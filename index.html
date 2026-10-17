@@ -32,6 +32,7 @@
             transition: background 0.35s ease, color 0.35s ease;
         }
 
+        /* DARK THEME OVERRIDES */
         body.dark-theme {
             background-color: #0b1120;
             background-image: 
@@ -163,17 +164,11 @@
             background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
         }
 
-        /* Glowing Follow Button Animation */
+        /* Glowing Button Animation */
         @keyframes glowPulse {
-            0% {
-                box-shadow: 0 0 5px rgba(225, 48, 108, 0.4), 0 0 12px rgba(225, 48, 108, 0.2);
-            }
-            50% {
-                box-shadow: 0 0 15px rgba(225, 48, 108, 0.8), 0 0 22px rgba(254, 44, 85, 0.6);
-            }
-            100% {
-                box-shadow: 0 0 5px rgba(225, 48, 108, 0.4), 0 0 12px rgba(225, 48, 108, 0.2);
-            }
+            0% { box-shadow: 0 0 5px rgba(225, 48, 108, 0.4), 0 0 10px rgba(225, 48, 108, 0.2); }
+            50% { box-shadow: 0 0 16px rgba(225, 48, 108, 0.8), 0 0 24px rgba(254, 44, 85, 0.6); }
+            100% { box-shadow: 0 0 5px rgba(225, 48, 108, 0.4), 0 0 10px rgba(225, 48, 108, 0.2); }
         }
 
         .btn-glow {
@@ -240,12 +235,11 @@
     <!-- MAIN CONTENT -->
     <main class="max-w-5xl w-full mx-auto px-3.5 sm:px-6 pt-3 pb-12">
 
-        <!-- 2. INSTAGRAM PROFILE BAR (Using Insta.jpg & Glowing Follow Button) -->
+        <!-- 2. INSTAGRAM ACCOUNT BAR -->
         <div class="flex flex-wrap items-center justify-between gap-2.5 mb-3.5">
             <a href="https://instagram.com/_satish_official_16" target="_blank" rel="noopener noreferrer" 
                class="theme-surface flex-1 min-w-[280px] bg-white/95 backdrop-blur-md rounded-2xl p-2.5 sm:px-4 shadow-md border border-white flex items-center justify-between gap-3 hover:scale-[1.01] transition-all">
                 <div class="flex items-center gap-3">
-                    <!-- Insta.jpg Avatar with fallback to FontAwesome -->
                     <div class="w-11 h-11 rounded-full p-[2px] ig-gradient shrink-0 shadow-sm">
                         <img src="Insta.jpg" alt="Instagram" 
                              onerror="this.onerror=null; this.src='https://cdn-icons-png.flaticon.com/518/3955/3955024.png';"
@@ -267,7 +261,7 @@
                 </div>
             </a>
 
-            <!-- Right Controls: Live Games & Theme -->
+            <!-- Right Controls: Games Count & Theme -->
             <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
                 <div class="bg-[#002b5b] text-white rounded-2xl px-3.5 py-2.5 shadow-md flex items-center gap-2 border border-white/10">
                     <i class="fa-solid fa-layer-group text-amber-300 text-xs"></i>
@@ -283,17 +277,17 @@
             </div>
         </div>
 
-        <!-- 3. NAVIGATION PILL WITH LOGIN REDIRECT ON AVATAR -->
+        <!-- 3. NAVIGATION PILL WITH GAMING HUB BRAND & AVATAR BADGE -->
         <header class="sticky top-2.5 z-30 mb-4">
             <div class="theme-surface bg-white rounded-2xl shadow-xl border border-white/80 px-3 sm:px-5 py-2.5 flex items-center justify-between">
-                <!-- Logo -->
+                <!-- GAMING HUB Brand Logo -->
                 <div class="flex items-center pr-3 sm:pr-5 border-r border-slate-200/60">
-                    <a href="index.html" class="brand-font text-2xl sm:text-3xl font-bold tracking-tight text-[#002b5b] theme-text-primary flex items-center gap-1">
-                        <span>game</span><span class="bg-[#002b5b] text-[#5be7c4] px-2 py-0.5 rounded-xl text-xl sm:text-2xl border border-cyan-400/30">HUB</span>
+                    <a href="index.html" class="brand-font text-xl sm:text-2xl font-bold tracking-tight text-[#002b5b] theme-text-primary flex items-center gap-1">
+                        <span>GAMING</span><span class="bg-[#002b5b] text-[#5be7c4] px-2 py-0.5 rounded-xl text-lg sm:text-xl border border-cyan-400/30">HUB</span>
                     </a>
                 </div>
 
-                <!-- Icons Bar -->
+                <!-- Navigation Icons -->
                 <div class="flex items-center justify-around flex-1 max-w-md ml-2 sm:ml-4 text-[#002b5b] theme-text-primary">
                     <button onclick="filterByCategory('popular')" title="Popular Games" class="p-2 rounded-xl hover:bg-slate-500/10 active:scale-90 transition">
                         <i class="fa-solid fa-fire-flame-curved text-lg sm:text-xl text-orange-500"></i>
@@ -307,10 +301,16 @@
                     <button onclick="toggleTheme()" title="Switch Theme" class="p-2 rounded-xl hover:bg-slate-500/10 active:scale-90 transition">
                         <span class="text-lg sm:text-xl leading-none">🌓</span>
                     </button>
-                    <!-- Avatar Redirects Directly to login.html -->
-                    <a href="login.html" title="Login with Google" class="p-2 rounded-xl hover:bg-slate-500/10 active:scale-90 transition relative inline-flex items-center justify-center">
-                        <i class="fa-regular fa-circle-user text-xl sm:text-2xl text-blue-600"></i>
-                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 absolute top-1 right-1 border-2 border-white"></span>
+                    
+                    <!-- Avatar Redirects to login.html with dynamic Initial/Photo -->
+                    <a href="login.html" id="navAvatarLink" title="User Profile / Login" class="p-1 rounded-xl hover:bg-slate-500/10 active:scale-90 transition inline-flex items-center justify-center">
+                        <div id="defaultAvatarIcon" class="relative inline-flex items-center justify-center">
+                            <i class="fa-regular fa-circle-user text-2xl text-blue-600"></i>
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 absolute top-0 right-0 border-2 border-white"></span>
+                        </div>
+                        <div id="userBadgeNav" class="hidden w-8 h-8 rounded-full bg-gradient-to-tr from-cyan-500 to-indigo-600 border-2 border-white text-white font-extrabold text-sm flex items-center justify-center shadow overflow-hidden">
+                            U
+                        </div>
                     </a>
                 </div>
             </div>
@@ -319,9 +319,8 @@
             <div id="searchDrawer" class="theme-surface hidden mt-2 bg-white rounded-2xl p-2.5 shadow-lg border border-slate-200">
                 <div class="relative flex items-center">
                     <i class="fa-solid fa-magnifying-glass text-slate-500 absolute left-3.5 z-10"></i>
-                    <!-- Forced solid text and placeholder visibility -->
                     <input id="gameSearchInput" type="text" 
-                           placeholder="Search (e.g., Snake, Car, 1v1, Dino)..." 
+                           placeholder="Search (e.g., Snake, Car, Bus, 1v1, Cricket)..." 
                            oninput="handleSearch(this.value)"
                            class="w-full pl-10 pr-20 py-2.5 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-500 rounded-xl text-sm font-semibold border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-400">
                     <button onclick="clearSearch()" class="absolute right-2 text-xs bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 text-slate-800 dark:text-slate-100 font-bold px-3 py-1.5 rounded-lg z-10">
@@ -337,22 +336,25 @@
                 <button onclick="filterByCategory('all')" data-cat="all" class="cat-btn active-cat shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-[#002b5b] text-white">
                     <i class="fa-solid fa-border-all"></i> All Games
                 </button>
+                <button onclick="filterByCategory('racing')" data-cat="racing" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
+                    <i class="fa-solid fa-car-burst text-amber-500"></i> Car & Bus Driving
+                </button>
                 <button onclick="filterByCategory('1v1')" data-cat="1v1" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
                     <i class="fa-solid fa-people-arrows text-rose-500"></i> 1v1 Battle
-                </button>
-                <button onclick="filterByCategory('single')" data-cat="single" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
-                    <i class="fa-solid fa-user-astronaut text-indigo-500"></i> Single Player
-                </button>
-                <button onclick="filterByCategory('racing')" data-cat="racing" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
-                    <i class="fa-solid fa-car-burst text-amber-500"></i> Car & Racing
                 </button>
                 <button onclick="filterByCategory('classic')" data-cat="classic" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
                     <i class="fa-solid fa-ghost text-emerald-500"></i> Classic & Snake
                 </button>
+                <button onclick="filterByCategory('single')" data-cat="single" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
+                    <i class="fa-solid fa-user-astronaut text-indigo-500"></i> Single Player
+                </button>
+                <button onclick="filterByCategory('sports')" data-cat="sports" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
+                    <i class="fa-solid fa-baseball-bat-ball text-sky-500"></i> Sports
+                </button>
             </div>
         </section>
 
-        <!-- 5. GAMES GRID -->
+        <!-- 5. MAIN GAMES GRID -->
         <section>
             <div id="gamesGrid" class="poki-grid"></div>
             <div id="emptyState" class="hidden bg-white/90 rounded-3xl p-8 text-center my-4 shadow-md">
@@ -380,16 +382,17 @@
 
     <script>
         /**
-         * GAME CATALOGUE
-         * You can set `image: 'snake.png'` or any `.jpg` file in the same folder.
-         * If image is missing, it falls back to a clean stylized placeholder.
+         * GAME LIST
+         * All paths use `game/NAME.html` and logos use `logo/NAME.png` (or .jpg)
+         * If the logo image doesn't exist yet, it displays a clean icon placeholder.
          */
         const GAMES_DATA = [
             {
                 id: 'snake',
-                title: 'Classic Snake Retro',
-                url: 'snake.html',
-                image: 'snake.png', 
+                title: 'Retro Snake Master',
+                url: 'game/snake.html',
+                logo: 'logo/snake.png',
+                icon: 'fa-solid fa-staff-snake',
                 size: 'large',
                 categories: ['classic', 'single', 'popular'],
                 badge: 'TOP',
@@ -398,59 +401,111 @@
             {
                 id: 'car-gt',
                 title: 'Turbo Street Car GT',
-                url: 'car.html',
-                image: 'car.jpg',
+                url: 'game/car.html',
+                logo: 'logo/car.png',
+                icon: 'fa-solid fa-car',
                 size: 'normal',
                 categories: ['racing', 'single', 'popular'],
                 badge: 'HOT',
                 bg: 'linear-gradient(135deg, #3b82f6, #1d4ed8)'
             },
             {
+                id: 'bus-simulator',
+                title: 'City Bus Simulator',
+                url: 'game/bus.html',
+                logo: 'logo/bus.png',
+                icon: 'fa-solid fa-bus-simple',
+                size: 'normal',
+                categories: ['racing', 'single'],
+                badge: 'NEW',
+                bg: 'linear-gradient(135deg, #0ea5e9, #0369a1)'
+            },
+            {
                 id: '1v1-battle',
                 title: '1v1 Battle Arena',
-                url: '1v1.html',
-                image: '1v1.jpg',
+                url: 'game/1v1.html',
+                logo: 'logo/1v1.png',
+                icon: 'fa-solid fa-gun',
                 size: 'normal',
                 categories: ['1v1', 'popular'],
                 badge: '1v1',
                 bg: 'linear-gradient(135deg, #ef4444, #7f1d1d)'
             },
             {
-                id: 'subway',
-                title: 'Subway Surfer 3D',
-                url: 'subway.html',
-                image: 'subway.jpg',
+                id: 'moto-stunt',
+                title: 'Moto Stunt X3M',
+                url: 'game/moto.html',
+                logo: 'logo/moto.png',
+                icon: 'fa-solid fa-motorcycle',
+                size: 'normal',
+                categories: ['racing', 'single', 'popular'],
+                badge: 'HOT',
+                bg: 'linear-gradient(135deg, #f97316, #c2410c)'
+            },
+            {
+                id: 'subway-surfer',
+                title: 'Street Subway Runner',
+                url: 'game/subway.html',
+                logo: 'logo/subway.png',
+                icon: 'fa-solid fa-person-running',
                 size: 'normal',
                 categories: ['single', 'popular'],
                 badge: 'HIT',
-                bg: 'linear-gradient(135deg, #f59e0b, #d97706)'
+                bg: 'linear-gradient(135deg, #f59e0b, #b45309)'
             },
             {
-                id: 'craft',
-                title: 'Craft World 1v1',
-                url: 'craft.html',
-                image: 'craft.jpg',
+                id: 'craft-world',
+                title: 'Craft Survival 1v1',
+                url: 'game/craft.html',
+                logo: 'logo/craft.png',
+                icon: 'fa-solid fa-cube',
                 size: 'large',
-                categories: ['1v1', 'classic'],
+                categories: ['1v1', 'classic', 'popular'],
                 badge: 'CO-OP',
                 bg: 'linear-gradient(135deg, #8b5cf6, #5b21b6)'
             },
             {
-                id: 'moto',
-                title: 'Moto Stunt X3M',
-                url: 'moto.html',
-                image: 'moto.jpg',
+                id: 'cricket',
+                title: 'Pro Cricket League',
+                url: 'game/cricket.html',
+                logo: 'logo/cricket.png',
+                icon: 'fa-solid fa-baseball-bat-ball',
+                size: 'normal',
+                categories: ['sports', 'single', 'popular'],
+                badge: 'TOP',
+                bg: 'linear-gradient(135deg, #14b8a6, #0f766e)'
+            },
+            {
+                id: 'truck-driver',
+                title: 'Heavy Truck Hauler',
+                url: 'game/truck.html',
+                logo: 'logo/truck.png',
+                icon: 'fa-solid fa-truck',
                 size: 'normal',
                 categories: ['racing', 'single'],
                 badge: '',
-                bg: 'linear-gradient(135deg, #f97316, #c2410c)'
+                bg: 'linear-gradient(135deg, #64748b, #334155)'
+            },
+            {
+                id: 'dino-jump',
+                title: 'Dino Jurassic Run',
+                url: 'game/dino.html',
+                logo: 'logo/dino.png',
+                icon: 'fa-solid fa-paw',
+                size: 'normal',
+                categories: ['classic', 'single'],
+                badge: '',
+                bg: 'linear-gradient(135deg, #84cc16, #4d7c0f)'
             }
         ];
 
         const POPULAR_ROW_DATA = [
-            { id: 'hole', title: 'Hole City .io', url: 'hole.html', image: 'hole.jpg', categories: ['single', 'popular'], bg: '#334155' },
-            { id: 'aquapark', title: 'Aquapark Slide', url: 'aquapark.html', image: 'aqua.jpg', categories: ['racing', 'popular'], bg: '#0284c7' },
-            { id: 'soccer', title: 'Head Soccer 1v1', url: 'soccer.html', image: 'soccer.jpg', categories: ['1v1', 'popular'], bg: '#16a34a' }
+            { id: 'hole', title: 'Hole City .io', url: 'game/hole.html', logo: 'logo/hole.png', icon: 'fa-solid fa-circle-dot', categories: ['single', 'popular'], bg: '#334155' },
+            { id: 'aquapark', title: 'Aquapark Slide', url: 'game/aquapark.html', logo: 'logo/aquapark.png', icon: 'fa-solid fa-water', categories: ['racing', 'popular'], bg: '#0284c7' },
+            { id: 'soccer', title: 'Head Soccer 1v1', url: 'game/soccer.html', logo: 'logo/soccer.png', icon: 'fa-solid fa-futbol', categories: ['1v1', 'sports', 'popular'], bg: '#16a34a' },
+            { id: 'archery', title: 'Stickman Bow 1v1', url: 'game/archery.html', logo: 'logo/archery.png', icon: 'fa-solid fa-bullseye', categories: ['1v1', 'popular'], bg: '#6366f1' },
+            { id: 'drift', title: 'Nitro Drift Car', url: 'game/drift.html', logo: 'logo/drift.png', icon: 'fa-solid fa-car-side', categories: ['racing', 'popular'], bg: '#dc2626' },
+            { id: 'sports', title: 'Badminton Duel', url: 'game/sports.html', logo: 'logo/sports.png', icon: 'fa-solid fa-medal', categories: ['1v1', 'sports', 'popular'], bg: '#059669' }
         ];
 
         const ALL_COMBINED = [...GAMES_DATA, ...POPULAR_ROW_DATA];
@@ -469,6 +524,13 @@
                 return matchesCat && matchesSearch;
             });
 
+            const filteredPopular = POPULAR_ROW_DATA.filter(game => {
+                const matchesCat = currentCategory === 'all' || game.categories.includes(currentCategory);
+                const matchesSearch = game.title.toLowerCase().includes(currentSearch.toLowerCase()) ||
+                                      game.url.toLowerCase().includes(currentSearch.toLowerCase());
+                return matchesCat && matchesSearch;
+            });
+
             document.getElementById('liveGameCount').textContent = ALL_COMBINED.length;
 
             if (filteredMain.length === 0) {
@@ -479,7 +541,8 @@
                 gridEl.innerHTML = filteredMain.map(g => createCardHTML(g, true)).join('');
             }
 
-            popularRowEl.innerHTML = POPULAR_ROW_DATA.map(g => createCardHTML(g, false)).join('');
+            popularRowEl.innerHTML = (filteredPopular.length > 0 ? filteredPopular : POPULAR_ROW_DATA)
+                .map(g => createCardHTML(g, false)).join('');
         }
 
         function createCardHTML(game, allowLarge) {
@@ -493,13 +556,14 @@
             return `
                 <a href="${game.url}" class="game-card ${spanClass}" style="background: ${game.bg};">
                     ${badge}
-                    <!-- Real Image with graceful fallback -->
-                    <img src="${game.image}" alt="${game.title}"
+                    <!-- Real Logo Image from logo/ directory -->
+                    <img src="${game.logo}" alt="${game.title}"
                          onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');"
                          class="w-full h-full object-cover">
-                    <!-- Fallback Icon if image file is not found -->
-                    <div class="hidden w-full h-full flex items-center justify-center text-white text-3xl font-extrabold">
-                        <i class="fa-solid fa-gamepad"></i>
+                    <!-- Clean icon fallback if logo file isn't uploaded yet -->
+                    <div class="hidden w-full h-full flex flex-col items-center justify-center text-white p-3 text-center">
+                        <i class="${game.icon} text-3xl sm:text-4xl mb-1 drop-shadow"></i>
+                        <span class="text-[11px] font-extrabold leading-tight drop-shadow">${game.title}</span>
                     </div>
                     <div class="game-card-overlay absolute inset-0 flex flex-col justify-end p-3 text-white">
                         <h3 class="font-extrabold text-xs sm:text-sm truncate">${game.title}</h3>
@@ -544,7 +608,6 @@
             window.location.href = rnd.url;
         }
 
-        // Theme toggle
         let isDark = false;
         function toggleTheme() {
             isDark = !isDark;
@@ -554,6 +617,21 @@
 
         window.onload = () => {
             renderGames();
+
+            // Load saved user initial / photo if signed in via login.html
+            const savedLetter = localStorage.getItem('gh_user_letter');
+            const savedPhoto = localStorage.getItem('gh_user_photo');
+
+            if (savedLetter) {
+                document.getElementById('defaultAvatarIcon').classList.add('hidden');
+                const badge = document.getElementById('userBadgeNav');
+                badge.classList.remove('hidden');
+                if (savedPhoto) {
+                    badge.innerHTML = `<img src="${savedPhoto}" class="w-full h-full rounded-full object-cover">`;
+                } else {
+                    badge.textContent = savedLetter;
+                }
+            }
         };
     </script>
 </body>
