@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Playing Game - Gaming Hub</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #070a13;
+    }
+    iframe {
+      width: 100%;
+      height: calc(100% - 48px);
+      border: none;
+      display: block;
+    }
+  </style>
+</head>
+<body class="flex flex-col text-white">
+
+  <!-- Top Global Header -->
+  <header class="h-12 bg-[#0d1222] border-b border-white/10 px-4 flex items-center justify-between shrink-0 z-50">
+    <a href="index.html" class="flex items-center gap-2 text-xs font-bold text-slate-300 hover:text-white transition">
+      <i class="fa-solid fa-arrow-left"></i> Hub
+    </a>
+
+    <!-- Live Cloud Sync Status Indicator -->
+    <div id="cloudStatus" class="flex items-center gap-1.5 text-xs text-slate-400 font-semibold truncate max-w-[200px] sm:max-w-none">
+      <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+      <span id="statusText">Checking login...</span>
+    </div>
+
+    <!-- High Score Display -->
+    <div class="flex items-center gap-2 text-xs">
+      <span class="text-slate-400">High:</span>
+      <span id="topHighScoreDisplay" class="font-extrabold text-[#00f0ff] tabular-nums">0</span>
+    </div>
+  </header>
+
+  <!-- Game Embed Container -->
+  <iframe id="gameIframe" src="" allowfullscreen></iframe>
+
+  <!-- Firebase Auto-Sync Engine -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+    import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBzLchy5M2fLne4c7Ghw1KNN8wVrlZdd8M",
+      authDomain: "friendsgame-872f5.firebaseapp.com",
+      databaseURL: "https://friendsgame-872f5-default-rtdb.firebaseio.com",
+      projectId: "friendsgame-872f5",
+      storageBucket: "friendsgame-872f5.firebasestorage.app",
+      messagingSenderId: "522534013233",
+      appId: "1:522534013233:web:f5faa6e6795023d0420810",
+      measurementId: "G-PW5H3G97QR"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    // Read the game parameter from URL (e.g., play.html?game=carracing or play.html?game=snake)
+    const urlParams = new URLSearchParams(window.location.search);
+    const gameId = urlParams.get('game') || 'snake';
+    const iframe = document.getElementById('gameIframe');
+    const cloudStatus = document.getElementById('cloudStatus');
+    const topHighScoreDisplay = document.getElementById('topHighScoreDisplay');
+
+    // Automatically load the game from the game/ folder
+    iframe.src = `game/${gameId}.html`;
+
+    let currentUser = null;
+    let cloudHighScore = 0;
+
+    // 1. Authenticate user & load existing high score from Firebase
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        currentUser = user;
+        const displayName = user.displayName || user.email.split('@')[0];
+        cloudStatus.innerHTML = `
+          <span class="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span>
+          <span class="text-emerald-400 font-bold truncate">Cloud Synced (${displayName})</span>
+        `;
+        try {
+          const snapshot = await get(child(ref(db), `scores/${user.uid}/${gameId}_high`));
+          if (snapshot.exists()) {
+            cloudHighScore = snapshot.val();
+            topHighScoreDisplay.textContent = cloudHighScore;
+          }
+        } catch (err) {
+          console.error("Score fetch failed:", err);
+        }
+      } else {
+        currentUser = null;
+        cloudStatus.innerHTML = `
+          <a href="login.html" class="text-amber-300 underline font-semibold">Login to save cloud score</a>
+        `;
+      }
+    });
+
+    // 2. Automatic Scanner: inspects iframe localStorage for new high scores every 1.5s
+    setInterval(async () => {
+      try {
+        const frameWin = iframe.contentWindow;
+        if (!frameWin || !frameWin.localStorage) return;
+
+        const storageKeys = Object.keys(frameWin.localStorage);
+        let detectedScore = 0;
+
+        for (const key of storageKeys) {
+          const keyLower = key.toLowerCase();
+          if (
+            keyLower.includes('score') || 
+            keyLower.includes('high') || 
+            keyLower.includes('best') || 
+            keyLower.includes('point')
+          ) {
+            const val = parseInt(frameWin.localStorage.getItem(key), 10);
+            if (!isNaN(val) && val > detectedScore) {
+              detectedScore = val;
+            }
+          }
+        }
+
+        // Upload to Firebase if higher than previous score
+        if (detectedScore > cloudHighScore) {
+          cloudHighScore = detectedScore;
+          topHighScoreDisplay.textContent = cloudHighScore;
+
+          if (currentUser) {
+            await set(ref(db, `scores/${currentUser.uid}/${gameId}_high`), cloudHighScore);
+            console.log(`[Auto-Sync] Cloud saved score ${cloudHighScore} for ${gameId}`);
+          }
+        }
+      } catch (e) {
+        // Cross-origin safe ignore
+      }
+    }, 1500);
+  </script>
+</body>
+</html>
