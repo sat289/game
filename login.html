@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Login - Gaming Hub</title>
+    <title>Login - Gaming Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -12,9 +12,7 @@
             font-family: 'Inter', sans-serif;
             background: linear-gradient(135deg, #090d16 0%, #0f172a 50%, #1e1b4b 100%);
         }
-        .brand-font {
-            font-family: 'Fredoka', sans-serif;
-        }
+        .brand-font { font-family: 'Fredoka', sans-serif; }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4 text-white">
@@ -27,40 +25,87 @@
         </a>
 
         <!-- Header -->
-        <div class="text-center mb-8">
-            <div class="brand-font text-3xl font-bold tracking-tight text-white mb-2">
+        <div class="text-center mb-6">
+            <div class="brand-font text-3xl font-bold tracking-tight text-white mb-1">
                 <span>game</span><span class="bg-[#002b5b] text-[#5be7c4] px-2 py-0.5 rounded-xl ml-1 text-2xl border border-cyan-400/30">HUB</span>
             </div>
-            <h2 class="text-lg font-bold text-slate-200">Sign in to your account</h2>
-            <p class="text-xs text-slate-400 mt-1">Save game records, high scores & play multiplayer</p>
+            <h2 id="authHeading" class="text-lg font-bold text-slate-200">Sign in to your account</h2>
+            <p class="text-xs text-slate-400 mt-0.5">Save game records, high scores & play multiplayer</p>
         </div>
 
-        <!-- Logged Out State (Google Sign In Button) -->
+        <!-- Logged Out Container -->
         <div id="loggedOutState" class="space-y-4">
-            <button id="googleLoginBtn" class="w-full bg-white hover:bg-slate-100 text-slate-900 font-bold py-3.5 px-4 rounded-2xl flex items-center justify-center gap-3 shadow-lg active:scale-95 transition-all">
+            
+            <!-- Google Sign-in Button -->
+            <button id="googleLoginBtn" class="w-full bg-white hover:bg-slate-100 text-slate-900 font-bold py-3 px-4 rounded-2xl flex items-center justify-center gap-3 shadow-lg active:scale-95 transition-all">
                 <svg class="w-5 h-5" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                     <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
                     <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
                     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
                 </svg>
-                <span>Continue with Google</span>
+                <span class="text-sm">Continue with Google</span>
             </button>
-            <p id="authError" class="text-xs text-rose-400 text-center font-medium hidden"></p>
+
+            <div class="flex items-center my-3">
+                <div class="flex-1 border-t border-slate-700"></div>
+                <span class="px-3 text-xs text-slate-500 font-semibold uppercase">Or with Email / Username</span>
+                <div class="flex-1 border-t border-slate-700"></div>
+            </div>
+
+            <!-- Email & Password Form -->
+            <form id="emailAuthForm" class="space-y-3">
+                <div id="usernameField" class="hidden">
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Your Name</label>
+                    <input type="text" id="authDisplayName" placeholder="Enter your display name"
+                           class="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-cyan-400">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Email / Username</label>
+                    <input type="text" id="authEmail" required placeholder="username@gmail.com"
+                           class="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-cyan-400">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Password</label>
+                    <input type="password" id="authPassword" required placeholder="••••••••" minlength="6"
+                           class="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-cyan-400">
+                </div>
+
+                <button type="submit" id="submitAuthBtn" class="w-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold py-2.5 rounded-xl text-sm transition-all shadow-md active:scale-95">
+                    Sign In
+                </button>
+            </form>
+
+            <!-- Toggle Sign In / Sign Up -->
+            <div class="text-center pt-2">
+                <button type="button" id="toggleModeBtn" class="text-xs text-cyan-400 hover:underline font-semibold">
+                    Don't have an account? Sign Up
+                </button>
+            </div>
+
+            <p id="authError" class="text-xs text-rose-400 text-center font-medium hidden bg-rose-950/40 p-2.5 rounded-xl border border-rose-800/50"></p>
         </div>
 
-        <!-- Logged In State (Profile Card) -->
+        <!-- Logged In Profile Box -->
         <div id="loggedInState" class="hidden text-center space-y-4">
-            <div class="relative w-20 h-20 mx-auto">
-                <img id="userAvatar" src="" alt="Avatar" class="w-full h-full rounded-full border-4 border-cyan-400 object-cover shadow-lg">
+            <div class="relative w-20 h-20 mx-auto flex items-center justify-center">
+                <!-- Avatar Image or First-Letter Logo -->
+                <img id="userAvatarImg" src="" alt="Avatar" class="hidden w-full h-full rounded-full border-4 border-cyan-400 object-cover shadow-lg">
+                <div id="userLetterBadge" class="w-full h-full rounded-full border-4 border-cyan-400 bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-3xl font-extrabold text-white uppercase shadow-lg">
+                    U
+                </div>
                 <span class="absolute bottom-0 right-0 w-5 h-5 bg-emerald-500 rounded-full border-2 border-slate-900"></span>
             </div>
+            
             <div>
                 <h3 id="userName" class="text-lg font-bold text-white"></h3>
                 <p id="userEmail" class="text-xs text-slate-400"></p>
             </div>
+
             <div class="pt-4 flex gap-3">
-                <a href="index.html" class="flex-1 bg-cyan-500 hover:bg-cyan-600 text-slate-950 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 transition">
+                <a href="index.html" class="flex-1 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 transition">
                     <i class="fa-solid fa-play"></i> Play Games
                 </a>
                 <button id="logoutBtn" class="flex-1 bg-slate-800 hover:bg-slate-700 text-rose-400 border border-rose-500/30 font-bold py-2.5 rounded-xl text-xs transition">
@@ -71,10 +116,19 @@
 
     </div>
 
-    <!-- Firebase SDK Modular Import -->
+    <!-- Firebase Script -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+        import { 
+            getAuth, 
+            signInWithPopup, 
+            GoogleAuthProvider, 
+            signInWithEmailAndPassword, 
+            createUserWithEmailAndPassword, 
+            updateProfile, 
+            onAuthStateChanged, 
+            signOut 
+        } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBzLchy5M2fLne4c7Ghw1KNN8wVrlZdd8M",
@@ -89,36 +143,114 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const provider = new GoogleAuthProvider();
+        const googleProvider = new GoogleAuthProvider();
 
-        const loginBtn = document.getElementById('googleLoginBtn');
-        const logoutBtn = document.getElementById('logoutBtn');
+        let isSignUpMode = false;
+
         const loggedOutState = document.getElementById('loggedOutState');
         const loggedInState = document.getElementById('loggedInState');
-        const userAvatar = document.getElementById('userAvatar');
+        const userAvatarImg = document.getElementById('userAvatarImg');
+        const userLetterBadge = document.getElementById('userLetterBadge');
         const userName = document.getElementById('userName');
         const userEmail = document.getElementById('userEmail');
         const authError = document.getElementById('authError');
+        const toggleModeBtn = document.getElementById('toggleModeBtn');
+        const usernameField = document.getElementById('usernameField');
+        const submitAuthBtn = document.getElementById('submitAuthBtn');
+        const authHeading = document.getElementById('authHeading');
 
-        // Check Auth State
+        // Toggle Sign In vs Sign Up
+        toggleModeBtn.addEventListener('click', () => {
+            isSignUpMode = !isSignUpMode;
+            authError.classList.add('hidden');
+            if (isSignUpMode) {
+                usernameField.classList.remove('hidden');
+                submitAuthBtn.textContent = 'Create Account';
+                authHeading.textContent = 'Create a New Account';
+                toggleModeBtn.textContent = 'Already have an account? Sign In';
+            } else {
+                usernameField.classList.add('hidden');
+                submitAuthBtn.textContent = 'Sign In';
+                authHeading.textContent = 'Sign in to your account';
+                toggleModeBtn.textContent = "Don't have an account? Sign Up";
+            }
+        });
+
+        // Format email if user typed a plain username
+        function formatEmail(input) {
+            const val = input.trim();
+            return val.includes('@') ? val : `${val}@gamehub.local`;
+        }
+
+        // Render user details & Avatar badge letter
+        function displayUserProfile(user) {
+            const name = user.displayName || user.email.split('@')[0];
+            const initialLetter = name.charAt(0).toUpperCase();
+
+            userName.textContent = name;
+            userEmail.textContent = user.email;
+
+            // Save to localStorage for index.html to read
+            localStorage.setItem('gh_user_letter', initialLetter);
+            localStorage.setItem('gh_user_photo', user.photoURL || '');
+            localStorage.setItem('gh_user_name', name);
+
+            if (user.photoURL) {
+                userAvatarImg.src = user.photoURL;
+                userAvatarImg.classList.remove('hidden');
+                userLetterBadge.classList.add('hidden');
+            } else {
+                userLetterBadge.textContent = initialLetter;
+                userLetterBadge.classList.remove('hidden');
+                userAvatarImg.classList.add('hidden');
+            }
+
+            loggedOutState.classList.add('hidden');
+            loggedInState.classList.remove('hidden');
+        }
+
+        // Auth state listener
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                userAvatar.src = user.photoURL || 'https://via.placeholder.com/80';
-                userName.textContent = user.displayName || 'Player';
-                userEmail.textContent = user.email || '';
-                loggedOutState.classList.add('hidden');
-                loggedInState.classList.remove('hidden');
+                displayUserProfile(user);
             } else {
+                localStorage.removeItem('gh_user_letter');
+                localStorage.removeItem('gh_user_photo');
+                localStorage.removeItem('gh_user_name');
                 loggedOutState.classList.remove('hidden');
                 loggedInState.classList.add('hidden');
             }
         });
 
-        // Google Sign In
-        loginBtn.addEventListener('click', async () => {
+        // Email / Password Form Submit
+        document.getElementById('emailAuthForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            authError.classList.add('hidden');
+            const email = formatEmail(document.getElementById('authEmail').value);
+            const password = document.getElementById('authPassword').value;
+            const displayName = document.getElementById('authDisplayName').value.trim();
+
             try {
-                authError.classList.add('hidden');
-                await signInWithPopup(auth, provider);
+                if (isSignUpMode) {
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    if (displayName) {
+                        await updateProfile(userCredential.user, { displayName });
+                    }
+                    displayUserProfile(userCredential.user);
+                } else {
+                    await signInWithEmailAndPassword(auth, email, password);
+                }
+            } catch (err) {
+                authError.textContent = err.message;
+                authError.classList.remove('hidden');
+            }
+        });
+
+        // Google Sign In
+        document.getElementById('googleLoginBtn').addEventListener('click', async () => {
+            authError.classList.add('hidden');
+            try {
+                await signInWithPopup(auth, googleProvider);
             } catch (err) {
                 authError.textContent = err.message;
                 authError.classList.remove('hidden');
@@ -126,7 +258,7 @@
         });
 
         // Sign Out
-        logoutBtn.addEventListener('click', async () => {
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
             await signOut(auth);
         });
     </script>
