@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Login - Gaming Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #090d16 0%, #0f172a 50%, #1e1b4b 100%);
+        }
+        .brand-font {
+            font-family: 'Fredoka', sans-serif;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 text-white">
+
+    <div class="max-w-md w-full bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl relative">
+        
+        <!-- Back Button -->
+        <a href="index.html" class="inline-flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-white mb-6 transition">
+            <i class="fa-solid fa-arrow-left"></i> Back to Games
+        </a>
+
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <div class="brand-font text-3xl font-bold tracking-tight text-white mb-2">
+                <span>game</span><span class="bg-[#002b5b] text-[#5be7c4] px-2 py-0.5 rounded-xl ml-1 text-2xl border border-cyan-400/30">HUB</span>
+            </div>
+            <h2 class="text-lg font-bold text-slate-200">Sign in to your account</h2>
+            <p class="text-xs text-slate-400 mt-1">Save game records, high scores & play multiplayer</p>
+        </div>
+
+        <!-- Logged Out State (Google Sign In Button) -->
+        <div id="loggedOutState" class="space-y-4">
+            <button id="googleLoginBtn" class="w-full bg-white hover:bg-slate-100 text-slate-900 font-bold py-3.5 px-4 rounded-2xl flex items-center justify-center gap-3 shadow-lg active:scale-95 transition-all">
+                <svg class="w-5 h-5" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                </svg>
+                <span>Continue with Google</span>
+            </button>
+            <p id="authError" class="text-xs text-rose-400 text-center font-medium hidden"></p>
+        </div>
+
+        <!-- Logged In State (Profile Card) -->
+        <div id="loggedInState" class="hidden text-center space-y-4">
+            <div class="relative w-20 h-20 mx-auto">
+                <img id="userAvatar" src="" alt="Avatar" class="w-full h-full rounded-full border-4 border-cyan-400 object-cover shadow-lg">
+                <span class="absolute bottom-0 right-0 w-5 h-5 bg-emerald-500 rounded-full border-2 border-slate-900"></span>
+            </div>
+            <div>
+                <h3 id="userName" class="text-lg font-bold text-white"></h3>
+                <p id="userEmail" class="text-xs text-slate-400"></p>
+            </div>
+            <div class="pt-4 flex gap-3">
+                <a href="index.html" class="flex-1 bg-cyan-500 hover:bg-cyan-600 text-slate-950 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 transition">
+                    <i class="fa-solid fa-play"></i> Play Games
+                </a>
+                <button id="logoutBtn" class="flex-1 bg-slate-800 hover:bg-slate-700 text-rose-400 border border-rose-500/30 font-bold py-2.5 rounded-xl text-xs transition">
+                    Sign Out
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Firebase SDK Modular Import -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBzLchy5M2fLne4c7Ghw1KNN8wVrlZdd8M",
+            authDomain: "friendsgame-872f5.firebaseapp.com",
+            databaseURL: "https://friendsgame-872f5-default-rtdb.firebaseio.com",
+            projectId: "friendsgame-872f5",
+            storageBucket: "friendsgame-872f5.firebasestorage.app",
+            messagingSenderId: "522534013233",
+            appId: "1:522534013233:web:f5faa6e6795023d0420810",
+            measurementId: "G-PW5H3G97QR"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        const loginBtn = document.getElementById('googleLoginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const loggedOutState = document.getElementById('loggedOutState');
+        const loggedInState = document.getElementById('loggedInState');
+        const userAvatar = document.getElementById('userAvatar');
+        const userName = document.getElementById('userName');
+        const userEmail = document.getElementById('userEmail');
+        const authError = document.getElementById('authError');
+
+        // Check Auth State
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                userAvatar.src = user.photoURL || 'https://via.placeholder.com/80';
+                userName.textContent = user.displayName || 'Player';
+                userEmail.textContent = user.email || '';
+                loggedOutState.classList.add('hidden');
+                loggedInState.classList.remove('hidden');
+            } else {
+                loggedOutState.classList.remove('hidden');
+                loggedInState.classList.add('hidden');
+            }
+        });
+
+        // Google Sign In
+        loginBtn.addEventListener('click', async () => {
+            try {
+                authError.classList.add('hidden');
+                await signInWithPopup(auth, provider);
+            } catch (err) {
+                authError.textContent = err.message;
+                authError.classList.remove('hidden');
+            }
+        });
+
+        // Sign Out
+        logoutBtn.addEventListener('click', async () => {
+            await signOut(auth);
+        });
+    </script>
+</body>
+</html>
