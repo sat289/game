@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Street Racing 3D - HTML5</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #111;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            user-select: none;
+        }
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 500px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            border-radius: 8px;
+            overflow: hidden;
+            background: #87CEEB;
+        }
+        canvas {
+            display: block;
+        }
+        #ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .hud-top {
+            display: flex;
+            justify-content: space-between;
+            font-size: 20px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+        .dashboard {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px 20px;
+            border-radius: 20px;
+            border: 2px solid #00f0ff;
+        }
+        #screen-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+        h1 {
+            font-size: 42px;
+            color: #00f0ff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 15px rgba(0, 240, 255, 0.6);
+        }
+        p {
+            color: #aaa;
+            font-size: 16px;
+            margin-bottom: 25px;
+            text-align: center;
+            max-width: 400px;
+        }
+        .btn {
+            background: linear-gradient(135deg, #00f0ff, #0077ff);
+            color: white;
+            border: none;
+            padding: 12px 35px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 0 15px rgba(0, 119, 255, 0.6);
+            transition: 0.2s;
+            pointer-events: auto;
+        }
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.9);
+        }
+        .controls-hint {
+            margin-top: 15px;
+            font-size: 13px;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas" width="800" height="500"></canvas>
+    
+    <div id="ui">
+        <div class="hud-top">
+            <div class="dashboard">SCORE: <span id="scoreVal">0</span></div>
+            <div class="dashboard">SPEED: <span id="speedVal">0</span> MPH</div>
+        </div>
+    </div>
+
+    <div id="screen-overlay">
+        <h1>Street Racing 3D</h1>
+        <p>Dodge oncoming traffic, collect boosts, and survive the highway rush!</p>
+        <button class="btn" id="startBtn">Start Race</button>
+        <div class="controls-hint">Use <b>LEFT / RIGHT</b> Arrow keys or <b>A / D</b> to steer</div>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+let gameRunning = false;
+let score = 0;
+let speed = 120;
+let distance = 0;
+
+const keys = {};
+window.addEventListener('keydown', e => keys[e.code] = true);
+window.addEventListener('keyup', e => keys[e.code] = false);
+
+document.getElementById('startBtn').addEventListener('click', startGame);
+
+let player = {
+    x: 400,
+    y: 380,
+    width: 60,
+    height: 100,
+    speed: 6,
+    color: '#00f0ff'
+};
+
+let obstacles = [];
+let roadSegments = [];
+let roadLength = 100;
+let segmentHeight = 20;
+
+function initRoad() {
+    roadSegments = [];
+    for (let i = 0; i < roadLength; i++) {
+        roadSegments.push({
+            z: i,
+            curve: Math.sin(i * 0.1) * 150
+        });
+    }
+}
+
+function startGame() {
+    document.getElementById('screen-overlay').style.display = 'none';
+    gameRunning = true;
+    score = 0;
+    distance = 0;
+    obstacles = [];
+    player.x = 400;
+    initRoad();
+    loop();
+}
+
+function spawnObstacle() {
+    if (Math.random() < 0.03 && obstacles.length < 4) {
+        let laneOffset = (Math.random() - 0.5) * 300;
+        obstacles.push({
+            x: 400 + laneOffset,
+            y: -100,
+            width: 55,
+            height: 95,
+            color: '#ff2255',
+            speed: 4
+        });
+    }
+}
+
+function update() {
+    if (!gameRunning) return;
+
+    if (keys['ArrowLeft'] || keys['KeyA']) {
+        player.x -= player.speed;
+    }
+    if (keys['ArrowRight'] || keys['KeyD']) {
+        player.x += player.speed;
+    }
+
+    // Boundaries
+    if (player.x < 210) player.x = 210;
+    if (player.x > 590) player.x = 590;
+
+    distance += speed / 30;
+    score = Math.floor(distance);
+
+    spawnObstacle();
+
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+        let obs = obstacles[i];
+        obs.y += speed / 15 + obs.speed;
+
+        // Collision Check
+        if (
+            player.x < obs.x + obs.width - 15 &&
+            player.x + player.width - 15 > obs.x &&
+            player.y < obs.y + obs.height - 15 &&
+            player.y + player.height - 15 > obs.y
+        ) {
+            // Crash!
+            gameRunning = false;
+            document.getElementById('screen-overlay').style.display = 'flex';
+            document.querySelector('#screen-overlay h1').innerText = 'CRASHED!';
+            document.querySelector('#screen-overlay p').innerText = `Final Score: ${score} m`;
+            document.getElementById('startBtn').innerText = 'Play Again';
+        }
+
+        if (obs.y > 600) {
+            obstacles.splice(i, 1);
+        }
+    }
+
+    document.getElementById('scoreVal').innerText = score;
+    document.getElementById('speedVal').innerText = Math.floor(speed);
+}
+
+function drawClassicSkyAndHorizon() {
+    // Gradient Sky
+    let skyGrad = ctx.createLinearGradient(0, 0, 0, 250);
+    skyGrad.addColorStop(0, '#0f2027');
+    skyGrad.addColorStop(0.5, '#203a43');
+    skyGrad.addColorStop(1, '#2c5364');
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, canvas.width, 250);
+
+    // Mountains backdrop
+    ctx.fillStyle = '#1b2a32';
+    ctx.beginPath();
+    ctx.moveTo(0, 250);
+    ctx.lineTo(0, 180);
+    ctx.lineTo(150, 130);
+    ctx.lineTo(300, 200);
+    ctx.lineTo(500, 120);
+    ctx.lineTo(700, 190);
+    ctx.lineTo(800, 150);
+    ctx.lineTo(800, 250);
+    ctx.fill();
+
+    // Ground / Grass
+    ctx.fillStyle = '#1e3f20';
+    ctx.fillRect(0, 250, canvas.width, 250);
+}
+
+function drawRoad() {
+    // Road trapezium
+    ctx.fillStyle = '#333';
+    ctx.beginPath();
+    ctx.moveTo(200, 250);
+    ctx.lineTo(600, 250);
+    ctx.lineTo(750, 500);
+    ctx.lineTo(50, 500);
+    ctx.closePath();
+    ctx.fill();
+
+    // Side shoulders/borders (Rumble strips)
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(200, 250);
+    ctx.lineTo(50, 500);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(600, 250);
+    ctx.lineTo(750, 500);
+    ctx.stroke();
+
+    // Center dashes
+    let dashOffset = (distance * 15) % 40;
+    ctx.strokeStyle = '#f1c40f';
+    ctx.lineWidth = 6;
+    ctx.setLineDash([20, 20]);
+    ctx.lineDashOffset = -dashOffset;
+    ctx.beginPath();
+    ctx.moveTo(400, 250);
+    ctx.lineTo(400, 500);
+    ctx.stroke();
+    ctx.setLineDash([]); // reset
+}
+
+function drawCar(x, y, color, isPlayer = false) {
+    ctx.save();
+    ctx.translate(x, y);
+
+    // Car shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(-30, 20, 60, 80);
+
+    // Car Body
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.roundRect(-28, 0, 56, 95, 12);
+    ctx.fill();
+
+    // Windshield & Roof
+    ctx.fillStyle = '#111';
+    ctx.fillRect(-22, 25, 44, 35);
+    ctx.fillStyle = color;
+    ctx.fillRect(-20, 28, 40, 30);
+
+    // Headlights / Taillights
+    if (isPlayer) {
+        ctx.fillStyle = '#00feff';
+        ctx.fillRect(-24, 85, 10, 5);
+        ctx.fillRect(14, 85, 10, 5);
+
+        // Exhaust / Nitro glow
+        ctx.fillStyle = '#00f0ff';
+        ctx.fillRect(-18, 95, 10, 10);
+        ctx.fillRect(8, 95, 10, 10);
+    } else {
+        ctx.fillStyle = '#ff0033';
+        ctx.fillRect(-24, 5, 10, 4);
+        ctx.fillRect(14, 5, 10, 4);
+    }
+
+    // Wheels
+    ctx.fillStyle = '#050505';
+    ctx.fillRect(-34, 15, 8, 22);
+    ctx.fillRect(26, 15, 8, 22);
+    ctx.fillRect(-34, 65, 8, 22);
+    ctx.fillRect(26, 65, 8, 22);
+
+    ctx.restore();
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    drawClassicSkyAndHorizon();
+    drawRoad();
+
+    // Draw obstacles sorted by Y coordinate for faux 3D depth scaling
+    obstacles.sort((a, b) => a.y - b.y);
+    obstacles.forEach(obs => {
+        let scale = 0.4 + (obs.y / 500) * 0.6;
+        ctx.save();
+        ctx.translate(obs.x, obs.y);
+        ctx.scale(scale, scale);
+        drawCar(0, 0, obs.color, false);
+        ctx.restore();
+    });
+
+    // Draw Player Car
+    drawCar(player.x, player.y, player.color, true);
+}
+
+function loop() {
+    update();
+    draw();
+    if (gameRunning) {
+        requestAnimationFrame(loop);
+    }
+}
+</script>
+
+</body>
+</html>
