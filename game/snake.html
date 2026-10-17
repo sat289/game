@@ -6,76 +6,129 @@
   <title>Cyber Snake - Gaming Hub</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Icons -->
+  <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <style>
     body {
-      touch-action: manipulation;
+      touch-action: none;
       user-select: none;
       -webkit-user-select: none;
       background: radial-gradient(circle at 50% 50%, #151c33 0%, #080c16 100%);
     }
+
+    /* Controller Button Glow Effect */
+    .ctrl-btn {
+      transition: all 0.15s ease-in-out;
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.1);
+    }
+
+    .ctrl-btn:active, .ctrl-btn.active-glow {
+      transform: scale(0.92);
+      background-color: rgba(0, 240, 255, 0.35) !important;
+      border-color: #00f0ff !important;
+      box-shadow: 0 0 22px rgba(0, 240, 255, 0.8), inset 0 0 12px rgba(0, 240, 255, 0.5) !important;
+      color: #ffffff !important;
+    }
+
+    /* Pulsing Outer Card Glow */
+    @keyframes neonPulse {
+      0% { box-shadow: 0 0 15px rgba(0, 240, 255, 0.3), 0 0 30px rgba(255, 0, 123, 0.2); }
+      50% { box-shadow: 0 0 25px rgba(0, 240, 255, 0.6), 0 0 45px rgba(255, 0, 123, 0.4); }
+      100% { box-shadow: 0 0 15px rgba(0, 240, 255, 0.3), 0 0 30px rgba(255, 0, 123, 0.2); }
+    }
+
+    .canvas-glow-box {
+      animation: neonPulse 3s infinite ease-in-out;
+    }
   </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-3 text-white">
+<body class="min-h-screen flex items-center justify-center p-3 text-white overflow-hidden">
 
   <!-- Main Game Card -->
-  <div class="bg-[#101626] border border-white/15 rounded-3xl p-5 max-w-[380px] w-full flex flex-col items-center relative shadow-[0_10px_40px_rgba(0,0,0,0.8)]">
+  <div class="bg-[#101626]/95 border border-white/15 rounded-3xl p-4 sm:p-5 max-w-[390px] w-full flex flex-col items-center relative shadow-[0_10px_40px_rgba(0,0,0,0.8)] backdrop-blur-xl">
     
-    <!-- Close / Exit button back to Gaming Hub -->
+    <!-- Exit back to Hub -->
     <a href="../index.html" class="absolute top-4 right-4 text-white/60 hover:text-white p-2 rounded-full bg-white/5 active:scale-95 transition" title="Exit to Hub">
       <i class="fa-solid fa-xmark text-lg"></i>
     </a>
 
-    <h3 class="text-lg font-black text-[#00f2fe] tracking-wider mb-2 flex items-center gap-1.5">
+    <h3 class="text-lg font-black text-[#00f2fe] tracking-wider mb-0.5 flex items-center gap-1.5 drop-shadow-[0_0_10px_rgba(0,242,254,0.6)]">
       🐍 CYBER SNAKE
     </h3>
+    
+    <!-- User Status Banner -->
+    <p id="userStatus" class="text-[10px] text-slate-400 mb-2 font-semibold">
+      Syncing with Firebase...
+    </p>
 
     <!-- Score Header -->
-    <div class="flex justify-between w-full text-xs font-black uppercase tracking-wider mb-3 px-2">
-      <span id="scoreText" class="text-[#00f0ff] drop-shadow-[0_0_8px_rgba(0,240,255,0.6)]">
+    <div class="flex justify-between w-full text-xs font-black uppercase tracking-wider mb-2.5 px-3">
+      <span id="scoreText" class="text-[#00f0ff] drop-shadow-[0_0_10px_rgba(0,240,255,0.8)]">
         SCORE: 0
       </span>
-      <span id="highScoreText" class="text-[#ff007b] drop-shadow-[0_0_8px_rgba(255,0,123,0.6)]">
+      <span class="text-[10px] text-slate-400 flex items-center gap-1">
+        <span>🤌 Swipe / Keys</span>
+      </span>
+      <span id="highScoreText" class="text-[#ff007b] drop-shadow-[0_0_10px_rgba(255,0,123,0.8)]">
         BEST: 0
       </span>
     </div>
 
-    <!-- Canvas Frame -->
-    <div class="relative rounded-2xl p-[3px] bg-gradient-to-br from-[#00f0ff] to-[#ff007b] shadow-[0_0_30px_rgba(108,92,231,0.4)]">
-      <canvas id="gameCanvas" width="320" height="320" class="block bg-[#0d0c15] rounded-[13px]"></canvas>
+    <!-- Canvas Frame with Glowing Neon Border -->
+    <div class="canvas-glow-box relative rounded-2xl p-[3px] bg-gradient-to-br from-[#00f0ff] via-[#9d4edd] to-[#ff007b]">
+      <canvas id="gameCanvas" width="320" height="320" class="block bg-[#080811] rounded-[13px]"></canvas>
 
       <!-- Game Over Modal Overlay -->
-      <div id="gameOverOverlay" class="hidden absolute inset-0 bg-black/85 rounded-[13px] flex flex-col items-center justify-center p-4">
-        <span class="text-2xl font-black text-[#ff3838] tracking-widest mb-1">GAME OVER</span>
-        <p id="finalScoreText" class="text-xs text-white/80 mb-3">Final Score: 0</p>
-        <button id="restartBtn" class="bg-gradient-to-r from-[#00f2fe] to-[#0072ff] text-slate-950 font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-lg active:scale-95 transition">
+      <div id="gameOverOverlay" class="hidden absolute inset-0 bg-black/85 backdrop-blur-sm rounded-[13px] flex flex-col items-center justify-center p-4 z-20">
+        <span class="text-3xl font-black text-[#ff3838] tracking-widest mb-1 drop-shadow-[0_0_15px_rgba(255,56,56,0.8)]">GAME OVER</span>
+        <p id="finalScoreText" class="text-sm font-semibold text-white/90 mb-4">Final Score: 0</p>
+        <button id="restartBtn" class="bg-gradient-to-r from-[#00f2fe] to-[#0072ff] text-slate-950 font-black px-5 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-[0_0_20px_rgba(0,242,254,0.6)] active:scale-95 transition">
           <i class="fa-solid fa-rotate-left"></i> PLAY AGAIN
         </button>
       </div>
     </div>
 
-    <!-- Mobile D-Pad Touch Controls -->
-    <div class="grid grid-cols-3 gap-2 mt-4">
+    <!-- Mobile D-Pad Touch Controllers with Glow Animations -->
+    <div class="grid grid-cols-3 gap-2.5 mt-4">
       <div></div>
-      <button id="btnUp" class="w-14 h-14 bg-white/5 hover:bg-white/10 active:bg-[#00f0ff]/30 active:scale-95 border border-white/15 rounded-xl flex items-center justify-center text-[#00f0ff] transition text-xl">
+      <button id="btnUp" class="ctrl-btn w-14 h-13 py-3 bg-white/5 border border-white/15 rounded-2xl flex items-center justify-center text-[#00f0ff] text-xl">
         <i class="fa-solid fa-arrow-up"></i>
       </button>
       <div></div>
 
-      <button id="btnLeft" class="w-14 h-14 bg-white/5 hover:bg-white/10 active:bg-[#00f0ff]/30 active:scale-95 border border-white/15 rounded-xl flex items-center justify-center text-[#00f0ff] transition text-xl">
+      <button id="btnLeft" class="ctrl-btn w-14 h-13 py-3 bg-white/5 border border-white/15 rounded-2xl flex items-center justify-center text-[#00f0ff] text-xl">
         <i class="fa-solid fa-arrow-left"></i>
       </button>
-      <button id="btnDown" class="w-14 h-14 bg-white/5 hover:bg-white/10 active:bg-[#00f0ff]/30 active:scale-95 border border-white/15 rounded-xl flex items-center justify-center text-[#00f0ff] transition text-xl">
+      <button id="btnDown" class="ctrl-btn w-14 h-13 py-3 bg-white/5 border border-white/15 rounded-2xl flex items-center justify-center text-[#00f0ff] text-xl">
         <i class="fa-solid fa-arrow-down"></i>
       </button>
-      <button id="btnRight" class="w-14 h-14 bg-white/5 hover:bg-white/10 active:bg-[#00f0ff]/30 active:scale-95 border border-white/15 rounded-xl flex items-center justify-center text-[#00f0ff] transition text-xl">
+      <button id="btnRight" class="ctrl-btn w-14 h-13 py-3 bg-white/5 border border-white/15 rounded-2xl flex items-center justify-center text-[#00f0ff] text-xl">
         <i class="fa-solid fa-arrow-right"></i>
       </button>
     </div>
   </div>
 
-  <script>
+  <!-- Firebase & Core Engine -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+    import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBzLchy5M2fLne4c7Ghw1KNN8wVrlZdd8M",
+      authDomain: "friendsgame-872f5.firebaseapp.com",
+      databaseURL: "https://friendsgame-872f5-default-rtdb.firebaseio.com",
+      projectId: "friendsgame-872f5",
+      storageBucket: "friendsgame-872f5.firebasestorage.app",
+      messagingSenderId: "522534013233",
+      appId: "1:522534013233:web:f5faa6e6795023d0420810",
+      measurementId: "G-PW5H3G97QR"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     const scoreText = document.getElementById('scoreText');
@@ -83,13 +136,15 @@
     const finalScoreText = document.getElementById('finalScoreText');
     const gameOverOverlay = document.getElementById('gameOverOverlay');
     const restartBtn = document.getElementById('restartBtn');
+    const userStatus = document.getElementById('userStatus');
 
     const gridSize = 16;
     const tileCount = 20;
 
     let score = 0;
-    let highScore = parseInt(localStorage.getItem('cyber_snake_hi') || '0', 10);
-    highScoreText.textContent = `BEST: ${highScore}`;
+    let highScore = 0;
+    let currentUser = null;
+    let animPulse = 0;
 
     let snake = [
       { x: 10, y: 10 },
@@ -102,6 +157,36 @@
     let speed = 110;
     let isGameOver = false;
     let loopTimeout = null;
+
+    // Firebase Auth State
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        currentUser = user;
+        const name = user.displayName || user.email.split('@')[0];
+        userStatus.innerHTML = `Player: <span class="text-cyan-300 font-bold">${name}</span> (Cloud Synced ☁️)`;
+        try {
+          const dbRef = ref(db);
+          const snapshot = await get(child(dbRef, `scores/${user.uid}/snake_high`));
+          if (snapshot.exists()) {
+            highScore = snapshot.val();
+            highScoreText.textContent = `BEST: ${highScore}`;
+          }
+        } catch (err) {
+          console.error("Score fetch error:", err);
+        }
+      } else {
+        currentUser = null;
+        userStatus.innerHTML = `<a href="../login.html" class="text-amber-300 underline font-bold">Login to save cloud score</a>`;
+        highScore = parseInt(localStorage.getItem('cyber_snake_hi') || '0', 10);
+        highScoreText.textContent = `BEST: ${highScore}`;
+      }
+    });
+
+    function syncScoreToFirebase(newScore) {
+      if (currentUser) {
+        set(ref(db, `scores/${currentUser.uid}/snake_high`), newScore);
+      }
+    }
 
     function generateFood() {
       let newFood;
@@ -120,6 +205,14 @@
       if (dx !== 0 && dir.x === -dx) return;
       if (dy !== 0 && dir.y === -dy) return;
       nextDir = { x: dx, y: dy };
+    }
+
+    function triggerButtonGlow(btnId) {
+      const btn = document.getElementById(btnId);
+      if (btn) {
+        btn.classList.add('active-glow');
+        setTimeout(() => btn.classList.remove('active-glow'), 180);
+      }
     }
 
     function resetGame() {
@@ -166,14 +259,16 @@
 
       snake.unshift(head);
 
-      // Check Food
+      // Check Food Collision
       if (head.x === food.x && head.y === food.y) {
         score += 10;
         scoreText.textContent = `SCORE: ${score}`;
+
         if (score > highScore) {
           highScore = score;
           highScoreText.textContent = `BEST: ${highScore}`;
           localStorage.setItem('cyber_snake_hi', highScore.toString());
+          syncScoreToFirebase(highScore);
         }
         generateFood();
         speed = Math.max(65, speed - 1);
@@ -181,18 +276,18 @@
         snake.pop();
       }
 
-      // Render
       render();
-
       loopTimeout = setTimeout(tick, speed);
     }
 
     function render() {
-      ctx.fillStyle = '#0d0c15';
+      animPulse += 0.15;
+
+      ctx.fillStyle = '#080811';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Grid Lines
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+      // Neon Grid Lines
+      ctx.strokeStyle = 'rgba(0, 240, 255, 0.04)';
       ctx.lineWidth = 1;
       for (let i = 0; i < tileCount; i++) {
         ctx.beginPath();
@@ -206,60 +301,140 @@
         ctx.stroke();
       }
 
-      // Draw Food
-      ctx.shadowBlur = 12;
+      // 🌟 Food (Pulsing Animated Neon Orb)
+      const foodRadius = (gridSize / 2 - 2) + Math.sin(animPulse) * 1.5;
+      const foodX = food.x * gridSize + gridSize / 2;
+      const foodY = food.y * gridSize + gridSize / 2;
+
+      // Outer Glow
+      ctx.save();
+      ctx.shadowBlur = 18 + Math.sin(animPulse) * 6;
       ctx.shadowColor = '#ff007b';
       ctx.fillStyle = '#ff007b';
       ctx.beginPath();
-      ctx.arc(
-        food.x * gridSize + gridSize / 2,
-        food.y * gridSize + gridSize / 2,
-        gridSize / 2 - 2,
-        0,
-        Math.PI * 2
-      );
+      ctx.arc(foodX, foodY, Math.max(2, foodRadius), 0, Math.PI * 2);
       ctx.fill();
 
-      // Draw Snake
-      ctx.shadowBlur = 10;
-      ctx.shadowColor = '#00f0ff';
+      // Inner Core Glow
+      ctx.shadowBlur = 6;
+      ctx.shadowColor = '#ffffff';
+      ctx.fillStyle = '#ffe0ec';
+      ctx.beginPath();
+      ctx.arc(foodX, foodY, Math.max(1, foodRadius * 0.45), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // 🌟 Snake (Glowing Neon Body with Head Glow)
       snake.forEach((seg, idx) => {
-        ctx.fillStyle = idx === 0 ? '#00f0ff' : (idx % 2 === 0 ? '#38bdf8' : '#818cf8');
-        ctx.fillRect(
-          seg.x * gridSize + 1,
-          seg.y * gridSize + 1,
-          gridSize - 2,
-          gridSize - 2
-        );
+        ctx.save();
+        if (idx === 0) {
+          // Snake Head (Bright Cyan Glow)
+          ctx.shadowBlur = 16 + Math.cos(animPulse) * 4;
+          ctx.shadowColor = '#00f0ff';
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(seg.x * gridSize + 1, seg.y * gridSize + 1, gridSize - 2, gridSize - 2);
+
+          // Head Core
+          ctx.fillStyle = '#00f0ff';
+          ctx.fillRect(seg.x * gridSize + 3, seg.y * gridSize + 3, gridSize - 6, gridSize - 6);
+        } else {
+          // Snake Body (Gradient Cyan-Purple Glow)
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = idx % 2 === 0 ? '#00f0ff' : '#a855f7';
+          ctx.fillStyle = idx % 2 === 0 ? '#38bdf8' : '#c084fc';
+          ctx.fillRect(seg.x * gridSize + 1.5, seg.y * gridSize + 1.5, gridSize - 3, gridSize - 3);
+        }
+        ctx.restore();
       });
-      ctx.shadowBlur = 0;
     }
 
-    // Keyboard controls
+    // 🤌 TOUCH / SWIPE FINGER CONTROLS (Play anywhere on Canvas/Screen)
+    let touchStartX = 0;
+    let touchStartY = 0;
+    const minSwipeDistance = 25; // minimum pixels to count as swipe
+
+    const touchArea = document.body;
+
+    touchArea.addEventListener('touchstart', (e) => {
+      // Ignore clicks on control buttons or close button
+      if (e.target.closest('button') || e.target.closest('a')) return;
+      const touch = e.touches[0];
+      touchStartX = touch.clientX;
+      touchStartY = touch.clientY;
+    }, { passive: true });
+
+    touchArea.addEventListener('touchend', (e) => {
+      if (e.target.closest('button') || e.target.closest('a')) return;
+      const touch = e.changedTouches[0];
+      const diffX = touch.clientX - touchStartX;
+      const diffY = touch.clientY - touchStartY;
+
+      if (Math.abs(diffX) > Math.abs(diffY)) {
+        // Horizontal Swipe
+        if (Math.abs(diffX) > minSwipeDistance) {
+          if (diffX > 0) {
+            changeDirection(1, 0);
+            triggerButtonGlow('btnRight');
+          } else {
+            changeDirection(-1, 0);
+            triggerButtonGlow('btnLeft');
+          }
+        }
+      } else {
+        // Vertical Swipe
+        if (Math.abs(diffY) > minSwipeDistance) {
+          if (diffY > 0) {
+            changeDirection(0, 1);
+            triggerButtonGlow('btnDown');
+          } else {
+            changeDirection(0, -1);
+            triggerButtonGlow('btnUp');
+          }
+        }
+      }
+    }, { passive: true });
+
+    // ⌨️ Keyboard Bindings
     window.addEventListener('keydown', (e) => {
       if (['ArrowUp', 'KeyW'].includes(e.code)) {
         e.preventDefault();
         changeDirection(0, -1);
+        triggerButtonGlow('btnUp');
       } else if (['ArrowDown', 'KeyS'].includes(e.code)) {
         e.preventDefault();
         changeDirection(0, 1);
+        triggerButtonGlow('btnDown');
       } else if (['ArrowLeft', 'KeyA'].includes(e.code)) {
         e.preventDefault();
         changeDirection(-1, 0);
+        triggerButtonGlow('btnLeft');
       } else if (['ArrowRight', 'KeyD'].includes(e.code)) {
         e.preventDefault();
         changeDirection(1, 0);
+        triggerButtonGlow('btnRight');
       }
     });
 
-    // Touch button bindings
-    document.getElementById('btnUp').onclick = () => changeDirection(0, -1);
-    document.getElementById('btnDown').onclick = () => changeDirection(0, 1);
-    document.getElementById('btnLeft').onclick = () => changeDirection(-1, 0);
-    document.getElementById('btnRight').onclick = () => changeDirection(1, 0);
+    // 🔘 Interactive D-Pad Controllers with Instant Glow
+    const bindBtn = (id, dx, dy) => {
+      const el = document.getElementById(id);
+      const action = (e) => {
+        e.preventDefault();
+        changeDirection(dx, dy);
+        triggerButtonGlow(id);
+      };
+      el.addEventListener('touchstart', action, { passive: false });
+      el.addEventListener('mousedown', action);
+    };
+
+    bindBtn('btnUp', 0, -1);
+    bindBtn('btnDown', 0, 1);
+    bindBtn('btnLeft', -1, 0);
+    bindBtn('btnRight', 1, 0);
+
     restartBtn.onclick = resetGame;
 
-    // Start initial game
+    // Launch
     resetGame();
   </script>
 </body>
