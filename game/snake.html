@@ -9,50 +9,54 @@
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <style>
+    * {
+      -webkit-tap-highlight-color: transparent;
+    }
     body {
       touch-action: none;
       user-select: none;
       -webkit-user-select: none;
-      background: radial-gradient(circle at 50% 50%, #151c33 0%, #080c16 100%);
+      background-color: #080c16;
     }
 
-    /* Controller Button Glow Effect */
+    /* GPU-Accelerated Smooth Controller Glowing */
     .ctrl-btn {
-      transition: all 0.15s ease-in-out;
-      box-shadow: 0 0 10px rgba(0, 240, 255, 0.1);
+      position: relative;
+      overflow: hidden;
+      transform: translateZ(0);
+      will-change: transform;
+      transition: transform 0.12s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
-
-    .ctrl-btn:active, .ctrl-btn.active-glow {
-      transform: scale(0.92);
-      background-color: rgba(0, 240, 255, 0.35) !important;
+    .ctrl-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 1rem;
+      background: radial-gradient(circle, rgba(0, 240, 255, 0.45) 0%, rgba(0, 240, 255, 0) 70%);
+      opacity: 0;
+      transition: opacity 0.15s ease-out;
+      pointer-events: none;
+    }
+    .ctrl-btn.active-glow {
+      transform: scale(0.92) translateZ(0);
       border-color: #00f0ff !important;
-      box-shadow: 0 0 22px rgba(0, 240, 255, 0.8), inset 0 0 12px rgba(0, 240, 255, 0.5) !important;
-      color: #ffffff !important;
     }
-
-    /* Pulsing Outer Card Glow */
-    @keyframes neonPulse {
-      0% { box-shadow: 0 0 15px rgba(0, 240, 255, 0.3), 0 0 30px rgba(255, 0, 123, 0.2); }
-      50% { box-shadow: 0 0 25px rgba(0, 240, 255, 0.6), 0 0 45px rgba(255, 0, 123, 0.4); }
-      100% { box-shadow: 0 0 15px rgba(0, 240, 255, 0.3), 0 0 30px rgba(255, 0, 123, 0.2); }
-    }
-
-    .canvas-glow-box {
-      animation: neonPulse 3s infinite ease-in-out;
+    .ctrl-btn.active-glow::before {
+      opacity: 1;
     }
   </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-3 text-white overflow-hidden">
 
   <!-- Main Game Card -->
-  <div class="bg-[#101626]/95 border border-white/15 rounded-3xl p-4 sm:p-5 max-w-[390px] w-full flex flex-col items-center relative shadow-[0_10px_40px_rgba(0,0,0,0.8)] backdrop-blur-xl">
+  <div class="bg-[#101626]/95 border border-white/10 rounded-3xl p-4 sm:p-5 max-w-[390px] w-full flex flex-col items-center relative shadow-2xl">
     
     <!-- Exit back to Hub -->
     <a href="../index.html" class="absolute top-4 right-4 text-white/60 hover:text-white p-2 rounded-full bg-white/5 active:scale-95 transition" title="Exit to Hub">
       <i class="fa-solid fa-xmark text-lg"></i>
     </a>
 
-    <h3 class="text-lg font-black text-[#00f2fe] tracking-wider mb-0.5 flex items-center gap-1.5 drop-shadow-[0_0_10px_rgba(0,242,254,0.6)]">
+    <h3 class="text-lg font-black text-[#00f2fe] tracking-wider mb-0.5 flex items-center gap-1.5">
       🐍 CYBER SNAKE
     </h3>
     
@@ -63,46 +67,42 @@
 
     <!-- Score Header -->
     <div class="flex justify-between w-full text-xs font-black uppercase tracking-wider mb-2.5 px-3">
-      <span id="scoreText" class="text-[#00f0ff] drop-shadow-[0_0_10px_rgba(0,240,255,0.8)]">
-        SCORE: 0
-      </span>
-      <span class="text-[10px] text-slate-400 flex items-center gap-1">
+      <span id="scoreText" class="text-[#00f0ff]">SCORE: 0</span>
+      <span class="text-[10px] text-slate-500 flex items-center gap-1">
         <span>🤌 Swipe / Keys</span>
       </span>
-      <span id="highScoreText" class="text-[#ff007b] drop-shadow-[0_0_10px_rgba(255,0,123,0.8)]">
-        BEST: 0
-      </span>
+      <span id="highScoreText" class="text-[#ff007b]">BEST: 0</span>
     </div>
 
-    <!-- Canvas Frame with Glowing Neon Border -->
-    <div class="canvas-glow-box relative rounded-2xl p-[3px] bg-gradient-to-br from-[#00f0ff] via-[#9d4edd] to-[#ff007b]">
-      <canvas id="gameCanvas" width="320" height="320" class="block bg-[#080811] rounded-[13px]"></canvas>
+    <!-- Canvas Container -->
+    <div class="relative rounded-2xl p-[2px] bg-gradient-to-br from-[#00f0ff]/50 via-[#9d4edd]/40 to-[#ff007b]/50">
+      <canvas id="gameCanvas" width="320" height="320" class="block bg-[#070a13] rounded-[14px]"></canvas>
 
       <!-- Game Over Modal Overlay -->
-      <div id="gameOverOverlay" class="hidden absolute inset-0 bg-black/85 backdrop-blur-sm rounded-[13px] flex flex-col items-center justify-center p-4 z-20">
-        <span class="text-3xl font-black text-[#ff3838] tracking-widest mb-1 drop-shadow-[0_0_15px_rgba(255,56,56,0.8)]">GAME OVER</span>
+      <div id="gameOverOverlay" class="hidden absolute inset-0 bg-black/85 rounded-[14px] flex flex-col items-center justify-center p-4 z-20">
+        <span class="text-3xl font-black text-[#ff3838] tracking-widest mb-1">GAME OVER</span>
         <p id="finalScoreText" class="text-sm font-semibold text-white/90 mb-4">Final Score: 0</p>
-        <button id="restartBtn" class="bg-gradient-to-r from-[#00f2fe] to-[#0072ff] text-slate-950 font-black px-5 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-[0_0_20px_rgba(0,242,254,0.6)] active:scale-95 transition">
+        <button id="restartBtn" class="bg-gradient-to-r from-[#00f2fe] to-[#0072ff] text-slate-950 font-black px-5 py-2.5 rounded-xl text-xs flex items-center gap-2 active:scale-95 transition shadow-lg">
           <i class="fa-solid fa-rotate-left"></i> PLAY AGAIN
         </button>
       </div>
     </div>
 
-    <!-- Mobile D-Pad Touch Controllers with Glow Animations -->
+    <!-- Smooth Mobile D-Pad Touch Controllers -->
     <div class="grid grid-cols-3 gap-2.5 mt-4">
       <div></div>
-      <button id="btnUp" class="ctrl-btn w-14 h-13 py-3 bg-white/5 border border-white/15 rounded-2xl flex items-center justify-center text-[#00f0ff] text-xl">
+      <button id="btnUp" class="ctrl-btn w-14 h-13 py-3 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-[#00f0ff] text-xl">
         <i class="fa-solid fa-arrow-up"></i>
       </button>
       <div></div>
 
-      <button id="btnLeft" class="ctrl-btn w-14 h-13 py-3 bg-white/5 border border-white/15 rounded-2xl flex items-center justify-center text-[#00f0ff] text-xl">
+      <button id="btnLeft" class="ctrl-btn w-14 h-13 py-3 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-[#00f0ff] text-xl">
         <i class="fa-solid fa-arrow-left"></i>
       </button>
-      <button id="btnDown" class="ctrl-btn w-14 h-13 py-3 bg-white/5 border border-white/15 rounded-2xl flex items-center justify-center text-[#00f0ff] text-xl">
+      <button id="btnDown" class="ctrl-btn w-14 h-13 py-3 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-[#00f0ff] text-xl">
         <i class="fa-solid fa-arrow-down"></i>
       </button>
-      <button id="btnRight" class="ctrl-btn w-14 h-13 py-3 bg-white/5 border border-white/15 rounded-2xl flex items-center justify-center text-[#00f0ff] text-xl">
+      <button id="btnRight" class="ctrl-btn w-14 h-13 py-3 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-[#00f0ff] text-xl">
         <i class="fa-solid fa-arrow-right"></i>
       </button>
     </div>
@@ -130,7 +130,7 @@
     const db = getDatabase(app);
 
     const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { alpha: false }); // High performance canvas context
     const scoreText = document.getElementById('scoreText');
     const highScoreText = document.getElementById('highScoreText');
     const finalScoreText = document.getElementById('finalScoreText');
@@ -146,6 +146,10 @@
     let currentUser = null;
     let animPulse = 0;
 
+    // Eat Effect Particles & Waves
+    let eatParticles = [];
+    let eatWaves = [];
+
     let snake = [
       { x: 10, y: 10 },
       { x: 10, y: 11 },
@@ -156,9 +160,8 @@
     let food = { x: 5, y: 5 };
     let speed = 110;
     let isGameOver = false;
-    let loopTimeout = null;
 
-    // Firebase Auth State
+    // Firebase Auth
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         currentUser = user;
@@ -211,12 +214,33 @@
       const btn = document.getElementById(btnId);
       if (btn) {
         btn.classList.add('active-glow');
-        setTimeout(() => btn.classList.remove('active-glow'), 180);
+        setTimeout(() => btn.classList.remove('active-glow'), 160);
+      }
+    }
+
+    function triggerEatGlowEffect(x, y) {
+      const cx = x * gridSize + gridSize / 2;
+      const cy = y * gridSize + gridSize / 2;
+
+      // Ripple shockwave
+      eatWaves.push({ x: cx, y: cy, radius: 2, maxRadius: 28, alpha: 1.0 });
+
+      // Lightweight sparkling particles
+      for (let i = 0; i < 8; i++) {
+        const angle = (Math.PI * 2 * i) / 8;
+        const vel = 1.5 + Math.random() * 2;
+        eatParticles.push({
+          x: cx,
+          y: cy,
+          vx: Math.cos(angle) * vel,
+          vy: Math.sin(angle) * vel,
+          alpha: 1.0,
+          color: i % 2 === 0 ? '#ff007b' : '#00f0ff'
+        });
       }
     }
 
     function resetGame() {
-      if (loopTimeout) clearTimeout(loopTimeout);
       snake = [
         { x: 10, y: 10 },
         { x: 10, y: 11 },
@@ -227,10 +251,11 @@
       score = 0;
       speed = 110;
       isGameOver = false;
+      eatParticles = [];
+      eatWaves = [];
       scoreText.textContent = `SCORE: 0`;
       gameOverOverlay.classList.add('hidden');
       generateFood();
-      tick();
     }
 
     function triggerGameOver() {
@@ -239,183 +264,207 @@
       gameOverOverlay.classList.remove('hidden');
     }
 
-    function tick() {
+    // Logic step
+    let lastStepTime = 0;
+    function updateGameLogic(time) {
       if (isGameOver) return;
 
-      dir = nextDir;
-      const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+      if (time - lastStepTime > speed) {
+        lastStepTime = time;
 
-      // Wall Collision
-      if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
-        triggerGameOver();
-        return;
-      }
+        dir = nextDir;
+        const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
 
-      // Self Collision
-      if (snake.some(seg => seg.x === head.x && seg.y === head.y)) {
-        triggerGameOver();
-        return;
-      }
-
-      snake.unshift(head);
-
-      // Check Food Collision
-      if (head.x === food.x && head.y === food.y) {
-        score += 10;
-        scoreText.textContent = `SCORE: ${score}`;
-
-        if (score > highScore) {
-          highScore = score;
-          highScoreText.textContent = `BEST: ${highScore}`;
-          localStorage.setItem('cyber_snake_hi', highScore.toString());
-          syncScoreToFirebase(highScore);
+        // Wall Collision
+        if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
+          triggerGameOver();
+          return;
         }
-        generateFood();
-        speed = Math.max(65, speed - 1);
-      } else {
-        snake.pop();
-      }
 
-      render();
-      loopTimeout = setTimeout(tick, speed);
+        // Self Collision
+        if (snake.some(seg => seg.x === head.x && seg.y === head.y)) {
+          triggerGameOver();
+          return;
+        }
+
+        snake.unshift(head);
+
+        // Check Food
+        if (head.x === food.x && head.y === food.y) {
+          score += 10;
+          scoreText.textContent = `SCORE: ${score}`;
+
+          // Trigger smooth eat animation
+          triggerEatGlowEffect(food.x, food.y);
+
+          if (score > highScore) {
+            highScore = score;
+            highScoreText.textContent = `BEST: ${highScore}`;
+            localStorage.setItem('cyber_snake_hi', highScore.toString());
+            syncScoreToFirebase(highScore);
+          }
+          generateFood();
+          speed = Math.max(65, speed - 1);
+        } else {
+          snake.pop();
+        }
+      }
     }
 
+    // Ultra Smooth 60 FPS Render Pipeline
     function render() {
-      animPulse += 0.15;
+      animPulse += 0.08;
 
-      ctx.fillStyle = '#080811';
+      // Dark Background
+      ctx.fillStyle = '#070a13';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Neon Grid Lines
-      ctx.strokeStyle = 'rgba(0, 240, 255, 0.04)';
+      // Lightweight Grid
+      ctx.strokeStyle = '#0e1626';
       ctx.lineWidth = 1;
-      for (let i = 0; i < tileCount; i++) {
-        ctx.beginPath();
-        ctx.moveTo(i * gridSize, 0);
-        ctx.lineTo(i * gridSize, canvas.height);
-        ctx.stroke();
+      ctx.beginPath();
+      for (let i = 0; i <= tileCount; i++) {
+        const pos = i * gridSize;
+        ctx.moveTo(pos, 0); ctx.lineTo(pos, canvas.height);
+        ctx.moveTo(0, pos); ctx.lineTo(canvas.width, pos);
+      }
+      ctx.stroke();
 
+      // Render Expanding Eat Shockwaves
+      for (let i = eatWaves.length - 1; i >= 0; i--) {
+        const wave = eatWaves[i];
+        wave.radius += 2.2;
+        wave.alpha -= 0.08;
+        if (wave.alpha <= 0) {
+          eatWaves.splice(i, 1);
+          continue;
+        }
+        ctx.strokeStyle = `rgba(0, 240, 255, ${wave.alpha})`;
+        ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(0, i * gridSize);
-        ctx.lineTo(canvas.width, i * gridSize);
+        ctx.arc(wave.x, wave.y, wave.radius, 0, Math.PI * 2);
         ctx.stroke();
       }
 
-      // 🌟 Food (Pulsing Animated Neon Orb)
-      const foodRadius = (gridSize / 2 - 2) + Math.sin(animPulse) * 1.5;
+      // Render Spark Particles on Eat
+      for (let i = eatParticles.length - 1; i >= 0; i--) {
+        const p = eatParticles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.alpha -= 0.06;
+        if (p.alpha <= 0) {
+          eatParticles.splice(i, 1);
+          continue;
+        }
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.alpha;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1.0;
+
+      // 🌟 Food (Pulsing Multi-Layer Glow)
       const foodX = food.x * gridSize + gridSize / 2;
       const foodY = food.y * gridSize + gridSize / 2;
+      const pulseSize = Math.sin(animPulse) * 1.5;
 
-      // Outer Glow
-      ctx.save();
-      ctx.shadowBlur = 18 + Math.sin(animPulse) * 6;
-      ctx.shadowColor = '#ff007b';
+      // Outer Halo
+      ctx.fillStyle = 'rgba(255, 0, 123, 0.25)';
+      ctx.beginPath();
+      ctx.arc(foodX, foodY, 9 + pulseSize, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Core Food Body
       ctx.fillStyle = '#ff007b';
       ctx.beginPath();
-      ctx.arc(foodX, foodY, Math.max(2, foodRadius), 0, Math.PI * 2);
+      ctx.arc(foodX, foodY, 5.5, 0, Math.PI * 2);
       ctx.fill();
 
-      // Inner Core Glow
-      ctx.shadowBlur = 6;
-      ctx.shadowColor = '#ffffff';
-      ctx.fillStyle = '#ffe0ec';
+      // Center Bright Dot
+      ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      ctx.arc(foodX, foodY, Math.max(1, foodRadius * 0.45), 0, Math.PI * 2);
+      ctx.arc(foodX, foodY, 2, 0, Math.PI * 2);
       ctx.fill();
-      ctx.restore();
 
-      // 🌟 Snake (Glowing Neon Body with Head Glow)
-      snake.forEach((seg, idx) => {
-        ctx.save();
-        if (idx === 0) {
-          // Snake Head (Bright Cyan Glow)
-          ctx.shadowBlur = 16 + Math.cos(animPulse) * 4;
-          ctx.shadowColor = '#00f0ff';
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(seg.x * gridSize + 1, seg.y * gridSize + 1, gridSize - 2, gridSize - 2);
+      // 🌟 Glowing Snake (Fast Multi-Layer Rendering)
+      for (let i = snake.length - 1; i >= 0; i--) {
+        const seg = snake[i];
+        const px = seg.x * gridSize;
+        const py = seg.y * gridSize;
 
-          // Head Core
+        if (i === 0) {
+          // Snake Head Outer Aura
+          ctx.fillStyle = 'rgba(0, 240, 255, 0.28)';
+          ctx.fillRect(px - 2, py - 2, gridSize + 4, gridSize + 4);
+
+          // Head Body
           ctx.fillStyle = '#00f0ff';
-          ctx.fillRect(seg.x * gridSize + 3, seg.y * gridSize + 3, gridSize - 6, gridSize - 6);
+          ctx.fillRect(px + 1, py + 1, gridSize - 2, gridSize - 2);
+
+          // Head Center White Core
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(px + 4, py + 4, gridSize - 8, gridSize - 8);
         } else {
-          // Snake Body (Gradient Cyan-Purple Glow)
-          ctx.shadowBlur = 10;
-          ctx.shadowColor = idx % 2 === 0 ? '#00f0ff' : '#a855f7';
-          ctx.fillStyle = idx % 2 === 0 ? '#38bdf8' : '#c084fc';
-          ctx.fillRect(seg.x * gridSize + 1.5, seg.y * gridSize + 1.5, gridSize - 3, gridSize - 3);
+          // Body Segments
+          const isEven = i % 2 === 0;
+          ctx.fillStyle = isEven ? 'rgba(0, 240, 255, 0.12)' : 'rgba(168, 85, 247, 0.12)';
+          ctx.fillRect(px - 1, py - 1, gridSize + 2, gridSize + 2);
+
+          ctx.fillStyle = isEven ? '#38bdf8' : '#c084fc';
+          ctx.fillRect(px + 1.5, py + 1.5, gridSize - 3, gridSize - 3);
         }
-        ctx.restore();
-      });
+      }
     }
 
-    // 🤌 TOUCH / SWIPE FINGER CONTROLS (Play anywhere on Canvas/Screen)
+    // Main 60 FPS Engine Loop (requestAnimationFrame)
+    function gameLoop(timestamp) {
+      updateGameLogic(timestamp);
+      render();
+      requestAnimationFrame(gameLoop);
+    }
+    requestAnimationFrame(gameLoop);
+
+    // 🤌 ZERO-LAG FINGER SWIPE CONTROLS
     let touchStartX = 0;
     let touchStartY = 0;
-    const minSwipeDistance = 25; // minimum pixels to count as swipe
+    const minSwipeDist = 20;
 
-    const touchArea = document.body;
-
-    touchArea.addEventListener('touchstart', (e) => {
-      // Ignore clicks on control buttons or close button
+    document.body.addEventListener('touchstart', (e) => {
       if (e.target.closest('button') || e.target.closest('a')) return;
-      const touch = e.touches[0];
-      touchStartX = touch.clientX;
-      touchStartY = touch.clientY;
+      const t = e.touches[0];
+      touchStartX = t.clientX;
+      touchStartY = t.clientY;
     }, { passive: true });
 
-    touchArea.addEventListener('touchend', (e) => {
+    document.body.addEventListener('touchend', (e) => {
       if (e.target.closest('button') || e.target.closest('a')) return;
-      const touch = e.changedTouches[0];
-      const diffX = touch.clientX - touchStartX;
-      const diffY = touch.clientY - touchStartY;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - touchStartX;
+      const dy = t.clientY - touchStartY;
 
-      if (Math.abs(diffX) > Math.abs(diffY)) {
-        // Horizontal Swipe
-        if (Math.abs(diffX) > minSwipeDistance) {
-          if (diffX > 0) {
-            changeDirection(1, 0);
-            triggerButtonGlow('btnRight');
-          } else {
-            changeDirection(-1, 0);
-            triggerButtonGlow('btnLeft');
-          }
+      if (Math.abs(dx) > Math.abs(dy)) {
+        if (Math.abs(dx) > minSwipeDist) {
+          if (dx > 0) { changeDirection(1, 0); triggerButtonGlow('btnRight'); }
+          else { changeDirection(-1, 0); triggerButtonGlow('btnLeft'); }
         }
       } else {
-        // Vertical Swipe
-        if (Math.abs(diffY) > minSwipeDistance) {
-          if (diffY > 0) {
-            changeDirection(0, 1);
-            triggerButtonGlow('btnDown');
-          } else {
-            changeDirection(0, -1);
-            triggerButtonGlow('btnUp');
-          }
+        if (Math.abs(dy) > minSwipeDist) {
+          if (dy > 0) { changeDirection(0, 1); triggerButtonGlow('btnDown'); }
+          else { changeDirection(0, -1); triggerButtonGlow('btnUp'); }
         }
       }
     }, { passive: true });
 
-    // ⌨️ Keyboard Bindings
+    // Keyboard bindings
     window.addEventListener('keydown', (e) => {
-      if (['ArrowUp', 'KeyW'].includes(e.code)) {
-        e.preventDefault();
-        changeDirection(0, -1);
-        triggerButtonGlow('btnUp');
-      } else if (['ArrowDown', 'KeyS'].includes(e.code)) {
-        e.preventDefault();
-        changeDirection(0, 1);
-        triggerButtonGlow('btnDown');
-      } else if (['ArrowLeft', 'KeyA'].includes(e.code)) {
-        e.preventDefault();
-        changeDirection(-1, 0);
-        triggerButtonGlow('btnLeft');
-      } else if (['ArrowRight', 'KeyD'].includes(e.code)) {
-        e.preventDefault();
-        changeDirection(1, 0);
-        triggerButtonGlow('btnRight');
-      }
+      if (['ArrowUp', 'KeyW'].includes(e.code)) { changeDirection(0, -1); triggerButtonGlow('btnUp'); }
+      else if (['ArrowDown', 'KeyS'].includes(e.code)) { changeDirection(0, 1); triggerButtonGlow('btnDown'); }
+      else if (['ArrowLeft', 'KeyA'].includes(e.code)) { changeDirection(-1, 0); triggerButtonGlow('btnLeft'); }
+      else if (['ArrowRight', 'KeyD'].includes(e.code)) { changeDirection(1, 0); triggerButtonGlow('btnRight'); }
     });
 
-    // 🔘 Interactive D-Pad Controllers with Instant Glow
+    // Zero-Delay Touch on Controller Buttons
     const bindBtn = (id, dx, dy) => {
       const el = document.getElementById(id);
       const action = (e) => {
@@ -434,7 +483,7 @@
 
     restartBtn.onclick = resetGame;
 
-    // Launch
+    // Start
     resetGame();
   </script>
 </body>
