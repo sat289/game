@@ -68,13 +68,17 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">Password</label>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-xs font-semibold text-slate-300">Password</label>
+                        <button type="button" id="forgotPasswordBtn" class="text-[11px] text-cyan-400 hover:underline">Forgot?</button>
+                    </div>
                     <input type="password" id="authPassword" required placeholder="••••••••" minlength="6"
                            class="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-cyan-400">
                 </div>
 
-                <button type="submit" id="submitAuthBtn" class="w-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold py-2.5 rounded-xl text-sm transition-all shadow-md active:scale-95">
-                    Sign In
+                <button type="submit" id="submitAuthBtn" class="w-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold py-2.5 rounded-xl text-sm transition-all shadow-md active:scale-95 flex items-center justify-center gap-2">
+                    <span id="submitBtnText">Sign In</span>
+                    <i id="submitSpinner" class="fa-solid fa-circle-notch fa-spin hidden text-sm"></i>
                 </button>
             </form>
 
@@ -85,13 +89,22 @@
                 </button>
             </div>
 
-            <p id="authError" class="text-xs text-rose-400 text-center font-medium hidden bg-rose-950/40 p-2.5 rounded-xl border border-rose-800/50"></p>
+            <!-- Clear Error Alert -->
+            <div id="authError" class="hidden text-xs text-rose-300 bg-rose-950/60 p-3 rounded-xl border border-rose-800/80 flex items-start gap-2.5">
+                <i class="fa-solid fa-triangle-exclamation text-rose-400 mt-0.5"></i>
+                <div id="authErrorMsg"></div>
+            </div>
+
+            <!-- Clear Success Alert -->
+            <div id="authSuccess" class="hidden text-xs text-emerald-300 bg-emerald-950/60 p-3 rounded-xl border border-emerald-800/80 flex items-start gap-2.5">
+                <i class="fa-solid fa-circle-check text-emerald-400 mt-0.5"></i>
+                <div id="authSuccessMsg"></div>
+            </div>
         </div>
 
         <!-- Logged In Profile Box -->
         <div id="loggedInState" class="hidden text-center space-y-4">
             <div class="relative w-20 h-20 mx-auto flex items-center justify-center">
-                <!-- Avatar Image or First-Letter Logo -->
                 <img id="userAvatarImg" src="" alt="Avatar" class="hidden w-full h-full rounded-full border-4 border-cyan-400 object-cover shadow-lg">
                 <div id="userLetterBadge" class="w-full h-full rounded-full border-4 border-cyan-400 bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-3xl font-extrabold text-white uppercase shadow-lg">
                     U
@@ -125,6 +138,7 @@
             GoogleAuthProvider, 
             signInWithEmailAndPassword, 
             createUserWithEmailAndPassword, 
+            sendPasswordResetEmail,
             updateProfile, 
             onAuthStateChanged, 
             signOut 
@@ -154,35 +168,87 @@
         const userName = document.getElementById('userName');
         const userEmail = document.getElementById('userEmail');
         const authError = document.getElementById('authError');
+        const authErrorMsg = document.getElementById('authErrorMsg');
+        const authSuccess = document.getElementById('authSuccess');
+        const authSuccessMsg = document.getElementById('authSuccessMsg');
         const toggleModeBtn = document.getElementById('toggleModeBtn');
         const usernameField = document.getElementById('usernameField');
         const submitAuthBtn = document.getElementById('submitAuthBtn');
+        const submitBtnText = document.getElementById('submitBtnText');
+        const submitSpinner = document.getElementById('submitSpinner');
         const authHeading = document.getElementById('authHeading');
+        const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
+
+        function showError(msg) {
+            authSuccess.classList.add('hidden');
+            authErrorMsg.textContent = msg;
+            authError.classList.remove('hidden');
+        }
+
+        function showSuccess(msg) {
+            authError.classList.add('hidden');
+            authSuccessMsg.textContent = msg;
+            authSuccess.classList.remove('hidden');
+        }
+
+        function clearAlerts() {
+            authError.classList.add('hidden');
+            authSuccess.classList.add('hidden');
+        }
+
+        function setLoading(loading) {
+            if (loading) {
+                submitSpinner.classList.remove('hidden');
+                submitAuthBtn.disabled = true;
+            } else {
+                submitSpinner.classList.add('hidden');
+                submitAuthBtn.disabled = false;
+            }
+        }
+
+        // Translate Firebase error codes into clear messages
+        function getFriendlyErrorMessage(errCode) {
+            switch (errCode) {
+                case 'auth/email-already-in-use':
+                    return 'This email is already registered! Please switch to "Sign In" or use "Continue with Google".';
+                case 'auth/invalid-credential':
+                case 'auth/wrong-password':
+                    return 'Incorrect password or no account found with these credentials.';
+                case 'auth/user-not-found':
+                    return 'No user found with this email. Please click "Sign Up" below to create an account.';
+                case 'auth/weak-password':
+                    return 'Password is too weak. Please use at least 6 characters.';
+                case 'auth/invalid-email':
+                    return 'Please enter a valid email address.';
+                case 'auth/popup-closed-by-user':
+                    return 'Google sign-in popup was closed before completing.';
+                default:
+                    return 'Authentication failed. Please check your details and try again.';
+            }
+        }
 
         // Toggle Sign In vs Sign Up
         toggleModeBtn.addEventListener('click', () => {
             isSignUpMode = !isSignUpMode;
-            authError.classList.add('hidden');
+            clearAlerts();
             if (isSignUpMode) {
                 usernameField.classList.remove('hidden');
-                submitAuthBtn.textContent = 'Create Account';
+                submitBtnText.textContent = 'Create Account';
                 authHeading.textContent = 'Create a New Account';
                 toggleModeBtn.textContent = 'Already have an account? Sign In';
             } else {
                 usernameField.classList.add('hidden');
-                submitAuthBtn.textContent = 'Sign In';
+                submitBtnText.textContent = 'Sign In';
                 authHeading.textContent = 'Sign in to your account';
                 toggleModeBtn.textContent = "Don't have an account? Sign Up";
             }
         });
 
-        // Format email if user typed a plain username
         function formatEmail(input) {
             const val = input.trim();
             return val.includes('@') ? val : `${val}@gamehub.local`;
         }
 
-        // Render user details & Avatar badge letter
         function displayUserProfile(user) {
             const name = user.displayName || user.email.split('@')[0];
             const initialLetter = name.charAt(0).toUpperCase();
@@ -190,7 +256,6 @@
             userName.textContent = name;
             userEmail.textContent = user.email;
 
-            // Save to localStorage for index.html to read
             localStorage.setItem('gh_user_letter', initialLetter);
             localStorage.setItem('gh_user_photo', user.photoURL || '');
             localStorage.setItem('gh_user_name', name);
@@ -209,7 +274,6 @@
             loggedInState.classList.remove('hidden');
         }
 
-        // Auth state listener
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 displayUserProfile(user);
@@ -222,10 +286,12 @@
             }
         });
 
-        // Email / Password Form Submit
+        // Email & Password Submit
         document.getElementById('emailAuthForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            authError.classList.add('hidden');
+            clearAlerts();
+            setLoading(true);
+
             const email = formatEmail(document.getElementById('authEmail').value);
             const password = document.getElementById('authPassword').value;
             const displayName = document.getElementById('authDisplayName').value.trim();
@@ -236,30 +302,51 @@
                     if (displayName) {
                         await updateProfile(userCredential.user, { displayName });
                     }
+                    showSuccess('Account created successfully!');
                     displayUserProfile(userCredential.user);
                 } else {
-                    await signInWithEmailAndPassword(auth, email, password);
+                    const res = await signInWithEmailAndPassword(auth, email, password);
+                    showSuccess('Signed in successfully!');
+                    displayUserProfile(res.user);
                 }
             } catch (err) {
-                authError.textContent = err.message;
-                authError.classList.remove('hidden');
+                showError(getFriendlyErrorMessage(err.code));
+            } finally {
+                setLoading(false);
             }
         });
 
-        // Google Sign In
-        document.getElementById('googleLoginBtn').addEventListener('click', async () => {
-            authError.classList.add('hidden');
+        // Forgot Password
+        forgotPasswordBtn.addEventListener('click', async () => {
+            const emailInput = document.getElementById('authEmail').value.trim();
+            if (!emailInput) {
+                showError('Please enter your email above first, then click Forgot Password.');
+                return;
+            }
             try {
-                await signInWithPopup(auth, googleProvider);
+                await sendPasswordResetEmail(auth, formatEmail(emailInput));
+                showSuccess('Password reset link has been sent to your email.');
             } catch (err) {
-                authError.textContent = err.message;
-                authError.classList.remove('hidden');
+                showError(getFriendlyErrorMessage(err.code));
             }
         });
 
-        // Sign Out
+        // Google Sign-In
+        document.getElementById('googleLoginBtn').addEventListener('click', async () => {
+            clearAlerts();
+            try {
+                const result = await signInWithPopup(auth, googleProvider);
+                showSuccess('Signed in with Google successfully!');
+                displayUserProfile(result.user);
+            } catch (err) {
+                showError(getFriendlyErrorMessage(err.code));
+            }
+        });
+
+        // Logout
         document.getElementById('logoutBtn').addEventListener('click', async () => {
             await signOut(auth);
+            showSuccess('Signed out successfully.');
         });
     </script>
 </body>
