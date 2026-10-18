@@ -8,9 +8,8 @@
 </head>
 <body>
 
-  <!-- 1. HOME / START SCREEN OVERLAY (Subway Surfers UI Style) -->
+  <!-- 1. HOME / START SCREEN OVERLAY -->
   <div id="startOverlay">
-    <!-- Top Currency & Profile Bar -->
     <div class="top-menu-bar">
       <div class="currency-pills">
         <div class="pill">💎 <span id="menuDiamonds">25</span></div>
@@ -20,7 +19,6 @@
       <div class="pill" id="firebaseStatus">☁️ Connecting...</div>
     </div>
 
-    <!-- Left & Right Mission/Event Badges -->
     <div class="side-badges-left">
       <div class="side-badge-btn" onclick="openShopModal()">📋</div>
     </div>
@@ -29,15 +27,17 @@
       <div class="side-badge-btn" onclick="openShopModal()">🦇</div>
     </div>
 
-    <!-- Center Graffiti Banner & Tap to Play Prompt -->
     <div class="center-intro-content">
       <div class="high-score-display">High Score<br><span id="menuHighScore">0</span></div>
-      <div class="tap-to-play-banner">Tap to Play</div>
+      <div class="tap-to-play-banner" id="tapToPlayTrigger">Tap to Play</div>
     </div>
 
-    <!-- Bottom Navigation Bar (Missions, Me/Avatars, Shop, Events) -->
+    <!-- Bottom Navigation Bar (With Red Notification Dot for Missions) -->
     <div class="bottom-nav-bar">
-      <button class="nav-tab" onclick="openShopModal()">⭐ MISSIONS</button>
+      <button class="nav-tab" onclick="openMissionsModal()" style="position: relative;">
+        ⭐ MISSIONS
+        <span id="missionsRedDot" class="red-dot" style="display: none;"></span>
+      </button>
       <button class="nav-tab" onclick="openShopModal()">👤 ME</button>
       <button class="nav-tab shop-active-tab" onclick="openShopModal()">🛒 SHOP</button>
       <button class="nav-tab" onclick="openShopModal()">🌐 EVENTS</button>
@@ -85,7 +85,20 @@
     </div>
   </div>
 
-  <!-- 3. 5-SECOND ROTATING REVIVE ("SAVE ME!") MODAL -->
+  <!-- 3. MISSIONS MODAL -->
+  <div id="missionsModal" style="display:none; position:fixed; inset:0; background:rgba(15, 5, 25, 0.88); z-index:60; align-items:center; justify-content:center; padding:16px;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2>⭐ DAILY MISSIONS</h2>
+        <button class="close-btn" onclick="closeMissionsModal()">✕</button>
+      </div>
+      <div id="missionsListContainer" style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+        <!-- Injected via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. 5-SECOND ROTATING REVIVE ("SAVE ME!") MODAL -->
   <div id="reviveModal">
     <div class="modal-box revive-box">
       <h2 class="revive-title">SAVE ME?</h2>
@@ -112,18 +125,15 @@
     </div>
   </div>
 
-  <!-- 4. GAME OVER SUMMARY MODAL (Includes Used Avatar Preview) -->
+  <!-- 5. GAME OVER SUMMARY MODAL -->
   <div id="gameOverModal">
     <div class="modal-box gameover-box">
       <div class="gameover-banner">
         <h2 id="gameOverTitle">RUN OVER!</h2>
       </div>
 
-      <!-- Avatar Preview Column + Score Stats -->
       <div class="gameover-content-grid">
-        <div class="gameover-avatar-preview" id="summaryAvatarPreviewContainer">
-          <!-- Rendered via JS canvas preview -->
-        </div>
+        <div class="gameover-avatar-preview" id="summaryAvatarPreviewContainer"></div>
         <div class="gameover-stats-col">
           <div class="stats-row"><span>Score</span><b id="finalScore" style="color:#ffd700;">0</b></div>
           <div class="stats-row"><span>High Score</span><span id="goHighScore">0</span></div>
@@ -140,7 +150,7 @@
     </div>
   </div>
 
-  <!-- 5. STORE & AVATARS MODAL -->
+  <!-- 6. STORE & AVATARS MODAL -->
   <div id="shopModal">
     <div class="modal-box">
       <div class="modal-header">
@@ -175,12 +185,10 @@
 
   <canvas id="gameCanvas"></canvas>
 
-  <!-- THREE.JS + GLTFLOADER + SKELETONUTILS CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
 
-  <!-- FIREBASE SYNC MODULE + MAIN GAME SCRIPT -->
   <script type="module" src="firebase-sync.js"></script>
   <script src="game.js"></script>
 </body>
