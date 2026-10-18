@@ -66,7 +66,6 @@
     const actionBtn = document.getElementById('actionBtn');
     const userStatus = document.getElementById('userStatus');
 
-    // SFX Synth Audio Context
     let audioCtx = null;
     function playSound(type) {
       try {
@@ -107,7 +106,6 @@
     bestDisplay.textContent = `BEST: ${highScore}`;
     let currentUser = null;
 
-    // Random Real Bird Skins per match
     const realBirds = ['🐦', '🕊️', '🦅', '🦆', '🦉', '🦜'];
     let currentBirdEmoji = '🐦';
 
@@ -187,7 +185,6 @@
         triggerGameOver();
       }
 
-      // Progressive difficulty scaling with score
       let currentGap = Math.max(95, 140 - Math.floor(score / 30) * 5);
       let currentSpeed = Math.min(5.5, 2.3 + (score / 40));
       let spawnRate = Math.max(70, 110 - Math.floor(score / 25) * 5);
@@ -196,9 +193,7 @@
         let minHeight = 45;
         let maxHeight = canvas.height - currentGap - 80;
         let height = Math.floor(Math.random() * (maxHeight - minHeight + 1)) + minHeight;
-        
-        // Obstacle type changes every 50 points
-        let obstacleTheme = Math.floor(score / 50) % 3; // 0: Standard, 1: Neon Cyber, 2: Crystal Prism
+        let obstacleTheme = Math.floor(score / 50) % 3;
 
         pipes.push({
           x: canvas.width,
@@ -240,27 +235,24 @@
     }
 
     function render() {
-      // Dynamic Sky background shifting forward based on score progress
       let skyPhase = Math.floor(score / 60) % 4;
       let grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      if (skyPhase === 0) { grad.addColorStop(0, '#1e1b4b'); grad.addColorStop(1, '#4338ca'); } // Twilight Blue
-      else if (skyPhase === 1) { grad.addColorStop(0, '#7c2d12'); grad.addColorStop(1, '#c2410c'); } // Sunset Orange
-      else if (skyPhase === 2) { grad.addColorStop(0, '#064e3b'); grad.addColorStop(1, '#047857'); } // Deep Forest Emerald
-      else { grad.addColorStop(0, '#581c87'); grad.addColorStop(1, '#db2777'); } // Cyber Magenta
+      if (skyPhase === 0) { grad.addColorStop(0, '#1e1b4b'); grad.addColorStop(1, '#4338ca'); }
+      else if (skyPhase === 1) { grad.addColorStop(0, '#7c2d12'); grad.addColorStop(1, '#c2410c'); }
+      else if (skyPhase === 2) { grad.addColorStop(0, '#064e3b'); grad.addColorStop(1, '#047857'); }
+      else { grad.addColorStop(0, '#581c87'); grad.addColorStop(1, '#db2777'); }
 
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Moving Star/Cloud particles
       ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
       ctx.fillRect((frameCount * 0.5) % canvas.width, 50, 3, 3);
       ctx.fillRect((frameCount * 0.8) % canvas.width, 120, 4, 4);
 
-      // Render Obstacles with changing themes
       pipes.forEach(p => {
         let primaryColor = '#10b981', borderColor = '#059669';
-        if (p.theme === 1) { primaryColor = '#38bdf8'; borderColor = '#0284c7'; } // Neon Blue
-        else if (p.theme === 2) { primaryColor = '#f43f5e'; borderColor = '#be123c'; } // Crimson Neon
+        if (p.theme === 1) { primaryColor = '#38bdf8'; borderColor = '#0284c7'; }
+        else if (p.theme === 2) { primaryColor = '#f43f5e'; borderColor = '#be123c'; }
 
         ctx.fillStyle = primaryColor;
         ctx.fillRect(p.x, 0, pipeWidth, p.top);
@@ -271,17 +263,18 @@
         ctx.strokeRect(p.x, canvas.height - p.bottom - 40, pipeWidth, p.bottom);
       });
 
-      // Ground
       ctx.fillStyle = '#0f172a'; ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
       ctx.fillStyle = '#34d399'; ctx.fillRect(0, canvas.height - 40, canvas.width, 6);
 
-      // Real Bird Character (Changes every match)
       ctx.save();
       ctx.translate(bird.x, bird.y);
-      let rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, (bird.velocity / 10)));
+      let targetRot = bird.velocity * 0.08;
+      let rotation = Math.max(-0.5, Math.min(0.8, targetRot));
       ctx.rotate(rotation);
-      ctx.font = "28px sans-serif";
-      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.font = "30px sans-serif";
+      ctx.textAlign = "center"; 
+      ctx.textBaseline = "middle";
+      ctx.scale(1, 1);
       ctx.fillText(currentBirdEmoji, 0, 0);
       ctx.restore();
     }
