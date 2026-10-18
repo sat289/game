@@ -1,0 +1,606 @@
+* {
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-user-select: none;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #12081c;
+  touch-action: none;
+}
+
+#gameCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ================= AGE VERIFICATION MODAL ================= */
+#ageModal {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(180deg, #b8dcff 0%, #99ccff 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.age-card {
+  width: 90%;
+  max-width: 360px;
+  background: #d8ebff;
+  border: 4px solid #4a6b82;
+  border-radius: 18px;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.35);
+  overflow: hidden;
+  text-align: center;
+}
+
+.age-header {
+  background: #73a6d6;
+  color: #fff;
+  padding: 14px;
+  font-size: 20px;
+  font-weight: 900;
+  text-shadow: 0 2px 0 #34587a;
+  border-bottom: 3px solid #4a6b82;
+}
+
+.age-display {
+  background: #9eadc2;
+  margin: 20px auto;
+  width: 80%;
+  padding: 16px 0;
+  border-radius: 12px;
+  font-size: 56px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 3px 0 #3a4659, 0 -2px 0 #3a4659, 3px 0 0 #3a4659, -3px 0 0 #3a4659;
+}
+
+.age-slider-wrap {
+  width: 80%;
+  margin: 10px auto 24px;
+}
+
+#ageSlider {
+  width: 100%;
+  height: 12px;
+  border-radius: 6px;
+  accent-color: #2660a4;
+  cursor: pointer;
+}
+
+.btn-green {
+  background: linear-gradient(180deg, #62c435 0%, #3e9419 100%);
+  color: #fff;
+  border: 3px solid #fff;
+  outline: 2px solid #29630f;
+  border-radius: 12px;
+  padding: 12px 32px;
+  font-size: 19px;
+  font-weight: 900;
+  text-shadow: 0 2px 0 #1e4d0a;
+  cursor: pointer;
+  margin-bottom: 22px;
+  box-shadow: 0 5px 0 #29630f;
+  transition: transform 0.1s;
+}
+.btn-green:active { transform: translateY(3px); }
+
+.btn-home {
+  background: linear-gradient(180deg, #3a86ff 0%, #1d4ed8 100%);
+  color: #fff;
+  border: 3px solid #fff;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-size: 19px;
+  font-weight: 900;
+  text-shadow: 0 2px 0 #1e3a8a;
+  cursor: pointer;
+  box-shadow: 0 5px 0 #1e3a8a;
+  transition: transform 0.1s;
+}
+.btn-home:active { transform: translateY(3px); }
+
+/* ================= HUD OVERLAY ================= */
+#hud {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.hud-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 16px;
+}
+
+.pause-btn {
+  pointer-events: auto;
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #56b4e9, #1f78b4);
+  border: 3px solid #fff;
+  color: #fff;
+  font-weight: 900;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+}
+
+.score-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.score-box {
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 20px;
+  padding: 6px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  font-weight: 900;
+  font-size: 22px;
+  letter-spacing: 1px;
+  border: 2px solid rgba(255,255,255,0.25);
+}
+
+.multiplier-badge {
+  color: #ffd700;
+  font-size: 18px;
+  text-shadow: 0 2px 0 #000;
+}
+
+.coin-box {
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 20px;
+  padding: 4px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ffd700;
+  font-weight: 900;
+  font-size: 16px;
+  border: 2px solid rgba(255,215,0,0.35);
+}
+
+.distance-box {
+  font-size: 13px;
+  color: #eee;
+  font-weight: 700;
+  background: rgba(0,0,0,0.5);
+  padding: 3px 10px;
+  border-radius: 12px;
+}
+
+.police-badge {
+  background: rgba(220, 20, 60, 0.88);
+  border: 2px solid #fff;
+  color: #fff;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 900;
+  display: none;
+  animation: pulse 0.5s infinite alternate;
+}
+
+.hud-bottom {
+  position: absolute;
+  bottom: 20px;
+  left: 16px;
+  right: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.powerup-bars {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.p-bar {
+  background: rgba(0,0,0,0.65);
+  border: 2px solid #fff;
+  border-radius: 12px;
+  padding: 6px 10px;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.p-fill-wrap {
+  width: 75px;
+  height: 12px;
+  background: #222;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #fff;
+}
+
+.p-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #7cfc00, #ffd700);
+  transition: width 0.1s linear;
+}
+
+#calloutText {
+  position: absolute;
+  top: 32%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  font-size: 32px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 4px 0 #000, 0 0 15px #ff0055;
+  transition: transform 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+  text-align: center;
+  white-space: nowrap;
+}
+#calloutText.show {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* ================= START MENU OVERLAY ================= */
+#startOverlay {
+  position: fixed;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 24px;
+  z-index: 20;
+}
+
+.top-menu-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.currency-pills {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pill {
+  background: rgba(0,0,0,0.65);
+  border: 2px solid #fff;
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-weight: 900;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.title-banner {
+  text-align: center;
+  margin-top: 10px;
+}
+.title-banner h1 {
+  font-size: 44px;
+  font-weight: 900;
+  color: #a8ff00;
+  text-shadow: 0 4px 0 #1f4700, 0 0 22px rgba(168,255,0,0.6);
+  margin: 0;
+  letter-spacing: 2px;
+  font-style: italic;
+}
+.title-banner p {
+  color: #fff;
+  font-weight: 700;
+  margin: 4px 0 0;
+  text-shadow: 0 2px 0 #000;
+  font-size: 14px;
+}
+
+.bottom-menu-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.tap-to-play {
+  font-size: 32px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 4px 0 #000;
+  cursor: pointer;
+  animation: pulse 1.2s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+.btn-shop {
+  background: linear-gradient(180deg, #ff9900, #cc5200);
+  border: 3px solid #fff;
+  color: #fff;
+  padding: 12px 22px;
+  border-radius: 14px;
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 5px 0 #662900;
+}
+
+/* ================= MODALS (REVIVE, SHOP, GAME OVER) ================= */
+#shopModal, #gameOverModal, #reviveModal {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 5, 25, 0.88);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 16px;
+}
+
+.modal-box {
+  background: linear-gradient(180deg, #2a4466 0%, #19283d 100%);
+  border: 4px solid #fff;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 460px;
+  max-height: 88vh;
+  overflow-y: auto;
+  padding: 20px;
+  color: #fff;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+}
+
+/* ================= 5-SECOND ROTATING REVIVE MODAL ================= */
+.revive-box {
+  text-align: center;
+  max-width: 360px;
+  background: radial-gradient(circle at top, #3b1c54 0%, #160924 100%);
+}
+
+.revive-title {
+  margin: 0;
+  font-size: 32px;
+  color: #00f5d4;
+  text-shadow: 0 3px 0 #000;
+}
+
+.revive-sub {
+  margin: 6px 0 14px;
+  color: #ddd;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.revive-ring-container {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  margin: 10px auto 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.revive-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.revive-ring-bg {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.15);
+  stroke-width: 10;
+}
+
+.revive-ring-progress {
+  fill: none;
+  stroke: #00f5d4;
+  stroke-width: 10;
+  stroke-linecap: round;
+  stroke-dasharray: 364.4;
+  stroke-dashoffset: 0;
+}
+
+.revive-spinner-glow {
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  border: 3px dashed rgba(0, 245, 212, 0.65);
+  animation: spinRing 2.5s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes spinRing {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.revive-center-btn {
+  position: relative;
+  z-index: 2;
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  background: linear-gradient(180deg, #62c435 0%, #2d7a0f 100%);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.5);
+  transition: transform 0.1s;
+}
+.revive-center-btn:active {
+  transform: scale(0.95);
+}
+
+.revive-gem {
+  font-size: 22px;
+  font-weight: 900;
+  text-shadow: 0 2px 0 #000;
+}
+
+.revive-label {
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+}
+
+.revive-sec {
+  font-size: 12px;
+  color: #ffea00;
+  font-weight: 800;
+  margin-top: 2px;
+}
+
+.no-thanks-btn {
+  background: rgba(255, 255, 255, 0.12);
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  color: #fff;
+  padding: 10px 28px;
+  border-radius: 20px;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.no-thanks-btn:hover {
+  background: rgba(231, 76, 60, 0.8);
+}
+
+/* ================= SHOP & GAMEOVER ELEMENTS ================= */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid rgba(255,255,255,0.2);
+  padding-bottom: 10px;
+  margin-bottom: 14px;
+}
+.modal-header h2 {
+  margin: 0;
+  font-size: 24px;
+  color: #ffd700;
+  text-shadow: 0 2px 0 #000;
+}
+.close-btn {
+  background: #e74c3c;
+  border: 2px solid #fff;
+  color: #fff;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-weight: 900;
+  cursor: pointer;
+}
+.shop-section-title {
+  font-size: 15px;
+  font-weight: 900;
+  color: #8ad4ff;
+  margin: 14px 0 8px;
+  text-transform: uppercase;
+}
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.shop-item {
+  background: rgba(0,0,0,0.35);
+  border: 2px solid rgba(255,255,255,0.25);
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+}
+.shop-item.active {
+  border-color: #62c435;
+  background: rgba(98, 196, 53, 0.2);
+}
+.shop-btn {
+  background: linear-gradient(180deg, #ffd700, #e69500);
+  border: 2px solid #fff;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-weight: 900;
+  color: #111;
+  cursor: pointer;
+}
+.shop-btn.equipped {
+  background: #62c435;
+  color: #fff;
+}
+
+.gameover-banner {
+  background: linear-gradient(180deg, #ffaa00 0%, #ff5500 100%);
+  text-align: center;
+  padding: 18px;
+  border-radius: 16px;
+  margin-bottom: 16px;
+  border: 3px solid #fff;
+}
+.gameover-banner h2 {
+  margin: 0 0 6px;
+  font-size: 28px;
+  text-shadow: 0 3px 0 #000;
+}
+.stats-row {
+  display: flex;
+  justify-content: space-between;
+  background: rgba(0,0,0,0.4);
+  padding: 10px 16px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  font-size: 16px;
+  font-weight: 800;
+}
+.action-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+.action-row button {
+  flex: 1;
+  margin-bottom: 0;
+}
