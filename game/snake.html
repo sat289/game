@@ -4,60 +4,30 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Cyber Snake Retro - Gaming Hub</title>
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <style>
-    * {
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
-    body, html {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background-color: #070a13;
-      font-family: 'Inter', sans-serif;
-      user-select: none;
-    }
-    canvas {
-      display: block;
-      background-color: #070a13;
-      box-shadow: 0 0 25px rgba(56, 189, 248, 0.2);
-    }
-    .ctrl-btn {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      transition: all 0.12s ease;
-    }
-    .ctrl-btn:active, .active-glow {
-      background: rgba(56, 189, 248, 0.35) !important;
-      border-color: #38bdf8 !important;
-      box-shadow: 0 0 15px rgba(56, 189, 248, 0.7);
-      transform: scale(0.93);
-    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #070a13; font-family: 'Inter', sans-serif; user-select: none; }
+    canvas { display: block; background-color: #070a13; box-shadow: 0 0 25px rgba(56, 189, 248, 0.2); }
+    .ctrl-btn { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.12s ease; }
+    .ctrl-btn:active, .active-glow { background: rgba(56, 189, 248, 0.35) !important; border-color: #38bdf8 !important; box-shadow: 0 0 15px rgba(56, 189, 248, 0.7); transform: scale(0.93); }
   </style>
 </head>
 <body class="flex flex-col justify-between h-screen text-white p-3 max-w-md mx-auto relative overflow-hidden">
 
-  <!-- Top Hub Navigation Header -->
   <header class="flex items-center justify-between bg-[#0d1222] border border-white/10 rounded-2xl px-3 py-2.5 shrink-0 z-30 shadow-md">
     <a href="../index.html" class="flex items-center gap-2 text-xs font-bold text-slate-300 hover:text-white transition">
       <i class="fa-solid fa-arrow-left text-cyan-400"></i> Hub
     </a>
     <div class="flex items-center gap-1.5 text-xs text-slate-300 font-bold">
-      <i class="fa-solid fa-staff-snake text-cyan-400"></i>
-      <span>CYBER SNAKE</span>
+      <i class="fa-solid fa-staff-snake text-cyan-400"></i><span>CYBER SNAKE</span>
     </div>
     <button onclick="window.location.href='../index.html'" class="w-7 h-7 rounded-xl bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition">
       <i class="fa-solid fa-xmark text-sm"></i>
     </button>
   </header>
 
-  <!-- Player Info / Cloud Sync Status -->
   <div class="flex items-center justify-between text-xs px-1 shrink-0">
     <div id="userStatus" class="text-slate-400 truncate">Connecting to cloud...</div>
     <div class="flex items-center gap-3 font-extrabold tracking-wider">
@@ -66,12 +36,9 @@
     </div>
   </div>
 
-  <!-- Game Canvas Container -->
   <div class="relative flex items-center justify-center my-auto">
     <div class="relative rounded-2xl p-[2px] bg-gradient-to-br from-[#38bdf8] via-[#a855f7] to-[#ff007b] shadow-xl">
       <canvas id="gameCanvas" width="320" height="320" class="rounded-[14px]"></canvas>
-
-      <!-- Game Over Overlay -->
       <div id="gameOverOverlay" class="hidden absolute inset-0 bg-black/85 rounded-[14px] flex flex-col items-center justify-center p-4 z-20 backdrop-blur-sm">
         <span class="text-xs font-bold tracking-widest text-[#38bdf8] mb-1">GAME OVER</span>
         <span id="finalScoreText" class="text-2xl font-black text-white mb-4 drop-shadow">Final Score: 0</span>
@@ -82,31 +49,19 @@
     </div>
   </div>
 
-  <!-- Swipe Notice -->
   <div class="text-center text-[10px] text-slate-500 font-semibold tracking-wider shrink-0 mb-1">
     <i class="fa-solid fa-hand-pointer mr-1"></i> SWIPE SCREEN OR USE D-PAD
   </div>
 
-  <!-- On-Screen D-Pad Controllers -->
   <div class="grid grid-cols-3 gap-2 w-full max-w-[240px] mx-auto shrink-0 mb-2">
     <div></div>
-    <button id="btnUp" class="ctrl-btn h-12 rounded-2xl flex items-center justify-center text-cyan-400 text-lg shadow">
-      <i class="fa-solid fa-arrow-up"></i>
-    </button>
+    <button id="btnUp" class="ctrl-btn h-12 rounded-2xl flex items-center justify-center text-cyan-400 text-lg shadow"><i class="fa-solid fa-arrow-up"></i></button>
     <div></div>
-
-    <button id="btnLeft" class="ctrl-btn h-12 rounded-2xl flex items-center justify-center text-cyan-400 text-lg shadow">
-      <i class="fa-solid fa-arrow-left"></i>
-    </button>
-    <button id="btnDown" class="ctrl-btn h-12 rounded-2xl flex items-center justify-center text-cyan-400 text-lg shadow">
-      <i class="fa-solid fa-arrow-down"></i>
-    </button>
-    <button id="btnRight" class="ctrl-btn h-12 rounded-2xl flex items-center justify-center text-cyan-400 text-lg shadow">
-      <i class="fa-solid fa-arrow-right"></i>
-    </button>
+    <button id="btnLeft" class="ctrl-btn h-12 rounded-2xl flex items-center justify-center text-cyan-400 text-lg shadow"><i class="fa-solid fa-arrow-left"></i></button>
+    <button id="btnDown" class="ctrl-btn h-12 rounded-2xl flex items-center justify-center text-cyan-400 text-lg shadow"><i class="fa-solid fa-arrow-down"></i></button>
+    <button id="btnRight" class="ctrl-btn h-12 rounded-2xl flex items-center justify-center text-cyan-400 text-lg shadow"><i class="fa-solid fa-arrow-right"></i></button>
   </div>
 
-  <!-- Firebase & Core Game Script with Emoji Food & Sky Blue Snake -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
@@ -142,38 +97,28 @@
     let score = 0;
     let highScore = parseInt(localStorage.getItem('cyber_snake_hi') || '0', 10);
     highScoreText.textContent = `BEST: ${highScore}`;
-
     let currentUser = null;
     let animPulse = 0;
     let eatParticles = [];
     let eatWaves = [];
 
-    // Food emoji list provided
     const foodEmojis = ["🌭","🌮","🌯","🌽","🌾","🍅","🍆","🍑","🍓","🍔","🍕","🍖","🍗","🍟","🍠","🍡","🍢","🍛","🍘","🍚","🍙","🍜","🍝","🍢","🍣","🍤","🍞","🍥","🍮","🍱","🍦","🍧","🍨","🍲","🍳","🍩","🍪","🍫","🥔","🥕","🥖","🥗","🥐","🥑","🥘","🥙","🥒","🥓","🥚","🥦","🥜","🥝","🥧","🥢","🥞","🦃","🥟","🥥","🦑","🥡","🥪","🥫","🥨","🥩","🫜","🫒","🫘"];
     let currentFoodEmoji = "🍕";
 
-    let snake = [
-      { x: 10, y: 10 },
-      { x: 10, y: 11 },
-      { x: 10, y: 12 }
-    ];
+    let snake = [{ x: 10, y: 10 }, { x: 10, y: 11 }, { x: 10, y: 12 }];
     let dir = { x: 0, y: -1 };
     let nextDir = { x: 0, y: -1 };
     let food = { x: 5, y: 5 };
     let speed = 110;
     let isGameOver = false;
 
-    // Firebase Cloud Score Sync
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         currentUser = user;
         const name = user.displayName || user.email.split('@')[0];
         userStatus.innerHTML = `Player: <span class="text-cyan-300 font-bold">${name}</span> (Cloud Synced ☁️)`;
-        
         try {
-          const dbRef = ref(db);
-          const snapshot = await get(child(dbRef, `scores/${user.uid}/snake_high`));
-          
+          const snapshot = await get(child(ref(db), `scores/${user.uid}/snake_high`));
           if (snapshot.exists()) {
             const cloudScore = parseInt(snapshot.val(), 10) || 0;
             if (cloudScore > highScore) {
@@ -186,9 +131,7 @@
             set(ref(db, `scores/${user.uid}/snake_high`), highScore);
           }
           highScoreText.textContent = `BEST: ${highScore}`;
-        } catch (err) {
-          console.error("Score fetch error:", err);
-        }
+        } catch (err) { console.error("Score fetch error:", err); }
       } else {
         currentUser = null;
         userStatus.innerHTML = `<a href="../login.html" class="text-amber-300 underline font-bold">Login to save cloud score</a>`;
@@ -204,15 +147,10 @@
     function generateFood() {
       let newFood;
       while (true) {
-        newFood = {
-          x: Math.floor(Math.random() * tileCount),
-          y: Math.floor(Math.random() * tileCount)
-        };
-        const collidesWithSnake = snake.some(s => s.x === newFood.x && s.y === newFood.y);
-        if (!collidesWithSnake) break;
+        newFood = { x: Math.floor(Math.random() * tileCount), y: Math.floor(Math.random() * tileCount) };
+        if (!snake.some(s => s.x === newFood.x && s.y === newFood.y)) break;
       }
       food = newFood;
-      // Pick a random food emoji from the list
       currentFoodEmoji = foodEmojis[Math.floor(Math.random() * foodEmojis.length)];
     }
 
@@ -234,27 +172,15 @@
       const cx = x * gridSize + gridSize / 2;
       const cy = y * gridSize + gridSize / 2;
       eatWaves.push({ x: cx, y: cy, radius: 2, alpha: 1.0 });
-
       for (let i = 0; i < 8; i++) {
         const angle = (Math.PI * 2 * i) / 8;
         const vel = 1.5 + Math.random() * 2;
-        eatParticles.push({
-          x: cx,
-          y: cy,
-          vx: Math.cos(angle) * vel,
-          vy: Math.sin(angle) * vel,
-          alpha: 1.0,
-          color: i % 2 === 0 ? '#38bdf8' : '#7dd3fc'
-        });
+        eatParticles.push({ x: cx, y: cy, vx: Math.cos(angle) * vel, vy: Math.sin(angle) * vel, alpha: 1.0, color: i % 2 === 0 ? '#38bdf8' : '#7dd3fc' });
       }
     }
 
     function resetGame() {
-      snake = [
-        { x: 10, y: 10 },
-        { x: 10, y: 11 },
-        { x: 10, y: 12 }
-      ];
+      snake = [{ x: 10, y: 10 }, { x: 10, y: 11 }, { x: 10, y: 12 }];
       dir = { x: 0, y: -1 };
       nextDir = { x: 0, y: -1 };
       score = 0;
@@ -277,31 +203,21 @@
     let lastStepTime = 0;
     function updateGameLogic(time) {
       if (isGameOver) return;
-
       if (time - lastStepTime > speed) {
         lastStepTime = time;
-
         dir = nextDir;
         const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
 
-        if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
-          triggerGameOver();
-          return;
-        }
-
-        if (snake.some(seg => seg.x === head.x && seg.y === head.y)) {
+        if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount || snake.some(seg => seg.x === head.x && seg.y === head.y)) {
           triggerGameOver();
           return;
         }
 
         snake.unshift(head);
-
         if (head.x === food.x && head.y === food.y) {
           score += 10;
           scoreText.textContent = `SCORE: ${score}`;
-
           triggerEatGlowEffect(food.x, food.y);
-
           if (score > highScore) {
             highScore = score;
             highScoreText.textContent = `BEST: ${highScore}`;
@@ -318,11 +234,9 @@
 
     function render() {
       animPulse += 0.08;
-
       ctx.fillStyle = '#070a13';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Grid Lines
       ctx.strokeStyle = '#0e1626';
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -333,73 +247,38 @@
       }
       ctx.stroke();
 
-      // Eat Wave animations
       for (let i = eatWaves.length - 1; i >= 0; i--) {
-        const wave = eatWaves[i];
-        wave.radius += 2.2;
-        wave.alpha -= 0.08;
-        if (wave.alpha <= 0) {
-          eatWaves.splice(i, 1);
-          continue;
-        }
+        let wave = eatWaves[i];
+        wave.radius += 2.2; wave.alpha -= 0.08;
+        if (wave.alpha <= 0) { eatWaves.splice(i, 1); continue; }
         ctx.strokeStyle = `rgba(56, 189, 248, ${wave.alpha})`;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(wave.x, wave.y, wave.radius, 0, Math.PI * 2);
-        ctx.stroke();
+        ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(wave.x, wave.y, wave.radius, 0, Math.PI * 2); ctx.stroke();
       }
 
-      // Eat Particle animations
       for (let i = eatParticles.length - 1; i >= 0; i--) {
-        const p = eatParticles[i];
-        p.x += p.vx;
-        p.y += p.vy;
-        p.alpha -= 0.06;
-        if (p.alpha <= 0) {
-          eatParticles.splice(i, 1);
-          continue;
-        }
-        ctx.fillStyle = p.color;
-        ctx.globalAlpha = p.alpha;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
-        ctx.fill();
+        let p = eatParticles[i];
+        p.x += p.vx; p.y += p.vy; p.alpha -= 0.06;
+        if (p.alpha <= 0) { eatParticles.splice(i, 1); continue; }
+        ctx.fillStyle = p.color; ctx.globalAlpha = p.alpha; ctx.beginPath(); ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2); ctx.fill();
       }
       ctx.globalAlpha = 1.0;
 
-      // Food Rendering (Emoji Food with Floating Pulse)
       const foodX = food.x * gridSize + gridSize / 2;
       const foodY = food.y * gridSize + gridSize / 2;
-      
-      ctx.save();
-      ctx.font = "16px sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(currentFoodEmoji, foodX, foodY);
-      ctx.restore();
+      ctx.save(); ctx.font = "16px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(currentFoodEmoji, foodX, foodY); ctx.restore();
 
-      // Snake Rendering (Light Sky Blue with Glowing Effects)
       for (let i = snake.length - 1; i >= 0; i--) {
         const seg = snake[i];
-        const px = seg.x * gridSize;
-        const py = seg.y * gridSize;
-
+        const px = seg.x * gridSize, py = seg.y * gridSize;
         if (i === 0) {
-          // Snake Head (Bright Light Sky Blue with Outer Aura)
-          ctx.fillStyle = 'rgba(56, 189, 248, 0.35)';
-          ctx.fillRect(px - 2, py - 2, gridSize + 4, gridSize + 4);
-
-          ctx.fillStyle = '#38bdf8';
-          ctx.fillRect(px + 1, py + 1, gridSize - 2, gridSize - 2);
-
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(px + 4, py + 4, gridSize - 8, gridSize - 8);
+          ctx.fillStyle = 'rgba(56, 189, 248, 0.35)'; ctx.fillRect(px - 2, py - 2, gridSize + 4, gridSize + 4);
+          ctx.fillStyle = '#38bdf8'; ctx.fillRect(px + 1, py + 1, gridSize - 2, gridSize - 2);
+          ctx.fillStyle = '#ffffff'; ctx.fillRect(px + 4, py + 4, gridSize - 8, gridSize - 8);
         } else {
-          // Snake Body (Sky Blue gradient shades with soft glow)
           const isEven = i % 2 === 0;
           ctx.fillStyle = isEven ? 'rgba(56, 189, 248, 0.15)' : 'rgba(125, 211, 252, 0.15)';
           ctx.fillRect(px - 1, py - 1, gridSize + 2, gridSize + 2);
-
           ctx.fillStyle = isEven ? '#38bdf8' : '#7dd3fc';
           ctx.fillRect(px + 1.5, py + 1.5, gridSize - 3, gridSize - 3);
         }
@@ -413,38 +292,22 @@
     }
     requestAnimationFrame(gameLoop);
 
-    // Touch Swipe Controls
-    let touchStartX = 0;
-    let touchStartY = 0;
-    const minSwipeDist = 20;
-
+    let touchStartX = 0, touchStartY = 0;
     document.body.addEventListener('touchstart', (e) => {
       if (e.target.closest('button') || e.target.closest('a')) return;
-      const t = e.touches[0];
-      touchStartX = t.clientX;
-      touchStartY = t.clientY;
+      touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY;
     }, { passive: true });
 
     document.body.addEventListener('touchend', (e) => {
       if (e.target.closest('button') || e.target.closest('a')) return;
-      const t = e.changedTouches[0];
-      const dx = t.clientX - touchStartX;
-      const dy = t.clientY - touchStartY;
-
+      const dx = e.changedTouches[0].clientX - touchStartX, dy = e.changedTouches[0].clientY - touchStartY;
       if (Math.abs(dx) > Math.abs(dy)) {
-        if (Math.abs(dx) > minSwipeDist) {
-          if (dx > 0) { changeDirection(1, 0); triggerButtonGlow('btnRight'); }
-          else { changeDirection(-1, 0); triggerButtonGlow('btnLeft'); }
-        }
+        if (Math.abs(dx) > 20) { dx > 0 ? (changeDirection(1, 0), triggerButtonGlow('btnRight')) : (changeDirection(-1, 0), triggerButtonGlow('btnLeft')); }
       } else {
-        if (Math.abs(dy) > minSwipeDist) {
-          if (dy > 0) { changeDirection(0, 1); triggerButtonGlow('btnDown'); }
-          else { changeDirection(0, -1); triggerButtonGlow('btnUp'); }
-        }
+        if (Math.abs(dy) > 20) { dy > 0 ? (changeDirection(0, 1), triggerButtonGlow('btnDown')) : (changeDirection(0, -1), triggerButtonGlow('btnUp')); }
       }
     }, { passive: true });
 
-    // Keyboard bindings
     window.addEventListener('keydown', (e) => {
       if (['ArrowUp', 'KeyW'].includes(e.code)) { changeDirection(0, -1); triggerButtonGlow('btnUp'); }
       else if (['ArrowDown', 'KeyS'].includes(e.code)) { changeDirection(0, 1); triggerButtonGlow('btnDown'); }
@@ -452,26 +315,14 @@
       else if (['ArrowRight', 'KeyD'].includes(e.code)) { changeDirection(1, 0); triggerButtonGlow('btnRight'); }
     });
 
-    // Touch Buttons D-Pad
     const bindBtn = (id, dx, dy) => {
       const el = document.getElementById(id);
-      const action = (e) => {
-        e.preventDefault();
-        changeDirection(dx, dy);
-        triggerButtonGlow(id);
-      };
+      const action = (e) => { e.preventDefault(); changeDirection(dx, dy); triggerButtonGlow(id); };
       el.addEventListener('touchstart', action, { passive: false });
       el.addEventListener('mousedown', action);
     };
-
-    bindBtn('btnUp', 0, -1);
-    bindBtn('btnDown', 0, 1);
-    bindBtn('btnLeft', -1, 0);
-    bindBtn('btnRight', 1, 0);
-
+    bindBtn('btnUp', 0, -1); bindBtn('btnDown', 0, 1); bindBtn('btnLeft', -1, 0); bindBtn('btnRight', 1, 0);
     restartBtn.onclick = resetGame;
-
-    // Start
     resetGame();
   </script>
 </body>
