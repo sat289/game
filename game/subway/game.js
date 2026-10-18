@@ -1,4 +1,4 @@
-// ================= 1. AVATARS & TRAINS (TRAIN1 TO TRAIN5) =================
+// ================= 1. AVATARS & TRAINS CATALOG =================
 const AVATAR_CATALOG = [
   { id: "michelle", name: "Street Dancer (3D)", price: 0, glbUrl: "https://threejs.org/examples/models/gltf/Michelle.glb", scale: 1.35, rotY: Math.PI },
   { id: "soldier", name: "Metro Commando (3D)", price: 500, glbUrl: "https://threejs.org/examples/models/gltf/Soldier.glb", scale: 1.35, rotY: 0 },
@@ -33,7 +33,6 @@ window.playerProfile = Object.assign(
     selectedAvatar: "michelle",
     selectedBoard: "flame",
     displayName: "",
-    age: "",
     lastLoginDate: "",
     loginStreak: 0,
     claimedStreakToday: false,
@@ -56,7 +55,6 @@ window.playerProfile = Object.assign(
 
 if (typeof window.playerProfile.diamonds !== "number") window.playerProfile.diamonds = 25;
 
-// Check Daily Login Streak
 const todayStr = new Date().toDateString();
 if (window.playerProfile.lastLoginDate !== todayStr) {
   const yesterday = new Date();
@@ -418,7 +416,7 @@ window.loadSelectedHumanAvatar = function () {
   boardRim.material.color.setHex(skin.rimColor);
 };
 
-// ================= 5. TRAIN1 TO TRAIN5 & PROCEDURAL SKINS =================
+// ================= 5. TRAIN1 TO TRAIN5 =================
 const trainGlbCache = {};
 
 function createRealTrainSideTexture(skinType) {
@@ -426,45 +424,13 @@ function createRealTrainSideTexture(skinType) {
   c.width = 1024;
   c.height = 256;
   const ctx = c.getContext("2d");
-
-  if (skinType === "high_speed_express") {
-    ctx.fillStyle = "#f8f9fa";
-    ctx.fillRect(0, 0, 1024, 256);
-    ctx.fillStyle = "#fb8500";
-    ctx.fillRect(0, 120, 1024, 38);
-    ctx.fillStyle = "#ffb703";
-    ctx.fillRect(0, 158, 1024, 16);
-    ctx.fillStyle = "#1d3557";
-    ctx.fillRect(0, 210, 1024, 46);
-    ctx.fillStyle = "#14213d";
-    ctx.fillRect(35, 58, 954, 48);
-    for (let x = 60; x < 960; x += 110) {
-      ctx.fillStyle = "rgba(144, 224, 239, 0.85)";
-      ctx.fillRect(x, 63, 85, 38);
-    }
-  } else {
-    ctx.fillStyle = "#d90429";
-    ctx.fillRect(0, 0, 1024, 256);
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 25, 1024, 30);
-    ctx.fillStyle = "#2b2d42";
-    ctx.fillRect(0, 205, 1024, 51);
-    for (let x = 50; x < 980; x += 150) {
-      ctx.fillStyle = "#111111";
-      ctx.fillRect(x - 14, 65, 115, 110);
-      ctx.fillStyle = "rgba(200, 235, 255, 0.9)";
-      ctx.fillRect(x - 10, 70, 107, 100);
-    }
-  }
+  ctx.fillStyle = "#d90429";
+  ctx.fillRect(0, 0, 1024, 256);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 25, 1024, 30);
+  ctx.fillStyle = "#2b2d42";
+  ctx.fillRect(0, 205, 1024, 51);
   return new THREE.CanvasTexture(c);
-}
-
-const TRAIN_TEXTURE_CACHE = {};
-function getTrainTexture(skinName) {
-  if (!TRAIN_TEXTURE_CACHE[skinName]) {
-    TRAIN_TEXTURE_CACHE[skinName] = createRealTrainSideTexture(skinName);
-  }
-  return TRAIN_TEXTURE_CACHE[skinName];
 }
 
 function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, forcedIndex = null) {
@@ -501,16 +467,15 @@ function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, 
       );
     }
   } else {
-    const sideTex = getTrainTexture(trainConfig.skinType);
+    const sideTex = createRealTrainSideTexture("high_speed_express");
     const bodyMaterials = [
-      new THREE.MeshStandardMaterial({ map: sideTex, metalness: 0.5, roughness: 0.3 }),
-      new THREE.MeshStandardMaterial({ map: sideTex, metalness: 0.5, roughness: 0.3 }),
-      new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.6, roughness: 0.35 }),
-      new THREE.MeshStandardMaterial({ color: 0x1b1b1e, roughness: 0.9 }),
-      new THREE.MeshStandardMaterial({ color: 0xd90429, metalness: 0.6, roughness: 0.3 }),
-      new THREE.MeshStandardMaterial({ color: 0x2b2d42, metalness: 0.5, roughness: 0.5 })
+      new THREE.MeshStandardMaterial({ map: sideTex }),
+      new THREE.MeshStandardMaterial({ map: sideTex }),
+      new THREE.MeshStandardMaterial({ color: 0xffffff }),
+      new THREE.MeshStandardMaterial({ color: 0x1b1b1e }),
+      new THREE.MeshStandardMaterial({ color: 0xd90429 }),
+      new THREE.MeshStandardMaterial({ color: 0x2b2d42 })
     ];
-
     const coach = new THREE.Mesh(new THREE.BoxGeometry(2.75, 2.95, length), bodyMaterials);
     coach.position.y = 1.85;
     coach.castShadow = true;
@@ -739,7 +704,7 @@ function activateHoverboard() {
     return;
   }
   window.playerProfile.boards--;
-  updateMissionsProgress(0, 0, 0, 1); // Track skateboard usage mission
+  updateMissionsProgress(0, 0, 0, 1);
   window.syncPlayerProfileToCloud && window.syncPlayerProfileToCloud();
   hoverboardTimer = 30.0;
   boardGroup.visible = true;
@@ -769,7 +734,6 @@ function updateMissionsProgress(distDelta, coinsDelta, diamondsDelta = 0, boards
       } else if (m.id === "m3") {
         m.current = Math.min(m.target, m.current + coinsDelta);
       } else if (m.id === "m4") {
-        // Collect 500 coins in a single game run
         m.current = Math.min(m.target, runCoins);
       } else if (m.id === "m5") {
         m.current = Math.min(m.target, m.current + diamondsDelta);
@@ -888,22 +852,38 @@ window.closeEventsModal = function() {
   document.getElementById("eventsModal").style.display = "none";
 };
 
-// Account / Google Login Modal Handlers
+// Account / Google Login Modal Handlers (Name & Avatar Only)
 window.openAccountModal = function() {
   const nameInput = document.getElementById("editNameInput");
-  const ageInput = document.getElementById("editAgeInput");
   nameInput.value = window.playerProfile.displayName || "";
-  ageInput.value = window.playerProfile.age || "";
 
   if (window.playerProfile.displayName) {
     document.getElementById("accountLoggedOutView").style.display = "none";
     document.getElementById("accountLoggedInView").style.display = "block";
     document.getElementById("accountDisplayName").innerText = window.playerProfile.displayName;
-    document.getElementById("accountDisplayEmail").innerText = "google_user@gmail.com";
   } else {
     document.getElementById("accountLoggedOutView").style.display = "block";
     document.getElementById("accountLoggedInView").style.display = "none";
   }
+
+  // Render Avatar Selector Grid inside Account Modal
+  const avatarGrid = document.getElementById("accountAvatarSelectorGrid");
+  avatarGrid.innerHTML = "";
+  AVATAR_CATALOG.forEach(av => {
+    const isSelected = window.playerProfile.selectedAvatar === av.id;
+    const btn = document.createElement("button");
+    btn.className = "shop-btn" + (isSelected ? " equipped" : "");
+    btn.innerText = av.name.split(" ")[0];
+    btn.style.fontSize = "11px";
+    btn.onclick = () => {
+      window.playerProfile.selectedAvatar = av.id;
+      window.loadSelectedHumanAvatar();
+      window.syncPlayerProfileToCloud && window.syncPlayerProfileToCloud();
+      window.openAccountModal();
+    };
+    avatarGrid.appendChild(btn);
+  });
+
   document.getElementById("accountModal").style.display = "flex";
 };
 
@@ -912,12 +892,9 @@ window.closeAccountModal = function() {
 };
 
 document.getElementById("googleLoginBtn").onclick = () => {
-  // Simulate Google Login Prompt
   const defaultName = prompt("Enter your Google Account Display Name:", "Satish Kommana");
   if (defaultName) {
-    const defaultAge = prompt("Enter your Age:", "16");
     window.playerProfile.displayName = defaultName;
-    window.playerProfile.age = defaultAge || "16";
     window.syncPlayerProfileToCloud && window.syncPlayerProfileToCloud();
     window.openAccountModal();
   }
@@ -925,10 +902,8 @@ document.getElementById("googleLoginBtn").onclick = () => {
 
 window.saveAccountProfile = function() {
   const nameInput = document.getElementById("editNameInput").value.trim();
-  const ageInput = document.getElementById("editAgeInput").value.trim();
   if (nameInput) {
     window.playerProfile.displayName = nameInput;
-    window.playerProfile.age = ageInput;
     window.syncPlayerProfileToCloud && window.syncPlayerProfileToCloud();
     alert("Profile saved successfully!");
     window.openAccountModal();
@@ -1199,16 +1174,6 @@ canvas.addEventListener("pointerup", e => {
     else roll();
   }
 });
-
-const tapTrigger = document.getElementById("tapToPlayTrigger");
-if (tapTrigger) {
-  tapTrigger.addEventListener("click", () => {
-    if (gameState === "IDLE_INTRO") {
-      ensureAudio();
-      startNewRun();
-    }
-  });
-}
 
 // ================= 9. UI & STORE BINDINGS =================
 window.updateMenuUI = function () {
@@ -1630,6 +1595,7 @@ function animate(now) {
         scene.remove(c);
         coins.splice(i, 1);
         updateMissionsProgress(0, 1, 0, 0);
+        updateMissionsProgress(0, 0, 0, 0); // Check 500 coins in game mission
         continue;
       }
       if (c.position.z > 12) {
@@ -1660,7 +1626,7 @@ function animate(now) {
           showCallout("+1 Hoverboard! 🛹");
         } else if (p.userData.kind === "diamondPickup") {
           window.playerProfile.diamonds += 2;
-          updateMissionsProgress(0, 0, 2, 0); // Track diamond collection mission
+          updateMissionsProgress(0, 0, 2, 0);
           showCallout("+2 Diamonds! 💎");
         }
         scene.remove(p);
