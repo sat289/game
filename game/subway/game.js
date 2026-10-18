@@ -38,7 +38,7 @@ const savedProfile = JSON.parse(localStorage.getItem("carracing_profile") || "nu
 window.playerProfile = Object.assign(
   {
     coins: 300,
-    diamonds: 25, // Starts with 25 diamonds so you can test the 5-diamond Revive immediately
+    diamonds: 25,
     boards: 5,
     unlockedAvatars: ["michelle"],
     unlockedBoardSkins: ["flame"],
@@ -408,30 +408,74 @@ window.loadSelectedHumanAvatar = function () {
   boardRim.material.color.setHex(skin.rimColor);
 };
 
-// ================= 5. 4 DIFFERENT REALISTIC 3D TRAIN MODELS =================
-function createTrainSideTexture(styleType) {
+// ================= 5. REALISTIC 3D TRAINS WITH REAL WORLD SKINS =================
+function createRealTrainSideTexture(skinType) {
   const c = document.createElement("canvas");
   c.width = 1024;
   c.height = 256;
   const ctx = c.getContext("2d");
 
-  if (styleType === "bullet") {
-    // Model 1: High-Speed Aerodynamic Bullet Train (White & Electric Blue)
+  if (skinType === "london_tube") {
+    // 1. London Underground (Red body, white upper band, blue underframe)
+    ctx.fillStyle = "#b51a2b";
+    ctx.fillRect(0, 0, 1024, 256);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 30, 1024, 45);
+    ctx.fillStyle = "#001933";
+    ctx.fillRect(0, 205, 1024, 51);
+    for (let x = 60; x < 980; x += 150) {
+      ctx.fillStyle = "#002b49";
+      ctx.fillRect(x - 12, 90, 85, 80);
+      ctx.fillStyle = "rgba(255, 240, 180, 0.85)";
+      ctx.fillRect(x - 7, 95, 75, 70);
+    }
+  } else if (skinType === "nyc_subway") {
+    // 2. New York City MTA Subway (Brushed Stainless Steel + Dark Stripe)
+    const grad = ctx.createLinearGradient(0, 0, 0, 256);
+    grad.addColorStop(0, "#adb5bd");
+    grad.addColorStop(0.35, "#ced4da");
+    grad.addColorStop(0.65, "#6c757d");
+    grad.addColorStop(1, "#343a40");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 1024, 256);
+    ctx.fillStyle = "#212529";
+    ctx.fillRect(0, 135, 1024, 28);
+
+    for (let x = 50; x < 980; x += 140) {
+      ctx.fillStyle = "#111111";
+      ctx.fillRect(x - 10, 50, 80, 70);
+      ctx.fillStyle = "rgba(200, 230, 255, 0.85)";
+      ctx.fillRect(x - 6, 54, 72, 62);
+    }
+  } else if (skinType === "bullet_shinkansen") {
+    // 3. Japanese Shinkansen Bullet Train (White & Blue Ribbon)
     ctx.fillStyle = "#f8f9fa";
     ctx.fillRect(0, 0, 1024, 256);
     ctx.fillStyle = "#0077b6";
     ctx.fillRect(0, 130, 1024, 32);
     ctx.fillStyle = "#03045e";
     ctx.fillRect(0, 210, 1024, 46);
-    // Continuous Sleek Tinted Window Strip
-    ctx.fillStyle = "#023e8a";
-    ctx.fillRect(30, 62, 964, 52);
     for (let x = 50; x < 960; x += 110) {
-      ctx.fillStyle = "rgba(144, 224, 239, 0.75)";
-      ctx.fillRect(x, 68, 85, 40);
+      ctx.fillStyle = "#023e8a";
+      ctx.fillRect(x, 62, 85, 52);
+      ctx.fillStyle = "rgba(144, 224, 239, 0.8)";
+      ctx.fillRect(x + 4, 66, 77, 44);
     }
-  } else if (styleType === "steam") {
-    // Model 2: Transylvania Gothic Vintage Express (Crimson & Gold)
+  } else if (skinType === "paris_metro") {
+    // 4. Paris Métro (Bright Green & Silver Urban Commuter)
+    ctx.fillStyle = "#2a9d8f";
+    ctx.fillRect(0, 0, 1024, 256);
+    ctx.fillStyle = "#e9c46a";
+    ctx.fillRect(0, 140, 1024, 20);
+    ctx.fillStyle = "#1d3557";
+    for (let x = 55; x < 980; x += 145) {
+      ctx.fillStyle = "#1f3a4d";
+      ctx.fillRect(x - 12, 55, 82, 70);
+      ctx.fillStyle = "rgba(255, 250, 200, 0.85)";
+      ctx.fillRect(x - 8, 59, 74, 62);
+    }
+  } else if (skinType === "transylvania_steam") {
+    // 5. Transylvania Gothic Vintage Express
     ctx.fillStyle = "#590d22";
     ctx.fillRect(0, 0, 1024, 256);
     ctx.strokeStyle = "#ffb703";
@@ -444,8 +488,8 @@ function createTrainSideTexture(styleType) {
       ctx.lineWidth = 6;
       ctx.strokeRect(x, 55, 80, 95);
     }
-  } else if (styleType === "cargo") {
-    // Model 3: Heavy Corrugated Industrial Freight Container Train
+  } else {
+    // 6. Heavy Industrial Freight Cargo
     ctx.fillStyle = "#d97706";
     ctx.fillRect(0, 0, 1024, 256);
     ctx.fillStyle = "#92400e";
@@ -455,50 +499,28 @@ function createTrainSideTexture(styleType) {
     ctx.fillStyle = "#fef3c7";
     ctx.font = "bold 44px Impact, sans-serif";
     ctx.fillText("CARGO EXPRESS • HEAVY FREIGHT", 190, 145);
-  } else {
-    // Model 4: City Metro Commuter Subway Coach (Silver & Red/Yellow Stripe)
-    const grad = ctx.createLinearGradient(0, 0, 0, 256);
-    grad.addColorStop(0, "#d8dee9");
-    grad.addColorStop(0.5, "#eceff4");
-    grad.addColorStop(1, "#2b2d42");
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 1024, 256);
-    ctx.fillStyle = "#ef233c";
-    ctx.fillRect(0, 152, 1024, 18);
-
-    for (let x = 40; x < 980; x += 155) {
-      if (x % 310 === 40) {
-        ctx.fillStyle = "#8d99ae";
-        ctx.fillRect(x, 38, 66, 175);
-        ctx.fillStyle = "#a8dadc";
-        ctx.fillRect(x + 8, 52, 20, 65);
-        ctx.fillRect(x + 38, 52, 20, 65);
-      } else {
-        ctx.fillStyle = "rgba(255, 230, 150, 0.85)";
-        ctx.fillRect(x - 10, 55, 85, 62);
-      }
-    }
   }
   return new THREE.CanvasTexture(c);
 }
 
-const TRAIN_TEXTURES = {
-  metro: createTrainSideTexture("metro"),
-  bullet: createTrainSideTexture("bullet"),
-  steam: createTrainSideTexture("steam"),
-  cargo: createTrainSideTexture("cargo")
-};
+const TRAIN_SKIN_TYPES = ["london_tube", "nyc_subway", "bullet_shinkansen", "paris_metro", "transylvania_steam", "cargo"];
+const TRAIN_TEXTURE_CACHE = {};
+function getTrainTexture(skinName) {
+  if (!TRAIN_TEXTURE_CACHE[skinName]) {
+    TRAIN_TEXTURE_CACHE[skinName] = createRealTrainSideTexture(skinName);
+  }
+  return TRAIN_TEXTURE_CACHE[skinName];
+}
 
-function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, forcedModelType = null) {
+function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, forcedSkin = null) {
   const group = new THREE.Group();
   const wheels = [];
 
-  const modelTypes = ["metro", "bullet", "steam", "cargo"];
-  const modelType = forcedModelType || modelTypes[Math.floor(Math.random() * modelTypes.length)];
-  const sideTex = TRAIN_TEXTURES[modelType];
+  const skinType = forcedSkin || TRAIN_SKIN_TYPES[Math.floor(Math.random() * TRAIN_SKIN_TYPES.length)];
+  const sideTex = getTrainTexture(skinType);
 
-  const roofHex = modelType === "bullet" ? 0xffffff : modelType === "steam" ? 0x3c0919 : modelType === "cargo" ? 0x78350f : 0xced4da;
-  const frontHex = modelType === "bullet" ? 0x0077b6 : modelType === "steam" ? 0x800f2f : modelType === "cargo" ? 0xb45309 : 0x1d3557;
+  const roofHex = skinType === "bullet_shinkansen" ? 0xffffff : skinType === "transylvania_steam" ? 0x3c0919 : skinType === "cargo" ? 0x78350f : 0xced4da;
+  const frontHex = skinType === "bullet_shinkansen" ? 0x0077b6 : skinType === "london_tube" ? 0xb51a2b : skinType === "paris_metro" ? 0x2a9d8f : 0x1d3557;
 
   const bodyMaterials = [
     new THREE.MeshStandardMaterial({ map: sideTex, metalness: 0.5, roughness: 0.3 }),
@@ -509,14 +531,12 @@ function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, 
     new THREE.MeshStandardMaterial({ color: 0x2b2d42, metalness: 0.5, roughness: 0.5 })
   ];
 
-  // Main Coach Body
   const coach = new THREE.Mesh(new THREE.BoxGeometry(2.75, 2.95, length), bodyMaterials);
   coach.position.y = 1.85;
   coach.castShadow = true;
   coach.receiveShadow = true;
   group.add(coach);
 
-  // Undercarriage & Rotating Steel Bogie Wheels
   const chassis = new THREE.Mesh(
     new THREE.BoxGeometry(2.4, 0.38, length - 0.6),
     new THREE.MeshStandardMaterial({ color: 0x161a1d, metalness: 0.6, roughness: 0.7 })
@@ -536,9 +556,7 @@ function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, 
     });
   }
 
-  // Distinct Front Noses & Roof Details for Each of the 4 Train Models
-  if (modelType === "bullet") {
-    // Sleek Aerodynamic Bullet Nose Cone
+  if (skinType === "bullet_shinkansen") {
     const aeroNose = new THREE.Mesh(
       new THREE.ConeGeometry(1.38, 2.4, 16),
       new THREE.MeshStandardMaterial({ color: 0xf8f9fa, metalness: 0.5, roughness: 0.2 })
@@ -546,16 +564,7 @@ function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, 
     aeroNose.rotation.x = Math.PI / 2;
     aeroNose.position.set(0, 1.5, length / 2 + 1.1);
     group.add(aeroNose);
-
-    const cockpitGlass = new THREE.Mesh(
-      new THREE.BoxGeometry(2.1, 0.65, 0.9),
-      new THREE.MeshStandardMaterial({ color: 0x00b4d8, emissive: 0x0077b6, emissiveIntensity: 0.5 })
-    );
-    cockpitGlass.position.set(0, 2.35, length / 2 + 0.15);
-    cockpitGlass.rotation.x = 0.35;
-    group.add(cockpitGlass);
-  } else if (modelType === "steam") {
-    // Classic Steam Locomotive Cylindrical Boiler + Smokestack + Central Lantern
+  } else if (skinType === "transylvania_steam") {
     const boiler = new THREE.Mesh(
       new THREE.CylinderGeometry(1.1, 1.1, 1.6, 18),
       new THREE.MeshStandardMaterial({ color: 0x2b0912, metalness: 0.7, roughness: 0.3 })
@@ -570,15 +579,7 @@ function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, 
     );
     chimney.position.set(0, 3.55, length / 2 - 0.8);
     group.add(chimney);
-
-    const lantern = new THREE.Mesh(
-      new THREE.CircleGeometry(0.42, 16),
-      new THREE.MeshBasicMaterial({ color: 0xffea00 })
-    );
-    lantern.position.set(0, 1.6, length / 2 + 1.22);
-    group.add(lantern);
   } else {
-    // Metro & Cargo Cabins
     const nose = new THREE.Mesh(
       new THREE.BoxGeometry(2.72, 1.45, 0.8),
       new THREE.MeshStandardMaterial({ color: frontHex, metalness: 0.5, roughness: 0.3 })
@@ -586,16 +587,8 @@ function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, 
     nose.position.set(0, 1.15, length / 2 + 0.25);
     nose.rotation.x = -0.18;
     group.add(nose);
-
-    const windshield = new THREE.Mesh(
-      new THREE.PlaneGeometry(2.3, 0.95),
-      new THREE.MeshStandardMaterial({ color: 0x90e0ef, emissive: 0x0077b6, emissiveIntensity: 0.4 })
-    );
-    windshield.position.set(0, 2.38, length / 2 + 0.02);
-    group.add(windshield);
   }
 
-  // Twin LED Headlights
   [-0.85, 0.85].forEach(hx => {
     const hl = new THREE.Mesh(
       new THREE.CylinderGeometry(0.18, 0.18, 0.12, 14),
@@ -606,7 +599,6 @@ function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, 
     group.add(hl);
   });
 
-  // Optional Boarding Ramp Attached to Front of Train
   let rampLength = 0;
   if (hasRamp) {
     rampLength = 4.6;
@@ -621,20 +613,20 @@ function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, 
 
   group.userData = {
     type: "train",
-    modelType,
+    skinType,
     length,
     height: 3.35,
     hasRamp,
     rampLength,
     isMoving,
-    speedOffset: isMoving ? (modelType === "bullet" ? 20 : 14) : 0,
+    speedOffset: isMoving ? (skinType === "bullet_shinkansen" ? 20 : 14) : 0,
     wheels
   };
   return group;
 }
 
-// Intro Parked Train for Spray-Painting Scene
-const introTrainGroup = createRealistic3DTrain(15, false, false, "metro");
+// Intro Parked Train
+const introTrainGroup = createRealistic3DTrain(15, false, false, "london_tube");
 introTrainGroup.position.set(-3.6, 0, -2.5);
 
 const grafCanvas = document.createElement("canvas");
@@ -772,8 +764,8 @@ function spawnWave(zPos) {
   }
 }
 
-// ================= 7. GAME STATE, REVIVE ("SAVE ME!") & POLICE LOGIC =================
-let gameState = "AGE_GATE"; // AGE_GATE | IDLE_INTRO | PLAYING | REVIVE_PROMPT | GAMEOVER
+// ================= 7. GAME STATE, REVIVE & POLICE LOGIC =================
+let gameState = "AGE_GATE";
 let currentLane = 1;
 let previousLane = 1;
 let playerY = 0;
@@ -794,7 +786,6 @@ let hoverboardTimer = 0;
 let jetpackTimer = 0;
 let magnetTimer = 0;
 
-// 5-Second Revive Countdown State
 let reviveCountdown = 5.0;
 let pendingDeathReason = "CAUGHT BY INSPECTOR!";
 
@@ -850,7 +841,6 @@ function switchPlayerAnimation(mode) {
   }
 }
 
-// Show 5-Second Rotating Revive ("Save Me!") Popup When Player Is Out
 function promptReviveOrGameOver(reasonText) {
   SFX.crash();
   SFX.whistle();
@@ -859,7 +849,6 @@ function promptReviveOrGameOver(reasonText) {
   reviveCountdown = 5.0;
   switchPlayerAnimation("idle");
 
-  // Place Inspector next to player
   chaserGroup.visible = true;
   chaserGroup.position.set(playerGroup.position.x - 0.75, playerGroup.position.y, 0.5);
 
@@ -867,18 +856,16 @@ function promptReviveOrGameOver(reasonText) {
   document.getElementById("reviveModal").style.display = "flex";
 }
 
-// If Player Clicks Revive (Costs 5 Diamonds) -> Resume Exact Score, Coins & Distance!
 function handleReviveClick() {
   if (gameState !== "REVIVE_PROMPT") return;
   if (window.playerProfile.diamonds < 5) {
-    alert("You need 5 Diamonds (💎) to Revive! You can buy Diamonds in the Store.");
+    alert("You need 5 Diamonds (💎) to Revive!");
     return;
   }
 
   window.playerProfile.diamonds -= 5;
   window.syncPlayerProfileToCloud && window.syncPlayerProfileToCloud();
 
-  // Clear nearby obstacles so the player doesn't crash immediately on revive
   for (let i = obstacles.length - 1; i >= 0; i--) {
     if (obstacles[i].position.z > -45) {
       scene.remove(obstacles[i]);
@@ -891,7 +878,7 @@ function handleReviveClick() {
   playerVelY = 0;
   groundHeight = 0;
   dizzyTimer = 0;
-  policeTimer = 0; // Police drops back
+  policeTimer = 0;
   chaserGroup.visible = false;
 
   gameState = "PLAYING";
@@ -901,12 +888,10 @@ function handleReviveClick() {
   updateHudUI();
 }
 
-// If Player Clicks "No Thanks" or 5-Second Timer Expires -> Final Game Over Summary
 function finalizeGameOver() {
   document.getElementById("reviveModal").style.display = "none";
   gameState = "GAMEOVER";
 
-  // Bank the coins collected in this run and sync to Firebase
   window.playerProfile.coins += runCoins;
   const finalScoreInt = Math.floor(window.score);
   window.submitScore && window.submitScore(finalScoreInt);
@@ -977,7 +962,6 @@ function startNewRun() {
   updateHudUI();
 }
 
-// Return to Home Screen (Tap to Play, Store, Coins, Diamonds, Graffiti Intro)
 function goToHomeScreen() {
   resetGameWorld();
   gameState = "IDLE_INTRO";
@@ -1170,7 +1154,6 @@ function renderShopItems() {
   });
 }
 
-// Button Listeners
 const ageSlider = document.getElementById("ageSlider");
 const ageValue = document.getElementById("ageValue");
 ageSlider.oninput = () => (ageValue.innerText = ageSlider.value);
@@ -1187,7 +1170,6 @@ document.getElementById("replayBtn").onclick = startNewRun;
 document.getElementById("homeBtn").onclick = goToHomeScreen;
 document.getElementById("boardTriggerBtn").onclick = activateHoverboard;
 
-// Revive & No Thanks Buttons
 document.getElementById("reviveActionBtn").onclick = handleReviveClick;
 document.getElementById("noThanksBtn").onclick = finalizeGameOver;
 
@@ -1248,7 +1230,6 @@ function animate(now) {
     return;
   }
 
-  // Handle 5-Second Rotating Revive Countdown Ring
   if (gameState === "REVIVE_PROMPT") {
     reviveCountdown -= dt;
     const progress = Math.max(0, reviveCountdown / 5.0);
@@ -1271,30 +1252,25 @@ function animate(now) {
   if (gameState === "PLAYING") {
     playerGroup.rotation.y = 0;
 
-    // 1. Speed, Distance & Score
     speed = Math.min(42, speed + dt * 0.38);
     const stepZ = speed * dt;
     distanceRun += stepZ * 0.45;
     window.score += stepZ * 2.2 * scoreMultiplier;
 
-    // 2. Scroll Track & City Buildings
     scrollingProps.forEach(row => {
       row.position.z += stepZ;
       if (row.position.z > 24) row.position.z -= 260;
     });
 
-    // 3. Spawn New Waves
     nextSpawnZ += stepZ;
     if (nextSpawnZ > -185) {
       spawnWave(nextSpawnZ - 30);
       nextSpawnZ -= 30;
     }
 
-    // 4. Smooth Lane Switching
     const targetX = LANES[currentLane];
     playerGroup.position.x += (targetX - playerGroup.position.x) * Math.min(1, dt * 14);
 
-    // 5. Power-Up Timers
     if (hoverboardTimer > 0) {
       hoverboardTimer -= dt;
       if (hoverboardTimer <= 0) {
@@ -1307,7 +1283,6 @@ function animate(now) {
       if (magnetTimer < 0) magnetTimer = 0;
     }
 
-    // 6. 3D Train & Barrier Collisions
     groundHeight = 0;
     for (let i = obstacles.length - 1; i >= 0; i--) {
       const obs = obstacles[i];
@@ -1395,7 +1370,6 @@ function animate(now) {
       }
     }
 
-    // 7. Jump, Gravity & Jetpack Physics
     if (jetpackTimer > 0) {
       jetpackTimer -= dt;
       jetpackGroup.visible = true;
@@ -1432,7 +1406,6 @@ function animate(now) {
 
     playerGroup.position.y = playerY;
 
-    // 8. Fallback Limb & Guard Dog Animations
     const runCycle = t * speed * 0.65;
     fallbackHuman.userData.leftLeg.rotation.x = Math.sin(runCycle) * 0.85;
     fallbackHuman.userData.rightLeg.rotation.x = -Math.sin(runCycle) * 0.85;
@@ -1453,7 +1426,6 @@ function animate(now) {
       dizzyStarsGroup.visible = false;
     }
 
-    // 9. Police & Dog 5-Second Chase Behavior
     if (policeTimer > 0) {
       policeTimer -= dt;
       chaserGroup.visible = true;
@@ -1465,7 +1437,6 @@ function animate(now) {
       if (chaserGroup.position.z > 9.8) chaserGroup.visible = false;
     }
 
-    // 10. Coins & Magnet
     for (let i = coins.length - 1; i >= 0; i--) {
       const c = coins[i];
       c.position.z += stepZ;
@@ -1495,7 +1466,6 @@ function animate(now) {
       }
     }
 
-    // 11. Power-ups & Diamond Pickups
     for (let i = powerups.length - 1; i >= 0; i--) {
       const p = powerups[i];
       p.position.z += stepZ;
@@ -1530,7 +1500,6 @@ function animate(now) {
       }
     }
 
-    // 12. Camera Follow
     const targetCamX = playerGroup.position.x * 0.45;
     const targetCamY = 4.7 + playerGroup.position.y * 0.65;
     camera.position.x += (targetCamX - camera.position.x) * dt * 8;
