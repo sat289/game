@@ -3,112 +3,110 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Cyber Snake - Gaming Hub</title>
+  <title>Cyber Snake Retro - Gaming Hub</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <style>
     * {
+      box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
     }
-    body {
-      touch-action: none;
-      user-select: none;
-      -webkit-user-select: none;
-      background-color: #080c16;
-    }
-
-    /* GPU-Accelerated Smooth Controller Glowing */
-    .ctrl-btn {
-      position: relative;
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
       overflow: hidden;
-      transform: translateZ(0);
-      will-change: transform;
-      transition: transform 0.12s cubic-bezier(0.2, 0.8, 0.2, 1);
+      background-color: #070a13;
+      font-family: 'Inter', sans-serif;
+      user-select: none;
     }
-    .ctrl-btn::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: 1rem;
-      background: radial-gradient(circle, rgba(0, 240, 255, 0.45) 0%, rgba(0, 240, 255, 0) 70%);
-      opacity: 0;
-      transition: opacity 0.15s ease-out;
-      pointer-events: none;
+    canvas {
+      display: block;
+      background-color: #070a13;
+      box-shadow: 0 0 25px rgba(56, 189, 248, 0.2);
     }
-    .ctrl-btn.active-glow {
-      transform: scale(0.92) translateZ(0);
-      border-color: #00f0ff !important;
+    .ctrl-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.12s ease;
     }
-    .ctrl-btn.active-glow::before {
-      opacity: 1;
+    .ctrl-btn:active, .active-glow {
+      background: rgba(56, 189, 248, 0.35) !important;
+      border-color: #38bdf8 !important;
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.7);
+      transform: scale(0.93);
     }
   </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-3 text-white overflow-hidden">
+<body class="flex flex-col justify-between h-screen text-white p-3 max-w-md mx-auto relative overflow-hidden">
 
-  <!-- Main Game Card -->
-  <div class="bg-[#101626]/95 border border-white/10 rounded-3xl p-4 sm:p-5 max-w-[390px] w-full flex flex-col items-center relative shadow-2xl">
-    
-    <!-- Exit back to Hub -->
-    <a href="../index.html" class="absolute top-4 right-4 text-white/60 hover:text-white p-2 rounded-full bg-white/5 active:scale-95 transition" title="Exit to Hub">
-      <i class="fa-solid fa-xmark text-lg"></i>
+  <!-- Top Hub Navigation Header -->
+  <header class="flex items-center justify-between bg-[#0d1222] border border-white/10 rounded-2xl px-3 py-2.5 shrink-0 z-30 shadow-md">
+    <a href="../index.html" class="flex items-center gap-2 text-xs font-bold text-slate-300 hover:text-white transition">
+      <i class="fa-solid fa-arrow-left text-cyan-400"></i> Hub
     </a>
+    <div class="flex items-center gap-1.5 text-xs text-slate-300 font-bold">
+      <i class="fa-solid fa-staff-snake text-cyan-400"></i>
+      <span>CYBER SNAKE</span>
+    </div>
+    <button onclick="window.location.href='../index.html'" class="w-7 h-7 rounded-xl bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition">
+      <i class="fa-solid fa-xmark text-sm"></i>
+    </button>
+  </header>
 
-    <h3 class="text-lg font-black text-[#00f2fe] tracking-wider mb-0.5 flex items-center gap-1.5">
-      🐍 CYBER SNAKE
-    </h3>
-    
-    <!-- User Status Banner -->
-    <p id="userStatus" class="text-[10px] text-slate-400 mb-2 font-semibold">
-      Syncing with Firebase...
-    </p>
-
-    <!-- Score Header -->
-    <div class="flex justify-between w-full text-xs font-black uppercase tracking-wider mb-2.5 px-3">
-      <span id="scoreText" class="text-[#00f0ff]">SCORE: 0</span>
-      <span class="text-[10px] text-slate-500 flex items-center gap-1">
-        <span>🤌 Swipe / Keys</span>
-      </span>
+  <!-- Player Info / Cloud Sync Status -->
+  <div class="flex items-center justify-between text-xs px-1 shrink-0">
+    <div id="userStatus" class="text-slate-400 truncate">Connecting to cloud...</div>
+    <div class="flex items-center gap-3 font-extrabold tracking-wider">
+      <span id="scoreText" class="text-[#38bdf8]">SCORE: 0</span>
       <span id="highScoreText" class="text-[#ff007b]">BEST: 0</span>
     </div>
+  </div>
 
-    <!-- Canvas Container -->
-    <div class="relative rounded-2xl p-[2px] bg-gradient-to-br from-[#00f0ff]/50 via-[#9d4edd]/40 to-[#ff007b]/50">
-      <canvas id="gameCanvas" width="320" height="320" class="block bg-[#070a13] rounded-[14px]"></canvas>
+  <!-- Game Canvas Container -->
+  <div class="relative flex items-center justify-center my-auto">
+    <div class="relative rounded-2xl p-[2px] bg-gradient-to-br from-[#38bdf8] via-[#a855f7] to-[#ff007b] shadow-xl">
+      <canvas id="gameCanvas" width="320" height="320" class="rounded-[14px]"></canvas>
 
-      <!-- Game Over Modal Overlay -->
-      <div id="gameOverOverlay" class="hidden absolute inset-0 bg-black/85 rounded-[14px] flex flex-col items-center justify-center p-4 z-20">
-        <span class="text-3xl font-black text-[#ff3838] tracking-widest mb-1">GAME OVER</span>
-        <p id="finalScoreText" class="text-sm font-semibold text-white/90 mb-4">Final Score: 0</p>
-        <button id="restartBtn" class="bg-gradient-to-r from-[#00f2fe] to-[#0072ff] text-slate-950 font-black px-5 py-2.5 rounded-xl text-xs flex items-center gap-2 active:scale-95 transition shadow-lg">
+      <!-- Game Over Overlay -->
+      <div id="gameOverOverlay" class="hidden absolute inset-0 bg-black/85 rounded-[14px] flex flex-col items-center justify-center p-4 z-20 backdrop-blur-sm">
+        <span class="text-xs font-bold tracking-widest text-[#38bdf8] mb-1">GAME OVER</span>
+        <span id="finalScoreText" class="text-2xl font-black text-white mb-4 drop-shadow">Final Score: 0</span>
+        <button id="restartBtn" class="bg-gradient-to-r from-[#38bdf8] to-[#6366f1] text-white font-extrabold px-6 py-2.5 rounded-xl text-xs flex items-center gap-2 active:scale-95 transition shadow-lg">
           <i class="fa-solid fa-rotate-left"></i> PLAY AGAIN
         </button>
       </div>
     </div>
-
-    <!-- Smooth Mobile D-Pad Touch Controllers -->
-    <div class="grid grid-cols-3 gap-2.5 mt-4">
-      <div></div>
-      <button id="btnUp" class="ctrl-btn w-14 h-13 py-3 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-[#00f0ff] text-xl">
-        <i class="fa-solid fa-arrow-up"></i>
-      </button>
-      <div></div>
-
-      <button id="btnLeft" class="ctrl-btn w-14 h-13 py-3 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-[#00f0ff] text-xl">
-        <i class="fa-solid fa-arrow-left"></i>
-      </button>
-      <button id="btnDown" class="ctrl-btn w-14 h-13 py-3 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-[#00f0ff] text-xl">
-        <i class="fa-solid fa-arrow-down"></i>
-      </button>
-      <button id="btnRight" class="ctrl-btn w-14 h-13 py-3 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-[#00f0ff] text-xl">
-        <i class="fa-solid fa-arrow-right"></i>
-      </button>
-    </div>
   </div>
 
-  <!-- Firebase & Core Engine -->
+  <!-- Swipe Notice -->
+  <div class="text-center text-[10px] text-slate-500 font-semibold tracking-wider shrink-0 mb-1">
+    <i class="fa-solid fa-hand-pointer mr-1"></i> SWIPE SCREEN OR USE D-PAD
+  </div>
+
+  <!-- On-Screen D-Pad Controllers -->
+  <div class="grid grid-cols-3 gap-2 w-full max-w-[240px] mx-auto shrink-0 mb-2">
+    <div></div>
+    <button id="btnUp" class="ctrl-btn h-12 rounded-2xl flex items-center justify-center text-cyan-400 text-lg shadow">
+      <i class="fa-solid fa-arrow-up"></i>
+    </button>
+    <div></div>
+
+    <button id="btnLeft" class="ctrl-btn h-12 rounded-2xl flex items-center justify-center text-cyan-400 text-lg shadow">
+      <i class="fa-solid fa-arrow-left"></i>
+    </button>
+    <button id="btnDown" class="ctrl-btn h-12 rounded-2xl flex items-center justify-center text-cyan-400 text-lg shadow">
+      <i class="fa-solid fa-arrow-down"></i>
+    </button>
+    <button id="btnRight" class="ctrl-btn h-12 rounded-2xl flex items-center justify-center text-cyan-400 text-lg shadow">
+      <i class="fa-solid fa-arrow-right"></i>
+    </button>
+  </div>
+
+  <!-- Firebase & Core Game Script with Sky Blue Glowing Snake Theme -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
@@ -130,7 +128,7 @@
     const db = getDatabase(app);
 
     const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d', { alpha: false }); // High performance canvas context
+    const ctx = canvas.getContext('2d', { alpha: false });
     const scoreText = document.getElementById('scoreText');
     const highScoreText = document.getElementById('highScoreText');
     const finalScoreText = document.getElementById('finalScoreText');
@@ -142,11 +140,11 @@
     const tileCount = 20;
 
     let score = 0;
-    let highScore = 0;
+    let highScore = parseInt(localStorage.getItem('cyber_snake_hi') || '0', 10);
+    highScoreText.textContent = `BEST: ${highScore}`;
+
     let currentUser = null;
     let animPulse = 0;
-
-    // Eat Effect Particles & Waves
     let eatParticles = [];
     let eatWaves = [];
 
@@ -161,32 +159,40 @@
     let speed = 110;
     let isGameOver = false;
 
-    // Firebase Auth
+    // Firebase Cloud Score Sync
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         currentUser = user;
         const name = user.displayName || user.email.split('@')[0];
         userStatus.innerHTML = `Player: <span class="text-cyan-300 font-bold">${name}</span> (Cloud Synced ☁️)`;
+        
         try {
           const dbRef = ref(db);
           const snapshot = await get(child(dbRef, `scores/${user.uid}/snake_high`));
+          
           if (snapshot.exists()) {
-            highScore = snapshot.val();
-            highScoreText.textContent = `BEST: ${highScore}`;
+            const cloudScore = parseInt(snapshot.val(), 10) || 0;
+            if (cloudScore > highScore) {
+              highScore = cloudScore;
+              localStorage.setItem('cyber_snake_hi', highScore.toString());
+            } else if (highScore > cloudScore) {
+              set(ref(db, `scores/${user.uid}/snake_high`), highScore);
+            }
+          } else if (highScore > 0) {
+            set(ref(db, `scores/${user.uid}/snake_high`), highScore);
           }
+          highScoreText.textContent = `BEST: ${highScore}`;
         } catch (err) {
           console.error("Score fetch error:", err);
         }
       } else {
         currentUser = null;
         userStatus.innerHTML = `<a href="../login.html" class="text-amber-300 underline font-bold">Login to save cloud score</a>`;
-        highScore = parseInt(localStorage.getItem('cyber_snake_hi') || '0', 10);
-        highScoreText.textContent = `BEST: ${highScore}`;
       }
     });
 
     function syncScoreToFirebase(newScore) {
-      if (currentUser) {
+      if (currentUser && newScore > 0) {
         set(ref(db, `scores/${currentUser.uid}/snake_high`), newScore);
       }
     }
@@ -221,11 +227,8 @@
     function triggerEatGlowEffect(x, y) {
       const cx = x * gridSize + gridSize / 2;
       const cy = y * gridSize + gridSize / 2;
+      eatWaves.push({ x: cx, y: cy, radius: 2, alpha: 1.0 });
 
-      // Ripple shockwave
-      eatWaves.push({ x: cx, y: cy, radius: 2, maxRadius: 28, alpha: 1.0 });
-
-      // Lightweight sparkling particles
       for (let i = 0; i < 8; i++) {
         const angle = (Math.PI * 2 * i) / 8;
         const vel = 1.5 + Math.random() * 2;
@@ -235,7 +238,7 @@
           vx: Math.cos(angle) * vel,
           vy: Math.sin(angle) * vel,
           alpha: 1.0,
-          color: i % 2 === 0 ? '#ff007b' : '#00f0ff'
+          color: i % 2 === 0 ? '#38bdf8' : '#7dd3fc'
         });
       }
     }
@@ -254,6 +257,7 @@
       eatParticles = [];
       eatWaves = [];
       scoreText.textContent = `SCORE: 0`;
+      highScoreText.textContent = `BEST: ${highScore}`;
       gameOverOverlay.classList.add('hidden');
       generateFood();
     }
@@ -264,7 +268,6 @@
       gameOverOverlay.classList.remove('hidden');
     }
 
-    // Logic step
     let lastStepTime = 0;
     function updateGameLogic(time) {
       if (isGameOver) return;
@@ -275,13 +278,11 @@
         dir = nextDir;
         const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
 
-        // Wall Collision
         if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
           triggerGameOver();
           return;
         }
 
-        // Self Collision
         if (snake.some(seg => seg.x === head.x && seg.y === head.y)) {
           triggerGameOver();
           return;
@@ -289,12 +290,10 @@
 
         snake.unshift(head);
 
-        // Check Food
         if (head.x === food.x && head.y === food.y) {
           score += 10;
           scoreText.textContent = `SCORE: ${score}`;
 
-          // Trigger smooth eat animation
           triggerEatGlowEffect(food.x, food.y);
 
           if (score > highScore) {
@@ -311,15 +310,13 @@
       }
     }
 
-    // Ultra Smooth 60 FPS Render Pipeline
     function render() {
       animPulse += 0.08;
 
-      // Dark Background
       ctx.fillStyle = '#070a13';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Lightweight Grid
+      // Grid Lines
       ctx.strokeStyle = '#0e1626';
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -330,7 +327,7 @@
       }
       ctx.stroke();
 
-      // Render Expanding Eat Shockwaves
+      // Eat Wave animations
       for (let i = eatWaves.length - 1; i >= 0; i--) {
         const wave = eatWaves[i];
         wave.radius += 2.2;
@@ -339,14 +336,14 @@
           eatWaves.splice(i, 1);
           continue;
         }
-        ctx.strokeStyle = `rgba(0, 240, 255, ${wave.alpha})`;
+        ctx.strokeStyle = `rgba(56, 189, 248, ${wave.alpha})`;
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.arc(wave.x, wave.y, wave.radius, 0, Math.PI * 2);
         ctx.stroke();
       }
 
-      // Render Spark Particles on Eat
+      // Eat Particle animations
       for (let i = eatParticles.length - 1; i >= 0; i--) {
         const p = eatParticles[i];
         p.x += p.vx;
@@ -364,60 +361,54 @@
       }
       ctx.globalAlpha = 1.0;
 
-      // 🌟 Food (Pulsing Multi-Layer Glow)
+      // Food Rendering (Pinkish Glowing Orb)
       const foodX = food.x * gridSize + gridSize / 2;
       const foodY = food.y * gridSize + gridSize / 2;
       const pulseSize = Math.sin(animPulse) * 1.5;
 
-      // Outer Halo
       ctx.fillStyle = 'rgba(255, 0, 123, 0.25)';
       ctx.beginPath();
       ctx.arc(foodX, foodY, 9 + pulseSize, 0, Math.PI * 2);
       ctx.fill();
 
-      // Core Food Body
       ctx.fillStyle = '#ff007b';
       ctx.beginPath();
       ctx.arc(foodX, foodY, 5.5, 0, Math.PI * 2);
       ctx.fill();
 
-      // Center Bright Dot
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
       ctx.arc(foodX, foodY, 2, 0, Math.PI * 2);
       ctx.fill();
 
-      // 🌟 Glowing Snake (Fast Multi-Layer Rendering)
+      // Snake Rendering (Light Sky Blue with Glowing Effects)
       for (let i = snake.length - 1; i >= 0; i--) {
         const seg = snake[i];
         const px = seg.x * gridSize;
         const py = seg.y * gridSize;
 
         if (i === 0) {
-          // Snake Head Outer Aura
-          ctx.fillStyle = 'rgba(0, 240, 255, 0.28)';
+          // Snake Head (Bright Light Sky Blue with Outer Aura)
+          ctx.fillStyle = 'rgba(56, 189, 248, 0.35)';
           ctx.fillRect(px - 2, py - 2, gridSize + 4, gridSize + 4);
 
-          // Head Body
-          ctx.fillStyle = '#00f0ff';
+          ctx.fillStyle = '#38bdf8';
           ctx.fillRect(px + 1, py + 1, gridSize - 2, gridSize - 2);
 
-          // Head Center White Core
           ctx.fillStyle = '#ffffff';
           ctx.fillRect(px + 4, py + 4, gridSize - 8, gridSize - 8);
         } else {
-          // Body Segments
+          // Snake Body (Sky Blue gradient shades with soft glow)
           const isEven = i % 2 === 0;
-          ctx.fillStyle = isEven ? 'rgba(0, 240, 255, 0.12)' : 'rgba(168, 85, 247, 0.12)';
+          ctx.fillStyle = isEven ? 'rgba(56, 189, 248, 0.15)' : 'rgba(125, 211, 252, 0.15)';
           ctx.fillRect(px - 1, py - 1, gridSize + 2, gridSize + 2);
 
-          ctx.fillStyle = isEven ? '#38bdf8' : '#c084fc';
+          ctx.fillStyle = isEven ? '#38bdf8' : '#7dd3fc';
           ctx.fillRect(px + 1.5, py + 1.5, gridSize - 3, gridSize - 3);
         }
       }
     }
 
-    // Main 60 FPS Engine Loop (requestAnimationFrame)
     function gameLoop(timestamp) {
       updateGameLogic(timestamp);
       render();
@@ -425,7 +416,7 @@
     }
     requestAnimationFrame(gameLoop);
 
-    // 🤌 ZERO-LAG FINGER SWIPE CONTROLS
+    // Touch Swipe Controls
     let touchStartX = 0;
     let touchStartY = 0;
     const minSwipeDist = 20;
@@ -464,7 +455,7 @@
       else if (['ArrowRight', 'KeyD'].includes(e.code)) { changeDirection(1, 0); triggerButtonGlow('btnRight'); }
     });
 
-    // Zero-Delay Touch on Controller Buttons
+    // Touch Buttons D-Pad
     const bindBtn = (id, dx, dy) => {
       const el = document.getElementById(id);
       const action = (e) => {
