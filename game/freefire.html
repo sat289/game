@@ -1,280 +1,223 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="te">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Battle Arena 3D</title>
-<style>
-  *{box-sizing:border-box} html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101820;color:#fff;font-family:system-ui,Arial,sans-serif}
-  #game{position:fixed;inset:0} canvas{display:block}
-  .panel{background:rgba(8,16,24,.78);border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:10px 12px;backdrop-filter:blur(5px)}
-  #hud{position:fixed;top:10px;left:10px;right:10px;display:flex;gap:8px;align-items:flex-start;justify-content:space-between;pointer-events:none}
-  #hud>*{pointer-events:auto} .small{font-size:12px;color:#c9d6e2} .big{font-size:18px;font-weight:800}
-  #healthOuter{height:8px;background:#3a444c;border-radius:8px;overflow:hidden;width:140px;margin-top:4px}#health{height:100%;width:100%;background:#3ce27b}
-  #menu{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(3,12,20,.88),rgba(10,30,42,.62));z-index:5;padding:18px}
-  #menuCard{width:min(460px,100%);max-height:92vh;overflow:auto}
-  h1{margin:0 0 4px;font-size:clamp(28px,7vw,42px);letter-spacing:1px} .accent{color:#ffca3a}
-  p{color:#d0dae2;line-height:1.45;margin:7px 0 14px}
-  label{display:block;font-size:13px;color:#cbd5df;margin:12px 0 5px}
-  select,button{font:inherit;border:0;border-radius:9px;padding:11px 12px}
-  select{width:100%;background:#1b2b37;color:white;border:1px solid #41515d}
-  button{font-weight:800;cursor:pointer;color:#111;background:#ffca3a}
-  button.secondary{background:#253744;color:#fff;border:1px solid #52616b}
-  #start{width:100%;margin-top:16px;font-size:17px;padding:13px}
-  #help{font-size:12px;color:#b7c5d0;margin-top:12px}
-  #message{position:fixed;top:24%;left:50%;transform:translateX(-50%);font-size:24px;font-weight:900;text-shadow:0 2px 5px #000;pointer-events:none;text-align:center}
-  #crosshair{position:fixed;left:50%;top:50%;width:18px;height:18px;transform:translate(-50%,-50%);pointer-events:none}
-  #crosshair:before,#crosshair:after{content:"";position:absolute;background:#fff;box-shadow:0 0 3px #000}
-  #crosshair:before{width:2px;height:18px;left:8px}#crosshair:after{height:2px;width:18px;top:8px}
-  #bottom{position:fixed;bottom:12px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:end;gap:8px;pointer-events:none}
-  #bottom>*{pointer-events:auto}
-  #weaponInfo{min-width:130px} #weaponName{font-weight:900;font-size:16px}
-  #buttons{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
-  .gameBtn{padding:10px 12px;background:rgba(12,24,34,.85);color:white;border:1px solid #71818d}
-  #mobileControls{display:none;position:fixed;inset:auto 0 85px 0;pointer-events:none}
-  #stickArea{position:absolute;left:18px;bottom:0;width:120px;height:120px;border-radius:50%;background:#ffffff1c;border:2px solid #ffffff55;pointer-events:auto;touch-action:none}
-  #stick{position:absolute;left:35px;top:35px;width:46px;height:46px;border-radius:50%;background:#ffffff88}
-  #shootTouch{position:absolute;right:20px;bottom:10px;width:76px;height:76px;border-radius:50%;background:#e84d4dcc;color:#fff;border:2px solid #ffffffaa;pointer-events:auto}
-  #jumpTouch{position:absolute;right:105px;bottom:0;width:58px;height:58px;border-radius:50%;background:#ffffff33;color:#fff;border:1px solid #ffffff88;pointer-events:auto}
-  #toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#081018dd;padding:8px 12px;border-radius:8px;display:none;font-size:13px}
-  @media (pointer:coarse){#mobileControls{display:block}#bottom{bottom:8px}#buttons .desktopOnly{display:none}}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ఫ్రీ ఫైర్ - 3D 360° డెమో గేమ్</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #0b0b0b;
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #game-container {
+            position: relative;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+            border: 2px solid #00ffcc;
+        }
+        canvas {
+            background: linear-gradient(to bottom, #111, #222);
+            display: block;
+        }
+        .ui-panel {
+            margin-top: 10px;
+            display: flex;
+            gap: 25px;
+            background: #1f1f1f;
+            padding: 10px 25px;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .ui-panel div {
+            font-size: 15px;
+        }
+    </style>
 </head>
 <body>
-<div id="game"></div>
-<div id="hud">
-  <div class="panel"><div class="small">HEALTH</div><div class="big"><span id="hpText">100</span> / 100</div><div id="healthOuter"><div id="health"></div></div><div class="small" style="margin-top:5px">Armor: <span id="armor">25</span></div></div>
-  <div class="panel" style="text-align:center"><div class="small" id="modeLabel">SURVIVAL</div><div class="big">Kills: <span id="kills">0</span></div><div class="small">Enemies: <span id="enemyCount">0</span></div></div>
-  <div class="panel" style="text-align:right"><div class="small">MATCH</div><div class="big" id="timer">00:00</div><div class="small">WASD / arrows move</div></div>
-</div>
-<div id="crosshair"></div><div id="message"></div>
-<div id="bottom">
-  <div class="panel" id="weaponInfo"><div class="small">EQUIPPED WEAPON</div><div id="weaponName">Assault Rifle</div><div><b id="ammo">30</b> <span class="small">rounds</span></div></div>
-  <div id="buttons">
-    <button class="gameBtn" id="reload">Reload R</button>
-    <button class="gameBtn" id="switch">Switch Gun Q</button>
-    <button class="gameBtn" id="jump">Jump Space</button>
-    <button class="gameBtn desktopOnly" id="pause">Menu</button>
-  </div>
-</div>
-<div id="mobileControls"><div id="stickArea"><div id="stick"></div></div><button id="shootTouch">FIRE</button><button id="jumpTouch">JUMP</button></div>
-<div id="toast"></div>
-<div id="menu"><div class="panel" id="menuCard">
-  <div class="small">3D OFFLINE BATTLE ARENA</div><h1>BATTLE <span class="accent">ARENA</span></h1>
-  <p>Drop into the arena, collect weapons, and survive enemy waves. This is an original browser demo inspired by battle-royale shooters.</p>
-  <label for="mode">GAME MODE</label><select id="mode">
-    <option value="survival">Battle Royale — Survival</option>
-    <option value="team">Team Battle — AI allies vs enemies</option>
-    <option value="zombie">Zombie Rush — endless waves</option>
-    <option value="deathmatch">Deathmatch — fast respawns</option>
-  </select>
-  <label for="difficulty">DIFFICULTY</label><select id="difficulty"><option value="easy">Rookie</option><option value="normal" selected>Soldier</option><option value="hard">Veteran</option></select>
-  <label for="enemyNum">ENEMY COUNT</label><select id="enemyNum"><option value="6">6 enemies</option><option value="10" selected>10 enemies</option><option value="16">16 enemies</option><option value="24">24 enemies (busy)</option></select>
-  <label for="weaponStart">STARTING WEAPON</label><select id="weaponStart"><option value="rifle">Assault Rifle</option><option value="pistol">Pistol</option><option value="shotgun">Shotgun</option><option value="sniper">Sniper Rifle</option></select>
-  <button id="start">START MATCH</button>
-  <div id="help">Desktop: WASD move · mouse aim · click fire · Q switch weapon · R reload · Space jump · Esc menu.<br>Mobile: left joystick to move, drag the view to aim, FIRE to shoot.<br><b>Friends:</b> Team Battle includes AI allies. Real online co-op needs a multiplayer server and is not included in this single file.</div>
-</div></div>
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+    <h2 style="margin: 5px; color: #00ffcc;">ఫ్రీ ఫైర్ - 360° 3D డెమో (స్టెప్ 2)</h2>
+    <div id="game-container">
+        <canvas id="gameCanvas" width="850" height="480"></canvas>
+    </div>
+
+    <div class="ui-panel">
+        <div>కదలికలు: <b>W, A, S, D</b></div>
+        <div>360° ఎయిమ్: <b>మౌస్ మూవ్‌మెంట్</b></div>
+        <div>షూట్: <b>లెఫ్ట్ క్లిక్</b></div>
+        <div>గన్: <span id="gunName" style="color: #ffcc00;">AWM స్నిపర్</span></div>
+    </div>
+
 <script>
-(()=> {
-'use strict';
-const $=id=>document.getElementById(id);
-const game=$('game');
-let scene,camera,renderer,clock,player,ground,started=false,paused=true,gameOver=false;
-let enemies=[],allies=[],bullets=[],pickups=[],obstacles=[],keys={},mouse={x:0,y:0,down:false},yaw=0,pitch=-0.12;
-let hp=100,armor=25,kills=0,elapsed=0,ammo=30,reserve=120,reloadTimer=0,fireCooldown=0,jumpV=0,onGround=true,wave=1;
-let mode='survival',difficulty='normal',enemyTarget=10,weapon='rifle',moveStick={x:0,y:0},lookTouch=null,toastTimer=0;
-const weaponData={
- rifle:{name:'Assault Rifle',mag:30,damage:23,rate:.13,spread:.018,range:85,reserve:120},
- pistol:{name:'Pistol',mag:12,damage:28,rate:.28,spread:.012,range:55,reserve:72},
- shotgun:{name:'Shotgun',mag:6,damage:13,rate:.7,spread:.11,pellets:7,range:23,reserve:48},
- sniper:{name:'Sniper Rifle',mag:5,damage:95,rate:1.0,spread:.002,range:140,reserve:25}
-};
-let currentMag={rifle:30,pistol:12,shotgun:6,sniper:5}, reserves={rifle:120,pistol:72,shotgun:48,sniper:25};
-const mats={};
-function mat(color,roughness=.8){return new THREE.MeshStandardMaterial({color,roughness});}
-function init3D(){
- scene=new THREE.Scene();scene.background=new THREE.Color(0x8ec4df);scene.fog=new THREE.Fog(0x8ec4df,55,145);
- camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,.1,250);
- renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;game.innerHTML='';game.appendChild(renderer.domElement);
- scene.add(new THREE.HemisphereLight(0xd8f1ff,0x566346,2));
- const sun=new THREE.DirectionalLight(0xfff0d2,2.2);sun.position.set(-35,55,20);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);scene.add(sun);
- const floor=new THREE.Mesh(new THREE.PlaneGeometry(220,220),mat(0x6c9b54));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);ground=floor;
- // ground patches and arena boundaries
- for(let i=0;i<90;i++){let x=(Math.random()-.5)*190,z=(Math.random()-.5)*190;let m=new THREE.Mesh(new THREE.CircleGeometry(1+Math.random()*3,8),mat(i%2?0x769f5b:0x628b4b));m.rotation.x=-Math.PI/2;m.position.set(x,.015,z);scene.add(m);}
- buildArena();
- player=new THREE.Group();
- const body=new THREE.Mesh(new THREE.CapsuleGeometry(.42,.75,4,8),mat(0x2f75c7));body.position.y=1.05;body.castShadow=true;player.add(body);
- const head=new THREE.Mesh(new THREE.SphereGeometry(.28,12,10),mat(0xd9a77f));head.position.y=1.72;head.castShadow=true;player.add(head);
- const vest=new THREE.Mesh(new THREE.BoxGeometry(.7,.45,.38),mat(0x243b4a));vest.position.set(0,1.1,-.02);player.add(vest);
- const gun=new THREE.Mesh(new THREE.BoxGeometry(.13,.14,.85),mat(0x20252a));gun.position.set(.38,1.25,-.45);player.add(gun);
- player.position.set(0,0,0);scene.add(player);
- clock=new THREE.Clock();
-}
-function buildArena(){
- const wallMat=mat(0x9caaad),crateMat=mat(0x8b633d),roofMat=mat(0x5e717b);
- // buildings and cover, deliberately leave wide lanes
- const structures=[[-17,-15,8,7,5],[15,-19,10,6,6],[-24,15,7,9,4],[24,16,8,8,5],[0,-31,12,6,5],[-3,27,11,7,4]];
- for(const [x,z,w,d,h] of structures){
-  let b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),wallMat);b.position.set(x,h/2,z);b.castShadow=true;b.receiveShadow=true;scene.add(b);obstacles.push({x,z,w,d,h,mesh:b});
-  let roof=new THREE.Mesh(new THREE.BoxGeometry(w+.3,.35,d+.3),roofMat);roof.position.set(x,h+.15,z);roof.castShadow=true;scene.add(roof);
-  // windows
-  for(let side of [-1,1])for(let j=-1;j<=1;j++){let win=new THREE.Mesh(new THREE.BoxGeometry(.9,.8,.08),mat(0x375a69,.25));win.position.set(x+j*w*.25,h*.62,z+side*(d/2+.045));scene.add(win);}
- }
- for(let i=0;i<36;i++){
-  const x=(Math.random()-.5)*95,z=(Math.random()-.5)*95;
-  if(Math.abs(x)<7&&Math.abs(z)<7)continue;
-  const w=1.1+Math.random()*1.2,h=.8+Math.random()*1.1,d=1+Math.random()*1.2;
-  const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),crateMat);b.position.set(x,h/2,z);b.castShadow=true;b.receiveShadow=true;scene.add(b);obstacles.push({x,z,w,d,h,mesh:b});
- }
- // trees
- for(let i=0;i<45;i++){const x=(Math.random()-.5)*115,z=(Math.random()-.5)*115;if(Math.abs(x)<10&&Math.abs(z)<10)continue;
-  const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.18,.25,1.5,7),mat(0x6d482a));trunk.position.set(x,.75,z);trunk.castShadow=true;scene.add(trunk);
-  const leaves=new THREE.Mesh(new THREE.ConeGeometry(1.1,2.8,7),mat(0x2d7040));leaves.position.set(x,2.5,z);leaves.castShadow=true;scene.add(leaves);
- }
- // distant hills
- for(let i=0;i<18;i++){const hill=new THREE.Mesh(new THREE.SphereGeometry(1,10,7),mat(i%2?0x799b78:0x87a782));hill.scale.set(7+Math.random()*10,3+Math.random()*6,8+Math.random()*12);hill.position.set((Math.random()-.5)*200,-1,(Math.random()-.5)*200);scene.add(hill);}
-}
-function makeCharacter(team='enemy',kind='soldier'){
- const g=new THREE.Group();
- const color=team==='ally'?0x37d7b0:kind==='zombie'?0x75a34c:kind==='boss'?0xc43d39:0xd34a38;
- const body=new THREE.Mesh(new THREE.CapsuleGeometry(.38,.68,3,7),mat(color));body.position.y=.9;body.castShadow=true;g.add(body);
- const head=new THREE.Mesh(new THREE.SphereGeometry(.24,10,8),mat(kind==='zombie'?0x9bc46a:0xc99a75));head.position.y=1.52;head.castShadow=true;g.add(head);
- const pack=new THREE.Mesh(new THREE.BoxGeometry(.42,.48,.2),mat(team==='ally'?0x147e70:0x5b2d2b));pack.position.set(0,.95,.28);g.add(pack);
- const gun=new THREE.Mesh(new THREE.BoxGeometry(.1,.12,.65),mat(0x20252a));gun.position.set(.3,1.0,-.35);g.add(gun);
- const e={group:g,team,kind,hp:kind==='boss'?260:kind==='zombie'?65:100,speed:kind==='zombie'?1.8:(difficulty==='hard'?3.1:difficulty==='easy'?1.5:2.2),attack:0,alive:true,strafe:Math.random()>.5?1:-1};
- g.position.set(0,0,0);scene.add(g);return e;
-}
-function safeSpawn(min=22,max=45){
- for(let i=0;i<50;i++){let a=Math.random()*Math.PI*2,r=min+Math.random()*(max-min),x=Math.cos(a)*r,z=Math.sin(a)*r;
-  if(!obstacles.some(o=>Math.abs(x-o.x)<o.w/2+1.5&&Math.abs(z-o.z)<o.d/2+1.5))return new THREE.Vector3(x,0,z);}
- return new THREE.Vector3(30,0,30);
-}
-function spawnEnemy(kind='soldier'){const e=makeCharacter('enemy',kind);const p=safeSpawn(24,48);e.group.position.copy(p);enemies.push(e);}
-function spawnAlly(){const a=makeCharacter('ally');const p=safeSpawn(5,12);a.group.position.copy(p);allies.push(a);}
-function spawnPickup(type,pos){const c=type==='medkit'?0x48e889:type==='ammo'?0xf2c94c:0x6eb5ff;const m=new THREE.Mesh(new THREE.BoxGeometry(.65,.65,.65),mat(c));m.position.copy(pos);m.position.y=.5;m.rotation.y=.4;scene.add(m);pickups.push({mesh:m,type});}
-function resetGame(){
- if(!scene)init3D();
- for(const e of [...enemies,...allies])scene.remove(e.group);for(const b of bullets)scene.remove(b.mesh);for(const p of pickups)scene.remove(p.mesh);
- enemies=[];allies=[];bullets=[];pickups=[];
- hp=100;armor=25;kills=0;elapsed=0;wave=1;gameOver=false;paused=false;started=true;
- mode=$('mode').value;difficulty=$('difficulty').value;enemyTarget=Number($('enemyNum').value);weapon=$('weaponStart').value;
- for(const k in currentMag)currentMag[k]=weaponData[k].mag;for(const k in reserves)reserves[k]=weaponData[k].reserve;
- player.position.set(0,0,0);yaw=0;pitch=-.12;jumpV=0;onGround=true;
- for(let i=0;i<enemyTarget;i++)spawnEnemy(mode==='zombie'?'zombie':'soldier');
- if(mode==='team'){for(let i=0;i<3;i++)spawnAlly();}
- for(let i=0;i<8;i++){const p=safeSpawn(8,42);spawnPickup(i%3===0?'medkit':i%3===1?'ammo':'armor',p);}
- $('modeLabel').textContent=mode.toUpperCase();$('menu').style.display='none';$('message').textContent='';renderer.domElement.requestPointerLock?.();
- updateHUD();clock.start();
-}
-function showToast(t){$('toast').textContent=t;$('toast').style.display='block';toastTimer=2;}
-function updateHUD(){
- $('hpText').textContent=Math.max(0,Math.ceil(hp));$('health').style.width=Math.max(0,hp)+'%';$('armor').textContent=Math.ceil(armor);
- $('kills').textContent=kills;$('enemyCount').textContent=enemies.filter(e=>e.alive).length;$('weaponName').textContent=weaponData[weapon].name;
- $('ammo').textContent=currentMag[weapon]+(reloadTimer>0?' (reloading)':'');$('timer').textContent=String(Math.floor(elapsed/60)).padStart(2,'0')+':'+String(Math.floor(elapsed%60)).padStart(2,'0');
-}
-function direction(){return new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw));}
-function fire(){
- if(!started||paused||gameOver||reloadTimer>0||fireCooldown>0)return;
- if(currentMag[weapon]<=0){showToast('Magazine empty — press R to reload');return;}
- currentMag[weapon]--;fireCooldown=weaponData[weapon].rate;
- const data=weaponData[weapon],origin=camera.position.clone(),baseDir=new THREE.Vector3(-Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),-Math.cos(yaw)*Math.cos(pitch));
- for(let i=0;i<(data.pellets||1);i++){
-  let dir=baseDir.clone();dir.x+=(Math.random()-.5)*data.spread;dir.y+=(Math.random()-.5)*data.spread;dir.z+=(Math.random()-.5)*data.spread;dir.normalize();
-  const mesh=new THREE.Mesh(new THREE.SphereGeometry(.065,5,4),mat(0xffdf73));mesh.position.copy(origin);scene.add(mesh);
-  const ray=new THREE.Raycaster(origin,dir,0,data.range);
-  const targets=enemies.filter(e=>e.alive).map(e=>e.group.children[0]).concat(obstacles.map(o=>o.mesh));
-  const hits=ray.intersectObjects(targets,true);
-  let end=origin.clone().addScaledVector(dir,data.range);
-  if(hits.length){end.copy(hits[0].point);const hit=hits[0].object;const enemy=enemies.find(e=>e.alive&&e.group.children.some(c=>c===hit||c.children?.includes(hit)));if(enemy)damageEnemy(enemy,data.damage);}
-  bullets.push({mesh,from:origin.clone(),to:end,life:.08});
- }
- updateHUD();
-}
-function damageEnemy(e,damage){
- if(!e.alive)return;e.hp-=damage;
- if(e.hp<=0){e.alive=false;scene.remove(e.group);kills++;if(Math.random()<.42)spawnPickup(Math.random()<.4?'medkit':'ammo',e.group.position.clone());$('message').textContent='';}
-}
-function reload(){if(!started||paused||gameOver||reloadTimer>0)return;const d=weaponData[weapon];if(currentMag[weapon]>=d.mag||reserves[weapon]<=0){showToast('No reload needed');return;}reloadTimer=weapon==='sniper'?1.6:weapon==='shotgun'?1.3:1.1;showToast('Reloading…');}
-function switchWeapon(){const arr=Object.keys(weaponData),i=arr.indexOf(weapon);weapon=arr[(i+1)%arr.length];showToast('Equipped '+weaponData[weapon].name);updateHUD();}
-function hurt(amount){if(gameOver)return;let rest=amount;if(armor>0){const blocked=Math.min(armor,rest*.55);armor-=blocked;rest-=blocked;}hp-=rest;if(hp<=0){hp=0;if(mode==='deathmatch'){hp=100;armor=25;player.position.set(0,0,0);showToast('Respawned!');}else{gameOver=true;paused=true;$('message').textContent='YOU WERE ELIMINATED';setTimeout(()=>{$('menu').style.display='flex';$('start').textContent='PLAY AGAIN';},1200);}}}
-function enemyAI(e,dt){
- if(!e.alive)return;
- const ep=e.group.position,pp=player.position,dist=ep.distanceTo(pp);
- let target=pp;
- if(e.team==='ally'){let nearest=null,nd=1e9;for(const en of enemies){if(!en.alive)continue;let d=en.group.position.distanceTo(ep);if(d<nd){nd=d;nearest=en;}}if(!nearest){target=pp.clone().add(new THREE.Vector3(Math.sin(elapsed)*4,0,Math.cos(elapsed)*4));}else target=nearest.group.position;}
- const dx=target.x-ep.x,dz=target.z-ep.z,d=Math.hypot(dx,dz);
- if(e.team==='enemy'&&dist<2.1){e.attack-=dt;if(e.attack<=0){hurt(mode==='zombie'?12: difficulty==='hard'?13:8);e.attack=mode==='zombie'?.9:1.15;}}
- else if(e.team==='enemy'&&dist<20){e.attack-=dt;if(e.attack<=0){e.attack=difficulty==='hard'?.75:1.25;const accuracy=difficulty==='hard'?.7:difficulty==='easy'?.25:.45;if(Math.random()<accuracy)hurt(mode==='zombie'?4:7);}}
- if(d>3.8||(e.team==='ally'&&d>7)){
-  const speed=e.speed*(e.team==='ally'?1.0:1);ep.x+=(dx/d)*speed*dt;ep.z+=(dz/d)*speed*dt;
-  if(e.team==='enemy'&&dist<13){ep.x+=(-dz/d)*e.strafe*.45*dt;ep.z+=(dx/d)*e.strafe*.45*dt;}
- }
- e.group.rotation.y=Math.atan2(dx,dz);
- // simple obstacle avoidance
- for(const o of obstacles){if(Math.abs(ep.x-o.x)<o.w/2+.55&&Math.abs(ep.z-o.z)<o.d/2+.55){if(Math.abs(ep.x-o.x)>Math.abs(ep.z-o.z))ep.x+=(ep.x>o.x?1:-1)*dt*2;else ep.z+=(ep.z>o.z?1:-1)*dt*2;}}
- if(e.team==='ally'&&target!==pp&&d<18&&Math.random()<dt*.6){damageEnemy(enemies.find(en=>en.alive&&en.group.position.distanceTo(target)<.1)||enemies.filter(en=>en.alive).sort((a,b)=>a.group.position.distanceTo(ep)-b.group.position.distanceTo(ep))[0],8);}
-}
-function updatePlayer(dt){
- let forward=0,side=0;
- if(keys.KeyW||keys.ArrowUp)forward++;if(keys.KeyS||keys.ArrowDown)forward--;if(keys.KeyA||keys.ArrowLeft)side--;if(keys.KeyD||keys.ArrowRight)side++;
- forward+=-moveStick.y;side+=moveStick.x;
- let len=Math.hypot(forward,side);if(len>1){forward/=len;side/=len;}
- const speed=7.2,fx=-Math.sin(yaw),fz=-Math.cos(yaw),rx=Math.cos(yaw),rz=-Math.sin(yaw);
- player.position.x+=(fx*forward+rx*side)*speed*dt;player.position.z+=(fz*forward+rz*side)*speed*dt;
- player.position.x=THREE.MathUtils.clamp(player.position.x,-95,95);player.position.z=THREE.MathUtils.clamp(player.position.z,-95,95);
- if(!onGround){jumpV-=18*dt;player.position.y+=jumpV*dt;if(player.position.y<=0){player.position.y=0;jumpV=0;onGround=true;}}
- // player collision with cover
- for(const o of obstacles){if(Math.abs(player.position.x-o.x)<o.w/2+.5&&Math.abs(player.position.z-o.z)<o.d/2+.5){const dx=player.position.x-o.x,dz=player.position.z-o.z;if(Math.abs(dx/o.w)>Math.abs(dz/o.d))player.position.x=o.x+Math.sign(dx||1)*(o.w/2+.55);else player.position.z=o.z+Math.sign(dz||1)*(o.d/2+.55);}}
- player.rotation.y=yaw;
- camera.position.set(player.position.x+Math.sin(yaw)*4.8,player.position.y+2.65,player.position.z+Math.cos(yaw)*4.8);
- camera.lookAt(player.position.x-Math.sin(yaw)*7,player.position.y+1.25+Math.sin(pitch)*5,player.position.z-Math.cos(yaw)*7);
-}
-function updatePickups(dt){
- for(let i=pickups.length-1;i>=0;i--){const p=pickups[i];p.mesh.rotation.y+=dt*1.4;p.mesh.position.y=.5+Math.sin(elapsed*2+i)*.1;if(p.mesh.position.distanceTo(new THREE.Vector3(player.position.x,.5,player.position.z))<1.5){
-  if(p.type==='medkit'){hp=Math.min(100,hp+35);showToast('Medkit: +35 health');}
-  if(p.type==='ammo'){for(const k in reserves)reserves[k]+=Math.ceil(weaponData[k].mag*.7);showToast('Ammo collected');}
-  if(p.type==='armor'){armor=Math.min(100,armor+35);showToast('Armor collected');}
-  scene.remove(p.mesh);pickups.splice(i,1);
- }}
-}
-function tick(){
- requestAnimationFrame(tick);if(!renderer||!scene)return;
- const dt=Math.min(clock.getDelta(),.04);
- if(started&&!paused&&!gameOver){
-  elapsed+=dt;fireCooldown=Math.max(0,fireCooldown-dt);
-  if(reloadTimer>0){reloadTimer-=dt;if(reloadTimer<=0){const d=weaponData[weapon],need=d.mag-currentMag[weapon],take=Math.min(need,reserves[weapon]);currentMag[weapon]+=take;reserves[weapon]-=take;showToast('Reload complete');}}
-  if(mouse.down)fire();
-  updatePlayer(dt);
-  enemies.forEach(e=>enemyAI(e,dt));allies.forEach(a=>enemyAI(a,dt));updatePickups(dt);
-  if(mode==='zombie'&&enemies.filter(e=>e.alive).length<3){wave++;for(let i=0;i<4+Math.min(wave,8);i++)spawnEnemy(wave%4===0&&i===0?'boss':'zombie');showToast('WAVE '+wave+' INCOMING!');}
-  if(mode==='survival'&&enemies.every(e=>!e.alive)){gameOver=true;paused=true;$('message').textContent='VICTORY!';setTimeout(()=>{$('menu').style.display='flex';$('start').textContent='PLAY AGAIN';},1000);}
-  for(let i=bullets.length-1;i>=0;i--){bullets[i].life-=dt;if(bullets[i].life<=0){scene.remove(bullets[i].mesh);bullets.splice(i,1);}}
-  if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)$('toast').style.display='none';}
-  updateHUD();
- }
- renderer.render(scene,camera);
-}
-function jump(){if(started&&!paused&&onGround){jumpV=7.2;onGround=false;}}
-$('start').addEventListener('click',()=>{if(!window.THREE){alert('3D library could not load. Connect to the internet and reload.');return;}resetGame();});
-$('reload').onclick=reload;$('switch').onclick=switchWeapon;$('jump').onclick=jump;$('jumpTouch').onclick=jump;
-$('pause').onclick=()=>{paused=true;$('menu').style.display='flex';$('start').textContent='RESUME / RESTART';document.exitPointerLock?.();};
-document.addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='KeyR')reload();if(e.code==='KeyQ')switchWeapon();if(e.code==='Space'){e.preventDefault();jump();}if(e.code==='Escape'&&started){paused=true;$('menu').style.display='flex';$('start').textContent='RESUME / RESTART';}});
-document.addEventListener('keyup',e=>keys[e.code]=false);
-document.addEventListener('mousemove',e=>{if(document.pointerLockElement===renderer?.domElement&&started&&!paused){yaw-=e.movementX*.0024;pitch=THREE.MathUtils.clamp(pitch-e.movementY*.0018,-.65,.45);}});
-document.addEventListener('mousedown',e=>{if(e.button===0&&started&&!paused){if(document.pointerLockElement!==renderer.domElement)renderer.domElement.requestPointerLock?.();mouse.down=true;fire();}});
-document.addEventListener('mouseup',e=>{if(e.button===0)mouse.down=false;});
-rendererlessResize();
-function rendererlessResize(){addEventListener('resize',()=>{if(camera&&renderer){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);}});}
-const stickArea=$('stickArea'),stick=$('stick');
-stickArea.addEventListener('pointerdown',e=>{stickArea.setPointerCapture(e.pointerId);moveStick.startX=e.clientX;moveStick.startY=e.clientY;moveStick.pointer=e.pointerId;});
-stickArea.addEventListener('pointermove',e=>{if(moveStick.pointer!==e.pointerId)return;let dx=e.clientX-moveStick.startX,dy=e.clientY-moveStick.startY,len=Math.hypot(dx,dy),m=Math.min(40,len);if(len){dx=dx/len*m;dy=dy/len*m;}stick.style.transform=`translate(${dx}px,${dy}px)`;moveStick.x=dx/40;moveStick.y=dy/40;});
-function endStick(e){if(moveStick.pointer===e.pointerId){moveStick.pointer=null;moveStick.x=0;moveStick.y=0;stick.style.transform='translate(0,0)';}}
-stickArea.addEventListener('pointerup',endStick);stickArea.addEventListener('pointercancel',endStick);
-$('shootTouch').addEventListener('pointerdown',e=>{e.preventDefault();mouse.down=true;fire();});$('shootTouch').addEventListener('pointerup',()=>mouse.down=false);$('shootTouch').addEventListener('pointercancel',()=>mouse.down=false);
-rendererlessResize();
-init3D();tick();
-})();
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const gunNameDisplay = document.getElementById("gunName");
+
+    // ప్లేయర్ పొజిషన్ మరియు యాంగిల్ (360 డిగ్రీల రొటేషన్ కోసం)
+    let player = {
+        x: 425,
+        y: 240,
+        speed: 3.5,
+        angle: 0
+    };
+
+    let guns = ["AWM స్నిపర్", "AK47", "SCAR", "AUG", "M4A1"];
+    let currentGun = 0;
+
+    let bullets = [];
+    let enemies = [
+        { x: 200, y: 100, radius: 18, color: "#ff3333", alive: true },
+        { x: 700, y: 120, radius: 18, color: "#ff3333", alive: true },
+        { x: 600, y: 380, radius: 18, color: "#ff3333", alive: true },
+        { x: 150, y: 400, radius: 18, color: "#ff3333", alive: true }
+    ];
+
+    let keys = {};
+
+    window.addEventListener("keydown", (e) => {
+        keys[e.key.toLowerCase()] = true;
+        if(e.key.toLowerCase() === 'q') {
+            currentGun = (currentGun + 1) % guns.length;
+            gunNameDisplay.innerText = guns[currentGun];
+        }
+    });
+
+    window.addEventListener("keyup", (e) => {
+        keys[e.key.toLowerCase()] = false;
+    });
+
+    // మౌస్ ద్వారా 360 డిగ్రీల రొటేషన్ ఎయిమింగ్
+    canvas.addEventListener("mousemove", (e) => {
+        let rect = canvas.getBoundingClientRect();
+        let mouseX = e.clientX - rect.left;
+        let mouseY = e.clientY - rect.top;
+        player.angle = Math.atan2(mouseY - player.y, mouseX - player.x);
+    });
+
+    // షూటింగ్
+    canvas.addEventListener("mousedown", () => {
+        bullets.push({
+            x: player.x,
+            y: player.y,
+            dx: Math.cos(player.angle) * 10,
+            dy: Math.sin(player.angle) * 10,
+            radius: 5
+        });
+    });
+
+    function update() {
+        // W, A, S, D కదలికలు
+        if (keys['w'] && player.y > 20) player.y -= player.speed;
+        if (keys['s'] && player.y < canvas.height - 20) player.y += player.speed;
+        if (keys['a'] && player.x > 20) player.x -= player.speed;
+        if (keys['d'] && player.x < canvas.width - 20) player.x += player.speed;
+
+        // బుల్లెట్ల అప్‌డేట్
+        for (let i = bullets.length - 1; i >= 0; i--) {
+            bullets[i].x += bullets[i].dx;
+            bullets[i].y += bullets[i].dy;
+
+            if (bullets[i].x < 0 || bullets[i].x > canvas.width || bullets[i].y < 0 || bullets[i].y > canvas.height) {
+                bullets.splice(i, 1);
+                continue;
+            }
+
+            // శత్రువులకు తగిలితే చెక్ చేయి
+            for (let j = 0; j < enemies.length; j++) {
+                let en = enemies[j];
+                if (en.alive) {
+                    let dist = Math.hypot(bullets[i].x - en.x, bullets[i].y - en.y);
+                    if (dist < en.radius + bullets[i].radius) {
+                        en.alive = false;
+                        bullets.splice(i, 1);
+                        setTimeout(() => { en.alive = true; }, 3000); // 3 సెకన్ల తర్వాత రిసెంట్
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 3D ఎఫెక్ట్ కోసం బ్యాక్‌గ్రౌండ్ గ్రిడ్ లైన్స్
+        ctx.strokeStyle = "rgba(0, 255, 204, 0.07)";
+        ctx.lineWidth = 1;
+        for (let i = 0; i < canvas.width; i += 50) {
+            ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke();
+        }
+
+        // శత్రువులు (Enemies) - 3D షాడో ఎఫెక్ట్‌తో
+        enemies.forEach(en => {
+            if (en.alive) {
+                // షాడో
+                ctx.fillStyle = "rgba(0,0,0,0.5)";
+                ctx.beginPath();
+                ctx.arc(en.x + 3, en.y + 5, en.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // శత్రువు బాడీ
+                ctx.fillStyle = en.color;
+                ctx.beginPath();
+                ctx.arc(en.x, en.y, en.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = "#fff";
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+        });
+
+        // బుల్లెట్లు
+        ctx.fillStyle = "#ffcc00";
+        bullets.forEach(b => {
+            ctx.beginPath();
+            ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        // ప్లేయర్ (360 డిగ్రీల రొటేషన్ గన్ క్యారెక్టర్)
+        ctx.save();
+        ctx.translate(player.x, player.y);
+        ctx.rotate(player.angle);
+
+        // ప్లేయర్ షాడో
+        ctx.fillStyle = "rgba(0,0,0,0.4)";
+        ctx.beginPath();
+        ctx.arc(3, 5, 14, 0, Math.PI * 2);
+        ctx.fill();
+
+        // ప్లేయర్ హెల్మెట్/బాడీ (3D లుక్)
+        ctx.fillStyle = "#00aaff";
+        ctx.beginPath();
+        ctx.arc(0, 0, 14, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // గన్ బ్యారెల్ (మౌస్ ఎటు ఉంటే అటు 360 తిరుగుతుంది)
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, -4, 22, 8);
+
+        ctx.restore();
+    }
+
+    function loop() {
+        update();
+        draw();
+        requestAnimationFrame(loop);
+    }
+
+    loop();
 </script>
+
 </body>
 </html>
