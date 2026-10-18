@@ -411,7 +411,7 @@ window.loadSelectedHumanAvatar = function () {
   boardRim.material.color.setHex(skin.rimColor);
 };
 
-// ================= 5. REALISTIC 3D TRAINS (STEAM GLB + EXPRESS SKINS) =================
+// ================= 5. REALISTIC 3D TRAINS =================
 const TRAIN_MODEL_CATALOG = [
   {
     id: "steam_train",
@@ -1000,6 +1000,14 @@ function resetGameWorld() {
   nextSpawnZ = -40;
 }
 
+function forceStartGame() {
+  if (gameState === "IDLE_INTRO") {
+    ensureAudio();
+    startNewRun();
+  }
+}
+window.forceStartGame = forceStartGame;
+
 function startNewRun() {
   ensureAudio();
   resetGameWorld();
@@ -1109,16 +1117,6 @@ canvas.addEventListener("pointerup", e => {
     else roll();
   }
 });
-
-const tapTrigger = document.getElementById("tapToPlayTrigger");
-if (tapTrigger) {
-  tapTrigger.addEventListener("click", () => {
-    if (gameState === "IDLE_INTRO") {
-      ensureAudio();
-      startNewRun();
-    }
-  });
-}
 
 // ================= 9. UI & STORE BINDINGS =================
 window.updateMenuUI = function () {
