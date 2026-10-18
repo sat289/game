@@ -1,29 +1,8 @@
-// ================= 1. REAL 3D GLB HUMAN AVATARS & BOARDS CONFIG =================
+// ================= 1. AVATARS & TRAINS (TRAIN1 TO TRAIN5) =================
 const AVATAR_CATALOG = [
-  {
-    id: "michelle",
-    name: "Street Dancer (3D)",
-    price: 0,
-    glbUrl: "https://threejs.org/examples/models/gltf/Michelle.glb",
-    scale: 1.35,
-    rotY: Math.PI
-  },
-  {
-    id: "soldier",
-    name: "Metro Commando (3D)",
-    price: 500,
-    glbUrl: "https://threejs.org/examples/models/gltf/Soldier.glb",
-    scale: 1.35,
-    rotY: 0
-  },
-  {
-    id: "xbot",
-    name: "Cyber Runner (3D)",
-    price: 1000,
-    glbUrl: "https://threejs.org/examples/models/gltf/Xbot.glb",
-    scale: 1.35,
-    rotY: Math.PI
-  }
+  { id: "michelle", name: "Street Dancer (3D)", price: 0, glbUrl: "https://threejs.org/examples/models/gltf/Michelle.glb", scale: 1.35, rotY: Math.PI },
+  { id: "soldier", name: "Metro Commando (3D)", price: 500, glbUrl: "https://threejs.org/examples/models/gltf/Soldier.glb", scale: 1.35, rotY: 0 },
+  { id: "xbot", name: "Cyber Runner (3D)", price: 1000, glbUrl: "https://threejs.org/examples/models/gltf/Xbot.glb", scale: 1.35, rotY: Math.PI }
 ];
 
 const POLICE_GLB_URL = "https://threejs.org/examples/models/gltf/Soldier.glb";
@@ -32,6 +11,15 @@ const BOARD_SKIN_CATALOG = [
   { id: "flame", name: "Flame Cruiser", price: 0, deckColor: 0xff3300, rimColor: 0xffd700 },
   { id: "bouncer", name: "Neon Cyberdeck", price: 400, deckColor: 0x00ffcc, rimColor: 0xff00aa },
   { id: "stealth", name: "Carbon Stealth", price: 900, deckColor: 0x1c1c1c, rimColor: 0x00ff66 }
+];
+
+const TRAIN_MODEL_CATALOG = [
+  { id: "train1", name: "Animated Steam Train", glbUrl: "models/train1.glb", scale: 1.2, isGlb: true },
+  { id: "train2", name: "Express Bullet", glbUrl: "models/train2.glb", scale: 1.2, isGlb: true },
+  { id: "train3", name: "Metro Commuter", glbUrl: "models/train3.glb", scale: 1.2, isGlb: true },
+  { id: "train4", name: "Freight Hauler", glbUrl: "models/train4.glb", scale: 1.2, isGlb: true },
+  { id: "train5", name: "Alpine Express", glbUrl: "models/train5.glb", scale: 1.2, isGlb: true },
+  { id: "procedural_express", name: "High-Speed Express", isGlb: false, skinType: "high_speed_express" }
 ];
 
 const savedProfile = JSON.parse(localStorage.getItem("carracing_profile") || "null");
@@ -44,24 +32,43 @@ window.playerProfile = Object.assign(
     unlockedBoardSkins: ["flame"],
     selectedAvatar: "michelle",
     selectedBoard: "flame",
+    displayName: "",
+    age: "",
+    lastLoginDate: "",
+    loginStreak: 0,
+    claimedStreakToday: false,
     missions: [
       { id: "m1", title: "Run 500 meters", target: 500, current: 0, rewardCoins: 250, claimed: false },
-      { id: "m2", title: "Run 1,000 meters", target: 1000, current: 0, rewardCoins: 500, claimed: false },
-      { id: "m3", title: "Collect 20 coins", target: 20, current: 0, rewardCoins: 300, claimed: false }
-    ]
+      { id: "m2", title: "Run 2,000 meters", target: 2000, current: 0, rewardCoins: 1000, claimed: false },
+      { id: "m3", title: "Collect 20 coins", target: 20, current: 0, rewardCoins: 300, claimed: false },
+      { id: "m4", title: "Collect 500 coins in a game", target: 500, current: 0, rewardCoins: 2500, claimed: false },
+      { id: "m5", title: "Collect 5 diamonds", target: 5, current: 0, rewardCoins: 1500, claimed: false },
+      { id: "m6", title: "Use 5 skateboards", target: 5, current: 0, rewardCoins: 1000, claimed: false }
+    ],
+    streakGifts: Array.from({ length: 10 }, (_, i) => ({
+      day: i + 1,
+      reward: i === 9 ? { type: "diamonds", amount: 10 } : { type: "coins", amount: (i + 1) * 10 },
+      claimed: false
+    }))
   },
   savedProfile || {}
 );
 
-if (typeof window.playerProfile.diamonds !== "number") {
-  window.playerProfile.diamonds = 25;
-}
-if (!Array.isArray(window.playerProfile.missions)) {
-  window.playerProfile.missions = [
-    { id: "m1", title: "Run 500 meters", target: 500, current: 0, rewardCoins: 250, claimed: false },
-    { id: "m2", title: "Run 1,000 meters", target: 1000, current: 0, rewardCoins: 500, claimed: false },
-    { id: "m3", title: "Collect 20 coins", target: 20, current: 0, rewardCoins: 300, claimed: false }
-  ];
+if (typeof window.playerProfile.diamonds !== "number") window.playerProfile.diamonds = 25;
+
+// Check Daily Login Streak
+const todayStr = new Date().toDateString();
+if (window.playerProfile.lastLoginDate !== todayStr) {
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (window.playerProfile.lastLoginDate === yesterday.toDateString()) {
+    window.playerProfile.loginStreak = (window.playerProfile.loginStreak || 0) + 1;
+  } else {
+    window.playerProfile.loginStreak = 1;
+  }
+  window.playerProfile.lastLoginDate = todayStr;
+  window.playerProfile.claimedStreakToday = false;
+  window.syncPlayerProfileToCloud && window.syncPlayerProfileToCloud();
 }
 
 // ================= 2. WEB AUDIO SOUND SYNTHESIZER =================
@@ -105,7 +112,7 @@ const SFX = {
   }
 };
 
-// ================= 3. THREE.JS SCENE & TRACK ENVIRONMENT =================
+// ================= 3. THREE.JS SCENE & ENVIRONMENT =================
 const canvas = document.getElementById("gameCanvas");
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -192,7 +199,7 @@ for (let z = 20; z > -240; z -= 4) {
   scrollingProps.push(row);
 }
 
-// ================= 4. REAL HUMANS (SCULPTED + GLTFLOADER RIGGED HUMANS) =================
+// ================= 4. REAL HUMANS & GLB AVATARS =================
 function createSculptedHuman(shirtHex = 0x2277ff, pantsHex = 0x223344, isPolice = false) {
   const root = new THREE.Group();
   const skinMat = new THREE.MeshStandardMaterial({ color: 0xf1c27d, roughness: 0.6 });
@@ -411,35 +418,7 @@ window.loadSelectedHumanAvatar = function () {
   boardRim.material.color.setHex(skin.rimColor);
 };
 
-// ================= 5. REALISTIC 3D TRAINS =================
-const TRAIN_MODEL_CATALOG = [
-  {
-    id: "steam_train",
-    name: "Animated Steam Train",
-    glbUrl: "models/train1.glb",
-    scale: 1.2,
-    isGlb: true
-  },
-  {
-    id: "high_speed_express",
-    name: "High-Speed Express",
-    isGlb: false,
-    skinType: "high_speed_express"
-  },
-  {
-    id: "alpine_panoramic",
-    name: "Alpine Red Express",
-    isGlb: false,
-    skinType: "alpine_panoramic"
-  },
-  {
-    id: "london_tube",
-    name: "London Underground",
-    isGlb: false,
-    skinType: "london_tube"
-  }
-];
-
+// ================= 5. TRAIN1 TO TRAIN5 & PROCEDURAL SKINS =================
 const trainGlbCache = {};
 
 function createRealTrainSideTexture(skinType) {
@@ -463,7 +442,7 @@ function createRealTrainSideTexture(skinType) {
       ctx.fillStyle = "rgba(144, 224, 239, 0.85)";
       ctx.fillRect(x, 63, 85, 38);
     }
-  } else if (skinType === "alpine_panoramic") {
+  } else {
     ctx.fillStyle = "#d90429";
     ctx.fillRect(0, 0, 1024, 256);
     ctx.fillStyle = "#ffffff";
@@ -475,19 +454,6 @@ function createRealTrainSideTexture(skinType) {
       ctx.fillRect(x - 14, 65, 115, 110);
       ctx.fillStyle = "rgba(200, 235, 255, 0.9)";
       ctx.fillRect(x - 10, 70, 107, 100);
-    }
-  } else {
-    ctx.fillStyle = "#b51a2b";
-    ctx.fillRect(0, 0, 1024, 256);
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 30, 1024, 45);
-    ctx.fillStyle = "#001933";
-    ctx.fillRect(0, 205, 1024, 51);
-    for (let x = 60; x < 980; x += 150) {
-      ctx.fillStyle = "#002b49";
-      ctx.fillRect(x - 12, 90, 85, 80);
-      ctx.fillStyle = "rgba(255, 240, 180, 0.85)";
-      ctx.fillRect(x - 7, 95, 75, 70);
     }
   }
   return new THREE.CanvasTexture(c);
@@ -602,7 +568,7 @@ grafPlane.position.set(1.39, 1.9, 1.0);
 introTrainGroup.add(grafPlane);
 scene.add(introTrainGroup);
 
-// ================= 6. BARRIERS, COINS, DIAMONDS & POWER-UPS =================
+// ================= 6. BARRIERS, COINS & POWER-UPS =================
 let obstacles = [];
 let coins = [];
 let powerups = [];
@@ -773,6 +739,7 @@ function activateHoverboard() {
     return;
   }
   window.playerProfile.boards--;
+  updateMissionsProgress(0, 0, 0, 1); // Track skateboard usage mission
   window.syncPlayerProfileToCloud && window.syncPlayerProfileToCloud();
   hoverboardTimer = 30.0;
   boardGroup.visible = true;
@@ -792,15 +759,22 @@ function switchPlayerAnimation(mode) {
   }
 }
 
-function updateMissionsProgress(distDelta, coinsDelta) {
+function updateMissionsProgress(distDelta, coinsDelta, diamondsDelta = 0, boardsDelta = 0) {
   if (!window.playerProfile.missions) return;
   let updated = false;
   window.playerProfile.missions.forEach(m => {
     if (!m.claimed) {
-      if (m.id.startsWith("m1") || m.id.startsWith("m2")) {
+      if (m.id === "m1" || m.id === "m2") {
         m.current = Math.min(m.target, m.current + distDelta);
-      } else if (m.id.startsWith("m3")) {
+      } else if (m.id === "m3") {
         m.current = Math.min(m.target, m.current + coinsDelta);
+      } else if (m.id === "m4") {
+        // Collect 500 coins in a single game run
+        m.current = Math.min(m.target, runCoins);
+      } else if (m.id === "m5") {
+        m.current = Math.min(m.target, m.current + diamondsDelta);
+      } else if (m.id === "m6") {
+        m.current = Math.min(m.target, m.current + boardsDelta);
       }
       updated = true;
     }
@@ -814,8 +788,14 @@ function updateMissionsProgress(distDelta, coinsDelta) {
 function updateMissionsRedDot() {
   const dot = document.getElementById("missionsRedDot");
   if (!dot) return;
-  const hasClaimable = window.playerProfile.missions.some(m => m.current >= m.target && !m.claimed);
-  dot.style.display = hasClaimable ? "block" : "none";
+  const hasClaimableMissions = window.playerProfile.missions.some(m => m.current >= m.target && !m.claimed);
+  const hasClaimableGifts = window.playerProfile.streakGifts.some(g => g.day <= window.playerProfile.loginStreak && !g.claimed);
+  
+  const totalRedDot = hasClaimableMissions || hasClaimableGifts;
+  dot.style.display = totalRedDot ? "block" : "none";
+  
+  const giftDot = document.getElementById("giftsRedDot");
+  if (giftDot) giftDot.style.display = hasClaimableGifts ? "block" : "none";
 }
 
 window.openMissionsModal = function() {
@@ -856,6 +836,105 @@ window.openMissionsModal = function() {
 
 window.closeMissionsModal = function() {
   document.getElementById("missionsModal").style.display = "none";
+};
+
+window.openGiftsModal = function() {
+  const container = document.getElementById("giftsGridContainer");
+  container.innerHTML = "";
+
+  window.playerProfile.streakGifts.forEach(g => {
+    const unlocked = g.day <= window.playerProfile.loginStreak;
+    const isReady = unlocked && !g.claimed;
+    const rewardText = g.reward.type === "diamonds" ? `${g.reward.amount} 💎` : `${g.reward.amount} 🪙`;
+
+    const card = document.createElement("div");
+    card.className = "shop-item" + (g.claimed ? " active" : "");
+    card.innerHTML = `
+      <div><b>Day ${g.day}</b></div>
+      <div style="font-size:20px; margin:6px 0;">🎁</div>
+      <div>${rewardText}</div>
+      <button class="shop-btn ${g.claimed ? 'equipped' : ''}" style="${isReady ? 'background:#62c435; color:#fff;' : ''}">
+        ${g.claimed ? "Claimed ✓" : isReady ? "CLAIM" : "Locked"}
+      </button>
+    `;
+    card.querySelector("button").onclick = () => {
+      if (isReady && !g.claimed) {
+        g.claimed = true;
+        if (g.reward.type === "diamonds") {
+          window.playerProfile.diamonds += g.reward.amount;
+        } else {
+          window.playerProfile.coins += g.reward.amount;
+        }
+        SFX.powerup();
+        window.syncPlayerProfileToCloud && window.syncPlayerProfileToCloud();
+        window.updateMenuUI();
+        window.openGiftsModal();
+      }
+    };
+    container.appendChild(card);
+  });
+
+  document.getElementById("giftsModal").style.display = "flex";
+};
+
+window.closeGiftsModal = function() {
+  document.getElementById("giftsModal").style.display = "none";
+};
+
+window.openEventsModal = function() {
+  document.getElementById("eventsModal").style.display = "flex";
+};
+window.closeEventsModal = function() {
+  document.getElementById("eventsModal").style.display = "none";
+};
+
+// Account / Google Login Modal Handlers
+window.openAccountModal = function() {
+  const nameInput = document.getElementById("editNameInput");
+  const ageInput = document.getElementById("editAgeInput");
+  nameInput.value = window.playerProfile.displayName || "";
+  ageInput.value = window.playerProfile.age || "";
+
+  if (window.playerProfile.displayName) {
+    document.getElementById("accountLoggedOutView").style.display = "none";
+    document.getElementById("accountLoggedInView").style.display = "block";
+    document.getElementById("accountDisplayName").innerText = window.playerProfile.displayName;
+    document.getElementById("accountDisplayEmail").innerText = "google_user@gmail.com";
+  } else {
+    document.getElementById("accountLoggedOutView").style.display = "block";
+    document.getElementById("accountLoggedInView").style.display = "none";
+  }
+  document.getElementById("accountModal").style.display = "flex";
+};
+
+window.closeAccountModal = function() {
+  document.getElementById("accountModal").style.display = "none";
+};
+
+document.getElementById("googleLoginBtn").onclick = () => {
+  // Simulate Google Login Prompt
+  const defaultName = prompt("Enter your Google Account Display Name:", "Satish Kommana");
+  if (defaultName) {
+    const defaultAge = prompt("Enter your Age:", "16");
+    window.playerProfile.displayName = defaultName;
+    window.playerProfile.age = defaultAge || "16";
+    window.syncPlayerProfileToCloud && window.syncPlayerProfileToCloud();
+    window.openAccountModal();
+  }
+};
+
+window.saveAccountProfile = function() {
+  const nameInput = document.getElementById("editNameInput").value.trim();
+  const ageInput = document.getElementById("editAgeInput").value.trim();
+  if (nameInput) {
+    window.playerProfile.displayName = nameInput;
+    window.playerProfile.age = ageInput;
+    window.syncPlayerProfileToCloud && window.syncPlayerProfileToCloud();
+    alert("Profile saved successfully!");
+    window.openAccountModal();
+  } else {
+    alert("Please enter a valid display name.");
+  }
 };
 
 function promptReviveOrGameOver(reasonText) {
@@ -1020,6 +1099,9 @@ function startNewRun() {
   document.getElementById("gameOverModal").style.display = "none";
   document.getElementById("reviveModal").style.display = "none";
   document.getElementById("missionsModal").style.display = "none";
+  document.getElementById("giftsModal").style.display = "none";
+  document.getElementById("eventsModal").style.display = "none";
+  document.getElementById("accountModal").style.display = "none";
   document.getElementById("hud").style.display = "block";
 
   for (let z = -40; z >= -180; z -= 30) {
@@ -1117,6 +1199,16 @@ canvas.addEventListener("pointerup", e => {
     else roll();
   }
 });
+
+const tapTrigger = document.getElementById("tapToPlayTrigger");
+if (tapTrigger) {
+  tapTrigger.addEventListener("click", () => {
+    if (gameState === "IDLE_INTRO") {
+      ensureAudio();
+      startNewRun();
+    }
+  });
+}
 
 // ================= 9. UI & STORE BINDINGS =================
 window.updateMenuUI = function () {
@@ -1334,7 +1426,7 @@ function animate(now) {
     distanceRun += distDelta;
     window.score += distDelta * 2.2 * scoreMultiplier;
 
-    updateMissionsProgress(distDelta, 0);
+    updateMissionsProgress(distDelta, 0, 0, 0);
 
     scrollingProps.forEach(row => {
       row.position.z += stepZ;
@@ -1537,7 +1629,7 @@ function animate(now) {
         SFX.coin();
         scene.remove(c);
         coins.splice(i, 1);
-        updateMissionsProgress(0, 1);
+        updateMissionsProgress(0, 1, 0, 0);
         continue;
       }
       if (c.position.z > 12) {
@@ -1568,6 +1660,7 @@ function animate(now) {
           showCallout("+1 Hoverboard! 🛹");
         } else if (p.userData.kind === "diamondPickup") {
           window.playerProfile.diamonds += 2;
+          updateMissionsProgress(0, 0, 2, 0); // Track diamond collection mission
           showCallout("+2 Diamonds! 💎");
         }
         scene.remove(p);
