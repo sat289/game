@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Temple Run Style 3D Experience</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #111;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+        #ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .header-ui {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .score-board {
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid #8b5a2b;
+            color: #ffd700;
+            padding: 8px 16px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 8px;
+            text-shadow: 2px 2px #000;
+        }
+        .title-banner {
+            text-align: center;
+            color: #d4af37;
+            font-size: 32px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 3px 3px #000, 0 0 15px rgba(212, 175, 55, 0.5);
+        }
+        .footer-ui {
+            text-align: center;
+            padding-bottom: 20px;
+        }
+        .instruction {
+            display: inline-block;
+            background: rgba(139, 90, 43, 0.8);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 16px;
+            border: 1px solid #ffd700;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            pointer-events: auto;
+            cursor: pointer;
+        }
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ffd700;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 2px 2px #000;
+            pointer-events: none;
+        }
+    </style>
+    <!-- Include Three.js and OrbitControls for 360/3D interaction -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+    <div id="loading">Loading Temple Grounds & Avatar...</div>
+    <div id="canvas-container"></div>
+
+    <div id="ui-overlay">
+        <div class="header-ui">
+            <div class="score-board">SCORE: <span id="score-val">0</span></div>
+            <div class="score-board">🪙 <span id="coin-val">0</span></div>
+        </div>
+        <div class="title-banner">Temple Explorer 360°</div>
+        <div class="footer-ui">
+            <div class="instruction" id="action-btn">Drag to Rotate 360° | Scroll to Zoom</div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Scene, Camera, and Renderer
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a1118);
+        scene.fog = new THREE.FogExp2(0x0a1118, 0.035);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 3, 6);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        // OrbitControls for 360-degree interactive rotation and inspection
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 - 0.05; // Don't go below ground
+        controls.minDistance = 2;
+        controls.maxDistance = 15;
+        controls.target.set(0, 1.5, 0);
+
+        // Lighting setup for atmospheric temple look
+        const ambientLight = new THREE.AmbientLight(0xfff5e6, 0.7);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffeedd, 1.2);
+        dirLight.position.set(10, 20, 10);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        scene.add(dirLight);
+
+        const pointLight = new THREE.PointLight(0xff7700, 2, 10);
+        pointLight.position.set(0, 2, -2);
+        scene.add(pointLight);
+
+        // Environment: Temple Stone Floor & Pillars
+        const floorGeo = new THREE.PlaneGeometry(20, 100);
+        const floorMat = new THREE.MeshStandardMaterial({ 
+            color: 0x4a453e, 
+            roughness: 0.9,
+            metalness: 0.1
+        });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        // Temple Arch / Portal in background
+        const archGroup = new THREE.Group();
+        const archMat = new THREE.MeshStandardMaterial({ color: 0x3d3832, roughness: 0.8 });
+        
+        const pillarGeo = new THREE.BoxGeometry(1.2, 6, 1.2);
+        const leftPillar = new THREE.Mesh(pillarGeo, archMat);
+        leftPillar.position.set(-3, 3, -10);
+        leftPillar.castShadow = true;
+        archGroup.add(leftPillar);
+
+        const rightPillar = new THREE.Mesh(pillarGeo, archMat);
+        rightPillar.position.set(3, 3, -10);
+        rightPillar.castShadow = true;
+        archGroup.add(rightPillar);
+
+        const topArch = new THREE.Mesh(new THREE.BoxGeometry(7.6, 1.5, 1.2), archMat);
+        topArch.position.set(0, 6.5, -10);
+        topArch.castShadow = true;
+        archGroup.add(topArch);
+        scene.add(archGroup);
+
+        // Create 3D Real Woman Avatar (Procedural low-poly rigged/structured aesthetic optimized for browser view)
+        const avatarGroup = new THREE.Group();
+
+        const skinMat = new THREE.MeshStandardMaterial({ color: 0xdcbeb6, roughness: 0.5 });
+        const shirtMat = new THREE.MeshStandardMaterial({ color: 0xf5f5f5, roughness: 0.7 }); // Explorer white top
+        const pantsMat = new THREE.MeshStandardMaterial({ color: 0x4a3b32, roughness: 0.8 }); // Cargo trousers
+        const hairMat = new THREE.MeshStandardMaterial({ color: 0x2c1d0c, roughness: 0.6 });  // Dark brown hair
+
+        // Head & Face
+        const headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 16), skinMat);
+        headMesh.position.set(0, 2.35, 0);
+        headMesh.castShadow = true;
+        avatarGroup.add(headMesh);
+
+        // Hair (Ponytail style typical of action runners)
+        const hairMesh = new THREE.Mesh(new THREE.SphereGeometry(0.23, 16, 16), hairMat);
+        hairMesh.position.set(0, 2.4, -0.04);
+        avatarGroup.add(hairMesh);
+        const bunMesh = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 12), hairMat);
+        bunMesh.position.set(0, 2.55, -0.2);
+        avatarGroup.add(bunMesh);
+
+        // Torso
+        const torsoMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.14, 0.7, 12), shirtMat);
+        torsoMesh.position.set(0, 1.75, 0);
+        torsoMesh.castShadow = true;
+        avatarGroup.add(torsoMesh);
+
+        // Limbs (Arms & Legs configured dynamically for a heroic standing/ready runner pose)
+        const armGeo = new THREE.CylinderGeometry(0.06, 0.05, 0.65, 8);
+        
+        const leftArm = new THREE.Mesh(armGeo, shirtMat);
+        leftArm.position.set(-0.28, 1.8, 0.1);
+        leftArm.rotation.z = 0.2;
+        leftArm.rotation.x = -0.4;
+        avatarGroup.add(leftArm);
+
+        const rightArm = new THREE.Mesh(armGeo, shirtMat);
+        rightArm.position.set(0.28, 1.8, -0.1);
+        rightArm.rotation.z = -0.2;
+        rightArm.rotation.x = 0.5;
+        avatarGroup.add(rightArm);
+
+        const legGeo = new THREE.CylinderGeometry(0.08, 0.06, 0.9, 8);
+
+        const leftLeg = new THREE.Mesh(legGeo, pantsMat);
+        leftLeg.position.set(-0.12, 1.0, 0);
+        avatarGroup.add(leftLeg);
+
+        const rightLeg = new THREE.Mesh(legGeo, pantsMat);
+        rightLeg.position.set(0.12, 1.0, 0);
+        avatarGroup.add(rightLeg);
+
+        scene.add(avatarGroup);
+
+        // Hide loading text once rendered
+        document.getElementById('loading').style.display = 'none';
+
+        // Animation Loop & Interactive Floating Elements
+        let clock = new THREE.Clock();
+        let score = 0;
+        let coins = 0;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const elapsedTime = clock.getElapsedTime();
+
+            // Subtle idle breathing motion for the 3D avatar
+            avatarGroup.position.y = Math.sin(elapsedTime * 3) * 0.03;
+            avatarGroup.rotation.y = Math.sin(elapsedTime * 0.5) * 0.1; // Gentle sway
+
+            // Increment score simulation
+            score = Math.floor(elapsedTime * 15);
+            coins = Math.floor(elapsedTime * 2);
+            document.getElementById('score-val').innerText = score;
+            document.getElementById('coin-val').innerText = coins;
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Responsive resizing
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
