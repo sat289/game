@@ -3,48 +3,48 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Subway Surfers 3D - Real Trains & Humans</title>
+  <title>Subway Surfers 3D</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <!-- 1. AGE CONFIRMATION MODAL -->
-  <div id="ageModal">
-    <div class="age-card">
-      <div class="age-header">Please enter your age</div>
-      <div class="age-display" id="ageValue">16</div>
-      <div class="age-slider-wrap">
-        <input type="range" id="ageSlider" min="3" max="65" value="16" />
-      </div>
-      <button class="btn-green" id="confirmAgeBtn">Confirm</button>
-    </div>
-  </div>
-
-  <!-- 2. HOME / START SCREEN OVERLAY (GRAFFITI INTRO) -->
+  <!-- 1. HOME / START SCREEN OVERLAY (Subway Surfers UI Style) -->
   <div id="startOverlay">
+    <!-- Top Currency & Profile Bar -->
     <div class="top-menu-bar">
       <div class="currency-pills">
-        <div class="pill">🪙 <span id="menuCoins">0</span></div>
         <div class="pill">💎 <span id="menuDiamonds">25</span></div>
+        <div class="pill">🪙 <span id="menuCoins">300</span></div>
         <div class="pill">🛹 <span id="menuBoards">5</span></div>
-        <div class="pill">🏆 HI: <span id="menuHighScore">0</span></div>
       </div>
-      <div class="pill" id="modelStatusBadge">🏃 Loading 3D Humans...</div>
       <div class="pill" id="firebaseStatus">☁️ Connecting...</div>
     </div>
 
-    <div class="title-banner">
-      <h1>SUBWAY SURFERS 3D</h1>
-      <p>4 Real Train Models • Rigged 3D Humans • Double-Tap / Space for Hoverboard</p>
+    <!-- Left & Right Mission/Event Badges -->
+    <div class="side-badges-left">
+      <div class="side-badge-btn" onclick="openShopModal()">📋</div>
+    </div>
+    <div class="side-badges-right">
+      <div class="side-badge-btn" onclick="openShopModal()">🎁</div>
+      <div class="side-badge-btn" onclick="openShopModal()">🦇</div>
     </div>
 
-    <div class="bottom-menu-bar">
-      <div class="tap-to-play" id="tapToPlayBtn">Tap to Play</div>
-      <button class="btn-shop" id="openShopBtn">🛒 STORE & AVATARS</button>
+    <!-- Center Graffiti Banner & Tap to Play Prompt -->
+    <div class="center-intro-content">
+      <div class="high-score-display">High Score<br><span id="menuHighScore">0</span></div>
+      <div class="tap-to-play-banner">Tap to Play</div>
+    </div>
+
+    <!-- Bottom Navigation Bar (Missions, Me/Avatars, Shop, Events) -->
+    <div class="bottom-nav-bar">
+      <button class="nav-tab" onclick="openShopModal()">⭐ MISSIONS</button>
+      <button class="nav-tab" onclick="openShopModal()">👤 ME</button>
+      <button class="nav-tab shop-active-tab" onclick="openShopModal()">🛒 SHOP</button>
+      <button class="nav-tab" onclick="openShopModal()">🌐 EVENTS</button>
     </div>
   </div>
 
-  <!-- 3. IN-GAME HUD -->
+  <!-- 2. IN-GAME HUD -->
   <div id="hud" style="display: none;">
     <div class="hud-top">
       <div class="pause-btn" id="boardTriggerBtn" title="Activate Hoverboard">🛹</div>
@@ -85,7 +85,7 @@
     </div>
   </div>
 
-  <!-- 4. 5-SECOND ROTATING REVIVE ("SAVE ME!") MODAL -->
+  <!-- 3. 5-SECOND ROTATING REVIVE ("SAVE ME!") MODAL -->
   <div id="reviveModal">
     <div class="modal-box revive-box">
       <h2 class="revive-title">SAVE ME?</h2>
@@ -95,7 +95,6 @@
         💎 Your Diamonds: <span id="reviveDiamondsCount">25</span>
       </div>
 
-      <!-- Rotating 5-Second Ring + Revive Button -->
       <div class="revive-ring-container">
         <svg class="revive-svg" viewBox="0 0 140 140">
           <circle class="revive-ring-bg" cx="70" cy="70" r="58"></circle>
@@ -113,19 +112,26 @@
     </div>
   </div>
 
-  <!-- 5. GAME OVER SUMMARY MODAL -->
+  <!-- 4. GAME OVER SUMMARY MODAL (Includes Used Avatar Preview) -->
   <div id="gameOverModal">
-    <div class="modal-box">
+    <div class="modal-box gameover-box">
       <div class="gameover-banner">
         <h2 id="gameOverTitle">RUN OVER!</h2>
-        <div>Score: <b id="finalScore" style="font-size: 30px;">0</b></div>
       </div>
 
-      <div class="stats-row"><span>🏆 High Score</span><span id="goHighScore">0</span></div>
-      <div class="stats-row"><span>📏 Distance Run</span><span id="goDistance">0m</span></div>
-      <div class="stats-row"><span>🪙 Coins (This Game)</span><span id="goCoins">0</span></div>
-      <div class="stats-row"><span>💰 Total Bank Coins</span><span id="goTotalCoins">0</span></div>
-      <div class="stats-row"><span>💎 Total Diamonds</span><span id="goDiamonds">0</span></div>
+      <!-- Avatar Preview Column + Score Stats -->
+      <div class="gameover-content-grid">
+        <div class="gameover-avatar-preview" id="summaryAvatarPreviewContainer">
+          <!-- Rendered via JS canvas preview -->
+        </div>
+        <div class="gameover-stats-col">
+          <div class="stats-row"><span>Score</span><b id="finalScore" style="color:#ffd700;">0</b></div>
+          <div class="stats-row"><span>High Score</span><span id="goHighScore">0</span></div>
+          <div class="stats-row"><span>Distance</span><span id="goDistance">0m</span></div>
+          <div class="stats-row"><span>Coins</span><span id="goCoins">0</span></div>
+          <div class="stats-row"><span>Diamonds</span><span id="goDiamonds">0</span></div>
+        </div>
+      </div>
 
       <div class="action-row">
         <button class="btn-home" id="homeBtn">🏠 HOME</button>
@@ -134,11 +140,11 @@
     </div>
   </div>
 
-  <!-- 6. STORE & AVATARS MODAL -->
+  <!-- 5. STORE & AVATARS MODAL -->
   <div id="shopModal">
     <div class="modal-box">
       <div class="modal-header">
-        <h2>🛒 3D STORE & AVATARS</h2>
+        <h2>🛒 STORE & AVATARS</h2>
         <button class="close-btn" id="closeShopBtn">✕</button>
       </div>
       <div class="pill" style="margin-bottom: 12px; display: inline-flex; flex-wrap: wrap;">
