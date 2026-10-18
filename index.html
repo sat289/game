@@ -1,1 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gaming Hub - Free Online Games</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
+    <style>
+        :root {
+            --poki-cyan: #5be7c4;
+            --poki-teal: #34c7a5;
+            --poki-yellow: #ffea59;
+            --poki-navy: #002b5b;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #4cd4b0;
+            background-image: 
+                radial-gradient(circle at 15% 20%, rgba(126, 255, 220, 0.7) 0%, transparent 45%),
+                radial-gradient(circle at 85% 60%, rgba(32, 178, 170, 0.5) 0%, transparent 50%),
+                linear-gradient(135deg, #5ef2d5 0%, #37c9ef 50%, #5ce1e6 100%);
+            background-attachment: fixed;
+            overflow-x: hidden;
+            user-select: none;
+            transition: background 0.35s ease, color 0.35s ease;
+        }
+
+        /* DARK THEME OVERRIDES */
+        body.dark-theme {
+            background-color: #0b1120;
+            background-image: 
+                radial-gradient(circle at 15% 20%, rgba(56, 189, 248, 0.16) 0%, transparent 45%),
+                radial-gradient(circle at 85% 60%, rgba(168, 85, 247, 0.16) 0%, transparent 50%),
+                linear-gradient(135deg, #090d16 0%, #0f172a 50%, #1e1b4b 100%);
+            color: #f8fafc;
+        }
+
+        body.dark-theme .theme-surface {
+            background-color: rgba(30, 41, 59, 0.95) !important;
+            border-color: rgba(255, 255, 255, 0.12) !important;
+            color: #f8fafc !important;
+        }
+
+        body.dark-theme .theme-text-primary {
+            color: #f8fafc !important;
+        }
+
+        body.dark-theme .theme-text-sub {
+            color: #94a3b8 !important;
+        }
+
+        body.dark-theme .cat-btn-inactive {
+            background-color: rgba(30, 41, 59, 0.9) !important;
+            color: #e2e8f0 !important;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        body.dark-theme .cat-btn-active {
+            background-color: #38bdf8 !important;
+            color: #0f172a !important;
+        }
+
+        body.dark-theme .popular-section {
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            border-top: 2px solid rgba(250, 204, 21, 0.35);
+        }
+
+        body.dark-theme .popular-section::before {
+            background: #1e293b;
+        }
+
+        body.dark-theme .popular-heading {
+            color: #facc15 !important;
+        }
+
+        .brand-font {
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        /* Marquee Animation */
+        @keyframes marquee {
+            0% { transform: translateX(0%); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .marquee-track {
+            display: flex;
+            width: max-content;
+            animation: marquee 24s linear infinite;
+        }
+
+        .marquee-track:hover {
+            animation-play-state: paused;
+        }
+
+        /* Responsive Grid */
+        .poki-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-auto-rows: 1fr;
+            gap: 14px;
+            grid-auto-flow: dense;
+        }
+
+        @media (min-width: 640px) {
+            .poki-grid {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: 18px;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .poki-grid {
+                grid-template-columns: repeat(6, minmax(0, 1fr));
+                gap: 20px;
+            }
+        }
+
+        .tile-large {
+            grid-column: span 2;
+            grid-row: span 2;
+        }
+
+        .game-card {
+            aspect-ratio: 1 / 1;
+            position: relative;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 8px 20px -4px rgba(0, 43, 91, 0.25), 0 2px 6px rgba(0,0,0,0.1);
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
+            background: #fff;
+            cursor: pointer;
+            display: block;
+        }
+
+        .game-card:hover {
+            transform: translateY(-5px) scale(1.03);
+            box-shadow: 0 16px 28px -6px rgba(0, 43, 91, 0.38);
+            z-index: 10;
+        }
+
+        .game-card:active {
+            transform: scale(0.95);
+        }
+
+        .game-card-overlay {
+            background: linear-gradient(to top, rgba(0, 22, 48, 0.9) 0%, rgba(0, 22, 48, 0.3) 60%, transparent 100%);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .game-card:hover .game-card-overlay {
+            opacity: 1;
+        }
+
+        .ig-gradient {
+            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+        }
+
+        .yt-gradient {
+            background: linear-gradient(45deg, #ff0000 0%, #e60000 50%, #cc0000 100%);
+        }
+
+        /* Glowing Animations */
+        @keyframes glowPulsePink {
+            0% { box-shadow: 0 0 5px rgba(225, 48, 108, 0.4), 0 0 10px rgba(225, 48, 108, 0.2); }
+            50% { box-shadow: 0 0 16px rgba(225, 48, 108, 0.8), 0 0 24px rgba(254, 44, 85, 0.6); }
+            100% { box-shadow: 0 0 5px rgba(225, 48, 108, 0.4), 0 0 10px rgba(225, 48, 108, 0.2); }
+        }
+
+        @keyframes glowPulseRed {
+            0% { box-shadow: 0 0 5px rgba(255, 0, 0, 0.4), 0 0 10px rgba(255, 0, 0, 0.2); }
+            50% { box-shadow: 0 0 16px rgba(255, 0, 0, 0.8), 0 0 24px rgba(255, 75, 75, 0.6); }
+            100% { box-shadow: 0 0 5px rgba(255, 0, 0, 0.4), 0 0 10px rgba(255, 0, 0, 0.2); }
+        }
+
+        .btn-glow-pink {
+            animation: glowPulsePink 2s infinite ease-in-out;
+        }
+
+        .btn-glow-red {
+            animation: glowPulseRed 2s infinite ease-in-out;
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .popular-section {
+            background: linear-gradient(180deg, #ffef62 0%, #ffd93d 100%);
+            position: relative;
+        }
+
+        .popular-section::before {
+            content: '';
+            position: absolute;
+            top: -28px;
+            left: 0;
+            right: 0;
+            height: 35px;
+            background: #ffef62;
+            clip-path: polygon(0 65%, 100% 0, 100% 100%, 0% 100%);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between text-slate-900">
+
+    <!-- 1. TOP NOTICE MARQUEE -->
+    <div class="bg-[#002b5b] text-white py-2 overflow-hidden border-b border-white/15 relative z-40 shadow-md">
+        <div class="marquee-track flex items-center space-x-10 text-xs sm:text-sm font-semibold tracking-wide">
+            <div class="flex items-center space-x-10 shrink-0">
+                <span class="flex items-center gap-2">
+                    <span class="bg-amber-400 text-[#002b5b] text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase">Live</span>
+                    Welcome to <strong>GAMING HUB</strong> — Play Free Games!
+                </span>
+                <span class="flex items-center gap-2 text-pink-300">
+                    <i class="fa-brands fa-instagram"></i> Follow <strong>@_satish_official_16</strong> on Instagram!
+                </span>
+                <span class="flex items-center gap-2 text-red-400">
+                    <i class="fa-brands fa-youtube"></i> Subscribe to <strong>@nanu16-h3g</strong> on YouTube!
+                </span>
+                <span class="flex items-center gap-2 text-cyan-200">
+                    <i class="fa-solid fa-gamepad"></i> Tap Avatar to Login with Google!
+                </span>
+            </div>
+            <div class="flex items-center space-x-10 shrink-0">
+                <span class="flex items-center gap-2">
+                    <span class="bg-amber-400 text-[#002b5b] text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase">Live</span>
+                    Welcome to <strong>GAMING HUB</strong> — Play Free Games!
+                </span>
+                <span class="flex items-center gap-2 text-pink-300">
+                    <i class="fa-brands fa-instagram"></i> Follow <strong>@_satish_official_16</strong> on Instagram!
+                </span>
+                <span class="flex items-center gap-2 text-red-400">
+                    <i class="fa-brands fa-youtube"></i> Subscribe to <strong>@nanu16-h3g</strong> on YouTube!
+                </span>
+                <span class="flex items-center gap-2 text-cyan-200">
+                    <i class="fa-solid fa-gamepad"></i> Tap Avatar to Login with Google!
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <main class="max-w-5xl w-full mx-auto px-3.5 sm:px-6 pt-3 pb-12">
+
+        <!-- 2. SOCIAL CHANNELS & CONTROLS -->
+        <div class="space-y-2.5 mb-4">
+            <div class="flex items-center justify-between gap-2">
+                <div class="bg-[#002b5b] text-white rounded-2xl px-3.5 py-2 shadow-md flex items-center gap-2 border border-white/10">
+                    <i class="fa-solid fa-layer-group text-amber-300 text-xs"></i>
+                    <span id="liveGameCount" class="font-extrabold text-sm tabular-nums text-white">0</span>
+                    <span class="text-xs text-slate-300 font-medium">Games Online</span>
+                </div>
+
+                <button onclick="toggleTheme()" 
+                        class="theme-surface bg-white/95 text-[#002b5b] rounded-2xl px-3.5 py-2 shadow-md border border-white flex items-center gap-2 hover:scale-105 active:scale-95 transition-all">
+                    <span class="text-lg leading-none">🌓</span>
+                    <span class="theme-text-primary text-xs font-extrabold text-[#002b5b]" id="themeModeLabel">Auto</span>
+                </button>
+            </div>
+
+            <!-- Instagram Card -->
+            <a href="https://instagram.com/_satish_official_16" target="_blank" rel="noopener noreferrer" 
+               class="theme-surface w-full bg-white/95 backdrop-blur-md rounded-2xl p-2.5 sm:px-4 shadow-md border border-white flex items-center justify-between gap-3 hover:scale-[1.01] transition-all">
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-full p-[2px] ig-gradient shrink-0 shadow-sm">
+                        <img src="logo/Insta.jpg" alt="Instagram" 
+                             onerror="this.onerror=null; this.src='https://cdn-icons-png.flaticon.com/518/3955/3955024.png';"
+                             class="w-full h-full object-cover rounded-full bg-white">
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="theme-text-primary font-extrabold text-xs sm:text-sm text-[#002b5b]">@_satish_official_16</span>
+                            <i class="fa-solid fa-circle-check text-blue-500 text-[11px]" title="Verified"></i>
+                        </div>
+                        <p class="theme-text-sub text-[11px] text-slate-500 font-medium">Official Gaming & Daily Updates</p>
+                    </div>
+                </div>
+
+                <div class="btn-glow-pink px-4 py-1.5 rounded-xl ig-gradient text-white text-xs font-bold flex items-center gap-1.5 hover:opacity-95 transition-all shrink-0">
+                    <i class="fa-brands fa-instagram text-sm"></i>
+                    <span>Follow</span>
+                </div>
+            </a>
+
+            <!-- YouTube Card -->
+            <a href="https://youtube.com/@nanu16-h3g?si=2jyeQ-V78uTGvBzW" target="_blank" rel="noopener noreferrer" 
+               class="theme-surface w-full bg-white/95 backdrop-blur-md rounded-2xl p-2.5 sm:px-4 shadow-md border border-white flex items-center justify-between gap-3 hover:scale-[1.01] transition-all">
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-full p-[2px] yt-gradient shrink-0 shadow-sm">
+                        <img src="logo/sub.jpg" alt="YouTube" 
+                             onerror="this.onerror=null; this.src='https://cdn-icons-png.flaticon.com/518/1384/1384060.png';"
+                             class="w-full h-full object-cover rounded-full bg-white">
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="theme-text-primary font-extrabold text-xs sm:text-sm text-[#002b5b]">@nanu16-h3g</span>
+                            <i class="fa-solid fa-circle-check text-red-500 text-[11px]" title="Creator"></i>
+                        </div>
+                        <p class="theme-text-sub text-[11px] text-slate-500 font-medium">Official YouTube Channel • Gameplay & Vlogs</p>
+                    </div>
+                </div>
+
+                <div class="btn-glow-red px-4 py-1.5 rounded-xl yt-gradient text-white text-xs font-bold flex items-center gap-1.5 hover:opacity-95 transition-all shrink-0">
+                    <i class="fa-brands fa-youtube text-sm"></i>
+                    <span>Subscribe</span>
+                </div>
+            </a>
+        </div>
+
+        <!-- 3. NAVIGATION HEADER -->
+        <header class="sticky top-2.5 z-30 mb-4">
+            <div class="theme-surface bg-white rounded-2xl shadow-xl border border-white/80 px-3 sm:px-5 py-2.5 flex items-center justify-between">
+                <div class="flex items-center pr-3 sm:pr-5 border-r border-slate-200/60">
+                    <a href="index.html" class="brand-font text-xl sm:text-2xl font-bold tracking-tight text-[#002b5b] theme-text-primary flex items-center gap-1">
+                        <span>GAMING</span><span class="bg-[#002b5b] text-[#5be7c4] px-2 py-0.5 rounded-xl text-lg sm:text-xl border border-cyan-400/30">HUB</span>
+                    </a>
+                </div>
+
+                <div class="flex items-center justify-around flex-1 max-w-md ml-2 sm:ml-4 text-[#002b5b] theme-text-primary">
+                    <button onclick="filterByCategory('popular')" title="Popular Games" class="p-2 rounded-xl hover:bg-slate-500/10 active:scale-90 transition">
+                        <i class="fa-solid fa-fire-flame-curved text-lg sm:text-xl text-orange-500"></i>
+                    </button>
+                    <button onclick="pickRandomGame()" title="Surprise Me" class="p-2 rounded-xl hover:bg-slate-500/10 active:scale-90 transition">
+                        <i class="fa-solid fa-gamepad text-lg sm:text-xl"></i>
+                    </button>
+                    <button onclick="toggleSearchBar()" title="Search Games" class="p-2 rounded-xl hover:bg-slate-500/10 active:scale-90 transition">
+                        <i class="fa-solid fa-magnifying-glass text-lg sm:text-xl"></i>
+                    </button>
+                    <button onclick="toggleTheme()" title="Switch Theme" class="p-2 rounded-xl hover:bg-slate-500/10 active:scale-90 transition">
+                        <span class="text-lg sm:text-xl leading-none">🌓</span>
+                    </button>
+                    
+                    <a href="login.html" id="navAvatarLink" title="User Profile / Login" class="p-1 rounded-xl hover:bg-slate-500/10 active:scale-90 transition inline-flex items-center justify-center">
+                        <div id="defaultAvatarIcon" class="relative inline-flex items-center justify-center">
+                            <i class="fa-regular fa-circle-user text-2xl text-blue-600"></i>
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 absolute top-0 right-0 border-2 border-white"></span>
+                        </div>
+                        <div id="userBadgeNav" class="hidden w-8 h-8 rounded-full bg-gradient-to-tr from-cyan-500 to-indigo-600 border-2 border-white text-white font-extrabold text-sm flex items-center justify-center shadow overflow-hidden">
+                            U
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Search Drawer -->
+            <div id="searchDrawer" class="theme-surface hidden mt-2 bg-white rounded-2xl p-2.5 shadow-lg border border-slate-200">
+                <div class="relative flex items-center">
+                    <i class="fa-solid fa-magnifying-glass text-slate-500 absolute left-3.5 z-10"></i>
+                    <input id="gameSearchInput" type="text" 
+                           placeholder="Search (e.g., Snake, Car, Arcade, Bus, 1v1)..." 
+                           oninput="handleSearch(this.value)"
+                           class="w-full pl-10 pr-20 py-2.5 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-500 rounded-xl text-sm font-semibold border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-400">
+                    <button onclick="clearSearch()" class="absolute right-2 text-xs bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 text-slate-800 dark:text-slate-100 font-bold px-3 py-1.5 rounded-lg z-10">
+                        Clear
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- 4. CATEGORY SELECTORS -->
+        <section class="mb-5">
+            <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1" id="categoryButtonsContainer">
+                <button onclick="filterByCategory('all')" data-cat="all" class="cat-btn active-cat shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-[#002b5b] text-white">
+                    <i class="fa-solid fa-border-all"></i> All Games
+                </button>
+                <button onclick="filterByCategory('classic')" data-cat="classic" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
+                    <i class="fa-solid fa-ghost text-emerald-500"></i> Classic & Snake
+                </button>
+                <button onclick="filterByCategory('racing')" data-cat="racing" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
+                    <i class="fa-solid fa-car-burst text-amber-500"></i> Car Racing
+                </button>
+                <button onclick="filterByCategory('1v1')" data-cat="1v1" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
+                    <i class="fa-solid fa-people-arrows text-rose-500"></i> 1v1 Battle
+                </button>
+                <button onclick="filterByCategory('single')" data-cat="single" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
+                    <i class="fa-solid fa-user-astronaut text-indigo-500"></i> Single Player
+                </button>
+                <button onclick="filterByCategory('sports')" data-cat="sports" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
+                    <i class="fa-solid fa-baseball-bat-ball text-sky-500"></i> Sports
+                </button>
+            </div>
+        </section>
+
+        <!-- 5. MAIN GAMES GRID -->
+        <section>
+            <div id="gamesGrid" class="poki-grid"></div>
+            <div id="emptyState" class="hidden bg-white/90 rounded-3xl p-8 text-center my-4 shadow-md">
+                <i class="fa-solid fa-gamepad text-4xl text-slate-400 mb-2"></i>
+                <h3 class="font-extrabold text-lg text-[#002b5b]">No games found</h3>
+                <p class="text-xs text-slate-500 mt-1 mb-4">Try clearing your search query.</p>
+                <button onclick="clearSearch()" class="bg-[#002b5b] text-white text-xs font-bold px-4 py-2 rounded-xl">Show All Games</button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 6. POPULAR GAMES SECTION -->
+    <section class="popular-section pt-5 pb-12 px-4 sm:px-6 mt-6 shadow-inner">
+        <div class="max-w-5xl mx-auto">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-fire text-xl sm:text-2xl text-[#002b5b] popular-heading"></i>
+                    <h2 class="brand-font text-xl sm:text-2xl font-bold text-[#002b5b] popular-heading">Popular Games</h2>
+                </div>
+            </div>
+            <div id="popularGamesRow" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3.5 sm:gap-4"></div>
+        </div>
+    </section>
+
+    <script>
+        /**
+         * FULL GAMES CATALOG (Including both Gamezop games)
+         */
+        const GAMES_DATA = [
+            {
+                id: 'snake',
+                title: 'Cyber Snake Retro',
+                url: 'game/snake.html',
+                logo: 'logo/snake-logo.jpg',
+                icon: 'fa-solid fa-staff-snake',
+                size: 'large',
+                categories: ['classic', 'single', 'popular'],
+                badge: 'TOP',
+                bg: 'linear-gradient(135deg, #10b981, #047857)'
+            },
+            {
+                id: 'carracing',
+                title: 'Turbo Street Car Racing',
+                url: 'game/carracing.html',
+                logo: 'logo/car.jpg',
+                icon: 'fa-solid fa-car',
+                size: 'normal',
+                categories: ['racing', 'single', 'popular'],
+                badge: 'HOT',
+                bg: 'linear-gradient(135deg, #3b82f6, #1d4ed8)'
+            },
+            {
+                id: 'gamezop-1',
+                title: 'Gamezop Arcade Pro',
+                url: 'game/gamezop.html',
+                logo: 'logo/game.jpg',
+                icon: 'fa-solid fa-bolt',
+                size: 'normal',
+                categories: ['classic', 'single', 'popular'],
+                badge: 'LIVE',
+                bg: 'linear-gradient(135deg, #ec4899, #8b5cf6)'
+            },
+            {
+                id: 'gamezop-2',
+                title: 'Gamezop Action Mania',
+                url: 'game/gamezop2.html',
+                logo: 'logo/game2.jpg',
+                icon: 'fa-solid fa-rocket',
+                size: 'normal',
+                categories: ['classic', 'single', 'popular'],
+                badge: 'NEW',
+                bg: 'linear-gradient(135deg, #f43f5e, #fb923c)'
+            },
+            {
+                id: 'game-hub-battle',
+                title: 'Multi Battle Arena',
+                url: 'game/1v1.html',
+                logo: 'logo/game.jpg',
+                icon: 'fa-solid fa-gamepad',
+                size: 'normal',
+                categories: ['1v1', 'popular'],
+                badge: '1v1',
+                bg: 'linear-gradient(135deg, #ef4444, #7f1d1d)'
+            },
+            {
+                id: 'bus-driver',
+                title: 'City Bus Simulator',
+                url: 'game/bus.html',
+                logo: 'logo/bus.jpg',
+                icon: 'fa-solid fa-bus-simple',
+                size: 'normal',
+                categories: ['racing', 'single'],
+                badge: 'NEW',
+                bg: 'linear-gradient(135deg, #0ea5e9, #0369a1)'
+            },
+            {
+                id: 'moto-stunt',
+                title: 'Moto Stunt X3M',
+                url: 'game/moto.html',
+                logo: 'logo/moto.jpg',
+                icon: 'fa-solid fa-motorcycle',
+                size: 'normal',
+                categories: ['racing', 'single', 'popular'],
+                badge: 'HOT',
+                bg: 'linear-gradient(135deg, #f97316, #c2410c)'
+            },
+            {
+                id: 'subway-runner',
+                title: 'Street Subway Runner',
+                url: 'game/subway.html',
+                logo: 'logo/subway.jpg',
+                icon: 'fa-solid fa-person-running',
+                size: 'normal',
+                categories: ['single', 'popular'],
+                badge: 'HIT',
+                bg: 'linear-gradient(135deg, #f59e0b, #b45309)'
+            },
+            {
+                id: 'craft-world',
+                title: 'Craft Survival 1v1',
+                url: 'game/craft.html',
+                logo: 'logo/craft.jpg',
+                icon: 'fa-solid fa-cube',
+                size: 'large',
+                categories: ['1v1', 'classic', 'popular'],
+                badge: 'CO-OP',
+                bg: 'linear-gradient(135deg, #8b5cf6, #5b21b6)'
+            },
+            {
+                id: 'cricket',
+                title: 'Pro Cricket League',
+                url: 'game/cricket.html',
+                logo: 'logo/cricket.jpg',
+                icon: 'fa-solid fa-baseball-bat-ball',
+                size: 'normal',
+                categories: ['sports', 'single', 'popular'],
+                badge: 'TOP',
+                bg: 'linear-gradient(135deg, #14b8a6, #0f766e)'
+            },
+            {
+                id: 'truck-driver',
+                title: 'Heavy Truck Hauler',
+                url: 'game/truck.html',
+                logo: 'logo/truck.jpg',
+                icon: 'fa-solid fa-truck',
+                size: 'normal',
+                categories: ['racing', 'single'],
+                badge: '',
+                bg: 'linear-gradient(135deg, #64748b, #334155)'
+            },
+            {
+                id: 'dino-jump',
+                title: 'Dino Jurassic Run',
+                url: 'game/dino.html',
+                logo: 'logo/dino.jpg',
+                icon: 'fa-solid fa-paw',
+                size: 'normal',
+                categories: ['classic', 'single'],
+                badge: '',
+                bg: 'linear-gradient(135deg, #84cc16, #4d7c0f)'
+            }
+        ];
+
+        const POPULAR_ROW_DATA = [
+            { id: 'hole', title: 'Hole City .io', url: 'game/hole.html', logo: 'logo/hole.jpg', icon: 'fa-solid fa-circle-dot', categories: ['single', 'popular'], bg: '#334155' },
+            { id: 'aquapark', title: 'Aquapark Slide', url: 'game/aquapark.html', logo: 'logo/aquapark.jpg', icon: 'fa-solid fa-water', categories: ['racing', 'popular'], bg: '#0284c7' },
+            { id: 'soccer', title: 'Head Soccer 1v1', url: 'game/soccer.html', logo: 'logo/soccer.jpg', icon: 'fa-solid fa-futbol', categories: ['1v1', 'sports', 'popular'], bg: '#16a34a' },
+            { id: 'archery', title: 'Stickman Bow 1v1', url: 'game/archery.html', logo: 'logo/archery.jpg', icon: 'fa-solid fa-bullseye', categories: ['1v1', 'popular'], bg: '#6366f1' },
+            { id: 'drift', title: 'Nitro Drift Car', url: 'game/drift.html', logo: 'logo/car.jpg', icon: 'fa-solid fa-car-side', categories: ['racing', 'popular'], bg: '#dc2626' },
+            { id: 'sports', title: 'Badminton Duel', url: 'game/sports.html', logo: 'logo/game.jpg', icon: 'fa-solid fa-medal', categories: ['1v1', 'sports', 'popular'], bg: '#059669' }
+        ];
+
+        const ALL_COMBINED = [...GAMES_DATA, ...POPULAR_ROW_DATA];
+        let currentCategory = 'all';
+        let currentSearch = '';
+
+        function renderGames() {
+            const gridEl = document.getElementById('gamesGrid');
+            const popularRowEl = document.getElementById('popularGamesRow');
+            const emptyEl = document.getElementById('emptyState');
+
+            const filteredMain = GAMES_DATA.filter(game => {
+                const matchesCat = currentCategory === 'all' || game.categories.includes(currentCategory);
+                const matchesSearch = game.title.toLowerCase().includes(currentSearch.toLowerCase()) ||
+                                      game.url.toLowerCase().includes(currentSearch.toLowerCase());
+                return matchesCat && matchesSearch;
+            });
+
+            const filteredPopular = POPULAR_ROW_DATA.filter(game => {
+                const matchesCat = currentCategory === 'all' || game.categories.includes(currentCategory);
+                const matchesSearch = game.title.toLowerCase().includes(currentSearch.toLowerCase()) ||
+                                      game.url.toLowerCase().includes(currentSearch.toLowerCase());
+                return matchesCat && matchesSearch;
+            });
+
+            document.getElementById('liveGameCount').textContent = ALL_COMBINED.length;
+
+            if (filteredMain.length === 0) {
+                gridEl.innerHTML = '';
+                emptyEl.classList.remove('hidden');
+            } else {
+                emptyEl.classList.add('hidden');
+                gridEl.innerHTML = filteredMain.map(g => createCardHTML(g, true)).join('');
+            }
+
+            popularRowEl.innerHTML = (filteredPopular.length > 0 ? filteredPopular : POPULAR_ROW_DATA)
+                .map(g => createCardHTML(g, false)).join('');
+        }
+
+        function createCardHTML(game, allowLarge) {
+            const spanClass = (allowLarge && game.size === 'large') ? 'tile-large' : '';
+            const badge = game.badge ? `
+                <div class="absolute top-2.5 left-2.5 z-10 bg-white/95 text-[#002b5b] text-[10px] font-extrabold px-2 py-0.5 rounded-lg shadow">
+                    ${game.badge}
+                </div>
+            ` : '';
+
+            return `
+                <a href="${game.url}" class="game-card ${spanClass}" style="background: ${game.bg};">
+                    ${badge}
+                    <img src="${game.logo}" alt="${game.title}"
+                         onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');"
+                         class="w-full h-full object-cover">
+                    <div class="hidden w-full h-full flex flex-col items-center justify-center text-white p-3 text-center">
+                        <i class="${game.icon} text-3xl sm:text-4xl mb-1 drop-shadow"></i>
+                        <span class="text-[11px] font-extrabold leading-tight drop-shadow">${game.title}</span>
+                    </div>
+                    <div class="game-card-overlay absolute inset-0 flex flex-col justify-end p-3 text-white">
+                        <h3 class="font-extrabold text-xs sm:text-sm truncate">${game.title}</h3>
+                        <span class="text-[10px] text-cyan-300 font-semibold">${game.url}</span>
+                    </div>
+                </a>
+            `;
+        }
+
+        function filterByCategory(category) {
+            currentCategory = category;
+            document.querySelectorAll('.cat-btn').forEach(btn => {
+                const active = btn.getAttribute('data-cat') === category;
+                btn.className = active 
+                    ? 'cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-md flex items-center gap-2 bg-[#002b5b] text-white scale-105 transition-all'
+                    : 'cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm flex items-center gap-2 bg-white/90 text-[#002b5b] transition-all';
+            });
+            renderGames();
+        }
+
+        function toggleSearchBar() {
+            const drawer = document.getElementById('searchDrawer');
+            drawer.classList.toggle('hidden');
+            if (!drawer.classList.contains('hidden')) {
+                document.getElementById('gameSearchInput').focus();
+            }
+        }
+
+        function handleSearch(val) {
+            currentSearch = val.trim();
+            renderGames();
+        }
+
+        function clearSearch() {
+            document.getElementById('gameSearchInput').value = '';
+            currentSearch = '';
+            renderGames();
+        }
+
+        function pickRandomGame() {
+            const rnd = ALL_COMBINED[Math.floor(Math.random() * ALL_COMBINED.length)];
+            window.location.href = rnd.url;
+        }
+
+        let isDark = false;
+        function toggleTheme() {
+            isDark = !isDark;
+            document.body.classList.toggle('dark-theme', isDark);
+            document.getElementById('themeModeLabel').textContent = isDark ? 'Dark' : 'Light';
+        }
+
+        window.onload = () => {
+            renderGames();
+
+            // Load saved user state from login.html
+            const savedLetter = localStorage.getItem('gh_user_letter');
+            const savedPhoto = localStorage.getItem('gh_user_photo');
+
+            if (savedLetter) {
+                document.getElementById('defaultAvatarIcon').classList.add('hidden');
+                const badge = document.getElementById('userBadgeNav');
+                badge.classList.remove('hidden');
+                if (savedPhoto) {
+                    badge.innerHTML = `<img src="${savedPhoto}" class="w-full h-full rounded-full object-cover">`;
+                } else {
+                    badge.textContent = savedLetter;
+                }
+            }
+        };
+    </script>
+</body>
+</html>
