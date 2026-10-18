@@ -404,7 +404,38 @@ window.loadSelectedHumanAvatar = function () {
   boardRim.material.color.setHex(skin.rimColor);
 };
 
-// ================= 5. REALISTIC 3D TRAINS (HIGH-SPEED EXPRESS & ALPINE SCENIC) =================
+
+// ================= 5. REALISTIC 3D TRAINS (STEAM GLB + EXPRESS SKINS) =================
+const TRAIN_MODEL_CATALOG = [
+  {
+    id: "steam_train",
+    name: "Animated Steam Train",
+    glbUrl: "models/train1.glb",
+    scale: 1.2,
+    isGlb: true
+  },
+  {
+    id: "high_speed_express",
+    name: "High-Speed Express",
+    isGlb: false,
+    skinType: "high_speed_express"
+  },
+  {
+    id: "alpine_panoramic",
+    name: "Alpine Red Express",
+    isGlb: false,
+    skinType: "alpine_panoramic"
+  },
+  {
+    id: "london_tube",
+    name: "London Underground",
+    isGlb: false,
+    skinType: "london_tube"
+  }
+];
+
+const trainGlbCache = {};
+
 function createRealTrainSideTexture(skinType) {
   const c = document.createElement("canvas");
   c.width = 1024;
@@ -439,7 +470,7 @@ function createRealTrainSideTexture(skinType) {
       ctx.fillStyle = "rgba(200, 235, 255, 0.9)";
       ctx.fillRect(x - 10, 70, 107, 100);
     }
-  } else if (skinType === "london_tube") {
+  } else {
     ctx.fillStyle = "#b51a2b";
     ctx.fillRect(0, 0, 1024, 256);
     ctx.fillStyle = "#ffffff";
@@ -452,21 +483,10 @@ function createRealTrainSideTexture(skinType) {
       ctx.fillStyle = "rgba(255, 240, 180, 0.85)";
       ctx.fillRect(x - 7, 95, 75, 70);
     }
-  } else {
-    ctx.fillStyle = "#d97706";
-    ctx.fillRect(0, 0, 1024, 256);
-    ctx.fillStyle = "#92400e";
-    for (let x = 0; x < 1024; x += 32) {
-      ctx.fillRect(x, 20, 14, 216);
-    }
-    ctx.fillStyle = "#fef3c7";
-    ctx.font = "bold 44px Impact, sans-serif";
-    ctx.fillText("CARGO EXPRESS • HEAVY FREIGHT", 190, 145);
   }
   return new THREE.CanvasTexture(c);
 }
 
-const TRAIN_SKIN_TYPES = ["high_speed_express", "alpine_panoramic", "london_tube", "cargo"];
 const TRAIN_TEXTURE_CACHE = {};
 function getTrainTexture(skinName) {
   if (!TRAIN_TEXTURE_CACHE[skinName]) {
@@ -475,77 +495,56 @@ function getTrainTexture(skinName) {
   return TRAIN_TEXTURE_CACHE[skinName];
 }
 
-function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, forcedSkin = null) {
+function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, forcedIndex = null) {
   const group = new THREE.Group();
   const wheels = [];
 
-  const skinType = forcedSkin || TRAIN_SKIN_TYPES[Math.floor(Math.random() * TRAIN_SKIN_TYPES.length)];
-  const sideTex = getTrainTexture(skinType);
+  const trainConfig = forcedIndex !== null 
+    ? TRAIN_MODEL_CATALOG[forcedIndex % TRAIN_MODEL_CATALOG.length]
+    : TRAIN_MODEL_CATALOG[Math.floor(Math.random() * TRAIN_MODEL_CATALOG.length)];
 
-  const roofHex = skinType === "high_speed_express" ? 0xffffff : skinType === "alpine_panoramic" ? 0xffffff : 0xced4da;
-  const frontHex = skinType === "high_speed_express" ? 0xfb8500 : skinType === "alpine_panoramic" ? 0xd90429 : 0x1d3557;
-
-  const bodyMaterials = [
-    new THREE.MeshStandardMaterial({ map: sideTex, metalness: 0.5, roughness: 0.3 }),
-    new THREE.MeshStandardMaterial({ map: sideTex, metalness: 0.5, roughness: 0.3 }),
-    new THREE.MeshStandardMaterial({ color: roofHex, metalness: 0.6, roughness: 0.35 }),
-    new THREE.MeshStandardMaterial({ color: 0x1b1b1e, roughness: 0.9 }),
-    new THREE.MeshStandardMaterial({ color: frontHex, metalness: 0.6, roughness: 0.3 }),
-    new THREE.MeshStandardMaterial({ color: 0x2b2d42, metalness: 0.5, roughness: 0.5 })
-  ];
-
-  const coach = new THREE.Mesh(new THREE.BoxGeometry(2.75, 2.95, length), bodyMaterials);
-  coach.position.y = 1.85;
-  coach.castShadow = true;
-  coach.receiveShadow = true;
-  group.add(coach);
-
-  const chassis = new THREE.Mesh(
-    new THREE.BoxGeometry(2.4, 0.38, length - 0.6),
-    new THREE.MeshStandardMaterial({ color: 0x161a1d, metalness: 0.6, roughness: 0.7 })
-  );
-  chassis.position.y = 0.25;
-  group.add(chassis);
-
-  const wheelGeo = new THREE.CylinderGeometry(0.32, 0.32, 0.18, 16);
-  const wheelMat = new THREE.MeshStandardMaterial({ color: 0xadb5bd, metalness: 0.9, roughness: 0.2 });
-  for (let wz = -length / 2 + 2; wz <= length / 2 - 2; wz += 3.6) {
-    [-1.15, 1.15].forEach(wx => {
-      const w = new THREE.Mesh(wheelGeo, wheelMat);
-      w.rotation.z = Math.PI / 2;
-      w.position.set(wx, 0.32, wz);
-      group.add(w);
-      wheels.push(w);
-    });
-  }
-
-  if (skinType === "high_speed_express") {
-    const aeroNose = new THREE.Mesh(
-      new THREE.ConeGeometry(1.38, 2.4, 16),
-      new THREE.MeshStandardMaterial({ color: 0xf8f9fa, metalness: 0.5, roughness: 0.2 })
-    );
-    aeroNose.rotation.x = Math.PI / 2;
-    aeroNose.position.set(0, 1.5, length / 2 + 1.1);
-    group.add(aeroNose);
+  if (trainConfig.isGlb) {
+    if (trainGlbCache[trainConfig.glbUrl]) {
+      const clone = trainGlbCache[trainConfig.glbUrl].clone();
+      clone.scale.set(trainConfig.scale, trainConfig.scale, trainConfig.scale);
+      group.add(clone);
+    } else {
+      gltfLoader.load(
+        trainConfig.glbUrl,
+        (gltf) => {
+          trainGlbCache[trainConfig.glbUrl] = gltf.scene;
+          const clone = gltf.scene.clone();
+          clone.scale.set(trainConfig.scale, trainConfig.scale, trainConfig.scale);
+          group.add(clone);
+        },
+        undefined,
+        () => {
+          const fallbackCoach = new THREE.Mesh(
+            new THREE.BoxGeometry(2.75, 2.95, length),
+            new THREE.MeshStandardMaterial({ color: 0xd90429, roughness: 0.3 })
+          );
+          fallbackCoach.position.y = 1.85;
+          group.add(fallbackCoach);
+        }
+      );
+    }
   } else {
-    const nose = new THREE.Mesh(
-      new THREE.BoxGeometry(2.72, 1.45, 0.8),
-      new THREE.MeshStandardMaterial({ color: frontHex, metalness: 0.5, roughness: 0.3 })
-    );
-    nose.position.set(0, 1.15, length / 2 + 0.25);
-    nose.rotation.x = -0.18;
-    group.add(nose);
-  }
+    const sideTex = getTrainTexture(trainConfig.skinType);
+    const bodyMaterials = [
+      new THREE.MeshStandardMaterial({ map: sideTex, metalness: 0.5, roughness: 0.3 }),
+      new THREE.MeshStandardMaterial({ map: sideTex, metalness: 0.5, roughness: 0.3 }),
+      new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.6, roughness: 0.35 }),
+      new THREE.MeshStandardMaterial({ color: 0x1b1b1e, roughness: 0.9 }),
+      new THREE.MeshStandardMaterial({ color: 0xd90429, metalness: 0.6, roughness: 0.3 }),
+      new THREE.MeshStandardMaterial({ color: 0x2b2d42, metalness: 0.5, roughness: 0.5 })
+    ];
 
-  [-0.85, 0.85].forEach(hx => {
-    const hl = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.18, 0.18, 0.12, 14),
-      new THREE.MeshBasicMaterial({ color: 0xffffcc })
-    );
-    hl.rotation.x = Math.PI / 2;
-    hl.position.set(hx, 0.92, length / 2 + 0.55);
-    group.add(hl);
-  });
+    const coach = new THREE.Mesh(new THREE.BoxGeometry(2.75, 2.95, length), bodyMaterials);
+    coach.position.y = 1.85;
+    coach.castShadow = true;
+    coach.receiveShadow = true;
+    group.add(coach);
+  }
 
   let rampLength = 0;
   if (hasRamp) {
@@ -561,42 +560,21 @@ function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, 
 
   group.userData = {
     type: "train",
-    skinType,
     length,
     height: 3.35,
     hasRamp,
     rampLength,
     isMoving,
-    speedOffset: isMoving ? (skinType === "high_speed_express" ? 20 : 14) : 0,
+    speedOffset: isMoving ? 18 : 0,
     wheels
   };
   return group;
 }
 
-const introTrainGroup = createRealistic3DTrain(15, false, false, "high_speed_express");
+const introTrainGroup = createRealistic3DTrain(15, false, false, 0);
 introTrainGroup.position.set(-3.6, 0, -2.5);
 
-const grafCanvas = document.createElement("canvas");
-grafCanvas.width = 512;
-grafCanvas.height = 256;
-const gCtx = grafCanvas.getContext("2d");
-gCtx.fillStyle = "rgba(25, 10, 40, 0.85)";
-gCtx.fillRect(0, 0, 512, 256);
-gCtx.font = "bold italic 60px Impact, sans-serif";
-gCtx.fillStyle = "#a8ff00";
-gCtx.strokeStyle = "#ff006e";
-gCtx.lineWidth = 8;
-gCtx.strokeText("SUBWAY 3D", 90, 150);
-gCtx.fillText("SUBWAY 3D", 90, 150);
-
-const grafPlane = new THREE.Mesh(
-  new THREE.PlaneGeometry(5.5, 2.1),
-  new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(grafCanvas), transparent: true })
-);
-grafPlane.rotation.y = Math.PI / 2;
-grafPlane.position.set(1.39, 1.9, 1.0);
-introTrainGroup.add(grafPlane);
-scene.add(introTrainGroup);
+  
 
 // ================= 6. BARRIERS, COINS, DIAMONDS & POWER-UPS =================
 let obstacles = [];
