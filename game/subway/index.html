@@ -8,9 +8,9 @@
 </head>
 <body>
 
-  <!-- 1. HOME / START SCREEN OVERLAY -->
-  <div id="startOverlay">
-    <div class="top-menu-bar">
+  <!-- 1. HOME / START SCREEN OVERLAY (Click anywhere here to start) -->
+  <div id="startOverlay" onclick="forceStartGame()">
+    <div class="top-menu-bar" onclick="event.stopPropagation()">
       <div class="currency-pills">
         <div class="pill">💎 <span id="menuDiamonds">25</span></div>
         <div class="pill">🪙 <span id="menuCoins">300</span></div>
@@ -19,21 +19,21 @@
       <div class="pill" id="firebaseStatus">☁️ Connecting...</div>
     </div>
 
-    <div class="side-badges-left">
+    <div class="side-badges-left" onclick="event.stopPropagation()">
       <div class="side-badge-btn" onclick="openShopModal()">📋</div>
     </div>
-    <div class="side-badges-right">
+    <div class="side-badges-right" onclick="event.stopPropagation()">
       <div class="side-badge-btn" onclick="openShopModal()">🎁</div>
       <div class="side-badge-btn" onclick="openShopModal()">🦇</div>
     </div>
 
     <div class="center-intro-content">
       <div class="high-score-display">High Score<br><span id="menuHighScore">0</span></div>
-      <div class="tap-to-play-banner" id="tapToPlayTrigger">Tap to Play</div>
+      <div class="tap-to-play-banner">Tap to Play</div>
     </div>
 
-    <!-- Bottom Navigation Bar (With Red Notification Dot for Missions) -->
-    <div class="bottom-nav-bar">
+    <!-- Bottom Navigation Bar -->
+    <div class="bottom-nav-bar" onclick="event.stopPropagation()">
       <button class="nav-tab" onclick="openMissionsModal()" style="position: relative;">
         ⭐ MISSIONS
         <span id="missionsRedDot" class="red-dot" style="display: none;"></span>
@@ -92,22 +92,18 @@
         <h2>⭐ DAILY MISSIONS</h2>
         <button class="close-btn" onclick="closeMissionsModal()">✕</button>
       </div>
-      <div id="missionsListContainer" style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
-        <!-- Injected via JS -->
-      </div>
+      <div id="missionsListContainer" style="display:flex; flex-direction:column; gap:10px; margin-top:10px;"></div>
     </div>
   </div>
 
-  <!-- 4. 5-SECOND ROTATING REVIVE ("SAVE ME!") MODAL -->
+  <!-- 4. 5-SECOND ROTATING REVIVE MODAL -->
   <div id="reviveModal">
     <div class="modal-box revive-box">
       <h2 class="revive-title">SAVE ME?</h2>
       <p class="revive-sub">Continue from your exact score & distance!</p>
-
       <div class="pill" style="margin: 0 auto 14px; display: inline-flex;">
         💎 Your Diamonds: <span id="reviveDiamondsCount">25</span>
       </div>
-
       <div class="revive-ring-container">
         <svg class="revive-svg" viewBox="0 0 140 140">
           <circle class="revive-ring-bg" cx="70" cy="70" r="58"></circle>
@@ -120,7 +116,6 @@
           <span class="revive-sec" id="reviveCountdownText">5s</span>
         </button>
       </div>
-
       <button class="no-thanks-btn" id="noThanksBtn">No Thanks</button>
     </div>
   </div>
@@ -131,7 +126,6 @@
       <div class="gameover-banner">
         <h2 id="gameOverTitle">RUN OVER!</h2>
       </div>
-
       <div class="gameover-content-grid">
         <div class="gameover-avatar-preview" id="summaryAvatarPreviewContainer"></div>
         <div class="gameover-stats-col">
@@ -142,7 +136,6 @@
           <div class="stats-row"><span>Diamonds</span><span id="goDiamonds">0</span></div>
         </div>
       </div>
-
       <div class="action-row">
         <button class="btn-home" id="homeBtn">🏠 HOME</button>
         <button class="btn-green" id="replayBtn">🔄 REPLAY</button>
@@ -152,7 +145,7 @@
 
   <!-- 6. STORE & AVATARS MODAL -->
   <div id="shopModal">
-    <div class="modal-box">
+    <div class="modal-box" onclick="event.stopPropagation()">
       <div class="modal-header">
         <h2>🛒 STORE & AVATARS</h2>
         <button class="close-btn" id="closeShopBtn">✕</button>
@@ -162,7 +155,6 @@
         💎 Diamonds: <span id="shopDiamonds">25</span> &nbsp;|&nbsp;
         🛹 Boards: <span id="shopBoards">5</span>
       </div>
-
       <div class="shop-section-title">Power-Ups & Diamonds</div>
       <div class="shop-grid">
         <div class="shop-item">
@@ -174,10 +166,8 @@
           <button class="shop-btn" id="buyDiamondsBtn">Buy (500 🪙)</button>
         </div>
       </div>
-
       <div class="shop-section-title">3D Human Avatars (.GLB Rigged Models)</div>
       <div class="shop-grid" id="avatarShopGrid"></div>
-
       <div class="shop-section-title">Hoverboard Skins</div>
       <div class="shop-grid" id="boardSkinShopGrid"></div>
     </div>
