@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Temple Run - Jungle River Edition</title>
+    <title>Temple Run - Jungle River & Closing Monster</title>
     <!-- Firebase SDK included as requested -->
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js" type="module"></script>
     <style>
@@ -129,7 +129,7 @@
 </head>
 <body>
 
-    <div id="loading">Loading Jungle River Bridge...</div>
+    <div id="loading">Loading Jungle River & Chasing Monster...</div>
     <div id="canvas-container"></div>
 
     <div id="ui-overlay">
@@ -137,7 +137,7 @@
             <div class="hud-card">SCORE: <span id="score-val">0</span></div>
             <div class="hud-card">🪙 <span id="coin-val">0</span></div>
         </div>
-        <div class="title-banner">Jungle Bridge Run</div>
+        <div class="title-banner">Jungle River Run</div>
         <div class="footer-ui">
             <div class="instruction">Swipe Left/Right: Lanes | Swipe Up: Jump | Swipe Down: Slide</div>
         </div>
@@ -183,16 +183,16 @@
         const bridgeMat = new THREE.MeshStandardMaterial({ color: 0x4a3b32, roughness: 0.9 }); // Wooden stone bridge
         const riverMat = new THREE.MeshStandardMaterial({ color: 0x1e88e5, roughness: 0.1, metalness: 0.8 }); // Water river
         const grassMat = new THREE.MeshStandardMaterial({ color: 0x2e7d32, roughness: 0.9 }); // Greenery ground
-        const obstacleMat = new THREE.MeshStandardMaterial({ color: 0x6d4c41, roughness: 0.7 }); // Log barrier
+        const rockMat = new THREE.MeshStandardMaterial({ color: 0x5a5550, roughness: 0.8 }); // Real Rock obstacle
+        const rootMat = new THREE.MeshStandardMaterial({ color: 0x3d2817, roughness: 0.9 }); // Tree Root obstacle
 
         const segments = [];
         const obstacles = [];
-        const sceneryElements = [];
 
         for (let i = 0; i < 5; i++) {
             const segment = new THREE.Group();
             
-            // Narrow Center Bridge (No walls on sides!)
+            // Narrow Center Bridge
             const bridge = new THREE.Mesh(new THREE.BoxGeometry(6, 0.4, trackLength), bridgeMat);
             bridge.position.set(0, -0.2, 0);
             bridge.receiveShadow = true;
@@ -209,7 +209,7 @@
             rightRiver.position.set(15, -0.5, 0);
             segment.add(rightRiver);
 
-            // 3D Trees on sides for Greenery effect
+            // Side Trees with Greenery
             for (let t = -40; t <= 40; t += 20) {
                 const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.8, 5, 8), bridgeMat);
                 trunk.position.set(-8, 2, t);
@@ -228,17 +228,28 @@
                 segment.add(foliageR);
             }
 
-            // Random Obstacles on Bridge
+            // Real Rocks and Tree Roots as Obstacles
             if (i > 0) {
                 const laneChoice = Math.floor(Math.random() * 3) - 1;
-                const obsType = Math.random() > 0.5 ? 'jump' : 'slide';
+                const isRock = Math.random() > 0.5; // True = Rock (Jump), False = Tree Root (Slide)
                 
-                const obsGeo = obsType === 'jump' ? new THREE.BoxGeometry(1.6, 0.6, 0.6) : new THREE.BoxGeometry(1.6, 1.6, 0.6);
-                const obsY = obsType === 'jump' ? 0.3 : 1.1;
-                const obstacle = new THREE.Mesh(obsGeo, obstacleMat);
-                obstacle.position.set(laneChoice * laneWidth, obsY, - (i * 20));
+                let obstacle;
+                if (isRock) {
+                    // Jagged real rock model
+                    const rockGeo = new THREE.DodecahedronGeometry(0.7, 1);
+                    obstacle = new THREE.Mesh(rockGeo, rockMat);
+                    obstacle.position.set(laneChoice * laneWidth, 0.4, - (i * 20));
+                    obstacle.userData = { type: 'jump', lane: laneChoice };
+                } else {
+                    // Tree root barrier spanning across bridge floor
+                    const rootGeo = new THREE.CylinderGeometry(0.5, 0.6, 1.8, 6);
+                    obstacle = new THREE.Mesh(rootGeo, rootMat);
+                    obstacle.rotation.z = Math.PI / 2;
+                    obstacle.position.set(laneChoice * laneWidth, 1.0, - (i * 20));
+                    obstacle.userData = { type: 'slide', lane: laneChoice };
+                }
+
                 obstacle.castShadow = true;
-                obstacle.userData = { type: obsType, lane: laneChoice };
                 segment.add(obstacle);
                 obstacles.push(obstacle);
             }
@@ -287,27 +298,30 @@
         playerGroup.position.set(0, 0, 0);
         scene.add(playerGroup);
 
-        // --- 5. CHASING MONSTER ---
+        // --- 5. CHASING MONSTER (Small Size, Closes in during first 3 seconds, then stops closing) ---
         const monkeyGroup = new THREE.Group();
         const monkeyMat = new THREE.MeshStandardMaterial({ color: 0x2e1c0c, roughness: 0.9 });
-        const mHead = new THREE.Mesh(new THREE.SphereGeometry(0.55, 12, 12), monkeyMat);
-        mHead.position.set(0, 2.1, 0);
+        
+        // Small size monkey model components
+        const mHead = new THREE.Mesh(new THREE.SphereGeometry(0.32, 12, 12), monkeyMat);
+        mHead.position.set(0, 1.5, 0);
         monkeyGroup.add(mHead);
         
         const eyeMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-        const leftEye = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), eyeMat);
-        leftEye.position.set(-0.2, 2.2, 0.45);
+        const leftEye = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), eyeMat);
+        leftEye.position.set(-0.12, 1.6, 0.28);
         monkeyGroup.add(leftEye);
-        const rightEye = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), eyeMat);
-        rightEye.position.set(0.2, 2.2, 0.45);
+        const rightEye = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), eyeMat);
+        rightEye.position.set(0.12, 1.6, 0.28);
         monkeyGroup.add(rightEye);
 
-        monkeyGroup.position.set(0, 0, 4.0);
+        // Initial position further back (e.g., Z = 5.5)
+        monkeyGroup.position.set(0, 0, 5.5);
         scene.add(monkeyGroup);
 
         document.getElementById('loading').style.display = 'none';
 
-        // --- 6. TOUCH & KEYBOARD CONTROLS ---
+        // --- 6. CONTROLS ---
         let currentLane = 0; // -1, 0, 1
         let targetX = 0;
         let isJumping = false;
@@ -366,6 +380,8 @@
 
         // --- 7. ANIMATION LOOP ---
         const clock = new THREE.Clock();
+        const initialMonkeyZ = 5.5;
+        const targetMonkeyZ = 2.8; // Closest stable tracking distance after 3 seconds
 
         function animate() {
             if (isGameOver) return;
@@ -390,6 +406,15 @@
                     isSliding = false;
                     playerGroup.scale.set(1, 1, 1);
                 }
+            }
+
+            // Smoothly move small monkey closer over the first 3 seconds, then hold steady distance
+            if (time < 3.0) {
+                // Lerp distance closer slowly
+                monkeyGroup.position.z = initialMonkeyZ - (initialMonkeyZ - targetMonkeyZ) * (time / 3.0);
+            } else {
+                // Fixed trailing distance behind runner
+                monkeyGroup.position.z = targetMonkeyZ;
             }
 
             leftArm.rotation.x = Math.sin(time * 16) * 0.8;
@@ -443,6 +468,7 @@
             currentLane = 0;
             targetX = 0;
             playerGroup.position.set(0, 0, 0);
+            clock.start(); // Reset timer for 3-second monkey approach
             document.getElementById('game-over').style.display = 'none';
             animate();
         }
