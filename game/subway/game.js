@@ -1,8 +1,10 @@
-// ================= 1. AVATARS & TRAINS CATALOG =================
+// ================= 1. AVATARS & TRAINS CATALOG (With Profile Previews) =================
 const AVATAR_CATALOG = [
-  { id: "michelle", name: "Street Dancer (3D)", price: 0, glbUrl: "https://threejs.org/examples/models/gltf/Michelle.glb", scale: 1.35, rotY: Math.PI },
-  { id: "soldier", name: "Metro Commando (3D)", price: 500, glbUrl: "https://threejs.org/examples/models/gltf/Soldier.glb", scale: 1.35, rotY: 0 },
-  { id: "xbot", name: "Cyber Runner (3D)", price: 1000, glbUrl: "https://threejs.org/examples/models/gltf/Xbot.glb", scale: 1.35, rotY: Math.PI }
+  { id: "michelle", name: "Street Dancer", price: 0, glbUrl: "https://threejs.org/examples/models/gltf/Michelle.glb", scale: 1.35, emoji: "💃", rotY: Math.PI },
+  { id: "soldier", name: "Metro Commando", price: 500, glbUrl: "https://threejs.org/examples/models/gltf/Soldier.glb", scale: 1.35, emoji: "🪖", rotY: 0 },
+  { id: "xbot", name: "Cyber Runner", price: 1000, glbUrl: "https://threejs.org/examples/models/gltf/Xbot.glb", scale: 1.35, emoji: "🤖", rotY: Math.PI },
+  { id: "stacy", name: "Stacy Skater", price: 1500, glbUrl: "https://threejs.org/examples/models/gltf/Michelle.glb", scale: 1.35, emoji: "🛹", rotY: Math.PI },
+  { id: "alex", name: "Alex Acrobat", price: 2000, glbUrl: "https://threejs.org/examples/models/gltf/Soldier.glb", scale: 1.35, emoji: "🤸", rotY: 0 }
 ];
 
 const POLICE_GLB_URL = "https://threejs.org/examples/models/gltf/Soldier.glb";
@@ -18,8 +20,7 @@ const TRAIN_MODEL_CATALOG = [
   { id: "train2", name: "Express Bullet", glbUrl: "models/train2.glb", scale: 1.2, isGlb: true },
   { id: "train3", name: "Metro Commuter", glbUrl: "models/train3.glb", scale: 1.2, isGlb: true },
   { id: "train4", name: "Freight Hauler", glbUrl: "models/train4.glb", scale: 1.2, isGlb: true },
-  { id: "train5", name: "Alpine Express", glbUrl: "models/train5.glb", scale: 1.2, isGlb: true },
-  { id: "procedural_express", name: "High-Speed Express", isGlb: false, skinType: "high_speed_express" }
+  { id: "train5", name: "Alpine Express", glbUrl: "models/train5.glb", scale: 1.2, isGlb: true }
 ];
 
 const savedProfile = JSON.parse(localStorage.getItem("carracing_profile") || "null");
@@ -40,7 +41,7 @@ window.playerProfile = Object.assign(
       { id: "m1", title: "Run 500 meters", target: 500, current: 0, rewardCoins: 250, claimed: false },
       { id: "m2", title: "Run 2,000 meters", target: 2000, current: 0, rewardCoins: 1000, claimed: false },
       { id: "m3", title: "Collect 20 coins", target: 20, current: 0, rewardCoins: 300, claimed: false },
-      { id: "m4", title: "Collect 500 coins in a game", target: 500, current: 0, rewardCoins: 2500, claimed: false },
+      { id: "m4", title: "Collect 500 coins in a game", target: 500, current: 0, rewardBoards: 10, claimed: false }, // Rewards 10 skateboards!
       { id: "m5", title: "Collect 5 diamonds", target: 5, current: 0, rewardCoins: 1500, claimed: false },
       { id: "m6", title: "Use 5 skateboards", target: 5, current: 0, rewardCoins: 1000, claimed: false }
     ],
@@ -416,10 +417,10 @@ window.loadSelectedHumanAvatar = function () {
   boardRim.material.color.setHex(skin.rimColor);
 };
 
-// ================= 5. TRAIN1 TO TRAIN5 & GROUNDING LOGIC =================
+// ================= 5. TRAIN1 TO TRAIN5 (FIXED GROUND LEVEL Y = 0) =================
 const trainGlbCache = {};
 
-function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, forcedIndex = null) {
+function createRealistic3DTrain(length = 16, hasRamp = true, isMoving = false, forcedIndex = null) {
   const group = new THREE.Group();
   const wheels = [];
 
@@ -431,7 +432,7 @@ function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, 
     if (trainGlbCache[trainConfig.glbUrl]) {
       const clone = trainGlbCache[trainConfig.glbUrl].clone();
       clone.scale.set(trainConfig.scale, trainConfig.scale, trainConfig.scale);
-      clone.position.set(0, 0, 0);
+      clone.position.set(0, 0, 0); // Grounded on rails
       group.add(clone);
     } else {
       gltfLoader.load(
@@ -455,25 +456,11 @@ function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, 
       );
     }
   } else {
-    const sideTex = new THREE.CanvasTexture((() => {
-      const c = document.createElement("canvas");
-      c.width = 1024; c.height = 256;
-      const ctx = c.getContext("2d");
-      ctx.fillStyle = "#d90429"; ctx.fillRect(0, 0, 1024, 256);
-      return c;
-    })());
-    const bodyMaterials = [
-      new THREE.MeshStandardMaterial({ map: sideTex }),
-      new THREE.MeshStandardMaterial({ map: sideTex }),
-      new THREE.MeshStandardMaterial({ color: 0xffffff }),
-      new THREE.MeshStandardMaterial({ color: 0x1b1b1e }),
-      new THREE.MeshStandardMaterial({ color: 0xd90429 }),
-      new THREE.MeshStandardMaterial({ color: 0x2b2d42 })
-    ];
-    const coach = new THREE.Mesh(new THREE.BoxGeometry(2.75, 2.95, length), bodyMaterials);
+    const coach = new THREE.Mesh(
+      new THREE.BoxGeometry(2.75, 2.95, length),
+      new THREE.MeshStandardMaterial({ color: 0xd90429 })
+    );
     coach.position.y = 1.85;
-    coach.castShadow = true;
-    coach.receiveShadow = true;
     group.add(coach);
   }
 
@@ -489,7 +476,7 @@ function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, 
     group.add(ramp);
   }
 
-  group.position.y = 0; // Lock perfectly to tracks
+  group.position.y = 0; // Ensures train rests firmly on tracks
 
   group.userData = {
     type: "train",
@@ -596,20 +583,20 @@ function spawnPowerup(laneIndex, y, z) {
 
 let nextSpawnZ = -45;
 function spawnWave(zPos) {
-  // DUAL ESCAPE ROUTE LOGIC: Block at most 1 lane so that at least 2 lanes are ALWAYS open!
   const blockedLane = Math.floor(Math.random() * 3);
 
   for (let lane = 0; lane < 3; lane++) {
     if (lane === blockedLane) {
-      // Spawn obstacle or moving train in this blocked lane
-      if (Math.random() < 0.6) {
-        const hasRamp = Math.random() < 0.35;
-        const isMoving = !hasRamp && Math.random() < 0.4;
+      if (Math.random() < 0.65) {
+        const hasRamp = true;
+        const isMoving = Math.random() < 0.35;
         const trainLength = 15 + Math.floor(Math.random() * 5);
         const train = createRealistic3DTrain(trainLength, hasRamp, isMoving);
         train.position.set(LANES[lane], 0, zPos - trainLength / 2);
         scene.add(train);
         obstacles.push(train);
+
+        spawnCoinArc(lane, zPos - 2, 4, 3.8, 0);
       } else {
         const isHigh = Math.random() < 0.4;
         const barrier = createBarrierMesh(isHigh);
@@ -618,7 +605,6 @@ function spawnWave(zPos) {
         obstacles.push(barrier);
       }
     } else {
-      // Open escape lanes get coins or powerups
       if (Math.random() < 0.3) {
         spawnPowerup(lane, 1.1, zPos - 4);
       } else {
@@ -755,19 +741,27 @@ window.openMissionsModal = function() {
     item.style.flexDirection = "row";
     item.style.alignItems = "center";
     item.style.justifyContent = "space-between";
+    
+    // Check reward type (coins vs skateboards)
+    const rewardLabel = m.rewardBoards ? `+${m.rewardBoards} 🛹` : `+${m.rewardCoins} 🪙`;
+
     item.innerHTML = `
       <div style="text-align:left;">
         <b>${m.title}</b><br>
         <small>${Math.floor(m.current)} / ${m.target}</small>
       </div>
       <button class="shop-btn ${m.claimed ? 'equipped' : ''}" style="${isReady ? 'background:#62c435; color:#fff;' : ''}">
-        ${m.claimed ? "Claimed ✓" : isReady ? "CLAIM (+" + m.rewardCoins + " 🪙)" : "In Progress"}
+        ${m.claimed ? "Claimed ✓" : isReady ? `CLAIM (${rewardLabel})` : "In Progress"}
       </button>
     `;
     item.querySelector("button").onclick = () => {
       if (isReady && !m.claimed) {
         m.claimed = true;
-        window.playerProfile.coins += m.rewardCoins;
+        if (m.rewardBoards) {
+          window.playerProfile.boards += m.rewardBoards;
+        } else {
+          window.playerProfile.coins += m.rewardCoins;
+        }
         SFX.powerup();
         window.syncPlayerProfileToCloud && window.syncPlayerProfileToCloud();
         window.updateMenuUI();
@@ -834,6 +828,75 @@ window.closeEventsModal = function() {
   document.getElementById("eventsModal").style.display = "none";
 };
 
+// ================= STORE & AVATARS (AVATAR IMAGES/EMOJIS + NAMES) =================
+function renderShopItems() {
+  const avGrid = document.getElementById("avatarShopGrid");
+  avGrid.innerHTML = "";
+  AVATAR_CATALOG.forEach(av => {
+    const unlocked = window.playerProfile.unlockedAvatars.includes(av.id);
+    const equipped = window.playerProfile.selectedAvatar === av.id;
+    const card = document.createElement("div");
+    card.className = "shop-item" + (equipped ? " active" : "");
+    card.innerHTML = `
+      <div style="font-size:32px; margin-bottom:4px;">${av.emoji || "👤"}</div>
+      <div><b>${av.name}</b></div>
+      <button class="shop-btn ${equipped ? 'equipped' : ''}">
+        ${equipped ? "Equipped ✓" : unlocked ? "Select" : `Buy (${av.price} 🪙)`}
+      </button>
+    `;
+    card.querySelector("button").onclick = () => {
+      if (unlocked) {
+        window.playerProfile.selectedAvatar = av.id;
+      } else if (window.playerProfile.coins >= av.price) {
+        window.playerProfile.coins -= av.price;
+        window.playerProfile.unlockedAvatars.push(av.id);
+        window.playerProfile.selectedAvatar = av.id;
+        SFX.powerup();
+      } else {
+        alert("Not enough coins!");
+        return;
+      }
+      window.loadSelectedHumanAvatar();
+      window.syncPlayerProfileToCloud && window.syncPlayerProfileToCloud();
+      window.updateMenuUI();
+    };
+    avGrid.appendChild(card);
+  });
+
+  const skinGrid = document.getElementById("boardSkinShopGrid");
+  skinGrid.innerHTML = "";
+  BOARD_SKIN_CATALOG.forEach(sk => {
+    const unlocked = window.playerProfile.unlockedBoardSkins.includes(sk.id);
+    const equipped = window.playerProfile.selectedBoard === sk.id;
+    const card = document.createElement("div");
+    card.className = "shop-item" + (equipped ? " active" : "");
+    card.innerHTML = `
+      <div style="font-size:32px; margin-bottom:4px;">🛹</div>
+      <div><b>${sk.name}</b></div>
+      <button class="shop-btn ${equipped ? 'equipped' : ''}">
+        ${equipped ? "Equipped ✓" : unlocked ? "Select" : `Buy (${sk.price} 🪙)`}
+      </button>
+    `;
+    card.querySelector("button").onclick = () => {
+      if (unlocked) {
+        window.playerProfile.selectedBoard = sk.id;
+      } else if (window.playerProfile.coins >= sk.price) {
+        window.playerProfile.coins -= sk.price;
+        window.playerProfile.unlockedBoardSkins.push(sk.id);
+        window.playerProfile.selectedBoard = sk.id;
+        SFX.powerup();
+      } else {
+        alert("Not enough coins!");
+        return;
+      }
+      window.loadSelectedHumanAvatar();
+      window.syncPlayerProfileToCloud && window.syncPlayerProfileToCloud();
+      window.updateMenuUI();
+    };
+    skinGrid.appendChild(card);
+  });
+}
+
 window.openAccountModal = function() {
   const nameInput = document.getElementById("editNameInput");
   nameInput.value = window.playerProfile.displayName || "";
@@ -853,7 +916,7 @@ window.openAccountModal = function() {
     const isSelected = window.playerProfile.selectedAvatar === av.id;
     const btn = document.createElement("button");
     btn.className = "shop-btn" + (isSelected ? " equipped" : "");
-    btn.innerText = av.name.split(" ")[0];
+    btn.innerHTML = `${av.emoji || "👤"} ${av.name}`;
     btn.style.fontSize = "11px";
     btn.onclick = () => {
       window.playerProfile.selectedAvatar = av.id;
@@ -1206,72 +1269,6 @@ function updateHudUI() {
   if (magnetTimer > 0) {
     document.getElementById("magnetBarFill").style.width = ((magnetTimer / 10) * 100) + "%";
   }
-}
-
-function renderShopItems() {
-  const avGrid = document.getElementById("avatarShopGrid");
-  avGrid.innerHTML = "";
-  AVATAR_CATALOG.forEach(av => {
-    const unlocked = window.playerProfile.unlockedAvatars.includes(av.id);
-    const equipped = window.playerProfile.selectedAvatar === av.id;
-    const card = document.createElement("div");
-    card.className = "shop-item" + (equipped ? " active" : "");
-    card.innerHTML = `
-      <div>🧍 <b>${av.name}</b></div>
-      <button class="shop-btn ${equipped ? 'equipped' : ''}">
-        ${equipped ? "Equipped ✓" : unlocked ? "Select" : `Buy (${av.price} 🪙)`}
-      </button>
-    `;
-    card.querySelector("button").onclick = () => {
-      if (unlocked) {
-        window.playerProfile.selectedAvatar = av.id;
-      } else if (window.playerProfile.coins >= av.price) {
-        window.playerProfile.coins -= av.price;
-        window.playerProfile.unlockedAvatars.push(av.id);
-        window.playerProfile.selectedAvatar = av.id;
-        SFX.powerup();
-      } else {
-        alert("Not enough coins!");
-        return;
-      }
-      window.loadSelectedHumanAvatar();
-      window.syncPlayerProfileToCloud && window.syncPlayerProfileToCloud();
-      window.updateMenuUI();
-    };
-    avGrid.appendChild(card);
-  });
-
-  const skinGrid = document.getElementById("boardSkinShopGrid");
-  skinGrid.innerHTML = "";
-  BOARD_SKIN_CATALOG.forEach(sk => {
-    const unlocked = window.playerProfile.unlockedBoardSkins.includes(sk.id);
-    const equipped = window.playerProfile.selectedBoard === sk.id;
-    const card = document.createElement("div");
-    card.className = "shop-item" + (equipped ? " active" : "");
-    card.innerHTML = `
-      <div>🛹 <b>${sk.name}</b></div>
-      <button class="shop-btn ${equipped ? 'equipped' : ''}">
-        ${equipped ? "Equipped ✓" : unlocked ? "Select" : `Buy (${sk.price} 🪙)`}
-      </button>
-    `;
-    card.querySelector("button").onclick = () => {
-      if (unlocked) {
-        window.playerProfile.selectedBoard = sk.id;
-      } else if (window.playerProfile.coins >= sk.price) {
-        window.playerProfile.coins -= sk.price;
-        window.playerProfile.unlockedBoardSkins.push(sk.id);
-        window.playerProfile.selectedBoard = sk.id;
-        SFX.powerup();
-      } else {
-        alert("Not enough coins!");
-        return;
-      }
-      window.loadSelectedHumanAvatar();
-      window.syncPlayerProfileToCloud && window.syncPlayerProfileToCloud();
-      window.updateMenuUI();
-    };
-    skinGrid.appendChild(card);
-  });
 }
 
 document.getElementById("replayBtn").onclick = startNewRun;
