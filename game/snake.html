@@ -106,7 +106,7 @@
     </button>
   </div>
 
-  <!-- Firebase & Core Game Script with Sky Blue Glowing Snake Theme -->
+  <!-- Firebase & Core Game Script with Emoji Food & Sky Blue Snake -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
@@ -147,6 +147,10 @@
     let animPulse = 0;
     let eatParticles = [];
     let eatWaves = [];
+
+    // Food emoji list provided
+    const foodEmojis = ["🌭","🌮","🌯","🌽","🌾","🍅","🍆","🍑","🍓","🍔","🍕","🍖","🍗","🍟","🍠","🍡","🍢","🍛","🍘","🍚","🍙","🍜","🍝","🍢","🍣","🍤","🍞","🍥","🍮","🍱","🍦","🍧","🍨","🍲","🍳","🍩","🍪","🍫","🥔","🥕","🥖","🥗","🥐","🥑","🥘","🥙","🥒","🥓","🥚","🥦","🥜","🥝","🥧","🥢","🥞","🦃","🥟","🥥","🦑","🥡","🥪","🥫","🥨","🥩","🫜","🫒","🫘"];
+    let currentFoodEmoji = "🍕";
 
     let snake = [
       { x: 10, y: 10 },
@@ -208,6 +212,8 @@
         if (!collidesWithSnake) break;
       }
       food = newFood;
+      // Pick a random food emoji from the list
+      currentFoodEmoji = foodEmojis[Math.floor(Math.random() * foodEmojis.length)];
     }
 
     function changeDirection(dx, dy) {
@@ -361,25 +367,16 @@
       }
       ctx.globalAlpha = 1.0;
 
-      // Food Rendering (Pinkish Glowing Orb)
+      // Food Rendering (Emoji Food with Floating Pulse)
       const foodX = food.x * gridSize + gridSize / 2;
       const foodY = food.y * gridSize + gridSize / 2;
-      const pulseSize = Math.sin(animPulse) * 1.5;
-
-      ctx.fillStyle = 'rgba(255, 0, 123, 0.25)';
-      ctx.beginPath();
-      ctx.arc(foodX, foodY, 9 + pulseSize, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = '#ff007b';
-      ctx.beginPath();
-      ctx.arc(foodX, foodY, 5.5, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(foodX, foodY, 2, 0, Math.PI * 2);
-      ctx.fill();
+      
+      ctx.save();
+      ctx.font = "16px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(currentFoodEmoji, foodX, foodY);
+      ctx.restore();
 
       // Snake Rendering (Light Sky Blue with Glowing Effects)
       for (let i = snake.length - 1; i >= 0; i--) {
