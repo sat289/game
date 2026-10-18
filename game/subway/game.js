@@ -416,22 +416,8 @@ window.loadSelectedHumanAvatar = function () {
   boardRim.material.color.setHex(skin.rimColor);
 };
 
-// ================= 5. TRAIN1 TO TRAIN5 =================
+// ================= 5. TRAIN1 TO TRAIN5 & GROUNDING LOGIC =================
 const trainGlbCache = {};
-
-function createRealTrainSideTexture(skinType) {
-  const c = document.createElement("canvas");
-  c.width = 1024;
-  c.height = 256;
-  const ctx = c.getContext("2d");
-  ctx.fillStyle = "#d90429";
-  ctx.fillRect(0, 0, 1024, 256);
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 25, 1024, 30);
-  ctx.fillStyle = "#2b2d42";
-  ctx.fillRect(0, 205, 1024, 51);
-  return new THREE.CanvasTexture(c);
-}
 
 function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, forcedIndex = null) {
   const group = new THREE.Group();
@@ -445,6 +431,7 @@ function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, 
     if (trainGlbCache[trainConfig.glbUrl]) {
       const clone = trainGlbCache[trainConfig.glbUrl].clone();
       clone.scale.set(trainConfig.scale, trainConfig.scale, trainConfig.scale);
+      clone.position.set(0, 0, 0);
       group.add(clone);
     } else {
       gltfLoader.load(
@@ -453,6 +440,7 @@ function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, 
           trainGlbCache[trainConfig.glbUrl] = gltf.scene;
           const clone = gltf.scene.clone();
           clone.scale.set(trainConfig.scale, trainConfig.scale, trainConfig.scale);
+          clone.position.set(0, 0, 0);
           group.add(clone);
         },
         undefined,
@@ -467,7 +455,13 @@ function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, 
       );
     }
   } else {
-    const sideTex = createRealTrainSideTexture("high_speed_express");
+    const sideTex = new THREE.CanvasTexture((() => {
+      const c = document.createElement("canvas");
+      c.width = 1024; c.height = 256;
+      const ctx = c.getContext("2d");
+      ctx.fillStyle = "#d90429"; ctx.fillRect(0, 0, 1024, 256);
+      return c;
+    })());
     const bodyMaterials = [
       new THREE.MeshStandardMaterial({ map: sideTex }),
       new THREE.MeshStandardMaterial({ map: sideTex }),
@@ -494,6 +488,8 @@ function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, 
     ramp.rotation.x = Math.atan2(3.35, 4.6);
     group.add(ramp);
   }
+
+  group.position.y = 0; // Lock perfectly to tracks
 
   group.userData = {
     type: "train",
@@ -533,7 +529,7 @@ grafPlane.position.set(1.39, 1.9, 1.0);
 introTrainGroup.add(grafPlane);
 scene.add(introTrainGroup);
 
-// ================= 6. BARRIERS, COINS & POWER-UPS =================
+// ================= 6. BARRIERS, COINS & DUAL ESCAPE ROUTES =================
 let obstacles = [];
 let coins = [];
 let powerups = [];
@@ -587,12 +583,7 @@ function spawnCoinArc(laneIndex, startZ, count = 5, baseHeight = 0.95, arcHeight
 function spawnPowerup(laneIndex, y, z) {
   const types = ["jetpack", "magnet", "boardPickup", "diamondPickup"];
   const kind = types[Math.floor(Math.random() * types.length)];
-  const colorMap = {
-    jetpack: 0xff4500,
-    magnet: 0x00e5ff,
-    boardPickup: 0x7cfc00,
-    diamondPickup: 0x00f5d4
-  };
+  const colorMap = { jetpack: 0xff4500, magnet: 0x00e5ff, boardPickup: 0x7cfc00, diamondPickup: 0x00f5d4 };
   const mesh = new THREE.Mesh(
     new THREE.OctahedronGeometry(0.55, 0),
     new THREE.MeshStandardMaterial({ color: colorMap[kind], emissive: colorMap[kind], emissiveIntensity: 0.5 })
@@ -605,42 +596,33 @@ function spawnPowerup(laneIndex, y, z) {
 
 let nextSpawnZ = -45;
 function spawnWave(zPos) {
-  const usedLanes = new Set();
-  const numObstacles = Math.random() < 0.65 ? 2 : 1;
-
-  for (let i = 0; i < numObstacles; i++) {
-    let lane = Math.floor(Math.random() * 3);
-    if (usedLanes.has(lane)) lane = (lane + 1) % 3;
-    usedLanes.add(lane);
-
-    if (Math.random() < 0.65) {
-      const hasRamp = Math.random() < 0.45;
-      const isMoving = !hasRamp && Math.random() < 0.48;
-      const trainLength = 15 + Math.floor(Math.random() * 5);
-      const train = createRealistic3DTrain(trainLength, hasRamp, isMoving);
-      train.position.set(LANES[lane], 0, zPos - trainLength / 2);
-      scene.add(train);
-      obstacles.push(train);
-
-      if (hasRamp || Math.random() < 0.5) {
-        spawnCoinArc(lane, zPos - 2, 5, 4.2, 0);
-      }
-    } else {
-      const isHigh = Math.random() < 0.4;
-      const barrier = createBarrierMesh(isHigh);
-      barrier.position.set(LANES[lane], 0, zPos);
-      scene.add(barrier);
-      obstacles.push(barrier);
-      spawnCoinArc(lane, zPos + 3, 5, 0.95, isHigh ? 0 : 2.1);
-    }
-  }
+  // DUAL ESCAPE ROUTE LOGIC: Block at most 1 lane so that at least 2 lanes are ALWAYS open!
+  const blockedLane = Math.floor(Math.random() * 3);
 
   for (let lane = 0; lane < 3; lane++) {
-    if (!usedLanes.has(lane)) {
-      if (Math.random() < 0.25) {
+    if (lane === blockedLane) {
+      // Spawn obstacle or moving train in this blocked lane
+      if (Math.random() < 0.6) {
+        const hasRamp = Math.random() < 0.35;
+        const isMoving = !hasRamp && Math.random() < 0.4;
+        const trainLength = 15 + Math.floor(Math.random() * 5);
+        const train = createRealistic3DTrain(trainLength, hasRamp, isMoving);
+        train.position.set(LANES[lane], 0, zPos - trainLength / 2);
+        scene.add(train);
+        obstacles.push(train);
+      } else {
+        const isHigh = Math.random() < 0.4;
+        const barrier = createBarrierMesh(isHigh);
+        barrier.position.set(LANES[lane], 0, zPos);
+        scene.add(barrier);
+        obstacles.push(barrier);
+      }
+    } else {
+      // Open escape lanes get coins or powerups
+      if (Math.random() < 0.3) {
         spawnPowerup(lane, 1.1, zPos - 4);
       } else {
-        spawnCoinArc(lane, zPos, 6, 0.95, 0);
+        spawnCoinArc(lane, zPos, 5, 0.95, 0);
       }
     }
   }
@@ -852,7 +834,6 @@ window.closeEventsModal = function() {
   document.getElementById("eventsModal").style.display = "none";
 };
 
-// Account / Google Login Modal Handlers (Name & Avatar Only)
 window.openAccountModal = function() {
   const nameInput = document.getElementById("editNameInput");
   nameInput.value = window.playerProfile.displayName || "";
@@ -866,7 +847,6 @@ window.openAccountModal = function() {
     document.getElementById("accountLoggedInView").style.display = "none";
   }
 
-  // Render Avatar Selector Grid inside Account Modal
   const avatarGrid = document.getElementById("accountAvatarSelectorGrid");
   avatarGrid.innerHTML = "";
   AVATAR_CATALOG.forEach(av => {
@@ -892,7 +872,7 @@ window.closeAccountModal = function() {
 };
 
 document.getElementById("googleLoginBtn").onclick = () => {
-  const defaultName = prompt("Enter your Google Account Display Name:", "Satish Kommana");
+  const defaultName = prompt("Enter your Display Name:", "Satish Kommana");
   if (defaultName) {
     window.playerProfile.displayName = defaultName;
     window.syncPlayerProfileToCloud && window.syncPlayerProfileToCloud();
@@ -1595,7 +1575,6 @@ function animate(now) {
         scene.remove(c);
         coins.splice(i, 1);
         updateMissionsProgress(0, 1, 0, 0);
-        updateMissionsProgress(0, 0, 0, 0); // Check 500 coins in game mission
         continue;
       }
       if (c.position.z > 12) {
