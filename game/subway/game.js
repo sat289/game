@@ -43,13 +43,25 @@ window.playerProfile = Object.assign(
     unlockedAvatars: ["michelle"],
     unlockedBoardSkins: ["flame"],
     selectedAvatar: "michelle",
-    selectedBoard: "flame"
+    selectedBoard: "flame",
+    missions: [
+      { id: "m1", title: "Run 500 meters", target: 500, current: 0, rewardCoins: 250, claimed: false },
+      { id: "m2", title: "Run 1,000 meters", target: 1000, current: 0, rewardCoins: 500, claimed: false },
+      { id: "m3", title: "Collect 20 coins", target: 20, current: 0, rewardCoins: 300, claimed: false }
+    ]
   },
   savedProfile || {}
 );
 
 if (typeof window.playerProfile.diamonds !== "number") {
   window.playerProfile.diamonds = 25;
+}
+if (!Array.isArray(window.playerProfile.missions)) {
+  window.playerProfile.missions = [
+    { id: "m1", title: "Run 500 meters", target: 500, current: 0, rewardCoins: 250, claimed: false },
+    { id: "m2", title: "Run 1,000 meters", target: 1000, current: 0, rewardCoins: 500, claimed: false },
+    { id: "m3", title: "Collect 20 coins", target: 20, current: 0, rewardCoins: 300, claimed: false }
+  ];
 }
 
 // ================= 2. WEB AUDIO SOUND SYNTHESIZER =================
@@ -252,7 +264,6 @@ let playerActions = { idle: null, run: null };
 const glbCache = {};
 const gltfLoader = new THREE.GLTFLoader();
 
-// Hoverboard Mesh
 const boardGroup = new THREE.Group();
 const boardDeck = new THREE.Mesh(
   new THREE.BoxGeometry(1.15, 0.1, 2.2),
@@ -267,7 +278,6 @@ boardGroup.position.y = 0.07;
 boardGroup.visible = false;
 playerGroup.add(boardGroup);
 
-// Jetpack Thrusters
 const jetpackGroup = new THREE.Group();
 [-0.22, 0.22].forEach(ox => {
   const cyl = new THREE.Mesh(
@@ -286,7 +296,6 @@ const jetpackGroup = new THREE.Group();
 jetpackGroup.visible = false;
 playerGroup.add(jetpackGroup);
 
-// Dizzy Stars Overhead
 const dizzyStarsGroup = new THREE.Group();
 dizzyStarsGroup.position.y = 2.75;
 for (let i = 0; i < 4; i++) {
@@ -301,7 +310,6 @@ for (let i = 0; i < 4; i++) {
 dizzyStarsGroup.visible = false;
 playerGroup.add(dizzyStarsGroup);
 
-// Police Inspector + Dog
 const chaserGroup = new THREE.Group();
 const fallbackPolice = createSculptedHuman(0x1b263b, 0x0d1b2a, true);
 fallbackPolice.userData.sprayCan.visible = false;
@@ -345,7 +353,6 @@ scene.add(chaserGroup);
 
 window.loadSelectedHumanAvatar = function () {
   const av = AVATAR_CATALOG.find(a => a.id === window.playerProfile.selectedAvatar) || AVATAR_CATALOG[0];
-  const badge = document.getElementById("modelStatusBadge");
   fallbackHuman.visible = true;
 
   if (activeGlbHuman) {
@@ -403,7 +410,6 @@ window.loadSelectedHumanAvatar = function () {
   boardDeck.material.color.setHex(skin.deckColor);
   boardRim.material.color.setHex(skin.rimColor);
 };
-
 
 // ================= 5. REALISTIC 3D TRAINS (STEAM GLB + EXPRESS SKINS) =================
 const TRAIN_MODEL_CATALOG = [
@@ -574,7 +580,27 @@ function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, 
 const introTrainGroup = createRealistic3DTrain(15, false, false, 0);
 introTrainGroup.position.set(-3.6, 0, -2.5);
 
-  
+const grafCanvas = document.createElement("canvas");
+grafCanvas.width = 512;
+grafCanvas.height = 256;
+const gCtx = grafCanvas.getContext("2d");
+gCtx.fillStyle = "rgba(25, 10, 40, 0.85)";
+gCtx.fillRect(0, 0, 512, 256);
+gCtx.font = "bold italic 60px Impact, sans-serif";
+gCtx.fillStyle = "#a8ff00";
+gCtx.strokeStyle = "#ff006e";
+gCtx.lineWidth = 8;
+gCtx.strokeText("SUBWAY 3D", 90, 150);
+gCtx.fillText("SUBWAY 3D", 90, 150);
+
+const grafPlane = new THREE.Mesh(
+  new THREE.PlaneGeometry(5.5, 2.1),
+  new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(grafCanvas), transparent: true })
+);
+grafPlane.rotation.y = Math.PI / 2;
+grafPlane.position.set(1.39, 1.9, 1.0);
+introTrainGroup.add(grafPlane);
+scene.add(introTrainGroup);
 
 // ================= 6. BARRIERS, COINS, DIAMONDS & POWER-UPS =================
 let obstacles = [];
@@ -689,8 +715,8 @@ function spawnWave(zPos) {
   }
 }
 
-// ================= 7. GAME STATE, REVIVE & POLICE LOGIC =================
-let gameState = "IDLE_INTRO"; // Starts immediately at Home screen (no age gate)
+// ================= 7. GAME STATE, MISSIONS & POLICE LOGIC =================
+let gameState = "IDLE_INTRO";
 let currentLane = 1;
 let previousLane = 1;
 let playerY = 0;
@@ -766,6 +792,72 @@ function switchPlayerAnimation(mode) {
   }
 }
 
+function updateMissionsProgress(distDelta, coinsDelta) {
+  if (!window.playerProfile.missions) return;
+  let updated = false;
+  window.playerProfile.missions.forEach(m => {
+    if (!m.claimed) {
+      if (m.id.startsWith("m1") || m.id.startsWith("m2")) {
+        m.current = Math.min(m.target, m.current + distDelta);
+      } else if (m.id.startsWith("m3")) {
+        m.current = Math.min(m.target, m.current + coinsDelta);
+      }
+      updated = true;
+    }
+  });
+  if (updated) {
+    window.syncPlayerProfileToCloud && window.syncPlayerProfileToCloud();
+    updateMissionsRedDot();
+  }
+}
+
+function updateMissionsRedDot() {
+  const dot = document.getElementById("missionsRedDot");
+  if (!dot) return;
+  const hasClaimable = window.playerProfile.missions.some(m => m.current >= m.target && !m.claimed);
+  dot.style.display = hasClaimable ? "block" : "none";
+}
+
+window.openMissionsModal = function() {
+  const container = document.getElementById("missionsListContainer");
+  container.innerHTML = "";
+
+  window.playerProfile.missions.forEach(m => {
+    const isReady = m.current >= m.target && !m.claimed;
+    const item = document.createElement("div");
+    item.className = "shop-item";
+    item.style.flexDirection = "row";
+    item.style.alignItems = "center";
+    item.style.justifyContent = "space-between";
+    item.innerHTML = `
+      <div style="text-align:left;">
+        <b>${m.title}</b><br>
+        <small>${Math.floor(m.current)} / ${m.target}</small>
+      </div>
+      <button class="shop-btn ${m.claimed ? 'equipped' : ''}" style="${isReady ? 'background:#62c435; color:#fff;' : ''}">
+        ${m.claimed ? "Claimed ✓" : isReady ? "CLAIM (+" + m.rewardCoins + " 🪙)" : "In Progress"}
+      </button>
+    `;
+    item.querySelector("button").onclick = () => {
+      if (isReady && !m.claimed) {
+        m.claimed = true;
+        window.playerProfile.coins += m.rewardCoins;
+        SFX.powerup();
+        window.syncPlayerProfileToCloud && window.syncPlayerProfileToCloud();
+        window.updateMenuUI();
+        window.openMissionsModal();
+      }
+    };
+    container.appendChild(item);
+  });
+
+  document.getElementById("missionsModal").style.display = "flex";
+};
+
+window.closeMissionsModal = function() {
+  document.getElementById("missionsModal").style.display = "none";
+};
+
 function promptReviveOrGameOver(reasonText) {
   SFX.crash();
   SFX.whistle();
@@ -813,7 +905,6 @@ function handleReviveClick() {
   updateHudUI();
 }
 
-// Render 3D Avatar inside Game Over Summary Screen
 let summaryRenderer = null;
 let summaryScene = null;
 let summaryCamera = null;
@@ -876,7 +967,6 @@ function finalizeGameOver() {
   document.getElementById("goDiamonds").innerText = window.playerProfile.diamonds;
   document.getElementById("gameOverModal").style.display = "flex";
 
-  // Render Avatar in Summary Screen
   setTimeout(renderSummaryAvatar, 50);
 }
 
@@ -921,6 +1011,7 @@ function startNewRun() {
   document.getElementById("startOverlay").style.display = "none";
   document.getElementById("gameOverModal").style.display = "none";
   document.getElementById("reviveModal").style.display = "none";
+  document.getElementById("missionsModal").style.display = "none";
   document.getElementById("hud").style.display = "block";
 
   for (let z = -40; z >= -180; z -= 30) {
@@ -993,7 +1084,6 @@ window.addEventListener("keydown", e => {
 
 let touchStartX = 0, touchStartY = 0, lastTapTime = 0;
 
-// Clicking ANYWHERE on home screen starts the game
 canvas.addEventListener("pointerdown", e => {
   if (gameState === "IDLE_INTRO") {
     ensureAudio();
@@ -1020,6 +1110,16 @@ canvas.addEventListener("pointerup", e => {
   }
 });
 
+const tapTrigger = document.getElementById("tapToPlayTrigger");
+if (tapTrigger) {
+  tapTrigger.addEventListener("click", () => {
+    if (gameState === "IDLE_INTRO") {
+      ensureAudio();
+      startNewRun();
+    }
+  });
+}
+
 // ================= 9. UI & STORE BINDINGS =================
 window.updateMenuUI = function () {
   document.getElementById("menuCoins").innerText = window.playerProfile.coins;
@@ -1031,6 +1131,7 @@ window.updateMenuUI = function () {
   document.getElementById("shopDiamonds").innerText = window.playerProfile.diamonds;
   document.getElementById("shopBoards").innerText = window.playerProfile.boards;
   renderShopItems();
+  updateMissionsRedDot();
 };
 
 window.openShopModal = function() {
@@ -1231,8 +1332,11 @@ function animate(now) {
 
     speed = Math.min(42, speed + dt * 0.38);
     const stepZ = speed * dt;
-    distanceRun += stepZ * 0.45;
-    window.score += stepZ * 2.2 * scoreMultiplier;
+    const distDelta = stepZ * 0.45;
+    distanceRun += distDelta;
+    window.score += distDelta * 2.2 * scoreMultiplier;
+
+    updateMissionsProgress(distDelta, 0);
 
     scrollingProps.forEach(row => {
       row.position.z += stepZ;
@@ -1435,6 +1539,7 @@ function animate(now) {
         SFX.coin();
         scene.remove(c);
         coins.splice(i, 1);
+        updateMissionsProgress(0, 1);
         continue;
       }
       if (c.position.z > 12) {
