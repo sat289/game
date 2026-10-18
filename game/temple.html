@@ -4,14 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Temple Run - Jungle Waterfall & Slide Escape</title>
+    <title>Temple Run - Misty Monsoon Waterfall Edition</title>
     <!-- Firebase SDK included as requested -->
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js" type="module"></script>
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #06140c;
+            background-color: #0b1f15;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             user-select: none;
             -webkit-user-select: none;
@@ -41,9 +41,9 @@
             align-items: center;
         }
         .hud-card {
-            background: rgba(0, 0, 0, 0.75);
+            background: rgba(0, 0, 0, 0.7);
             border: 2px solid #2e7d32;
-            color: #81c784;
+            color: #a5d6a7;
             padding: 8px 14px;
             font-size: 15px;
             font-weight: bold;
@@ -54,12 +54,12 @@
         }
         .title-banner {
             text-align: center;
-            color: #4caf50;
-            font-size: 24px;
+            color: #81c784;
+            font-size: 22px;
             font-weight: 900;
             text-transform: uppercase;
             letter-spacing: 2px;
-            text-shadow: 2px 2px #000, 0 0 15px rgba(76, 175, 80, 0.6);
+            text-shadow: 2px 2px #000, 0 0 15px rgba(129, 199, 132, 0.6);
         }
         .footer-ui {
             text-align: center;
@@ -67,7 +67,7 @@
         }
         .instruction {
             display: inline-block;
-            background: linear-gradient(135deg, #1b5e20, #0d3b13);
+            background: linear-gradient(135deg, #1b5e20, #0a3610);
             color: #fff;
             padding: 10px 20px;
             border-radius: 20px;
@@ -101,7 +101,7 @@
         }
         #game-over button {
             background: linear-gradient(135deg, #2e7d32, #1b5e20);
-            border: 1px solid #81c784;
+            border: 1px solid #a5d6a7;
             color: #fff;
             padding: 12px 24px;
             font-size: 16px;
@@ -129,7 +129,7 @@
 </head>
 <body>
 
-    <div id="loading">Loading Jungle Waterfalls & Explorer...</div>
+    <div id="loading">Loading Monsoon Valley & Waterfalls...[span_0](start_span)[span_0](end_span)</div>
     <div id="canvas-container"></div>
 
     <div id="ui-overlay">
@@ -137,9 +137,9 @@
             <div class="hud-card">SCORE: <span id="score-val">0</span></div>
             <div class="hud-card">🪙 <span id="coin-val">0</span></div>
         </div>
-        <div class="title-banner">Jungle Temple Run</div>
+        <div class="title-banner">Monsoon Valley Escape[span_1](start_span)[span_1](end_span)</div>
         <div class="footer-ui">
-            <div class="instruction">Swipe Left/Right: Lanes | Swipe Up: Jump | Swipe Down: Flat Slide (2s)</div>
+            <div class="instruction">Swipe Left/Right: Lanes | Swipe Up: Jump | Swipe Down: Flat Slide</div>
         </div>
     </div>
 
@@ -150,11 +150,11 @@
     </div>
 
     <script>
-        // --- 1. SETUP SCENE, CAMERA & RENDERER ---
+        // --- 1. SETUP SCENE, CAMERA & MISTY MONSOON ATMOSPHERE ---
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x06140c);
-        scene.fog = new THREE.FogExp2(0x06140c, 0.018);
+        scene.background = new THREE.Color(0x0f241a); // Deep lush monsoon forest tint[span_2](start_span)[span_2](end_span)
+        scene.fog = new THREE.FogExp2(0x142b1f, 0.025); // Heavy cinematic mist/fog like the reference reel[span_3](start_span)[span_3](end_span)
 
         const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1000);
         camera.position.set(0, 3.2, 5.2);
@@ -165,27 +165,28 @@
         renderer.shadowMap.enabled = true;
         container.appendChild(renderer.domElement);
 
-        // --- 2. LIGHTING SYSTEM ---
-        const ambientLight = new THREE.AmbientLight(0xd4edda, 0.75);
+        // --- 2. SOFT LIGHTING ---
+        const ambientLight = new THREE.AmbientLight(0xc8e6c9, 0.8);
         scene.add(ambientLight);
 
-        const dirLight = new THREE.DirectionalLight(0xfff3cd, 1.3);
+        const dirLight = new THREE.DirectionalLight(0xe8f5e9, 1.2);
         dirLight.position.set(10, 25, 10);
         dirLight.castShadow = true;
         scene.add(dirLight);
 
-        // --- 3. ENVIRONMENT: STONE PATH, WATERFALLS & JUNGLE TREES ---
+        // --- 3. ENVIRONMENT: RUNNING STREAM PATH, SURROUNDING WATERFALLS & GREENERY TREES ---
         const laneWidth = 2.0;
         const trackLength = 100;
         const roadGroup = new THREE.Group();
         scene.add(roadGroup);
 
-        const stoneMat = new THREE.MeshStandardMaterial({ color: 0x4a433b, roughness: 0.85 }); 
-        const riverMat = new THREE.MeshStandardMaterial({ color: 0x1e88e5, roughness: 0.1, metalness: 0.8 }); // Flowing water
-        const waterfallMat = new THREE.MeshBasicMaterial({ color: 0x80d8ff, transparent: true, opacity: 0.8 }); // Waterfall wall
-        const grassMat = new THREE.MeshStandardMaterial({ color: 0x2e7d32, roughness: 0.9 }); 
-        const rockMat = new THREE.MeshStandardMaterial({ color: 0x5a5550, roughness: 0.8 }); 
-        const rootMat = new THREE.MeshStandardMaterial({ color: 0x3d2817, roughness: 0.9 }); // Tree root barrier
+        const streamMat = new THREE.MeshStandardMaterial({ color: 0x3e5c54, roughness: 0.6 }); // Rocky stream bed like video[span_4](start_span)[span_4](end_span)
+        const flowingWaterMat = new THREE.MeshStandardMaterial({ color: 0x80deea, roughness: 0.1, metalness: 0.8, transparent: true, opacity: 0.85 });
+        const waterfallCliffMat = new THREE.MeshStandardMaterial({ color: 0x1c2b22, roughness: 0.9 });
+        const waterfallSheetMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.6 }); // Rushing waterfall streams[span_5](start_span)[span_5](end_span)
+        const jungleGreenMat = new THREE.MeshStandardMaterial({ color: 0x1b5e20, roughness: 0.9 });
+        const rockMat = new THREE.MeshStandardMaterial({ color: 0x4f5b52, roughness: 0.8 });
+        const rootMat = new THREE.MeshStandardMaterial({ color: 0x3e2723, roughness: 0.9 });
 
         const segments = [];
         const obstacles = [];
@@ -193,48 +194,55 @@
         for (let i = 0; i < 5; i++) {
             const segment = new THREE.Group();
             
-            // Central Running Bridge / Path
-            const bridge = new THREE.Mesh(new THREE.BoxGeometry(6, 0.4, trackLength), stoneMat);
-            bridge.position.set(0, -0.2, 0);
-            bridge.receiveShadow = true;
-            segment.add(bridge);
+            // Central Flowing Mountain Stream Path (where runner moves)[span_6](start_span)[span_6](end_span)
+            const streamBed = new THREE.Mesh(new THREE.BoxGeometry(6, 0.3, trackLength), streamMat);
+            streamBed.position.set(0, -0.15, 0);
+            streamBed.receiveShadow = true;
+            segment.add(streamBed);
 
-            // Surrounding Waterfalls & Rivers
-            const leftRiver = new THREE.Mesh(new THREE.PlaneGeometry(25, trackLength), riverMat);
-            leftRiver.rotation.x = -Math.PI / 2;
-            leftRiver.position.set(-15, -0.5, 0);
-            segment.add(leftRiver);
+            const streamWater = new THREE.Mesh(new THREE.PlaneGeometry(5.6, trackLength), flowingWaterMat);
+            streamWater.rotation.x = -Math.PI / 2;
+            streamWater.position.set(0, 0.02, 0);
+            segment.add(streamWater);
 
-            const rightRiver = new THREE.Mesh(new THREE.PlaneGeometry(25, trackLength), riverMat);
-            rightRiver.rotation.x = -Math.PI / 2;
-            rightRiver.position.set(15, -0.5, 0);
-            segment.add(rightRiver);
+            // Massive Valley Cliffs & Surrounding Waterfalls (matching reel video visuals)[span_7](start_span)[span_7](end_span)
+            const leftCliff = new THREE.Mesh(new THREE.BoxGeometry(18, 16, trackLength), waterfallCliffMat);
+            leftCliff.position.set(-14, 8, 0);
+            segment.add(leftCliff);
 
-            // Scenic Waterfall feature cascading down on the left side
-            const waterfall = new THREE.Mesh(new THREE.PlaneGeometry(4, 12), waterfallMat);
-            waterfall.position.set(-10, 4, - (i * 25));
-            segment.add(waterfall);
+            const rightCliff = new THREE.Mesh(new THREE.BoxGeometry(18, 16, trackLength), waterfallCliffMat);
+            rightCliff.position.set(14, 8, 0);
+            segment.add(rightCliff);
 
-            // Lush 3D Trees on sides
+            // Cascading Waterfall Walls[span_8](start_span)[span_8](end_span)
+            const leftWaterfall = new THREE.Mesh(new THREE.PlaneGeometry(6, 15), waterfallSheetMat);
+            leftWaterfall.position.set(-5.2, 5, - (i * 30));
+            segment.add(leftWaterfall);
+
+            const rightWaterfall = new THREE.Mesh(new THREE.PlaneGeometry(6, 15), waterfallSheetMat);
+            rightWaterfall.position.set(5.2, 5, - (i * 30) + 15);
+            segment.add(rightWaterfall);
+
+            // Dense Greenery Trees on cliffsides[span_9](start_span)[span_9](end_span)
             for (let t = -40; t <= 40; t += 20) {
-                const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.9, 6, 8), rootMat);
-                trunk.position.set(-8, 2.5, t);
+                const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1.1, 7, 8), rootMat);
+                trunk.position.set(-9, 4, t);
                 segment.add(trunk);
                 
-                const foliage = new THREE.Mesh(new THREE.ConeGeometry(3.5, 7, 8), grassMat);
-                foliage.position.set(-8, 7, t);
+                const foliage = new THREE.Mesh(new THREE.ConeGeometry(4, 8, 8), jungleGreenMat);
+                foliage.position.set(-9, 9, t);
                 segment.add(foliage);
 
-                const trunkR = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.9, 6, 8), rootMat);
-                trunkR.position.set(8, 2.5, t);
+                const trunkR = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1.1, 7, 8), rootMat);
+                trunkR.position.set(9, 4, t);
                 segment.add(trunkR);
 
-                const foliageR = new THREE.Mesh(new THREE.ConeGeometry(3.5, 7, 8), grassMat);
-                foliageR.position.set(8, 7, t);
+                const foliageR = new THREE.Mesh(new THREE.ConeGeometry(4, 8, 8), jungleGreenMat);
+                foliageR.position.set(9, 9, t);
                 segment.add(foliageR);
             }
 
-            // Obstacles: Rocks (Jump) & Low Tree Roots (Slide flat for 2 seconds)
+            // Real Rocks & Tree Roots as Obstacles
             if (i > 0) {
                 const laneChoice = Math.floor(Math.random() * 3) - 1;
                 const isRock = Math.random() > 0.5;
@@ -246,7 +254,6 @@
                     obstacle.position.set(laneChoice * laneWidth, 0.4, - (i * 20));
                     obstacle.userData = { type: 'jump', lane: laneChoice };
                 } else {
-                    // Real low tree root sweeping across path requiring flat slide
                     const rootGeo = new THREE.CylinderGeometry(0.4, 0.5, 2.0, 6);
                     obstacle = new THREE.Mesh(rootGeo, rootMat);
                     obstacle.rotation.z = Math.PI / 2;
@@ -267,11 +274,10 @@
         // --- 4. HUMAN-LIKE MALE RUNNER AVATAR ---
         const playerGroup = new THREE.Group();
         const skinMat = new THREE.MeshStandardMaterial({ color: 0xd8b29d, roughness: 0.6 });
-        const shirtMat = new THREE.MeshStandardMaterial({ color: 0xdf3a3a, roughness: 0.7 }); // Adventurer red shirt
-        const pantsMat = new THREE.MeshStandardMaterial({ color: 0x2a3b4c, roughness: 0.8 }); // Cargo trousers
-        const hairMat = new THREE.MeshStandardMaterial({ color: 0x2b1708, roughness: 0.5 }); // Short dark hair
+        const shirtMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7 }); // White shirt like video runner[span_10](start_span)[span_10](end_span)
+        const pantsMat = new THREE.MeshStandardMaterial({ color: 0x1f1f1f, roughness: 0.8 }); // Dark trousers[span_11](start_span)[span_11](end_span)
+        const hairMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.5 });
 
-        // Head
         const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 16, 16), skinMat);
         head.position.set(0, 1.8, 0);
         playerGroup.add(head);
@@ -280,12 +286,10 @@
         hair.position.set(0, 1.86, -0.01);
         playerGroup.add(hair);
 
-        // Torso
         const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.13, 0.6, 12), shirtMat);
         torso.position.set(0, 1.3, 0);
         playerGroup.add(torso);
 
-        // Limbs for human running animation
         const limbGeo = new THREE.CylinderGeometry(0.045, 0.035, 0.55, 8);
         const leftArm = new THREE.Mesh(limbGeo, shirtMat);
         leftArm.position.set(-0.24, 1.35, 0);
@@ -308,7 +312,7 @@
 
         // --- 5. CHASING MONSTER (Small Size, Closes in during first 3 seconds, then locks distance) ---
         const monkeyGroup = new THREE.Group();
-        const monkeyMat = new THREE.MeshStandardMaterial({ color: 0x2e1c0c, roughness: 0.9 });
+        const monkeyMat = new THREE.MeshStandardMaterial({ color: 0x1b120c, roughness: 0.9 });
         
         const mHead = new THREE.Mesh(new THREE.SphereGeometry(0.32, 12, 12), monkeyMat);
         mHead.position.set(0, 1.5, 0);
@@ -333,7 +337,7 @@
         let isJumping = false;
         let isSliding = false;
         let jumpVelocity = 0;
-        let slideTimer = 0; // Tracks 2-second flat slide
+        let slideTimer = 0; // Tracks 2-second flat slide escape
         
         let gameSpeed = 0.55;
         let score = 0;
@@ -382,8 +386,7 @@
 
         function triggerSlide() {
             isSliding = true;
-            slideTimer = 120; // 120 frames = roughly 2 seconds at 60fps
-            // Flat slide transformation (squish height, tilt forward like real escape slide)
+            slideTimer = 120; // 120 frames = roughly 2 seconds flat slide escape under roots
             playerGroup.scale.set(1, 0.35, 1.4);
             playerGroup.position.y = -0.3;
         }
