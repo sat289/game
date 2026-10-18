@@ -408,15 +408,50 @@ window.loadSelectedHumanAvatar = function () {
   boardRim.material.color.setHex(skin.rimColor);
 };
 
-// ================= 5. REALISTIC 3D TRAINS WITH REAL WORLD SKINS =================
+// ================= 5. REALISTIC 3D TRAINS (HIGH-SPEED EXPRESS & ALPINE SCENIC) =================
 function createRealTrainSideTexture(skinType) {
   const c = document.createElement("canvas");
   c.width = 1024;
   c.height = 256;
   const ctx = c.getContext("2d");
 
-  if (skinType === "london_tube") {
-    // 1. London Underground (Red body, white upper band, blue underframe)
+  if (skinType === "high_speed_express") {
+    // 1. Modern High-Speed Express (White body with Vibrant Orange & Gold Ribbons like Image 1)
+    ctx.fillStyle = "#f8f9fa";
+    ctx.fillRect(0, 0, 1024, 256);
+    // Vibrant Orange Safety Band
+    ctx.fillStyle = "#fb8500";
+    ctx.fillRect(0, 120, 1024, 38);
+    // Gold/Yellow Stripe
+    ctx.fillStyle = "#ffb703";
+    ctx.fillRect(0, 158, 1024, 16);
+    // Dark Undercarriage Skirt
+    ctx.fillStyle = "#1d3557";
+    ctx.fillRect(0, 210, 1024, 46);
+    // Continuous Streamlined Passenger Windows
+    ctx.fillStyle = "#14213d";
+    ctx.fillRect(35, 58, 954, 48);
+    for (let x = 60; x < 960; x += 110) {
+      ctx.fillStyle = "rgba(144, 224, 239, 0.85)";
+      ctx.fillRect(x, 63, 85, 38);
+    }
+  } else if (skinType === "alpine_panoramic") {
+    // 2. Alpine Scenic Red Panoramic Express (Bright Red Livery like Image 2)
+    ctx.fillStyle = "#d90429";
+    ctx.fillRect(0, 0, 1024, 256);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 25, 1024, 30);
+    ctx.fillStyle = "#2b2d42";
+    ctx.fillRect(0, 205, 1024, 51);
+    // Large Panoramic Sightseeing Windows
+    for (let x = 50; x < 980; x += 150) {
+      ctx.fillStyle = "#111111";
+      ctx.fillRect(x - 14, 65, 115, 110);
+      ctx.fillStyle = "rgba(200, 235, 255, 0.9)";
+      ctx.fillRect(x - 10, 70, 107, 100);
+    }
+  } else if (skinType === "london_tube") {
+    // 3. London Underground
     ctx.fillStyle = "#b51a2b";
     ctx.fillRect(0, 0, 1024, 256);
     ctx.fillStyle = "#ffffff";
@@ -429,67 +464,8 @@ function createRealTrainSideTexture(skinType) {
       ctx.fillStyle = "rgba(255, 240, 180, 0.85)";
       ctx.fillRect(x - 7, 95, 75, 70);
     }
-  } else if (skinType === "nyc_subway") {
-    // 2. New York City MTA Subway (Brushed Stainless Steel + Dark Stripe)
-    const grad = ctx.createLinearGradient(0, 0, 0, 256);
-    grad.addColorStop(0, "#adb5bd");
-    grad.addColorStop(0.35, "#ced4da");
-    grad.addColorStop(0.65, "#6c757d");
-    grad.addColorStop(1, "#343a40");
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 1024, 256);
-    ctx.fillStyle = "#212529";
-    ctx.fillRect(0, 135, 1024, 28);
-
-    for (let x = 50; x < 980; x += 140) {
-      ctx.fillStyle = "#111111";
-      ctx.fillRect(x - 10, 50, 80, 70);
-      ctx.fillStyle = "rgba(200, 230, 255, 0.85)";
-      ctx.fillRect(x - 6, 54, 72, 62);
-    }
-  } else if (skinType === "bullet_shinkansen") {
-    // 3. Japanese Shinkansen Bullet Train (White & Blue Ribbon)
-    ctx.fillStyle = "#f8f9fa";
-    ctx.fillRect(0, 0, 1024, 256);
-    ctx.fillStyle = "#0077b6";
-    ctx.fillRect(0, 130, 1024, 32);
-    ctx.fillStyle = "#03045e";
-    ctx.fillRect(0, 210, 1024, 46);
-    for (let x = 50; x < 960; x += 110) {
-      ctx.fillStyle = "#023e8a";
-      ctx.fillRect(x, 62, 85, 52);
-      ctx.fillStyle = "rgba(144, 224, 239, 0.8)";
-      ctx.fillRect(x + 4, 66, 77, 44);
-    }
-  } else if (skinType === "paris_metro") {
-    // 4. Paris Métro (Bright Green & Silver Urban Commuter)
-    ctx.fillStyle = "#2a9d8f";
-    ctx.fillRect(0, 0, 1024, 256);
-    ctx.fillStyle = "#e9c46a";
-    ctx.fillRect(0, 140, 1024, 20);
-    ctx.fillStyle = "#1d3557";
-    for (let x = 55; x < 980; x += 145) {
-      ctx.fillStyle = "#1f3a4d";
-      ctx.fillRect(x - 12, 55, 82, 70);
-      ctx.fillStyle = "rgba(255, 250, 200, 0.85)";
-      ctx.fillRect(x - 8, 59, 74, 62);
-    }
-  } else if (skinType === "transylvania_steam") {
-    // 5. Transylvania Gothic Vintage Express
-    ctx.fillStyle = "#590d22";
-    ctx.fillRect(0, 0, 1024, 256);
-    ctx.strokeStyle = "#ffb703";
-    ctx.lineWidth = 8;
-    ctx.strokeRect(12, 12, 1000, 232);
-    for (let x = 55; x < 960; x += 150) {
-      ctx.fillStyle = "#ffaa00";
-      ctx.fillRect(x, 55, 80, 95);
-      ctx.strokeStyle = "#2b0912";
-      ctx.lineWidth = 6;
-      ctx.strokeRect(x, 55, 80, 95);
-    }
   } else {
-    // 6. Heavy Industrial Freight Cargo
+    // 4. Heavy Industrial Freight Cargo
     ctx.fillStyle = "#d97706";
     ctx.fillRect(0, 0, 1024, 256);
     ctx.fillStyle = "#92400e";
@@ -503,7 +479,7 @@ function createRealTrainSideTexture(skinType) {
   return new THREE.CanvasTexture(c);
 }
 
-const TRAIN_SKIN_TYPES = ["london_tube", "nyc_subway", "bullet_shinkansen", "paris_metro", "transylvania_steam", "cargo"];
+const TRAIN_SKIN_TYPES = ["high_speed_express", "alpine_panoramic", "london_tube", "cargo"];
 const TRAIN_TEXTURE_CACHE = {};
 function getTrainTexture(skinName) {
   if (!TRAIN_TEXTURE_CACHE[skinName]) {
@@ -519,8 +495,8 @@ function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, 
   const skinType = forcedSkin || TRAIN_SKIN_TYPES[Math.floor(Math.random() * TRAIN_SKIN_TYPES.length)];
   const sideTex = getTrainTexture(skinType);
 
-  const roofHex = skinType === "bullet_shinkansen" ? 0xffffff : skinType === "transylvania_steam" ? 0x3c0919 : skinType === "cargo" ? 0x78350f : 0xced4da;
-  const frontHex = skinType === "bullet_shinkansen" ? 0x0077b6 : skinType === "london_tube" ? 0xb51a2b : skinType === "paris_metro" ? 0x2a9d8f : 0x1d3557;
+  const roofHex = skinType === "high_speed_express" ? 0xffffff : skinType === "alpine_panoramic" ? 0xffffff : 0xced4da;
+  const frontHex = skinType === "high_speed_express" ? 0xfb8500 : skinType === "alpine_panoramic" ? 0xd90429 : 0x1d3557;
 
   const bodyMaterials = [
     new THREE.MeshStandardMaterial({ map: sideTex, metalness: 0.5, roughness: 0.3 }),
@@ -556,7 +532,8 @@ function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, 
     });
   }
 
-  if (skinType === "bullet_shinkansen") {
+  if (skinType === "high_speed_express") {
+    // Sleek Streamlined High-Speed Cone Nose (Image 1 style)[span_4](start_span)[span_4](end_span)
     const aeroNose = new THREE.Mesh(
       new THREE.ConeGeometry(1.38, 2.4, 16),
       new THREE.MeshStandardMaterial({ color: 0xf8f9fa, metalness: 0.5, roughness: 0.2 })
@@ -564,22 +541,8 @@ function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, 
     aeroNose.rotation.x = Math.PI / 2;
     aeroNose.position.set(0, 1.5, length / 2 + 1.1);
     group.add(aeroNose);
-  } else if (skinType === "transylvania_steam") {
-    const boiler = new THREE.Mesh(
-      new THREE.CylinderGeometry(1.1, 1.1, 1.6, 18),
-      new THREE.MeshStandardMaterial({ color: 0x2b0912, metalness: 0.7, roughness: 0.3 })
-    );
-    boiler.rotation.x = Math.PI / 2;
-    boiler.position.set(0, 1.6, length / 2 + 0.4);
-    group.add(boiler);
-
-    const chimney = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.28, 0.2, 0.95, 12),
-      new THREE.MeshStandardMaterial({ color: 0xffb703, metalness: 0.8 })
-    );
-    chimney.position.set(0, 3.55, length / 2 - 0.8);
-    group.add(chimney);
   } else {
+    // Standard Slanted Cab Nose
     const nose = new THREE.Mesh(
       new THREE.BoxGeometry(2.72, 1.45, 0.8),
       new THREE.MeshStandardMaterial({ color: frontHex, metalness: 0.5, roughness: 0.3 })
@@ -619,14 +582,14 @@ function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, 
     hasRamp,
     rampLength,
     isMoving,
-    speedOffset: isMoving ? (skinType === "bullet_shinkansen" ? 20 : 14) : 0,
+    speedOffset: isMoving ? (skinType === "high_speed_express" ? 20 : 14) : 0,
     wheels
   };
   return group;
 }
 
 // Intro Parked Train
-const introTrainGroup = createRealistic3DTrain(15, false, false, "london_tube");
+const introTrainGroup = createRealistic3DTrain(15, false, false, "high_speed_express");
 introTrainGroup.position.set(-3.6, 0, -2.5);
 
 const grafCanvas = document.createElement("canvas");
