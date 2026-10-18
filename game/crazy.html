@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Cyber Neon Dash - Gaming Hub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background-color: #070a13; font-family: 'Inter', sans-serif; }
+    
+    /* Top scrolling notice bar */
+    .top-notice-bar {
+      position: absolute; top: 0; left: 0; width: 100%; height: 40px; z-index: 40;
+      background: rgba(7, 10, 19, 0.98);
+      border-bottom: 1px solid rgba(56, 189, 248, 0.4);
+      display: flex; align-items: center; justify-content: space-between; padding: 0 10px;
+      backdrop-filter: blur(8px);
+      transition: transform 0.3s ease;
+    }
+    .top-notice-bar.hidden-notice { transform: translateY(-100%); }
+
+    .hide-notice-btn {
+      position: absolute; bottom: -22px; right: 12px;
+      background: rgba(7, 10, 19, 0.95);
+      border: 1px solid rgba(56, 189, 248, 0.4); border-top: none;
+      color: #38bdf8; font-size: 10px; font-weight: 700; padding: 2px 8px;
+      border-radius: 0 0 6px 6px; cursor: pointer; z-index: 41;
+      display: flex; align-items: center; gap: 4px;
+    }
+
+    .ticker-container { overflow: hidden; white-space: nowrap; width: 68%; }
+    .ticker-text {
+      display: inline-block; animation: marquee 16s linear infinite;
+      font-size: 11px; font-weight: 700; color: #38bdf8;
+    }
+    @keyframes marquee {
+      0% { transform: translateX(100%); }
+      100% { transform: translateX(-100%); }
+    }
+
+    /* Game Canvas Styling */
+    canvas { display: block; width: 100%; height: 100%; background: linear-gradient(135deg, #0f172a, #070a13); }
+  </style>
+</head>
+<body class="relative">
+
+  <!-- Top Scrolling Notice Bar -->
+  <div id="topNoticeBar" class="top-notice-bar">
+    <a href="../index.html" class="bg-[#002b5b] hover:bg-[#002b5b]/80 text-white border border-cyan-400/40 px-2 py-0.5 rounded-md text-[10px] font-extrabold flex items-center gap-1 shadow-md transition shrink-0">
+      <i class="fa-solid fa-arrow-left text-cyan-300"></i><span>Hub</span>
+    </a>
+
+    <div class="ticker-container">
+      <div class="ticker-text">
+        🎮 Cyber Neon Dash &nbsp;•&nbsp; Instagram: <span class="text-pink-400">@_satish_official_16</span> &nbsp;•&nbsp; YouTube: <span class="text-red-400">@nanu16-h3g</span> &nbsp;•&nbsp; Tap to Jump & Survive! 🚀
+      </div>
+    </div>
+
+    <button onclick="hideAndRestoreNotice()" class="hide-notice-btn">
+      <i class="fa-solid fa-eye-slash"></i> <span>Hide 🫥</span>
+    </button>
+  </div>
+
+  <!-- Game Canvas -->
+  <canvas id="gameCanvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    let score = 0;
+    let highScore = localStorage.getItem('cyber_dash_high') || 0;
+    let isPlaying = false;
+
+    const player = {
+      x: 60,
+      y: canvas.height - 120,
+      w: 35,
+      h: 35,
+      vy: 0,
+      gravity: 0.8,
+      jumpForce: -14,
+      grounded: false
+    };
+
+    let obstacles = [];
+    let frameCount = 0;
+
+    function resetGame() {
+      score = 0;
+      obstacles = [];
+      player.y = canvas.height - 120;
+      player.vy = 0;
+      isPlaying = true;
+      loop();
+    }
+
+    function jump() {
+      if (!isPlaying) {
+        resetGame();
+        return;
+      }
+      if (player.grounded) {
+        player.vy = player.jumpForce;
+        player.grounded = false;
+      }
+    }
+
+    window.addEventListener('touchstart', jump);
+    window.addEventListener('mousedown', jump);
+    window.addEventListener('keydown', (e) => { if (e.code === 'Space') jump(); });
+
+    function spawnObstacle() {
+      const height = Math.floor(Math.random() * 40) + 30;
+      obstacles.push({
+        x: canvas.width,
+        y: canvas.height - 80 - height,
+        w: 25,
+        h: height,
+        speed: 7
+      });
+    }
+
+    function update() {
+      if (!isPlaying) return;
+
+      frameCount++;
+      if (frameCount % 90 === 0) {
+        spawnObstacle();
+      }
+
+      player.vy += player.gravity;
+      player.y += player.vy;
+
+      const groundLevel = canvas.height - 80;
+      if (player.y + player.h >= groundLevel) {
+        player.y = groundLevel - player.h;
+        player.vy = 0;
+        player.grounded = true;
+      }
+
+      for (let i = obstacles.length - 1; i >= 0; i--) {
+        let obs = obstacles[i];
+        obs.x -= obs.speed;
+
+        // Collision Check
+        if (
+          player.x < obs.x + obs.w &&
+          player.x + player.w > obs.x &&
+          player.y < obs.y + obs.h &&
+          player.y + player.h > obs.y
+        ) {
+          isPlaying = false;
+          if (score > highScore) {
+            highScore = score;
+            localStorage.setItem('cyber_dash_high', highScore);
+          }
+        }
+
+        if (obs.x + obs.w < 0) {
+          obstacles.splice(i, 1);
+          score += 10;
+        }
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw Ground
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(0, canvas.height - 80, canvas.width, 80);
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(0, canvas.height - 82, canvas.width, 2);
+
+      // Draw Player (Neon Cube)
+      ctx.fillStyle = '#ec4899';
+      ctx.shadowBlur = 15;
+      ctx.shadowColor = '#ec4899';
+      ctx.fillRect(player.x, player.y, player.w, player.h);
+      ctx.shadowBlur = 0;
+
+      // Draw Obstacles (Neon Barriers)
+      ctx.fillStyle = '#38bdf8';
+      ctx.shadowBlur = 12;
+      ctx.shadowColor = '#38bdf8';
+      obstacles.forEach(obs => {
+        ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+      });
+      ctx.shadowBlur = 0;
+
+      // Draw Scores
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 16px Inter, sans-serif';
+      ctx.fillText(`SCORE: ${score}`, 20, 70);
+      ctx.fillText(`HIGH: ${highScore}`, 20, 95);
+
+      if (!isPlaying) {
+        ctx.fillStyle = 'rgba(7, 10, 19, 0.85)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = 'bold 28px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('CYBER NEON DASH', canvas.width / 2, canvas.height / 2 - 40);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '14px Inter, sans-serif';
+        ctx.fillText(score > 0 ? `Game Over! Score: ${score}` : 'Tap or Press Space to Start', canvas.width / 2, canvas.height / 2);
+
+        ctx.fillStyle = '#ec4899';
+        ctx.font = 'bold 13px Inter, sans-serif';
+        ctx.fillText('TAP ANYWHERE TO PLAY', canvas.width / 2, canvas.height / 2 + 40);
+        ctx.textAlign = 'left';
+      }
+    }
+
+    function loop() {
+      update();
+      draw();
+      if (isPlaying) {
+        requestAnimationFrame(loop);
+      }
+    }
+
+    draw();
+
+    let noticeTimer = null;
+    function hideAndRestoreNotice() {
+      const bar = document.getElementById('topNoticeBar');
+      bar.classList.add('hidden-notice');
+      if (noticeTimer) clearTimeout(noticeTimer);
+      noticeTimer = setTimeout(() => {
+        bar.classList.remove('hidden-notice');
+      }, 5000);
+    }
+  </script>
+</body>
+</html>
