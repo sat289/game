@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Subway Surfers 3D - Real Trains & Humans</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- 1. AGE CONFIRMATION MODAL -->
+  <div id="ageModal">
+    <div class="age-card">
+      <div class="age-header">Please enter your age</div>
+      <div class="age-display" id="ageValue">16</div>
+      <div class="age-slider-wrap">
+        <input type="range" id="ageSlider" min="3" max="65" value="16" />
+      </div>
+      <button class="btn-green" id="confirmAgeBtn">Confirm</button>
+    </div>
+  </div>
+
+  <!-- 2. HOME / START SCREEN OVERLAY (GRAFFITI INTRO) -->
+  <div id="startOverlay">
+    <div class="top-menu-bar">
+      <div class="currency-pills">
+        <div class="pill">🪙 <span id="menuCoins">0</span></div>
+        <div class="pill">💎 <span id="menuDiamonds">25</span></div>
+        <div class="pill">🛹 <span id="menuBoards">5</span></div>
+        <div class="pill">🏆 HI: <span id="menuHighScore">0</span></div>
+      </div>
+      <div class="pill" id="modelStatusBadge">🏃 Loading 3D Humans...</div>
+      <div class="pill" id="firebaseStatus">☁️ Connecting...</div>
+    </div>
+
+    <div class="title-banner">
+      <h1>SUBWAY SURFERS 3D</h1>
+      <p>4 Real Train Models • Rigged 3D Humans • Double-Tap / Space for Hoverboard</p>
+    </div>
+
+    <div class="bottom-menu-bar">
+      <div class="tap-to-play" id="tapToPlayBtn">Tap to Play</div>
+      <button class="btn-shop" id="openShopBtn">🛒 STORE & AVATARS</button>
+    </div>
+  </div>
+
+  <!-- 3. IN-GAME HUD -->
+  <div id="hud" style="display: none;">
+    <div class="hud-top">
+      <div class="pause-btn" id="boardTriggerBtn" title="Activate Hoverboard">🛹</div>
+      <div class="score-panel">
+        <div class="score-box">
+          <span class="multiplier-badge" id="multiplierText">x1 ⭐</span>
+          <span id="score">000000</span>
+        </div>
+        <div class="coin-box">
+          <span><span id="hudCoins">0</span> 🪙 &nbsp;|&nbsp; <span id="hudDiamonds">25</span> 💎</span>
+        </div>
+        <div class="distance-box">
+          Distance: <span id="hudDistance">0</span>m
+        </div>
+        <div class="police-badge" id="policeWarningBadge">
+          🚓 INSPECTOR CHASING (<span id="policeCountdown">5.0</span>s)
+        </div>
+      </div>
+    </div>
+
+    <div id="calloutText">Fresh Moves!</div>
+
+    <div class="hud-bottom">
+      <div class="powerup-bars">
+        <div class="p-bar" id="boardHudBar">
+          <span>🛹 <b id="boardCountHud">5</b></span>
+          <div class="p-fill-wrap"><div class="p-fill" id="boardBarFill"></div></div>
+        </div>
+        <div class="p-bar" id="jetpackHudBar">
+          <span>🚀</span>
+          <div class="p-fill-wrap"><div class="p-fill" id="jetpackBarFill"></div></div>
+        </div>
+        <div class="p-bar" id="magnetHudBar">
+          <span>🧲</span>
+          <div class="p-fill-wrap"><div class="p-fill" id="magnetBarFill"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. 5-SECOND ROTATING REVIVE ("SAVE ME!") MODAL -->
+  <div id="reviveModal">
+    <div class="modal-box revive-box">
+      <h2 class="revive-title">SAVE ME?</h2>
+      <p class="revive-sub">Continue from your exact score & distance!</p>
+
+      <div class="pill" style="margin: 0 auto 14px; display: inline-flex;">
+        💎 Your Diamonds: <span id="reviveDiamondsCount">25</span>
+      </div>
+
+      <!-- Rotating 5-Second Ring + Revive Button -->
+      <div class="revive-ring-container">
+        <svg class="revive-svg" viewBox="0 0 140 140">
+          <circle class="revive-ring-bg" cx="70" cy="70" r="58"></circle>
+          <circle class="revive-ring-progress" id="reviveRingCircle" cx="70" cy="70" r="58"></circle>
+        </svg>
+        <div class="revive-spinner-glow"></div>
+        <button class="revive-center-btn" id="reviveActionBtn">
+          <span class="revive-gem">💎 5</span>
+          <span class="revive-label">REVIVE</span>
+          <span class="revive-sec" id="reviveCountdownText">5s</span>
+        </button>
+      </div>
+
+      <button class="no-thanks-btn" id="noThanksBtn">No Thanks</button>
+    </div>
+  </div>
+
+  <!-- 5. GAME OVER SUMMARY MODAL -->
+  <div id="gameOverModal">
+    <div class="modal-box">
+      <div class="gameover-banner">
+        <h2 id="gameOverTitle">RUN OVER!</h2>
+        <div>Score: <b id="finalScore" style="font-size: 30px;">0</b></div>
+      </div>
+
+      <div class="stats-row"><span>🏆 High Score</span><span id="goHighScore">0</span></div>
+      <div class="stats-row"><span>📏 Distance Run</span><span id="goDistance">0m</span></div>
+      <div class="stats-row"><span>🪙 Coins (This Game)</span><span id="goCoins">0</span></div>
+      <div class="stats-row"><span>💰 Total Bank Coins</span><span id="goTotalCoins">0</span></div>
+      <div class="stats-row"><span>💎 Total Diamonds</span><span id="goDiamonds">0</span></div>
+
+      <div class="action-row">
+        <button class="btn-home" id="homeBtn">🏠 HOME</button>
+        <button class="btn-green" id="replayBtn">🔄 REPLAY</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. STORE & AVATARS MODAL -->
+  <div id="shopModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2>🛒 3D STORE & AVATARS</h2>
+        <button class="close-btn" id="closeShopBtn">✕</button>
+      </div>
+      <div class="pill" style="margin-bottom: 12px; display: inline-flex; flex-wrap: wrap;">
+        🪙 Coins: <span id="shopCoins">0</span> &nbsp;|&nbsp;
+        💎 Diamonds: <span id="shopDiamonds">25</span> &nbsp;|&nbsp;
+        🛹 Boards: <span id="shopBoards">5</span>
+      </div>
+
+      <div class="shop-section-title">Power-Ups & Diamonds</div>
+      <div class="shop-grid">
+        <div class="shop-item">
+          <div><b>+1 Hoverboard</b><br><small>Crash Protection</small></div>
+          <button class="shop-btn" id="buyBoardConsumableBtn">Buy (300 🪙)</button>
+        </div>
+        <div class="shop-item">
+          <div><b>+5 Diamonds 💎</b><br><small>Used for Revives</small></div>
+          <button class="shop-btn" id="buyDiamondsBtn">Buy (500 🪙)</button>
+        </div>
+      </div>
+
+      <div class="shop-section-title">3D Human Avatars (.GLB Rigged Models)</div>
+      <div class="shop-grid" id="avatarShopGrid"></div>
+
+      <div class="shop-section-title">Hoverboard Skins</div>
+      <div class="shop-grid" id="boardSkinShopGrid"></div>
+    </div>
+  </div>
+
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- THREE.JS + GLTFLOADER + SKELETONUTILS CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
+
+  <!-- FIREBASE SYNC MODULE + MAIN GAME SCRIPT -->
+  <script type="module" src="firebase-sync.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
