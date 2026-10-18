@@ -10,26 +10,28 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <style>
     * {
-      margin: 0;
-      padding: 0;
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
     }
-    html, body {
+    body, html {
+      margin: 0;
+      padding: 0;
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background-color: #070a13;
+      background: radial-gradient(circle at 50% 50%, #0f172a 0%, #020617 100%);
+      font-family: 'Inter', sans-serif;
+      user-select: none;
     }
-    iframe {
-      width: 100%;
-      height: 100%;
-      border: 0;
+    canvas {
       display: block;
+      background: linear-gradient(180deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%);
+      box-shadow: 0 0 30px rgba(56, 189, 248, 0.3);
+      border-radius: 20px;
     }
   </style>
 </head>
-<body class="relative">
+<body class="flex flex-col items-center justify-center h-screen text-white relative">
 
   <!-- Floating Back Button to return to Gaming Hub -->
   <a href="../index.html" 
@@ -38,14 +40,285 @@
     <span>Hub</span>
   </a>
 
-  <!-- Embeds your hosted Clumsy Bird index page -->
-  <iframe 
-    seamless="seamless" 
-    allowtransparency="true" 
-    allowfullscreen="true" 
-    frameborder="0" 
-    src="clumsy-bird/index.html">
-  </iframe>
+  <!-- Game Container -->
+  <div class="relative flex flex-col items-center">
+    <!-- Status & Score Header -->
+    <div class="flex justify-between w-full max-w-[360px] mb-2 px-2 text-xs font-extrabold tracking-wider">
+      <span id="scoreDisplay" class="text-cyan-400 text-sm">SCORE: 0</span>
+      <span id="bestDisplay" class="text-pink-400 text-sm">BEST: 0</span>
+    </div>
+    <div id="userStatus" class="text-[11px] text-slate-400 font-semibold mb-2">Checking cloud sync...</div>
 
+    <canvas id="gameCanvas" width="360" height="460"></canvas>
+
+    <!-- Game Over / Start Overlay -->
+    <div id="overlay" class="absolute inset-0 top-12 bg-black/70 backdrop-blur-sm rounded-[20px] flex flex-col items-center justify-center p-6 text-center z-20">
+      <h1 id="overlayTitle" class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-pink-500 mb-2 drop-shadow">CLUMSY BIRD</h1>
+      <p id="overlaySub" class="text-xs text-slate-300 mb-6 font-medium">Tap screen, click, or press Space to fly!</p>
+      <button id="actionBtn" class="bg-gradient-to-r from-cyan-500 to-indigo-600 hover:opacity-90 text-white font-black px-6 py-3 rounded-2xl text-sm shadow-lg active:scale-95 transition">
+        TAP TO START
+      </button>
+    </div>
+  </div>
+
+  <!-- Firebase & Game Engine -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+    import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBzLchy5M2fLne4c7Ghw1KNN8wVrlZdd8M",
+      authDomain: "friendsgame-872f5.firebaseapp.com",
+      databaseURL: "https://friendsgame-872f5-default-rtdb.firebaseio.com",
+      projectId: "friendsgame-872f5",
+      storageBucket: "friendsgame-872f5.firebasestorage.app",
+      messagingSenderId: "522534013233",
+      appId: "1:522534013233:web:f5faa6e6795023d0420810",
+      measurementId: "G-PW5H3G97QR"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const bestDisplay = document.getElementById('bestDisplay');
+    const overlay = document.getElementById('overlay');
+    const overlayTitle = document.getElementById('overlayTitle');
+    const overlaySub = document.getElementById('overlaySub');
+    const actionBtn = document.getElementById('actionBtn');
+    const userStatus = document.getElementById('userStatus');
+
+    let gameState = 'START';
+    let score = 0;
+    let highScore = parseInt(localStorage.getItem('clumsy_hi') || '0', 10);
+    bestDisplay.textContent = `BEST: ${highScore}`;
+    let currentUser = null;
+
+    // Firebase Auth State & Cloud Sync
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        currentUser = user;
+        const name = user.displayName || user.email.split('@')[0];
+        userStatus.innerHTML = `Player: <span class="text-cyan-300 font-bold">${name}</span> (Cloud Synced ☁️)`;
+        try {
+          const snapshot = await get(child(ref(db), `scores/${user.uid}/clumsy_high`));
+          if (snapshot.exists()) {
+            const cloudScore = parseInt(snapshot.val(), 10) || 0;
+            if (cloudScore > highScore) {
+              highScore = cloudScore;
+              localStorage.setItem('clumsy_hi', highScore.toString());
+            } else if (highScore > cloudScore) {
+              set(ref(db, `scores/${user.uid}/clumsy_high`), highScore);
+            }
+          } else if (highScore > 0) {
+            set(ref(db, `scores/${user.uid}/clumsy_high`), highScore);
+          }
+          bestDisplay.textContent = `BEST: ${highScore}`;
+        } catch (err) {
+          console.error("Cloud fetch failed:", err);
+        }
+      } else {
+        currentUser = null;
+        userStatus.innerHTML = `<a href="../login.html" class="text-amber-300 underline font-bold">Login to save cloud score</a>`;
+      }
+    });
+
+    function syncScoreToFirebase(newScore) {
+      if (currentUser && newScore > 0) {
+        set(ref(db, `scores/${currentUser.uid}/clumsy_high`), newScore);
+      }
+    }
+
+    // Bird properties
+    let bird = {
+      x: 60,
+      y: 200,
+      radius: 14,
+      gravity: 0.35,
+      lift: -6.5,
+      velocity: 0
+    };
+
+    let pipes = [];
+    let pipeWidth = 50;
+    let pipeGap = 135;
+    let pipeSpeed = 2.5;
+    let frameCount = 0;
+
+    function resetGame() {
+      bird.y = 200;
+      bird.velocity = 0;
+      pipes = [];
+      score = 0;
+      frameCount = 0;
+      scoreDisplay.textContent = `SCORE: ${score}`;
+      overlay.classList.add('hidden');
+      gameState = 'PLAYING';
+    }
+
+    function triggerGameOver() {
+      gameState = 'GAMEOVER';
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('clumsy_hi', highScore.toString());
+        bestDisplay.textContent = `BEST: ${highScore}`;
+        syncScoreToFirebase(highScore);
+      }
+      overlayTitle.textContent = "GAME OVER";
+      overlaySub.textContent = `Final Score: ${score}`;
+      actionBtn.textContent = "PLAY AGAIN";
+      overlay.classList.remove('hidden');
+    }
+
+    function handleInput() {
+      if (gameState === 'START' || gameState === 'GAMEOVER') {
+        resetGame();
+      } else if (gameState === 'PLAYING') {
+        bird.velocity = bird.lift;
+      }
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (['Space', 'ArrowUp', 'KeyW'].includes(e.code)) {
+        e.preventDefault();
+        handleInput();
+      }
+    });
+
+    canvas.addEventListener('click', handleInput);
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      handleInput();
+    }, { passive: false });
+
+    actionBtn.addEventListener('click', handleInput);
+
+    function update() {
+      if (gameState !== 'PLAYING') return;
+
+      bird.velocity += bird.gravity;
+      bird.y += bird.velocity;
+
+      if (bird.y + bird.radius >= canvas.height - 40 || bird.y - bird.radius <= 0) {
+        triggerGameOver();
+      }
+
+      if (frameCount % 100 === 0) {
+        let minHeight = 50;
+        let maxHeight = canvas.height - 180;
+        let height = Math.floor(Math.random() * (maxHeight - minHeight + 1)) + minHeight;
+        pipes.push({
+          x: canvas.width,
+          top: height,
+          bottom: canvas.height - height - pipeGap,
+          passed: false
+        });
+      }
+
+      for (let i = pipes.length - 1; i >= 0; i--) {
+        pipes[i].x -= pipeSpeed;
+
+        if (
+          bird.x + bird.radius > pipes[i].x &&
+          bird.x - bird.radius < pipes[i].x + pipeWidth &&
+          (bird.y - bird.radius < pipes[i].top || bird.y + bird.radius > canvas.height - pipes[i].bottom - 40)
+        ) {
+          triggerGameOver();
+        }
+
+        if (!pipes[i].passed && pipes[i].x + pipeWidth < bird.x) {
+          score += 10;
+          scoreDisplay.textContent = `SCORE: ${score}`;
+          pipes[i].passed = true;
+          
+          if (score > highScore) {
+            highScore = score;
+            bestDisplay.textContent = `BEST: ${highScore}`;
+            localStorage.setItem('clumsy_hi', highScore.toString());
+            syncScoreToFirebase(highScore);
+          }
+        }
+
+        if (pipes[i].x + pipeWidth < 0) {
+          pipes.splice(i, 1);
+        }
+      }
+
+      frameCount++;
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Star particles background
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.fillRect(50, 40, 3, 3);
+      ctx.fillRect(160, 90, 4, 4);
+      ctx.fillRect(280, 60, 3, 3);
+
+      // Pipes
+      pipes.forEach(p => {
+        ctx.fillStyle = '#10b981';
+        ctx.fillRect(p.x, 0, pipeWidth, p.top);
+        ctx.strokeStyle = '#059669';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(p.x, 0, pipeWidth, p.top);
+
+        ctx.fillRect(p.x, canvas.height - p.bottom - 40, pipeWidth, p.bottom);
+        ctx.strokeRect(p.x, canvas.height - p.bottom - 40, pipeWidth, p.bottom);
+      });
+
+      // Ground
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
+      ctx.fillStyle = '#34d399';
+      ctx.fillRect(0, canvas.height - 40, canvas.width, 6);
+
+      // Bird
+      ctx.save();
+      ctx.translate(bird.x, bird.y);
+      let rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, (bird.velocity / 10)));
+      ctx.rotate(rotation);
+
+      ctx.fillStyle = '#facc15';
+      ctx.beginPath();
+      ctx.arc(0, 0, bird.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#ca8a04';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(6, -4, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.arc(7, -4, 1.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#fb923c';
+      ctx.beginPath();
+      ctx.moveTo(10, -1);
+      ctx.lineTo(18, 2);
+      ctx.lineTo(10, 5);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function gameLoop() {
+      update();
+      render();
+      requestAnimationFrame(gameLoop);
+    }
+
+    requestAnimationFrame(gameLoop);
+  </script>
 </body>
 </html>
