@@ -383,13 +383,11 @@ window.loadSelectedHumanAvatar = function () {
     } else if (playerActions.idle) {
       playerActions.idle.reset().play();
     }
-    if (badge) badge.innerText = `🧍 3D Model: ${av.name}`;
   };
 
   if (glbCache[av.glbUrl]) {
     setupClonedGlb(glbCache[av.glbUrl]);
   } else {
-    if (badge) badge.innerText = `⏳ Loading ${av.name}...`;
     gltfLoader.load(
       av.glbUrl,
       (gltf) => {
@@ -397,9 +395,7 @@ window.loadSelectedHumanAvatar = function () {
         setupClonedGlb(gltf);
       },
       undefined,
-      () => {
-        if (badge) badge.innerText = `🧍 3D Sculpted Mode`;
-      }
+      () => {}
     );
   }
 
@@ -416,19 +412,14 @@ function createRealTrainSideTexture(skinType) {
   const ctx = c.getContext("2d");
 
   if (skinType === "high_speed_express") {
-    // 1. Modern High-Speed Express (White body with Vibrant Orange & Gold Ribbons like Image 1)
     ctx.fillStyle = "#f8f9fa";
     ctx.fillRect(0, 0, 1024, 256);
-    // Vibrant Orange Safety Band
     ctx.fillStyle = "#fb8500";
     ctx.fillRect(0, 120, 1024, 38);
-    // Gold/Yellow Stripe
     ctx.fillStyle = "#ffb703";
     ctx.fillRect(0, 158, 1024, 16);
-    // Dark Undercarriage Skirt
     ctx.fillStyle = "#1d3557";
     ctx.fillRect(0, 210, 1024, 46);
-    // Continuous Streamlined Passenger Windows
     ctx.fillStyle = "#14213d";
     ctx.fillRect(35, 58, 954, 48);
     for (let x = 60; x < 960; x += 110) {
@@ -436,14 +427,12 @@ function createRealTrainSideTexture(skinType) {
       ctx.fillRect(x, 63, 85, 38);
     }
   } else if (skinType === "alpine_panoramic") {
-    // 2. Alpine Scenic Red Panoramic Express (Bright Red Livery like Image 2)
     ctx.fillStyle = "#d90429";
     ctx.fillRect(0, 0, 1024, 256);
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 25, 1024, 30);
     ctx.fillStyle = "#2b2d42";
     ctx.fillRect(0, 205, 1024, 51);
-    // Large Panoramic Sightseeing Windows
     for (let x = 50; x < 980; x += 150) {
       ctx.fillStyle = "#111111";
       ctx.fillRect(x - 14, 65, 115, 110);
@@ -451,7 +440,6 @@ function createRealTrainSideTexture(skinType) {
       ctx.fillRect(x - 10, 70, 107, 100);
     }
   } else if (skinType === "london_tube") {
-    // 3. London Underground
     ctx.fillStyle = "#b51a2b";
     ctx.fillRect(0, 0, 1024, 256);
     ctx.fillStyle = "#ffffff";
@@ -465,7 +453,6 @@ function createRealTrainSideTexture(skinType) {
       ctx.fillRect(x - 7, 95, 75, 70);
     }
   } else {
-    // 4. Heavy Industrial Freight Cargo
     ctx.fillStyle = "#d97706";
     ctx.fillRect(0, 0, 1024, 256);
     ctx.fillStyle = "#92400e";
@@ -533,7 +520,6 @@ function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, 
   }
 
   if (skinType === "high_speed_express") {
-    // Sleek Streamlined High-Speed Cone Nose (Image 1 style)[span_4](start_span)[span_4](end_span)
     const aeroNose = new THREE.Mesh(
       new THREE.ConeGeometry(1.38, 2.4, 16),
       new THREE.MeshStandardMaterial({ color: 0xf8f9fa, metalness: 0.5, roughness: 0.2 })
@@ -542,7 +528,6 @@ function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, 
     aeroNose.position.set(0, 1.5, length / 2 + 1.1);
     group.add(aeroNose);
   } else {
-    // Standard Slanted Cab Nose
     const nose = new THREE.Mesh(
       new THREE.BoxGeometry(2.72, 1.45, 0.8),
       new THREE.MeshStandardMaterial({ color: frontHex, metalness: 0.5, roughness: 0.3 })
@@ -588,7 +573,6 @@ function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, 
   return group;
 }
 
-// Intro Parked Train
 const introTrainGroup = createRealistic3DTrain(15, false, false, "high_speed_express");
 introTrainGroup.position.set(-3.6, 0, -2.5);
 
@@ -728,7 +712,7 @@ function spawnWave(zPos) {
 }
 
 // ================= 7. GAME STATE, REVIVE & POLICE LOGIC =================
-let gameState = "AGE_GATE";
+let gameState = "IDLE_INTRO"; // Starts immediately at Home screen (no age gate)
 let currentLane = 1;
 let previousLane = 1;
 let playerY = 0;
@@ -851,6 +835,51 @@ function handleReviveClick() {
   updateHudUI();
 }
 
+// Render 3D Avatar inside Game Over Summary Screen
+let summaryRenderer = null;
+let summaryScene = null;
+let summaryCamera = null;
+let summaryAvatarClone = null;
+
+function renderSummaryAvatar() {
+  const container = document.getElementById("summaryAvatarPreviewContainer");
+  container.innerHTML = "";
+
+  const width = container.clientWidth || 140;
+  const height = container.clientHeight || 200;
+
+  summaryScene = new THREE.Scene();
+  summaryScene.background = new THREE.Color(0x19283d);
+
+  summaryCamera = new THREE.PerspectiveCamera(40, width / height, 0.1, 10);
+  summaryCamera.position.set(0, 1.4, 3.2);
+  summaryCamera.lookAt(0, 1.2, 0);
+
+  const light = new THREE.DirectionalLight(0xffffff, 1.2);
+  light.position.set(2, 4, 3);
+  summaryScene.add(light);
+  summaryScene.add(new THREE.AmbientLight(0xffffff, 0.8));
+
+  summaryRenderer = new THREE.WebGLRenderer({ antialias: true });
+  summaryRenderer.setSize(width, height);
+  summaryRenderer.outputEncoding = THREE.sRGBEncoding;
+  container.appendChild(summaryRenderer.domElement);
+
+  if (activeGlbHuman) {
+    summaryAvatarClone = activeGlbHuman.clone();
+    summaryAvatarClone.position.set(0, 0, 0);
+    summaryAvatarClone.rotation.y = 0;
+    summaryScene.add(summaryAvatarClone);
+  } else {
+    const fClone = fallbackHuman.clone();
+    fClone.position.set(0, 0, 0);
+    summaryScene.add(fClone);
+    summaryAvatarClone = fClone;
+  }
+
+  summaryRenderer.render(summaryScene, summaryCamera);
+}
+
 function finalizeGameOver() {
   document.getElementById("reviveModal").style.display = "none";
   gameState = "GAMEOVER";
@@ -866,9 +895,11 @@ function finalizeGameOver() {
   document.getElementById("goHighScore").innerText = (window.getHighScore ? window.getHighScore() : finalScoreInt).toLocaleString();
   document.getElementById("goDistance").innerText = Math.floor(distanceRun) + "m";
   document.getElementById("goCoins").innerText = runCoins;
-  document.getElementById("goTotalCoins").innerText = window.playerProfile.coins;
   document.getElementById("goDiamonds").innerText = window.playerProfile.diamonds;
   document.getElementById("gameOverModal").style.display = "flex";
+
+  // Render Avatar in Summary Screen
+  setTimeout(renderSummaryAvatar, 50);
 }
 
 function resetGameWorld() {
@@ -983,26 +1014,33 @@ window.addEventListener("keydown", e => {
 });
 
 let touchStartX = 0, touchStartY = 0, lastTapTime = 0;
-canvas.addEventListener("touchstart", e => {
+
+// Clicking ANYWHERE on home screen starts the game
+canvas.addEventListener("pointerdown", e => {
+  if (gameState === "IDLE_INTRO") {
+    ensureAudio();
+    startNewRun();
+    return;
+  }
   if (gameState !== "PLAYING") return;
-  touchStartX = e.touches[0].clientX;
-  touchStartY = e.touches[0].clientY;
+  touchStartX = e.clientX;
+  touchStartY = e.clientY;
   const now = performance.now();
   if (now - lastTapTime < 280) activateHoverboard();
   lastTapTime = now;
-}, { passive: true });
+});
 
-canvas.addEventListener("touchend", e => {
+canvas.addEventListener("pointerup", e => {
   if (gameState !== "PLAYING") return;
-  const dx = e.changedTouches[0].clientX - touchStartX;
-  const dy = e.changedTouches[0].clientY - touchStartY;
+  const dx = e.clientX - touchStartX;
+  const dy = e.clientY - touchStartY;
   if (Math.abs(dx) < 25 && Math.abs(dy) < 25) return;
   if (Math.abs(dx) > Math.abs(dy)) changeLane(dx > 0 ? 1 : -1);
   else {
     if (dy < 0) jump();
     else roll();
   }
-}, { passive: true });
+});
 
 // ================= 9. UI & STORE BINDINGS =================
 window.updateMenuUI = function () {
@@ -1015,6 +1053,11 @@ window.updateMenuUI = function () {
   document.getElementById("shopDiamonds").innerText = window.playerProfile.diamonds;
   document.getElementById("shopBoards").innerText = window.playerProfile.boards;
   renderShopItems();
+};
+
+window.openShopModal = function() {
+  window.updateMenuUI();
+  document.getElementById("shopModal").style.display = "flex";
 };
 
 function updateHudUI() {
@@ -1117,18 +1160,6 @@ function renderShopItems() {
   });
 }
 
-const ageSlider = document.getElementById("ageSlider");
-const ageValue = document.getElementById("ageValue");
-ageSlider.oninput = () => (ageValue.innerText = ageSlider.value);
-document.getElementById("confirmAgeBtn").onclick = () => {
-  ensureAudio();
-  document.getElementById("ageModal").style.display = "none";
-  document.getElementById("startOverlay").style.display = "flex";
-  gameState = "IDLE_INTRO";
-  window.updateMenuUI();
-};
-
-document.getElementById("tapToPlayBtn").onclick = startNewRun;
 document.getElementById("replayBtn").onclick = startNewRun;
 document.getElementById("homeBtn").onclick = goToHomeScreen;
 document.getElementById("boardTriggerBtn").onclick = activateHoverboard;
@@ -1136,10 +1167,6 @@ document.getElementById("boardTriggerBtn").onclick = activateHoverboard;
 document.getElementById("reviveActionBtn").onclick = handleReviveClick;
 document.getElementById("noThanksBtn").onclick = finalizeGameOver;
 
-document.getElementById("openShopBtn").onclick = () => {
-  window.updateMenuUI();
-  document.getElementById("shopModal").style.display = "flex";
-};
 document.getElementById("closeShopBtn").onclick = () => {
   document.getElementById("shopModal").style.display = "none";
 };
@@ -1165,6 +1192,7 @@ document.getElementById("buyDiamondsBtn").onclick = () => {
 };
 
 window.loadSelectedHumanAvatar();
+window.updateMenuUI();
 
 // ================= 10. MAIN ANIMATION & PHYSICS LOOP =================
 let lastTime = performance.now();
@@ -1178,7 +1206,7 @@ function animate(now) {
   if (playerMixer) playerMixer.update(dt * (gameState === "PLAYING" ? speed / 18 : 1));
   if (policeMixer) policeMixer.update(dt * (speed / 16));
 
-  if (gameState === "AGE_GATE" || gameState === "IDLE_INTRO") {
+  if (gameState === "IDLE_INTRO") {
     introTrainGroup.visible = true;
     playerGroup.position.set(-1.3, 0, -0.8);
     playerGroup.rotation.y = -Math.PI / 2;
@@ -1209,6 +1237,14 @@ function animate(now) {
       finalizeGameOver();
     }
     renderer.render(scene, camera);
+    return;
+  }
+
+  if (gameState === "GAMEOVER") {
+    if (summaryRenderer && summaryScene && summaryCamera && summaryAvatarClone) {
+      summaryAvatarClone.rotation.y += dt * 1.2;
+      summaryRenderer.render(summaryScene, summaryCamera);
+    }
     return;
   }
 
@@ -1393,7 +1429,7 @@ function animate(now) {
       policeTimer -= dt;
       chaserGroup.visible = true;
       chaserGroup.position.z += (2.1 - chaserGroup.position.z) * dt * 5;
-      chaserGroup.position.x += (playerGroup.position.x - chaserGroup.position.x) * dt * 8;
+      chaserGroup.position.x += (playerGroup.position.x - playerGroup.position.x) * dt * 8;
       chaserGroup.position.y = playerGroup.position.y;
     } else {
       chaserGroup.position.z += (11.5 - chaserGroup.position.z) * dt * 2.5;
