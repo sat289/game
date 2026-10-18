@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Subway Surfers 3D - Transylvania Edition</title>
+  <title>Subway Surfers 3D - Real Humans & Real Trains Edition</title>
   <style>
     * {
       box-sizing: border-box;
@@ -17,7 +17,7 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: #1a0926;
+      background: #12081c;
       touch-action: none;
     }
     #gameCanvas {
@@ -93,9 +93,7 @@
       box-shadow: 0 5px 0 #29630f;
       transition: transform 0.1s;
     }
-    .btn-green:active {
-      transform: translateY(3px);
-    }
+    .btn-green:active { transform: translateY(3px); }
 
     /* ================= HUD OVERLAY ================= */
     #hud {
@@ -112,14 +110,14 @@
     }
     .pause-btn {
       pointer-events: auto;
-      width: 44px;
-      height: 44px;
+      width: 46px;
+      height: 46px;
       border-radius: 10px;
       background: linear-gradient(180deg, #56b4e9, #1f78b4);
       border: 3px solid #fff;
       color: #fff;
       font-weight: 900;
-      font-size: 18px;
+      font-size: 20px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -133,7 +131,7 @@
       gap: 6px;
     }
     .score-box {
-      background: rgba(0, 0, 0, 0.55);
+      background: rgba(0, 0, 0, 0.6);
       border-radius: 20px;
       padding: 6px 16px;
       display: flex;
@@ -143,7 +141,7 @@
       font-weight: 900;
       font-size: 22px;
       letter-spacing: 1px;
-      border: 2px solid rgba(255,255,255,0.2);
+      border: 2px solid rgba(255,255,255,0.25);
     }
     .multiplier-badge {
       color: #ffd700;
@@ -151,7 +149,7 @@
       text-shadow: 0 2px 0 #000;
     }
     .coin-box {
-      background: rgba(0, 0, 0, 0.55);
+      background: rgba(0, 0, 0, 0.6);
       border-radius: 20px;
       padding: 4px 14px;
       display: flex;
@@ -160,18 +158,28 @@
       color: #ffd700;
       font-weight: 900;
       font-size: 18px;
-      border: 2px solid rgba(255,215,0,0.3);
+      border: 2px solid rgba(255,215,0,0.35);
     }
     .distance-box {
       font-size: 13px;
-      color: #ddd;
+      color: #eee;
       font-weight: 700;
-      background: rgba(0,0,0,0.45);
+      background: rgba(0,0,0,0.5);
       padding: 3px 10px;
       border-radius: 12px;
     }
+    .police-badge {
+      background: rgba(220, 20, 60, 0.85);
+      border: 2px solid #fff;
+      color: #fff;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 900;
+      display: none;
+      animation: pulse 0.5s infinite alternate;
+    }
 
-    /* Power-up Bars Bottom Left */
     .hud-bottom {
       position: absolute;
       bottom: 20px;
@@ -213,13 +221,12 @@
       transition: width 0.1s linear;
     }
 
-    /* Callout Banner (Fresh Moves / You Rock / Police Warning) */
     #calloutText {
       position: absolute;
-      top: 34%;
+      top: 32%;
       left: 50%;
       transform: translate(-50%, -50%) scale(0);
-      font-size: 34px;
+      font-size: 32px;
       font-weight: 900;
       color: #fff;
       text-shadow: 0 4px 0 #000, 0 0 15px #ff0055;
@@ -245,6 +252,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
     }
     .currency-pills {
       display: flex;
@@ -265,10 +274,10 @@
     }
     .title-banner {
       text-align: center;
-      margin-top: 20px;
+      margin-top: 10px;
     }
     .title-banner h1 {
-      font-size: 46px;
+      font-size: 44px;
       font-weight: 900;
       color: #a8ff00;
       text-shadow: 0 4px 0 #1f4700, 0 0 22px rgba(168,255,0,0.6);
@@ -277,10 +286,11 @@
       font-style: italic;
     }
     .title-banner p {
-      color: #ffccff;
+      color: #fff;
       font-weight: 700;
       margin: 4px 0 0;
       text-shadow: 0 2px 0 #000;
+      font-size: 14px;
     }
     .bottom-menu-bar {
       display: flex;
@@ -328,7 +338,7 @@
       border: 4px solid #fff;
       border-radius: 20px;
       width: 100%;
-      max-width: 460px;
+      max-width: 480px;
       max-height: 88vh;
       overflow-y: auto;
       padding: 20px;
@@ -345,7 +355,7 @@
     }
     .modal-header h2 {
       margin: 0;
-      font-size: 26px;
+      font-size: 24px;
       color: #ffd700;
       text-shadow: 0 2px 0 #000;
     }
@@ -360,7 +370,7 @@
       cursor: pointer;
     }
     .shop-section-title {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 900;
       color: #8ad4ff;
       margin: 14px 0 8px;
@@ -385,13 +395,6 @@
     .shop-item.active {
       border-color: #62c435;
       background: rgba(98, 196, 53, 0.2);
-    }
-    .color-preview {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      margin: 0 auto;
-      border: 3px solid #fff;
     }
     .shop-btn {
       background: linear-gradient(180deg, #ffd700, #e69500);
@@ -418,7 +421,7 @@
     }
     .gameover-banner h2 {
       margin: 0 0 6px;
-      font-size: 32px;
+      font-size: 28px;
       text-shadow: 0 3px 0 #000;
     }
     .stats-row {
@@ -428,7 +431,7 @@
       padding: 10px 16px;
       border-radius: 10px;
       margin-bottom: 8px;
-      font-size: 18px;
+      font-size: 17px;
       font-weight: 800;
     }
     .action-row {
@@ -464,12 +467,13 @@
         <div class="pill">🛹 <span id="menuBoards">3</span></div>
         <div class="pill">🏆 HI: <span id="menuHighScore">0</span></div>
       </div>
-      <div class="pill" id="firebaseStatus">☁️ Offline / Guest</div>
+      <div class="pill" id="modelStatusBadge">🏃 Loading 3D Humans...</div>
+      <div class="pill" id="firebaseStatus">☁️ Connecting...</div>
     </div>
 
     <div class="title-banner">
-      <h1>TRANSYLVANIA</h1>
-      <p>Swipe or Arrow Keys to Dodge • Double-Tap / Space for Hoverboard</p>
+      <h1>SUBWAY SURFERS 3D</h1>
+      <p>Real 3D Rigged Humans & Express Metro Trains • Double-Tap / Space for Hoverboard</p>
     </div>
 
     <div class="bottom-menu-bar">
@@ -492,6 +496,9 @@
         </div>
         <div class="distance-box">
           Distance: <span id="hudDistance">0</span>m
+        </div>
+        <div class="police-badge" id="policeWarningBadge">
+          🚓 INSPECTOR CHASING (<span id="policeCountdown">5.0</span>s)
         </div>
       </div>
     </div>
@@ -520,26 +527,26 @@
   <div id="shopModal">
     <div class="modal-box">
       <div class="modal-header">
-        <h2>🛒 SURFER SHOP</h2>
+        <h2>🛒 3D AVATAR & BOARD STORE</h2>
         <button class="close-btn" id="closeShopBtn">✕</button>
       </div>
       <div class="pill" style="margin-bottom: 12px; display: inline-flex;">
-        🪙 Available Coins: <span id="shopCoins">0</span> &nbsp;|&nbsp; 🛹 Boards: <span id="shopBoards">3</span>
+        🪙 Coins: <span id="shopCoins">0</span> &nbsp;|&nbsp; 🛹 Hoverboards: <span id="shopBoards">3</span>
       </div>
 
-      <div class="shop-section-title">Consumables</div>
+      <div class="shop-section-title">Hoverboard Consumables</div>
       <div class="shop-grid">
         <div class="shop-item">
           <div><b>+1 Hoverboard</b><br><small>Protects from 1 crash</small></div>
           <button class="shop-btn" id="buyBoardConsumableBtn">Buy (300 🪙)</button>
         </div>
         <div class="shop-item">
-          <div><b>+5 Hoverboards</b><br><small>Bundle Pack</small></div>
+          <div><b>+5 Hoverboards</b><br><small>Value Pack</small></div>
           <button class="shop-btn" id="buyBoardPackBtn">Buy (1200 🪙)</button>
         </div>
       </div>
 
-      <div class="shop-section-title">Avatars (Characters)</div>
+      <div class="shop-section-title">3D Human Avatars (.GLB Rigged Models)</div>
       <div class="shop-grid" id="avatarShopGrid"></div>
 
       <div class="shop-section-title">Hoverboard Skins</div>
@@ -568,10 +575,12 @@
 
   <canvas id="gameCanvas"></canvas>
 
-  <!-- THREE.JS CDN -->
+  <!-- THREE.JS + GLTFLOADER + SKELETONUTILS CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
 
-  <!-- ================= FIREBASE AUTO CLOUD SYNC + GAME DATA ================= -->
+  <!-- ================= FIREBASE AUTO CLOUD SYNC ================= -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
@@ -592,13 +601,11 @@
     const auth = getAuth(app);
     const db = getDatabase(app);
 
-    // 1. Set the game name here
-    const GAME_KEY = "carracing"; // Kept compatible with your leaderboard or change to "subwaysurfers"
+    const GAME_KEY = "carracing";
 
     let currentUser = null;
     let currentHighScore = parseInt(localStorage.getItem(`${GAME_KEY}_hi`) || "0", 10);
 
-    // Sync full player profile (score, coins, boards, unlocked avatars/skins)
     window.syncPlayerProfileToCloud = async function() {
       if (!window.playerProfile) return;
       localStorage.setItem(`${GAME_KEY}_profile`, JSON.stringify(window.playerProfile));
@@ -619,7 +626,6 @@
       }
     };
 
-    // 2. Automatically listen to user login state
     onAuthStateChanged(auth, async (user) => {
       const statusBadge = document.getElementById("firebaseStatus");
       if (user) {
@@ -637,7 +643,6 @@
               set(ref(db, `scores/${user.uid}/${GAME_KEY}_high`), currentHighScore);
             }
 
-            // Merge coins & inventory from Firebase
             if (window.playerProfile) {
               if (typeof data[`${GAME_KEY}_coins`] === "number") {
                 window.playerProfile.coins = Math.max(window.playerProfile.coins, data[`${GAME_KEY}_coins`]);
@@ -664,7 +669,6 @@
       }
     });
 
-    // 3. Simple global helper function
     window.submitScore = function(newScore) {
       const val = parseInt(newScore, 10);
       if (isNaN(val)) return;
@@ -681,7 +685,6 @@
 
     window.getHighScore = () => currentHighScore;
 
-    // 4. Fallback Auto-Scanner
     setInterval(() => {
       let detected = 0;
       if (typeof window.score === "number") detected = window.score;
@@ -696,34 +699,72 @@
     }, 1000);
   </script>
 
-  <!-- ================= MAIN 3D SUBWAY SURFERS ENGINE ================= -->
+  <!-- ================= 3D SUBWAY SURFERS ENGINE (REAL HUMANS & REAL TRAINS) ================= -->
   <script>
-    // ================= 1. AVATARS & BOARDS CONFIG (Add GitHub Avatars Here) =================
+    // ================= 1. REAL 3D GLB HUMAN AVATARS & CUSTOM TRAIN CONFIG =================
+    // You can replace any glbUrl below with your own GitHub .glb file (e.g. "./models/jake.glb")
     const AVATAR_CATALOG = [
-      { id: "jake", name: "Jake (Default)", price: 0, jacket: 0xeeeeee, hoodie: 0xffffff, cap: 0xe62e2e, pants: 0x2c5e8a },
-      { id: "tricky", name: "Tricky", price: 500, jacket: 0xff3366, hoodie: 0xffffff, cap: 0xff0000, pants: 0x1e3d59 },
-      { id: "fresh", name: "Fresh", price: 1000, jacket: 0x00d2ff, hoodie: 0xffcc00, cap: 0x222222, pants: 0x444444 },
-      { id: "vampire", name: "Count Dracula", price: 2000, jacket: 0x1a001a, hoodie: 0x990000, cap: 0x111111, pants: 0x0d0d0d }
+      {
+        id: "michelle",
+        name: "Street Dancer (Real 3D)",
+        price: 0,
+        glbUrl: "https://threejs.org/examples/models/gltf/Michelle.glb",
+        scale: 1.35,
+        rotY: Math.PI, // Faces forward down the track (-Z)
+        shirtColor: 0x2277ff,
+        pantsColor: 0x223344
+      },
+      {
+        id: "soldier",
+        name: "Metro Commando (Real 3D)",
+        price: 500,
+        glbUrl: "https://threejs.org/examples/models/gltf/Soldier.glb",
+        scale: 1.35,
+        rotY: 0,
+        shirtColor: 0x3b5323,
+        pantsColor: 0x2b3a1a
+      },
+      {
+        id: "xbot",
+        name: "Cyber Runner (Real 3D)",
+        price: 1000,
+        glbUrl: "https://threejs.org/examples/models/gltf/Xbot.glb",
+        scale: 1.35,
+        rotY: Math.PI,
+        shirtColor: 0xff3300,
+        pantsColor: 0x1a1a1a
+      }
     ];
+
+    // Inspector uses the 3D Soldier/Officer GLB model
+    const POLICE_GLB_URL = "https://threejs.org/examples/models/gltf/Soldier.glb";
+
+    // Optional: If you upload a custom train .glb to your GitHub repo, put the path here:
+    const CUSTOM_TRAIN_GLB_URL = "";
 
     const BOARD_SKIN_CATALOG = [
       { id: "flame", name: "Flame Cruiser", price: 0, deckColor: 0xff3300, rimColor: 0xffd700 },
-      { id: "bouncer", name: "Neon Bouncer", price: 400, deckColor: 0x00ffcc, rimColor: 0xff00aa },
-      { id: "bat", name: "Transylvania Bat", price: 900, deckColor: 0x4b0082, rimColor: 0xff0000 }
+      { id: "bouncer", name: "Neon Cyberdeck", price: 400, deckColor: 0x00ffcc, rimColor: 0xff00aa },
+      { id: "stealth", name: "Carbon Stealth", price: 900, deckColor: 0x1c1c1c, rimColor: 0x00ff66 }
     ];
 
-    // Load saved profile
     const savedProfile = JSON.parse(localStorage.getItem("carracing_profile") || "null");
     window.playerProfile = savedProfile || {
-      coins: 250,
+      coins: 300,
       boards: 5,
-      unlockedAvatars: ["jake"],
+      unlockedAvatars: ["michelle"],
       unlockedBoardSkins: ["flame"],
-      selectedAvatar: "jake",
+      selectedAvatar: "michelle",
       selectedBoard: "flame"
     };
+    if (!AVATAR_CATALOG.some(a => a.id === window.playerProfile.selectedAvatar)) {
+      window.playerProfile.selectedAvatar = "michelle";
+      if (!window.playerProfile.unlockedAvatars.includes("michelle")) {
+        window.playerProfile.unlockedAvatars.push("michelle");
+      }
+    }
 
-    // ================= 2. SOUND SYNTHESIZER (No external MP3 needed) =================
+    // ================= 2. WEB AUDIO SOUND SYNTHESIZER =================
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     let audioCtx = null;
     function ensureAudio() {
@@ -750,403 +791,586 @@
       roll: () => playTone(380, "triangle", 0.15, 0.15, 140),
       swoosh: () => playTone(320, "sine", 0.09, 0.12, 480),
       whistle: () => {
-        playTone(2600, "triangle", 0.18, 0.18, 2800);
-        setTimeout(() => playTone(2700, "triangle", 0.25, 0.18, 2400), 200);
+        playTone(2650, "triangle", 0.18, 0.18, 2850);
+        setTimeout(() => playTone(2750, "triangle", 0.25, 0.18, 2450), 200);
       },
       bark: () => {
-        playTone(220, "sawtooth", 0.1, 0.18, 120);
-        setTimeout(() => playTone(240, "sawtooth", 0.12, 0.18, 110), 140);
+        playTone(210, "sawtooth", 0.1, 0.18, 120);
+        setTimeout(() => playTone(230, "sawtooth", 0.12, 0.18, 110), 140);
       },
-      crash: () => playTone(110, "sawtooth", 0.35, 0.25, 40),
+      crash: () => playTone(105, "sawtooth", 0.35, 0.25, 40),
       powerup: () => {
         playTone(440, "square", 0.1, 0.12, 660);
         setTimeout(() => playTone(660, "square", 0.2, 0.12, 990), 100);
       }
     };
 
-    // ================= 3. THREE.JS SCENE & WORLD SETUP =================
+    // ================= 3. THREE.JS SCENE & LIGHTING =================
     const canvas = document.getElementById("gameCanvas");
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
+    renderer.outputEncoding = THREE.sRGBEncoding;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x521244);
-    scene.fog = new THREE.FogExp2(0x521244, 0.0085);
+    scene.background = new THREE.Color(0x28133b);
+    scene.fog = new THREE.FogExp2(0x28133b, 0.0075);
 
-    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 220);
+    const camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 240);
 
-    // Lighting
-    const hemiLight = new THREE.HemisphereLight(0xff88cc, 0x2a1b3d, 0.85);
+    const hemiLight = new THREE.HemisphereLight(0xffd6ff, 0x2b1d3d, 1.15);
     scene.add(hemiLight);
 
-    const dirLight = new THREE.DirectionalLight(0xffd4a3, 0.9);
-    dirLight.position.set(18, 35, 25);
+    const dirLight = new THREE.DirectionalLight(0xfff0dd, 1.2);
+    dirLight.position.set(20, 40, 25);
     dirLight.castShadow = true;
     scene.add(dirLight);
 
-    // Constants
-    const LANES = [-3.4, 0, 3.4];
-    const TRACK_WIDTH = 12;
+    const LANES = [-3.6, 0, 3.6];
 
-    // Ground & 3-Lane Railway Sleeper / Rail System
-    const groundGeo = new THREE.PlaneGeometry(60, 400);
-    const groundMat = new THREE.MeshLambertMaterial({ color: 0x4e3b4f });
-    const ground = new THREE.Mesh(groundGeo, groundMat);
+    // Ballast Gravel Ground & Steel Railway Tracks
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(70, 420),
+      new THREE.MeshStandardMaterial({ color: 0x3a3242, roughness: 0.9 })
+    );
     ground.rotation.x = -Math.PI / 2;
-    ground.position.z = -150;
+    ground.position.z = -160;
     ground.receiveShadow = true;
     scene.add(ground);
 
-    // Rails
-    const railMat = new THREE.MeshStandardMaterial({ color: 0x998899, metalness: 0.6, roughness: 0.3 });
+    const railMat = new THREE.MeshStandardMaterial({ color: 0xcfd8dc, metalness: 0.85, roughness: 0.2 });
     LANES.forEach(laneX => {
-      [-0.7, 0.7].forEach(offset => {
-        const rail = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.14, 400), railMat);
-        rail.position.set(laneX + offset, 0.07, -150);
+      [-0.75, 0.75].forEach(offset => {
+        const rail = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.16, 420), railMat);
+        rail.position.set(laneX + offset, 0.08, -160);
         scene.add(rail);
       });
     });
 
-    // Moving Sleepers & Gothic Scenery Group
+    // Scrolling Concrete Sleepers, Overhead Catenary Poles & City Buildings
     const scrollingProps = [];
-    const sleeperMat = new THREE.MeshLambertMaterial({ color: 0x3b2820 });
-    const buildingMat = new THREE.MeshLambertMaterial({ color: 0x331638 });
-    const roofMat = new THREE.MeshLambertMaterial({ color: 0x1d0924 });
-    const windowLitMat = new THREE.MeshBasicMaterial({ color: 0xffaa22 });
-    const treeMat = new THREE.MeshLambertMaterial({ color: 0x16382b });
+    const sleeperMat = new THREE.MeshStandardMaterial({ color: 0x4a3b32, roughness: 0.8 });
+    const poleMat = new THREE.MeshStandardMaterial({ color: 0x607d8b, metalness: 0.7, roughness: 0.3 });
+    const buildingMat = new THREE.MeshStandardMaterial({ color: 0x241434, roughness: 0.7 });
+    const winMat = new THREE.MeshBasicMaterial({ color: 0xffcc66 });
 
-    for (let z = 20; z > -220; z -= 4) {
-      const rowGroup = new THREE.Group();
-      rowGroup.position.z = z;
+    for (let z = 20; z > -240; z -= 4) {
+      const row = new THREE.Group();
+      row.position.z = z;
 
-      // Sleepers across all 3 lanes
       LANES.forEach(lx => {
-        const sleeper = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.08, 0.45), sleeperMat);
+        const sleeper = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.09, 0.45), sleeperMat);
         sleeper.position.set(lx, 0.04, 0);
-        rowGroup.add(sleeper);
+        row.add(sleeper);
       });
 
-      // Transylvania Gothic Buildings & Pine Trees every 16 units
-      if (Math.abs(z) % 16 === 0) {
+      if (Math.abs(z) % 20 === 0) {
+        // Overhead Railway Electric Catenary Gantry
+        [-6.5, 6.5].forEach(px => {
+          const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 9.5, 8), poleMat);
+          mast.position.set(px, 4.75, 0);
+          row.add(mast);
+        });
+        const crossBeam = new THREE.Mesh(new THREE.BoxGeometry(13.4, 0.22, 0.22), poleMat);
+        crossBeam.position.set(0, 9.1, 0);
+        row.add(crossBeam);
+
+        // City Buildings on Sides
         [-1, 1].forEach(side => {
-          const bGroup = new THREE.Group();
-          const h = 10 + (Math.abs(z * side) % 8);
-          const house = new THREE.Mesh(new THREE.BoxGeometry(5, h, 5), buildingMat);
-          house.position.y = h / 2;
-          bGroup.add(house);
+          const h = 14 + (Math.abs(z * side) % 10);
+          const b = new THREE.Mesh(new THREE.BoxGeometry(6, h, 8), buildingMat);
+          b.position.set(side * 12, h / 2, 0);
+          row.add(b);
 
-          const roof = new THREE.Mesh(new THREE.ConeGeometry(4.2, 4.5, 4), roofMat);
-          roof.position.y = h + 2.25;
-          roof.rotation.y = Math.PI / 4;
-          bGroup.add(roof);
-
-          const win = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 1.4), windowLitMat);
-          win.position.set(side < 0 ? 2.51 : -2.51, h * 0.6, 0);
-          win.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2;
-          bGroup.add(win);
-
-          bGroup.position.x = side * 10.5;
-          rowGroup.add(bGroup);
-
-          // Spooky Pine Tree
-          const tree = new THREE.Mesh(new THREE.ConeGeometry(1.8, 6, 6), treeMat);
-          tree.position.set(side * 7.2, 3, 2);
-          rowGroup.add(tree);
+          for (let wy = 3; wy < h - 2; wy += 3) {
+            const w = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.5), winMat);
+            w.position.set(side * 8.98, wy, 0);
+            w.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2;
+            row.add(w);
+          }
         });
       }
 
-      scene.add(rowGroup);
-      scrollingProps.push(rowGroup);
+      scene.add(row);
+      scrollingProps.push(row);
     }
 
-    // ================= 4. CHARACTER MODELS (Player, Police, Dog, Graffiti Train) =================
-    function createHumanoid(colors, scale = 1) {
-      const group = new THREE.Group();
-      group.scale.set(scale, scale, scale);
+    // ================= 4. REAL HUMANS (SCULPTED FALLBACK + GLTFLOADER RIGGED HUMANS) =================
+    // Sculpted anatomical human (used while GLB downloads or if offline)
+    function createSculptedHuman(shirtHex = 0x2277ff, pantsHex = 0x223344, isPolice = false) {
+      const root = new THREE.Group();
+      const skinMat = new THREE.MeshStandardMaterial({ color: 0xf1c27d, roughness: 0.6 });
+      const shirtMat = new THREE.MeshStandardMaterial({ color: isPolice ? 0x1b263b : shirtHex, roughness: 0.5 });
+      const pantsMat = new THREE.MeshStandardMaterial({ color: isPolice ? 0x0d1b2a : pantsHex, roughness: 0.6 });
+      const shoeMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 });
 
-      // Torso (Hoodie/Jacket)
-      const torso = new THREE.Mesh(
-        new THREE.BoxGeometry(0.9, 1.15, 0.55),
-        new THREE.MeshLambertMaterial({ color: colors.jacket })
-      );
+      // Torso & Pelvis
+      const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.28, 0.95, 16), shirtMat);
       torso.position.y = 1.45;
       torso.castShadow = true;
-      group.add(torso);
+      root.add(torso);
 
-      // Back Graffiti Logo Patch
-      const logoPatch = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.55, 0.45),
-        new THREE.MeshBasicMaterial({ color: 0xffd700 })
-      );
-      logoPatch.position.set(0, 1.5, 0.28);
-      group.add(logoPatch);
+      // Sculpted Head & Hair/Cap
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.28, 20, 20), skinMat);
+      head.position.y = 2.18;
+      root.add(head);
 
-      // Head
-      const head = new THREE.Mesh(
-        new THREE.BoxGeometry(0.75, 0.75, 0.75),
-        new THREE.MeshLambertMaterial({ color: 0xffccaa })
-      );
-      head.position.y = 2.4;
-      group.add(head);
-
-      // Hoodie Cap
       const cap = new THREE.Mesh(
-        new THREE.BoxGeometry(0.82, 0.45, 0.85),
-        new THREE.MeshLambertMaterial({ color: colors.cap })
+        new THREE.CylinderGeometry(0.3, 0.3, 0.18, 16),
+        new THREE.MeshStandardMaterial({ color: isPolice ? 0x0a1128 : 0xe63946 })
       );
-      cap.position.set(0, 2.65, -0.04);
-      group.add(cap);
+      cap.position.y = 2.34;
+      root.add(cap);
 
-      // Limbs
-      const legGeo = new THREE.BoxGeometry(0.34, 0.85, 0.34);
-      const legMat = new THREE.MeshLambertMaterial({ color: colors.pants });
-      const leftLeg = new THREE.Mesh(legGeo, legMat);
-      leftLeg.position.set(-0.24, 0.45, 0);
-      const rightLeg = new THREE.Mesh(legGeo, legMat);
-      rightLeg.position.set(0.24, 0.45, 0);
-      group.add(leftLeg, rightLeg);
+      // Articulated Limbs
+      function makeLimb(radiusTop, radiusBottom, len, mat, hasShoe = false) {
+        const pivot = new THREE.Group();
+        const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radiusTop, radiusBottom, len, 14), mat);
+        mesh.position.y = -len / 2;
+        mesh.castShadow = true;
+        pivot.add(mesh);
+        if (hasShoe) {
+          const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.16, 0.42), shoeMat);
+          shoe.position.set(0, -len, -0.08);
+          pivot.add(shoe);
+        }
+        return pivot;
+      }
 
-      const armGeo = new THREE.BoxGeometry(0.28, 0.8, 0.28);
-      const armMat = new THREE.MeshLambertMaterial({ color: colors.hoodie });
-      const leftArm = new THREE.Mesh(armGeo, armMat);
-      leftArm.position.set(-0.62, 1.45, 0);
-      const rightArm = new THREE.Mesh(armGeo, armMat);
-      rightArm.position.set(0.62, 1.45, 0);
-      group.add(leftArm, rightArm);
+      const leftLeg = makeLimb(0.15, 0.11, 0.92, pantsMat, true);
+      leftLeg.position.set(-0.17, 0.95, 0);
+      const rightLeg = makeLimb(0.15, 0.11, 0.92, pantsMat, true);
+      rightLeg.position.set(0.17, 0.95, 0);
 
-      // Spray Can in Right Hand (for intro)
+      const leftArm = makeLimb(0.11, 0.08, 0.78, shirtMat, false);
+      leftArm.position.set(-0.46, 1.85, 0);
+      const rightArm = makeLimb(0.11, 0.08, 0.78, shirtMat, false);
+      rightArm.position.set(0.46, 1.85, 0);
+
       const sprayCan = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.1, 0.1, 0.32, 8),
-        new THREE.MeshLambertMaterial({ color: 0x00ffcc })
+        new THREE.CylinderGeometry(0.07, 0.07, 0.26, 12),
+        new THREE.MeshStandardMaterial({ color: 0x00f5d4, metalness: 0.5 })
       );
-      sprayCan.position.set(0, -0.4, 0);
+      sprayCan.position.set(0, -0.78, -0.08);
       rightArm.add(sprayCan);
 
-      group.userData = { torso, head, cap, leftLeg, rightLeg, leftArm, rightArm, sprayCan };
-      return group;
+      root.add(leftLeg, rightLeg, leftArm, rightArm);
+      root.userData = { leftLeg, rightLeg, leftArm, rightArm, sprayCan };
+      return root;
     }
 
     const playerGroup = new THREE.Group();
     scene.add(playerGroup);
 
-    let surferMesh = createHumanoid(AVATAR_CATALOG[0]);
-    playerGroup.add(surferMesh);
+    let fallbackHuman = createSculptedHuman();
+    playerGroup.add(fallbackHuman);
 
-    // Hoverboard Mesh under Player
+    let activeGlbHuman = null;
+    let playerMixer = null;
+    let playerActions = { idle: null, run: null };
+    const glbCache = {};
+    const gltfLoader = new THREE.GLTFLoader();
+
+    // Load Real 3D GLB Human Model for Player
+    window.loadSelectedHumanAvatar = function() {
+      const av = AVATAR_CATALOG.find(a => a.id === window.playerProfile.selectedAvatar) || AVATAR_CATALOG[0];
+      const badge = document.getElementById("modelStatusBadge");
+
+      // Update fallback colors immediately
+      fallbackHuman.visible = true;
+
+      if (activeGlbHuman) {
+        playerGroup.remove(activeGlbHuman);
+        activeGlbHuman = null;
+        playerMixer = null;
+      }
+
+      const setupClonedGlb = (gltf) => {
+        if (activeGlbHuman) playerGroup.remove(activeGlbHuman);
+        const clone = THREE.SkeletonUtils ? THREE.SkeletonUtils.clone(gltf.scene) : gltf.scene.clone();
+        clone.scale.set(av.scale, av.scale, av.scale);
+        clone.rotation.y = av.rotY;
+        clone.traverse(node => {
+          if (node.isMesh) {
+            node.castShadow = true;
+            node.receiveShadow = true;
+          }
+        });
+
+        playerGroup.add(clone);
+        activeGlbHuman = clone;
+        fallbackHuman.visible = false;
+
+        playerMixer = new THREE.AnimationMixer(clone);
+        const clips = gltf.animations || [];
+        const runClip = THREE.AnimationClip.findByName(clips, "Run") || clips.find(c => /run|walk|salsa|dance/i.test(c.name)) || clips[0];
+        const idleClip = THREE.AnimationClip.findByName(clips, "Idle") || clips[0];
+
+        if (runClip) playerActions.run = playerMixer.clipAction(runClip);
+        if (idleClip) playerActions.idle = playerMixer.clipAction(idleClip);
+
+        if (gameState === "PLAYING" && playerActions.run) {
+          playerActions.run.reset().play();
+        } else if (playerActions.idle) {
+          playerActions.idle.reset().play();
+        }
+        if (badge) badge.innerText = `🧍 3D Model: ${av.name}`;
+      };
+
+      if (glbCache[av.glbUrl]) {
+        setupClonedGlb(glbCache[av.glbUrl]);
+      } else {
+        if (badge) badge.innerText = `⏳ Loading ${av.name}...`;
+        gltfLoader.load(
+          av.glbUrl,
+          (gltf) => {
+            glbCache[av.glbUrl] = gltf;
+            setupClonedGlb(gltf);
+          },
+          undefined,
+          () => {
+            if (badge) badge.innerText = `🧍 3D Sculpted Mode`;
+          }
+        );
+      }
+
+      // Apply Hoverboard Skin
+      const skin = BOARD_SKIN_CATALOG.find(b => b.id === window.playerProfile.selectedBoard) || BOARD_SKIN_CATALOG[0];
+      boardDeck.material.color.setHex(skin.deckColor);
+      boardRim.material.color.setHex(skin.rimColor);
+    };
+
+    // Hoverboard Mesh
     const boardGroup = new THREE.Group();
     const boardDeck = new THREE.Mesh(
-      new THREE.BoxGeometry(1.15, 0.12, 2.1),
-      new THREE.MeshLambertMaterial({ color: 0xff3300 })
+      new THREE.BoxGeometry(1.15, 0.1, 2.2),
+      new THREE.MeshStandardMaterial({ color: 0xff3300, metalness: 0.4, roughness: 0.3 })
     );
     const boardRim = new THREE.Mesh(
-      new THREE.BoxGeometry(1.22, 0.08, 2.16),
+      new THREE.BoxGeometry(1.24, 0.06, 2.28),
       new THREE.MeshBasicMaterial({ color: 0xffd700 })
     );
     boardGroup.add(boardRim, boardDeck);
-    boardGroup.position.y = 0.08;
+    boardGroup.position.y = 0.07;
     boardGroup.visible = false;
     playerGroup.add(boardGroup);
 
-    // Jetpack Flame + Thrusters on Player Back
+    // Jetpack Thrusters
     const jetpackGroup = new THREE.Group();
-    [-0.25, 0.25].forEach(ox => {
-      const tank = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.14, 0.14, 0.8, 10),
-        new THREE.MeshLambertMaterial({ color: 0xffcc00 })
+    [-0.22, 0.22].forEach(ox => {
+      const cyl = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.12, 0.12, 0.75, 12),
+        new THREE.MeshStandardMaterial({ color: 0xffaa00, metalness: 0.7, roughness: 0.2 })
       );
-      tank.position.set(ox, 1.5, 0.35);
+      cyl.position.set(ox, 1.4, 0.28);
       const flame = new THREE.Mesh(
-        new THREE.ConeGeometry(0.22, 1.4, 8),
-        new THREE.MeshBasicMaterial({ color: 0xff5500 })
+        new THREE.ConeGeometry(0.2, 1.3, 10),
+        new THREE.MeshBasicMaterial({ color: 0xff4500 })
       );
       flame.rotation.x = Math.PI;
-      flame.position.set(ox, 0.5, 0.35);
-      jetpackGroup.add(tank, flame);
+      flame.position.set(ox, 0.45, 0.28);
+      jetpackGroup.add(cyl, flame);
     });
     jetpackGroup.visible = false;
     playerGroup.add(jetpackGroup);
 
     // Dizzy Stars Overhead (When Player Stumbles)
     const dizzyStarsGroup = new THREE.Group();
-    dizzyStarsGroup.position.y = 3.15;
+    dizzyStarsGroup.position.y = 2.75;
     for (let i = 0; i < 4; i++) {
       const star = new THREE.Mesh(
-        new THREE.OctahedronGeometry(0.16, 0),
+        new THREE.OctahedronGeometry(0.15, 0),
         new THREE.MeshBasicMaterial({ color: 0xffea00 })
       );
       const angle = (i / 4) * Math.PI * 2;
-      star.position.set(Math.cos(angle) * 0.6, 0, Math.sin(angle) * 0.6);
+      star.position.set(Math.cos(angle) * 0.55, 0, Math.sin(angle) * 0.55);
       dizzyStarsGroup.add(star);
     }
     dizzyStarsGroup.visible = false;
     playerGroup.add(dizzyStarsGroup);
 
-    // Apply Selected Avatar & Board Skin
-    window.applyCustomization = function() {
-      const av = AVATAR_CATALOG.find(a => a.id === window.playerProfile.selectedAvatar) || AVATAR_CATALOG[0];
-      surferMesh.userData.torso.material.color.setHex(av.jacket);
-      surferMesh.userData.cap.material.color.setHex(av.cap);
-      surferMesh.userData.leftLeg.material.color.setHex(av.pants);
-      surferMesh.userData.rightLeg.material.color.setHex(av.pants);
-      surferMesh.userData.leftArm.material.color.setHex(av.hoodie);
-      surferMesh.userData.rightArm.material.color.setHex(av.hoodie);
-
-      const skin = BOARD_SKIN_CATALOG.find(b => b.id === window.playerProfile.selectedBoard) || BOARD_SKIN_CATALOG[0];
-      boardDeck.material.color.setHex(skin.deckColor);
-      boardRim.material.color.setHex(skin.rimColor);
-    };
-    window.applyCustomization();
-
-    // Police Inspector + Dog Group
+    // Police Inspector (Real 3D Rigged Officer + Sculpted Guard Dog)
     const chaserGroup = new THREE.Group();
-    const policeMesh = createHumanoid({
-      jacket: 0x2b1d28,
-      hoodie: 0x2b1d28,
-      cap: 0x111111,
-      pants: 0x1a1118
-    }, 1.18);
-    policeMesh.userData.sprayCan.visible = false;
-    chaserGroup.add(policeMesh);
+    const fallbackPolice = createSculptedHuman(0x1b263b, 0x0d1b2a, true);
+    fallbackPolice.userData.sprayCan.visible = false;
+    chaserGroup.add(fallbackPolice);
 
-    // Police Dog
+    let policeMixer = null;
+    gltfLoader.load(POLICE_GLB_URL, (gltf) => {
+      glbCache[POLICE_GLB_URL] = gltf;
+      const officer = THREE.SkeletonUtils ? THREE.SkeletonUtils.clone(gltf.scene) : gltf.scene.clone();
+      officer.scale.set(1.42, 1.42, 1.42);
+      officer.rotation.y = 0;
+      chaserGroup.add(officer);
+      fallbackPolice.visible = false;
+      policeMixer = new THREE.AnimationMixer(officer);
+      const runClip = THREE.AnimationClip.findByName(gltf.animations, "Run") || gltf.animations[1] || gltf.animations[0];
+      if (runClip) policeMixer.clipAction(runClip).play();
+    });
+
+    // Articulated 3D Guard Dog
     const dogGroup = new THREE.Group();
-    const dogBody = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.45, 0.85), new THREE.MeshLambertMaterial({ color: 0xe6e6fa }));
-    dogBody.position.y = 0.45;
-    const dogHead = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.45), new THREE.MeshLambertMaterial({ color: 0xe6e6fa }));
-    dogHead.position.set(0, 0.72, -0.35);
-    const dogCollar = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.12, 0.44), new THREE.MeshBasicMaterial({ color: 0x800080 }));
-    dogCollar.position.set(0, 0.58, -0.25);
-    dogGroup.add(dogBody, dogHead, dogCollar);
-    dogGroup.position.set(0.95, 0, 0.2);
+    const dogFurMat = new THREE.MeshStandardMaterial({ color: 0xc29b61, roughness: 0.7 });
+    const dogDarkMat = new THREE.MeshStandardMaterial({ color: 0x2b2118, roughness: 0.8 });
+    const dTorso = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.2, 0.85, 12), dogFurMat);
+    dTorso.rotation.x = Math.PI / 2;
+    dTorso.position.y = 0.48;
+    const dHead = new THREE.Mesh(new THREE.SphereGeometry(0.21, 14, 14), dogFurMat);
+    dHead.position.set(0, 0.72, -0.42);
+    const dSnout = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 0.25, 10), dogDarkMat);
+    dSnout.rotation.x = Math.PI / 2;
+    dSnout.position.set(0, 0.68, -0.6);
+    const dLegs = [];
+    [[-0.14, -0.28], [0.14, -0.28], [-0.14, 0.28], [0.14, 0.28]].forEach(([lx, lz]) => {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.05, 0.45, 8), dogFurMat);
+      leg.position.set(lx, 0.22, lz);
+      dogGroup.add(leg);
+      dLegs.push(leg);
+    });
+    dogGroup.add(dTorso, dHead, dSnout);
+    dogGroup.position.set(0.95, 0, 0.25);
     chaserGroup.add(dogGroup);
     scene.add(chaserGroup);
 
-    // Intro Parked Train with Graffiti Canvas
-    const introTrainGroup = new THREE.Group();
-    const introCar = new THREE.Mesh(
-      new THREE.BoxGeometry(2.8, 3.3, 13),
-      new THREE.MeshLambertMaterial({ color: 0x8a5a83 })
-    );
-    introCar.position.set(-3.4, 1.65, -2);
-    introTrainGroup.add(introCar);
+    window.loadSelectedHumanAvatar();
 
-    // Dynamic Canvas Texture for "Transylvania" Graffiti
-    const grafCanvas = document.createElement("canvas");
-    grafCanvas.width = 512;
-    grafCanvas.height = 256;
-    const gCtx = grafCanvas.getContext("2d");
-    gCtx.fillStyle = "#704878";
-    gCtx.fillRect(0, 0, 512, 256);
-    gCtx.strokeStyle = "#3f2247";
-    gCtx.lineWidth = 8;
-    gCtx.strokeRect(10, 10, 492, 236);
-    gCtx.font = "bold italic 62px Impact, sans-serif";
-    gCtx.fillStyle = "#bfff00";
-    gCtx.strokeStyle = "#1a3300";
-    gCtx.lineWidth = 6;
-    gCtx.strokeText("Transylvania", 75, 145);
-    gCtx.fillText("Transylvania", 75, 145);
+    // ================= 5. REALISTIC 3D SUBWAY & EXPRESS TRAINS =================
+    // High-Res Procedural Subway Coach Side Texture (Windows, Doors, Rivets, Stripes)
+    function createRealisticTrainSideTexture(liveryHex = "#c1121f", stripeHex = "#ffb703") {
+      const c = document.createElement("canvas");
+      c.width = 1024;
+      c.height = 256;
+      const ctx = c.getContext("2d");
 
-    const grafTex = new THREE.CanvasTexture(grafCanvas);
-    const grafPlane = new THREE.Mesh(
-      new THREE.PlaneGeometry(6.5, 2.4),
-      new THREE.MeshBasicMaterial({ map: grafTex })
-    );
-    grafPlane.rotation.y = Math.PI / 2;
-    grafPlane.position.set(-1.98, 1.8, -1.5);
-    introTrainGroup.add(grafPlane);
-    scene.add(introTrainGroup);
+      // Brushed Metallic Steel Base
+      const grad = ctx.createLinearGradient(0, 0, 0, 256);
+      grad.addColorStop(0, "#d8dee9");
+      grad.addColorStop(0.25, "#eceff4");
+      grad.addColorStop(0.55, liveryHex);
+      grad.addColorStop(0.9, "#2b2d42");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 1024, 256);
 
-    // ================= 5. 3D TRAINS, OBSTACLES, COINS & POWERUPS =================
-    let obstacles = [];
-    let coins = [];
-    let powerups = [];
+      // Safety Stripe
+      ctx.fillStyle = stripeHex;
+      ctx.fillRect(0, 150, 1024, 16);
 
-    function createTrainMesh(length = 14, hasRamp = false, isMoving = false) {
-      const group = new THREE.Group();
+      // Sliding Double Doors & Illuminated Passenger Windows
+      for (let x = 40; x < 980; x += 155) {
+        if (x % 310 === 40) {
+          // Sliding Subway Doors
+          ctx.fillStyle = "#8d99ae";
+          ctx.fillRect(x, 38, 66, 175);
+          ctx.strokeStyle = "#1d2d44";
+          ctx.lineWidth = 4;
+          ctx.strokeRect(x, 38, 66, 175);
+          ctx.beginPath();
+          ctx.moveTo(x + 33, 38);
+          ctx.lineTo(x + 33, 213);
+          ctx.stroke();
+          // Door Glass
+          ctx.fillStyle = "#a8dadc";
+          ctx.fillRect(x + 8, 52, 20, 65);
+          ctx.fillRect(x + 38, 52, 20, 65);
+        } else {
+          // Tinted Passenger Windows with Warm Interior Glow
+          ctx.fillStyle = "#1d3557";
+          ctx.fillRect(x - 15, 50, 95, 72);
+          ctx.fillStyle = "rgba(255, 230, 150, 0.75)";
+          ctx.fillRect(x - 10, 55, 85, 62);
+          ctx.strokeStyle = "#e0e1dd";
+          ctx.lineWidth = 4;
+          ctx.strokeRect(x - 15, 50, 95, 72);
+        }
+      }
+      return new THREE.CanvasTexture(c);
+    }
 
-      // Main Carriage Body
-      const bodyColor = isMoving ? 0x9e2a3b : 0x7a2048;
-      const roofColor = isMoving ? 0xd9822b : 0x4a1230;
-      const body = new THREE.Mesh(
-        new THREE.BoxGeometry(2.65, 3.1, length),
-        new THREE.MeshLambertMaterial({ color: bodyColor })
-      );
-      body.position.y = 1.55;
-      body.castShadow = true;
-      body.receiveShadow = true;
-      group.add(body);
+    const movingTrainSideTex = createRealisticTrainSideTexture("#b5179e", "#00f5d4");
+    const parkedTrainSideTex = createRealisticTrainSideTexture("#1d3557", "#fca311");
 
-      // Arched Roof Top
-      const roof = new THREE.Mesh(
-        new THREE.BoxGeometry(2.4, 0.25, length - 0.2),
-        new THREE.MeshLambertMaterial({ color: roofColor })
-      );
-      roof.position.y = 3.2;
-      group.add(roof);
-
-      // Glowing Front Windshield & Headlights
-      const frontGlass = new THREE.Mesh(
-        new THREE.PlaneGeometry(2.1, 1.1),
-        new THREE.MeshBasicMaterial({ color: 0xcceeff })
-      );
-      frontGlass.position.set(0, 2.2, length / 2 + 0.02);
-      group.add(frontGlass);
-
-      [-0.8, 0.8].forEach(hx => {
-        const light = new THREE.Mesh(
-          new THREE.CircleGeometry(0.22, 12),
-          new THREE.MeshBasicMaterial({ color: 0xffff88 })
-        );
-        light.position.set(hx, 0.9, length / 2 + 0.02);
-        group.add(light);
+    let customTrainGlbTemplate = null;
+    if (CUSTOM_TRAIN_GLB_URL) {
+      gltfLoader.load(CUSTOM_TRAIN_GLB_URL, (gltf) => {
+        customTrainGlbTemplate = gltf.scene;
       });
+    }
 
-      // Optional Climbable Ramp at the Front of the Train
+    function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false) {
+      const group = new THREE.Group();
+      const wheels = [];
+
+      if (customTrainGlbTemplate) {
+        const clone = customTrainGlbTemplate.clone();
+        group.add(clone);
+      } else {
+        const sideTex = isMoving ? movingTrainSideTex : parkedTrainSideTex;
+        const bodyMaterials = [
+          new THREE.MeshStandardMaterial({ map: sideTex, metalness: 0.5, roughness: 0.3 }), // Right side
+          new THREE.MeshStandardMaterial({ map: sideTex, metalness: 0.5, roughness: 0.3 }), // Left side
+          new THREE.MeshStandardMaterial({ color: 0xced4da, metalness: 0.7, roughness: 0.35 }), // Roof
+          new THREE.MeshStandardMaterial({ color: 0x1b1b1e, roughness: 0.9 }), // Undercarriage
+          new THREE.MeshStandardMaterial({ color: isMoving ? 0x7209b7 : 0x1d3557, metalness: 0.6, roughness: 0.3 }), // Front
+          new THREE.MeshStandardMaterial({ color: 0x2b2d42, metalness: 0.5, roughness: 0.5 })  // Back
+        ];
+
+        // Main Coach Body
+        const coach = new THREE.Mesh(new THREE.BoxGeometry(2.75, 2.95, length), bodyMaterials);
+        coach.position.y = 1.85;
+        coach.castShadow = true;
+        coach.receiveShadow = true;
+        group.add(coach);
+
+        // Dark Undercarriage Chassis & Steel Bogie Wheels
+        const chassis = new THREE.Mesh(
+          new THREE.BoxGeometry(2.4, 0.38, length - 0.6),
+          new THREE.MeshStandardMaterial({ color: 0x161a1d, metalness: 0.6, roughness: 0.7 })
+        );
+        chassis.position.y = 0.25;
+        group.add(chassis);
+
+        const wheelGeo = new THREE.CylinderGeometry(0.32, 0.32, 0.18, 16);
+        const wheelMat = new THREE.MeshStandardMaterial({ color: 0xadb5bd, metalness: 0.9, roughness: 0.2 });
+        for (let wz = -length / 2 + 2; wz <= length / 2 - 2; wz += 3.6) {
+          [-1.15, 1.15].forEach(wx => {
+            const w = new THREE.Mesh(wheelGeo, wheelMat);
+            w.rotation.z = Math.PI / 2;
+            w.position.set(wx, 0.32, wz);
+            group.add(w);
+            wheels.push(w);
+          });
+        }
+
+        // Slanted Aerodynamic Locomotive Nose & Driver Cabin
+        const nose = new THREE.Mesh(
+          new THREE.BoxGeometry(2.72, 1.45, 0.8),
+          new THREE.MeshStandardMaterial({ color: isMoving ? 0xf72585 : 0xe63946, metalness: 0.5, roughness: 0.3 })
+        );
+        nose.position.set(0, 1.15, length / 2 + 0.25);
+        nose.rotation.x = -0.18;
+        group.add(nose);
+
+        // Panoramic Driver Windshield
+        const windshield = new THREE.Mesh(
+          new THREE.PlaneGeometry(2.3, 0.95),
+          new THREE.MeshStandardMaterial({ color: 0x90e0ef, emissive: 0x0077b6, emissiveIntensity: 0.4, roughness: 0.1 })
+        );
+        windshield.position.set(0, 2.38, length / 2 + 0.02);
+        group.add(windshield);
+
+        // Illuminated Destination LED Sign ("EXPRESS")
+        const ledSign = new THREE.Mesh(
+          new THREE.PlaneGeometry(1.5, 0.28),
+          new THREE.MeshBasicMaterial({ color: 0xffbe0b })
+        );
+        ledSign.position.set(0, 3.05, length / 2 + 0.02);
+        group.add(ledSign);
+
+        // Twin High-Beam LED Headlights + Cowcatcher Bumper
+        [-0.85, 0.85].forEach(hx => {
+          const hl = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.2, 0.2, 0.12, 16),
+            new THREE.MeshBasicMaterial({ color: 0xffffcc })
+          );
+          hl.rotation.x = Math.PI / 2;
+          hl.position.set(hx, 0.95, length / 2 + 0.55);
+          group.add(hl);
+        });
+
+        const cowcatcher = new THREE.Mesh(
+          new THREE.BoxGeometry(2.65, 0.35, 0.6),
+          new THREE.MeshStandardMaterial({ color: 0x343a40, metalness: 0.8 })
+        );
+        cowcatcher.position.set(0, 0.28, length / 2 + 0.5);
+        group.add(cowcatcher);
+
+        // Roof HVAC Air Conditioning Units & Pantograph
+        for (let rz = -length / 3; rz <= length / 3; rz += length / 2) {
+          const hvac = new THREE.Mesh(
+            new THREE.BoxGeometry(1.6, 0.22, 2.2),
+            new THREE.MeshStandardMaterial({ color: 0x6c757d, metalness: 0.6 })
+          );
+          hvac.position.set(0, 3.42, rz);
+          group.add(hvac);
+        }
+      }
+
+      // Optional Boarding Ramp Attached to Front of Train
       let rampLength = 0;
       if (hasRamp) {
-        rampLength = 4.5;
-        const rampGeo = new THREE.BoxGeometry(2.6, 0.3, 5.2);
-        const rampMat = new THREE.MeshLambertMaterial({ color: 0xc71585 });
-        const ramp = new THREE.Mesh(rampGeo, rampMat);
-        ramp.position.set(0, 1.6, length / 2 + 2.1);
-        ramp.rotation.x = Math.atan2(3.2, 4.5);
+        rampLength = 4.6;
+        const ramp = new THREE.Mesh(
+          new THREE.BoxGeometry(2.7, 0.28, 5.3),
+          new THREE.MeshStandardMaterial({ color: 0xffb703, metalness: 0.4, roughness: 0.4 })
+        );
+        ramp.position.set(0, 1.65, length / 2 + 2.2);
+        ramp.rotation.x = Math.atan2(3.35, 4.6);
         group.add(ramp);
       }
 
       group.userData = {
         type: "train",
         length,
-        height: 3.3,
+        height: 3.35,
         hasRamp,
         rampLength,
         isMoving,
-        speedOffset: isMoving ? 14 : 0
+        speedOffset: isMoving ? 15 : 0,
+        wheels
       };
       return group;
     }
 
+    // Intro Parked Train Being Spray-Painted by the Player
+    const introTrainGroup = createRealistic3DTrain(15, false, false);
+    introTrainGroup.position.set(-3.6, 0, -2.5);
+
+    const grafCanvas = document.createElement("canvas");
+    grafCanvas.width = 512;
+    grafCanvas.height = 256;
+    const gCtx = grafCanvas.getContext("2d");
+    gCtx.fillStyle = "rgba(25, 10, 40, 0.85)";
+    gCtx.fillRect(0, 0, 512, 256);
+    gCtx.font = "bold italic 60px Impact, sans-serif";
+    gCtx.fillStyle = "#a8ff00";
+    gCtx.strokeStyle = "#ff006e";
+    gCtx.lineWidth = 8;
+    gCtx.strokeText("SUBWAY 3D", 90, 150);
+    gCtx.fillText("SUBWAY 3D", 90, 150);
+
+    const grafPlane = new THREE.Mesh(
+      new THREE.PlaneGeometry(5.5, 2.1),
+      new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(grafCanvas), transparent: true })
+    );
+    grafPlane.rotation.y = Math.PI / 2;
+    grafPlane.position.set(1.39, 1.9, 1.0);
+    introTrainGroup.add(grafPlane);
+    scene.add(introTrainGroup);
+
+    // ================= 6. BARRIERS, COINS & POWER-UPS =================
+    let obstacles = [];
+    let coins = [];
+    let powerups = [];
+
     function createBarrierMesh(highBarrier = false) {
       const group = new THREE.Group();
-      const postMat = new THREE.MeshLambertMaterial({ color: 0x333344 });
-      [-1.05, 1.05].forEach(px => {
-        const post = new THREE.Mesh(new THREE.BoxGeometry(0.2, highBarrier ? 2.7 : 1.25, 0.2), postMat);
-        post.position.set(px, (highBarrier ? 2.7 : 1.25) / 2, 0);
+      const postMat = new THREE.MeshStandardMaterial({ color: 0x495057, metalness: 0.7 });
+      [-1.1, 1.1].forEach(px => {
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, highBarrier ? 2.75 : 1.25, 10), postMat);
+        post.position.set(px, (highBarrier ? 2.75 : 1.25) / 2, 0);
         group.add(post);
       });
 
       const bar = new THREE.Mesh(
-        new THREE.BoxGeometry(2.4, 0.65, 0.25),
-        new THREE.MeshLambertMaterial({ color: 0xff2244 })
+        new THREE.BoxGeometry(2.45, 0.6, 0.22),
+        new THREE.MeshStandardMaterial({ color: 0xef233c, roughness: 0.4 })
       );
-      bar.position.y = highBarrier ? 2.25 : 0.95;
+      bar.position.y = highBarrier ? 2.3 : 0.95;
       group.add(bar);
 
-      // White warning stripe
       const stripe = new THREE.Mesh(
-        new THREE.BoxGeometry(1.8, 0.22, 0.27),
+        new THREE.BoxGeometry(1.9, 0.2, 0.24),
         new THREE.MeshBasicMaterial({ color: 0xffffff })
       );
       stripe.position.y = bar.position.y;
@@ -1155,15 +1379,15 @@
       group.userData = {
         type: highBarrier ? "highBarrier" : "lowBarrier",
         length: 0.6,
-        height: highBarrier ? 2.7 : 1.25
+        height: highBarrier ? 2.75 : 1.25
       };
       return group;
     }
 
-    const coinGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.14, 16);
-    const coinMat = new THREE.MeshLambertMaterial({ color: 0xffd700, emissive: 0x553300 });
+    const coinGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.14, 20);
+    const coinMat = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.85, roughness: 0.2, emissive: 0x442200 });
 
-    function spawnCoinArc(laneIndex, startZ, count = 5, baseHeight = 0.9, arcHeight = 0) {
+    function spawnCoinArc(laneIndex, startZ, count = 5, baseHeight = 0.95, arcHeight = 0) {
       for (let i = 0; i < count; i++) {
         const coin = new THREE.Mesh(coinGeo, coinMat);
         coin.rotation.z = Math.PI / 2;
@@ -1181,7 +1405,7 @@
       const colorMap = { jetpack: 0xff4500, magnet: 0x00e5ff, boardPickup: 0x7cfc00 };
       const mesh = new THREE.Mesh(
         new THREE.OctahedronGeometry(0.55, 0),
-        new THREE.MeshBasicMaterial({ color: colorMap[kind] })
+        new THREE.MeshStandardMaterial({ color: colorMap[kind], emissive: colorMap[kind], emissiveIntensity: 0.5 })
       );
       mesh.position.set(LANES[laneIndex], y, z);
       mesh.userData = { kind };
@@ -1199,46 +1423,41 @@
         if (usedLanes.has(lane)) lane = (lane + 1) % 3;
         usedLanes.add(lane);
 
-        const roll = Math.random();
-        if (roll < 0.58) {
-          // Spawn 3D Train
+        if (Math.random() < 0.62) {
           const hasRamp = Math.random() < 0.45;
-          const isMoving = !hasRamp && Math.random() < 0.45;
-          const trainLength = 14 + Math.floor(Math.random() * 6);
-          const train = createTrainMesh(trainLength, hasRamp, isMoving);
+          const isMoving = !hasRamp && Math.random() < 0.48;
+          const trainLength = 15 + Math.floor(Math.random() * 5);
+          const train = createRealistic3DTrain(trainLength, hasRamp, isMoving);
           train.position.set(LANES[lane], 0, zPos - trainLength / 2);
           scene.add(train);
           obstacles.push(train);
 
-          // Coins on top of train roof
           if (hasRamp || Math.random() < 0.5) {
-            spawnCoinArc(lane, zPos - 2, 5, 4.1, 0);
+            spawnCoinArc(lane, zPos - 2, 5, 4.2, 0);
           }
         } else {
-          // Spawn Low or High Barrier
           const isHigh = Math.random() < 0.4;
           const barrier = createBarrierMesh(isHigh);
           barrier.position.set(LANES[lane], 0, zPos);
           scene.add(barrier);
           obstacles.push(barrier);
-          spawnCoinArc(lane, zPos + 3, 5, 0.9, isHigh ? 0 : 2.1);
+          spawnCoinArc(lane, zPos + 3, 5, 0.95, isHigh ? 0 : 2.1);
         }
       }
 
-      // Free lane gets coins or a power-up
       for (let lane = 0; lane < 3; lane++) {
         if (!usedLanes.has(lane)) {
           if (Math.random() < 0.25) {
             spawnPowerup(lane, 1.1, zPos - 4);
           } else {
-            spawnCoinArc(lane, zPos, 6, 0.9, 0);
+            spawnCoinArc(lane, zPos, 6, 0.95, 0);
           }
         }
       }
     }
 
-    // ================= 6. GAME STATE & POLICE CHASE LOGIC =================
-    let gameState = "AGE_GATE"; // AGE_GATE | IDLE_INTRO | PLAYING | GAMEOVER
+    // ================= 7. GAMEPLAY & 5-SECOND POLICE CHASE LOGIC =================
+    let gameState = "AGE_GATE";
     let currentLane = 1;
     let previousLane = 1;
     let playerY = 0;
@@ -1247,18 +1466,16 @@
     let isRolling = false;
     let rollTimer = 0;
 
-    // Speed, Score, Distance & Coins
     let speed = 22;
     let distanceRun = 0;
     window.score = 0;
     let runCoins = 0;
     let scoreMultiplier = 1;
 
-    // Police & Dog 5-Second Chase State
-    let policeTimer = 0; // > 0 means Police & Dog are actively right behind the player!
+    // 5-Second Police & Dog Chase Timer
+    let policeTimer = 0;
     let dizzyTimer = 0;
 
-    // Power-ups Timers
     let hoverboardTimer = 0;
     let jetpackTimer = 0;
     let magnetTimer = 0;
@@ -1271,24 +1488,23 @@
       el._hideTimeout = setTimeout(() => el.classList.remove("show"), 1300);
     }
 
-    // Trigger Police Chase for 5 Seconds
     function triggerPoliceChase(isStumble = false) {
       if (isStumble) {
         SFX.crash();
         SFX.whistle();
         SFX.bark();
-        // If police is ALREADY behind the player within the 5 seconds window -> Caught & Game Over!
+        // If player gets damaged/stumbles while Police is already chasing behind -> CAUGHT!
         if (policeTimer > 0) {
           triggerGameOver("CAUGHT BY THE INSPECTOR!");
           return;
         }
         dizzyTimer = 2.5;
-        showCallout("Watch Out! Inspector Behind You!");
+        showCallout("Inspector Chasing for 5s! Don't Stumble!");
       } else {
         SFX.whistle();
         SFX.bark();
       }
-      policeTimer = 5.0; // Chases for 5 seconds, then drops back
+      policeTimer = 5.0; // Exact 5-second chase before dropping back
     }
 
     function activateHoverboard() {
@@ -1302,8 +1518,19 @@
       hoverboardTimer = 30.0;
       boardGroup.visible = true;
       SFX.powerup();
-      showCallout("You Rock! 🛹");
+      showCallout("Hoverboard Active! 🛹");
       updateHudUI();
+    }
+
+    function switchPlayerAnimation(mode) {
+      if (!playerMixer) return;
+      if (mode === "run" && playerActions.run) {
+        if (playerActions.idle) playerActions.idle.stop();
+        playerActions.run.reset().play();
+      } else if (mode === "idle" && playerActions.idle) {
+        if (playerActions.run) playerActions.run.stop();
+        playerActions.idle.reset().play();
+      }
     }
 
     function resetGameWorld() {
@@ -1317,6 +1544,7 @@
       currentLane = 1;
       previousLane = 1;
       playerGroup.position.set(0, 0, 0);
+      playerGroup.rotation.y = 0;
       playerY = 0;
       playerVelY = 0;
       groundHeight = 0;
@@ -1340,17 +1568,16 @@
       resetGameWorld();
       gameState = "PLAYING";
       introTrainGroup.visible = false;
-      surferMesh.userData.sprayCan.visible = false;
-      surferMesh.rotation.y = 0;
+      fallbackHuman.userData.sprayCan.visible = false;
+      switchPlayerAnimation("run");
 
       document.getElementById("startOverlay").style.display = "none";
       document.getElementById("gameOverModal").style.display = "none";
       document.getElementById("hud").style.display = "block";
 
-      // Spawn initial waves
-      for (let z = -40; z >= -180; z -= 28) {
+      for (let z = -40; z >= -180; z -= 30) {
         spawnWave(z);
-        nextSpawnZ = z - 28;
+        nextSpawnZ = z - 30;
       }
 
       // Police & Dog chase at the start for 5 seconds
@@ -1364,12 +1591,11 @@
       SFX.crash();
       SFX.whistle();
       gameState = "GAMEOVER";
+      switchPlayerAnimation("idle");
 
-      // Place Police right next to player for arrest pose
       chaserGroup.visible = true;
-      chaserGroup.position.set(playerGroup.position.x - 0.7, playerGroup.position.y, 0.6);
+      chaserGroup.position.set(playerGroup.position.x - 0.75, playerGroup.position.y, 0.5);
 
-      // Update Bank Coins & Cloud High Score
       window.playerProfile.coins += runCoins;
       const finalScoreInt = Math.floor(window.score);
       window.submitScore && window.submitScore(finalScoreInt);
@@ -1385,7 +1611,7 @@
       document.getElementById("gameOverModal").style.display = "flex";
     }
 
-    // ================= 7. CONTROLS (Keyboard + Touch Swipes + Double Tap) =================
+    // ================= 8. INPUT CONTROLS =================
     function changeLane(dir) {
       if (gameState !== "PLAYING") return;
       const target = currentLane + dir;
@@ -1399,7 +1625,7 @@
     function jump() {
       if (gameState !== "PLAYING" || jetpackTimer > 0) return;
       if (playerY <= groundHeight + 0.08) {
-        playerVelY = 13.5;
+        playerVelY = 13.8;
         isRolling = false;
         SFX.jump();
       }
@@ -1410,7 +1636,7 @@
       isRolling = true;
       rollTimer = 0.65;
       if (playerY > groundHeight + 0.1) {
-        playerVelY = -20; // Fast slam down
+        playerVelY = -22;
       }
       SFX.roll();
     }
@@ -1434,9 +1660,7 @@
       touchStartX = e.touches[0].clientX;
       touchStartY = e.touches[0].clientY;
       const now = performance.now();
-      if (now - lastTapTime < 280) {
-        activateHoverboard();
-      }
+      if (now - lastTapTime < 280) activateHoverboard();
       lastTapTime = now;
     }, { passive: true });
 
@@ -1445,15 +1669,14 @@
       const dx = e.changedTouches[0].clientX - touchStartX;
       const dy = e.changedTouches[0].clientY - touchStartY;
       if (Math.abs(dx) < 25 && Math.abs(dy) < 25) return;
-      if (Math.abs(dx) > Math.abs(dy)) {
-        changeLane(dx > 0 ? 1 : -1);
-      } else {
+      if (Math.abs(dx) > Math.abs(dy)) changeLane(dx > 0 ? 1 : -1);
+      else {
         if (dy < 0) jump();
         else roll();
       }
     }, { passive: true });
 
-    // ================= 8. UI & STORE BINDINGS =================
+    // ================= 9. UI & STORE BINDINGS =================
     window.updateMenuUI = function() {
       document.getElementById("menuCoins").innerText = window.playerProfile.coins;
       document.getElementById("menuBoards").innerText = window.playerProfile.boards;
@@ -1469,7 +1692,14 @@
       document.getElementById("hudDistance").innerText = Math.floor(distanceRun);
       document.getElementById("boardCountHud").innerText = window.playerProfile.boards;
 
-      // Power-up bars visibility
+      const policeBadge = document.getElementById("policeWarningBadge");
+      if (policeTimer > 0) {
+        policeBadge.style.display = "block";
+        document.getElementById("policeCountdown").innerText = policeTimer.toFixed(1);
+      } else {
+        policeBadge.style.display = "none";
+      }
+
       const boardBar = document.getElementById("boardHudBar");
       boardBar.style.display = hoverboardTimer > 0 ? "flex" : "none";
       if (hoverboardTimer > 0) {
@@ -1497,10 +1727,8 @@
         const equipped = window.playerProfile.selectedAvatar === av.id;
         const card = document.createElement("div");
         card.className = "shop-item" + (equipped ? " active" : "");
-        const hexColor = "#" + av.jacket.toString(16).padStart(6, "0");
         card.innerHTML = `
-          <div class="color-preview" style="background:${hexColor}"></div>
-          <div><b>${av.name}</b></div>
+          <div>🧍 <b>${av.name}</b></div>
           <button class="shop-btn ${equipped ? 'equipped' : ''}">
             ${equipped ? "Equipped ✓" : unlocked ? "Select" : `Buy (${av.price} 🪙)`}
           </button>
@@ -1517,7 +1745,7 @@
             alert("Not enough coins!");
             return;
           }
-          window.applyCustomization();
+          window.loadSelectedHumanAvatar();
           window.syncPlayerProfileToCloud && window.syncPlayerProfileToCloud();
           window.updateMenuUI();
         };
@@ -1531,10 +1759,8 @@
         const equipped = window.playerProfile.selectedBoard === sk.id;
         const card = document.createElement("div");
         card.className = "shop-item" + (equipped ? " active" : "");
-        const hexColor = "#" + sk.deckColor.toString(16).padStart(6, "0");
         card.innerHTML = `
-          <div class="color-preview" style="background:${hexColor}"></div>
-          <div><b>${sk.name}</b></div>
+          <div>🛹 <b>${sk.name}</b></div>
           <button class="shop-btn ${equipped ? 'equipped' : ''}">
             ${equipped ? "Equipped ✓" : unlocked ? "Select" : `Buy (${sk.price} 🪙)`}
           </button>
@@ -1551,7 +1777,7 @@
             alert("Not enough coins!");
             return;
           }
-          window.applyCustomization();
+          window.loadSelectedHumanAvatar();
           window.syncPlayerProfileToCloud && window.syncPlayerProfileToCloud();
           window.updateMenuUI();
         };
@@ -1559,7 +1785,6 @@
       });
     }
 
-    // Age Gate Events
     const ageSlider = document.getElementById("ageSlider");
     const ageValue = document.getElementById("ageValue");
     ageSlider.oninput = () => (ageValue.innerText = ageSlider.value);
@@ -1590,7 +1815,7 @@
         document.getElementById("startOverlay").style.display = "flex";
         gameState = "IDLE_INTRO";
         introTrainGroup.visible = true;
-        surferMesh.userData.sprayCan.visible = true;
+        fallbackHuman.userData.sprayCan.visible = true;
       }
     };
 
@@ -1614,7 +1839,7 @@
       } else alert("Need 1200 Coins!");
     };
 
-    // ================= 9. MAIN ANIMATION & PHYSICS LOOP =================
+    // ================= 10. MAIN ANIMATION & PHYSICS LOOP =================
     let lastTime = performance.now();
 
     function animate(now) {
@@ -1623,47 +1848,47 @@
       lastTime = now;
       const t = now * 0.001;
 
+      if (playerMixer) playerMixer.update(dt * (gameState === "PLAYING" ? speed / 18 : 1));
+      if (policeMixer) policeMixer.update(dt * (speed / 16));
+
       if (gameState === "AGE_GATE" || gameState === "IDLE_INTRO") {
-        // Position player spraying graffiti on the parked train
         introTrainGroup.visible = true;
-        playerGroup.position.set(-1.35, 0, -0.8);
-        surferMesh.rotation.y = Math.PI / 2;
-        surferMesh.userData.rightArm.rotation.x = -0.9 + Math.sin(t * 10) * 0.35;
-        surferMesh.userData.leftArm.rotation.x = 0.2;
-        surferMesh.userData.leftLeg.rotation.x = 0;
-        surferMesh.userData.rightLeg.rotation.x = 0;
+        playerGroup.position.set(-1.3, 0, -0.8);
+        playerGroup.rotation.y = -Math.PI / 2;
+        fallbackHuman.userData.rightArm.rotation.x = -0.9 + Math.sin(t * 10) * 0.35;
 
-        // Inspector stands slightly behind in the intro frame
         chaserGroup.visible = true;
-        chaserGroup.position.set(-1.1, 0, 2.5);
+        chaserGroup.position.set(-1.0, 0, 2.5);
 
-        camera.position.set(1.6, 2.5, 3.6);
+        camera.position.set(1.7, 2.5, 3.8);
         camera.lookAt(-1.8, 1.7, -1.2);
         renderer.render(scene, camera);
         return;
       }
 
       if (gameState === "PLAYING") {
-        // 1. Accelerate Speed, Distance, and Score
-        speed = Math.min(40, speed + dt * 0.38);
+        playerGroup.rotation.y = 0;
+
+        // 1. Speed, Distance & Score
+        speed = Math.min(42, speed + dt * 0.38);
         const stepZ = speed * dt;
         distanceRun += stepZ * 0.45;
         window.score += stepZ * 2.2 * scoreMultiplier;
 
-        // 2. Scroll Sleepers & Gothic Buildings
+        // 2. Scroll Track & Buildings
         scrollingProps.forEach(row => {
           row.position.z += stepZ;
-          if (row.position.z > 24) row.position.z -= 240;
+          if (row.position.z > 24) row.position.z -= 260;
         });
 
-        // 3. Spawn New Waves Ahead
+        // 3. Spawn New Waves
         nextSpawnZ += stepZ;
         if (nextSpawnZ > -185) {
-          spawnWave(nextSpawnZ - 28);
-          nextSpawnZ -= 28;
+          spawnWave(nextSpawnZ - 30);
+          nextSpawnZ -= 30;
         }
 
-        // 4. Horizontal Lane Interpolation
+        // 4. Smooth Lane Switching
         const targetX = LANES[currentLane];
         playerGroup.position.x += (targetX - playerGroup.position.x) * Math.min(1, dt * 14);
 
@@ -1680,23 +1905,27 @@
           if (magnetTimer < 0) magnetTimer = 0;
         }
 
-        // 6. Obstacles Update & Collision Detection (Trains, Ramps, Barriers)
+        // 6. 3D Train & Barrier Collisions + Wheel Rotation
         groundHeight = 0;
         for (let i = obstacles.length - 1; i >= 0; i--) {
           const obs = obstacles[i];
           const obsStep = (speed + (obs.userData.speedOffset || 0)) * dt;
           obs.position.z += obsStep;
 
+          // Rotate 3D steel wheels on trains
+          if (obs.userData.wheels) {
+            obs.userData.wheels.forEach(w => (w.rotation.x += obsStep * 1.5));
+          }
+
           const dx = Math.abs(playerGroup.position.x - obs.position.x);
           const halfLen = obs.userData.length / 2;
           const frontZ = obs.position.z + halfLen;
           const backZ = obs.position.z - halfLen;
 
-          if (jetpackTimer <= 0 && dx < 1.15) {
+          if (jetpackTimer <= 0 && dx < 1.2) {
             if (obs.userData.type === "train") {
               const rampFrontZ = frontZ + (obs.userData.hasRamp ? obs.userData.rampLength : 0);
 
-              // Climbing up the front ramp
               if (obs.userData.hasRamp && frontZ >= -0.8 && rampFrontZ >= -0.5 && backZ <= 0.5) {
                 groundHeight = Math.max(groundHeight, obs.userData.height);
                 if (playerY < obs.userData.height) {
@@ -1704,29 +1933,25 @@
                   playerVelY = 0;
                 }
               } else if (frontZ >= -0.55 && backZ <= 0.55) {
-                // Player is overlapping the train body
                 if (playerY >= obs.userData.height - 0.45) {
-                  // Safely riding on top of the train roof!
                   groundHeight = Math.max(groundHeight, obs.userData.height);
                 } else {
-                  // Did the player swipe sideways into the train side, or hit it head-on?
                   const isSideSwipe = Math.abs(targetX - playerGroup.position.x) > 0.28 && previousLane !== currentLane;
                   if (isSideSwipe) {
-                    // Bounce back to previous lane + trigger Police for 5 seconds!
+                    // Side impact with train -> bounce back & Police chases for 5 seconds
                     currentLane = previousLane;
                     playerGroup.position.x = LANES[currentLane];
                     triggerPoliceChase(true);
                   } else if (hoverboardTimer > 0) {
-                    // Hoverboard saves player from crash!
                     hoverboardTimer = 0;
                     boardGroup.visible = false;
                     SFX.crash();
-                    showCallout("Board Saved You!");
+                    showCallout("Hoverboard Saved You!");
                     scene.remove(obs);
                     obstacles.splice(i, 1);
                     continue;
                   } else {
-                    triggerGameOver("CRASHED INTO A TRAIN!");
+                    triggerGameOver("HIT BY EXPRESS TRAIN!");
                     return;
                   }
                 }
@@ -1741,7 +1966,6 @@
                   obstacles.splice(i, 1);
                   continue;
                 } else {
-                  // Clipping a low barrier stumbles the player and calls the Police!
                   scene.remove(obs);
                   obstacles.splice(i, 1);
                   triggerPoliceChase(true);
@@ -1758,29 +1982,26 @@
                   obstacles.splice(i, 1);
                   continue;
                 } else {
-                  triggerGameOver("HIT BARRIER!");
+                  triggerGameOver("CRASHED INTO BARRIER!");
                   return;
                 }
               }
             }
           }
 
-          if (obs.position.z > 25) {
+          if (obs.position.z > 26) {
             scene.remove(obs);
             obstacles.splice(i, 1);
           }
         }
 
-        // 7. Vertical Physics (Jumping, Gravity, Jetpack Flight)
+        // 7. Jump / Gravity / Jetpack Physics
         if (jetpackTimer > 0) {
           jetpackTimer -= dt;
           jetpackGroup.visible = true;
           playerY += (7.8 - playerY) * dt * 6;
           playerVelY = 0;
-          // Spawn jetpack coin trail if needed
-          if (Math.random() < 0.35) {
-            spawnCoinArc(currentLane, -35, 1, 7.8, 0);
-          }
+          if (Math.random() < 0.35) spawnCoinArc(currentLane, -35, 1, 7.8, 0);
           if (jetpackTimer <= 0) {
             jetpackTimer = 0;
             jetpackGroup.visible = false;
@@ -1788,7 +2009,7 @@
         } else {
           if (playerY > groundHeight || playerVelY !== 0) {
             playerY += playerVelY * dt;
-            playerVelY -= 34 * dt;
+            playerVelY -= 35 * dt;
             if (playerY <= groundHeight) {
               playerY = groundHeight;
               playerVelY = 0;
@@ -1800,30 +2021,29 @@
 
         if (isRolling) {
           rollTimer -= dt;
-          surferMesh.scale.y = 0.52;
+          playerGroup.scale.y = 0.52;
           if (rollTimer <= 0) {
             isRolling = false;
-            surferMesh.scale.y = 1;
+            playerGroup.scale.y = 1;
           }
         } else {
-          surferMesh.scale.y = 1;
+          playerGroup.scale.y = 1;
         }
 
         playerGroup.position.y = playerY;
 
-        // 8. Running Limb & Dizzy Stars Animation
+        // 8. Fallback Sculpted Human & Guard Dog Limb Animation
         const runCycle = t * speed * 0.65;
-        if (hoverboardTimer > 0 || jetpackTimer > 0) {
-          surferMesh.userData.leftLeg.rotation.x = 0.2;
-          surferMesh.userData.rightLeg.rotation.x = -0.2;
-          surferMesh.userData.leftArm.rotation.x = -0.4;
-          surferMesh.userData.rightArm.rotation.x = 0.4;
-        } else {
-          surferMesh.userData.leftLeg.rotation.x = Math.sin(runCycle) * 0.85;
-          surferMesh.userData.rightLeg.rotation.x = -Math.sin(runCycle) * 0.85;
-          surferMesh.userData.leftArm.rotation.x = -Math.sin(runCycle) * 0.75;
-          surferMesh.userData.rightArm.rotation.x = Math.sin(runCycle) * 0.75;
-        }
+        fallbackHuman.userData.leftLeg.rotation.x = Math.sin(runCycle) * 0.85;
+        fallbackHuman.userData.rightLeg.rotation.x = -Math.sin(runCycle) * 0.85;
+        fallbackHuman.userData.leftArm.rotation.x = -Math.sin(runCycle) * 0.75;
+        fallbackHuman.userData.rightArm.rotation.x = Math.sin(runCycle) * 0.75;
+
+        fallbackPolice.userData.leftLeg.rotation.x = Math.sin(runCycle * 1.1) * 0.9;
+        fallbackPolice.userData.rightLeg.rotation.x = -Math.sin(runCycle * 1.1) * 0.9;
+        dLegs.forEach((leg, idx) => {
+          leg.rotation.x = Math.sin(runCycle * 1.4 + (idx < 2 ? 0 : Math.PI)) * 0.7;
+        });
 
         if (dizzyTimer > 0) {
           dizzyTimer -= dt;
@@ -1837,26 +2057,20 @@
         if (policeTimer > 0) {
           policeTimer -= dt;
           chaserGroup.visible = true;
-          const targetChaseZ = 2.1; // Right behind the player
-          chaserGroup.position.z += (targetChaseZ - chaserGroup.position.z) * dt * 5;
+          chaserGroup.position.z += (2.1 - chaserGroup.position.z) * dt * 5;
           chaserGroup.position.x += (playerGroup.position.x - chaserGroup.position.x) * dt * 8;
           chaserGroup.position.y = playerGroup.position.y;
         } else {
-          // Smoothly fall back out of view after 5 seconds
-          chaserGroup.position.z += (11 - chaserGroup.position.z) * dt * 2.5;
-          if (chaserGroup.position.z > 9.5) chaserGroup.visible = false;
+          chaserGroup.position.z += (11.5 - chaserGroup.position.z) * dt * 2.5;
+          if (chaserGroup.position.z > 9.8) chaserGroup.visible = false;
         }
-        policeMesh.userData.leftLeg.rotation.x = Math.sin(runCycle * 1.1) * 0.9;
-        policeMesh.userData.rightLeg.rotation.x = -Math.sin(runCycle * 1.1) * 0.9;
-        dogGroup.position.y = Math.abs(Math.sin(runCycle * 1.3)) * 0.25;
 
-        // 10. Coins Collection & Magnet Pull
+        // 10. Coins & Magnet
         for (let i = coins.length - 1; i >= 0; i--) {
           const c = coins[i];
           c.position.z += stepZ;
           c.rotation.x += dt * 4;
 
-          // Magnet pulls nearby coins toward player
           if (magnetTimer > 0 && c.position.z > -18 && c.position.z < 2) {
             c.position.x += (playerGroup.position.x - c.position.x) * dt * 10;
             c.position.y += (playerGroup.position.y + 1.2 - c.position.y) * dt * 10;
@@ -1881,7 +2095,7 @@
           }
         }
 
-        // 11. Power-ups Collection
+        // 11. Power-ups
         for (let i = powerups.length - 1; i >= 0; i--) {
           const p = powerups[i];
           p.position.z += stepZ;
@@ -1913,12 +2127,12 @@
           }
         }
 
-        // 12. Smooth Camera Follow
+        // 12. Camera Follow
         const targetCamX = playerGroup.position.x * 0.45;
-        const targetCamY = 4.6 + playerGroup.position.y * 0.65;
+        const targetCamY = 4.7 + playerGroup.position.y * 0.65;
         camera.position.x += (targetCamX - camera.position.x) * dt * 8;
         camera.position.y += (targetCamY - camera.position.y) * dt * 6;
-        camera.position.z = 7.4;
+        camera.position.z = 7.5;
         camera.lookAt(playerGroup.position.x * 0.3, 1.8 + playerGroup.position.y * 0.4, -8);
 
         updateHudUI();
