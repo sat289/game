@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Knife Hit - Ultimate Store & 40 Levels Edition</title>
+    <title>Knife Hit - Ultimate 50 Levels Edition</title>
     <style>
         * {
             box-sizing: border-box;
@@ -11,7 +11,7 @@
         }
         body {
             margin: 0;
-            background: radial-gradient(circle at center, #071922 0%, #02080d 100%);
+            background: radial-gradient(circle at center, #0b3c5d 0%, #1d2731 100%);
             color: #ffffff;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
@@ -23,13 +23,13 @@
         }
         .game-wrapper {
             position: relative;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
-            border-radius: 16px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.85);
+            border-radius: 18px;
             overflow: hidden;
-            border: 2px solid rgba(255, 255, 255, 0.08);
+            border: 2px solid rgba(255, 255, 255, 0.12);
         }
         canvas {
-            background: linear-gradient(135deg, #0b2531 0%, #06151d 100%);
+            background: linear-gradient(135deg, #0d3b66 0%, #04151f 100%);
             display: block;
             cursor: pointer;
         }
@@ -67,12 +67,12 @@
             background: #ffcc00;
             color: #000;
             border: none;
-            padding: 10px 20px;
+            padding: 10px 24px;
             font-size: 16px;
             font-weight: bold;
-            border-radius: 20px;
+            border-radius: 22px;
             cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
             z-index: 10;
         }
     </style>
@@ -136,7 +136,7 @@
         let score = 0;
         let apples = 0;
         let stage = 1;
-        let maxStages = 40; // 40 లెవెల్స్
+        let maxStages = 50; // 50 లెవెల్స్
         let totalKnives = 7;
         let knivesLeft = totalKnives;
         let isGameOver = false;
@@ -145,13 +145,17 @@
         let particles = [];
         let screenShake = 0;
 
-        // స్టోర్ కత్తుల కలెక్షన్
+        // స్టోర్ కోసం మరిన్ని కొత్త కత్తులు
         let knivesList = [
             { id: 1, name: "Classic Red", price: 0, unlocked: true, color: "#d9534f" },
-            { id: 2, name: "Neon Blue", price: 50, unlocked: false, color: "#00bcd4" },
-            { id: 3, name: "Golden Blade", price: 100, unlocked: false, color: "#ffcc00" },
-            { id: 4, name: "Emerald", price: 200, unlocked: false, color: "#00e676" },
-            { id: 5, name: "Purple Magic", price: 350, unlocked: false, color: "#9c27b0" }
+            { id: 2, name: "Neon Blue", price: 40, unlocked: false, color: "#00bcd4" },
+            { id: 3, name: "Golden Blade", price: 80, unlocked: false, color: "#ffcc00" },
+            { id: 4, name: "Emerald", price: 150, unlocked: false, color: "#00e676" },
+            { id: 5, name: "Purple Magic", price: 250, unlocked: false, color: "#9c27b0" },
+            { id: 6, name: "Fire Dagger", price: 350, unlocked: false, color: "#ff5722" },
+            { id: 7, name: "Cyber Pink", price: 500, unlocked: false, color: "#e91e63" },
+            { id: 8, name: "Royal Silver", price: 700, unlocked: false, color: "#e0e0e0" },
+            { id: 9, name: "Shadow Black", price: 1000, unlocked: false, color: "#212121" }
         ];
         let currentKnifeIndex = 0;
 
@@ -181,7 +185,8 @@
             apple.collected = false;
             apple.angle = Math.random() * Math.PI * 2;
             
-            log.speed = 0.025 + (stage * 0.0025);
+            // లెవెల్స్ పెరిగే కొద్దీ వేగం మరియు కఠినత పెరుగుతుంది
+            log.speed = 0.025 + (stage * 0.0022);
             log.direction = (stage % 2 === 0) ? -1 : 1;
 
             isStageCleared = false;
@@ -253,7 +258,7 @@
             ctx.restore();
         }
 
-        // సర్కిల్ బయట ఎడ్జ్ లో గుచ్చుకునేలా కత్తి డిజైన్
+        // కత్తులు సర్కిల్ బయట ఎడ్జ్ వద్ద గుచ్చుకుని స్పష్టంగా కనిపించేలా రెండర్ చేయడం
         function drawKnife(x, y, isStuck = false, customColor = null) {
             ctx.save();
             let color = customColor || knivesList[currentKnifeIndex].color;
@@ -292,7 +297,7 @@
                 ctx.save();
                 ctx.translate(log.x, log.y);
                 ctx.rotate(k.angle);
-                // కత్తి బ్లేడ్ సర్కిల్ లోపలికి కాకుండా, హ్యాండిల్ ఎడ్జ్ వద్ద ఉండేలా ట్రాన్స్లేట్ చేయడం
+                // లాగ్ ఎడ్జ్ దగ్గర కరెక్ట్‌గా గుచ్చుకునేలా పొజిషన్ చేయడం[span_3](start_span)[span_3](end_span)
                 drawKnife(0, -log.radius, true, k.color);
                 ctx.restore();
             });
@@ -311,22 +316,22 @@
         }
 
         function drawStore() {
-            ctx.fillStyle = "rgba(4, 15, 24, 0.95)";
+            ctx.fillStyle = "rgba(4, 21, 35, 0.96)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             ctx.fillStyle = "#ffcc00";
             ctx.font = "bold 24px 'Segoe UI', sans-serif";
             ctx.textAlign = "center";
-            ctx.fillText("KNIFE STORE", canvas.width / 2, 60);
+            ctx.fillText("KNIFE STORE", canvas.width / 2, 50);
 
             ctx.fillStyle = "#ffffff";
             ctx.font = "14px 'Segoe UI', sans-serif";
-            ctx.fillText("Select & Unlock Custom Knives", canvas.width / 2, 85);
+            ctx.fillText("Unlock & Equip Epic Knives", canvas.width / 2, 75);
 
-            let startX = 70;
-            let startY = 130;
-            let spacingX = 100;
-            let spacingY = 120;
+            let startX = 45;
+            let startY = 110;
+            let spacingX = 105;
+            let spacingY = 105;
 
             knivesList.forEach((knife, index) => {
                 let col = index % 3;
@@ -335,26 +340,26 @@
                 let y = startY + (row * spacingY);
 
                 ctx.fillStyle = (currentKnifeIndex === index) ? "#103748" : "#0d2b38";
-                ctx.strokeStyle = (currentKnifeIndex === index) ? "#00e676" : "#ffffff22";
+                ctx.strokeStyle = (currentKnifeIndex === index) ? "#00e676" : "#ffffff33";
                 ctx.lineWidth = 2;
-                ctx.fillRect(x, y, 80, 100);
-                ctx.strokeRect(x, y, 80, 100);
+                ctx.fillRect(x, y, 90, 95);
+                ctx.strokeRect(x, y, 90, 95);
 
                 ctx.save();
-                ctx.translate(x + 40, y + 45);
-                ctx.scale(0.5, 0.5);
+                ctx.translate(x + 45, y + 40);
+                ctx.scale(0.45, 0.45);
                 drawKnife(0, -30, true, knife.color);
                 ctx.restore();
 
                 ctx.fillStyle = knife.unlocked ? "#00e676" : "#ffcc00";
-                ctx.font = "bold 12px 'Segoe UI', sans-serif";
+                ctx.font = "bold 11px 'Segoe UI', sans-serif";
                 ctx.textAlign = "center";
-                ctx.fillText(knife.unlocked ? (currentKnifeIndex === index ? "ACTIVE" : "EQUIP") : `🍎 ${knife.price}`, x + 40, y + 88);
+                ctx.fillText(knife.unlocked ? (currentKnifeIndex === index ? "ACTIVE" : "EQUIP") : `🍎 ${knife.price}`, x + 45, y + 82);
             });
 
             ctx.fillStyle = "#ffffff";
-            ctx.font = "14px 'Segoe UI', sans-serif";
-            ctx.fillText("Click any knife to Equip or Buy!", canvas.width / 2, 620);
+            ctx.font = "13px 'Segoe UI', sans-serif";
+            ctx.fillText("Click any item to select or buy!", canvas.width / 2, 630);
         }
 
         function update() {
@@ -373,10 +378,9 @@
             });
 
             if (currentKnife.moving) {
-                currentKnife.y -= 26;
+                currentKnife.y -= 27;
 
                 let distance = Math.hypot(currentKnife.x - log.x, currentKnife.y - log.y);
-                // సర్కిల్ ఎడ్జ్ వద్ద టచ్ అయినప్పుడు గుచ్చుకోవడం
                 if (distance <= log.radius + 10) {
                     
                     if (!apple.collected) {
@@ -384,8 +388,8 @@
                         let diffAngle = Math.abs(knifeAngle - apple.angle);
                         if (diffAngle < 0.3) {
                             apple.collected = true;
-                            apples += 30; // ఆపిల్స్‌కి ఎక్కువ బోనస్ కాయిన్స్
-                            spawnParticles(currentKnife.x, currentKnife.y, 20, true);
+                            apples += 35; // యాపిల్స్‌కి మరింత ఎక్కువ బోనస్
+                            spawnParticles(currentKnife.x, currentKnife.y, 25, true);
                             playSound('apple');
                         }
                     }
@@ -416,7 +420,7 @@
 
                     if (knivesLeft === 0) {
                         isStageCleared = true;
-                        apples += 10; // స్టేజ్ క్లియర్ అయినందుకు బోనస్ ఆపిల్స్
+                        apples += 15; // స్టేజ్ క్లియర్ బోనస్ ఆపిల్స్
                         playSound('clear');
                     }
                 }
@@ -454,7 +458,7 @@
             });
 
             if (isGameOver) {
-                ctx.fillStyle = "rgba(2, 8, 13, 0.9)";
+                ctx.fillStyle = "rgba(4, 15, 24, 0.92)";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.fillStyle = "#ff1744";
                 ctx.font = "bold 32px 'Segoe UI', sans-serif";
@@ -464,7 +468,7 @@
                 ctx.fillStyle = "#ffffff";
                 ctx.fillText("Click anywhere to restart", canvas.width / 2, canvas.height / 2 + 25);
             } else if (isStageCleared) {
-                ctx.fillStyle = "rgba(2, 8, 13, 0.9)";
+                ctx.fillStyle = "rgba(4, 15, 24, 0.92)";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.fillStyle = "#00e676";
                 ctx.font = "bold 30px 'Segoe UI', sans-serif";
@@ -472,7 +476,7 @@
                 ctx.fillText(`STAGE ${stage} CLEARED!`, canvas.width / 2, canvas.height / 2 - 20);
                 ctx.font = "16px 'Segoe UI', sans-serif";
                 ctx.fillStyle = "#ffffff";
-                ctx.fillText(stage >= maxStages ? "You Completed All 40 Levels! 🎉" : "Click to advance next stage", canvas.width / 2, canvas.height / 2 + 25);
+                ctx.fillText(stage >= maxStages ? "You Completed All 50 Levels! 🎉" : "Click to advance next stage", canvas.width / 2, canvas.height / 2 + 25);
             }
 
             ctx.restore();
@@ -495,10 +499,10 @@
                 let mouseX = e.clientX - rect.left;
                 let mouseY = e.clientY - rect.top;
 
-                let startX = 70;
-                let startY = 130;
-                let spacingX = 100;
-                let spacingY = 120;
+                let startX = 45;
+                let startY = 110;
+                let spacingX = 105;
+                let spacingY = 105;
 
                 knivesList.forEach((knife, index) => {
                     let col = index % 3;
@@ -506,7 +510,7 @@
                     let x = startX + (col * spacingX);
                     let y = startY + (row * spacingY);
 
-                    if (mouseX >= x && mouseX <= x + 80 && mouseY >= y && mouseY <= y + 100) {
+                    if (mouseX >= x && mouseX <= x + 90 && mouseY >= y && mouseY <= y + 95) {
                         if (knife.unlocked) {
                             currentKnifeIndex = index;
                         } else if (apples >= knife.price) {
