@@ -15,29 +15,46 @@
 </head>
 <body class="bg-[#070b14] text-white min-h-screen flex items-center justify-center p-3 select-none overflow-hidden">
 
-  <!-- Background Ambient Glows -->
+  <!-- Background Music (Links to your creazy/song.mp3) -->
+  <audio id="bgMusic" loop preload="auto">
+    <source src="../creazy/song.mp3" type="audio/mpeg" />
+    <source src="song.mp3" type="audio/mpeg" />
+  </audio>
+
+  <!-- Ambient Neon Glows -->
   <div class="fixed -top-24 -left-24 w-72 h-72 bg-[#00f2fe]/15 rounded-full blur-3xl pointer-events-none"></div>
   <div class="fixed -bottom-24 -right-24 w-72 h-72 bg-[#ff007f]/15 rounded-full blur-3xl pointer-events-none"></div>
 
-  <!-- Main App Container -->
-  <div class="game-card relative bg-[#101626]/95 border border-white/15 rounded-3xl p-6 max-w-[410px] w-full shadow-[0_15px_50px_rgba(0,0,0,0.85)] backdrop-blur-xl z-10">
+  <!-- Floating Emoji Container (for Online Reactions) -->
+  <div id="emojiFloatContainer" class="fixed inset-0 pointer-events-none z-50 overflow-hidden"></div>
+
+  <!-- Main Card -->
+  <div class="game-card relative bg-[#101626]/95 border border-white/15 rounded-3xl p-5 max-w-[420px] w-full shadow-[0_15px_50px_rgba(0,0,0,0.85)] backdrop-blur-xl z-10">
 
     <!-- Top Header Bar -->
-    <div class="flex justify-between items-center mb-4">
+    <div class="flex justify-between items-center mb-3">
       <div class="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1 rounded-full">
         <span class="text-xs">🏆</span>
-        <span class="text-[11px] font-bold text-white/70">TOTAL WINS:</span>
+        <span class="text-[10px] font-bold text-white/70">SCORE:</span>
         <span id="score" class="text-xs font-black text-[#ffd700]">0</span>
+        <span id="streakBadge" class="hidden text-[10px] font-black bg-orange-500/20 text-orange-400 border border-orange-500/40 px-1.5 rounded-full">
+          🔥 0
+        </span>
       </div>
 
-      <button id="soundToggleBtn" class="bg-white/5 hover:bg-white/10 border border-white/10 p-2 rounded-full text-xs transition active:scale-90" title="Toggle Sound">
-        🔊
-      </button>
+      <div class="flex items-center gap-1.5">
+        <button id="musicToggleBtn" class="bg-white/5 hover:bg-white/10 border border-white/10 px-2.5 py-1.5 rounded-full text-[11px] font-bold transition active:scale-90" title="Toggle Background Song">
+          🎵 OFF
+        </button>
+        <button id="soundToggleBtn" class="bg-white/5 hover:bg-white/10 border border-white/10 p-1.5 rounded-full text-xs transition active:scale-90" title="Toggle SFX">
+          🔊
+        </button>
+      </div>
     </div>
 
-    <!-- Game Logo -->
-    <div class="text-center mb-5">
-      <h1 class="font-['Orbitron'] text-2xl font-black tracking-wider bg-gradient-to-r from-[#00f2fe] via-white to-[#ff007f] bg-clip-text text-transparent drop-shadow-sm">
+    <!-- Game Title -->
+    <div class="text-center mb-4">
+      <h1 class="font-['Orbitron'] text-2xl font-black tracking-wider bg-gradient-to-r from-[#00f2fe] via-white to-[#ff007f] bg-clip-text text-transparent">
         TIC-TAC-TOE 3D
       </h1>
       <p id="subHeaderText" class="text-[11px] text-white/50 font-semibold tracking-widest uppercase mt-0.5">
@@ -45,20 +62,30 @@
       </p>
     </div>
 
+    <!-- Rule Variant Switcher (Classic vs Infinity 3-Piece Mode) -->
+    <div id="ruleSelectorBar" class="flex bg-black/40 p-1 rounded-2xl border border-white/10 mb-4">
+      <button id="ruleClassicBtn" class="flex-1 py-1.5 rounded-xl text-[11px] font-black transition bg-[#00f2fe] text-slate-950 shadow">
+        🎯 Classic 3x3
+      </button>
+      <button id="ruleInfinityBtn" class="flex-1 py-1.5 rounded-xl text-[11px] font-black transition text-white/60 hover:text-white">
+        ♾️ Infinity (No Ties!)
+      </button>
+    </div>
+
     <!-- ==================== 1. MAIN MENU SCREEN ==================== -->
     <div id="mainMenuScreen" class="flex flex-col gap-3">
-      <button id="btnGoOnline" class="menu-btn group relative overflow-hidden bg-gradient-to-r from-[#00f2fe]/20 to-[#0072ff]/20 hover:from-[#00f2fe]/30 hover:to-[#0072ff]/30 border border-[#00f2fe]/50 p-4 rounded-2xl flex items-center justify-between transition-all active:scale-95">
+      <button id="btnGoOnline" class="group relative overflow-hidden bg-gradient-to-r from-[#00f2fe]/20 to-[#0072ff]/20 hover:from-[#00f2fe]/30 hover:to-[#0072ff]/30 border border-[#00f2fe]/50 p-4 rounded-2xl flex items-center justify-between transition-all active:scale-95">
         <div class="flex items-center gap-3.5">
           <span class="text-2xl bg-[#00f2fe]/20 p-2.5 rounded-xl border border-[#00f2fe]/40">🌍</span>
           <div class="text-left">
             <div class="text-sm font-black text-[#00f2fe] tracking-wide">PLAY ONLINE</div>
-            <div class="text-[11px] text-white/60">Create or join room with code</div>
+            <div class="text-[11px] text-white/60">Live Room Code + Emoji Chat</div>
           </div>
         </div>
         <span class="text-[#00f2fe] font-black text-lg group-hover:translate-x-1 transition">→</span>
       </button>
 
-      <button id="btnGoBot" class="menu-btn group relative overflow-hidden bg-gradient-to-r from-[#ff007f]/20 to-[#7928ca]/20 hover:from-[#ff007f]/30 hover:to-[#7928ca]/30 border border-[#ff007f]/50 p-4 rounded-2xl flex items-center justify-between transition-all active:scale-95">
+      <button id="btnGoBot" class="group relative overflow-hidden bg-gradient-to-r from-[#ff007f]/20 to-[#7928ca]/20 hover:from-[#ff007f]/30 hover:to-[#7928ca]/30 border border-[#ff007f]/50 p-4 rounded-2xl flex items-center justify-between transition-all active:scale-95">
         <div class="flex items-center gap-3.5">
           <span class="text-2xl bg-[#ff007f]/20 p-2.5 rounded-xl border border-[#ff007f]/40">🤖</span>
           <div class="text-left">
@@ -69,12 +96,12 @@
         <span class="text-[#ff007f] font-black text-lg group-hover:translate-x-1 transition">→</span>
       </button>
 
-      <button id="btnGoOffline" class="menu-btn group relative overflow-hidden bg-gradient-to-r from-[#ffd700]/20 to-[#ff793f]/20 hover:from-[#ffd700]/30 hover:to-[#ff793f]/30 border border-[#ffd700]/50 p-4 rounded-2xl flex items-center justify-between transition-all active:scale-95">
+      <button id="btnGoOffline" class="group relative overflow-hidden bg-gradient-to-r from-[#ffd700]/20 to-[#ff793f]/20 hover:from-[#ffd700]/30 hover:to-[#ff793f]/30 border border-[#ffd700]/50 p-4 rounded-2xl flex items-center justify-between transition-all active:scale-95">
         <div class="flex items-center gap-3.5">
           <span class="text-2xl bg-[#ffd700]/20 p-2.5 rounded-xl border border-[#ffd700]/40">👥</span>
           <div class="text-left">
             <div class="text-sm font-black text-[#ffd700] tracking-wide">OFFLINE FRIEND</div>
-            <div class="text-[11px] text-white/60">1v1 Local pass & play</div>
+            <div class="text-[11px] text-white/60">1v1 Local Pass & Play</div>
           </div>
         </div>
         <span class="text-[#ffd700] font-black text-lg group-hover:translate-x-1 transition">→</span>
@@ -83,14 +110,12 @@
 
     <!-- ==================== 2. ONLINE LOBBY SCREEN ==================== -->
     <div id="onlineLobbyScreen" class="hidden flex-col gap-4">
-      <!-- Create Room Card -->
       <div class="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
         <div class="text-xs font-bold text-white/70 mb-2">HOST A NEW MATCH</div>
         <button id="btnCreateRoom" class="w-full py-2.5 bg-gradient-to-r from-[#00f2fe] to-[#0072ff] text-slate-950 font-black rounded-xl text-xs tracking-wider uppercase shadow-[0_0_20px_rgba(0,242,254,0.4)] active:scale-95 transition">
           ⚡ Generate Room Code
         </button>
 
-        <!-- Displayed after creating room -->
         <div id="createdRoomBox" class="hidden mt-3 pt-3 border-t border-white/10">
           <div class="text-[11px] text-white/60 mb-1">Share this code with your friend:</div>
           <div class="flex items-center justify-center gap-2">
@@ -113,7 +138,6 @@
         <div class="flex-1 h-px bg-white/10"></div>
       </div>
 
-      <!-- Join Room Card -->
       <div class="bg-white/5 border border-white/10 rounded-2xl p-4">
         <div class="text-xs font-bold text-white/70 mb-2 text-center">ENTER ROOM CODE</div>
         <div class="flex gap-2">
@@ -142,7 +166,7 @@
         <div class="flex items-center gap-3">
           <span class="text-xl">🌱</span>
           <div class="text-left">
-            <div class="text-xs font-black text-emerald-400 uppercase">Easy Bot</div>
+            <div class="text-xs font-black text-emerald-400 uppercase">Easy Bot (+1 Pt)</div>
             <div class="text-[11px] text-white/60">Casual moves, great for warmup</div>
           </div>
         </div>
@@ -153,7 +177,7 @@
         <div class="flex items-center gap-3">
           <span class="text-xl">⚡</span>
           <div class="text-left">
-            <div class="text-xs font-black text-amber-400 uppercase">Medium Bot</div>
+            <div class="text-xs font-black text-amber-400 uppercase">Medium Bot (+2 Pts)</div>
             <div class="text-[11px] text-white/60">Smart blocks & tactical plays</div>
           </div>
         </div>
@@ -164,7 +188,7 @@
         <div class="flex items-center gap-3">
           <span class="text-xl">😈</span>
           <div class="text-left">
-            <div class="text-xs font-black text-red-400 uppercase">Unbeatable AI</div>
+            <div class="text-xs font-black text-red-400 uppercase">Unbeatable AI (+5 Pts)</div>
             <div class="text-[11px] text-white/60">Full Minimax calculation</div>
           </div>
         </div>
@@ -178,8 +202,8 @@
 
     <!-- ==================== 4. ACTIVE GAME SCREEN ==================== -->
     <div id="gameScreen" class="hidden flex-col items-center">
-      <!-- Top Mode & Room Bar -->
-      <div class="flex justify-between items-center w-full mb-3 text-xs">
+      <!-- Top Mode Bar -->
+      <div class="flex justify-between items-center w-full mb-2.5 text-xs">
         <button id="btnLeaveGame" class="bg-white/5 hover:bg-white/10 border border-white/10 px-2.5 py-1 rounded-lg text-[11px] font-bold text-white/70">
           ← Menu
         </button>
@@ -189,33 +213,54 @@
       </div>
 
       <!-- Scoreboard -->
-      <div class="grid grid-cols-3 gap-2 w-full text-center mb-3">
-        <div id="cardPlayerX" class="bg-white/5 border border-white/10 rounded-xl p-2 transition-all">
+      <div class="grid grid-cols-3 gap-2 w-full text-center mb-2.5">
+        <div id="cardPlayerX" class="bg-white/5 border border-white/10 rounded-xl p-1.5 transition-all">
           <div id="labelPlayerX" class="text-[10px] text-white/60 font-bold">X (YOU)</div>
-          <div id="scoreX" class="text-lg font-black text-[#00f2fe]">0</div>
+          <div id="scoreX" class="text-base font-black text-[#00f2fe]">0</div>
         </div>
-        <div class="bg-white/5 border border-white/10 rounded-xl p-2">
+        <div class="bg-white/5 border border-white/10 rounded-xl p-1.5">
           <div class="text-[10px] text-white/60 font-bold">TIES</div>
-          <div id="scoreTies" class="text-lg font-black text-[#ffd700]">0</div>
+          <div id="scoreTies" class="text-base font-black text-[#ffd700]">0</div>
         </div>
-        <div id="cardPlayerO" class="bg-white/5 border border-white/10 rounded-xl p-2 transition-all">
+        <div id="cardPlayerO" class="bg-white/5 border border-white/10 rounded-xl p-1.5 transition-all">
           <div id="labelPlayerO" class="text-[10px] text-white/60 font-bold">BOT (O)</div>
-          <div id="scoreO" class="text-lg font-black text-[#ff007f]">0</div>
+          <div id="scoreO" class="text-base font-black text-[#ff007f]">0</div>
         </div>
       </div>
 
-      <!-- Turn / Result Status Banner -->
-      <div id="statusBanner" class="w-full py-1.5 px-3 rounded-xl bg-white/5 border border-white/10 text-center text-xs font-bold mb-3">
-        Turn: <span class="text-[#00f2fe] font-black">Player X</span>
+      <!-- Turn Status + 10s Shot Clock Bar -->
+      <div class="w-full bg-white/5 border border-white/10 rounded-xl p-2 mb-3">
+        <div class="flex justify-between items-center text-xs font-bold mb-1 px-1">
+          <div id="statusBanner">Turn: <span class="text-[#00f2fe] font-black">Player X</span></div>
+          <span id="timerText" class="text-[11px] font-mono text-white/70">10s</span>
+        </div>
+        <div class="w-full h-1.5 bg-black/50 rounded-full overflow-hidden">
+          <div id="timerBar" class="h-full bg-gradient-to-r from-[#00f2fe] to-[#ff007f] transition-all duration-300" style="width: 100%"></div>
+        </div>
+      </div>
+
+      <!-- Infinity Mode Helper Note -->
+      <div id="infinityHint" class="hidden text-[10px] text-amber-300/90 bg-amber-500/10 border border-amber-500/30 rounded-lg px-2.5 py-1 mb-2.5 text-center w-full">
+        ♾️ <b>Infinity Mode:</b> Max 3 marks each! Dimmed mark vanishes next move.
       </div>
 
       <!-- 3x3 3D Board -->
-      <div id="boardGrid" class="board-3d grid grid-cols-3 gap-2.5 p-3 rounded-2xl bg-gradient-to-br from-[#1b2438] to-[#0a0e18] border border-white/15 shadow-[0_12px_30px_rgba(0,0,0,0.7)] w-full aspect-square max-w-[285px]">
-        <!-- 9 Cells injected via JS -->
+      <div id="boardGrid" class="board-3d grid grid-cols-3 gap-2.5 p-3 rounded-2xl bg-gradient-to-br from-[#1b2438] to-[#0a0e18] border border-white/15 shadow-[0_12px_30px_rgba(0,0,0,0.7)] w-full aspect-square max-w-[275px]">
+        <!-- 9 Cells Injected by JS -->
       </div>
 
-      <!-- Bottom Action Button -->
-      <div class="mt-4 w-full flex justify-center">
+      <!-- Online Emoji Reaction Bar -->
+      <div id="emojiBar" class="hidden flex-row justify-center gap-2 mt-3 w-full bg-white/5 border border-white/10 py-1.5 px-3 rounded-xl">
+        <button data-emoji="🔥" class="emoji-btn hover:scale-125 transition text-base">🔥</button>
+        <button data-emoji="😂" class="emoji-btn hover:scale-125 transition text-base">😂</button>
+        <button data-emoji="😎" class="emoji-btn hover:scale-125 transition text-base">😎</button>
+        <button data-emoji="💀" class="emoji-btn hover:scale-125 transition text-base">💀</button>
+        <button data-emoji="⚡" class="emoji-btn hover:scale-125 transition text-base">⚡</button>
+        <button data-emoji="🤝" class="emoji-btn hover:scale-125 transition text-base">🤝</button>
+      </div>
+
+      <!-- Reset Button -->
+      <div class="mt-3 w-full flex justify-center">
         <button id="btnResetBoard" class="bg-white/10 hover:bg-white/20 border border-white/20 px-5 py-2 rounded-xl text-xs font-black tracking-wide flex items-center gap-1.5 active:scale-95 transition">
           🔄 Next Round / Reset
         </button>
@@ -245,7 +290,6 @@
     const auth = getAuth(app);
     const db = getDatabase(app);
 
-    // Expose Firebase app & db for Online Multiplayer in game.js
     window._tttFirebase = { app, auth, db };
 
     // 1. Set the game name here
@@ -254,7 +298,6 @@
     let currentUser = null;
     let currentHighScore = parseInt(localStorage.getItem(`${GAME_KEY}_hi`) || "0", 10);
 
-    // Initialize score display from localStorage immediately
     const scoreElem = document.getElementById("score");
     if (scoreElem) scoreElem.innerText = currentHighScore;
     window.score = currentHighScore;
@@ -315,7 +358,6 @@
   </script>
   <!-- ============================================================ -->
 
-  <!-- Main Game Logic -->
   <script type="module" src="game.js"></script>
 </body>
 </html>
