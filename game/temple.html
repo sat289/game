@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Jungle Adventure - Ultimate Natural Edition</title>
+    <title>Temple Run - Guy Dangerous Edition</title>
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js" type="module"></script>
     <style>
         body {
@@ -76,7 +76,7 @@
         }
         #start-screen h1 {
             color: #ffffff;
-            font-size: 32px;
+            font-size: 30px;
             margin-bottom: 15px;
             text-shadow: 0 4px 15px rgba(0,0,0,0.6);
             text-transform: uppercase;
@@ -183,16 +183,16 @@
 </head>
 <body>
 
-    <div id="loading">Loading Jungle Adventure...</div>
+    <div id="loading">Loading Guy Dangerous World...</div>
 
     <div id="start-screen">
-        <h1>Jungle Adventure 3D</h1>
+        <h1>Guy Dangerous 3D</h1>
         <div class="guide-box">
             <h3>How to Play</h3>
             • <b>Swipe Left / Right:</b> Change Lanes<br>
-            • <b>Swipe Up:</b> Jump Over Hanging Fruits<br>
+            • <b>Swipe Up:</b> Jump Over Obstacles<br>
             • <b>Swipe Down:</b> Slide Under Low Branches<br>
-            • <b>Monster:</b> Chases at start, backs off, and attacks on mistakes!
+            • <b>Character:</b> Guy Dangerous with exact outfit & natural run!
         </div>
         <button id="start-btn" class="mobile-btn">Start Game</button>
     </div>
@@ -332,22 +332,20 @@
         dirLight.castShadow = true;
         scene.add(dirLight);
 
-        // --- Track & Natural Environment ---
+        // --- Track & Village Environment ---
         const laneWidth = 2.0;
         const segmentLength = 60;
         const totalSegments = 6;
         const roadGroup = new THREE.Group();
         scene.add(roadGroup);
 
-        const dirtRoadMat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b, roughness: 0.9 });
-        const riverMat = new THREE.MeshStandardMaterial({ color: 0x4682b4, roughness: 0.2, metalness: 0.8 });
-        const waterfallMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.7 });
-        const treeTrunkMat = new THREE.MeshStandardMaterial({ color: 0x5c4033, roughness: 0.9 });
-        const treeLeavesMat = new THREE.MeshStandardMaterial({ color: 0x006400, roughness: 0.7 });
+        const stoneRoadMat = new THREE.MeshStandardMaterial({ color: 0x8c7853, roughness: 0.8 });
+        const wallMat = new THREE.MeshStandardMaterial({ color: 0xd2b48c, roughness: 0.9 });
+        const roofMat = new THREE.MeshStandardMaterial({ color: 0xd9534f, roughness: 0.6 });
+        const woodMat = new THREE.MeshStandardMaterial({ color: 0x5c4033, roughness: 0.9 });
+        const treeLeavesMat = new THREE.MeshStandardMaterial({ color: 0x228b22, roughness: 0.7 });
         
-        // Natural Obstacle Materials (Hanging fruits / vines)
-        const fruitMat = new THREE.MeshStandardMaterial({ color: 0xff4500, roughness: 0.3 }); // Red hanging fruits
-        const branchMat = new THREE.MeshStandardMaterial({ color: 0x3e2723, roughness: 0.9 }); // Low hanging branches
+        const obstacleMat = new THREE.MeshStandardMaterial({ color: 0x696969, roughness: 0.8 });
         const coinMat = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.9, roughness: 0.1 });
 
         const segments = [];
@@ -355,41 +353,41 @@
         for (let i = 0; i < totalSegments; i++) {
             const segment = new THREE.Group();
             
-            const dirtRoad = new THREE.Mesh(new THREE.BoxGeometry(6, 0.2, segmentLength), dirtRoadMat);
-            dirtRoad.position.set(0, -0.1, 0);
-            dirtRoad.receiveShadow = true;
-            segment.add(dirtRoad);
+            const stoneRoad = new THREE.Mesh(new THREE.BoxGeometry(6, 0.2, segmentLength), stoneRoadMat);
+            stoneRoad.position.set(0, -0.1, 0);
+            stoneRoad.receiveShadow = true;
+            segment.add(stoneRoad);
 
-            const leftRiver = new THREE.Mesh(new THREE.PlaneGeometry(15, segmentLength), riverMat);
-            leftRiver.rotation.x = -Math.PI / 2;
-            leftRiver.position.set(-13, -0.2, 0);
-            segment.add(leftRiver);
+            for (let t = -25; t <= 25; t += 15) {
+                const bL = new THREE.Mesh(new THREE.BoxGeometry(4, 3, 5), wallMat);
+                bL.position.set(-8, 1.5, t);
+                segment.add(bL);
+                const rL = new THREE.Mesh(new THREE.ConeGeometry(3.2, 2, 4), roofMat);
+                rL.position.set(-8, 3.5, t);
+                rL.rotation.y = Math.PI / 4;
+                segment.add(rL);
 
-            const rightRiver = new THREE.Mesh(new THREE.PlaneGeometry(15, segmentLength), riverMat);
-            rightRiver.rotation.x = -Math.PI / 2;
-            rightRiver.position.set(13, -0.2, 0);
-            segment.add(rightRiver);
+                const bR = new THREE.Mesh(new THREE.BoxGeometry(4, 3, 5), wallMat);
+                bR.position.set(8, 1.5, t + 7);
+                segment.add(bR);
+                const rR = new THREE.Mesh(new THREE.ConeGeometry(3.2, 2, 4), roofMat);
+                rR.position.set(8, 3.5, t + 7);
+                rR.rotation.y = Math.PI / 4;
+                segment.add(rR);
 
-            const leftWaterfall = new THREE.Mesh(new THREE.PlaneGeometry(8, 16), waterfallMat);
-            leftWaterfall.position.set(-18, 6, 0);
-            segment.add(leftWaterfall);
+                const trunkL = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.9, 6, 8), woodMat);
+                trunkL.position.set(-12, 3, t + 3);
+                segment.add(trunkL);
+                const leavesL = new THREE.Mesh(new THREE.ConeGeometry(4, 7, 8), treeLeavesMat);
+                leavesL.position.set(-12, 7, t + 3);
+                segment.add(leavesL);
 
-            for (let t = -25; t <= 25; t += 12) {
-                const offsetL1 = (Math.sin(t) * 2);
-                const trunkL1 = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.8, 6, 8), treeTrunkMat);
-                trunkL1.position.set(-5 - offsetL1, 3, t);
-                segment.add(trunkL1);
-                const leavesL1 = new THREE.Mesh(new THREE.ConeGeometry(3, 6, 8), treeLeavesMat);
-                leavesL1.position.set(-5 - offsetL1, 7, t);
-                segment.add(leavesL1);
-
-                const offsetR1 = (Math.cos(t) * 2);
-                const trunkR1 = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.8, 6, 8), treeTrunkMat);
-                trunkR1.position.set(5 + offsetR1, 3, t);
-                segment.add(trunkR1);
-                const leavesR1 = new THREE.Mesh(new THREE.ConeGeometry(3, 6, 8), treeLeavesMat);
-                leavesR1.position.set(5 + offsetR1, 7, t);
-                segment.add(leavesR1);
+                const trunkR = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.9, 6, 8), woodMat);
+                trunkR.position.set(12, 3, t - 3);
+                segment.add(trunkR);
+                const leavesR = new THREE.Mesh(new THREE.ConeGeometry(4, 7, 8), treeLeavesMat);
+                leavesR.position.set(12, 7, t - 3);
+                segment.add(leavesR);
             }
 
             segment.userData = { hasObstacle: false, obstacle: null, coin: null };
@@ -411,28 +409,22 @@
             }
 
             const laneChoice = Math.floor(Math.random() * 3) - 1;
-            const isFruitCluster = Math.random() > 0.5;
+            const isRock = Math.random() > 0.5;
             
             let obstacle;
-            if (isFruitCluster) {
-                // Natural hanging glowing fruits cluster to jump over
-                const fruitGroup = new THREE.Group();
-                for(let f=0; f<3; f++) {
-                    const fruit = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), fruitMat);
-                    fruit.position.set((f-1)*0.3, 0.4, 0);
-                    fruitGroup.add(fruit);
-                }
-                obstacle = fruitGroup;
-                obstacle.position.set(laneChoice * laneWidth, 0.3, 0);
+            if (isRock) {
+                const rockGeo = new THREE.DodecahedronGeometry(0.6, 1);
+                obstacle = new THREE.Mesh(rockGeo, obstacleMat);
+                obstacle.position.set(laneChoice * laneWidth, 0.35, 0);
                 obstacle.userData = { type: 'jump', lane: laneChoice };
             } else {
-                // Low hanging jungle branch to slide under
-                const branch = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 2.2, 8), branchMat);
-                branch.rotation.z = Math.PI / 2;
-                obstacle = branch;
-                obstacle.position.set(laneChoice * laneWidth, 1.2, 0);
+                const rootGeo = new THREE.CylinderGeometry(0.35, 0.45, 1.8, 6);
+                obstacle = new THREE.Mesh(rootGeo, woodMat);
+                obstacle.rotation.z = Math.PI / 2;
+                obstacle.position.set(laneChoice * laneWidth, 0.8, 0);
                 obstacle.userData = { type: 'slide', lane: laneChoice };
             }
+            obstacle.castShadow = true;
             segment.add(obstacle);
             segment.userData.obstacle = obstacle;
 
@@ -445,54 +437,67 @@
             segment.userData.coin = coin;
         }
 
-        // --- Cute 3D Human Runner Avatar ---
+        // --- Guy Dangerous Character (Exact Outfit & Close Body Proportions) ---
         const playerGroup = new THREE.Group();
-        const skinMat = new THREE.MeshStandardMaterial({ color: 0xffdbac, roughness: 0.6 });
-        const shirtMat = new THREE.MeshStandardMaterial({ color: 0xff4500, roughness: 0.5 });
-        const pantsMat = new THREE.MeshStandardMaterial({ color: 0x00008b, roughness: 0.7 });
-        const hairMat = new THREE.MeshStandardMaterial({ color: 0x3d2314, roughness: 0.5 });
+        const skinMat = new THREE.MeshStandardMaterial({ color: 0xf5d0b1, roughness: 0.6 });
+        const shirtMat = new THREE.MeshStandardMaterial({ color: 0xd4bc8a, roughness: 0.6 }); // Cream/Khaki shirt[span_2](start_span)[span_2](end_span)
+        const pantsMat = new THREE.MeshStandardMaterial({ color: 0x2e5a36, roughness: 0.7 }); // Green jeans/pants[span_3](start_span)[span_3](end_span)
+        const bootMat = new THREE.MeshStandardMaterial({ color: 0x5c3a21, roughness: 0.8 }); // Brown boots[span_4](start_span)[span_4](end_span)
+        const hairMat = new THREE.MeshStandardMaterial({ color: 0xd9531e, roughness: 0.5 }); // Red hair[span_5](start_span)[span_5](end_span)
 
-        const head = new THREE.Mesh(new THREE.SphereGeometry(0.16, 16, 16), skinMat);
+        // Head & Face
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 16), skinMat);
         head.position.set(0, 1.75, 0);
         playerGroup.add(head);
 
-        const hair = new THREE.Mesh(new THREE.SphereGeometry(0.17, 16, 16), hairMat);
-        hair.position.set(0, 1.82, -0.01);
+        const hair = new THREE.Mesh(new THREE.SphereGeometry(0.16, 16, 16), hairMat);
+        hair.position.set(0, 1.81, -0.01);
         playerGroup.add(hair);
 
-        const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.1, 0.5, 12), shirtMat);
+        // Torso (Khaki/Cream Shirt)
+        const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.11, 0.5, 12), shirtMat);
         torso.position.set(0, 1.25, 0.04);
         torso.rotation.x = 0.15;
         playerGroup.add(torso);
 
+        // Natural Human Arms close to body
         const armGeo = new THREE.CylinderGeometry(0.03, 0.02, 0.45, 8);
         const leftArmPivot = new THREE.Group();
-        leftArmPivot.position.set(-0.2, 1.45, 0);
+        leftArmPivot.position.set(-0.16, 1.45, 0); // Kept close to body
         const leftArm = new THREE.Mesh(armGeo, shirtMat);
         leftArm.position.set(0, -0.2, 0);
         leftArmPivot.add(leftArm);
         playerGroup.add(leftArmPivot);
 
         const rightArmPivot = new THREE.Group();
-        rightArmPivot.position.set(0.2, 1.45, 0);
+        rightArmPivot.position.set(0.16, 1.45, 0); // Kept close to body
         const rightArm = new THREE.Mesh(armGeo, shirtMat);
         rightArm.position.set(0, -0.2, 0);
         rightArmPivot.add(rightArm);
         playerGroup.add(rightArmPivot);
 
-        const legGeo = new THREE.CylinderGeometry(0.035, 0.025, 0.5, 8);
+        // Green Pants & Brown Boots
+        const legGeo = new THREE.CylinderGeometry(0.035, 0.025, 0.35, 8);
+        const bootGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.2, 8);
+
         const leftLegPivot = new THREE.Group();
-        leftLegPivot.position.set(-0.08, 0.9, 0);
+        leftLegPivot.position.set(-0.07, 0.9, 0);
         const leftLeg = new THREE.Mesh(legGeo, pantsMat);
-        leftLeg.position.set(0, -0.22, 0);
+        leftLeg.position.set(0, -0.15, 0);
+        const leftBoot = new THREE.Mesh(bootGeo, bootMat);
+        leftBoot.position.set(0, -0.32, 0);
         leftLegPivot.add(leftLeg);
+        leftLegPivot.add(leftBoot);
         playerGroup.add(leftLegPivot);
 
         const rightLegPivot = new THREE.Group();
-        rightLegPivot.position.set(0.08, 0.9, 0);
+        rightLegPivot.position.set(0.07, 0.9, 0);
         const rightLeg = new THREE.Mesh(legGeo, pantsMat);
-        rightLeg.position.set(0, -0.22, 0);
+        rightLeg.position.set(0, -0.15, 0);
+        const rightBoot = new THREE.Mesh(bootGeo, bootMat);
+        rightBoot.position.set(0, -0.32, 0);
         rightLegPivot.add(rightLeg);
+        rightLegPivot.add(rightBoot);
         playerGroup.add(rightLegPivot);
 
         playerGroup.position.set(0, 0, 0);
@@ -513,7 +518,7 @@
         rightEye.position.set(0.1, 1.5, 0.25);
         monkeyGroup.add(rightEye);
 
-        monkeyGroup.position.set(0, 0, 2.0); // Starts close
+        monkeyGroup.position.set(0, 0, 2.0);
         scene.add(monkeyGroup);
 
         document.getElementById('loading').style.display = 'none';
@@ -589,7 +594,6 @@
 
             const time = clock.getElapsedTime();
 
-            // Monkey logic: First 3 seconds comes close, then backs off to 5.5. On mistake/game over comes forward.
             if (time < 3.0) {
                 monkeyGroup.position.z = 2.0 + (3.5 * (time / 3.0));
             } else {
@@ -616,10 +620,11 @@
                 }
             }
 
-            leftArmPivot.rotation.x = Math.sin(time * 18) * 0.7;
-            rightArmPivot.rotation.x = -Math.sin(time * 18) * 0.7;
-            leftLegPivot.rotation.x = -Math.sin(time * 18) * 0.7;
-            rightLegPivot.rotation.x = Math.sin(time * 18) * 0.7;
+            // Natural arm and leg swings keeping arms close to the body
+            leftArmPivot.rotation.x = Math.sin(time * 18) * 0.5;
+            rightArmPivot.rotation.x = -Math.sin(time * 18) * 0.5;
+            leftLegPivot.rotation.x = -Math.sin(time * 18) * 0.6;
+            rightLegPivot.rotation.x = Math.sin(time * 18) * 0.6;
 
             segments.forEach(seg => {
                 seg.position.z += gameSpeed;
@@ -672,7 +677,7 @@
             isGameOver = true;
             if (natureSoundNode) natureSoundNode.stop();
             playSound('gameover');
-            monkeyGroup.position.z = 1.8; // Monster rushes instantly to catch player on mistake
+            monkeyGroup.position.z = 1.8;
             document.getElementById('final-score').innerText = score;
             document.getElementById('final-coins').innerText = coins;
             document.getElementById('game-over').style.display = 'block';
