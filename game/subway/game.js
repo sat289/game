@@ -2,7 +2,7 @@
 const AVATAR_CATALOG = [
   { id: "michelle", name: "Street Dancer", price: 0, glbUrl: "https://threejs.org/examples/models/gltf/Michelle.glb", scale: 1.35, emoji: "💃", rotY: Math.PI },
   { id: "soldier", name: "Metro Commando", price: 500, glbUrl: "https://threejs.org/examples/models/gltf/Soldier.glb", scale: 1.35, emoji: "🪖", rotY: 0 },
-  { id: "xbot", name: "Cyber Runner", price: 1000, glbUrl: "https://threejs.org/examples/models/gltf/Xbot.glb", scale: 1.35, emoji: "🤖", rotY: Math.PI },
+  { id: "xbot", name: "Cyber Runner", price: 1000, glbUrl: "https://threejs.org/examples/models/gltf/Xbot.glb", scale: 1.35, rotY: Math.PI },
   { id: "stacy", name: "Stacy Skater", price: 1500, glbUrl: "https://threejs.org/examples/models/gltf/Michelle.glb", scale: 1.35, emoji: "🛹", rotY: Math.PI },
   { id: "alex", name: "Alex Acrobat", price: 2000, glbUrl: "https://threejs.org/examples/models/gltf/Soldier.glb", scale: 1.35, emoji: "🤸", rotY: 0 }
 ];
@@ -54,6 +54,7 @@ window.playerProfile = Object.assign(
     displayName: "",
     last4AmCheckDate: "",
     loginStreak: 0,
+    claimedStreakToday: false,
     missions: [
       { id: "m1", title: "Run 500 meters", target: 500, current: 0, rewardCoins: 250, claimed: false },
       { id: "m2", title: "Run 2,000 meters", target: 2000, current: 0, rewardCoins: 1000, claimed: false },
@@ -451,7 +452,7 @@ window.loadSelectedHumanAvatar = function () {
   boardRim.material.color.setHex(skin.rimColor);
 };
 
-// ================= 5. TRAINS GLB LOADING & GROUNDING =================
+// ================= 5. PURE GLB ONLINE & LOCAL TRAINS (NO SLIDERS / TEXTURE GLITCHES) =================
 const trainGlbCache = {};
 
 function createRealistic3DTrain(length = 16, hasRamp = true, isMoving = false, forcedIndex = null) {
@@ -462,33 +463,31 @@ function createRealistic3DTrain(length = 16, hasRamp = true, isMoving = false, f
     ? TRAIN_MODEL_CATALOG[forcedIndex % TRAIN_MODEL_CATALOG.length]
     : TRAIN_MODEL_CATALOG[Math.floor(Math.random() * TRAIN_MODEL_CATALOG.length)];
 
-  if (trainConfig.isGlb) {
-    if (trainGlbCache[trainConfig.glbUrl]) {
-      const clone = trainGlbCache[trainConfig.glbUrl].clone();
-      clone.scale.set(trainConfig.scale, trainConfig.scale, trainConfig.scale);
-      clone.position.set(0, 0, 0);
-      group.add(clone);
-    } else {
-      gltfLoader.load(
-        trainConfig.glbUrl,
-        (gltf) => {
-          trainGlbCache[trainConfig.glbUrl] = gltf.scene;
-          const clone = gltf.scene.clone();
-          clone.scale.set(trainConfig.scale, trainConfig.scale, trainConfig.scale);
-          clone.position.set(0, 0, 0);
-          group.add(clone);
-        },
-        undefined,
-        () => {
-          const fallbackCoach = new THREE.Mesh(
-            new THREE.BoxGeometry(2.75, 2.95, length),
-            new THREE.MeshStandardMaterial({ color: 0xd90429, roughness: 0.3 })
-          );
-          fallbackCoach.position.y = 1.85;
-          group.add(fallbackCoach);
-        }
-      );
-    }
+  if (trainGlbCache[trainConfig.glbUrl]) {
+    const clone = trainGlbCache[trainConfig.glbUrl].clone();
+    clone.scale.set(trainConfig.scale, trainConfig.scale, trainConfig.scale);
+    clone.position.set(0, 0, 0);
+    group.add(clone);
+  } else {
+    gltfLoader.load(
+      trainConfig.glbUrl,
+      (gltf) => {
+        trainGlbCache[trainConfig.glbUrl] = gltf.scene;
+        const clone = gltf.scene.clone();
+        clone.scale.set(trainConfig.scale, trainConfig.scale, trainConfig.scale);
+        clone.position.set(0, 0, 0);
+        group.add(clone);
+      },
+      undefined,
+      () => {
+        const fallbackCoach = new THREE.Mesh(
+          new THREE.BoxGeometry(2.75, 2.95, length),
+          new THREE.MeshStandardMaterial({ color: 0xd90429, roughness: 0.3 })
+        );
+        fallbackCoach.position.y = 1.85;
+        group.add(fallbackCoach);
+      }
+    );
   }
 
   let rampLength = 0;
@@ -503,7 +502,7 @@ function createRealistic3DTrain(length = 16, hasRamp = true, isMoving = false, f
     group.add(ramp);
   }
 
-  group.position.y = 0; // Lock perfectly to track level
+  group.position.y = 0; // Perfectly grounded on rails
 
   group.userData = {
     type: "train",
@@ -855,6 +854,75 @@ window.openEventsModal = function() {
 window.closeEventsModal = function() {
   document.getElementById("eventsModal").style.display = "none";
 };
+
+// ================= STORE & AVATARS WITH IMAGES / EMOJIS + NAMES =================
+function renderShopItems() {
+  const avGrid = document.getElementById("avatarShopGrid");
+  avGrid.innerHTML = "";
+  AVATAR_CATALOG.forEach(av => {
+    const unlocked = window.playerProfile.unlockedAvatars.includes(av.id);
+    const equipped = window.playerProfile.selectedAvatar === av.id;
+    const card = document.createElement("div");
+    card.className = "shop-item" + (equipped ? " active" : "");
+    card.innerHTML = `
+      <div style="font-size:32px; margin-bottom:4px;">${av.emoji || "👤"}</div>
+      <div><b>${av.name}</b></div>
+      <button class="shop-btn ${equipped ? 'equipped' : ''}">
+        ${equipped ? "Equipped ✓" : unlocked ? "Select" : `Buy (${av.price} 🪙)`}
+      </button>
+    `;
+    card.querySelector("button").onclick = () => {
+      if (unlocked) {
+        window.playerProfile.selectedAvatar = av.id;
+      } else if (window.playerProfile.coins >= av.price) {
+        window.playerProfile.coins -= av.price;
+        window.playerProfile.unlockedAvatars.push(av.id);
+        window.playerProfile.selectedAvatar = av.id;
+        SFX.powerup();
+      } else {
+        alert("Not enough coins!");
+        return;
+      }
+      window.loadSelectedHumanAvatar();
+      window.syncPlayerProfileToCloud && window.syncPlayerProfileToCloud();
+      window.updateMenuUI();
+    };
+    avGrid.appendChild(card);
+  });
+
+  const skinGrid = document.getElementById("boardSkinShopGrid");
+  skinGrid.innerHTML = "";
+  BOARD_SKIN_CATALOG.forEach(sk => {
+    const unlocked = window.playerProfile.unlockedBoardSkins.includes(sk.id);
+    const equipped = window.playerProfile.selectedBoard === sk.id;
+    const card = document.createElement("div");
+    card.className = "shop-item" + (equipped ? " active" : "");
+    card.innerHTML = `
+      <div style="font-size:32px; margin-bottom:4px;">🛹</div>
+      <div><b>${sk.name}</b></div>
+      <button class="shop-btn ${equipped ? 'equipped' : ''}">
+        ${equipped ? "Equipped ✓" : unlocked ? "Select" : `Buy (${sk.price} 🪙)`}
+      </button>
+    `;
+    card.querySelector("button").onclick = () => {
+      if (unlocked) {
+        window.playerProfile.selectedBoard = sk.id;
+      } else if (window.playerProfile.coins >= sk.price) {
+        window.playerProfile.coins -= sk.price;
+        window.playerProfile.unlockedBoardSkins.push(sk.id);
+        window.playerProfile.selectedBoard = sk.id;
+        SFX.powerup();
+      } else {
+        alert("Not enough coins!");
+        return;
+      }
+      window.loadSelectedHumanAvatar();
+      window.syncPlayerProfileToCloud && window.syncPlayerProfileToCloud();
+      window.updateMenuUI();
+    };
+    skinGrid.appendChild(card);
+  });
+}
 
 window.openAccountModal = function() {
   const nameInput = document.getElementById("editNameInput");
