@@ -2,7 +2,7 @@
 const AVATAR_CATALOG = [
   { id: "michelle", name: "Street Dancer", price: 0, glbUrl: "https://threejs.org/examples/models/gltf/Michelle.glb", scale: 1.35, emoji: "💃", rotY: Math.PI },
   { id: "soldier", name: "Metro Commando", price: 500, glbUrl: "https://threejs.org/examples/models/gltf/Soldier.glb", scale: 1.35, emoji: "🪖", rotY: 0 },
-  { id: "xbot", name: "Cyber Runner", price: 1000, glbUrl: "https://threejs.org/examples/models/gltf/Xbot.glb", scale: 1.35, rotY: Math.PI },
+  { id: "xbot", name: "Cyber Runner", price: 1000, glbUrl: "https://threejs.org/examples/models/gltf/Xbot.glb", scale: 1.35, emoji: "🤖", rotY: Math.PI },
   { id: "stacy", name: "Stacy Skater", price: 1500, glbUrl: "https://threejs.org/examples/models/gltf/Michelle.glb", scale: 1.35, emoji: "🛹", rotY: Math.PI },
   { id: "alex", name: "Alex Acrobat", price: 2000, glbUrl: "https://threejs.org/examples/models/gltf/Soldier.glb", scale: 1.35, emoji: "🤸", rotY: 0 }
 ];
@@ -15,7 +15,6 @@ const BOARD_SKIN_CATALOG = [
   { id: "stealth", name: "Carbon Stealth", price: 900, deckColor: 0x1c1c1c, rimColor: 0x00ff66 }
 ];
 
-// Authentic Indian Trains & train1.glb configuration
 const TRAIN_MODEL_CATALOG = [
   { id: "train1", name: "Steam Locomotive", glbUrl: "models/train1.glb", scale: 1.2, isGlb: true },
   { 
@@ -41,6 +40,15 @@ const TRAIN_MODEL_CATALOG = [
   }
 ];
 
+const defaultMissionsList = [
+  { id: "m1", title: "Run 500 meters", target: 500, current: 0, rewardCoins: 250, claimed: false },
+  { id: "m2", title: "Run 2,000 meters", target: 2000, current: 0, rewardCoins: 1000, claimed: false },
+  { id: "m3", title: "Collect 20 coins", target: 20, current: 0, rewardCoins: 300, claimed: false },
+  { id: "m4", title: "Collect 500 coins in a game", target: 500, current: 0, rewardBoards: 10, claimed: false },
+  { id: "m5", title: "Collect 5 diamonds", target: 5, current: 0, rewardCoins: 1500, claimed: false },
+  { id: "m6", title: "Use 5 skateboards", target: 5, current: 0, rewardCoins: 1000, claimed: false }
+];
+
 const savedProfile = JSON.parse(localStorage.getItem("carracing_profile") || "null");
 window.playerProfile = Object.assign(
   {
@@ -55,14 +63,7 @@ window.playerProfile = Object.assign(
     last4AmCheckDate: "",
     loginStreak: 0,
     claimedStreakToday: false,
-    missions: [
-      { id: "m1", title: "Run 500 meters", target: 500, current: 0, rewardCoins: 250, claimed: false },
-      { id: "m2", title: "Run 2,000 meters", target: 2000, current: 0, rewardCoins: 1000, claimed: false },
-      { id: "m3", title: "Collect 20 coins", target: 20, current: 0, rewardCoins: 300, claimed: false },
-      { id: "m4", title: "Collect 500 coins in a game", target: 500, current: 0, rewardBoards: 10, claimed: false },
-      { id: "m5", title: "Collect 5 diamonds", target: 5, current: 0, rewardCoins: 1500, claimed: false },
-      { id: "m6", title: "Use 5 skateboards", target: 5, current: 0, rewardCoins: 1000, claimed: false }
-    ],
+    missions: defaultMissionsList,
     streakGifts: Array.from({ length: 10 }, (_, i) => ({
       day: i + 1,
       reward: i === 9 ? { type: "diamonds", amount: 10 } : { type: "coins", amount: (i + 1) * 10 },
@@ -73,6 +74,11 @@ window.playerProfile = Object.assign(
 );
 
 if (typeof window.playerProfile.diamonds !== "number") window.playerProfile.diamonds = 25;
+
+// Ensure all 6 missions exist even if loading from an older local profile storage
+if (!Array.isArray(window.playerProfile.missions) || window.playerProfile.missions.length < defaultMissionsList.length) {
+  window.playerProfile.missions = defaultMissionsList;
+}
 
 // ================= 4:00 AM DAILY RESET LOGIC =================
 function getGameDayKey(now = new Date()) {
@@ -452,7 +458,7 @@ window.loadSelectedHumanAvatar = function () {
   boardRim.material.color.setHex(skin.rimColor);
 };
 
-// ================= 5. PURE GLB ONLINE & LOCAL TRAINS (NO SLIDERS / TEXTURE GLITCHES) =================
+// ================= 5. INDIAN TRAINS GLB LOADING & GROUNDING =================
 const trainGlbCache = {};
 
 function createRealistic3DTrain(length = 16, hasRamp = true, isMoving = false, forcedIndex = null) {
@@ -463,31 +469,33 @@ function createRealistic3DTrain(length = 16, hasRamp = true, isMoving = false, f
     ? TRAIN_MODEL_CATALOG[forcedIndex % TRAIN_MODEL_CATALOG.length]
     : TRAIN_MODEL_CATALOG[Math.floor(Math.random() * TRAIN_MODEL_CATALOG.length)];
 
-  if (trainGlbCache[trainConfig.glbUrl]) {
-    const clone = trainGlbCache[trainConfig.glbUrl].clone();
-    clone.scale.set(trainConfig.scale, trainConfig.scale, trainConfig.scale);
-    clone.position.set(0, 0, 0);
-    group.add(clone);
-  } else {
-    gltfLoader.load(
-      trainConfig.glbUrl,
-      (gltf) => {
-        trainGlbCache[trainConfig.glbUrl] = gltf.scene;
-        const clone = gltf.scene.clone();
-        clone.scale.set(trainConfig.scale, trainConfig.scale, trainConfig.scale);
-        clone.position.set(0, 0, 0);
-        group.add(clone);
-      },
-      undefined,
-      () => {
-        const fallbackCoach = new THREE.Mesh(
-          new THREE.BoxGeometry(2.75, 2.95, length),
-          new THREE.MeshStandardMaterial({ color: 0xd90429, roughness: 0.3 })
-        );
-        fallbackCoach.position.y = 1.85;
-        group.add(fallbackCoach);
-      }
-    );
+  if (trainConfig.isGlb) {
+    if (trainGlbCache[trainConfig.glbUrl]) {
+      const clone = trainGlbCache[trainConfig.glbUrl].clone();
+      clone.scale.set(trainConfig.scale, trainConfig.scale, trainConfig.scale);
+      clone.position.set(0, 0, 0);
+      group.add(clone);
+    } else {
+      gltfLoader.load(
+        trainConfig.glbUrl,
+        (gltf) => {
+          trainGlbCache[trainConfig.glbUrl] = gltf.scene;
+          const clone = gltf.scene.clone();
+          clone.scale.set(trainConfig.scale, trainConfig.scale, trainConfig.scale);
+          clone.position.set(0, 0, 0);
+          group.add(clone);
+        },
+        undefined,
+        () => {
+          const fallbackCoach = new THREE.Mesh(
+            new THREE.BoxGeometry(2.75, 2.95, length),
+            new THREE.MeshStandardMaterial({ color: 0xd90429, roughness: 0.3 })
+          );
+          fallbackCoach.position.y = 1.85;
+          group.add(fallbackCoach);
+        }
+      );
+    }
   }
 
   let rampLength = 0;
@@ -502,7 +510,7 @@ function createRealistic3DTrain(length = 16, hasRamp = true, isMoving = false, f
     group.add(ramp);
   }
 
-  group.position.y = 0; // Perfectly grounded on rails
+  group.position.y = 0; // Lock perfectly to track level
 
   group.userData = {
     type: "train",
