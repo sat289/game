@@ -1803,10 +1803,12 @@ function animate(now) {
           window.playerProfile.boards++;
           showCallout("+1 Hoverboard! 🛹");
         } else if (p.userData.kind === "diamondPickup") {
-          window.playerProfile.diamonds += 2;
-          updateMissionsProgress(0, 0, 2, 0);
-          showCallout("+2 Diamonds! 💎");
-        }
+  window.playerProfile.diamonds += 1; // Gives 1 diamond
+  updateMissionsProgress(0, 0, 1, 0); // Updates mission progress by 1
+  showCallout("+1 Diamond! 💎");
+}
+
+
         scene.remove(p);
         powerups.splice(i, 1);
         continue;
