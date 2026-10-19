@@ -34,27 +34,34 @@ body {
   align-items: center;
 }
 
-/* Control Panel */
 .control-panel {
   background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(10px);
-  padding: 25px;
+  padding: 22px;
   border-radius: 14px;
-  width: 290px;
+  width: 310px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 18px;
+  gap: 15px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.5);
   border: 1px solid rgba(255,255,255,0.1);
 }
 
 .control-panel h2 {
-  font-size: 1.4rem;
+  font-size: 1.3rem;
   letter-spacing: 1px;
 }
 
-.mode-selector {
+.auth-pill {
+  font-size: 0.75rem;
+  background: rgba(0,0,0,0.3);
+  padding: 4px 10px;
+  border-radius: 20px;
+  color: #f1c40f;
+}
+
+.mode-selector, .room-panel {
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -62,17 +69,45 @@ body {
   font-size: 0.85rem;
 }
 
-select, button {
+.room-panel {
+  background: rgba(0,0,0,0.2);
   padding: 10px;
   border-radius: 8px;
+  border: 1px dashed rgba(255,255,255,0.2);
+}
+
+.room-code-display {
+  font-family: monospace;
+  font-size: 1.3rem;
+  font-weight: bold;
+  letter-spacing: 3px;
+  text-align: center;
+  background: #111;
+  padding: 6px;
+  border-radius: 6px;
+  color: #2ecc71;
+}
+
+.room-btn-group {
+  display: flex;
+  gap: 6px;
+}
+
+.hidden { display: none !important; }
+
+select, input, button {
+  padding: 9px;
+  border-radius: 8px;
   border: none;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   cursor: pointer;
 }
 
-select {
+select, input {
   background: #fff;
   color: #333;
+  width: 100%;
+  text-align: center;
 }
 
 .primary-btn {
@@ -81,7 +116,6 @@ select {
   font-weight: bold;
   width: 100%;
   box-shadow: 0 4px 15px rgba(211, 84, 0, 0.4);
-  transition: transform 0.1s ease;
 }
 
 .primary-btn:active { transform: scale(0.96); }
@@ -118,12 +152,11 @@ select {
 .turn-badge.yellow { background: var(--yellow); color: #000; }
 .turn-badge.blue { background: var(--blue); }
 
-/* 3D Dice styling */
 .scene {
-  width: 75px;
-  height: 75px;
+  width: 70px;
+  height: 70px;
   perspective: 400px;
-  margin: 5px 0;
+  margin: 2px 0;
 }
 
 .cube {
@@ -131,18 +164,18 @@ select {
   height: 100%;
   position: relative;
   transform-style: preserve-3d;
-  transform: translateZ(-37.5px);
+  transform: translateZ(-35px);
   transition: transform 0.8s cubic-bezier(0.17, 0.67, 0.34, 1.35);
 }
 
 .cube__face {
   position: absolute;
-  width: 75px;
-  height: 75px;
+  width: 70px;
+  height: 70px;
   border: 2px solid #ccc;
   border-radius: 10px;
-  line-height: 75px;
-  font-size: 50px;
+  line-height: 70px;
+  font-size: 45px;
   text-align: center;
   background: white;
   color: #333;
@@ -150,20 +183,19 @@ select {
   user-select: none;
 }
 
-.cube__face--1 { transform: rotateY(0deg) translateZ(37.5px); color: var(--red); }
-.cube__face--2 { transform: rotateY(180deg) translateZ(37.5px); }
-.cube__face--3 { transform: rotateY(90deg) translateZ(37.5px); }
-.cube__face--4 { transform: rotateY(-90deg) translateZ(37.5px); }
-.cube__face--5 { transform: rotateX(90deg) translateZ(37.5px); }
-.cube__face--6 { transform: rotateX(-90deg) translateZ(37.5px); color: var(--green); }
+.cube__face--1 { transform: rotateY(0deg) translateZ(35px); color: var(--red); }
+.cube__face--2 { transform: rotateY(180deg) translateZ(35px); }
+.cube__face--3 { transform: rotateY(90deg) translateZ(35px); }
+.cube__face--4 { transform: rotateY(-90deg) translateZ(35px); }
+.cube__face--5 { transform: rotateX(90deg) translateZ(35px); }
+.cube__face--6 { transform: rotateX(-90deg) translateZ(35px); color: var(--green); }
 
-/* Ludo 15x15 Grid Layout matching reference image */
 .ludo-board {
   display: grid;
   grid-template-columns: repeat(15, 1fr);
   grid-template-rows: repeat(15, 1fr);
-  width: min(85vw, 560px);
-  height: min(85vw, 560px);
+  width: min(85vw, 540px);
+  height: min(85vw, 540px);
   background: var(--board-bg);
   border: 4px solid var(--border-color);
   border-radius: 8px;
@@ -179,7 +211,6 @@ select {
   align-items: center;
 }
 
-/* Base quadrant backgrounds */
 .yard-red { background: var(--red); }
 .yard-green { background: var(--green); }
 .yard-yellow { background: var(--yellow); }
@@ -200,7 +231,6 @@ select {
   );
 }
 
-/* Safe Star */
 .cell.safe-star::after {
   content: '★';
   font-size: 1.1rem;
@@ -209,7 +239,6 @@ select {
   pointer-events: none;
 }
 
-/* Pin-style Ludo Tokens matching reference image */
 .token {
   width: 70%;
   height: 70%;
