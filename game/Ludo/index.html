@@ -3,31 +3,74 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pro 3D Ludo</title>
+  <title>Pro Ludo 3D - Ultimate Edition</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body data-theme="classic">
   <div class="app-container">
-    <!-- Sidebar / Controls -->
+    <!-- Left Sidebar: Controls, Economy & Multiplayer -->
     <aside class="control-panel">
-      <h1>PRO LUDO 3D</h1>
-      
-      <div class="mode-selector">
-        <label for="game-mode">Game Mode:</label>
-        <select id="game-mode">
-          <option value="bot">Vs Computer (Bot)</option>
-          <option value="local">Pass & Play (Friends)</option>
-          <option value="online">Online (Firebase)</option>
-        </select>
-        <button id="new-game-btn">New Game</button>
+      <div class="header-bar">
+        <h1>LUDO 3D PRO</h1>
+        <div class="stats-pills">
+          <span class="pill">🪙 <strong id="coin-count">0</strong></span>
+          <span class="pill">🏆 <strong id="win-count">0</strong></span>
+        </div>
       </div>
 
+      <!-- Mode & Rule Selectors -->
+      <div class="settings-grid">
+        <div>
+          <label>Mode</label>
+          <select id="game-mode">
+            <option value="bot">Vs Smart Bot</option>
+            <option value="local">Pass & Play</option>
+            <option value="online">Online Room</option>
+          </select>
+        </div>
+        <div>
+          <label>Rules</label>
+          <select id="rule-mode">
+            <option value="classic">Classic (4 Tokens)</option>
+            <option value="quick">Quick Rush (2 Out)</option>
+          </select>
+        </div>
+        <div>
+          <label>Theme</label>
+          <select id="theme-select">
+            <option value="classic">Classic</option>
+            <option value="cyber">Cyberpunk</option>
+            <option value="royal">Royal Gold</option>
+          </select>
+        </div>
+        <div>
+          <label>Camera</label>
+          <button id="toggle-3d-btn" class="secondary-btn">🧊 3D Tilt: OFF</button>
+        </div>
+      </div>
+
+      <!-- Online Room Lobby -->
+      <div id="room-box" class="room-box hidden">
+        <input type="text" id="room-input" placeholder="Enter 6-Digit Code" maxlength="6">
+        <div class="room-actions">
+          <button id="create-room-btn" class="secondary-btn">Create</button>
+          <button id="join-room-btn" class="secondary-btn">Join</button>
+        </div>
+      </div>
+
+      <!-- Turn & Timer Box -->
       <div class="status-box">
-        <div id="turn-indicator" class="turn-badge red">RED'S TURN</div>
-        <p id="status-message">Roll the dice to start!</p>
+        <div class="turn-header">
+          <div id="turn-indicator" class="turn-badge red">RED'S TURN</div>
+          <div class="timer-pill">⏱️ <span id="timer-sec">15</span>s</div>
+        </div>
+        <div class="timer-bar-bg">
+          <div id="timer-bar" class="timer-bar-fill"></div>
+        </div>
+        <p id="status-message">Roll the dice to begin!</p>
       </div>
 
-      <!-- 3D Dice Container -->
+      <!-- 3D Dice -->
       <div class="scene">
         <div class="cube" id="dice-cube">
           <div class="cube__face cube__face--1">⚀</div>
@@ -38,20 +81,31 @@
           <div class="cube__face cube__face--6">⚅</div>
         </div>
       </div>
-      <button id="roll-btn" class="primary-btn">ROLL DICE</button>
 
-      <div class="storage-controls">
-        <button id="clear-save-btn" class="secondary-btn">Reset Saved Data</button>
+      <button id="roll-btn" class="primary-btn">🎲 ROLL DICE</button>
+
+      <!-- Emoji Quick Chat Tray -->
+      <div class="emoji-tray">
+        <button class="emoji-btn" data-emoji="😂">😂</button>
+        <button class="emoji-btn" data-emoji="🔥">🔥</button>
+        <button class="emoji-btn" data-emoji="😭">😭</button>
+        <button class="emoji-btn" data-emoji="👏">👏</button>
+        <button class="emoji-btn" data-emoji="😎">😎</button>
+      </div>
+
+      <div class="footer-btns">
+        <button id="new-game-btn" class="secondary-btn">🔄 New Match</button>
+        <button id="mute-btn" class="secondary-btn">🔊 Sound: ON</button>
       </div>
     </aside>
 
     <!-- Main Ludo Board -->
-    <main class="board-wrapper">
+    <main class="board-wrapper" id="board-wrapper">
+      <div id="emoji-floater" class="emoji-floater"></div>
       <div id="ludo-board" class="ludo-board"></div>
     </main>
   </div>
 
-  <!-- Firebase SDK (Optional: Configure in game.js for Online Mode) -->
   <script type="module" src="game.js"></script>
 </body>
 </html>
