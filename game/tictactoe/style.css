@@ -36,6 +36,14 @@ body {
   animation: popIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+/* Warning pulse for piece about to vanish in Infinity Mode */
+.cell-vanish-warning {
+  opacity: 0.45;
+  border-style: dashed !important;
+  border-color: #fbbf24 !important;
+  animation: pulseFade 1s infinite alternate;
+}
+
 .cell-win {
   box-shadow: 0 0 20px rgba(255, 215, 0, 0.75), inset 0 0 12px rgba(255, 215, 0, 0.4);
   border-color: #ffd700 !important;
@@ -54,12 +62,23 @@ body {
 }
 
 @keyframes popIn {
-  0% {
-    transform: scale(0.4);
-    opacity: 0;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
+  0% { transform: scale(0.4); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes pulseFade {
+  0% { opacity: 0.3; transform: scale(0.92); }
+  100% { opacity: 0.65; transform: scale(0.98); }
+}
+
+@keyframes floatUpEmoji {
+  0% { transform: translateY(0) scale(0.7); opacity: 1; }
+  100% { transform: translateY(-240px) scale(1.4); opacity: 0; }
+}
+
+.floating-emoji {
+  position: absolute;
+  bottom: 40px;
+  font-size: 2.2rem;
+  animation: floatUpEmoji 2s ease-out forwards;
 }
