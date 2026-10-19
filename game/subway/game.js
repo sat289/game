@@ -15,6 +15,7 @@ const BOARD_SKIN_CATALOG = [
   { id: "stealth", name: "Carbon Stealth", price: 900, deckColor: 0x1c1c1c, rimColor: 0x00ff66 }
 ];
 
+// Authentic Indian Trains & train1.glb configuration
 const TRAIN_MODEL_CATALOG = [
   { id: "train1", name: "Steam Locomotive", glbUrl: "models/train1.glb", scale: 1.2, isGlb: true },
   { 
@@ -62,7 +63,6 @@ window.playerProfile = Object.assign(
     displayName: "",
     last4AmCheckDate: "",
     loginStreak: 0,
-    claimedStreakToday: false,
     missions: defaultMissionsList,
     streakGifts: Array.from({ length: 10 }, (_, i) => ({
       day: i + 1,
@@ -74,8 +74,6 @@ window.playerProfile = Object.assign(
 );
 
 if (typeof window.playerProfile.diamonds !== "number") window.playerProfile.diamonds = 25;
-
-// Ensure all 6 missions exist even if loading from an older local profile storage
 if (!Array.isArray(window.playerProfile.missions) || window.playerProfile.missions.length < defaultMissionsList.length) {
   window.playerProfile.missions = defaultMissionsList;
 }
@@ -617,7 +615,6 @@ function spawnPowerup(laneIndex, y, z) {
 
 let nextSpawnZ = -45;
 function spawnWave(zPos) {
-  // GUARANTEE TWO ESCAPE WAYS: Block at most ONE lane, leaving the other two 100% open
   const blockedLane = Math.floor(Math.random() * 3);
 
   for (let lane = 0; lane < 3; lane++) {
