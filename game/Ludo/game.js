@@ -1,49 +1,36 @@
 // =====================================================
-// 1. SYNTHESIZED WEB AUDIO ENGINE (No MP3s Required)
+// 1. WEB AUDIO SYNTHESIZER (No External Assets)
 // =====================================================
 class SoundFX {
   constructor() {
     this.ctx = new (window.AudioContext || window.webkitAudioContext)();
     this.muted = false;
   }
-
-  playTone(freq, type = 'sine', duration = 0.12, delay = 0) {
+  playTone(freq, type = 'sine', duration = 0.1, delay = 0) {
     if (this.muted) return;
     if (this.ctx.state === 'suspended') this.ctx.resume();
-
     setTimeout(() => {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       osc.type = type;
       osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-      gain.gain.setValueAtTime(0.18, this.ctx.currentTime);
+      gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
-
       osc.connect(gain);
       gain.connect(this.ctx.destination);
       osc.start();
       osc.stop(this.ctx.currentTime + duration);
     }, delay);
   }
-
-  dice() {
-    [220, 330, 280, 400].forEach((f, i) => this.playTone(f, 'triangle', 0.06, i * 60));
-  }
-  hop() {
-    this.playTone(480, 'sine', 0.09);
-  }
-  capture() {
-    [520, 380, 240].forEach((f, i) => this.playTone(f, 'sawtooth', 0.14, i * 90));
-  }
-  win() {
-    [523, 659, 783, 1046].forEach((f, i) => this.playTone(f, 'triangle', 0.22, i * 130));
-  }
+  dice() { [200, 300, 250, 380].forEach((f, i) => this.playTone(f, 'triangle', 0.05, i * 50)); }
+  hop() { this.playTone(500, 'sine', 0.08); }
+  capture() { [500, 350, 200].forEach((f, i) => this.playTone(f, 'sawtooth', 0.12, i * 80)); }
+  win() { [523, 659, 783, 1046].forEach((f, i) => this.playTone(f, 'triangle', 0.2, i * 120)); }
 }
-
 const sfx = new SoundFX();
 
 // =====================================================
-// 2. BOARD COORDINATES & CONSTANTS
+// 2. LUDO TRACK & COORDINATES CONFIGURATION
 // =====================================================
 const PLAYERS = ['red', 'green', 'yellow', 'blue'];
 
@@ -72,27 +59,22 @@ const HOME_PATHS = {
   blue:   [[13,7],[12,7],[11,7],[10,7],[9,7],[8,7]]
 };
 
+// Base coordinates inside white yard slots matching image layout
 const BASE_POSITIONS = {
-  red:    [[1,1],[1,4],[4,1],[4,4]],
-  green:  [[1,10],[1,13],[4,10],[4,13]],
-  yellow: [[10,10],[10,13],[13,10],[13,13]],
-  blue:   [[10,1],[10,4],[13,1],[13,4]]
+  red:    [[1.5, 1.5], [1.5, 3.5], [3.5, 1.5], [3.5, 3.5]],
+  green:  [[1.5, 10.5], [1.5, 12.5], [3.5, 10.5], [3.5, 12.5]],
+  yellow: [[10.5, 10.5], [10.5, 12.5], [12.5, 10.5], [12.5, 12.5]],
+  blue:   [[10.5, 1.5], [10.5, 3.5], [12.5, 1.5], [12.5, 3.5]]
 };
 
 // =====================================================
-// 3. STATE, ECONOMY & TIMER VARIABLES
+// 3. STATE & LOCALSTORAGE MANAGEMENT
 // =====================================================
-const STORAGE_KEY = 'PRO_LUDO_ULTIMATE_V2';
-const PROFILE_KEY = 'PRO_LUDO_PROFILE_V2';
-
-let profile = JSON.parse(localStorage.getItem(PROFILE_KEY)) || { coins: 100, wins: 0 };
+const STORAGE_KEY = 'CLASSIC_LUDO_STATE';
 
 let state = {
   mode: 'bot',
-  ruleMode: 'classic',
-  roomCode: null,
   turnIndex: 0,
-  sixStreak: 0,
   diceValue: null,
   waitingForMove: false,
   isAnimating: false,
@@ -104,79 +86,30 @@ let state = {
   }
 };
 
-let turnTimer = null;
-let timeLeft = 15;
-
 // =====================================================
-// 4. DOM REFERENCES & SETUP
+// 4. DOM SETUP & EVENT LISTENERS
 // =====================================================
 const boardEl = document.getElementById('ludo-board');
 const rollBtn = document.getElementById('roll-btn');
 const diceCube = document.getElementById('dice-cube');
 const turnBadge = document.getElementById('turn-indicator');
 const statusMsg = document.getElementById('status-message');
-const timerSecEl = document.getElementById('timer-sec');
-const timerBarEl = document.getElementById('timer-bar');
-const coinEl = document.getElementById('coin-count');
-const winEl = document.getElementById('win-count');
 const modeSelect = document.getElementById('game-mode');
-const ruleSelect = document.getElementById('rule-mode');
-const roomBox = document.getElementById('room-box');
-const roomInput = document.getElementById('room-input');
 
 function init() {
   buildBoardGrid();
   loadState();
-  updateProfileUI();
   renderState();
-  resetTurnTimer();
 
   rollBtn.addEventListener('click', handleRollDice);
   document.getElementById('new-game-btn').addEventListener('click', startNewGame);
-
-  modeSelect.addEventListener('change', (e) => {
-    state.mode = e.target.value;
-    roomBox.classList.toggle('hidden', state.mode !== 'online');
-    saveState();
-  });
-
-  ruleSelect.addEventListener('change', (e) => {
-    state.ruleMode = e.target.value;
+  document.getElementById('reset-storage-btn').addEventListener('click', () => {
+    localStorage.removeItem(STORAGE_KEY);
     startNewGame();
   });
-
-  document.getElementById('theme-select').addEventListener('change', (e) => {
-    document.body.dataset.theme = e.target.value;
-  });
-
-  document.getElementById('toggle-3d-btn').addEventListener('click', (e) => {
-    const tilted = boardEl.classList.toggle('tilted-3d');
-    e.target.textContent = `🧊 3D Tilt: ${tilted ? 'ON' : 'OFF'}`;
-  });
-
-  document.getElementById('mute-btn').addEventListener('click', (e) => {
-    sfx.muted = !sfx.muted;
-    e.target.textContent = sfx.muted ? '🔇 Sound: OFF' : '🔊 Sound: ON';
-  });
-
-  // Emoji Reactions
-  document.querySelectorAll('.emoji-btn').forEach(btn => {
-    btn.addEventListener('click', () => triggerEmoji(btn.dataset.emoji));
-  });
-
-  // Online Room Generator
-  document.getElementById('create-room-btn').addEventListener('click', () => {
-    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-    roomInput.value = code;
-    state.roomCode = code;
-    statusMsg.textContent = `Room ${code} created! Share with friends.`;
-  });
-
-  document.getElementById('join-room-btn').addEventListener('click', () => {
-    if (roomInput.value.trim().length === 6) {
-      state.roomCode = roomInput.value.trim().toUpperCase();
-      statusMsg.textContent = `Joined Room ${state.roomCode}!`;
-    }
+  modeSelect.addEventListener('change', (e) => {
+    state.mode = e.target.value;
+    saveState();
   });
 }
 
@@ -189,71 +122,61 @@ function buildBoardGrid() {
       cell.dataset.r = r;
       cell.dataset.c = c;
 
-      if (r < 6 && c < 6) cell.classList.add('bg-red');
-      if (r < 6 && c > 8) cell.classList.add('bg-green');
-      if (r > 8 && c > 8) cell.classList.add('bg-yellow');
-      if (r > 8 && c < 6) cell.classList.add('bg-blue');
-      if (r >= 6 && r <= 8 && c >= 6 && c <= 8) cell.classList.add('bg-center');
+      // Color 6x6 Yards
+      if (r < 6 && c < 6) cell.classList.add('yard-red');
+      else if (r < 6 && c > 8) cell.classList.add('yard-green');
+      else if (r > 8 && c > 8) cell.classList.add('yard-yellow');
+      else if (r > 8 && c < 6) cell.classList.add('yard-blue');
+      // Center Triangle Area
+      else if (r >= 6 && r <= 8 && c >= 6 && c <= 8) cell.classList.add('bg-center');
+      // Home Stretches
+      else if (r === 7 && c >= 1 && c <= 5) cell.classList.add('path-red');
+      else if (c === 7 && r >= 1 && r <= 5) cell.classList.add('path-green');
+      else if (r === 7 && c >= 9 && c <= 13) cell.classList.add('path-yellow');
+      else if (c === 7 && r >= 9 && r <= 13) cell.classList.add('path-blue');
 
-      if (r === 7 && c >= 1 && c <= 5) cell.classList.add('bg-red');
-      if (c === 7 && r >= 1 && r <= 5) cell.classList.add('bg-green');
-      if (r === 7 && c >= 9 && c <= 13) cell.classList.add('bg-yellow');
-      if (c === 7 && r >= 9 && r <= 13) cell.classList.add('bg-blue');
-
+      // Safe Stars
       SAFE_INDICES.forEach(idx => {
         const [sr, sc] = MAIN_TRACK[idx];
         if (sr === r && sc === c) cell.classList.add('safe-star');
       });
 
-      if (r === 6 && c === 1) cell.classList.add('bg-red');
-      if (r === 1 && c === 8) cell.classList.add('bg-green');
-      if (r === 8 && c === 13) cell.classList.add('bg-yellow');
-      if (r === 13 && c === 6) cell.classList.add('bg-blue');
+      // Starting track arrows/colors
+      if (r === 6 && c === 1) cell.classList.add('path-red');
+      if (r === 1 && c === 8) cell.classList.add('path-green');
+      if (r === 8 && c === 13) cell.classList.add('path-yellow');
+      if (r === 13 && c === 6) cell.classList.add('path-blue');
 
       boardEl.appendChild(cell);
     }
   }
+
+  // Draw White Inner Square Yards with circular inner targets matching image
+  drawWhiteYardBoxes();
 }
 
-// =====================================================
-// 5. TURN TIMER & EMOJI FX
-// =====================================================
-function resetTurnTimer() {
-  clearInterval(turnTimer);
-  timeLeft = 15;
-  timerSecEl.textContent = timeLeft;
-  timerBarEl.style.width = '100%';
+function drawWhiteYardBoxes() {
+  const yards = [
+    { color: 'red', rStart: 1, cStart: 1 },
+    { color: 'green', rStart: 1, cStart: 10 },
+    { color: 'yellow', rStart: 10, cStart: 10 },
+    { color: 'blue', rStart: 10, cStart: 1 }
+  ];
 
-  turnTimer = setInterval(() => {
-    if (state.isAnimating) return;
-    timeLeft--;
-    timerSecEl.textContent = timeLeft;
-    timerBarEl.style.width = `${(timeLeft / 15) * 100}%`;
-
-    if (timeLeft <= 0) {
-      clearInterval(turnTimer);
-      statusMsg.textContent = '⏰ Time up! Auto-playing...';
-      if (!state.waitingForMove) {
-        handleRollDice();
-      } else {
-        const player = getCurrentPlayer();
-        const movable = getMovableTokens(player, state.diceValue);
-        if (movable.length > 0) runBotTurn(player, movable);
+  yards.forEach(y => {
+    for (let r = y.rStart; r <= y.rStart + 3; r++) {
+      for (let c = y.cStart; c <= y.cStart + 3; c++) {
+        const cell = boardEl.querySelector(`[data-r="${r}"][data-c="${c}"]`);
+        if (cell) {
+          cell.style.background = '#ffffff';
+        }
       }
     }
-  }, 1000);
-}
-
-function triggerEmoji(emoji) {
-  const floater = document.getElementById('emoji-floater');
-  floater.textContent = emoji;
-  floater.classList.remove('pop');
-  void floater.offsetWidth; // Reflow
-  floater.classList.add('pop');
+  });
 }
 
 // =====================================================
-// 6. CORE GAMEPLAY, THREE-6s RULE & STEP HOPPING
+// 5. GAME LOGIC & STEP-BY-STEP HOPPING
 // =====================================================
 function getCurrentPlayer() {
   return PLAYERS[state.turnIndex];
@@ -284,35 +207,20 @@ function handleRollDice() {
   const roll = Math.floor(Math.random() * 6) + 1;
   state.diceValue = roll;
   sfx.dice();
-  if (navigator.vibrate) navigator.vibrate(35);
   animate3DDice(roll);
 
   setTimeout(() => {
     const player = getCurrentPlayer();
-
-    // Check Three Consecutive Sixes Penalty
-    if (roll === 6) {
-      state.sixStreak++;
-      if (state.sixStreak === 3) {
-        statusMsg.textContent = `Rolled three 6s in a row! Turn forfeited.`;
-        setTimeout(nextTurn, 1100);
-        return;
-      }
-    } else {
-      state.sixStreak = 0;
-    }
-
     const movable = getMovableTokens(player, roll);
 
     if (movable.length === 0) {
       statusMsg.textContent = `Rolled ${roll}. No valid moves!`;
       setTimeout(nextTurn, 1000);
-    } else if (movable.length === 1) {
-      // Auto-move if only 1 valid token exists
+    } else if (movable.length === 1 && (state.mode === 'bot' && player !== 'red')) {
       moveToken(player, movable[0]);
     } else {
       state.waitingForMove = true;
-      statusMsg.textContent = `Rolled ${roll}! Choose a token.`;
+      statusMsg.textContent = `Rolled ${roll}! Select a token.`;
       renderState();
 
       if (state.mode === 'bot' && player !== 'red') {
@@ -331,7 +239,7 @@ function animate3DDice(roll) {
     5: 'rotateX(-90deg) rotateY(0deg)',
     6: 'rotateX(90deg) rotateY(0deg)'
   };
-  diceCube.style.transform = `translateZ(-38px) rotateX(720deg) rotateY(720deg) ${rotations[roll]}`;
+  diceCube.style.transform = `translateZ(-37.5px) rotateX(720deg) rotateY(720deg) ${rotations[roll]}`;
 }
 
 async function moveToken(color, tokenIdx) {
@@ -343,7 +251,7 @@ async function moveToken(color, tokenIdx) {
   state.isAnimating = true;
   let currentStep = state.tokens[color][tokenIdx];
 
-  // Step-by-Step Hopping Animation
+  // Smooth Hop Animation Loop
   if (currentStep === -1 && roll === 6) {
     state.tokens[color][tokenIdx] = 0;
     sfx.hop();
@@ -354,26 +262,26 @@ async function moveToken(color, tokenIdx) {
       state.tokens[color][tokenIdx]++;
       sfx.hop();
       renderState(color, tokenIdx);
-      await new Promise(r => setTimeout(r, 155));
+      await new Promise(r => setTimeout(r, 150));
     }
   }
 
   state.isAnimating = false;
   const newStep = state.tokens[color][tokenIdx];
-  let capturedOpponent = false;
+  let captured = false;
 
-  // Capture Check
+  // Check captures
   if (newStep >= 0 && newStep <= 50) {
     const globalIdx = (START_INDEX[color] + newStep) % 52;
     if (!SAFE_INDICES.includes(globalIdx)) {
-      PLAYERS.forEach(oppColor => {
-        if (oppColor === color) return;
-        state.tokens[oppColor].forEach((oppStep, oppIdx) => {
+      PLAYERS.forEach(opp => {
+        if (opp === color) return;
+        state.tokens[opp].forEach((oppStep, oppIdx) => {
           if (oppStep >= 0 && oppStep <= 50) {
-            const oppGlobalIdx = (START_INDEX[oppColor] + oppStep) % 52;
+            const oppGlobalIdx = (START_INDEX[opp] + oppStep) % 52;
             if (oppGlobalIdx === globalIdx) {
-              state.tokens[oppColor][oppIdx] = -1;
-              capturedOpponent = true;
+              state.tokens[opp][oppIdx] = -1;
+              captured = true;
             }
           }
         });
@@ -381,33 +289,20 @@ async function moveToken(color, tokenIdx) {
     }
   }
 
-  if (capturedOpponent) {
-    sfx.capture();
-    boardEl.classList.add('shake');
-    setTimeout(() => boardEl.classList.remove('shake'), 450);
-    if (color === 'red') addCoins(10);
-  }
+  if (captured) sfx.capture();
 
   saveState();
   renderState();
 
-  // Win Check
   if (state.tokens[color].every(s => s === 56)) {
     sfx.win();
-    clearInterval(turnTimer);
-    statusMsg.textContent = `🏆 ${color.toUpperCase()} WINS THE MATCH!`;
-    if (color === 'red') {
-      profile.wins++;
-      addCoins(100);
-    }
+    statusMsg.textContent = `🏆 ${color.toUpperCase()} WINS THE GAME!`;
     rollBtn.disabled = true;
     return;
   }
 
-  // Bonus Turn Check
-  if (roll === 6 || capturedOpponent || newStep === 56) {
-    statusMsg.textContent = `${color.toUpperCase()} earns a bonus roll!`;
-    resetTurnTimer();
+  if (roll === 6 || captured || newStep === 56) {
+    statusMsg.textContent = `${color.toUpperCase()} gets another turn!`;
     rollBtn.disabled = false;
     if (state.mode === 'bot' && color !== 'red') {
       setTimeout(handleRollDice, 850);
@@ -419,12 +314,10 @@ async function moveToken(color, tokenIdx) {
 
 function nextTurn() {
   state.turnIndex = (state.turnIndex + 1) % 4;
-  state.sixStreak = 0;
   state.diceValue = null;
   state.waitingForMove = false;
   saveState();
   renderState();
-  resetTurnTimer();
 
   const currentPlayer = getCurrentPlayer();
   if (state.mode === 'bot' && currentPlayer !== 'red') {
@@ -436,7 +329,7 @@ function nextTurn() {
 }
 
 // =====================================================
-// 7. BOT AI & PERSISTENCE
+// 6. SMART BOT AI
 // =====================================================
 function runBotTurn(botColor, movableIndices) {
   const roll = state.diceValue;
@@ -445,27 +338,9 @@ function runBotTurn(botColor, movableIndices) {
 
   movableIndices.forEach(idx => {
     const step = state.tokens[botColor][idx];
-    let score = 0;
-
-    if (step === -1 && roll === 6) score = 85;
-    else if (step + roll === 56) score = 110;
-    else if (step + roll <= 50) {
-      const targetGlobal = (START_INDEX[botColor] + step + roll) % 52;
-      if (!SAFE_INDICES.includes(targetGlobal)) {
-        PLAYERS.forEach(opp => {
-          if (opp !== botColor) {
-            state.tokens[opp].forEach(oppStep => {
-              if (oppStep >= 0 && oppStep <= 50 && (START_INDEX[opp] + oppStep) % 52 === targetGlobal) {
-                score = 100;
-              }
-            });
-          }
-        });
-      }
-      if (SAFE_INDICES.includes(targetGlobal)) score = Math.max(score, 65);
-    }
-    score += step;
-
+    let score = step;
+    if (step === -1 && roll === 6) score = 80;
+    else if (step + roll === 56) score = 100;
     if (score > bestScore) {
       bestScore = score;
       bestToken = idx;
@@ -475,7 +350,11 @@ function runBotTurn(botColor, movableIndices) {
   moveToken(botColor, bestToken);
 }
 
+// =====================================================
+// 7. RENDER & STORAGE
+// =====================================================
 function renderState(hoppingColor = null, hoppingIdx = null) {
+  // Clear existing DOM tokens
   document.querySelectorAll('.token').forEach(t => t.remove());
 
   const currentPlayer = getCurrentPlayer();
@@ -484,8 +363,14 @@ function renderState(hoppingColor = null, hoppingIdx = null) {
 
   PLAYERS.forEach(color => {
     state.tokens[color].forEach((step, idx) => {
-      const [r, c] = step === -1 ? BASE_POSITIONS[color][idx] : getCoordinates(color, step);
-      const cell = document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
+      let r, c;
+      if (step === -1) {
+        [r, c] = BASE_POSITIONS[color][idx];
+      } else {
+        [r, c] = getCoordinates(color, step);
+      }
+
+      const cell = document.querySelector(`.cell[data-r="${Math.floor(r)}"][data-c="${Math.floor(c)}"]`);
       if (!cell) return;
 
       const token = document.createElement('div');
@@ -505,17 +390,6 @@ function renderState(hoppingColor = null, hoppingIdx = null) {
   });
 }
 
-function addCoins(amount) {
-  profile.coins += amount;
-  localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
-  updateProfileUI();
-}
-
-function updateProfileUI() {
-  coinEl.textContent = profile.coins;
-  winEl.textContent = profile.wins;
-}
-
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
@@ -525,8 +399,6 @@ function loadState() {
   if (saved) {
     try {
       state = { ...state, ...JSON.parse(saved), isAnimating: false };
-      modeSelect.value = state.mode;
-      ruleSelect.value = state.ruleMode;
     } catch (e) {
       console.error(e);
     }
@@ -534,33 +406,23 @@ function loadState() {
 }
 
 function startNewGame() {
-  const isQuick = ruleSelect.value === 'quick';
-  const startTokens = () => isQuick ? [0, 0, -1, -1] : [-1, -1, -1, -1];
-
   state = {
     mode: modeSelect.value,
-    ruleMode: ruleSelect.value,
-    roomCode: state.roomCode,
     turnIndex: 0,
-    sixStreak: 0,
     diceValue: null,
     waitingForMove: false,
     isAnimating: false,
     tokens: {
-      red: startTokens(),
-      green: startTokens(),
-      yellow: startTokens(),
-      blue: startTokens()
+      red:    [-1, -1, -1, -1],
+      green:  [-1, -1, -1, -1],
+      yellow: [-1, -1, -1, -1],
+      blue:   [-1, -1, -1, -1]
     }
   };
-
   rollBtn.disabled = false;
-  statusMsg.textContent = isQuick
-    ? '⚡ Quick Ludo started! 2 tokens unlocked.'
-    : 'New Classic match started! Roll the dice.';
+  statusMsg.textContent = 'New game started! Roll the dice.';
   saveState();
   renderState();
-  resetTurnTimer();
 }
 
 init();
