@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="te">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Knife Hit Game</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #1a1a1a;
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        canvas {
+            background-color: #2e2e2e;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            cursor: pointer;
+        }
+        #ui {
+            margin-bottom: 10px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui">స్కోర్: <span id="score">0</span> | మిగిలిన కత్తులు: <span id="knivesLeft">7</span></div>
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        let score = 0;
+        let totalKnives = 7;
+        let knivesLeft = totalKnives;
+        let gameOver = false;
+        let gameWon = false;
+
+        // తిరిగే చెక్క దుంగ (Log)
+        let log = {
+            x: canvas.width / 2,
+            y: 180,
+            radius: 60,
+            angle: 0,
+            speed: 0.03
+        };
+
+        // గుచ్చబడిన కత్తులు
+        let stuckKnives = [];
+
+        // విసిరే కత్తి
+        let currentKnife = {
+            x: canvas.width / 2,
+            y: 520,
+            width: 10,
+            height: 40,
+            moving: false
+        };
+
+        function drawLog() {
+            ctx.save();
+            ctx.translate(log.x, log.y);
+            ctx.rotate(log.angle);
+            
+            // చెక్క దుంగ డిజైన్
+            ctx.beginPath();
+            ctx.arc(0, 0, log.radius, 0, Math.PI * 2);
+            ctx.fillStyle = "#8B4513";
+            ctx.fill();
+            ctx.lineWidth = 5;
+            ctx.strokeStyle = "#5C2E0B";
+            ctx.stroke();
+            
+            ctx.closePath();
+            ctx.restore();
+        }
+
+        function drawKnives() {
+            // గుచ్చబడిన కత్తులు డ్రా చేయడం
+            stuckKnives.forEach(k => {
+                ctx.save();
+                ctx.translate(log.x, log.y);
+                ctx.rotate(k.angle);
+                ctx.fillStyle = "silver";
+                ctx.fillRect(-5, 0, 10, 40);
+                ctx.restore();
+            });
+
+            // మనం విసిరే కత్తి
+            ctx.fillStyle = "silver";
+            ctx.fillRect(currentKnife.x - currentKnife.width / 2, currentKnife.y, currentKnife.width, currentKnife.height);
+        }
+
+        function update() {
+            if (gameOver || gameWon) return;
+
+            // లాగ్ రొటేట్ అవ్వడం
+            log.angle += log.speed;
+
+            // కత్తి పైకి వెళ్లడం
+            if (currentKnife.moving) {
+                currentKnife.y -= 15;
+
+                // కత్తి లాగ్‌కి తగిలిందా లేదా చెక్ చేయడం
+                let dist = Math.hypot(currentKnife.x - log.x, currentKnife.y - log.y);
+                if (dist <= log.radius + 10) {
+                    // లాగ్ కోఆర్డినేట్స్‌లో కత్తి యొక్క కోణం (Angle) కనుగొనడం
+                    let hitAngle = log.angle - Math.atan2(currentKnife.x - log.x, currentKnife.y - log.y) + Math.PI / 2;
+                    
+                    // వేరే కత్తికి తగిలిందో లేదో చెక్ చేయడం
+                    for (let k of stuckKnives) {
+                        let diff = Math.abs(k.angle - (Math.atan2(currentKnife.y - log.y, currentKnife.x - log.x) - log.angle));
+                        if (diff < 0.25 || diff > Math.PI * 2 - 0.25) {
+                            gameOver = true;
+                            break;
+                        }
+                    }
+
+                    if (!gameOver) {
+                        // కొత్త కత్తిని దుంగకి అటాచ్ చేయడం
+                        stuckKnives.push({ angle: Math.atan2(currentKnife.y - log.y, currentKnife.x - log.x) - log.angle });
+                        score += 10;
+                        knivesLeft--;
+                        
+                        // రీసెట్ కత్తి
+                        currentKnife.moving = false;
+                        currentKnife.y = 520;
+
+                        if (knivesLeft === 0) {
+                            gameWon = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawLog();
+            drawKnives();
+
+            // మెసేజ్ డిస్ప్లే
+            if (gameOver) {
+                ctx.fillStyle = "red";
+                ctx.font = "30px Arial";
+                ctx.textAlign = "center";
+                ctx.fillText("గేమ్ ఓవర్! (Game Over)", canvas.width / 2, canvas.height / 2 + 100);
+                ctx.font = "16px Arial";
+                ctx.fillText("రీస్టార్ట్ చేయడానికి క్లిక్ చేయండి", canvas.width / 2, canvas.height / 2 + 130);
+            } else if (gameWon) {
+                ctx.fillStyle = "lightgreen";
+                ctx.font = "30px Arial";
+                ctx.textAlign = "center";
+                ctx.fillText("మీరు గెలిచారు! (You Win)", canvas.width / 2, canvas.height / 2 + 100);
+                ctx.font = "16px Arial";
+                ctx.fillText("మళ్లీ ఆడేందుకు క్లిక్ చేయండి", canvas.width / 2, canvas.height / 2 + 130);
+            }
+
+            document.getElementById("score").innerText = score;
+            document.getElementById("knivesLeft").innerText = knivesLeft;
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // స్క్రీన్ మీద క్లిక్ చేస్తే కత్తి పైకి విసరబడుతుంది
+        window.addEventListener("click", () => {
+            if (gameOver || gameWon) {
+                // రిసెట్ గేమ్
+                score = 0;
+                knivesLeft = totalKnives;
+                stuckKnives = [];
+                gameOver = false;
+                gameWon = false;
+                currentKnife.moving = false;
+                currentKnife.y = 520;
+            } else if (!currentKnife.moving) {
+                currentKnife.moving = true;
+            }
+        });
+
+        gameLoop();
+    </script>
+</body>
+</html>
