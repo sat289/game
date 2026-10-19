@@ -15,7 +15,6 @@ const BOARD_SKIN_CATALOG = [
   { id: "stealth", name: "Carbon Stealth", price: 900, deckColor: 0x1c1c1c, rimColor: 0x00ff66 }
 ];
 
-// Authentic Indian Trains & train1.glb configuration
 const TRAIN_MODEL_CATALOG = [
   { id: "train1", name: "Steam Locomotive", glbUrl: "models/train1.glb", scale: 1.2, isGlb: true, color: 0x1d3557, stripe: 0xffb703 },
   { 
@@ -329,21 +328,37 @@ boardGroup.position.y = 0.07;
 boardGroup.visible = false;
 playerGroup.add(boardGroup);
 
+// ================= JETPACK 🚀 (DUAL THRUSTERS + GIANT FLAME TRAILS) =================
 const jetpackGroup = new THREE.Group();
-[-0.22, 0.22].forEach(ox => {
+
+const jetpackBody = new THREE.Mesh(
+  new THREE.BoxGeometry(0.38, 0.52, 0.22),
+  new THREE.MeshStandardMaterial({ color: 0xe63946, metalness: 0.8, roughness: 0.2 })
+);
+jetpackBody.position.set(0, 1.35, -0.22);
+jetpackGroup.add(jetpackBody);
+
+const flameGeo = new THREE.ConeGeometry(0.32, 2.4, 12);
+flameGeo.rotateX(Math.PI);
+
+const jetpackFlames = [];
+[-0.15, 0.15].forEach(ox => {
   const cyl = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.12, 0.12, 0.75, 12),
-    new THREE.MeshStandardMaterial({ color: 0xffaa00, metalness: 0.7, roughness: 0.2 })
+    new THREE.CylinderGeometry(0.1, 0.1, 0.45, 10),
+    new THREE.MeshStandardMaterial({ color: 0xffb703, metalness: 0.9 })
   );
-  cyl.position.set(ox, 1.4, 0.28);
+  cyl.position.set(ox, 1.15, -0.25);
+  jetpackGroup.add(cyl);
+
   const flame = new THREE.Mesh(
-    new THREE.ConeGeometry(0.2, 1.3, 10),
-    new THREE.MeshBasicMaterial({ color: 0xff4500 })
+    flameGeo,
+    new THREE.MeshBasicMaterial({ color: 0xffea00, transparent: true, opacity: 0.9 })
   );
-  flame.rotation.x = Math.PI;
-  flame.position.set(ox, 0.45, 0.28);
-  jetpackGroup.add(cyl, flame);
+  flame.position.set(ox, -0.1, -0.25);
+  jetpackGroup.add(flame);
+  jetpackFlames.push(flame);
 });
+
 jetpackGroup.visible = false;
 playerGroup.add(jetpackGroup);
 
@@ -492,7 +507,6 @@ function createTrainFallbackCoach(length, mainColor = 0xd90429, stripeColor = 0x
 }
 
 function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, forcedIndex = null) {
-  // CRITICAL FIX: Moving trains NEVER have sliders/ramps!
   if (isMoving) {
     hasRamp = false;
   }
@@ -504,7 +518,6 @@ function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, 
     ? TRAIN_MODEL_CATALOG[forcedIndex % TRAIN_MODEL_CATALOG.length]
     : TRAIN_MODEL_CATALOG[Math.floor(Math.random() * TRAIN_MODEL_CATALOG.length)];
 
-  // Add immediate visible coach body so train is never invisible while GLB loads
   const baseCoach = createTrainFallbackCoach(length, trainConfig.color, trainConfig.stripe);
   group.add(baseCoach);
 
@@ -528,14 +541,12 @@ function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, 
         },
         undefined,
         () => {
-          // Keep baseCoach visible if GLB fails
           baseCoach.visible = true;
         }
       );
     }
   }
 
-  // Only stationary trains with hasRamp === true get a front boarding ramp
   let rampLength = 0;
   if (hasRamp && !isMoving) {
     rampLength = 4.6;
@@ -548,7 +559,7 @@ function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, 
     group.add(ramp);
   }
 
-  group.position.y = 0; // Lock to track level
+  group.position.y = 0;
 
   group.userData = {
     type: "train",
@@ -640,7 +651,6 @@ function spawnCoinArc(laneIndex, startZ, count = 5, baseHeight = 0.95, arcHeight
   }
 }
 
-// Cache 🛹, 🧲, 🚀, 💎 symbol textures for crisp 3D runway pickups
 const POWERUP_META = {
   jetpack:       { emoji: "🚀", hex: "#ff5500", numHex: 0xff5500 },
   magnet:        { emoji: "🧲", hex: "#00e5ff", numHex: 0x00e5ff },
@@ -1306,7 +1316,7 @@ function changeLane(dir) {
   if (target >= 0 && target <= 2) {
     previousLane = currentLane;
     currentLane = target;
-    laneChangeTimer = 0.28; // Track active lane change for side-swipe detection
+    laneChangeTimer = 0.28;
     SFX.swoosh();
   }
 }
@@ -1554,6 +1564,41 @@ function animate(now) {
       if (magnetTimer < 0) magnetTimer = 0;
     }
 
+    // ================= JETPACK FLIGHT LOOP 🚀 =================
+    if (jetpackTimer > 0) {
+      jetpackTimer -= dt;
+      jetpackGroup.visible = true;
+      
+      playerY += (8.5 - playerY) * dt * 5;
+      playerVelY = 0;
+
+      jetpackFlames.forEach((flame, idx) => {
+        flame.scale.y = 1 + Math.sin(t * 25 + idx) * 0.35;
+        flame.scale.x = 1 + Math.cos(t * 20) * 0.2;
+      });
+
+      const targetCamX = playerGroup.position.x * 0.3;
+      const targetCamY = 7.5 + playerY * 0.4;
+      camera.position.x += (targetCamX - camera.position.x) * dt * 8;
+      camera.position.y += (targetCamY - camera.position.y) * dt * 6;
+      camera.position.z = 9.5;
+      camera.lookAt(playerGroup.position.x * 0.2, playerY * 0.5, -4);
+
+      if (Math.random() < 0.45) spawnCoinArc(currentLane, -35, 1, 8.5, 0);
+
+      if (jetpackTimer <= 0) {
+        jetpackTimer = 0;
+        jetpackGroup.visible = false;
+        showCallout("Jetpack Landing!");
+      }
+
+      updateHudUI();
+      renderer.render(scene, camera);
+      return;
+    } else {
+      jetpackGroup.visible = false;
+    }
+
     groundHeight = 0;
     for (let i = obstacles.length - 1; i >= 0; i--) {
       const obs = obstacles[i];
@@ -1569,11 +1614,10 @@ function animate(now) {
       const frontZ = obs.position.z + halfLen;
       const backZ = obs.position.z - halfLen;
 
-      if (jetpackTimer <= 0 && dx < 1.25) {
+      if (dx < 1.25) {
         if (obs.userData.type === "train") {
           const rampFrontZ = frontZ + (obs.userData.hasRamp ? obs.userData.rampLength : 0);
 
-          // 1. FRONT RAMP CLIMBING: Only on stationary trains with a ramp, and ONLY within the front ramp zone!
           if (obs.userData.hasRamp && !obs.userData.isMoving && rampFrontZ >= -0.4 && frontZ <= 0.6) {
             const rampProgress = Math.min(1, Math.max(0, (rampFrontZ + 0.4) / (obs.userData.rampLength + 0.4)));
             const rampY = rampProgress * obs.userData.height;
@@ -1582,18 +1626,13 @@ function animate(now) {
               playerY = rampY;
               playerVelY = 0;
             }
-          }
-          // 2. TRAIN BODY COLLISION (frontZ > 0.6 to backZ <= 0.5)
-          else if (frontZ >= -0.55 && backZ <= 0.55) {
-            // Player is safely on top of the train roof
+          } else if (frontZ >= -0.55 && backZ <= 0.55) {
             if (playerY >= obs.userData.height - 0.5) {
               groundHeight = Math.max(groundHeight, obs.userData.height);
             } else {
-              // Player is below the roof: Check if they swiped into the SIDE of the train vs hit the FRONT
               const swipedIntoSide = (laneChangeTimer > 0 && previousLane !== currentLane) || frontZ > 1.35;
 
               if (swipedIntoSide) {
-                // Bounce back to previous lane and summon Police Chaser!
                 currentLane = previousLane;
                 laneChangeTimer = 0;
                 playerGroup.position.x = LANES[currentLane];
@@ -1651,27 +1690,15 @@ function animate(now) {
       }
     }
 
-    if (jetpackTimer > 0) {
-      jetpackTimer -= dt;
-      jetpackGroup.visible = true;
-      playerY += (7.8 - playerY) * dt * 6;
-      playerVelY = 0;
-      if (Math.random() < 0.35) spawnCoinArc(currentLane, -35, 1, 7.8, 0);
-      if (jetpackTimer <= 0) {
-        jetpackTimer = 0;
-        jetpackGroup.visible = false;
+    if (playerY > groundHeight || playerVelY !== 0) {
+      playerY += playerVelY * dt;
+      playerVelY -= 35 * dt;
+      if (playerY <= groundHeight) {
+        playerY = groundHeight;
+        playerVelY = 0;
       }
     } else {
-      if (playerY > groundHeight || playerVelY !== 0) {
-        playerY += playerVelY * dt;
-        playerVelY -= 35 * dt;
-        if (playerY <= groundHeight) {
-          playerY = groundHeight;
-          playerVelY = 0;
-        }
-      } else {
-        playerY = groundHeight;
-      }
+      playerY = groundHeight;
     }
 
     if (isRolling) {
@@ -1707,7 +1734,6 @@ function animate(now) {
       dizzyStarsGroup.visible = false;
     }
 
-    // FIXED: Police Chaser X and Z tracking so the Inspector visibly follows the player
     if (policeTimer > 0) {
       policeTimer -= dt;
       chaserGroup.visible = true;
@@ -1752,13 +1778,20 @@ function animate(now) {
     for (let i = powerups.length - 1; i >= 0; i--) {
       const p = powerups[i];
       p.position.z += stepZ;
-      p.rotation.y += dt * 3;
+      if (p.userData.ring) {
+        p.userData.ring.rotation.y += dt * 3.5;
+        p.userData.ring.rotation.x = Math.sin(t * 3) * 0.35;
+      }
+      if (typeof p.userData.baseY === "number") {
+        p.position.y = p.userData.baseY + Math.sin(t * 5 + p.position.z * 0.2) * 0.16;
+      }
+
       const dist = Math.hypot(
         p.position.x - playerGroup.position.x,
         p.position.y - (playerGroup.position.y + 1.1),
         p.position.z
       );
-      if (dist < 1.45) {
+      if (dist < 1.55) {
         SFX.powerup();
         if (p.userData.kind === "jetpack") {
           jetpackTimer = 8.0;
