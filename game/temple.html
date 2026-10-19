@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Monsoon Valley - Hardcore Edition</title>
+    <title>Monsoon Valley - Real Human Run</title>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js" type="module"></script>
     <style>
@@ -40,7 +40,7 @@
             align-items: center;
         }
         .hud-card {
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.85);
             border: 2px solid #4CAF50;
             color: #a3ffb4;
             padding: 8px 14px;
@@ -56,7 +56,7 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: linear-gradient(135deg, rgba(6,20,12,0.96), rgba(11,31,21,0.96));
+            background: linear-gradient(135deg, rgba(6,20,12,0.98), rgba(11,31,21,0.98));
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -71,11 +71,11 @@
             color: #4CAF50;
             font-size: 26px;
             margin-bottom: 10px;
-            text-shadow: 0 0 20px rgba(76, 175, 80, 0.6);
+            text-shadow: 0 0 20px rgba(76, 175, 80, 0.8);
             text-transform: uppercase;
         }
         .guide-box {
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.7);
             border: 1px solid #4CAF50;
             padding: 15px;
             border-radius: 12px;
@@ -102,7 +102,7 @@
             font-weight: bold;
             border-radius: 25px;
             cursor: pointer;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.6);
             text-transform: uppercase;
             letter-spacing: 1px;
             margin-top: 10px;
@@ -175,17 +175,17 @@
 </head>
 <body>
 
-    <div id="loading">Loading Hardcore Mode...</div>
+    <div id="loading">Loading Realistic Game...</div>
 
-    <!-- Start Screen & Guide -->
+    <!-- Start Screen -->
     <div id="start-screen">
-        <h1>Monsoon Valley Hardcore</h1>
+        <h1>Monsoon Valley Pro</h1>
         <div class="guide-box">
             <h3>How to Play</h3>
             • <b>Swipe Left / Right:</b> Change Lanes<br>
             • <b>Swipe Up:</b> Jump over Rocks<br>
             • <b>Swipe Down:</b> Flat Slide under Roots<br>
-            • <b>Challenge:</b> Strict side walls and fast runner action!
+            • <b>Features:</b> Real Human Run Animation, No Glitches, 360° Nature!
         </div>
         <button id="start-btn" class="mobile-btn">Start Game</button>
     </div>
@@ -214,7 +214,6 @@
         let audioCtx = null;
         let natureSoundNode = null;
 
-        // Button Event Listener for robust mobile responsiveness
         document.getElementById('start-btn').addEventListener('click', startGame);
         document.getElementById('start-btn').addEventListener('touchend', (e) => {
             e.preventDefault();
@@ -257,7 +256,7 @@
                 whiteNoise.start();
                 natureSoundNode = whiteNoise;
             } catch (e) {
-                console.log("Audio not supported or blocked");
+                console.log("Audio not supported");
             }
         }
 
@@ -343,7 +342,7 @@
         const rainSystem = new THREE.Points(rainGeo, rainMat);
         scene.add(rainSystem);
 
-        // --- Track & Obstacles ---
+        // --- Track & Environment ---
         const laneWidth = 2.0;
         const trackLength = 120;
         const roadGroup = new THREE.Group();
@@ -441,41 +440,61 @@
             segments.push(segment);
         }
 
-        // --- Human Runner Avatar ---
+        // --- Real Human Runner Avatar (Proper Proportions & Natural Motion) ---
         const playerGroup = new THREE.Group();
         const skinMat = new THREE.MeshStandardMaterial({ color: 0xd8b29d, roughness: 0.6 });
         const jacketMat = new THREE.MeshStandardMaterial({ color: 0x2b4c7e, roughness: 0.6 });
         const jeansMat = new THREE.MeshStandardMaterial({ color: 0x1b263b, roughness: 0.8 });
         const hairMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.5 });
 
-        const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 16, 16), skinMat);
-        head.position.set(0, 1.8, 0);
+        // Head & Face
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.16, 16, 16), skinMat);
+        head.position.set(0, 1.85, 0);
         playerGroup.add(head);
 
-        const hair = new THREE.Mesh(new THREE.SphereGeometry(0.19, 16, 16), hairMat);
-        hair.position.set(0, 1.86, -0.01);
+        const hair = new THREE.Mesh(new THREE.SphereGeometry(0.17, 16, 16), hairMat);
+        hair.position.set(0, 1.91, -0.01);
         playerGroup.add(hair);
 
-        const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.13, 0.6, 12), jacketMat);
-        torso.position.set(0, 1.3, 0);
+        // Torso (Slightly tilted forward like a runner)
+        const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.11, 0.55, 12), jacketMat);
+        torso.position.set(0, 1.3, 0.05);
+        torso.rotation.x = 0.15;
         playerGroup.add(torso);
 
-        const limbGeo = new THREE.CylinderGeometry(0.045, 0.035, 0.55, 8);
-        const leftArm = new THREE.Mesh(limbGeo, jacketMat);
-        leftArm.position.set(-0.24, 1.35, 0);
-        playerGroup.add(leftArm);
+        // Natural Human Arms (Pivoted smoothly from shoulders)
+        const armGeo = new THREE.CylinderGeometry(0.035, 0.025, 0.5, 8);
+        
+        const leftArmPivot = new THREE.Group();
+        leftArmPivot.position.set(-0.22, 1.5, 0);
+        const leftArm = new THREE.Mesh(armGeo, jacketMat);
+        leftArm.position.set(0, -0.25, 0);
+        leftArmPivot.add(leftArm);
+        playerGroup.add(leftArmPivot);
 
-        const rightArm = new THREE.Mesh(limbGeo, jacketMat);
-        rightArm.position.set(0.24, 1.35, 0);
-        playerGroup.add(rightArm);
+        const rightArmPivot = new THREE.Group();
+        rightArmPivot.position.set(0.22, 1.5, 0);
+        const rightArm = new THREE.Mesh(armGeo, jacketMat);
+        rightArm.position.set(0, -0.25, 0);
+        rightArmPivot.add(rightArm);
+        playerGroup.add(rightArmPivot);
 
-        const leftLeg = new THREE.Mesh(limbGeo, jeansMat);
-        leftLeg.position.set(-0.1, 0.75, 0);
-        playerGroup.add(leftLeg);
+        // Natural Human Legs (Pivoted from hips)
+        const legGeo = new THREE.CylinderGeometry(0.04, 0.03, 0.55, 8);
+        
+        const leftLegPivot = new THREE.Group();
+        leftLegPivot.position.set(-0.09, 0.95, 0);
+        const leftLeg = new THREE.Mesh(legGeo, jeansMat);
+        leftLeg.position.set(0, -0.25, 0);
+        leftLegPivot.add(leftLeg);
+        playerGroup.add(leftLegPivot);
 
-        const rightLeg = new THREE.Mesh(limbGeo, jeansMat);
-        rightLeg.position.set(0.1, 0.75, 0);
-        playerGroup.add(rightLeg);
+        const rightLegPivot = new THREE.Group();
+        rightLegPivot.position.set(0.09, 0.95, 0);
+        const rightLeg = new THREE.Mesh(legGeo, jeansMat);
+        rightLeg.position.set(0, -0.25, 0);
+        rightLegPivot.add(rightLeg);
+        playerGroup.add(rightLegPivot);
 
         playerGroup.position.set(0, 0, 0);
         scene.add(playerGroup);
@@ -602,10 +621,11 @@
                 monkeyGroup.position.z = targetMonkeyZ;
             }
 
-            leftArm.rotation.x = Math.sin(time * 18) * 0.8;
-            rightArm.rotation.x = -Math.sin(time * 18) * 0.8;
-            leftLeg.rotation.x = -Math.sin(time * 18) * 0.8;
-            rightLeg.rotation.x = Math.sin(time * 18) * 0.8;
+            // Smooth, natural human running arm and leg rotations (No robotic wide gaps)
+            leftArmPivot.rotation.x = Math.sin(time * 16) * 0.7;
+            rightArmPivot.rotation.x = -Math.sin(time * 16) * 0.7;
+            leftLegPivot.rotation.x = -Math.sin(time * 16) * 0.7;
+            rightLegPivot.rotation.x = Math.sin(time * 16) * 0.7;
 
             segments.forEach(seg => {
                 seg.position.z += gameSpeed;
