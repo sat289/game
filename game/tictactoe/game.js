@@ -10,37 +10,57 @@ import {
 
 const { db } = window._tttFirebase;
 
-// Winning Combinations
 const WINNING_LINES = [
-  [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
-  [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
-  [0, 4, 8], [2, 4, 6]             // Diagonals
+  [0, 1, 2], [3, 4, 5], [6, 7, 8],
+  [0, 3, 6], [1, 4, 7], [2, 5, 8],
+  [0, 4, 8], [2, 4, 6]
 ];
 
-// Game State
+// Core Game State
 let gameMode = "bot"; // 'online' | 'bot' | 'pvp'
+let ruleMode = "classic"; // 'classic' | 'infinity'
 let botDifficulty = "impossible"; // 'easy' | 'medium' | 'impossible'
 let board = Array(9).fill(null);
+let moveHistory = { X: [], O: [] }; // Tracks move order for Infinity Mode
 let isXNext = true;
 let isBotThinking = false;
 let scores = { X: 0, O: 0, ties: 0 };
+let winStreak = 0;
+
+// Audio State
 let soundEnabled = true;
+let musicPlaying = false;
+const bgMusic = document.getElementById("bgMusic");
+const musicToggleBtn = document.getElementById("musicToggleBtn");
+const soundToggleBtn = document.getElementById("soundToggleBtn");
+
+// Turn Timer State
+let turnTimeLeft = 10;
+let turnTimerInterval = null;
 
 // Online Multiplayer State
 let roomCode = null;
-let mySymbol = "X"; // Host = 'X', Guest = 'O'
+let mySymbol = "X";
 let roomRef = null;
 let opponentConnected = false;
-let matchAwarded = false; // Prevents double-counting wins on firebase snapshot updates
+let matchAwarded = false;
+let lastReactionTimestamp = 0;
 
-// DOM Elements - Screens
+// DOM Elements
 const mainMenuScreen = document.getElementById("mainMenuScreen");
 const onlineLobbyScreen = document.getElementById("onlineLobbyScreen");
 const botMenuScreen = document.getElementById("botMenuScreen");
 const gameScreen = document.getElementById("gameScreen");
+const ruleSelectorBar = document.getElementById("ruleSelectorBar");
 const subHeaderText = document.getElementById("subHeaderText");
+const infinityHint = document.getElementById("infinityHint");
+const emojiBar = document.getElementById("emojiBar");
+const emojiFloatContainer = document.getElementById("emojiFloatContainer");
+const streakBadge = document.getElementById("streakBadge");
 
-// DOM Elements - Online Lobby
+const ruleClassicBtn = document.getElementById("ruleClassicBtn");
+const ruleInfinityBtn = document.getElementById("ruleInfinityBtn");
+
 const btnCreateRoom = document.getElementById("btnCreateRoom");
 const createdRoomBox = document.getElementById("createdRoomBox");
 const generatedCodeText = document.getElementById("generatedCodeText");
@@ -49,7 +69,6 @@ const joinCodeInput = document.getElementById("joinCodeInput");
 const btnJoinRoom = document.getElementById("btnJoinRoom");
 const lobbyErrorMsg = document.getElementById("lobbyErrorMsg");
 
-// DOM Elements - Game Screen
 const boardGrid = document.getElementById("boardGrid");
 const statusBanner = document.getElementById("statusBanner");
 const activeModeBadge = document.getElementById("activeModeBadge");
@@ -60,10 +79,11 @@ const cardPlayerO = document.getElementById("cardPlayerO");
 const scoreXEl = document.getElementById("scoreX");
 const scoreOEl = document.getElementById("scoreO");
 const scoreTiesEl = document.getElementById("scoreTies");
+const timerText = document.getElementById("timerText");
+const timerBar = document.getElementById("timerBar");
 const btnResetBoard = document.getElementById("btnResetBoard");
-const soundToggleBtn = document.getElementById("soundToggleBtn");
 
-/* ==================== SOUND SYNTHESIZER (WEB AUDIO API) ==================== */
+/* ==================== MUSIC & WEB AUDIO SFX ==================== */
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 function playTone(freq, type = "sine", duration = 0.12, gainVal = 0.12) {
@@ -103,15 +123,52 @@ soundToggleBtn.addEventListener("click", () => {
   soundToggleBtn.textContent = soundEnabled ? "🔊" : "🔇";
 });
 
-/* ==================== NAVIGATION ==================== */
+musicToggleBtn.addEventListener("click", () => {
+  if (!bgMusic) return;
+  if (musicPlaying) {
+    bgMusic.pause();
+    musicPlaying = false;
+    musicToggleBtn.textContent = "🎵 OFF";
+    musicToggleBtn.className = "bg-white/5 hover:bg-white/10 border border-white/10 px-2.5 py-1.5 rounded-full text-[11px] font-bold transition";
+  } else {
+    bgMusic.volume = 0.35;
+    bgMusic.play().then(() => {
+      musicPlaying = true;
+      musicToggleBtn.textContent = "🎵 ON";
+      musicToggleBtn.className = "bg-[#00f2fe]/20 border border-[#00f2fe] text-[#00f2fe] px-2.5 py-1.5 rounded-full text-[11px] font-bold transition";
+    }).catch(() => {
+      alert("Place song.mp3 inside creazy/song.mp3 or tictactoe/song.mp3!");
+    });
+  }
+});
+
+/* ==================== RULE VARIANT SWITCHER ==================== */
+ruleClassicBtn.addEventListener("click", () => {
+  ruleMode = "classic";
+  ruleClassicBtn.className = "flex-1 py-1.5 rounded-xl text-[11px] font-black transition bg-[#00f2fe] text-slate-950 shadow";
+  ruleInfinityBtn.className = "flex-1 py-1.5 rounded-xl text-[11px] font-black transition text-white/60 hover:text-white";
+  playTone(580, "sine", 0.08);
+});
+
+ruleInfinityBtn.addEventListener("click", () => {
+  ruleMode = "infinity";
+  ruleInfinityBtn.className = "flex-1 py-1.5 rounded-xl text-[11px] font-black transition bg-amber-400 text-slate-950 shadow";
+  ruleClassicBtn.className = "flex-1 py-1.5 rounded-xl text-[11px] font-black transition text-white/60 hover:text-white";
+  playTone(680, "sine", 0.08);
+});
+
+/* ==================== SCREEN NAVIGATION ==================== */
 function showScreen(screenName) {
   mainMenuScreen.classList.add("hidden");
   onlineLobbyScreen.classList.add("hidden");
   botMenuScreen.classList.add("hidden");
   gameScreen.classList.add("hidden");
+  ruleSelectorBar.classList.add("hidden");
 
   if (screenName === "menu") {
+    stopTurnTimer();
     mainMenuScreen.classList.remove("hidden");
+    ruleSelectorBar.classList.remove("hidden");
     subHeaderText.textContent = "Select Game Mode";
   } else if (screenName === "lobby") {
     onlineLobbyScreen.classList.remove("hidden");
@@ -120,12 +177,16 @@ function showScreen(screenName) {
   } else if (screenName === "botMenu") {
     botMenuScreen.classList.remove("hidden");
     botMenuScreen.classList.add("flex");
+    ruleSelectorBar.classList.remove("hidden");
     subHeaderText.textContent = "Choose AI Difficulty";
   } else if (screenName === "game") {
     gameScreen.classList.remove("hidden");
     gameScreen.classList.add("flex");
+    infinityHint.classList.toggle("hidden", ruleMode !== "infinity");
+    emojiBar.classList.toggle("hidden", gameMode !== "online");
+    emojiBar.classList.toggle("flex", gameMode === "online");
     subHeaderText.textContent =
-      gameMode === "online" ? `Room Code: ${roomCode}` : "Match In Progress";
+      gameMode === "online" ? `Room Code: ${roomCode}` : `${ruleMode.toUpperCase()} MATCH`;
   }
 }
 
@@ -167,34 +228,111 @@ document.querySelectorAll(".bot-diff-btn").forEach((btn) => {
   });
 });
 
-/* ==================== WIN CHECK & FIREBASE SCORE INCREMENT ==================== */
+/* ==================== TURN SHOT CLOCK (10s) ==================== */
+function resetTurnTimer() {
+  stopTurnTimer();
+  const res = checkWinner(board);
+  if (res) {
+    timerText.textContent = "--";
+    timerBar.style.width = "0%";
+    return;
+  }
+
+  turnTimeLeft = 10;
+  updateTimerUI();
+
+  turnTimerInterval = setInterval(() => {
+    if (gameMode === "online" && !opponentConnected) return;
+    turnTimeLeft--;
+    updateTimerUI();
+
+    if (turnTimeLeft <= 0) {
+      stopTurnTimer();
+      // Auto-move if local/bot or if it's my online turn
+      if (gameMode !== "online" || (isXNext ? "X" : "O") === mySymbol) {
+        const emptyIndices = board
+          .map((v, i) => (v === null ? i : null))
+          .filter((v) => v !== null);
+        if (emptyIndices.length > 0 && !isBotThinking) {
+          const randomIdx = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+          handleCellClick(randomIdx);
+        }
+      }
+    }
+  }, 1000);
+}
+
+function stopTurnTimer() {
+  if (turnTimerInterval) {
+    clearInterval(turnTimerInterval);
+    turnTimerInterval = null;
+  }
+}
+
+function updateTimerUI() {
+  timerText.textContent = `${turnTimeLeft}s`;
+  timerBar.style.width = `${(turnTimeLeft / 10) * 100}%`;
+}
+
+/* ==================== WIN CHECK & FIREBASE SCORE SYNC ==================== */
 function checkWinner(squares) {
   for (const [a, b, c] of WINNING_LINES) {
     if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
       return { winner: squares[a], line: [a, b, c] };
     }
   }
-  if (squares.every((sq) => sq !== null && sq !== "")) {
+  if (ruleMode === "classic" && squares.every((sq) => sq !== null && sq !== "")) {
     return { winner: "Tie", line: null };
   }
   return null;
 }
 
 function recordPlayerWin() {
-  const currentTotal = (typeof window.score === "number" ? window.score : 0) + 1;
-  window.score = currentTotal;
+  winStreak++;
+  streakBadge.textContent = `🔥 ${winStreak}`;
+  streakBadge.classList.remove("hidden");
+
+  let basePoints = 1;
+  if (gameMode === "bot") {
+    basePoints = botDifficulty === "impossible" ? 5 : botDifficulty === "medium" ? 2 : 1;
+  } else if (gameMode === "online") {
+    basePoints = 3;
+  }
+
+  const bonus = winStreak > 1 ? winStreak - 1 : 0;
+  const newTotal = (typeof window.score === "number" ? window.score : 0) + basePoints + bonus;
+
+  window.score = newTotal;
   const scoreEl = document.getElementById("score");
-  if (scoreEl) scoreEl.innerText = currentTotal;
+  if (scoreEl) scoreEl.innerText = newTotal;
   if (typeof window.submitScore === "function") {
-    window.submitScore(currentTotal);
+    window.submitScore(newTotal);
   }
   if (typeof confetti === "function") {
-    confetti({ particleCount: 75, spread: 65, origin: { y: 0.6 } });
+    confetti({ particleCount: 80, spread: 65, origin: { y: 0.6 } });
   }
   sfxWin();
 }
 
-/* ==================== ONLINE MULTIPLAYER (ROOM CODE SYSTEM) ==================== */
+function resetWinStreak() {
+  winStreak = 0;
+  streakBadge.classList.add("hidden");
+}
+
+/* ==================== APPLY MOVE (WITH INFINITY 3-MARK LOGIC) ==================== */
+function applyMoveToState(player, idx) {
+  board[idx] = player;
+  moveHistory[player].push(idx);
+
+  if (ruleMode === "infinity" && moveHistory[player].length > 3) {
+    const oldestIdx = moveHistory[player].shift();
+    if (oldestIdx !== undefined && oldestIdx !== idx) {
+      board[oldestIdx] = null;
+    }
+  }
+}
+
+/* ==================== ONLINE MULTIPLAYER & EMOJI REACTIONS ==================== */
 function generateRoomCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "";
@@ -203,6 +341,29 @@ function generateRoomCode() {
   }
   return code;
 }
+
+function spawnFloatingEmoji(emoji) {
+  const el = document.createElement("div");
+  el.className = "floating-emoji";
+  el.textContent = emoji;
+  el.style.left = `${20 + Math.random() * 60}%`;
+  emojiFloatContainer.appendChild(el);
+  playTone(720, "sine", 0.08, 0.08);
+  setTimeout(() => el.remove(), 2000);
+}
+
+document.querySelectorAll(".emoji-btn").forEach((btn) => {
+  btn.addEventListener("click", async () => {
+    const emoji = btn.getAttribute("data-emoji");
+    if (gameMode === "online" && roomRef) {
+      await update(roomRef, {
+        reaction: { emoji, sender: mySymbol, ts: Date.now() }
+      });
+    } else {
+      spawnFloatingEmoji(emoji);
+    }
+  });
+});
 
 btnCreateRoom.addEventListener("click", async () => {
   cleanupOnlineRoom();
@@ -214,6 +375,9 @@ btnCreateRoom.addEventListener("click", async () => {
 
   const initialRoomData = {
     board: Array(9).fill(""),
+    historyX: [],
+    historyO: [],
+    ruleMode: ruleMode,
     turn: "X",
     status: "waiting",
     scores: { X: 0, O: 0, ties: 0 },
@@ -265,6 +429,9 @@ btnJoinRoom.addEventListener("click", async () => {
       return;
     }
 
+    const data = snap.val();
+    ruleMode = data.ruleMode || "classic";
+
     await update(roomRef, { status: "playing", updatedAt: Date.now() });
     listenToRoomChanges();
     startOnlineGameUI();
@@ -289,24 +456,36 @@ function listenToRoomChanges() {
 
     const data = snapshot.val();
 
-    // Transition host from lobby into game once guest joins
     if (data.status === "playing" && !onlineLobbyScreen.classList.contains("hidden")) {
       startOnlineGameUI();
     }
 
+    if (data.reaction && data.reaction.ts > lastReactionTimestamp) {
+      lastReactionTimestamp = data.reaction.ts;
+      spawnFloatingEmoji(data.reaction.emoji);
+    }
+
     opponentConnected = data.status === "playing";
+    ruleMode = data.ruleMode || "classic";
     board = (data.board || Array(9).fill("")).map((v) => (v === "" ? null : v));
+    moveHistory.X = data.historyX || [];
+    moveHistory.O = data.historyO || [];
     isXNext = data.turn === "X";
     scores = data.scores || { X: 0, O: 0, ties: 0 };
 
     const result = checkWinner(board);
     if (!result) {
       matchAwarded = false;
+      resetTurnTimer();
     } else if (!matchAwarded) {
       matchAwarded = true;
+      stopTurnTimer();
       if (result.winner === mySymbol) {
         recordPlayerWin();
       } else if (result.winner === "Tie") {
+        sfxTie();
+      } else {
+        resetWinStreak();
         sfxTie();
       }
     }
@@ -318,7 +497,7 @@ function listenToRoomChanges() {
 function startOnlineGameUI() {
   gameMode = "online";
   matchAwarded = false;
-  activeModeBadge.textContent = `ONLINE • YOU ARE ${mySymbol}`;
+  activeModeBadge.textContent = `ONLINE • ${ruleMode.toUpperCase()} (${mySymbol})`;
   labelPlayerX.textContent = mySymbol === "X" ? "X (YOU)" : "X (FRIEND)";
   labelPlayerO.textContent = mySymbol === "O" ? "O (YOU)" : "O (FRIEND)";
   showScreen("game");
@@ -326,6 +505,7 @@ function startOnlineGameUI() {
 }
 
 function cleanupOnlineRoom() {
+  stopTurnTimer();
   if (roomRef) {
     off(roomRef);
     roomRef = null;
@@ -339,6 +519,7 @@ function startOfflineOrBotGame(mode) {
   cleanupOnlineRoom();
   gameMode = mode;
   board = Array(9).fill(null);
+  moveHistory = { X: [], O: [] };
   isXNext = true;
   isBotThinking = false;
   scores = { X: 0, O: 0, ties: 0 };
@@ -354,6 +535,7 @@ function startOfflineOrBotGame(mode) {
   }
 
   showScreen("game");
+  resetTurnTimer();
   renderBoard();
 }
 
@@ -361,7 +543,7 @@ function minimax(newBoard, depth, isMaximizing) {
   const res = checkWinner(newBoard);
   if (res?.winner === "O") return 10 - depth;
   if (res?.winner === "X") return depth - 10;
-  if (res?.winner === "Tie") return 0;
+  if (res?.winner === "Tie" || depth >= 6) return 0;
 
   if (isMaximizing) {
     let maxEval = -Infinity;
@@ -414,7 +596,7 @@ function makeBotMove() {
     }
   }
 
-  board[move] = "O";
+  applyMoveToState("O", move);
   sfxMove("O");
   isXNext = true;
   isBotThinking = false;
@@ -422,10 +604,15 @@ function makeBotMove() {
   const check = checkWinner(board);
   if (check?.winner === "O") {
     scores.O++;
+    resetWinStreak();
+    stopTurnTimer();
     sfxTie();
   } else if (check?.winner === "Tie") {
     scores.ties++;
+    stopTurnTimer();
     sfxTie();
+  } else {
+    resetTurnTimer();
   }
   renderBoard();
 }
@@ -435,13 +622,12 @@ async function handleCellClick(idx) {
   const result = checkWinner(board);
   if (board[idx] || result || isBotThinking) return;
 
-  // Online Mode Handler
   if (gameMode === "online") {
     if (!opponentConnected) return;
     const currentTurn = isXNext ? "X" : "O";
-    if (currentTurn !== mySymbol) return; // Not your turn!
+    if (currentTurn !== mySymbol) return;
 
-    board[idx] = mySymbol;
+    applyMoveToState(mySymbol, idx);
     sfxMove(mySymbol);
 
     const check = checkWinner(board);
@@ -452,6 +638,8 @@ async function handleCellClick(idx) {
 
     await update(roomRef, {
       board: board.map((c) => c || ""),
+      historyX: moveHistory.X,
+      historyO: moveHistory.O,
       turn: mySymbol === "X" ? "O" : "X",
       scores: updatedScores,
       updatedAt: Date.now()
@@ -459,20 +647,23 @@ async function handleCellClick(idx) {
     return;
   }
 
-  // Bot & Offline 1v1 Handler
   const currentPlayer = isXNext ? "X" : "O";
-  board[idx] = currentPlayer;
+  applyMoveToState(currentPlayer, idx);
   sfxMove(currentPlayer);
 
   const check = checkWinner(board);
   if (check) {
+    stopTurnTimer();
     if (check.winner === "X") {
       scores.X++;
       recordPlayerWin();
     } else if (check.winner === "O") {
       scores.O++;
       if (gameMode === "pvp") recordPlayerWin();
-      else sfxTie();
+      else {
+        resetWinStreak();
+        sfxTie();
+      }
     } else if (check.winner === "Tie") {
       scores.ties++;
       sfxTie();
@@ -484,10 +675,12 @@ async function handleCellClick(idx) {
   if (gameMode === "bot") {
     isXNext = false;
     isBotThinking = true;
+    resetTurnTimer();
     renderBoard();
-    setTimeout(makeBotMove, 380);
+    setTimeout(makeBotMove, 420);
   } else {
     isXNext = !isXNext;
+    resetTurnTimer();
     renderBoard();
   }
 }
@@ -497,14 +690,18 @@ btnResetBoard.addEventListener("click", async () => {
   if (gameMode === "online" && roomRef) {
     await update(roomRef, {
       board: Array(9).fill(""),
+      historyX: [],
+      historyO: [],
       turn: "X",
       updatedAt: Date.now()
     });
     return;
   }
   board = Array(9).fill(null);
+  moveHistory = { X: [], O: [] };
   isXNext = true;
   isBotThinking = false;
+  resetTurnTimer();
   renderBoard();
 });
 
@@ -512,23 +709,28 @@ btnResetBoard.addEventListener("click", async () => {
 function renderBoard() {
   const result = checkWinner(board);
 
-  // Update Scoreboard numbers
   scoreXEl.textContent = scores.X;
   scoreOEl.textContent = scores.O;
   scoreTiesEl.textContent = scores.ties;
 
-  // Highlight active player's card
   cardPlayerX.classList.toggle("active-turn-x", !result && isXNext);
   cardPlayerO.classList.toggle("active-turn-o", !result && !isXNext);
 
-  // Render 9 cells
+  // Identify which cell is about to vanish in Infinity Mode
+  let vanishingIdx = null;
+  if (ruleMode === "infinity" && !result) {
+    const activeTurnPlayer = isXNext ? "X" : "O";
+    if (moveHistory[activeTurnPlayer].length === 3) {
+      vanishingIdx = moveHistory[activeTurnPlayer][0];
+    }
+  }
+
   boardGrid.innerHTML = "";
   board.forEach((cell, idx) => {
     const isWinCell = result?.line?.includes(idx);
     const btn = document.createElement("button");
 
-    let cls =
-      "cell-3d rounded-xl text-3xl font-black flex items-center justify-center border ";
+    let cls = "cell-3d rounded-xl text-3xl font-black flex items-center justify-center border ";
     if (cell === "X") {
       cls += "cell-x ";
     } else if (cell === "O") {
@@ -537,6 +739,7 @@ function renderBoard() {
       cls += "bg-white/5 border-white/10 hover:bg-white/10 ";
     }
 
+    if (idx === vanishingIdx) cls += "cell-vanish-warning ";
     if (isWinCell) cls += "cell-win ";
 
     btn.className = cls;
@@ -545,27 +748,26 @@ function renderBoard() {
     boardGrid.appendChild(btn);
   });
 
-  // Update Status Banner
   if (result) {
     if (result.winner === "Tie") {
-      statusBanner.innerHTML = `<span class="text-[#ffd700]">🤝 Round Tied! Tap Next Round</span>`;
+      statusBanner.innerHTML = `<span class="text-[#ffd700]">🤝 Round Tied!</span>`;
     } else {
       const winColor = result.winner === "X" ? "text-[#00f2fe]" : "text-[#ff007f]";
-      statusBanner.innerHTML = `<span class="${winColor}">🎉 Player ${result.winner} Wins the Round!</span>`;
+      statusBanner.innerHTML = `<span class="${winColor}">🎉 Player ${result.winner} Wins!</span>`;
     }
   } else if (gameMode === "online") {
     const currentTurn = isXNext ? "X" : "O";
     if (!opponentConnected) {
-      statusBanner.innerHTML = `<span class="text-[#ffd700] animate-pulse">⏳ Waiting for friend to join...</span>`;
+      statusBanner.innerHTML = `<span class="text-[#ffd700] animate-pulse">⏳ Waiting for friend...</span>`;
     } else if (currentTurn === mySymbol) {
       statusBanner.innerHTML = `<span class="text-[#2ecc71]">⚡ Your Turn (${mySymbol})</span>`;
     } else {
-      statusBanner.innerHTML = `<span class="text-white/60">⏳ Opponent's Turn (${currentTurn})...</span>`;
+      statusBanner.innerHTML = `<span class="text-white/60">⏳ Friend's Turn (${currentTurn})...</span>`;
     }
   } else {
     const turnColor = isXNext ? "text-[#00f2fe]" : "text-[#ff007f]";
     statusBanner.innerHTML = `Turn: <span class="${turnColor}">${
-      isBotThinking ? "🤖 Bot is thinking..." : `Player ${isXNext ? "X" : "O"}`
+      isBotThinking ? "🤖 Bot thinking..." : `Player ${isXNext ? "X" : "O"}`
     }</span>`;
   }
 }
