@@ -354,6 +354,42 @@
                     </a>
                 </div>
             </div>
+            <!-- Background Audio Element -->
+<audio id="bgMusic" loop>
+  <!-- Change "song.mp3" to your actual audio file name -->
+  <source src="creazy/song.mp3" type="audio/mpeg">
+</audio>
+
+<!-- Floating Sound Toggle Button -->
+<button onclick="toggleAudio()" id="soundToggleBtn" class="fixed bottom-5 right-5 z-50 bg-slate-900/90 border border-cyan-500/40 text-cyan-400 p-3 rounded-2xl shadow-lg shadow-cyan-500/20 backdrop-blur-md hover:scale-105 transition flex items-center gap-2 text-xs font-bold">
+  <i class="fa-solid fa-volume-xmark text-sm" id="soundIcon"></i>
+  <span id="soundText" class="hidden sm:inline">Sound Off</span>
+</button>
+
+<script>
+  const music = document.getElementById('bgMusic');
+  const soundIcon = document.getElementById('soundIcon');
+  const soundText = document.getElementById('soundText');
+  let isPlaying = false;
+
+  function toggleAudio() {
+    if (isPlaying) {
+      music.pause();
+      isPlaying = false;
+      soundIcon.className = "fa-solid fa-volume-xmark text-sm";
+      soundText.innerText = "Sound Off";
+    } else {
+      music.play().then(() => {
+        isPlaying = true;
+        soundIcon.className = "fa-solid fa-volume-high text-sm animate-pulse";
+        soundText.innerText = "Sound On";
+      }).catch(e => {
+        console.log("Playback prevented:", e);
+      });
+    }
+  }
+</script>
+            
 
             <!-- Search Drawer -->
             <div id="searchDrawer" class="theme-surface hidden mt-2 bg-white rounded-2xl p-2.5 shadow-lg border border-slate-200">
