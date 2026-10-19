@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Type Race Multiplayer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+</head>
+<body class="bg-black text-white flex items-center justify-center min-h-screen m-0">
+
+  <div class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-3">
+    <div class="bg-[#121826] border border-white/15 rounded-3xl p-5 max-w-[440px] w-full flex flex-col items-center relative shadow-[0_10px_40px_rgba(0,0,0,0.8)]">
+      
+      <h3 class="text-base font-black text-[#00f0ff] tracking-wider mb-1 flex items-center gap-1.5">
+        🏎️ TYPE RACE MULTIPLAYER
+      </h3>
+      <p class="text-[11px] text-white/60 mb-3">Type the sentence below as fast as you can!</p>
+
+      <!-- Live Race Tracks -->
+      <div class="w-full bg-[#0a0f18] border border-white/10 rounded-2xl p-3 flex flex-col gap-2 mb-4">
+        <!-- Lane 1: Player -->
+        <div class="relative h-9 bg-white/5 rounded-xl border border-white/10 px-2 flex items-center overflow-hidden">
+          <div id="playerWpmLabel" class="absolute left-2 text-[10px] font-extrabold text-[#00f0ff] bg-[#00f0ff]/10 px-1.5 py-0.5 rounded border border-[#00f0ff]/30 z-10">
+            YOU (0 WPM)
+          </div>
+          <div id="playerCar" class="absolute text-xl transition-all duration-150 ease-out z-20" style="left: calc(0% - 22px);">
+            🏎️
+          </div>
+          <div class="absolute right-2 text-xs">🏁</div>
+        </div>
+
+        <!-- Lane 2: Bot Apex -->
+        <div class="relative h-8 bg-white/5 rounded-xl border border-white/10 px-2 flex items-center overflow-hidden">
+          <div class="absolute left-2 text-[10px] font-bold text-white/50 z-10">
+            Bot Apex
+          </div>
+          <div id="bot1Car" class="absolute text-xl transition-all duration-300 ease-out z-20" style="left: calc(0% - 22px);">
+            🚗
+          </div>
+          <div class="absolute right-2 text-xs">🏁</div>
+        </div>
+
+        <!-- Lane 3: Bot Turbo -->
+        <div class="relative h-8 bg-white/5 rounded-xl border border-white/10 px-2 flex items-center overflow-hidden">
+          <div class="absolute left-2 text-[10px] font-bold text-white/50 z-10">
+            Bot Turbo
+          </div>
+          <div id="bot2Car" class="absolute text-xl transition-all duration-300 ease-out z-20" style="left: calc(0% - 22px);">
+            🚙
+          </div>
+          <div class="absolute right-2 text-xs">🏁</div>
+        </div>
+
+        <!-- Lane 4: Bot Nitro -->
+        <div class="relative h-8 bg-white/5 rounded-xl border border-white/10 px-2 flex items-center overflow-hidden">
+          <div class="absolute left-2 text-[10px] font-bold text-white/50 z-10">
+            Bot Nitro
+          </div>
+          <div id="bot3Car" class="absolute text-xl transition-all duration-300 ease-out z-20" style="left: calc(0% - 22px);">
+            🏎️
+          </div>
+          <div class="absolute right-2 text-xs">🏁</div>
+        </div>
+      </div>
+
+      <!-- Text Prompt Box -->
+      <div class="w-full bg-[#1b2438] p-3.5 rounded-2xl border border-white/15 text-sm leading-relaxed mb-3 select-none">
+        <span id="typedTextSpan" class="text-[#2ecc71] font-bold"></span><span id="remainingTextSpan" class="text-white/40"></span>
+      </div>
+
+      <!-- Typing Input -->
+      <input
+        id="typeInput"
+        type="text"
+        placeholder="Start typing here..."
+        autofocus
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        spellcheck="false"
+        class="w-full bg-[#0d1320] border-2 border-[#00f0ff]/50 focus:border-[#00f0ff] rounded-xl px-4 py-2.5 text-white font-mono text-sm outline-none transition mb-3"
+      />
+
+      <!-- Bottom Actions: Active State -->
+      <div id="activeControls" class="w-full flex justify-between items-center text-xs font-bold text-white/60">
+        <span>Accuracy: 100%</span>
+        <button id="changeQuoteBtn" class="text-[#00f0ff] hover:underline flex items-center gap-1 text-[11px]">
+          🔄 Change Quote
+        </button>
+      </div>
+
+      <!-- Bottom Actions: Finished State -->
+      <div id="finishedBanner" class="w-full bg-[#2ecc71]/15 border border-[#2ecc71]/40 rounded-2xl p-3 text-center animate-bounce hidden">
+        <div class="text-sm font-black text-[#2ecc71] flex items-center justify-center gap-1.5 mb-1">
+          🏆 RACE FINISHED!
+        </div>
+        <div class="text-xs text-white/90 mb-2">
+          Your Speed: <b id="finalWpm" class="text-[#00f0ff]">0 WPM</b>
+        </div>
+        <button id="nextRaceBtn" class="bg-gradient-to-r from-[#00f0ff] to-[#0072ff] text-slate-950 font-black px-4 py-1.5 rounded-xl text-xs inline-flex items-center gap-1 active:scale-95 shadow-md">
+          🔄 Next Race
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const sampleQuotes = [
+      "Speed and precision make a true racing champion on every track.",
+      "The quick brown fox jumps over the lazy dog and races to the finish line.",
+      "Never give up because great things take time, focus, and persistent effort.",
+      "Coding great games requires creativity, logical thinking, and constant passion."
+    ];
+
+    let targetText = sampleQuotes[0];
+    let typedText = '';
+    let startTime = null;
+    let wpm = 0;
+    let isFinished = false;
+
+    let bot1Progress = 0;
+    let bot2Progress = 0;
+    let bot3Progress = 0;
+    let botInterval = null;
+
+    const playerWpmLabel = document.getElementById('playerWpmLabel');
+    const playerCar = document.getElementById('playerCar');
+    const bot1Car = document.getElementById('bot1Car');
+    const bot2Car = document.getElementById('bot2Car');
+    const bot3Car = document.getElementById('bot3Car');
+
+    const typedTextSpan = document.getElementById('typedTextSpan');
+    const remainingTextSpan = document.getElementById('remainingTextSpan');
+    const typeInput = document.getElementById('typeInput');
+
+    const activeControls = document.getElementById('activeControls');
+    const finishedBanner = document.getElementById('finishedBanner');
+    const finalWpm = document.getElementById('finalWpm');
+    const changeQuoteBtn = document.getElementById('changeQuoteBtn');
+    const nextRaceBtn = document.getElementById('nextRaceBtn');
+
+    function startBotSimulation() {
+      if (botInterval) clearInterval(botInterval);
+      botInterval = setInterval(() => {
+        if (!startTime || isFinished) return;
+
+        bot1Progress = Math.min(100, bot1Progress + Math.random() * 3.5 + 1.2);
+        bot2Progress = Math.min(100, bot2Progress + Math.random() * 4.0 + 1.0);
+        bot3Progress = Math.min(100, bot3Progress + Math.random() * 3.0 + 1.5);
+
+        updateTracksUI();
+      }, 400);
+    }
+
+    function updateTracksUI() {
+      const playerProgress = targetText.length > 0 ? (typedText.length / targetText.length) * 100 : 0;
+      playerCar.style.left = `calc(${playerProgress}% - 22px)`;
+      bot1Car.style.left = `calc(${bot1Progress}% - 22px)`;
+      bot2Car.style.left = `calc(${bot2Progress}% - 22px)`;
+      bot3Car.style.left = `calc(${bot3Progress}% - 22px)`;
+      playerWpmLabel.textContent = `YOU (${wpm} WPM)`;
+    }
+
+    function updateTextUI() {
+      typedTextSpan.textContent = typedText;
+      remainingTextSpan.textContent = targetText.slice(typedText.length);
+    }
+
+    function startNewRace() {
+      targetText = sampleQuotes[Math.floor(Math.random() * sampleQuotes.length)];
+      typedText = '';
+      startTime = null;
+      wpm = 0;
+      isFinished = false;
+      bot1Progress = 0;
+      bot2Progress = 0;
+      bot3Progress = 0;
+
+      if (botInterval) clearInterval(botInterval);
+
+      typeInput.value = '';
+      typeInput.disabled = false;
+      typeInput.focus();
+
+      finishedBanner.classList.add('hidden');
+      activeControls.classList.remove('hidden');
+
+      updateTextUI();
+      updateTracksUI();
+    }
+
+    typeInput.addEventListener('input', (e) => {
+      const val = e.target.value;
+
+      if (!startTime && val.length > 0) {
+        startTime = Date.now();
+        startBotSimulation();
+      }
+
+      // Only allow correct prefix
+      if (targetText.startsWith(val)) {
+        typedText = val;
+
+        if (startTime) {
+          const elapsedMin = (Date.now() - startTime) / 60000;
+          const words = val.length / 5;
+          wpm = Math.round(words / Math.max(0.01, elapsedMin));
+        }
+
+        updateTextUI();
+        updateTracksUI();
+
+        if (val === targetText) {
+          isFinished = true;
+          typeInput.disabled = true;
+          if (botInterval) clearInterval(botInterval);
+
+          finalWpm.textContent = `${wpm} WPM`;
+          activeControls.classList.add('hidden');
+          finishedBanner.classList.remove('hidden');
+
+          if (typeof confetti === 'function') confetti();
+        }
+      } else {
+        // Prevent wrong characters from staying in the input box
+        e.target.value = typedText;
+      }
+    });
+
+    changeQuoteBtn.addEventListener('click', startNewRace);
+    nextRaceBtn.addEventListener('click', startNewRace);
+
+    // Initialize first race
+    updateTextUI();
+    updateTracksUI();
+  </script>
+</body>
+</html>
