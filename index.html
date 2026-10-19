@@ -354,18 +354,19 @@
                     </a>
                 </div>
             </div>
-            <!-- Floating Sound Control Button -->
-<button onclick="toggleAudio()" id="soundToggleBtn" class="fixed bottom-5 right-5 z-50 bg-slate-900/90 border border-cyan-500/40 text-cyan-400 px-3.5 py-2.5 rounded-2xl shadow-lg shadow-cyan-500/20 backdrop-blur-md hover:scale-105 transition flex items-center gap-2 text-xs font-bold">
-  <i class="fa-solid fa-volume-high text-sm" id="soundIcon"></i>
-  <span id="soundText">Sound ON 🔊</span>
-</button>
 
 <!-- Background Audio Element -->
 <audio id="bgMusic" loop>
+  <!-- Change this to your actual direct music file path -->
   <source src="creazy/song.mp3" type="audio/mpeg">
 </audio>
 
-<!-- Audio Script Logic -->
+<!-- Floating Sound Control Button -->
+<button onclick="toggleAudio()" id="soundToggleBtn" class="fixed bottom-5 right-5 z-50 bg-slate-900/90 border border-cyan-500/40 text-cyan-400 px-3.5 py-2.5 rounded-2xl shadow-lg shadow-cyan-500/20 backdrop-blur-md hover:scale-105 transition flex items-center gap-2 text-xs font-bold">
+  <i class="fa-solid fa-volume-xmark text-sm" id="soundIcon"></i>
+  <span id="soundText">Play Music 🎵</span>
+</button>
+
 <script>
   const music = document.getElementById('bgMusic');
   const soundIcon = document.getElementById('soundIcon');
@@ -386,31 +387,21 @@
         soundText.innerText = "Sound ON 🔊";
         localStorage.setItem('hub_sound', 'on');
       }).catch(e => {
-        console.log("Autoplay blocked:", e);
+        console.log("Playback error:", e);
       });
     }
   }
 
   window.addEventListener('DOMContentLoaded', () => {
-    // Try playing music automatically on page load
-    music.play().then(() => {
-      isPlaying = true;
-      soundIcon.className = "fa-solid fa-volume-high text-sm animate-pulse";
-      soundText.innerText = "Sound ON 🔊";
-    }).catch(() => {
-      // Fallback: starts playing on the user's first click anywhere on the page if browser blocks autoplay
-      const startAudioOnClick = () => {
-        music.play().then(() => {
-          isPlaying = true;
-          soundIcon.className = "fa-solid fa-volume-high text-sm animate-pulse";
-          soundText.innerText = "Sound ON 🔊";
-          window.removeEventListener('click', startAudioOnClick);
-          window.removeEventListener('keydown', startAudioOnClick);
-        }).catch(()=>{});
-      };
-      window.addEventListener('click', startAudioOnClick);
-      window.addEventListener('keydown', startAudioOnClick);
-    });
+    // Check if user previously had sound turned on
+    const savedSound = localStorage.getItem('hub_sound');
+    if (savedSound === 'on') {
+      music.play().then(() => {
+        isPlaying = true;
+        soundIcon.className = "fa-solid fa-volume-high text-sm animate-pulse";
+        soundText.innerText = "Sound ON 🔊";
+      }).catch(() => {});
+    }
   });
 </script>
 
