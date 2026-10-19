@@ -17,13 +17,11 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
-// 1. Set the game name here (e.g. 'carracing', 'subwaysurfers')
-const GAME_KEY = "carracing";
+const GAME_KEY = "subway";
 
 let currentUser = null;
 let currentHighScore = parseInt(localStorage.getItem(`${GAME_KEY}_hi`) || "0", 10);
 
-// Sync full player profile (high score, coins, diamonds, boards, unlocked avatars/skins)
 window.syncPlayerProfileToCloud = async function () {
   if (!window.playerProfile) return;
   localStorage.setItem(`${GAME_KEY}_profile`, JSON.stringify(window.playerProfile));
@@ -37,7 +35,8 @@ window.syncPlayerProfileToCloud = async function () {
         [`${GAME_KEY}_avatars`]: window.playerProfile.unlockedAvatars,
         [`${GAME_KEY}_boardSkins`]: window.playerProfile.unlockedBoardSkins,
         [`${GAME_KEY}_selectedAvatar`]: window.playerProfile.selectedAvatar,
-        [`${GAME_KEY}_selectedBoard`]: window.playerProfile.selectedBoard
+        [`${GAME_KEY}_selectedBoard`]: window.playerProfile.selectedBoard,
+        [`${GAME_KEY}_displayName`]: window.playerProfile.displayName
       });
     } catch (err) {
       console.error("Firebase profile sync error:", err);
@@ -45,7 +44,6 @@ window.syncPlayerProfileToCloud = async function () {
   }
 };
 
-// 2. Automatically listen to user login state
 onAuthStateChanged(auth, async (user) => {
   const statusBadge = document.getElementById("firebaseStatus");
   if (user) {
@@ -59,30 +57,13 @@ onAuthStateChanged(auth, async (user) => {
         if (cloudScore > currentHighScore) {
           currentHighScore = cloudScore;
           localStorage.setItem(`${GAME_KEY}_hi`, currentHighScore.toString());
-        } else if (currentHighScore > cloudScore) {
-          set(ref(db, `scores/${user.uid}/${GAME_KEY}_high`), currentHighScore);
         }
 
         if (window.playerProfile) {
-          if (typeof data[`${GAME_KEY}_coins`] === "number") {
-            window.playerProfile.coins = Math.max(window.playerProfile.coins, data[`${GAME_KEY}_coins`]);
-          }
-          if (typeof data[`${GAME_KEY}_diamonds`] === "number") {
-            window.playerProfile.diamonds = Math.max(window.playerProfile.diamonds, data[`${GAME_KEY}_diamonds`]);
-          }
-          if (typeof data[`${GAME_KEY}_boards`] === "number") {
-            window.playerProfile.boards = Math.max(window.playerProfile.boards, data[`${GAME_KEY}_boards`]);
-          }
-          if (Array.isArray(data[`${GAME_KEY}_avatars`])) {
-            window.playerProfile.unlockedAvatars = Array.from(
-              new Set([...window.playerProfile.unlockedAvatars, ...data[`${GAME_KEY}_avatars`]])
-            );
-          }
-          if (Array.isArray(data[`${GAME_KEY}_boardSkins`])) {
-            window.playerProfile.unlockedBoardSkins = Array.from(
-              new Set([...window.playerProfile.unlockedBoardSkins, ...data[`${GAME_KEY}_boardSkins`]])
-            );
-          }
+          if (typeof data[`${GAME_KEY}_coins`] === "number") window.playerProfile.coins = Math.max(window.playerProfile.coins, data[`${GAME_KEY}_coins`]);
+          if (typeof data[`${GAME_KEY}_diamonds`] === "number") window.playerProfile.diamonds = Math.max(window.playerProfile.diamonds, data[`${GAME_KEY}_diamonds`]);
+          if (typeof data[`${GAME_KEY}_boards`] === "number") window.playerProfile.boards = Math.max(window.playerProfile.boards, data[`${GAME_KEY}_boards`]);
+          if (data[`${GAME_KEY}_displayName`]) window.playerProfile.displayName = data[`${GAME_KEY}_displayName`];
           window.updateMenuUI && window.updateMenuUI();
         }
       } else if (currentHighScore > 0) {
@@ -96,7 +77,6 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-// 3. Simple global helper function
 window.submitScore = function (newScore) {
   const val = parseInt(newScore, 10);
   if (isNaN(val)) return;
@@ -112,17 +92,3 @@ window.submitScore = function (newScore) {
 };
 
 window.getHighScore = () => currentHighScore;
-
-// 4. Fallback Auto-Scanner
-setInterval(() => {
-  let detected = 0;
-  if (typeof window.score === "number") detected = window.score;
-  const elem = document.getElementById("score") || document.getElementById("finalScore");
-  if (elem) {
-    const parsed = parseInt(elem.innerText.replace(/[^0-9]/g, ""), 10);
-    if (!isNaN(parsed)) detected = Math.max(detected, parsed);
-  }
-  if (detected > currentHighScore) {
-    window.submitScore(detected);
-  }
-}, 1000);
