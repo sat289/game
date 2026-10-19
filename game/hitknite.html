@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Knife Hit - Ketchapp Style Pro Edition</title>
+    <title>Knife Hit - Advanced 3D Rotation Edition</title>
     <style>
         * {
             box-sizing: border-box;
@@ -124,16 +124,17 @@
         let knivesLeft = totalKnives;
         let isGameOver = false;
         let isStageCleared = false;
-        let isBossFight = false;
         let particles = [];
         let screenShake = 0;
+        let timeCount = 0;
 
         let log = {
             x: canvas.width / 2,
             y: 210,
             radius: 80,
             angle: 0,
-            speed: 0.03,
+            baseSpeed: 0.025,
+            speed: 0.025,
             direction: 1
         };
 
@@ -144,24 +145,19 @@
             x: canvas.width / 2,
             y: 580,
             width: 14,
-            height: 52,
+            height: 65, // పొడవు పెంచబడింది
             moving: false
         };
 
         function initStage() {
-            isBossFight = (stage % 5 === 0); // Every 5th stage is a Boss Fight
             knivesLeft = totalKnives + Math.floor((stage - 1) / 2);
             stuckKnives = [];
             apple.collected = false;
             apple.angle = Math.random() * Math.PI * 2;
             
-            if (isBossFight) {
-                log.speed = 0.045;
-                log.direction = -1; // Boss changes rotation direction dynamically
-            } else {
-                log.speed = 0.025 + (stage * 0.004);
-                log.direction = (stage % 2 === 0) ? -1 : 1;
-            }
+            // లెవెల్ బట్టి వేగం మరియు దిశ మార్పు
+            log.baseSpeed = 0.02 + (stage * 0.005);
+            log.direction = (stage % 2 === 0) ? -1 : 1;
 
             isStageCleared = false;
             currentKnife.moving = false;
@@ -188,26 +184,20 @@
             ctx.translate(log.x, log.y);
             ctx.rotate(log.angle);
 
-            // Outer metallic rim (Boss gets a red/gold glowing rim)
+            // Outer metallic rim
             ctx.beginPath();
             ctx.arc(0, 0, log.radius + 8, 0, Math.PI * 2);
-            ctx.fillStyle = isBossFight ? "#b71c1c" : "#e09f3e";
+            ctx.fillStyle = "#e09f3e";
             ctx.fill();
             ctx.lineWidth = 4;
-            ctx.strokeStyle = isBossFight ? "#ff1744" : "#5c2e0b";
+            ctx.strokeStyle = "#5c2e0b";
             ctx.stroke();
 
             // Log body gradient
             let woodGrad = ctx.createRadialGradient(0, 0, 10, 0, 0, log.radius);
-            if (isBossFight) {
-                woodGrad.addColorStop(0, "#ffcc00");
-                woodGrad.addColorStop(0.6, "#d32f2f");
-                woodGrad.addColorStop(1, "#5c1d1d");
-            } else {
-                woodGrad.addColorStop(0, "#ffe0b2");
-                woodGrad.addColorStop(0.6, "#f4d35e");
-                woodGrad.addColorStop(1, "#8b5a2b");
-            }
+            woodGrad.addColorStop(0, "#ffe0b2");
+            woodGrad.addColorStop(0.6, "#f4d35e");
+            woodGrad.addColorStop(1, "#8b5a2b");
 
             ctx.beginPath();
             ctx.arc(0, 0, log.radius, 0, Math.PI * 2);
@@ -237,14 +227,15 @@
             ctx.restore();
         }
 
+        // పొడవుగా మరియు స్పష్టమైన 3D లుక్ ఉన్న కత్తి
         function drawKnife(x, y, isStuck = false) {
             ctx.save();
             if (!isStuck) {
                 ctx.fillStyle = "rgba(0, 229, 255, 0.15)";
-                ctx.fillRect(x - 6, y, 12, 55);
+                ctx.fillRect(x - 6, y, 12, 65);
             }
 
-            // Blade
+            // Blade (పొడవు పెంచబడింది)
             let bladeGrad = ctx.createLinearGradient(x - 4, y, x + 4, y);
             bladeGrad.addColorStop(0, "#b0bec5");
             bladeGrad.addColorStop(0.5, "#ffffff");
@@ -252,25 +243,25 @@
 
             ctx.fillStyle = bladeGrad;
             ctx.beginPath();
-            ctx.moveTo(x - 4, y + 32);
+            ctx.moveTo(x - 4, y + 40);
             ctx.lineTo(x, y);
-            ctx.lineTo(x + 4, y + 32);
+            ctx.lineTo(x + 4, y + 40);
             ctx.closePath();
             ctx.fill();
-            ctx.fillRect(x - 3, y + 32, 6, 12);
+            ctx.fillRect(x - 3, y + 40, 6, 12);
 
             // Handle
-            let handleGrad = ctx.createLinearGradient(x - 6, y + 44, x + 6, y + 44);
+            let handleGrad = ctx.createLinearGradient(x - 6, y + 52, x + 6, y + 52);
             handleGrad.addColorStop(0, "#d9534f");
             handleGrad.addColorStop(0.5, "#ff6b6b");
             handleGrad.addColorStop(1, "#c9302c");
 
             ctx.fillStyle = handleGrad;
-            ctx.fillRect(x - 6, y + 44, 12, 28);
+            ctx.fillRect(x - 6, y + 52, 12, 32);
             
             ctx.fillStyle = "#1a1a1a";
-            ctx.fillRect(x - 8, y + 42, 16, 4);
-            ctx.fillRect(x - 5, y + 70, 10, 4);
+            ctx.fillRect(x - 8, y + 50, 16, 4);
+            ctx.fillRect(x - 5, y + 84, 10, 4);
 
             ctx.restore();
         }
@@ -300,6 +291,11 @@
         function update() {
             if (isGameOver || isStageCleared) return;
 
+            // మధ్యలో స్లోగా, ఆ తర్వాత ఫాస్ట్‌గా మారే డైనమిక్ స్పీడ్ సిస్టమ్ (Sine wave speed variation)
+            timeCount += 0.03;
+            let dynamicFactor = 1 + Math.sin(timeCount) * 0.6; // స్పీడ్ మారుతూ ఉంటుంది
+            log.speed = log.baseSpeed * dynamicFactor;
+
             log.angle += log.speed * log.direction;
             apple.angle += log.speed * log.direction;
 
@@ -316,9 +312,9 @@
                 currentKnife.y -= 26;
 
                 let distance = Math.hypot(currentKnife.x - log.x, currentKnife.y - log.y);
-                if (distance <= log.radius + 12) {
+                if (distance <= log.radius + 15) {
                     
-                    // Apple collection
+                    // Apple collection check
                     if (!apple.collected) {
                         let knifeAngle = Math.atan2(currentKnife.y - log.y, currentKnife.x - log.x) - log.angle;
                         let diffAngle = Math.abs(knifeAngle - apple.angle);
@@ -330,7 +326,7 @@
                         }
                     }
 
-                    // Collision check
+                    // Collision check with stuck knives
                     for (let k of stuckKnives) {
                         let angleDiff = Math.abs(k.angle - (Math.atan2(currentKnife.y - log.y, currentKnife.x - log.x) - log.angle));
                         if (angleDiff < 0.26 || angleDiff > Math.PI * 2 - 0.26) {
@@ -400,7 +396,7 @@
                 ctx.fillStyle = "#00e676";
                 ctx.font = "bold 30px 'Segoe UI', sans-serif";
                 ctx.textAlign = "center";
-                ctx.fillText(isBossFight ? "BOSS DEFEATED!" : `STAGE ${stage} CLEARED!`, canvas.width / 2, canvas.height / 2 - 20);
+                ctx.fillText(`STAGE ${stage} CLEARED!`, canvas.width / 2, canvas.height / 2 - 20);
                 ctx.font = "16px 'Segoe UI', sans-serif";
                 ctx.fillStyle = "#ffffff";
                 ctx.fillText("Click to advance next stage", canvas.width / 2, canvas.height / 2 + 25);
@@ -410,7 +406,7 @@
 
             document.getElementById("scoreVal").innerText = score;
             document.getElementById("appleVal").innerText = "🍎 " + apples;
-            document.getElementById("stageVal").innerText = isBossFight ? "⚠️ BOSS FIGHT ⚠️" : "STAGE " + stage;
+            document.getElementById("stageVal").innerText = "STAGE " + stage;
         }
 
         function gameLoop() {
