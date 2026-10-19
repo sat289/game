@@ -1,15 +1,19 @@
 <!DOCTYPE html>
-<html lang="te">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Knife Hit - Multi-Level Pro</title>
+    <title>Knife Hit - Ketchapp Style Pro Edition</title>
     <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
         body {
             margin: 0;
-            background-color: #0b2531;
-            color: white;
-            font-family: Arial, sans-serif;
+            background: radial-gradient(circle at center, #071922 0%, #02080d 100%);
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -17,298 +21,413 @@
             height: 100vh;
             overflow: hidden;
         }
+        .game-wrapper {
+            position: relative;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.08);
+        }
         canvas {
-            background-color: #0d2b38;
-            box-shadow: 0 0 25px rgba(0,0,0,0.6);
+            background: linear-gradient(135deg, #0b2531 0%, #06151d 100%);
+            display: block;
             cursor: pointer;
         }
-        .top-bar {
+        .hud-top {
             position: absolute;
             top: 20px;
-            width: 380px;
+            left: 20px;
+            right: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 20px;
-            font-weight: bold;
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            pointer-events: none;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.6);
         }
-        .stage-info {
-            text-align: center;
+        .hud-stage {
             position: absolute;
-            top: 55px;
-            font-size: 16px;
-            color: #ffcc00;
+            top: 65px;
+            width: 100%;
+            text-align: center;
+            font-size: 18px;
+            color: #f4d35e;
+            font-weight: 700;
+            letter-spacing: 2px;
+            pointer-events: none;
+            text-transform: uppercase;
         }
     </style>
 </head>
 <body>
 
-    <div class="top-bar">
-        <span id="scoreText" style="color: #ffcc00;">స్కోర్: 0</span>
-        <span id="appleText" style="color: #ff4d4d;">🍎 0</span>
+    <div class="game-wrapper">
+        <div class="hud-top">
+            <span id="scoreVal" style="color: #f4d35e;">0</span>
+            <span id="appleVal" style="color: #ff4d4d;">🍎 0</span>
+        </div>
+        <div class="hud-stage" id="stageVal">STAGE 1</div>
+        <canvas id="gameCanvas" width="420" height="680"></canvas>
     </div>
-    <div class="stage-info">
-        <div id="stageText">Stage I</div>
-    </div>
-
-    <canvas id="gameCanvas" width="400" height="600"></canvas>
 
     <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
 
-        // Web Audio API for Sound Effects
+        // Web Audio API Sound Generator
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
         function playSound(type) {
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
             const osc = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            osc.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
 
             if (type === 'hit') {
                 osc.type = 'triangle';
                 osc.frequency.setValueAtTime(300, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.1);
-                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
-                gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.1);
+                osc.frequency.exponentialRampToValueAtTime(70, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
             } else if (type === 'apple') {
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(600, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(900, audioCtx.currentTime + 0.15);
-                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
-                gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.15);
-            } else if (type === 'gameover') {
+                osc.frequency.setValueAtTime(550, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(950, audioCtx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+            } else if (type === 'crash') {
                 osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-                osc.frequency.linearRampToValueAtTime(50, audioCtx.currentTime + 0.4);
-                gainNode.gain.setValueAtTime(0.4, audioCtx.currentTime);
-                gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.4);
-            } else if (type === 'win') {
+                osc.frequency.setValueAtTime(130, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(30, audioCtx.currentTime + 0.4);
+                gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+            } else if (type === 'clear') {
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-                osc.frequency.setValueAtTime(600, audioCtx.currentTime + 0.1);
-                osc.frequency.setValueAtTime(800, audioCtx.currentTime + 0.2);
-                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
-                gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.3);
+                osc.frequency.setValueAtTime(450, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(650, audioCtx.currentTime + 0.1);
+                osc.frequency.setValueAtTime(850, audioCtx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
             }
         }
 
         let score = 0;
         let apples = 0;
-        let currentStage = 1;
-        let totalKnives = 5;
+        let stage = 1;
+        let totalKnives = 7;
         let knivesLeft = totalKnives;
-        let gameOver = false;
-        let stageCleared = false;
+        let isGameOver = false;
+        let isStageCleared = false;
+        let isBossFight = false;
+        let particles = [];
+        let screenShake = 0;
 
         let log = {
             x: canvas.width / 2,
-            y: 200,
-            radius: 70,
+            y: 210,
+            radius: 80,
             angle: 0,
-            speed: 0.03
+            speed: 0.03,
+            direction: 1
         };
 
         let stuckKnives = [];
-        let apple = { angle: 1.5, collected: false };
+        let apple = { angle: 1.8, collected: false };
 
         let currentKnife = {
             x: canvas.width / 2,
-            y: 500,
-            width: 12,
-            height: 45,
+            y: 580,
+            width: 14,
+            height: 52,
             moving: false
         };
 
         function initStage() {
-            knivesLeft = totalKnives + (currentStage - 1) * 2; // ప్రతి లెవెల్‌కి కత్తులు పెరుగుతాయి
+            isBossFight = (stage % 5 === 0); // Every 5th stage is a Boss Fight
+            knivesLeft = totalKnives + Math.floor((stage - 1) / 2);
             stuckKnives = [];
             apple.collected = false;
             apple.angle = Math.random() * Math.PI * 2;
-            log.speed = 0.025 + (currentStage * 0.008); // లెవెల్ మారుతున్న కొద్దీ స్పీడ్ పెరుగుతుంది
-            stageCleared = false;
+            
+            if (isBossFight) {
+                log.speed = 0.045;
+                log.direction = -1; // Boss changes rotation direction dynamically
+            } else {
+                log.speed = 0.025 + (stage * 0.004);
+                log.direction = (stage % 2 === 0) ? -1 : 1;
+            }
+
+            isStageCleared = false;
             currentKnife.moving = false;
-            currentKnife.y = 500;
+            currentKnife.y = 580;
+        }
+
+        function spawnParticles(x, y, colorCount = 15, isFire = false) {
+            for (let i = 0; i < colorCount; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8 - (isFire ? 2 : 0),
+                    radius: Math.random() * 4 + 2,
+                    color: isFire ? (Math.random() > 0.5 ? '#ff4500' : '#ffcc00') : '#00ffff',
+                    alpha: 1,
+                    decay: Math.random() * 0.03 + 0.02
+                });
+            }
         }
 
         function drawLog() {
             ctx.save();
             ctx.translate(log.x, log.y);
             ctx.rotate(log.angle);
-            
-            // రింగ్
-            ctx.beginPath();
-            ctx.arc(0, 0, log.radius + 6, 0, Math.PI * 2);
-            ctx.fillStyle = "#e09f3e";
-            ctx.fill();
-            ctx.closePath();
 
-            // లాగ్ బాడీ
+            // Outer metallic rim (Boss gets a red/gold glowing rim)
+            ctx.beginPath();
+            ctx.arc(0, 0, log.radius + 8, 0, Math.PI * 2);
+            ctx.fillStyle = isBossFight ? "#b71c1c" : "#e09f3e";
+            ctx.fill();
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = isBossFight ? "#ff1744" : "#5c2e0b";
+            ctx.stroke();
+
+            // Log body gradient
+            let woodGrad = ctx.createRadialGradient(0, 0, 10, 0, 0, log.radius);
+            if (isBossFight) {
+                woodGrad.addColorStop(0, "#ffcc00");
+                woodGrad.addColorStop(0.6, "#d32f2f");
+                woodGrad.addColorStop(1, "#5c1d1d");
+            } else {
+                woodGrad.addColorStop(0, "#ffe0b2");
+                woodGrad.addColorStop(0.6, "#f4d35e");
+                woodGrad.addColorStop(1, "#8b5a2b");
+            }
+
             ctx.beginPath();
             ctx.arc(0, 0, log.radius, 0, Math.PI * 2);
-            ctx.fillStyle = "#f4d35e";
+            ctx.fillStyle = woodGrad;
             ctx.fill();
 
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = "#e9c46a";
-            ctx.beginPath(); ctx.arc(0, 0, log.radius * 0.7, 0, Math.PI * 2); ctx.stroke();
-            ctx.beginPath(); ctx.arc(0, 0, log.radius * 0.4, 0, Math.PI * 2); ctx.stroke();
+            // Log texture rings
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "rgba(0, 0, 0, 0.2)";
+            ctx.beginPath(); ctx.arc(0, 0, log.radius * 0.65, 0, Math.PI * 2); ctx.stroke();
+            ctx.beginPath(); ctx.arc(0, 0, log.radius * 0.35, 0, Math.PI * 2); ctx.stroke();
 
+            // Apple on log
             if (!apple.collected) {
                 ctx.save();
                 ctx.rotate(apple.angle);
-                ctx.translate(0, -log.radius - 12);
-                ctx.fillStyle = "red";
+                ctx.translate(0, -log.radius - 15);
+                ctx.fillStyle = "#ff1744";
                 ctx.beginPath();
-                ctx.arc(0, 0, 10, 0, Math.PI * 2);
+                ctx.arc(0, 0, 12, 0, Math.PI * 2);
                 ctx.fill();
-                ctx.fillStyle = "green";
-                ctx.fillRect(-2, -14, 4, 6);
+                ctx.fillStyle = "#00e676";
+                ctx.fillRect(-2, -17, 4, 8);
                 ctx.restore();
             }
 
             ctx.restore();
         }
 
-        function drawKnifeGraphic(x, y) {
-            ctx.fillStyle = "#e0e0e0";
-            ctx.fillRect(x - 3, y, 6, 25);
-            ctx.fillStyle = "#d9534f";
-            ctx.fillRect(x - 5, y + 25, 10, 20);
+        function drawKnife(x, y, isStuck = false) {
+            ctx.save();
+            if (!isStuck) {
+                ctx.fillStyle = "rgba(0, 229, 255, 0.15)";
+                ctx.fillRect(x - 6, y, 12, 55);
+            }
+
+            // Blade
+            let bladeGrad = ctx.createLinearGradient(x - 4, y, x + 4, y);
+            bladeGrad.addColorStop(0, "#b0bec5");
+            bladeGrad.addColorStop(0.5, "#ffffff");
+            bladeGrad.addColorStop(1, "#cfd8dc");
+
+            ctx.fillStyle = bladeGrad;
+            ctx.beginPath();
+            ctx.moveTo(x - 4, y + 32);
+            ctx.lineTo(x, y);
+            ctx.lineTo(x + 4, y + 32);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillRect(x - 3, y + 32, 6, 12);
+
+            // Handle
+            let handleGrad = ctx.createLinearGradient(x - 6, y + 44, x + 6, y + 44);
+            handleGrad.addColorStop(0, "#d9534f");
+            handleGrad.addColorStop(0.5, "#ff6b6b");
+            handleGrad.addColorStop(1, "#c9302c");
+
+            ctx.fillStyle = handleGrad;
+            ctx.fillRect(x - 6, y + 44, 12, 28);
+            
+            ctx.fillStyle = "#1a1a1a";
+            ctx.fillRect(x - 8, y + 42, 16, 4);
+            ctx.fillRect(x - 5, y + 70, 10, 4);
+
+            ctx.restore();
         }
 
-        function drawKnives() {
+        function drawStuckKnives() {
             stuckKnives.forEach(k => {
                 ctx.save();
                 ctx.translate(log.x, log.y);
                 ctx.rotate(k.angle);
-                drawKnifeGraphic(0, 0);
+                drawKnife(0, 0, true);
                 ctx.restore();
             });
-            drawKnifeGraphic(currentKnife.x, currentKnife.y);
+            drawKnife(currentKnife.x, currentKnife.y, false);
         }
 
-        function drawSideLeftKnives() {
-            let count = Math.min(knivesLeft, 10);
-            for (let i = 0; i < count; i++) {
+        function drawBottomKnives() {
+            let limit = Math.min(knivesLeft, 10);
+            for (let i = 0; i < limit; i++) {
                 ctx.save();
-                ctx.translate(35, 470 + (i * 12));
-                ctx.scale(0.4, 0.4);
-                drawKnifeGraphic(0, 0);
+                ctx.translate(35, 570 + (i * 10));
+                ctx.scale(0.32, 0.32);
+                drawKnife(0, 0, true);
                 ctx.restore();
             }
         }
 
         function update() {
-            if (gameOver || stageCleared) return;
+            if (isGameOver || isStageCleared) return;
 
-            log.angle += log.speed;
-            apple.angle += log.speed;
+            log.angle += log.speed * log.direction;
+            apple.angle += log.speed * log.direction;
+
+            if (screenShake > 0) screenShake--;
+
+            particles.forEach((p, index) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= p.decay;
+                if (p.alpha <= 0) particles.splice(index, 1);
+            });
 
             if (currentKnife.moving) {
-                currentKnife.y -= 20;
+                currentKnife.y -= 26;
 
-                let dist = Math.hypot(currentKnife.x - log.x, currentKnife.y - log.y);
-                if (dist <= log.radius + 15) {
+                let distance = Math.hypot(currentKnife.x - log.x, currentKnife.y - log.y);
+                if (distance <= log.radius + 12) {
                     
-                    // యాపిల్ చెక్
+                    // Apple collection
                     if (!apple.collected) {
                         let knifeAngle = Math.atan2(currentKnife.y - log.y, currentKnife.x - log.x) - log.angle;
-                        let angleDiff = Math.abs(knifeAngle - apple.angle);
-                        if (angleDiff < 0.25) {
+                        let diffAngle = Math.abs(knifeAngle - apple.angle);
+                        if (diffAngle < 0.3) {
                             apple.collected = true;
-                            apples += 5;
+                            apples += 20;
+                            spawnParticles(currentKnife.x, currentKnife.y, 20, true);
                             playSound('apple');
                         }
                     }
 
-                    // కత్తుల కొలిషన్ చెక్
+                    // Collision check
                     for (let k of stuckKnives) {
-                        let diff = Math.abs(k.angle - (Math.atan2(currentKnife.y - log.y, currentKnife.x - log.x) - log.angle));
-                        if (diff < 0.25 || diff > Math.PI * 2 - 0.25) {
-                            gameOver = true;
-                            playSound('gameover');
+                        let angleDiff = Math.abs(k.angle - (Math.atan2(currentKnife.y - log.y, currentKnife.x - log.x) - log.angle));
+                        if (angleDiff < 0.26 || angleDiff > Math.PI * 2 - 0.26) {
+                            isGameOver = true;
+                            screenShake = 22;
+                            spawnParticles(currentKnife.x, currentKnife.y, 35, true);
+                            playSound('crash');
                             return;
                         }
                     }
 
                     stuckKnives.push({ angle: Math.atan2(currentKnife.y - log.y, currentKnife.x - log.x) - log.angle });
-                    score += 10;
+                    score += 15;
                     knivesLeft--;
+                    screenShake = 6;
+                    spawnParticles(currentKnife.x, log.y + log.radius, 12, false);
                     playSound('hit');
 
                     currentKnife.moving = false;
-                    currentKnife.y = 500;
+                    currentKnife.y = 580;
 
                     if (knivesLeft === 0) {
-                        stageCleared = true;
-                        playSound('win');
+                        isStageCleared = true;
+                        playSound('clear');
                     }
                 }
             }
         }
 
-        function draw() {
+        function render() {
+            ctx.save();
+            if (screenShake > 0) {
+                let ox = (Math.random() - 0.5) * 12;
+                let oy = (Math.random() - 0.5) * 12;
+                ctx.translate(ox, oy);
+            }
+
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             drawLog();
-            drawSideLeftKnives();
-            drawKnives();
+            drawBottomKnives();
+            drawStuckKnives();
 
-            if (gameOver) {
-                ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
+            particles.forEach(p => {
+                ctx.save();
+                ctx.globalAlpha = p.alpha;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+
+            if (isGameOver) {
+                ctx.fillStyle = "rgba(2, 8, 13, 0.9)";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = "#ff4d4d";
-                ctx.font = "bold 26px Arial";
+                ctx.fillStyle = "#ff1744";
+                ctx.font = "bold 32px 'Segoe UI', sans-serif";
                 ctx.textAlign = "center";
-                ctx.fillText("గేమ్ ఓవర్!", canvas.width / 2, canvas.height / 2 - 20);
-                ctx.font = "15px Arial";
-                ctx.fillStyle = "white";
-                ctx.fillText("మళ్లీ ఆడేందుకు ఇక్కడ క్లిక్ చేయండి", canvas.width / 2, canvas.height / 2 + 20);
-            } else if (stageCleared) {
-                ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
+                ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 20);
+                ctx.font = "16px 'Segoe UI', sans-serif";
+                ctx.fillStyle = "#ffffff";
+                ctx.fillText("Click anywhere to restart", canvas.width / 2, canvas.height / 2 + 25);
+            } else if (isStageCleared) {
+                ctx.fillStyle = "rgba(2, 8, 13, 0.9)";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = "#5cb85c";
-                ctx.font = "bold 26px Arial";
+                ctx.fillStyle = "#00e676";
+                ctx.font = "bold 30px 'Segoe UI', sans-serif";
                 ctx.textAlign = "center";
-                ctx.fillText(`స్టేజ్ ${currentStage} విజయవంతం!`, canvas.width / 2, canvas.height / 2 - 20);
-                ctx.font = "15px Arial";
-                ctx.fillStyle = "white";
-                ctx.fillText("తదుపరి స్టేజ్ కోసం క్లిక్ చేయండి", canvas.width / 2, canvas.height / 2 + 20);
+                ctx.fillText(isBossFight ? "BOSS DEFEATED!" : `STAGE ${stage} CLEARED!`, canvas.width / 2, canvas.height / 2 - 20);
+                ctx.font = "16px 'Segoe UI', sans-serif";
+                ctx.fillStyle = "#ffffff";
+                ctx.fillText("Click to advance next stage", canvas.width / 2, canvas.height / 2 + 25);
             }
 
-            document.getElementById("scoreText").innerText = "స్కోర్: " + score;
-            document.getElementById("appleText").innerText = "🍎 " + apples;
-            document.getElementById("stageText").innerText = "Stage " + currentStage;
+            ctx.restore();
+
+            document.getElementById("scoreVal").innerText = score;
+            document.getElementById("appleVal").innerText = "🍎 " + apples;
+            document.getElementById("stageVal").innerText = isBossFight ? "⚠️ BOSS FIGHT ⚠️" : "STAGE " + stage;
         }
 
         function gameLoop() {
             update();
-            draw();
+            render();
             requestAnimationFrame(gameLoop);
         }
 
         window.addEventListener("click", () => {
-            if (gameOver) {
+            if (isGameOver) {
                 score = 0;
                 apples = 0;
-                currentStage = 1;
-                gameOver = false;
+                stage = 1;
+                isGameOver = false;
                 initStage();
-            } else if (stageCleared) {
-                currentStage++;
+            } else if (isStageCleared) {
+                stage++;
                 initStage();
             } else if (!currentKnife.moving) {
                 currentKnife.moving = true;
