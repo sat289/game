@@ -8,9 +8,9 @@
 </head>
 <body>
 
-  <!-- 1. HOME / START SCREEN OVERLAY (Guaranteed Tap to Start) -->
-  <div id="startOverlay" onclick="forceStartGame()">
-    <div class="top-menu-bar" onclick="event.stopPropagation()">
+  <!-- 1. HOME / START SCREEN OVERLAY -->
+  <div id="startOverlay">
+    <div class="top-menu-bar">
       <div class="currency-pills">
         <div class="pill">💎 <span id="menuDiamonds">25</span></div>
         <div class="pill">🪙 <span id="menuCoins">300</span></div>
@@ -20,10 +20,10 @@
     </div>
 
     <!-- Side Badges -->
-    <div class="side-badges-left" onclick="event.stopPropagation()">
+    <div class="side-badges-left">
       <div class="side-badge-btn" onclick="openMissionsModal()">📋</div>
     </div>
-    <div class="side-badges-right" onclick="event.stopPropagation()">
+    <div class="side-badges-right">
       <div class="side-badge-btn" onclick="openGiftsModal()" style="position:relative;">
         🎁 <span id="giftsRedDot" class="red-dot" style="display:none;"></span>
       </div>
@@ -32,11 +32,11 @@
 
     <div class="center-intro-content">
       <div class="high-score-display">High Score<br><span id="menuHighScore">0</span></div>
-      <div class="tap-to-play-banner" onclick="forceStartGame()">Tap to Play</div>
+      <div class="tap-to-play-banner" id="tapToPlayTrigger">Tap to Play</div>
     </div>
 
     <!-- Bottom Navigation Bar -->
-    <div class="bottom-nav-bar" onclick="event.stopPropagation()">
+    <div class="bottom-nav-bar">
       <button class="nav-tab" onclick="openMissionsModal()" style="position: relative;">
         ⭐ MISSIONS
         <span id="missionsRedDot" class="red-dot" style="display: none;"></span>
@@ -88,26 +88,27 @@
     </div>
   </div>
 
-  <!-- 3. MISSIONS MODAL -->
+  <!-- 3. MISSIONS MODAL (With 4:00 AM Note) -->
   <div id="missionsModal" style="display:none; position:fixed; inset:0; background:rgba(15, 5, 25, 0.88); z-index:60; align-items:center; justify-content:center; padding:16px;">
     <div class="modal-box">
       <div class="modal-header">
         <h2>⭐ MISSIONS</h2>
         <button class="close-btn" onclick="closeMissionsModal()">✕</button>
       </div>
-      <div id="missionsListContainer" style="display:flex; flex-direction:column; gap:10px; margin-top:10px;"></div>
+      <p style="text-align:center; color:#00f5d4; font-size:13px; font-weight:800; margin-top:0; margin-bottom:12px;">Note: Missions update every day at 4:00 AM</p>
+      <div id="missionsListContainer" style="display:flex; flex-direction:column; gap:10px;"></div>
     </div>
   </div>
 
-  <!-- 4. GIFTS MODAL -->
+  <!-- 4. GIFTS / LOGIN STREAK MODAL (4:00 AM Reset) -->
   <div id="giftsModal" style="display:none; position:fixed; inset:0; background:rgba(15, 5, 25, 0.88); z-index:60; align-items:center; justify-content:center; padding:16px;">
     <div class="modal-box">
       <div class="modal-header">
         <h2>🎁 DAILY LOGIN STREAK</h2>
         <button class="close-btn" onclick="closeGiftsModal()">✕</button>
       </div>
-      <p style="text-align:center; color:#ddd; font-size:14px; margin-top:0;">Log in daily to claim escalating rewards up to Day 10!</p>
-      <div id="giftsGridContainer" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:10px; margin-top:10px;"></div>
+      <p style="text-align:center; color:#00f5d4; font-size:13px; font-weight:800; margin-top:0; margin-bottom:12px;">Note: Daily rewards refresh every day at 4:00 AM</p>
+      <div id="giftsGridContainer" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:10px; margin-top:4px;"></div>
     </div>
   </div>
 
@@ -125,7 +126,7 @@
     </div>
   </div>
 
-  <!-- 6. ACCOUNT ("ME") MODAL - Name & Avatar Only (No Age) -->
+  <!-- 6. ACCOUNT ("ME") MODAL -->
   <div id="accountModal" style="display:none; position:fixed; inset:0; background:rgba(15, 5, 25, 0.88); z-index:60; align-items:center; justify-content:center; padding:16px;">
     <div class="modal-box" style="text-align:center;">
       <div class="modal-header">
