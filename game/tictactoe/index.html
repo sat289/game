@@ -4,105 +4,134 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Tic-Tac-Toe 3D Pro</title>
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Canvas Confetti -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@500;700;900&display=swap" rel="stylesheet">
+  <!-- Custom Styles -->
   <link rel="stylesheet" href="style.css" />
 </head>
-<body class="bg-[#070b14] text-white min-h-screen flex items-center justify-center p-3 select-none overflow-hidden">
+<body class="bg-[#070b14] text-white min-h-screen flex items-center justify-center p-3 select-none overflow-x-hidden">
 
-  <!-- Background Music (Links to your creazy/song.mp3) -->
+  <!-- Background Song (Links to your creazy/song.mp3) -->
   <audio id="bgMusic" loop preload="auto">
     <source src="../creazy/song.mp3" type="audio/mpeg" />
     <source src="song.mp3" type="audio/mpeg" />
   </audio>
 
-  <!-- Ambient Neon Glows -->
+  <!-- Ambient Background Glows -->
   <div class="fixed -top-24 -left-24 w-72 h-72 bg-[#00f2fe]/15 rounded-full blur-3xl pointer-events-none"></div>
   <div class="fixed -bottom-24 -right-24 w-72 h-72 bg-[#ff007f]/15 rounded-full blur-3xl pointer-events-none"></div>
 
-  <!-- Floating Emoji Container -->
+  <!-- Floating Emoji Container (Online Reactions) -->
   <div id="emojiFloatContainer" class="fixed inset-0 pointer-events-none z-50 overflow-hidden"></div>
 
-  <!-- Main Card -->
-  <div class="game-card relative bg-[#101626]/95 border border-white/15 rounded-3xl p-5 max-w-[420px] w-full shadow-[0_15px_50px_rgba(0,0,0,0.85)] backdrop-blur-xl z-10">
+  <!-- Main Game Card -->
+  <div class="game-card relative bg-[#101626]/95 border border-white/15 rounded-3xl p-5 max-w-[430px] w-full shadow-[0_15px_50px_rgba(0,0,0,0.85)] backdrop-blur-xl z-10">
 
-    <!-- Top Header Bar (Score + Cloud/Guest Status + Audio) -->
-    <div class="flex justify-between items-center mb-3 gap-1">
-      <div class="flex items-center gap-1.5 bg-white/5 border border-white/10 px-2.5 py-1 rounded-full">
-        <span class="text-xs">🏆</span>
-        <span class="text-[10px] font-bold text-white/70">SCORE:</span>
-        <span id="score" class="text-xs font-black text-[#ffd700]">0</span>
-        <span id="streakBadge" class="hidden text-[10px] font-black bg-orange-500/20 text-orange-400 border border-orange-500/40 px-1.5 rounded-full">
-          🔥 0
-        </span>
-      </div>
+    <!-- Top Navigation & Storage Status Bar -->
+    <div class="flex justify-between items-center gap-2 mb-2.5">
+      <a href="../index.html" class="bg-white/5 hover:bg-white/10 border border-white/10 px-2.5 py-1 rounded-full text-[11px] font-bold text-white/80 flex items-center gap-1 transition active:scale-95">
+        🏠 Home
+      </a>
 
-      <!-- Live Cloud / Guest Storage Indicator -->
-      <div id="syncStatusBadge" class="text-[10px] font-bold px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 truncate max-w-[135px]">
-        👤 Guest Storage
+      <!-- Live Cloud / Guest Storage Badge -->
+      <div id="storageStatusBadge" class="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 px-2.5 py-1 rounded-full text-[10px] font-extrabold tracking-wide">
+        <span id="storageIcon">👤</span>
+        <span id="storageText">Guest Storage</span>
       </div>
 
       <div class="flex items-center gap-1">
-        <button id="musicToggleBtn" class="bg-white/5 hover:bg-white/10 border border-white/10 px-2 py-1 rounded-full text-[10px] font-bold transition active:scale-90" title="Toggle Background Song">
+        <button id="musicToggleBtn" class="bg-white/5 hover:bg-white/10 border border-white/10 px-2 py-1 rounded-full text-[10px] font-bold transition active:scale-90" title="Toggle Music">
           🎵 OFF
         </button>
-        <button id="soundToggleBtn" class="bg-white/5 hover:bg-white/10 border border-white/10 p-1.5 rounded-full text-xs transition active:scale-90" title="Toggle SFX">
+        <button id="soundToggleBtn" class="bg-white/5 hover:bg-white/10 border border-white/10 p-1 rounded-full text-xs transition active:scale-90" title="Toggle SFX">
           🔊
         </button>
       </div>
     </div>
 
+    <!-- High Score & Win Streak Bar -->
+    <div class="flex justify-between items-center bg-black/40 border border-white/10 rounded-2xl px-3.5 py-2 mb-3">
+      <div class="flex items-center gap-2">
+        <span class="text-sm">🏆</span>
+        <div>
+          <div class="text-[9px] text-white/50 font-bold uppercase leading-none">HIGH SCORE</div>
+          <div id="score" class="text-sm font-black text-[#ffd700]">0</div>
+        </div>
+      </div>
+
+      <div id="streakBadge" class="hidden text-[10px] font-black bg-orange-500/20 text-orange-400 border border-orange-500/40 px-2.5 py-0.5 rounded-full">
+        🔥 0 Streak
+      </div>
+
+      <!-- Skin Selector -->
+      <div class="flex items-center gap-1">
+        <span class="text-[9px] text-white/50 font-bold uppercase mr-1">SKIN:</span>
+        <select id="skinSelector" class="bg-[#1b2438] border border-white/15 rounded-lg px-2 py-1 text-[11px] font-bold text-[#00f2fe] outline-none cursor-pointer">
+          <option value="classic">❌ / ⭕ (Default)</option>
+          <option value="cyber">⚡ / 🛡️ (5 Pts)</option>
+          <option value="element">🔥 / ❄️ (15 Pts)</option>
+          <option value="royale">👑 / 💎 (30 Pts)</option>
+        </select>
+      </div>
+    </div>
+
     <!-- Game Title -->
-    <div class="text-center mb-4">
-      <h1 class="font-['Orbitron'] text-2xl font-black tracking-wider bg-gradient-to-r from-[#00f2fe] via-white to-[#ff007f] bg-clip-text text-transparent">
-        TIC-TAC-TOE 3D
+    <div class="text-center mb-3">
+      <h1 class="font-['Orbitron'] text-xl font-black tracking-wider bg-gradient-to-r from-[#00f2fe] via-white to-[#ff007f] bg-clip-text text-transparent">
+        TIC-TAC-TOE 3D PRO
       </h1>
-      <p id="subHeaderText" class="text-[11px] text-white/50 font-semibold tracking-widest uppercase mt-0.5">
+      <p id="subHeaderText" class="text-[10px] text-white/50 font-semibold tracking-widest uppercase">
         Select Game Mode
       </p>
     </div>
 
-    <!-- Rule Variant Switcher -->
-    <div id="ruleSelectorBar" class="flex bg-black/40 p-1 rounded-2xl border border-white/10 mb-4">
-      <button id="ruleClassicBtn" class="flex-1 py-1.5 rounded-xl text-[11px] font-black transition bg-[#00f2fe] text-slate-950 shadow">
-        🎯 Classic 3x3
+    <!-- Board Rule Switcher (Classic 3x3 / Infinity / 5x5 Big Board) -->
+    <div id="ruleSelectorBar" class="grid grid-cols-3 gap-1 bg-black/40 p-1 rounded-2xl border border-white/10 mb-4">
+      <button data-rule="classic" class="rule-btn py-1.5 rounded-xl text-[10px] font-black transition bg-[#00f2fe] text-slate-950 shadow">
+        🎯 3x3 Classic
       </button>
-      <button id="ruleInfinityBtn" class="flex-1 py-1.5 rounded-xl text-[11px] font-black transition text-white/60 hover:text-white">
-        ♾️ Infinity (No Ties!)
+      <button data-rule="infinity" class="rule-btn py-1.5 rounded-xl text-[10px] font-black transition text-white/60 hover:text-white">
+        ♾️ Infinity
+      </button>
+      <button data-rule="big5x5" class="rule-btn py-1.5 rounded-xl text-[10px] font-black transition text-white/60 hover:text-white">
+        🔥 5x5 (4-Win)
       </button>
     </div>
 
     <!-- ==================== 1. MAIN MENU SCREEN ==================== -->
-    <div id="mainMenuScreen" class="flex flex-col gap-3">
-      <button id="btnGoOnline" class="group relative overflow-hidden bg-gradient-to-r from-[#00f2fe]/20 to-[#0072ff]/20 hover:from-[#00f2fe]/30 hover:to-[#0072ff]/30 border border-[#00f2fe]/50 p-4 rounded-2xl flex items-center justify-between transition-all active:scale-95">
-        <div class="flex items-center gap-3.5">
-          <span class="text-2xl bg-[#00f2fe]/20 p-2.5 rounded-xl border border-[#00f2fe]/40">🌍</span>
+    <div id="mainMenuScreen" class="flex flex-col gap-2.5">
+      <button id="btnGoOnline" class="group relative overflow-hidden bg-gradient-to-r from-[#00f2fe]/20 to-[#0072ff]/20 hover:from-[#00f2fe]/30 hover:to-[#0072ff]/30 border border-[#00f2fe]/50 p-3.5 rounded-2xl flex items-center justify-between transition-all active:scale-95">
+        <div class="flex items-center gap-3">
+          <span class="text-2xl bg-[#00f2fe]/20 p-2 rounded-xl border border-[#00f2fe]/40">🌍</span>
           <div class="text-left">
             <div class="text-sm font-black text-[#00f2fe] tracking-wide">PLAY ONLINE</div>
-            <div class="text-[11px] text-white/60">Live Room Code + Emoji Chat</div>
+            <div class="text-[11px] text-white/60">Room Code Generator + Live Chat</div>
           </div>
         </div>
         <span class="text-[#00f2fe] font-black text-lg group-hover:translate-x-1 transition">→</span>
       </button>
 
-      <button id="btnGoBot" class="group relative overflow-hidden bg-gradient-to-r from-[#ff007f]/20 to-[#7928ca]/20 hover:from-[#ff007f]/30 hover:to-[#7928ca]/30 border border-[#ff007f]/50 p-4 rounded-2xl flex items-center justify-between transition-all active:scale-95">
-        <div class="flex items-center gap-3.5">
-          <span class="text-2xl bg-[#ff007f]/20 p-2.5 rounded-xl border border-[#ff007f]/40">🤖</span>
+      <button id="btnGoBot" class="group relative overflow-hidden bg-gradient-to-r from-[#ff007f]/20 to-[#7928ca]/20 hover:from-[#ff007f]/30 hover:to-[#7928ca]/30 border border-[#ff007f]/50 p-3.5 rounded-2xl flex items-center justify-between transition-all active:scale-95">
+        <div class="flex items-center gap-3">
+          <span class="text-2xl bg-[#ff007f]/20 p-2 rounded-xl border border-[#ff007f]/40">🤖</span>
           <div class="text-left">
             <div class="text-sm font-black text-[#ff007f] tracking-wide">PLAY WITH BOT</div>
-            <div class="text-[11px] text-white/60">Easy, Medium & Unbeatable AI</div>
+            <div class="text-[11px] text-white/60">AI + Power-Ups (Bomb & 2x Turn)</div>
           </div>
         </div>
         <span class="text-[#ff007f] font-black text-lg group-hover:translate-x-1 transition">→</span>
       </button>
 
-      <button id="btnGoOffline" class="group relative overflow-hidden bg-gradient-to-r from-[#ffd700]/20 to-[#ff793f]/20 hover:from-[#ffd700]/30 hover:to-[#ff793f]/30 border border-[#ffd700]/50 p-4 rounded-2xl flex items-center justify-between transition-all active:scale-95">
-        <div class="flex items-center gap-3.5">
-          <span class="text-2xl bg-[#ffd700]/20 p-2.5 rounded-xl border border-[#ffd700]/40">👥</span>
+      <button id="btnGoOffline" class="group relative overflow-hidden bg-gradient-to-r from-[#ffd700]/20 to-[#ff793f]/20 hover:from-[#ffd700]/30 hover:to-[#ff793f]/30 border border-[#ffd700]/50 p-3.5 rounded-2xl flex items-center justify-between transition-all active:scale-95">
+        <div class="flex items-center gap-3">
+          <span class="text-2xl bg-[#ffd700]/20 p-2 rounded-xl border border-[#ffd700]/40">👥</span>
           <div class="text-left">
             <div class="text-sm font-black text-[#ffd700] tracking-wide">OFFLINE FRIEND</div>
-            <div class="text-[11px] text-white/60">1v1 Local Pass & Play</div>
+            <div class="text-[11px] text-white/60">1v1 Pass & Play on Same Device</div>
           </div>
         </div>
         <span class="text-[#ffd700] font-black text-lg group-hover:translate-x-1 transition">→</span>
@@ -110,7 +139,7 @@
     </div>
 
     <!-- ==================== 2. ONLINE LOBBY SCREEN ==================== -->
-    <div id="onlineLobbyScreen" class="hidden flex-col gap-4">
+    <div id="onlineLobbyScreen" class="hidden flex-col gap-3.5">
       <div class="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
         <div class="text-xs font-bold text-white/70 mb-2">HOST A NEW MATCH</div>
         <button id="btnCreateRoom" class="w-full py-2.5 bg-gradient-to-r from-[#00f2fe] to-[#0072ff] text-slate-950 font-black rounded-xl text-xs tracking-wider uppercase shadow-[0_0_20px_rgba(0,242,254,0.4)] active:scale-95 transition">
@@ -156,13 +185,13 @@
         <p id="lobbyErrorMsg" class="text-[11px] text-red-400 text-center mt-2 hidden"></p>
       </div>
 
-      <button id="btnBackFromLobby" class="text-xs text-white/60 hover:text-white font-bold py-1.5 text-center">
+      <button id="btnBackFromLobby" class="text-xs text-white/60 hover:text-white font-bold py-1 text-center">
         ← Back to Main Menu
       </button>
     </div>
 
     <!-- ==================== 3. BOT DIFFICULTY SCREEN ==================== -->
-    <div id="botMenuScreen" class="hidden flex-col gap-3">
+    <div id="botMenuScreen" class="hidden flex-col gap-2.5">
       <button data-diff="easy" class="bot-diff-btn bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 p-3.5 rounded-2xl flex items-center justify-between active:scale-95 transition">
         <div class="flex items-center gap-3">
           <span class="text-xl">🌱</span>
@@ -196,14 +225,14 @@
         <span class="text-red-400 font-bold">Play →</span>
       </button>
 
-      <button id="btnBackFromBot" class="text-xs text-white/60 hover:text-white font-bold py-1.5 text-center mt-1">
+      <button id="btnBackFromBot" class="text-xs text-white/60 hover:text-white font-bold py-1 text-center mt-1">
         ← Back to Main Menu
       </button>
     </div>
 
     <!-- ==================== 4. ACTIVE GAME SCREEN ==================== -->
     <div id="gameScreen" class="hidden flex-col items-center">
-      <div class="flex justify-between items-center w-full mb-2.5 text-xs">
+      <div class="flex justify-between items-center w-full mb-2 text-xs">
         <button id="btnLeaveGame" class="bg-white/5 hover:bg-white/10 border border-white/10 px-2.5 py-1 rounded-lg text-[11px] font-bold text-white/70">
           ← Menu
         </button>
@@ -212,9 +241,10 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-3 gap-2 w-full text-center mb-2.5">
+      <!-- Match Scoreboard -->
+      <div class="grid grid-cols-3 gap-2 w-full text-center mb-2">
         <div id="cardPlayerX" class="bg-white/5 border border-white/10 rounded-xl p-1.5 transition-all">
-          <div id="labelPlayerX" class="text-[10px] text-white/60 font-bold">X (YOU)</div>
+          <div id="labelPlayerX" class="text-[10px] text-white/60 font-bold truncate">X (YOU)</div>
           <div id="scoreX" class="text-base font-black text-[#00f2fe]">0</div>
         </div>
         <div class="bg-white/5 border border-white/10 rounded-xl p-1.5">
@@ -222,12 +252,13 @@
           <div id="scoreTies" class="text-base font-black text-[#ffd700]">0</div>
         </div>
         <div id="cardPlayerO" class="bg-white/5 border border-white/10 rounded-xl p-1.5 transition-all">
-          <div id="labelPlayerO" class="text-[10px] text-white/60 font-bold">BOT (O)</div>
+          <div id="labelPlayerO" class="text-[10px] text-white/60 font-bold truncate">BOT (O)</div>
           <div id="scoreO" class="text-base font-black text-[#ff007f]">0</div>
         </div>
       </div>
 
-      <div class="w-full bg-white/5 border border-white/10 rounded-xl p-2 mb-3">
+      <!-- Turn Banner + 10s Shot Clock -->
+      <div class="w-full bg-white/5 border border-white/10 rounded-xl p-2 mb-2.5">
         <div class="flex justify-between items-center text-xs font-bold mb-1 px-1">
           <div id="statusBanner">Turn: <span class="text-[#00f2fe] font-black">Player X</span></div>
           <span id="timerText" class="text-[11px] font-mono text-white/70">10s</span>
@@ -237,12 +268,25 @@
         </div>
       </div>
 
-      <div id="infinityHint" class="hidden text-[10px] text-amber-300/90 bg-amber-500/10 border border-amber-500/30 rounded-lg px-2.5 py-1 mb-2.5 text-center w-full">
-        ♾️ <b>Infinity Mode:</b> Max 3 marks each! Dimmed mark vanishes next move.
+      <!-- Mode Helper Hint -->
+      <div id="modeRuleHint" class="hidden text-[10px] text-amber-300/90 bg-amber-500/10 border border-amber-500/30 rounded-lg px-2.5 py-1 mb-2 text-center w-full"></div>
+
+      <!-- Dynamic 3D Board (3x3 or 5x5) -->
+      <div id="boardGrid" class="board-3d grid grid-cols-3 gap-2.5 p-3 rounded-2xl bg-gradient-to-br from-[#1b2438] to-[#0a0e18] border border-white/15 shadow-[0_12px_30px_rgba(0,0,0,0.7)] w-full aspect-square max-w-[280px]">
+        <!-- Cells Injected via JS -->
       </div>
 
-      <div id="boardGrid" class="board-3d grid grid-cols-3 gap-2.5 p-3 rounded-2xl bg-gradient-to-br from-[#1b2438] to-[#0a0e18] border border-white/15 shadow-[0_12px_30px_rgba(0,0,0,0.7)] w-full aspect-square max-w-[275px]"></div>
+      <!-- Power-Up Bar (For Bot & Offline Matches) -->
+      <div id="powerUpBar" class="flex gap-2 mt-3 w-full">
+        <button id="btnPowerBomb" class="flex-1 bg-red-500/15 hover:bg-red-500/25 border border-red-500/40 text-red-300 py-1.5 px-2 rounded-xl text-[11px] font-extrabold flex items-center justify-center gap-1 active:scale-95 transition">
+          💣 Bomb Tile <span class="text-[9px] bg-black/40 px-1.5 py-0.5 rounded">1x</span>
+        </button>
+        <button id="btnPowerDouble" class="flex-1 bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/40 text-purple-300 py-1.5 px-2 rounded-xl text-[11px] font-extrabold flex items-center justify-center gap-1 active:scale-95 transition">
+          ⚡ Double Turn <span class="text-[9px] bg-black/40 px-1.5 py-0.5 rounded">1x</span>
+        </button>
+      </div>
 
+      <!-- Online Emoji Bar -->
       <div id="emojiBar" class="hidden flex-row justify-center gap-2 mt-3 w-full bg-white/5 border border-white/10 py-1.5 px-3 rounded-xl">
         <button data-emoji="🔥" class="emoji-btn hover:scale-125 transition text-base">🔥</button>
         <button data-emoji="😂" class="emoji-btn hover:scale-125 transition text-base">😂</button>
@@ -252,6 +296,7 @@
         <button data-emoji="🤝" class="emoji-btn hover:scale-125 transition text-base">🤝</button>
       </div>
 
+      <!-- Reset Button -->
       <div class="mt-3 w-full flex justify-center">
         <button id="btnResetBoard" class="bg-white/10 hover:bg-white/20 border border-white/20 px-5 py-2 rounded-xl text-xs font-black tracking-wide flex items-center gap-1.5 active:scale-95 transition">
           🔄 Next Round / Reset
@@ -261,11 +306,11 @@
 
   </div>
 
-  <!-- ======= FIREBASE + GUEST STORAGE AUTO SYNC ENGINE ======= -->
+  <!-- ================= FIREBASE + GUEST STORAGE AUTO SYNC ================= -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-    import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js";
+    import { getDatabase, ref, set, get, update, child } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBzLchy5M2fLne4c7Ghw1KNN8wVrlZdd8M",
@@ -282,96 +327,129 @@
     const auth = getAuth(app);
     const db = getDatabase(app);
 
-    window._tttFirebase = { app, auth, db };
-
+    // 1. Game Key for Firebase & Guest Storage
     const GAME_KEY = "tictactoe";
-    const scoreElem = document.getElementById("score");
-    const syncBadge = document.getElementById("syncStatusBadge");
+    const GUEST_SCORE_KEY = `${GAME_KEY}_guest_hi`;
+    const GUEST_STATS_KEY = `${GAME_KEY}_guest_stats`;
 
     let currentUser = null;
 
-    // Helper: Read from Guest Storage (localStorage)
-    function getGuestScore() {
-      const direct = parseInt(localStorage.getItem(`${GAME_KEY}_hi`) || "0", 10);
-      const guestMap = JSON.parse(localStorage.getItem("friendsgame_guest_scores") || "{}");
-      const mapped = parseInt(guestMap[GAME_KEY] || "0", 10);
-      return Math.max(direct, mapped);
+    // Load initial score from Guest / Local Storage
+    let localMainScore = parseInt(localStorage.getItem(`${GAME_KEY}_hi`) || "0", 10);
+    let guestScore = parseInt(localStorage.getItem(GUEST_SCORE_KEY) || "0", 10);
+    let currentHighScore = Math.max(localMainScore, guestScore);
+
+    // Expose Firebase & Player Profile helper to game.js
+    window._tttFirebase = {
+      app,
+      auth,
+      db,
+      getPlayerName: () => {
+        if (currentUser) {
+          return currentUser.displayName || currentUser.email?.split("@")[0] || "Cloud Player";
+        }
+        return localStorage.getItem("guestName") || localStorage.getItem("username") || "Guest";
+      },
+      isLoggedIn: () => !!currentUser
+    };
+
+    const scoreElem = document.getElementById("score");
+    const storageBadge = document.getElementById("storageStatusBadge");
+    const storageIcon = document.getElementById("storageIcon");
+    const storageText = document.getElementById("storageText");
+
+    function updateScoreUI(val) {
+      window.score = val;
+      if (scoreElem) scoreElem.innerText = val;
+      if (typeof window.onScoreUpdated === "function") {
+        window.onScoreUpdated(val);
+      }
     }
 
-    // Helper: Save to Guest Storage (localStorage)
-    function saveGuestScore(val) {
-      localStorage.setItem(`${GAME_KEY}_hi`, val.toString());
-      const guestMap = JSON.parse(localStorage.getItem("friendsgame_guest_scores") || "{}");
-      guestMap[GAME_KEY] = Math.max(val, parseInt(guestMap[GAME_KEY] || "0", 10));
-      localStorage.setItem("friendsgame_guest_scores", JSON.stringify(guestMap));
+    function setStorageBadgeUI(isCloud, name) {
+      if (!storageBadge) return;
+      if (isCloud) {
+        storageBadge.className = "flex items-center gap-1.5 bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 px-2.5 py-1 rounded-full text-[10px] font-extrabold tracking-wide";
+        storageIcon.textContent = "☁️";
+        storageText.textContent = `Cloud: ${name}`;
+      } else {
+        storageBadge.className = "flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 px-2.5 py-1 rounded-full text-[10px] font-extrabold tracking-wide";
+        storageIcon.textContent = "👤";
+        storageText.textContent = "Guest Storage";
+      }
     }
 
-    let currentHighScore = getGuestScore();
-    window.score = currentHighScore;
-    if (scoreElem) scoreElem.innerText = currentHighScore;
+    // Initialize UI immediately with Guest Storage data
+    updateScoreUI(currentHighScore);
+    setStorageBadgeUI(false);
 
-    // Listen to Home Page Login State Automatically
+    // 2. Listen to Home Page Login State Automatically
     onAuthStateChanged(auth, async (user) => {
       if (user) {
+        // User is logged in from Home Page -> Switch to Firebase Cloud Sync
         currentUser = user;
-        const displayName = user.displayName || (user.email ? user.email.split("@")[0] : "Player");
-        if (syncBadge) {
-          syncBadge.textContent = `☁️ ${displayName}`;
-          syncBadge.className = "text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 truncate max-w-[135px]";
-        }
+        const displayName = user.displayName || user.email?.split("@")[0] || "Player";
+        setStorageBadgeUI(true, displayName);
 
         try {
           const snapshot = await get(child(ref(db), `scores/${user.uid}/${GAME_KEY}_high`));
           const cloudScore = snapshot.exists() ? (parseInt(snapshot.val(), 10) || 0) : 0;
 
+          // Merge Guest Storage & Cloud Score (keep the highest)
           if (cloudScore > currentHighScore) {
             currentHighScore = cloudScore;
-            saveGuestScore(currentHighScore);
           } else if (currentHighScore > cloudScore) {
-            // Automatically upload Guest score to Firebase Cloud!
             await set(ref(db, `scores/${user.uid}/${GAME_KEY}_high`), currentHighScore);
           }
 
-          window.score = currentHighScore;
-          if (scoreElem) scoreElem.innerText = currentHighScore;
+          // Keep both local and guest keys updated
+          localStorage.setItem(`${GAME_KEY}_hi`, currentHighScore.toString());
+          localStorage.setItem(GUEST_SCORE_KEY, currentHighScore.toString());
+          updateScoreUI(currentHighScore);
         } catch (err) {
           console.error("Firebase cloud sync error:", err);
         }
       } else {
-        // User is Not Logged In -> Use Guest Storage Automatically
+        // User is NOT logged in -> Use Guest Storage automatically
         currentUser = null;
-        currentHighScore = getGuestScore();
-        window.score = currentHighScore;
-        if (scoreElem) scoreElem.innerText = currentHighScore;
-
-        if (syncBadge) {
-          syncBadge.textContent = "👤 Guest Storage";
-          syncBadge.className = "text-[10px] font-bold px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 truncate max-w-[135px]";
-        }
+        setStorageBadgeUI(false);
+        localStorage.setItem(GUEST_SCORE_KEY, currentHighScore.toString());
+        localStorage.setItem(`${GAME_KEY}_hi`, currentHighScore.toString());
+        updateScoreUI(currentHighScore);
       }
     });
 
-    // Global Score Submitter (Saves to Firebase if logged in, or Guest Storage if not)
-    window.submitScore = function(newScore) {
+    // 3. Global Score & Stats Submitter (Saves to Firebase if Logged In, or Guest Storage if Guest)
+    window.submitScore = function(newScore, extraStats = null) {
       const val = parseInt(newScore, 10);
       if (isNaN(val)) return;
 
       if (val > currentHighScore) {
         currentHighScore = val;
-        window.score = currentHighScore;
-        if (scoreElem) scoreElem.innerText = currentHighScore;
+      }
 
-        // Always keep Guest Storage updated as backup
-        saveGuestScore(currentHighScore);
+      // Always save in Guest / Local Storage so offline play works seamlessly
+      localStorage.setItem(`${GAME_KEY}_hi`, currentHighScore.toString());
+      localStorage.setItem(GUEST_SCORE_KEY, currentHighScore.toString());
+      if (extraStats) {
+        localStorage.setItem(GUEST_STATS_KEY, JSON.stringify(extraStats));
+      }
 
-        // If logged in on Home Page, push straight to Firebase
-        if (currentUser) {
-          set(ref(db, `scores/${currentUser.uid}/${GAME_KEY}_high`), currentHighScore);
+      updateScoreUI(currentHighScore);
+
+      // If logged in on Home Page, push directly to Firebase Realtime Database
+      if (currentUser) {
+        set(ref(db, `scores/${currentUser.uid}/${GAME_KEY}_high`), currentHighScore);
+        if (extraStats) {
+          update(ref(db, `scores/${currentUser.uid}/${GAME_KEY}_stats`), {
+            ...extraStats,
+            updatedAt: Date.now()
+          });
         }
       }
     };
 
-    // Fallback Auto-Scanner every 1s
+    // 4. Fallback Auto-Scanner (Every 1s)
     setInterval(() => {
       let detected = 0;
       if (typeof window.score === "number") detected = window.score;
@@ -385,7 +463,7 @@
       }
     }, 1000);
   </script>
-  <!-- ========================================================= -->
+  <!-- ====================================================================== -->
 
   <script type="module" src="game.js"></script>
 </body>
