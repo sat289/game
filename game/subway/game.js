@@ -1,8 +1,10 @@
 // ================= 1. AVATARS & AUTHENTIC INDIAN TRAINS CATALOG =================
 const AVATAR_CATALOG = [
-  { id: "michelle", name: "Street Dancer (3D)", price: 0, glbUrl: "https://threejs.org/examples/models/gltf/Michelle.glb", scale: 1.35, emoji: "💃", rotY: Math.PI },
-  { id: "soldier", name: "Metro Commando (3D)", price: 500, glbUrl: "https://threejs.org/examples/models/gltf/Soldier.glb", scale: 1.35, emoji: "🪖", rotY: 0 },
-  { id: "xbot", name: "Cyber Runner (3D)", price: 1000, glbUrl: "https://threejs.org/examples/models/gltf/Xbot.glb", scale: 1.35, emoji: "🤖", rotY: Math.PI }
+  { id: "michelle", name: "Street Dancer", price: 0, glbUrl: "https://threejs.org/examples/models/gltf/Michelle.glb", scale: 1.35, emoji: "💃", rotY: Math.PI },
+  { id: "soldier", name: "Metro Commando", price: 500, glbUrl: "https://threejs.org/examples/models/gltf/Soldier.glb", scale: 1.35, emoji: "🪖", rotY: 0 },
+  { id: "xbot", name: "Cyber Runner", price: 1000, glbUrl: "https://threejs.org/examples/models/gltf/Xbot.glb", scale: 1.35, emoji: "🤖", rotY: Math.PI },
+  { id: "stacy", name: "Stacy Skater", price: 1500, glbUrl: "https://threejs.org/examples/models/gltf/Michelle.glb", scale: 1.35, emoji: "🛹", rotY: Math.PI },
+  { id: "alex", name: "Alex Acrobat", price: 2000, glbUrl: "https://threejs.org/examples/models/gltf/Soldier.glb", scale: 1.35, emoji: "🤸", rotY: 0 }
 ];
 
 const POLICE_GLB_URL = "https://threejs.org/examples/models/gltf/Soldier.glb";
@@ -13,11 +15,12 @@ const BOARD_SKIN_CATALOG = [
   { id: "stealth", name: "Carbon Stealth", price: 900, deckColor: 0x1c1c1c, rimColor: 0x00ff66 }
 ];
 
-// Real Indian Train Models with Online CDN GLB URLs
+// Authentic Indian Trains & train1.glb configuration
 const TRAIN_MODEL_CATALOG = [
+  { id: "train1", name: "Steam Locomotive", glbUrl: "models/train1.glb", scale: 1.2, isGlb: true },
   { 
     id: "vande_bharat", 
-    name: "Vande Bharat Express (Train 18)", 
+    name: "Vande Bharat Express", 
     glbUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Train/glTF/Train.gltf", 
     scale: 0.85, 
     isGlb: true 
@@ -35,20 +38,6 @@ const TRAIN_MODEL_CATALOG = [
     glbUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Train/glTF/Train.gltf", 
     scale: 0.85, 
     isGlb: true 
-  },
-  { 
-    id: "tejas", 
-    name: "Tejas Express", 
-    glbUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Locomotive/glTF/Locomotive.gltf", 
-    scale: 0.9, 
-    isGlb: true 
-  },
-  { 
-    id: "shatabdi", 
-    name: "Shatabdi Express", 
-    glbUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Train/glTF/Train.gltf", 
-    scale: 0.85, 
-    isGlb: true 
   }
 ];
 
@@ -63,9 +52,8 @@ window.playerProfile = Object.assign(
     selectedAvatar: "michelle",
     selectedBoard: "flame",
     displayName: "",
-    lastLoginDate: "",
+    last4AmCheckDate: "",
     loginStreak: 0,
-    claimedStreakToday: false,
     missions: [
       { id: "m1", title: "Run 500 meters", target: 500, current: 0, rewardCoins: 250, claimed: false },
       { id: "m2", title: "Run 2,000 meters", target: 2000, current: 0, rewardCoins: 1000, claimed: false },
@@ -85,19 +73,36 @@ window.playerProfile = Object.assign(
 
 if (typeof window.playerProfile.diamonds !== "number") window.playerProfile.diamonds = 25;
 
-const todayStr = new Date().toDateString();
-if (window.playerProfile.lastLoginDate !== todayStr) {
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  if (window.playerProfile.lastLoginDate === yesterday.toDateString()) {
-    window.playerProfile.loginStreak = (window.playerProfile.loginStreak || 0) + 1;
-  } else {
-    window.playerProfile.loginStreak = 1;
+// ================= 4:00 AM DAILY RESET LOGIC =================
+function getGameDayKey(now = new Date()) {
+  const d = new Date(now);
+  if (d.getHours() < 4) {
+    d.setDate(d.getDate() - 1);
   }
-  window.playerProfile.lastLoginDate = todayStr;
-  window.playerProfile.claimedStreakToday = false;
-  window.syncPlayerProfileToCloud && window.syncPlayerProfileToCloud();
+  return d.toDateString();
 }
+
+function checkAndResetDaily4Am() {
+  const current4AmKey = getGameDayKey();
+  if (window.playerProfile.last4AmCheckDate !== current4AmKey) {
+    const prevKey = window.playerProfile.last4AmCheckDate;
+    window.playerProfile.last4AmCheckDate = current4AmKey;
+
+    if (prevKey) {
+      window.playerProfile.loginStreak = (window.playerProfile.loginStreak || 0) + 1;
+    } else {
+      window.playerProfile.loginStreak = 1;
+    }
+
+    window.playerProfile.missions.forEach(m => {
+      m.current = 0;
+      m.claimed = false;
+    });
+
+    window.syncPlayerProfileToCloud && window.syncPlayerProfileToCloud();
+  }
+}
+checkAndResetDaily4Am();
 
 // ================= 2. WEB AUDIO SOUND SYNTHESIZER =================
 const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -446,7 +451,7 @@ window.loadSelectedHumanAvatar = function () {
   boardRim.material.color.setHex(skin.rimColor);
 };
 
-// ================= 5. ONLINE INDIAN TRAINS GLB LOADING & GROUNDING =================
+// ================= 5. TRAINS GLB LOADING & GROUNDING =================
 const trainGlbCache = {};
 
 function createRealistic3DTrain(length = 16, hasRamp = true, isMoving = false, forcedIndex = null) {
@@ -605,6 +610,7 @@ function spawnPowerup(laneIndex, y, z) {
 
 let nextSpawnZ = -45;
 function spawnWave(zPos) {
+  // GUARANTEE TWO ESCAPE WAYS: Block at most ONE lane, leaving the other two 100% open
   const blockedLane = Math.floor(Math.random() * 3);
 
   for (let lane = 0; lane < 3; lane++) {
@@ -742,6 +748,7 @@ function updateMissionsProgress(distDelta, coinsDelta, diamondsDelta = 0, boards
 function updateMissionsRedDot() {
   const dot = document.getElementById("missionsRedDot");
   if (!dot) return;
+  checkAndResetDaily4Am();
   const hasClaimableMissions = window.playerProfile.missions.some(m => m.current >= m.target && !m.claimed);
   const hasClaimableGifts = window.playerProfile.streakGifts.some(g => g.day <= window.playerProfile.loginStreak && !g.claimed);
   
@@ -848,75 +855,6 @@ window.openEventsModal = function() {
 window.closeEventsModal = function() {
   document.getElementById("eventsModal").style.display = "none";
 };
-
-// ================= STORE & AVATARS WITH IMAGES/EMOJIS + NAMES =================
-function renderShopItems() {
-  const avGrid = document.getElementById("avatarShopGrid");
-  avGrid.innerHTML = "";
-  AVATAR_CATALOG.forEach(av => {
-    const unlocked = window.playerProfile.unlockedAvatars.includes(av.id);
-    const equipped = window.playerProfile.selectedAvatar === av.id;
-    const card = document.createElement("div");
-    card.className = "shop-item" + (equipped ? " active" : "");
-    card.innerHTML = `
-      <div style="font-size:32px; margin-bottom:4px;">${av.emoji || "👤"}</div>
-      <div><b>${av.name}</b></div>
-      <button class="shop-btn ${equipped ? 'equipped' : ''}">
-        ${equipped ? "Equipped ✓" : unlocked ? "Select" : `Buy (${av.price} 🪙)`}
-      </button>
-    `;
-    card.querySelector("button").onclick = () => {
-      if (unlocked) {
-        window.playerProfile.selectedAvatar = av.id;
-      } else if (window.playerProfile.coins >= av.price) {
-        window.playerProfile.coins -= av.price;
-        window.playerProfile.unlockedAvatars.push(av.id);
-        window.playerProfile.selectedAvatar = av.id;
-        SFX.powerup();
-      } else {
-        alert("Not enough coins!");
-        return;
-      }
-      window.loadSelectedHumanAvatar();
-      window.syncPlayerProfileToCloud && window.syncPlayerProfileToCloud();
-      window.updateMenuUI();
-    };
-    avGrid.appendChild(card);
-  });
-
-  const skinGrid = document.getElementById("boardSkinShopGrid");
-  skinGrid.innerHTML = "";
-  BOARD_SKIN_CATALOG.forEach(sk => {
-    const unlocked = window.playerProfile.unlockedBoardSkins.includes(sk.id);
-    const equipped = window.playerProfile.selectedBoard === sk.id;
-    const card = document.createElement("div");
-    card.className = "shop-item" + (equipped ? " active" : "");
-    card.innerHTML = `
-      <div style="font-size:32px; margin-bottom:4px;">🛹</div>
-      <div><b>${sk.name}</b></div>
-      <button class="shop-btn ${equipped ? 'equipped' : ''}">
-        ${equipped ? "Equipped ✓" : unlocked ? "Select" : `Buy (${sk.price} 🪙)`}
-      </button>
-    `;
-    card.querySelector("button").onclick = () => {
-      if (unlocked) {
-        window.playerProfile.selectedBoard = sk.id;
-      } else if (window.playerProfile.coins >= sk.price) {
-        window.playerProfile.coins -= sk.price;
-        window.playerProfile.unlockedBoardSkins.push(sk.id);
-        window.playerProfile.selectedBoard = sk.id;
-        SFX.powerup();
-      } else {
-        alert("Not enough coins!");
-        return;
-      }
-      window.loadSelectedHumanAvatar();
-      window.syncPlayerProfileToCloud && window.syncPlayerProfileToCloud();
-      window.updateMenuUI();
-    };
-    skinGrid.appendChild(card);
-  });
-}
 
 window.openAccountModal = function() {
   const nameInput = document.getElementById("editNameInput");
@@ -1241,6 +1179,7 @@ canvas.addEventListener("pointerup", e => {
 
 // ================= 9. UI & STORE BINDINGS =================
 window.updateMenuUI = function () {
+  checkAndResetDaily4Am();
   document.getElementById("menuCoins").innerText = window.playerProfile.coins;
   document.getElementById("menuDiamonds").innerText = window.playerProfile.diamonds;
   document.getElementById("menuBoards").innerText = window.playerProfile.boards;
