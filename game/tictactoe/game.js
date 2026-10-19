@@ -8,24 +8,35 @@ import {
   onDisconnect
 } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js";
 
-const { db } = window._tttFirebase;
+const { db, getPlayerName } = window._tttFirebase;
 
-const WINNING_LINES = [
-  [0, 1, 2], [3, 4, 5], [6, 7, 8],
-  [0, 3, 6], [1, 4, 7], [2, 5, 8],
-  [0, 4, 8], [2, 4, 6]
-];
+// Unlockable Skins Map
+const SKINS = {
+  classic: { X: "X", O: "O", req: 0 },
+  cyber:   { X: "⚡", O: "🛡️", req: 5 },
+  element: { X: "🔥", O: "❄️", req: 15 },
+  royale:  { X: "👑", O: "💎", req: 30 }
+};
+
+let selectedSkin = localStorage.getItem("tictactoe_skin") || "classic";
 
 // Core Game State
 let gameMode = "bot"; // 'online' | 'bot' | 'pvp'
-let ruleMode = "classic"; // 'classic' | 'infinity'
-let botDifficulty = "impossible"; // 'easy' | 'medium' | 'impossible'
+let ruleMode = "classic"; // 'classic' | 'infinity' | 'big5x5'
+let botDifficulty = "impossible";
+let boardSize = 9;
 let board = Array(9).fill(null);
-let moveHistory = { X: [], O: [] }; // Tracks move order for Infinity Mode
+let moveHistory = { X: [], O: [] };
 let isXNext = true;
 let isBotThinking = false;
 let scores = { X: 0, O: 0, ties: 0 };
 let winStreak = 0;
+
+// Power-Up State (1 per match)
+let bombAvailable = true;
+let doubleTurnAvailable = true;
+let bombModeActive = false;
+let extraTurnQueued = false;
 
 // Audio State
 let soundEnabled = true;
@@ -34,7 +45,7 @@ const bgMusic = document.getElementById("bgMusic");
 const musicToggleBtn = document.getElementById("musicToggleBtn");
 const soundToggleBtn = document.getElementById("soundToggleBtn");
 
-// Turn Timer State
+// Shot Clock Timer
 let turnTimeLeft = 10;
 let turnTimerInterval = null;
 
@@ -53,13 +64,15 @@ const botMenuScreen = document.getElementById("botMenuScreen");
 const gameScreen = document.getElementById("gameScreen");
 const ruleSelectorBar = document.getElementById("ruleSelectorBar");
 const subHeaderText = document.getElementById("subHeaderText");
-const infinityHint = document.getElementById("infinityHint");
+const modeRuleHint = document.getElementById("modeRuleHint");
+const powerUpBar = document.getElementById("powerUpBar");
 const emojiBar = document.getElementById("emojiBar");
 const emojiFloatContainer = document.getElementById("emojiFloatContainer");
 const streakBadge = document.getElementById("streakBadge");
+const skinSelector = document.getElementById("skinSelector");
 
-const ruleClassicBtn = document.getElementById("ruleClassicBtn");
-const ruleInfinityBtn = document.getElementById("ruleInfinityBtn");
+const btnPowerBomb = document.getElementById("btnPowerBomb");
+const btnPowerDouble = document.getElementById("btnPowerDouble");
 
 const btnCreateRoom = document.getElementById("btnCreateRoom");
 const createdRoomBox = document.getElementById("createdRoomBox");
@@ -83,7 +96,40 @@ const timerText = document.getElementById("timerText");
 const timerBar = document.getElementById("timerBar");
 const btnResetBoard = document.getElementById("btnResetBoard");
 
-/* ==================== MUSIC & WEB AUDIO SFX ==================== */
+/* ==================== SKIN UNLOCK HANDLER ==================== */
+function refreshSkinOptions() {
+  const currentPts = typeof window.score === "number" ? window.score : 0;
+  Array.from(skinSelector.options).forEach((opt) => {
+    const key = opt.value;
+    const req = SKINS[key]?.req || 0;
+    const unlocked = currentPts >= req;
+    opt.disabled = !unlocked;
+  });
+
+  if (currentPts < (SKINS[selectedSkin]?.req || 0)) {
+    selectedSkin = "classic";
+  }
+  skinSelector.value = selectedSkin;
+}
+
+window.onScoreUpdated = () => {
+  refreshSkinOptions();
+};
+
+skinSelector.addEventListener("change", (e) => {
+  const chosen = e.target.value;
+  const currentPts = typeof window.score === "number" ? window.score : 0;
+  if (currentPts >= SKINS[chosen].req) {
+    selectedSkin = chosen;
+    localStorage.setItem("tictactoe_skin", chosen);
+    playTone(640, "sine", 0.1);
+    renderBoard();
+  }
+});
+
+refreshSkinOptions();
+
+/* ==================== SOUND & MUSIC ==================== */
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 function playTone(freq, type = "sine", duration = 0.12, gainVal = 0.12) {
@@ -129,13 +175,13 @@ musicToggleBtn.addEventListener("click", () => {
     bgMusic.pause();
     musicPlaying = false;
     musicToggleBtn.textContent = "🎵 OFF";
-    musicToggleBtn.className = "bg-white/5 hover:bg-white/10 border border-white/10 px-2.5 py-1.5 rounded-full text-[11px] font-bold transition";
+    musicToggleBtn.className = "bg-white/5 hover:bg-white/10 border border-white/10 px-2 py-1 rounded-full text-[10px] font-bold transition";
   } else {
     bgMusic.volume = 0.35;
     bgMusic.play().then(() => {
       musicPlaying = true;
       musicToggleBtn.textContent = "🎵 ON";
-      musicToggleBtn.className = "bg-[#00f2fe]/20 border border-[#00f2fe] text-[#00f2fe] px-2.5 py-1.5 rounded-full text-[11px] font-bold transition";
+      musicToggleBtn.className = "bg-[#00f2fe]/20 border border-[#00f2fe] text-[#00f2fe] px-2 py-1 rounded-full text-[10px] font-bold transition";
     }).catch(() => {
       alert("Place song.mp3 inside creazy/song.mp3 or tictactoe/song.mp3!");
     });
@@ -143,21 +189,69 @@ musicToggleBtn.addEventListener("click", () => {
 });
 
 /* ==================== RULE VARIANT SWITCHER ==================== */
-ruleClassicBtn.addEventListener("click", () => {
-  ruleMode = "classic";
-  ruleClassicBtn.className = "flex-1 py-1.5 rounded-xl text-[11px] font-black transition bg-[#00f2fe] text-slate-950 shadow";
-  ruleInfinityBtn.className = "flex-1 py-1.5 rounded-xl text-[11px] font-black transition text-white/60 hover:text-white";
-  playTone(580, "sine", 0.08);
+document.querySelectorAll(".rule-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    ruleMode = btn.getAttribute("data-rule");
+    document.querySelectorAll(".rule-btn").forEach((b) => {
+      b.className = "rule-btn py-1.5 rounded-xl text-[10px] font-black transition text-white/60 hover:text-white";
+    });
+    btn.className = "rule-btn py-1.5 rounded-xl text-[10px] font-black transition bg-[#00f2fe] text-slate-950 shadow";
+    playTone(620, "sine", 0.08);
+  });
 });
 
-ruleInfinityBtn.addEventListener("click", () => {
-  ruleMode = "infinity";
-  ruleInfinityBtn.className = "flex-1 py-1.5 rounded-xl text-[11px] font-black transition bg-amber-400 text-slate-950 shadow";
-  ruleClassicBtn.className = "flex-1 py-1.5 rounded-xl text-[11px] font-black transition text-white/60 hover:text-white";
-  playTone(680, "sine", 0.08);
-});
+/* ==================== DYNAMIC WINNING LINES (3x3 & 5x5) ==================== */
+function getWinningLines() {
+  if (ruleMode !== "big5x5") {
+    return [
+      [0, 1, 2], [3, 4, 5], [6, 7, 8],
+      [0, 3, 6], [1, 4, 7], [2, 5, 8],
+      [0, 4, 8], [2, 4, 6]
+    ];
+  }
+  // 5x5 Grid (4 in a row to win)
+  const lines = [];
+  const size = 5;
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c <= size - 4; c++) {
+      const i = r * size + c;
+      lines.push([i, i + 1, i + 2, i + 3]);
+    }
+  }
+  for (let c = 0; c < size; c++) {
+    for (let r = 0; r <= size - 4; r++) {
+      const i = r * size + c;
+      lines.push([i, i + size, i + size * 2, i + size * 3]);
+    }
+  }
+  for (let r = 0; r <= size - 4; r++) {
+    for (let c = 0; c <= size - 4; c++) {
+      const i = r * size + c;
+      lines.push([i, i + size + 1, i + (size + 1) * 2, i + (size + 1) * 3]);
+    }
+    for (let c = 3; c < size; c++) {
+      const i = r * size + c;
+      lines.push([i, i + size - 1, i + (size - 1) * 2, i + (size - 1) * 3]);
+    }
+  }
+  return lines;
+}
 
-/* ==================== SCREEN NAVIGATION ==================== */
+function checkWinner(squares) {
+  const lines = getWinningLines();
+  for (const line of lines) {
+    const first = squares[line[0]];
+    if (first && line.every((idx) => squares[idx] === first)) {
+      return { winner: first, line };
+    }
+  }
+  if (ruleMode !== "infinity" && squares.every((sq) => sq !== null && sq !== "")) {
+    return { winner: "Tie", line: null };
+  }
+  return null;
+}
+
+/* ==================== NAVIGATION ==================== */
 function showScreen(screenName) {
   mainMenuScreen.classList.add("hidden");
   onlineLobbyScreen.classList.add("hidden");
@@ -182,11 +276,24 @@ function showScreen(screenName) {
   } else if (screenName === "game") {
     gameScreen.classList.remove("hidden");
     gameScreen.classList.add("flex");
-    infinityHint.classList.toggle("hidden", ruleMode !== "infinity");
+
+    if (ruleMode === "infinity") {
+      modeRuleHint.innerHTML = "♾️ <b>Infinity Mode:</b> Max 3 marks each! Dimmed mark vanishes next move.";
+      modeRuleHint.classList.remove("hidden");
+    } else if (ruleMode === "big5x5") {
+      modeRuleHint.innerHTML = "🔥 <b>5x5 Big Board:</b> Connect <b>4 in a row</b> horizontally, vertically, or diagonally!";
+      modeRuleHint.classList.remove("hidden");
+    } else {
+      modeRuleHint.classList.add("hidden");
+    }
+
+    powerUpBar.classList.toggle("hidden", gameMode === "online");
+    powerUpBar.classList.toggle("flex", gameMode !== "online");
     emojiBar.classList.toggle("hidden", gameMode !== "online");
     emojiBar.classList.toggle("flex", gameMode === "online");
+
     subHeaderText.textContent =
-      gameMode === "online" ? `Room Code: ${roomCode}` : `${ruleMode.toUpperCase()} MATCH`;
+      gameMode === "online" ? `Room Code: ${roomCode}` : `${ruleMode.toUpperCase()} ARENA`;
   }
 }
 
@@ -228,11 +335,10 @@ document.querySelectorAll(".bot-diff-btn").forEach((btn) => {
   });
 });
 
-/* ==================== TURN SHOT CLOCK (10s) ==================== */
+/* ==================== SHOT CLOCK TIMER ==================== */
 function resetTurnTimer() {
   stopTurnTimer();
-  const res = checkWinner(board);
-  if (res) {
+  if (checkWinner(board)) {
     timerText.textContent = "--";
     timerBar.style.width = "0%";
     return;
@@ -248,7 +354,6 @@ function resetTurnTimer() {
 
     if (turnTimeLeft <= 0) {
       stopTurnTimer();
-      // Auto-move if local/bot or if it's my online turn
       if (gameMode !== "online" || (isXNext ? "X" : "O") === mySymbol) {
         const emptyIndices = board
           .map((v, i) => (v === null ? i : null))
@@ -274,22 +379,10 @@ function updateTimerUI() {
   timerBar.style.width = `${(turnTimeLeft / 10) * 100}%`;
 }
 
-/* ==================== WIN CHECK & FIREBASE SCORE SYNC ==================== */
-function checkWinner(squares) {
-  for (const [a, b, c] of WINNING_LINES) {
-    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-      return { winner: squares[a], line: [a, b, c] };
-    }
-  }
-  if (ruleMode === "classic" && squares.every((sq) => sq !== null && sq !== "")) {
-    return { winner: "Tie", line: null };
-  }
-  return null;
-}
-
+/* ==================== SCORE SAVING (FIREBASE OR GUEST STORAGE) ==================== */
 function recordPlayerWin() {
   winStreak++;
-  streakBadge.textContent = `🔥 ${winStreak}`;
+  streakBadge.textContent = `🔥 ${winStreak} Streak`;
   streakBadge.classList.remove("hidden");
 
   let basePoints = 1;
@@ -303,11 +396,15 @@ function recordPlayerWin() {
   const newTotal = (typeof window.score === "number" ? window.score : 0) + basePoints + bonus;
 
   window.score = newTotal;
-  const scoreEl = document.getElementById("score");
-  if (scoreEl) scoreEl.innerText = newTotal;
   if (typeof window.submitScore === "function") {
-    window.submitScore(newTotal);
+    window.submitScore(newTotal, {
+      streak: winStreak,
+      skin: selectedSkin,
+      lastMode: gameMode
+    });
   }
+  refreshSkinOptions();
+
   if (typeof confetti === "function") {
     confetti({ particleCount: 80, spread: 65, origin: { y: 0.6 } });
   }
@@ -319,7 +416,47 @@ function resetWinStreak() {
   streakBadge.classList.add("hidden");
 }
 
-/* ==================== APPLY MOVE (WITH INFINITY 3-MARK LOGIC) ==================== */
+/* ==================== POWER-UPS (BOMB & DOUBLE TURN) ==================== */
+function resetPowerUps() {
+  bombAvailable = true;
+  doubleTurnAvailable = true;
+  bombModeActive = false;
+  extraTurnQueued = false;
+  updatePowerUpUI();
+}
+
+function updatePowerUpUI() {
+  btnPowerBomb.disabled = !bombAvailable;
+  btnPowerBomb.style.opacity = bombAvailable ? "1" : "0.35";
+  btnPowerBomb.classList.toggle("ring-2", bombModeActive);
+  btnPowerBomb.classList.toggle("ring-red-400", bombModeActive);
+
+  btnPowerDouble.disabled = !doubleTurnAvailable;
+  btnPowerDouble.style.opacity = doubleTurnAvailable ? "1" : "0.35";
+  btnPowerDouble.classList.toggle("ring-2", extraTurnQueued);
+  btnPowerDouble.classList.toggle("ring-purple-400", extraTurnQueued);
+}
+
+btnPowerBomb.addEventListener("click", () => {
+  if (!bombAvailable || isBotThinking || checkWinner(board)) return;
+  const oppSymbol = isXNext ? "O" : "X";
+  if (!board.includes(oppSymbol)) return; // Need at least 1 opponent tile to bomb
+  bombModeActive = !bombModeActive;
+  playTone(400, "sawtooth", 0.1);
+  updatePowerUpUI();
+  renderBoard();
+});
+
+btnPowerDouble.addEventListener("click", () => {
+  if (!doubleTurnAvailable || isBotThinking || checkWinner(board)) return;
+  doubleTurnAvailable = false;
+  extraTurnQueued = true;
+  playTone(780, "sine", 0.14);
+  updatePowerUpUI();
+  renderBoard();
+});
+
+/* ==================== APPLY MOVE ==================== */
 function applyMoveToState(player, idx) {
   board[idx] = player;
   moveHistory[player].push(idx);
@@ -332,7 +469,7 @@ function applyMoveToState(player, idx) {
   }
 }
 
-/* ==================== ONLINE MULTIPLAYER & EMOJI REACTIONS ==================== */
+/* ==================== ONLINE MULTIPLAYER ==================== */
 function generateRoomCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "";
@@ -371,13 +508,16 @@ btnCreateRoom.addEventListener("click", async () => {
 
   roomCode = generateRoomCode();
   mySymbol = "X";
+  boardSize = ruleMode === "big5x5" ? 25 : 9;
   roomRef = ref(db, `tictactoe_rooms/${roomCode}`);
 
   const initialRoomData = {
-    board: Array(9).fill(""),
+    board: Array(boardSize).fill(""),
     historyX: [],
     historyO: [],
     ruleMode: ruleMode,
+    hostName: getPlayerName(),
+    guestName: "Friend",
     turn: "X",
     status: "waiting",
     scores: { X: 0, O: 0, ties: 0 },
@@ -431,10 +571,15 @@ btnJoinRoom.addEventListener("click", async () => {
 
     const data = snap.val();
     ruleMode = data.ruleMode || "classic";
+    boardSize = ruleMode === "big5x5" ? 25 : 9;
 
-    await update(roomRef, { status: "playing", updatedAt: Date.now() });
+    await update(roomRef, {
+      status: "playing",
+      guestName: getPlayerName(),
+      updatedAt: Date.now()
+    });
     listenToRoomChanges();
-    startOnlineGameUI();
+    startOnlineGameUI(data.hostName || "Host", getPlayerName());
   } catch (err) {
     lobbyErrorMsg.textContent = "Error joining room.";
     lobbyErrorMsg.classList.remove("hidden");
@@ -457,7 +602,7 @@ function listenToRoomChanges() {
     const data = snapshot.val();
 
     if (data.status === "playing" && !onlineLobbyScreen.classList.contains("hidden")) {
-      startOnlineGameUI();
+      startOnlineGameUI(data.hostName || "Host", data.guestName || "Guest");
     }
 
     if (data.reaction && data.reaction.ts > lastReactionTimestamp) {
@@ -467,11 +612,15 @@ function listenToRoomChanges() {
 
     opponentConnected = data.status === "playing";
     ruleMode = data.ruleMode || "classic";
-    board = (data.board || Array(9).fill("")).map((v) => (v === "" ? null : v));
+    boardSize = ruleMode === "big5x5" ? 25 : 9;
+    board = (data.board || Array(boardSize).fill("")).map((v) => (v === "" ? null : v));
     moveHistory.X = data.historyX || [];
     moveHistory.O = data.historyO || [];
     isXNext = data.turn === "X";
     scores = data.scores || { X: 0, O: 0, ties: 0 };
+
+    labelPlayerX.textContent = `X (${data.hostName || "Host"})`;
+    labelPlayerO.textContent = `O (${data.guestName || "Friend"})`;
 
     const result = checkWinner(board);
     if (!result) {
@@ -494,12 +643,12 @@ function listenToRoomChanges() {
   });
 }
 
-function startOnlineGameUI() {
+function startOnlineGameUI(hostName, guestName) {
   gameMode = "online";
   matchAwarded = false;
   activeModeBadge.textContent = `ONLINE • ${ruleMode.toUpperCase()} (${mySymbol})`;
-  labelPlayerX.textContent = mySymbol === "X" ? "X (YOU)" : "X (FRIEND)";
-  labelPlayerO.textContent = mySymbol === "O" ? "O (YOU)" : "O (FRIEND)";
+  labelPlayerX.textContent = `X (${hostName})`;
+  labelPlayerO.textContent = `O (${guestName})`;
   showScreen("game");
   playTone(880, "sine", 0.15);
 }
@@ -518,20 +667,23 @@ function cleanupOnlineRoom() {
 function startOfflineOrBotGame(mode) {
   cleanupOnlineRoom();
   gameMode = mode;
-  board = Array(9).fill(null);
+  boardSize = ruleMode === "big5x5" ? 25 : 9;
+  board = Array(boardSize).fill(null);
   moveHistory = { X: [], O: [] };
   isXNext = true;
   isBotThinking = false;
   scores = { X: 0, O: 0, ties: 0 };
+  resetPowerUps();
 
+  const pName = getPlayerName();
   if (mode === "bot") {
     activeModeBadge.textContent = `BOT (${botDifficulty.toUpperCase()})`;
-    labelPlayerX.textContent = "X (YOU)";
+    labelPlayerX.textContent = `X (${pName})`;
     labelPlayerO.textContent = "BOT (O)";
   } else {
     activeModeBadge.textContent = "1V1 OFFLINE";
-    labelPlayerX.textContent = "PLAYER X";
-    labelPlayerO.textContent = "PLAYER O";
+    labelPlayerX.textContent = `X (${pName})`;
+    labelPlayerO.textContent = "FRIEND (O)";
   }
 
   showScreen("game");
@@ -539,15 +691,28 @@ function startOfflineOrBotGame(mode) {
   renderBoard();
 }
 
+function findImmediateMove(player) {
+  const lines = getWinningLines();
+  for (const line of lines) {
+    const vals = line.map((idx) => board[idx]);
+    const countPlayer = vals.filter((v) => v === player).length;
+    const countEmpty = vals.filter((v) => v === null).length;
+    if (countPlayer === line.length - 1 && countEmpty === 1) {
+      return line[vals.indexOf(null)];
+    }
+  }
+  return null;
+}
+
 function minimax(newBoard, depth, isMaximizing) {
   const res = checkWinner(newBoard);
   if (res?.winner === "O") return 10 - depth;
   if (res?.winner === "X") return depth - 10;
-  if (res?.winner === "Tie" || depth >= 6) return 0;
+  if (res?.winner === "Tie" || depth >= 5) return 0;
 
   if (isMaximizing) {
     let maxEval = -Infinity;
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < boardSize; i++) {
       if (!newBoard[i]) {
         newBoard[i] = "O";
         const evaluation = minimax(newBoard, depth + 1, false);
@@ -558,7 +723,7 @@ function minimax(newBoard, depth, isMaximizing) {
     return maxEval;
   } else {
     let minEval = Infinity;
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < boardSize; i++) {
       if (!newBoard[i]) {
         newBoard[i] = "X";
         const evaluation = minimax(newBoard, depth + 1, true);
@@ -576,12 +741,19 @@ function makeBotMove() {
     .filter((v) => v !== null);
   if (available.length === 0) return;
 
-  let move;
+  let move = null;
   const randomChance =
-    botDifficulty === "easy" ? 0.75 : botDifficulty === "medium" ? 0.35 : 0;
+    botDifficulty === "easy" ? 0.75 : botDifficulty === "medium" ? 0.3 : 0;
 
   if (Math.random() < randomChance) {
     move = available[Math.floor(Math.random() * available.length)];
+  } else if (ruleMode === "big5x5") {
+    // Tactical heuristic for 5x5 board
+    move = findImmediateMove("O") ?? findImmediateMove("X");
+    if (move === null) {
+      const center = 12;
+      move = board[center] === null ? center : available[Math.floor(Math.random() * available.length)];
+    }
   } else {
     let bestScore = -Infinity;
     move = available[0];
@@ -617,15 +789,34 @@ function makeBotMove() {
   renderBoard();
 }
 
-/* ==================== CELL CLICK & RESET LOGIC ==================== */
+/* ==================== CELL CLICK & POWER-UP EXECUTION ==================== */
 async function handleCellClick(idx) {
   const result = checkWinner(board);
-  if (board[idx] || result || isBotThinking) return;
+  if (result || isBotThinking) return;
 
+  const currentPlayer = isXNext ? "X" : "O";
+  const oppSymbol = isXNext ? "O" : "X";
+
+  // Handle Bomb Power-Up Click
+  if (bombModeActive) {
+    if (board[idx] === oppSymbol) {
+      board[idx] = null;
+      moveHistory[oppSymbol] = moveHistory[oppSymbol].filter((i) => i !== idx);
+      bombAvailable = false;
+      bombModeActive = false;
+      playTone(190, "sawtooth", 0.22, 0.2);
+      updatePowerUpUI();
+      renderBoard();
+    }
+    return;
+  }
+
+  if (board[idx]) return;
+
+  // Online Mode Handler
   if (gameMode === "online") {
     if (!opponentConnected) return;
-    const currentTurn = isXNext ? "X" : "O";
-    if (currentTurn !== mySymbol) return;
+    if (currentPlayer !== mySymbol) return;
 
     applyMoveToState(mySymbol, idx);
     sfxMove(mySymbol);
@@ -647,7 +838,7 @@ async function handleCellClick(idx) {
     return;
   }
 
-  const currentPlayer = isXNext ? "X" : "O";
+  // Local / Bot Move Execution
   applyMoveToState(currentPlayer, idx);
   sfxMove(currentPlayer);
 
@@ -672,12 +863,21 @@ async function handleCellClick(idx) {
     return;
   }
 
+  // Check if Double Turn Power-Up is active
+  if (extraTurnQueued) {
+    extraTurnQueued = false;
+    updatePowerUpUI();
+    resetTurnTimer();
+    renderBoard();
+    return;
+  }
+
   if (gameMode === "bot") {
     isXNext = false;
     isBotThinking = true;
     resetTurnTimer();
     renderBoard();
-    setTimeout(makeBotMove, 420);
+    setTimeout(makeBotMove, 400);
   } else {
     isXNext = !isXNext;
     resetTurnTimer();
@@ -687,9 +887,11 @@ async function handleCellClick(idx) {
 
 btnResetBoard.addEventListener("click", async () => {
   playTone(500, "sine", 0.08);
+  boardSize = ruleMode === "big5x5" ? 25 : 9;
+
   if (gameMode === "online" && roomRef) {
     await update(roomRef, {
-      board: Array(9).fill(""),
+      board: Array(boardSize).fill(""),
       historyX: [],
       historyO: [],
       turn: "X",
@@ -697,10 +899,11 @@ btnResetBoard.addEventListener("click", async () => {
     });
     return;
   }
-  board = Array(9).fill(null);
+  board = Array(boardSize).fill(null);
   moveHistory = { X: [], O: [] };
   isXNext = true;
   isBotThinking = false;
+  resetPowerUps();
   resetTurnTimer();
   renderBoard();
 });
@@ -708,6 +911,7 @@ btnResetBoard.addEventListener("click", async () => {
 /* ==================== UI RENDERER ==================== */
 function renderBoard() {
   const result = checkWinner(board);
+  const skin = SKINS[selectedSkin] || SKINS.classic;
 
   scoreXEl.textContent = scores.X;
   scoreOEl.textContent = scores.O;
@@ -716,7 +920,6 @@ function renderBoard() {
   cardPlayerX.classList.toggle("active-turn-x", !result && isXNext);
   cardPlayerO.classList.toggle("active-turn-o", !result && !isXNext);
 
-  // Identify which cell is about to vanish in Infinity Mode
   let vanishingIdx = null;
   if (ruleMode === "infinity" && !result) {
     const activeTurnPlayer = isXNext ? "X" : "O";
@@ -725,12 +928,22 @@ function renderBoard() {
     }
   }
 
+  // Adjust Grid Columns for 3x3 vs 5x5
+  boardGrid.className =
+    ruleMode === "big5x5"
+      ? "board-3d grid grid-cols-5 gap-1.5 p-2.5 rounded-2xl bg-gradient-to-br from-[#1b2438] to-[#0a0e18] border border-white/15 shadow-[0_12px_30px_rgba(0,0,0,0.7)] w-full aspect-square max-w-[295px]"
+      : "board-3d grid grid-cols-3 gap-2.5 p-3 rounded-2xl bg-gradient-to-br from-[#1b2438] to-[#0a0e18] border border-white/15 shadow-[0_12px_30px_rgba(0,0,0,0.7)] w-full aspect-square max-w-[280px]";
+
+  const oppSymbol = isXNext ? "O" : "X";
+
   boardGrid.innerHTML = "";
   board.forEach((cell, idx) => {
     const isWinCell = result?.line?.includes(idx);
     const btn = document.createElement("button");
 
-    let cls = "cell-3d rounded-xl text-3xl font-black flex items-center justify-center border ";
+    const fontSize = ruleMode === "big5x5" ? "text-xl" : "text-3xl";
+    let cls = `cell-3d rounded-xl ${fontSize} font-black flex items-center justify-center border `;
+
     if (cell === "X") {
       cls += "cell-x ";
     } else if (cell === "O") {
@@ -740,34 +953,39 @@ function renderBoard() {
     }
 
     if (idx === vanishingIdx) cls += "cell-vanish-warning ";
+    if (bombModeActive && cell === oppSymbol) cls += "cell-bomb-target ";
     if (isWinCell) cls += "cell-win ";
 
     btn.className = cls;
-    btn.textContent = cell || "";
+    btn.textContent = cell === "X" ? skin.X : cell === "O" ? skin.O : "";
     btn.addEventListener("click", () => handleCellClick(idx));
     boardGrid.appendChild(btn);
   });
 
-  if (result) {
+  if (bombModeActive) {
+    statusBanner.innerHTML = `<span class="text-red-400 animate-pulse">💣 Tap an opponent mark to destroy it!</span>`;
+  } else if (extraTurnQueued) {
+    statusBanner.innerHTML = `<span class="text-purple-400">⚡ Double Turn Active! Place 2 marks!</span>`;
+  } else if (result) {
     if (result.winner === "Tie") {
       statusBanner.innerHTML = `<span class="text-[#ffd700]">🤝 Round Tied!</span>`;
     } else {
       const winColor = result.winner === "X" ? "text-[#00f2fe]" : "text-[#ff007f]";
-      statusBanner.innerHTML = `<span class="${winColor}">🎉 Player ${result.winner} Wins!</span>`;
+      statusBanner.innerHTML = `<span class="${winColor}">🎉 Player ${skin[result.winner]} Wins!</span>`;
     }
   } else if (gameMode === "online") {
     const currentTurn = isXNext ? "X" : "O";
     if (!opponentConnected) {
       statusBanner.innerHTML = `<span class="text-[#ffd700] animate-pulse">⏳ Waiting for friend...</span>`;
     } else if (currentTurn === mySymbol) {
-      statusBanner.innerHTML = `<span class="text-[#2ecc71]">⚡ Your Turn (${mySymbol})</span>`;
+      statusBanner.innerHTML = `<span class="text-[#2ecc71]">⚡ Your Turn (${skin[mySymbol]})</span>`;
     } else {
-      statusBanner.innerHTML = `<span class="text-white/60">⏳ Friend's Turn (${currentTurn})...</span>`;
+      statusBanner.innerHTML = `<span class="text-white/60">⏳ Friend's Turn (${skin[currentTurn]})...</span>`;
     }
   } else {
     const turnColor = isXNext ? "text-[#00f2fe]" : "text-[#ff007f]";
     statusBanner.innerHTML = `Turn: <span class="${turnColor}">${
-      isBotThinking ? "🤖 Bot thinking..." : `Player ${isXNext ? "X" : "O"}`
+      isBotThinking ? "🤖 Bot thinking..." : `Player ${isXNext ? skin.X : skin.O}`
     }</span>`;
   }
 }
