@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Monsoon Valley Escape - Pro Edition</title>
+    <title>Monsoon Valley Escape - Ultimate Pro</title>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js" type="module"></script>
     <style>
@@ -40,7 +40,7 @@
             align-items: center;
         }
         .hud-card {
-            background: rgba(0, 0, 0, 0.75);
+            background: rgba(0, 0, 0, 0.8);
             border: 2px solid #4CAF50;
             color: #a3ffb4;
             padding: 8px 14px;
@@ -50,7 +50,6 @@
             text-shadow: 1px 1px #000;
             pointer-events: auto;
         }
-        /* Start Screen / Guide */
         #start-screen {
             position: absolute;
             top: 0;
@@ -173,19 +172,19 @@
 </head>
 <body>
 
-    <div id="loading">Loading 3D World...</div>
+    <div id="loading">ప్రో మోడ్ లోడ్ అవుతోంది...</div>
 
-    <!-- Start Screen & Step-by-Step Instructions -->
+    <!-- స్టార్ట్ స్క్రీన్ & గైడ్ -->
     <div id="start-screen">
-        <h1>Monsoon Valley Escape</h1>
+        <h1>Monsoon Valley Pro</h1>
         <div class="guide-box">
-            <h3>How to Play (Step-by-Step)</h3>
-            • <b>Swipe Left / Right:</b> Change running lanes.<br>
-            • <b>Swipe Up:</b> Jump over rocks.<br>
-            • <b>Swipe Down:</b> Slide flat under tree roots.<br>
-            • <b>Goal:</b> Escape the chasing monster in the misty waterfalls!
+            <h3>ఆడే విధానం (Game Guide)</h3>
+            • <b>Swipe Left / Right:</b> లేన్స్ మార్చండి.<br>
+            • <b>Swipe Up:</b> రాళ్ల మీద నుంచి జంప్ చేయండి.<br>
+            • <b>Swipe Down:</b> చెట్టు వేర్ల కింద నుంచి స్లైడ్ అవ్వండి.<br>
+            • <b>Features:</b> వర్షం, కాయిన్స్ కలెక్షన్ & సౌండ్స్!
         </div>
-        <button class="mobile-btn" onclick="startGame()">Start Game</button>
+        <button class="mobile-btn" onclick="startGame()">ఆట మొదలుపెట్టు</button>
     </div>
 
     <div id="canvas-container"></div>
@@ -193,23 +192,24 @@
     <div id="ui-overlay" style="display: none;">
         <div class="header-ui">
             <div class="hud-card">SCORE: <span id="score-val">0</span></div>
-            <div class="hud-card">🪙 <span id="coin-val">0</span></div>
+            <div class="hud-card">🪙 COINS: <span id="coin-val">0</span></div>
         </div>
         <div class="footer-ui">
-            <div class="instruction">Swipe Left/Right: Lanes | Up: Jump | Down: Slide</div>
+            <div class="instruction">Swipe: Left/Right (Lane) | Up (Jump) | Down (Slide)</div>
         </div>
     </div>
 
     <div id="game-over">
-        <h2>CAUGHT BY MONSTER!</h2>
+        <h2>రాక్షసుడు పట్టుకున్నాడు!</h2>
         <p>Final Score: <span id="final-score">0</span></p>
-        <button onclick="restartGame()">Play Again</button>
+        <p>Coins Collected: <span id="final-coins">0</span></p>
+        <button onclick="restartGame()">మళ్ళీ ప్రయత్నించు</button>
     </div>
 
     <script>
         let gameStarted = false;
 
-        // --- Audio Sound Effects Generator (Web Audio API) ---
+        // --- 1. ఆడియో సౌండ్ ఎఫెక్ట్స్ (Web Audio API) ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
         function playSound(type) {
@@ -238,6 +238,14 @@
                 gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
                 osc.start(now);
                 osc.stop(now + 0.2);
+            } else if (type === 'coin') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, now);
+                osc.frequency.setValueAtTime(1200, now + 0.08);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+                osc.start(now);
+                osc.stop(now + 0.15);
             } else if (type === 'gameover') {
                 osc.type = 'sawtooth';
                 osc.frequency.setValueAtTime(150, now);
@@ -249,7 +257,7 @@
             }
         }
 
-        // --- 1. Scene Setup ---
+        // --- 2. సీన్ మరియు కెమెరా సెటప్ ---
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x0f241a);
@@ -272,7 +280,23 @@
         dirLight.castShadow = true;
         scene.add(dirLight);
 
-        // --- 2. Environment Setup ---
+        // --- 3. వర్షపు పార్టికల్స్ (Rain Particles Effect) ---
+        const rainCount = 400;
+        const rainGeo = new THREE.BufferGeometry();
+        const rainPositions = [];
+        for (let i = 0; i < rainCount; i++) {
+            rainPositions.push(
+                (Math.random() - 0.5) * 40,
+                Math.random() * 20,
+                (Math.random() - 0.5) * 100
+            );
+        }
+        rainGeo.setAttribute('position', new THREE.Float32BufferAttribute(rainPositions, 3));
+        const rainMat = new THREE.PointsMaterial({ color: 0xaaaaaa, size: 0.12, transparent: true, opacity: 0.6 });
+        const rainSystem = new THREE.Points(rainGeo, rainMat);
+        scene.add(rainSystem);
+
+        // --- 4. ఎన్విరాన్మెంట్ & కాయిన్స్ ---
         const laneWidth = 2.0;
         const trackLength = 100;
         const roadGroup = new THREE.Group();
@@ -284,9 +308,11 @@
         const jungleGreenMat = new THREE.MeshStandardMaterial({ color: 0x1b5e20, roughness: 0.9 });
         const rockMat = new THREE.MeshStandardMaterial({ color: 0x4f5b52, roughness: 0.8 });
         const rootMat = new THREE.MeshStandardMaterial({ color: 0x3e2723, roughness: 0.9 });
+        const coinMat = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.9, roughness: 0.1 });
 
         const segments = [];
         const obstacles = [];
+        const coinsList = [];
 
         for (let i = 0; i < 5; i++) {
             const segment = new THREE.Group();
@@ -348,6 +374,14 @@
                 obstacle.castShadow = true;
                 segment.add(obstacle);
                 obstacles.push(obstacle);
+
+                // బంగారు నాణ్యాలు (Coins) జతచేయడం
+                const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.08, 16), coinMat);
+                coin.rotation.x = Math.PI / 2;
+                const coinLane = (laneChoice === 0) ? 1 : 0;
+                coin.position.set(coinLane * laneWidth, 0.6, - (i * 20) + 6);
+                segment.add(coin);
+                coinsList.push(coin);
             }
 
             segment.position.z = -i * trackLength;
@@ -355,7 +389,7 @@
             segments.push(segment);
         }
 
-        // --- 3. Human Runner Avatar ---
+        // --- 5. మానవ రూపంలోని హ్యూమన్ రన్నర్ అవతార్ ---
         const playerGroup = new THREE.Group();
         const skinMat = new THREE.MeshStandardMaterial({ color: 0xd8b29d, roughness: 0.6 });
         const shirtMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7 });
@@ -394,7 +428,7 @@
         playerGroup.position.set(0, 0, 0);
         scene.add(playerGroup);
 
-        // --- 4. Chasing Monster ---
+        // --- 6. తరుముకొచ్చే రాక్షసుడు ---
         const monkeyGroup = new THREE.Group();
         const monkeyMat = new THREE.MeshStandardMaterial({ color: 0x1b120c, roughness: 0.9 });
         
@@ -415,7 +449,7 @@
 
         document.getElementById('loading').style.display = 'none';
 
-        // --- 5. Touch Controls ---
+        // --- 7. టచ్ కంట్రోల్స్ & గేమ్‌ప్లే లాజిక్ ---
         let currentLane = 0;
         let targetX = 0;
         let isJumping = false;
@@ -482,6 +516,14 @@
 
             const time = clock.getElapsedTime();
 
+            // వర్షపు పార్టికల్స్ కిందకు కదలడం
+            const positions = rainGeo.attributes.position.array;
+            for (let i = 1; i < positions.length; i += 3) {
+                positions[i] -= 0.8;
+                if (positions[i] < 0) positions[i] = 20;
+            }
+            rainGeo.attributes.position.needsUpdate = true;
+
             playerGroup.position.x += (targetX - playerGroup.position.x) * 0.25;
 
             if (isJumping) {
@@ -520,6 +562,18 @@
                 }
             });
 
+            // కాయిన్స్ కలెక్షన్ చెకింగ్
+            coinsList.forEach((coin, index) => {
+                const coinWorldPos = new THREE.Vector3();
+                coin.getWorldPosition(coinWorldPos);
+                if (Math.abs(coinWorldPos.z - playerGroup.position.z) < 0.6 && Math.abs(coinWorldPos.x - playerGroup.position.x) < 0.6) {
+                    coins += 10;
+                    playSound('coin');
+                    coin.position.y = -10; // స్క్రీన్ నుంచి కాయిన్ మాయం చేయడం
+                }
+            });
+
+            // అడ్డంకులతో కొలిజన్ చెకింగ్
             obstacles.forEach(obs => {
                 const worldPos = new THREE.Vector3();
                 obs.getWorldPosition(worldPos);
@@ -541,7 +595,7 @@
             document.getElementById('score-val').innerText = score;
             document.getElementById('coin-val').innerText = coins;
 
-            gameSpeed += 0.00015;
+            gameSpeed += 0.00015; // క్రమంగా వేగం పెరగడం
             renderer.render(scene, camera);
         }
 
@@ -549,6 +603,7 @@
             isGameOver = true;
             playSound('gameover');
             document.getElementById('final-score').innerText = score;
+            document.getElementById('final-coins').innerText = coins;
             document.getElementById('game-over').style.display = 'block';
         }
 
