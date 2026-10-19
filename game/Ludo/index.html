@@ -1,132 +1,62 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="తెలుగు">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pro Ludo 3D - Firebase Live Multiplayer</title>
+  <title>ప్రో లూడో గేమ్</title>
   <link rel="stylesheet" href="style.css">
-  
-  <!-- ================= FIREBASE AUTO CLOUD SYNC & AUTH ================= -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-    import { getDatabase, ref, set, get, child, onValue, update } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyBzLchy5M2fLne4c7Ghw1KNN8wVrlZdd8M",
-      authDomain: "friendsgame-872f5.firebaseapp.com",
-      databaseURL: "https://friendsgame-872f5-default-rtdb.firebaseio.com",
-      projectId: "friendsgame-872f5",
-      storageBucket: "friendsgame-872f5.firebasestorage.app",
-      messagingSenderId: "522534013233",
-      appId: "1:522534013233:web:f5faa6e6795023d0420810",
-      measurementId: "G-PW5H3G97QR"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getDatabase(app);
-
-    const GAME_KEY = "ludo_pro";
-    let currentUser = null;
-    let currentHighScore = parseInt(localStorage.getItem(`${GAME_KEY}_hi`) || "0", 10);
-
-    // Auto sign-in anonymously if not logged in, to enable cloud storage seamlessly
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        currentUser = user;
-        document.getElementById("auth-status").textContent = `Logged in (${user.uid.substring(0,6)}...)`;
-        try {
-          const snapshot = await get(child(ref(db), `scores/${user.uid}/${GAME_KEY}_high`));
-          if (snapshot.exists()) {
-            const cloudScore = parseInt(snapshot.val(), 10) || 0;
-            if (cloudScore > currentHighScore) {
-              currentHighScore = cloudScore;
-              localStorage.setItem(`${GAME_KEY}_hi`, currentHighScore.toString());
-            } else if (currentHighScore > cloudScore) {
-              set(ref(db, `scores/${user.uid}/${GAME_KEY}_high`), currentHighScore);
-            }
-          } else if (currentHighScore > 0) {
-            set(ref(db, `scores/${user.uid}/${GAME_KEY}_high`), currentHighScore);
-          }
-        } catch (err) {
-          console.error("Firebase sync error:", err);
-        }
-      } else {
-        currentUser = null;
-        document.getElementById("auth-status").textContent = "Offline / Guest Mode (LocalStorage)";
-      }
-    });
-
-    // Universal score/stats submission helper (Conditional Firebase vs LocalStorage)
-    window.submitScore = function(newScore) {
-      const val = parseInt(newScore, 10);
-      if (isNaN(val)) return;
-
-      if (val > currentHighScore) {
-        currentHighScore = val;
-        localStorage.setItem(`${GAME_KEY}_hi`, currentHighScore.toString());
-        if (currentUser) {
-          set(ref(db, `scores/${currentUser.uid}/${GAME_KEY}_high`), currentHighScore);
-        }
-      }
-    };
-
-    // Expose Firebase DB & Auth to game.js for Live Multiplayer Rooms
-    window.LudoFirebase = { db, auth, ref, set, get, onValue, update };
-  </script>
-  <!-- ============================================================ -->
 </head>
 <body>
-  <div class="app-container">
-    <aside class="control-panel">
-      <h2>LUDO MULTIPLAYER</h2>
-      <div id="auth-status" class="auth-pill">Checking login state...</div>
+  <!-- స్టార్ట్ గేమ్ హోమ్ స్క్రీన్ (మొదట కనిపించే పేజీ) -->
+  <div id="home-screen" class="home-screen">
+    <div class="home-content">
+      <h1>ప్రో లూడో గేమ్</h1>
+      <!-- లూడో లోగో లేదా ఇమేజ్ -->
+      <img src="https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?w=300&auto=format&fit=crop&q=80" alt="లూడో బోర్డ్" class="ludo-logo">
+      <p>ఆటను ప్రారంభించడానికి కింద ఉన్న బటన్‌ను క్లిక్ చేయండి</p>
+      <button id="start-game-btn" class="start-btn">స్టార్ట్ గేమ్ (Start Game)</button>
+    </div>
+  </div>
 
-      <div class="mode-selector">
-        <label for="game-mode">Game Mode</label>
-        <select id="game-mode">
-          <option value="bot">Vs Smart Bot</option>
-          <option value="local">Pass & Play</option>
-          <option value="online">Live Room (Multiplayer)</option>
+  <!-- మెయిన్ గేమ్ కంటైనర్ (ఆట మొదలయ్యాక కనిపిస్తుంది) -->
+  <div id="game-container" class="app-container hidden">
+    <!-- కంట్రోల్ ప్యానెల్ (Sidebar) -->
+    <aside class="control-panel">
+      <h2>లూడో అల్టిమేట్</h2>
+      
+      <div class="setting-group">
+        <label>గేమ్ మోడ్</label>
+        <select id="match-mode">
+          <option value="1v1">1 vs 1 (ఎరుపు vs పసుపు)</option>
+          <option value="bot">స్మార్ట్ బాట్ (Vs Bot)</option>
         </select>
       </div>
 
-      <!-- Online Room Code Panel -->
-      <div id="room-panel" class="room-panel hidden">
-        <p class="room-info">Create or Join a 6-Digit Room</p>
-        <div class="room-code-display" id="display-room-code">------</div>
-        <input type="text" id="room-input-code" placeholder="Enter Code" maxlength="6">
-        <div class="room-btn-group">
-          <button id="create-room-btn" class="secondary-btn">Create Room</button>
-          <button id="join-room-btn" class="secondary-btn">Join Room</button>
+      <div class="turn-box">
+        <div id="turn-badge" class="turn-indicator red">ఎరుపు వంతు</div>
+        <div id="step-counter" class="step-counter">కదిలిన అడుగులు: 0</div>
+      </div>
+
+      <!-- 3D డైస్ -->
+      <div class="dice-container">
+        <div class="dice-cube" id="dice-cube">
+          <div class="face front">1</div>
+          <div class="face back">6</div>
+          <div class="face right">3</div>
+          <div class="face left">4</div>
+          <div class="face top">5</div>
+          <div class="face bottom">2</div>
         </div>
       </div>
+      <button id="roll-dice-btn" class="primary-btn">🎲 డైస్ రోల్ చేయండి</button>
 
-      <div class="status-box">
-        <div id="turn-indicator" class="turn-badge red">RED'S TURN</div>
-        <p id="status-message">Roll the dice to start!</p>
-      </div>
-
-      <!-- 3D Dice Display -->
-      <div class="scene">
-        <div class="cube" id="dice-cube">
-          <div class="cube__face cube__face--1">⚀</div>
-          <div class="cube__face cube__face--2">⚁</div>
-          <div class="cube__face cube__face--3">⚂</div>
-          <div class="cube__face cube__face--4">⚃</div>
-          <div class="cube__face cube__face--5">⚄</div>
-          <div class="cube__face cube__face--6">⚅</div>
-        </div>
-      </div>
-      
-      <button id="roll-btn" class="primary-btn">ROLL DICE</button>
-
-      <div class="action-buttons">
-        <button id="new-game-btn" class="secondary-btn">New Match</button>
+      <div class="footer-buttons">
+        <button id="back-home-btn" class="secondary-btn">హోమ్ పేజీ</button>
+        <button id="sound-toggle-btn" class="secondary-btn">🔊 సౌండ్: ఆన్</button>
       </div>
     </aside>
 
+    <!-- లూడో బోర్డ్ -->
     <main class="board-wrapper">
       <div id="ludo-board" class="ludo-board"></div>
     </main>
