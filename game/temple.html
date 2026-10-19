@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Monsoon Valley Mobile Escape</title>
+    <title>Monsoon Valley Escape - Pro Edition</title>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js" type="module"></script>
     <style>
@@ -50,36 +50,49 @@
             text-shadow: 1px 1px #000;
             pointer-events: auto;
         }
-        /* Mobile Start / Login Overlay */
+        /* Start Screen / Guide */
         #start-screen {
             position: absolute;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: linear-gradient(135deg, rgba(6,20,12,0.95), rgba(11,31,21,0.95));
+            background: linear-gradient(135deg, rgba(6,20,12,0.96), rgba(11,31,21,0.96));
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 10;
             pointer-events: auto;
-            padding: 20px;
+            padding: 24px;
             box-sizing: border-box;
             text-align: center;
         }
         #start-screen h1 {
             color: #4CAF50;
-            font-size: 28px;
+            font-size: 26px;
             margin-bottom: 10px;
             text-shadow: 0 0 20px rgba(76, 175, 80, 0.6);
             text-transform: uppercase;
         }
-        #start-screen p {
-            color: #c8e6c9;
-            font-size: 14px;
-            margin-bottom: 25px;
-            line-height: 1.5;
+        .guide-box {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid #4CAF50;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            max-width: 320px;
+            text-align: left;
+            color: #d0e8d0;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        .guide-box h3 {
+            color: #a3ffb4;
+            margin-top: 0;
+            margin-bottom: 8px;
+            font-size: 15px;
+            text-align: center;
         }
         .mobile-btn {
             background: linear-gradient(135deg, #4CAF50, #2e7d32);
@@ -160,37 +173,83 @@
 </head>
 <body>
 
-    <div id="loading">గేమ్ లోడ్ అవుతోంది...</div>
+    <div id="loading">Loading 3D World...</div>
 
-    <!-- మొబైల్ లాగిన్ / స్టార్ట్ స్క్రీన్ -->
+    <!-- Start Screen & Step-by-Step Instructions -->
     <div id="start-screen">
         <h1>Monsoon Valley Escape</h1>
-        <p>దట్టమైన అడవులు, జలపాతాలు మరియు నదుల మధ్య సాహసయాత్ర. మొబైల్ స్క్రీన్ పై స్వైప్ చేస్తూ రాక్షసుడి నుండి తప్పించుకోండి!</p>
-        <button class="mobile-btn" onclick="startGame()">ఆట మొదలుపెట్టండి</button>
+        <div class="guide-box">
+            <h3>How to Play (Step-by-Step)</h3>
+            • <b>Swipe Left / Right:</b> Change running lanes.<br>
+            • <b>Swipe Up:</b> Jump over rocks.<br>
+            • <b>Swipe Down:</b> Slide flat under tree roots.<br>
+            • <b>Goal:</b> Escape the chasing monster in the misty waterfalls!
+        </div>
+        <button class="mobile-btn" onclick="startGame()">Start Game</button>
     </div>
 
     <div id="canvas-container"></div>
 
-    <div id="ui-overlay" style="display: none;" id="main-ui">
+    <div id="ui-overlay" style="display: none;">
         <div class="header-ui">
             <div class="hud-card">SCORE: <span id="score-val">0</span></div>
             <div class="hud-card">🪙 <span id="coin-val">0</span></div>
         </div>
         <div class="footer-ui">
-            <div class="instruction">⬅️ ➡️ స్వైప్: లేన్స్ మార్చండి | ⬆️ స్వైప్: జంప్ | ⬇️ స్వైప్: స్లైడ్</div>
+            <div class="instruction">Swipe Left/Right: Lanes | Up: Jump | Down: Slide</div>
         </div>
     </div>
 
     <div id="game-over">
-        <h2>రాక్షసుడు పట్టుకున్నాడు!</h2>
-        <p>చివరి స్కోర్: <span id="final-score">0</span></p>
-        <button onclick="restartGame()">మళ్ళీ ఆడండి</button>
+        <h2>CAUGHT BY MONSTER!</h2>
+        <p>Final Score: <span id="final-score">0</span></p>
+        <button onclick="restartGame()">Play Again</button>
     </div>
 
     <script>
         let gameStarted = false;
 
-        // --- 1. సీన్ మరియు వాతావరణం ---
+        // --- Audio Sound Effects Generator (Web Audio API) ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            let now = audioCtx.currentTime;
+            if (type === 'jump') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(600, now + 0.15);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            } else if (type === 'slide') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.linearRampToValueAtTime(100, now + 0.2);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            } else if (type === 'gameover') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.linearRampToValueAtTime(50, now + 0.5);
+                gain.gain.setValueAtTime(0.4, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.5);
+                osc.start(now);
+                osc.stop(now + 0.5);
+            }
+        }
+
+        // --- 1. Scene Setup ---
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x0f241a);
@@ -213,7 +272,7 @@
         dirLight.castShadow = true;
         scene.add(dirLight);
 
-        // --- 2. ఎన్విరాన్మెంట్ (నదులు, జలపాతాలు, చెట్లు) ---
+        // --- 2. Environment Setup ---
         const laneWidth = 2.0;
         const trackLength = 100;
         const roadGroup = new THREE.Group();
@@ -296,7 +355,7 @@
             segments.push(segment);
         }
 
-        // --- 3. హ్యూమన్ అవతార్ ---
+        // --- 3. Human Runner Avatar ---
         const playerGroup = new THREE.Group();
         const skinMat = new THREE.MeshStandardMaterial({ color: 0xd8b29d, roughness: 0.6 });
         const shirtMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7 });
@@ -335,7 +394,7 @@
         playerGroup.position.set(0, 0, 0);
         scene.add(playerGroup);
 
-        // --- 4. మొబైల్ మాన్‌స్టర్ ---
+        // --- 4. Chasing Monster ---
         const monkeyGroup = new THREE.Group();
         const monkeyMat = new THREE.MeshStandardMaterial({ color: 0x1b120c, roughness: 0.9 });
         
@@ -356,7 +415,7 @@
 
         document.getElementById('loading').style.display = 'none';
 
-        // --- 5. మొబైల్ టచ్ కంట్రోల్స్ ---
+        // --- 5. Touch Controls ---
         let currentLane = 0;
         let targetX = 0;
         let isJumping = false;
@@ -389,6 +448,7 @@
                 if (deltaY < -30 && !isJumping && !isSliding) {
                     isJumping = true;
                     jumpVelocity = 0.25;
+                    playSound('jump');
                 } else if (deltaY > 30 && !isJumping && !isSliding) {
                     triggerSlide();
                 }
@@ -401,6 +461,7 @@
             slideTimer = 120;
             playerGroup.scale.set(1, 0.35, 1.4);
             playerGroup.position.y = -0.3;
+            playSound('slide');
         }
 
         function startGame() {
@@ -486,6 +547,7 @@
 
         function triggerGameOver() {
             isGameOver = true;
+            playSound('gameover');
             document.getElementById('final-score').innerText = score;
             document.getElementById('game-over').style.display = 'block';
         }
