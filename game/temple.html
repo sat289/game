@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Monsoon Valley - Real Human Run</title>
+    <title>Monsoon Valley - Glitch-Free Pro Edition</title>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js" type="module"></script>
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #06140c;
+            background-color: #040e08;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             user-select: none;
             -webkit-user-select: none;
@@ -56,7 +56,7 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: linear-gradient(135deg, rgba(6,20,12,0.98), rgba(11,31,21,0.98));
+            background: linear-gradient(135deg, rgba(4,14,8,0.98), rgba(8,26,16,0.98));
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -175,7 +175,7 @@
 </head>
 <body>
 
-    <div id="loading">Loading Realistic Game...</div>
+    <div id="loading">Loading Glitch-Free 3D World...</div>
 
     <!-- Start Screen -->
     <div id="start-screen">
@@ -185,7 +185,7 @@
             • <b>Swipe Left / Right:</b> Change Lanes<br>
             • <b>Swipe Up:</b> Jump over Rocks<br>
             • <b>Swipe Down:</b> Flat Slide under Roots<br>
-            • <b>Features:</b> Real Human Run Animation, No Glitches, 360° Nature!
+            • <b>Performance:</b> 100% Glitch-Free, Smooth 3D Graphics!
         </div>
         <button id="start-btn" class="mobile-btn">Start Game</button>
     </div>
@@ -195,7 +195,7 @@
     <div id="ui-overlay" style="display: none;">
         <div class="header-ui">
             <div class="hud-card">SCORE: <span id="score-val">0</span></div>
-            <div class="hud-card">🪙 COINS: <span id="coin-val">0</span></div>
+            <div class="hud-card">🪙 <span id="coin-val">0</span></div>
         </div>
         <div class="footer-ui">
             <div class="instruction">Swipe: Left/Right (Lane) | Up (Jump) | Down (Slide)</div>
@@ -303,14 +303,14 @@
             }
         }
 
-        // --- Scene Setup ---
+        // --- Scene & Renderer Setup ---
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x0f241a);
-        scene.fog = new THREE.FogExp2(0x142b1f, 0.018);
+        scene.background = new THREE.Color(0x06140c);
+        scene.fog = new THREE.FogExp2(0x06140c, 0.015);
 
-        const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 3.2, 5.2);
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 3.0, 5.0);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -318,181 +318,175 @@
         renderer.shadowMap.enabled = true;
         container.appendChild(renderer.domElement);
 
-        const ambientLight = new THREE.AmbientLight(0xc8e6c9, 0.9);
+        const ambientLight = new THREE.AmbientLight(0xd4edda, 0.9);
         scene.add(ambientLight);
 
-        const dirLight = new THREE.DirectionalLight(0xe8f5e9, 1.4);
-        dirLight.position.set(15, 30, 15);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.3);
+        dirLight.position.set(10, 20, 10);
         dirLight.castShadow = true;
         scene.add(dirLight);
 
         // --- Rain Particles ---
-        const rainCount = 400;
+        const rainCount = 300;
         const rainGeo = new THREE.BufferGeometry();
         const rainPositions = [];
         for (let i = 0; i < rainCount; i++) {
             rainPositions.push(
-                (Math.random() - 0.5) * 50,
-                Math.random() * 25,
-                (Math.random() - 0.5) * 120
+                (Math.random() - 0.5) * 40,
+                Math.random() * 20,
+                (Math.random() - 0.5) * 100
             );
         }
         rainGeo.setAttribute('position', new THREE.Float32BufferAttribute(rainPositions, 3));
-        const rainMat = new THREE.PointsMaterial({ color: 0xaaaaaa, size: 0.12, transparent: true, opacity: 0.6 });
+        const rainMat = new THREE.PointsMaterial({ color: 0xaaaaaa, size: 0.1, transparent: true, opacity: 0.6 });
         const rainSystem = new THREE.Points(rainGeo, rainMat);
         scene.add(rainSystem);
 
-        // --- Track & Environment ---
+        // --- Stable Track & Fixed Glitch-Free Architecture ---
         const laneWidth = 2.0;
-        const trackLength = 120;
+        const segmentLength = 60;
+        const totalSegments = 6;
         const roadGroup = new THREE.Group();
         scene.add(roadGroup);
 
         const streamMat = new THREE.MeshStandardMaterial({ color: 0x3e5c54, roughness: 0.6 });
         const wallMat = new THREE.MeshStandardMaterial({ color: 0x2b382f, roughness: 0.8 });
-        const waterfallSheetMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.7 });
+        const waterfallSheetMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.6 });
         const jungleGreenMat = new THREE.MeshStandardMaterial({ color: 0x1b5e20, roughness: 0.9 });
         const rockMat = new THREE.MeshStandardMaterial({ color: 0x4f5b52, roughness: 0.8 });
         const rootMat = new THREE.MeshStandardMaterial({ color: 0x3e2723, roughness: 0.9 });
         const coinMat = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.9, roughness: 0.1 });
 
         const segments = [];
-        const obstacles = [];
-        const coinsList = [];
 
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i < totalSegments; i++) {
             const segment = new THREE.Group();
             
-            const streamBed = new THREE.Mesh(new THREE.BoxGeometry(6, 0.3, trackLength), streamMat);
+            const streamBed = new THREE.Mesh(new THREE.BoxGeometry(6, 0.3, segmentLength), streamMat);
             streamBed.position.set(0, -0.15, 0);
             streamBed.receiveShadow = true;
             segment.add(streamBed);
 
-            const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.8, trackLength), wallMat);
+            const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.8, segmentLength), wallMat);
             leftWall.position.set(-3.1, 0.25, 0);
-            leftWall.castShadow = true;
             segment.add(leftWall);
 
-            const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.8, trackLength), wallMat);
+            const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.8, segmentLength), wallMat);
             rightWall.position.set(3.1, 0.25, 0);
-            rightWall.castShadow = true;
             segment.add(rightWall);
 
-            const leftWaterfall = new THREE.Mesh(new THREE.PlaneGeometry(10, 22), waterfallSheetMat);
-            leftWaterfall.position.set(-15, 8, - (i * 30));
+            const leftWaterfall = new THREE.Mesh(new THREE.PlaneGeometry(8, 15), waterfallSheetMat);
+            leftWaterfall.position.set(-12, 6, 0);
             segment.add(leftWaterfall);
 
-            const rightWaterfall = new THREE.Mesh(new THREE.PlaneGeometry(10, 22), waterfallSheetMat);
-            rightWaterfall.position.set(15, 8, - (i * 30) + 15);
+            const rightWaterfall = new THREE.Mesh(new THREE.PlaneGeometry(8, 15), waterfallSheetMat);
+            rightWaterfall.position.set(12, 6, 0);
             segment.add(rightWaterfall);
 
-            for (let t = -50; t <= 50; t += 20) {
-                const trunkL = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.3, 8, 8), rootMat);
-                trunkL.position.set(-12, 4, t);
-                segment.add(trunkL);
-                
-                const foliageL1 = new THREE.Mesh(new THREE.ConeGeometry(5, 7, 8), jungleGreenMat);
-                foliageL1.position.set(-12, 8, t);
-                segment.add(foliageL1);
+            // Obstacle & Coin containers per segment
+            segment.userData = {
+                hasObstacle: false,
+                obstacle: null,
+                coin: null
+            };
 
-                const trunkR = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.3, 8, 8), rootMat);
-                trunkR.position.set(12, 4, t);
-                segment.add(trunkR);
-
-                const foliageR1 = new THREE.Mesh(new THREE.ConeGeometry(5, 7, 8), jungleGreenMat);
-                foliageR1.position.set(12, 8, t);
-                segment.add(foliageR1);
+            if (i > 1) {
+                spawnSegmentContent(segment);
             }
 
-            if (i > 0) {
-                const laneChoice = Math.floor(Math.random() * 3) - 1;
-                const isRock = Math.random() > 0.5;
-                
-                let obstacle;
-                if (isRock) {
-                    const rockGeo = new THREE.DodecahedronGeometry(0.7, 1);
-                    obstacle = new THREE.Mesh(rockGeo, rockMat);
-                    obstacle.position.set(laneChoice * laneWidth, 0.4, - (i * 20));
-                    obstacle.userData = { type: 'jump', lane: laneChoice };
-                } else {
-                    const rootGeo = new THREE.CylinderGeometry(0.4, 0.5, 2.0, 6);
-                    obstacle = new THREE.Mesh(rootGeo, rootMat);
-                    obstacle.rotation.z = Math.PI / 2;
-                    obstacle.position.set(laneChoice * laneWidth, 0.9, - (i * 20));
-                    obstacle.userData = { type: 'slide', lane: laneChoice };
-                }
-
-                obstacle.castShadow = true;
-                segment.add(obstacle);
-                obstacles.push(obstacle);
-
-                const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.08, 16), coinMat);
-                coin.rotation.x = Math.PI / 2;
-                const coinLane = (laneChoice === 0) ? 1 : 0;
-                coin.position.set(coinLane * laneWidth, 0.6, - (i * 20) + 6);
-                coin.userData = { collected: false };
-                segment.add(coin);
-                coinsList.push(coin);
-            }
-
-            segment.position.z = -i * trackLength;
+            segment.position.z = -i * segmentLength;
             roadGroup.add(segment);
             segments.push(segment);
         }
 
-        // --- Real Human Runner Avatar (Proper Proportions & Natural Motion) ---
+        function spawnSegmentContent(segment) {
+            // Remove previous if any
+            if (segment.userData.obstacle) {
+                segment.remove(segment.userData.obstacle);
+                segment.userData.obstacle = null;
+            }
+            if (segment.userData.coin) {
+                segment.remove(segment.userData.coin);
+                segment.userData.coin = null;
+            }
+
+            const laneChoice = Math.floor(Math.random() * 3) - 1;
+            const isRock = Math.random() > 0.5;
+            
+            let obstacle;
+            if (isRock) {
+                const rockGeo = new THREE.DodecahedronGeometry(0.6, 1);
+                obstacle = new THREE.Mesh(rockGeo, rockMat);
+                obstacle.position.set(laneChoice * laneWidth, 0.35, 0);
+                obstacle.userData = { type: 'jump', lane: laneChoice };
+            } else {
+                const rootGeo = new THREE.CylinderGeometry(0.35, 0.45, 1.8, 6);
+                obstacle = new THREE.Mesh(rootGeo, rootMat);
+                obstacle.rotation.z = Math.PI / 2;
+                obstacle.position.set(laneChoice * laneWidth, 0.8, 0);
+                obstacle.userData = { type: 'slide', lane: laneChoice };
+            }
+            obstacle.castShadow = true;
+            segment.add(obstacle);
+            segment.userData.obstacle = obstacle;
+
+            // Coin
+            const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.06, 16), coinMat);
+            coin.rotation.x = Math.PI / 2;
+            const coinLane = (laneChoice === 0) ? 1 : 0;
+            coin.position.set(coinLane * laneWidth, 0.5, 10);
+            coin.userData = { collected: false };
+            segment.add(coin);
+            segment.userData.coin = coin;
+        }
+
+        // --- Realistic Human Runner Avatar ---
         const playerGroup = new THREE.Group();
         const skinMat = new THREE.MeshStandardMaterial({ color: 0xd8b29d, roughness: 0.6 });
-        const jacketMat = new THREE.MeshStandardMaterial({ color: 0x2b4c7e, roughness: 0.6 });
-        const jeansMat = new THREE.MeshStandardMaterial({ color: 0x1b263b, roughness: 0.8 });
+        const jacketMat = new THREE.MeshStandardMaterial({ color: 0x1d3557, roughness: 0.6 });
+        const jeansMat = new THREE.MeshStandardMaterial({ color: 0x1d2d44, roughness: 0.8 });
         const hairMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.5 });
 
-        // Head & Face
-        const head = new THREE.Mesh(new THREE.SphereGeometry(0.16, 16, 16), skinMat);
-        head.position.set(0, 1.85, 0);
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 16), skinMat);
+        head.position.set(0, 1.75, 0);
         playerGroup.add(head);
 
-        const hair = new THREE.Mesh(new THREE.SphereGeometry(0.17, 16, 16), hairMat);
-        hair.position.set(0, 1.91, -0.01);
+        const hair = new THREE.Mesh(new THREE.SphereGeometry(0.16, 16, 16), hairMat);
+        hair.position.set(0, 1.81, -0.01);
         playerGroup.add(hair);
 
-        // Torso (Slightly tilted forward like a runner)
-        const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.11, 0.55, 12), jacketMat);
-        torso.position.set(0, 1.3, 0.05);
-        torso.rotation.x = 0.15;
+        const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.1, 0.5, 12), jacketMat);
+        torso.position.set(0, 1.25, 0.04);
+        torso.rotation.x = 0.1;
         playerGroup.add(torso);
 
-        // Natural Human Arms (Pivoted smoothly from shoulders)
-        const armGeo = new THREE.CylinderGeometry(0.035, 0.025, 0.5, 8);
-        
+        const armGeo = new THREE.CylinderGeometry(0.03, 0.02, 0.45, 8);
         const leftArmPivot = new THREE.Group();
-        leftArmPivot.position.set(-0.22, 1.5, 0);
+        leftArmPivot.position.set(-0.2, 1.45, 0);
         const leftArm = new THREE.Mesh(armGeo, jacketMat);
-        leftArm.position.set(0, -0.25, 0);
+        leftArm.position.set(0, -0.2, 0);
         leftArmPivot.add(leftArm);
         playerGroup.add(leftArmPivot);
 
         const rightArmPivot = new THREE.Group();
-        rightArmPivot.position.set(0.22, 1.5, 0);
+        rightArmPivot.position.set(0.2, 1.45, 0);
         const rightArm = new THREE.Mesh(armGeo, jacketMat);
-        rightArm.position.set(0, -0.25, 0);
+        rightArm.position.set(0, -0.2, 0);
         rightArmPivot.add(rightArm);
         playerGroup.add(rightArmPivot);
 
-        // Natural Human Legs (Pivoted from hips)
-        const legGeo = new THREE.CylinderGeometry(0.04, 0.03, 0.55, 8);
-        
+        const legGeo = new THREE.CylinderGeometry(0.035, 0.025, 0.5, 8);
         const leftLegPivot = new THREE.Group();
-        leftLegPivot.position.set(-0.09, 0.95, 0);
+        leftLegPivot.position.set(-0.08, 0.9, 0);
         const leftLeg = new THREE.Mesh(legGeo, jeansMat);
-        leftLeg.position.set(0, -0.25, 0);
+        leftLeg.position.set(0, -0.22, 0);
         leftLegPivot.add(leftLeg);
         playerGroup.add(leftLegPivot);
 
         const rightLegPivot = new THREE.Group();
-        rightLegPivot.position.set(0.09, 0.95, 0);
+        rightLegPivot.position.set(0.08, 0.9, 0);
         const rightLeg = new THREE.Mesh(legGeo, jeansMat);
-        rightLeg.position.set(0, -0.25, 0);
+        rightLeg.position.set(0, -0.22, 0);
         rightLegPivot.add(rightLeg);
         playerGroup.add(rightLegPivot);
 
@@ -502,25 +496,24 @@
         // --- Chasing Monster ---
         const monkeyGroup = new THREE.Group();
         const monkeyMat = new THREE.MeshStandardMaterial({ color: 0x1b120c, roughness: 0.9 });
-        
-        const mHead = new THREE.Mesh(new THREE.SphereGeometry(0.32, 12, 12), monkeyMat);
-        mHead.position.set(0, 1.5, 0);
+        const mHead = new THREE.Mesh(new THREE.SphereGeometry(0.3, 12, 12), monkeyMat);
+        mHead.position.set(0, 1.4, 0);
         monkeyGroup.add(mHead);
         
         const eyeMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-        const leftEye = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), eyeMat);
-        leftEye.position.set(-0.12, 1.6, 0.28);
+        const leftEye = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), eyeMat);
+        leftEye.position.set(-0.1, 1.5, 0.25);
         monkeyGroup.add(leftEye);
-        const rightEye = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), eyeMat);
-        rightEye.position.set(0.12, 1.6, 0.28);
+        const rightEye = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), eyeMat);
+        rightEye.position.set(0.1, 1.5, 0.25);
         monkeyGroup.add(rightEye);
 
-        monkeyGroup.position.set(0, 0, 2.5);
+        monkeyGroup.position.set(0, 0, 3.0);
         scene.add(monkeyGroup);
 
         document.getElementById('loading').style.display = 'none';
 
-        // --- Touch Controls & Logic ---
+        // --- Controls & Game State ---
         let currentLane = 0;
         let targetX = 0;
         let isJumping = false;
@@ -528,7 +521,7 @@
         let jumpVelocity = 0;
         let slideTimer = 0;
         
-        let gameSpeed = 0.58;
+        let gameSpeed = 0.55;
         let score = 0;
         let coins = 0;
         let isGameOver = false;
@@ -552,7 +545,7 @@
             } else {
                 if (deltaY < -30 && !isJumping && !isSliding) {
                     isJumping = true;
-                    jumpVelocity = 0.25;
+                    jumpVelocity = 0.24;
                     playSound('jump');
                 } else if (deltaY > 30 && !isJumping && !isSliding) {
                     triggerSlide();
@@ -563,9 +556,9 @@
 
         function triggerSlide() {
             isSliding = true;
-            slideTimer = 120;
-            playerGroup.scale.set(1, 0.35, 1.4);
-            playerGroup.position.y = -0.3;
+            slideTimer = 100;
+            playerGroup.scale.set(1, 0.4, 1.3);
+            playerGroup.position.y = -0.25;
             playSound('slide');
         }
 
@@ -579,8 +572,6 @@
         }
 
         const clock = new THREE.Clock();
-        const initialMonkeyZ = 2.5;
-        const targetMonkeyZ = 5.5;
 
         function animate() {
             if (!gameStarted || isGameOver) return;
@@ -588,18 +579,19 @@
 
             const time = clock.getElapsedTime();
 
+            // Rain update
             const positions = rainGeo.attributes.position.array;
             for (let i = 1; i < positions.length; i += 3) {
-                positions[i] -= 0.8;
-                if (positions[i] < 0) positions[i] = 25;
+                positions[i] -= 0.7;
+                if (positions[i] < 0) positions[i] = 20;
             }
             rainGeo.attributes.position.needsUpdate = true;
 
-            playerGroup.position.x += (targetX - playerGroup.position.x) * 0.25;
+            playerGroup.position.x += (targetX - playerGroup.position.x) * 0.3;
 
             if (isJumping) {
                 playerGroup.position.y += jumpVelocity;
-                jumpVelocity -= 0.015;
+                jumpVelocity -= 0.014;
                 if (playerGroup.position.y <= 0) {
                     playerGroup.position.y = 0;
                     isJumping = false;
@@ -615,64 +607,62 @@
                 }
             }
 
-            if (time < 4.0) {
-                monkeyGroup.position.z = initialMonkeyZ + (targetMonkeyZ - initialMonkeyZ) * (time / 4.0);
-            } else {
-                monkeyGroup.position.z = targetMonkeyZ;
-            }
+            // Smooth human running animation loop
+            leftArmPivot.rotation.x = Math.sin(time * 16) * 0.6;
+            rightArmPivot.rotation.x = -Math.sin(time * 16) * 0.6;
+            leftLegPivot.rotation.x = -Math.sin(time * 16) * 0.6;
+            rightLegPivot.rotation.x = Math.sin(time * 16) * 0.6;
 
-            // Smooth, natural human running arm and leg rotations (No robotic wide gaps)
-            leftArmPivot.rotation.x = Math.sin(time * 16) * 0.7;
-            rightArmPivot.rotation.x = -Math.sin(time * 16) * 0.7;
-            leftLegPivot.rotation.x = -Math.sin(time * 16) * 0.7;
-            rightLegPivot.rotation.x = Math.sin(time * 16) * 0.7;
-
+            // Seamless infinite track recycling without glitches
             segments.forEach(seg => {
                 seg.position.z += gameSpeed;
-                if (seg.position.z > trackLength / 2) {
-                    seg.position.z -= trackLength * segments.length;
+                if (seg.position.z > segmentLength) {
+                    seg.position.z -= segmentLength * totalSegments;
+                    spawnSegmentContent(seg);
                 }
-            });
 
-            coinsList.forEach((coin) => {
-                if (!coin.userData.collected) {
+                // Check collision & coin collection per segment
+                const playerWorldZ = playerGroup.position.z;
+                
+                // Coin check
+                const coin = seg.userData.coin;
+                if (coin && !coin.userData.collected && coin.visible) {
                     const coinWorldPos = new THREE.Vector3();
                     coin.getWorldPosition(coinWorldPos);
                     
-                    if (Math.abs(coinWorldPos.z - playerGroup.position.z) < 2.0 && Math.abs(coinWorldPos.x - playerGroup.position.x) < 1.5) {
-                        coin.position.x += (playerGroup.position.x - coin.position.x) * 0.2;
-                    }
-                    if (Math.abs(coinWorldPos.z - playerGroup.position.z) < 0.8 && Math.abs(coinWorldPos.x - playerGroup.position.x) < 0.8) {
+                    if (Math.abs(coinWorldPos.z - playerGroup.position.z) < 1.0 && Math.abs(coinWorldPos.x - playerGroup.position.x) < 0.8) {
                         coins += 10;
                         playSound('coin');
                         coin.userData.collected = true;
                         coin.visible = false;
                     }
                 }
-            });
 
-            obstacles.forEach(obs => {
-                const worldPos = new THREE.Vector3();
-                obs.getWorldPosition(worldPos);
+                // Obstacle check
+                const obs = seg.userData.obstacle;
+                if (obs) {
+                    const obsWorldPos = new THREE.Vector3();
+                    obs.getWorldPosition(obsWorldPos);
 
-                if (Math.abs(worldPos.z - playerGroup.position.z) < 0.6 && currentLane === obs.userData.lane) {
-                    if (obs.userData.type === 'jump' && playerGroup.position.y < 0.4) {
-                        triggerGameOver();
-                    } else if (obs.userData.type === 'slide' && !isSliding) {
-                        triggerGameOver();
+                    if (Math.abs(obsWorldPos.z - playerGroup.position.z) < 0.5 && currentLane === obs.userData.lane) {
+                        if (obs.userData.type === 'jump' && playerGroup.position.y < 0.3) {
+                            triggerGameOver();
+                        } else if (obs.userData.type === 'slide' && !isSliding) {
+                            triggerGameOver();
+                        }
                     }
                 }
             });
 
-            camera.position.x = playerGroup.position.x * 0.35 + Math.sin(time * 0.2) * 0.2;
-            camera.position.y = 3.2 + (isJumping ? 0.4 : 0);
-            camera.lookAt(playerGroup.position.x * 0.2, 1.5, -3);
+            camera.position.x = playerGroup.position.x * 0.3;
+            camera.position.y = 3.0 + (isJumping ? 0.3 : 0);
+            camera.lookAt(playerGroup.position.x * 0.1, 1.4, -3);
 
             score += Math.floor(gameSpeed * 2);
             document.getElementById('score-val').innerText = score;
             document.getElementById('coin-val').innerText = coins;
 
-            gameSpeed += 0.00015;
+            gameSpeed += 0.0001;
             renderer.render(scene, camera);
         }
 
@@ -690,15 +680,15 @@
             isGameOver = false;
             score = 0;
             coins = 0;
-            gameSpeed = 0.58;
+            gameSpeed = 0.55;
             currentLane = 0;
             targetX = 0;
             playerGroup.position.set(0, 0, 0);
-            monkeyGroup.position.z = 2.5;
-            
-            coinsList.forEach(coin => {
-                coin.userData.collected = false;
-                coin.visible = true;
+            monkeyGroup.position.z = 3.0;
+
+            segments.forEach((seg, idx) => {
+                seg.position.z = -idx * segmentLength;
+                if (idx > 1) spawnSegmentContent(seg);
             });
 
             startNatureAudio();
