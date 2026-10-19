@@ -1,14 +1,11 @@
-import {
-  ref,
-  set,
-  get,
-  update,
-  onValue,
-  off,
-  onDisconnect
-} from "https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js";
+// Dynamically load PeerJS for instant Room Code multiplayer (works for both Cloud & Guest users)
+const peerScript = document.createElement("script");
+peerScript.src = "https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js";
+document.head.appendChild(peerScript);
 
-const { db, getPlayerName } = window._tttFirebase;
+const { getPlayerName } = window._tttFirebase || {
+  getPlayerName: () => "Player"
+};
 
 // Unlockable Skins Map
 const SKINS = {
@@ -49,13 +46,14 @@ const soundToggleBtn = document.getElementById("soundToggleBtn");
 let turnTimeLeft = 10;
 let turnTimerInterval = null;
 
-// Online Multiplayer State
+// Online Multiplayer State (WebRTC PeerJS)
+let peer = null;
+let conn = null;
 let roomCode = null;
 let mySymbol = "X";
-let roomRef = null;
 let opponentConnected = false;
 let matchAwarded = false;
-let lastReactionTimestamp = 0;
+let onlineNames = { X: "Host", O: "Friend" };
 
 // DOM Elements
 const mainMenuScreen = document.getElementById("mainMenuScreen");
@@ -102,8 +100,7 @@ function refreshSkinOptions() {
   Array.from(skinSelector.options).forEach((opt) => {
     const key = opt.value;
     const req = SKINS[key]?.req || 0;
-    const unlocked = currentPts >= req;
-    opt.disabled = !unlocked;
+    opt.disabled = currentPts < req;
   });
 
   if (currentPts < (SKINS[selectedSkin]?.req || 0)) {
@@ -200,7 +197,7 @@ document.querySelectorAll(".rule-btn").forEach((btn) => {
   });
 });
 
-/* ==================== DYNAMIC WINNING LINES (3x3 & 5x5) ==================== */
+/* ==================== WINNING LINES (3x3 & 5x5) ==================== */
 function getWinningLines() {
   if (ruleMode !== "big5x5") {
     return [
@@ -209,7 +206,6 @@ function getWinningLines() {
       [0, 4, 8], [2, 4, 6]
     ];
   }
-  // 5x5 Grid (4 in a row to win)
   const lines = [];
   const size = 5;
   for (let r = 0; r < size; r++) {
@@ -267,6 +263,7 @@ function showScreen(screenName) {
   } else if (screenName === "lobby") {
     onlineLobbyScreen.classList.remove("hidden");
     onlineLobbyScreen.classList.add("flex");
+    ruleSelectorBar.classList.remove("hidden");
     subHeaderText.textContent = "Online Multiplayer Lobby";
   } else if (screenName === "botMenu") {
     botMenuScreen.classList.remove("hidden");
@@ -281,7 +278,7 @@ function showScreen(screenName) {
       modeRuleHint.innerHTML = "♾️ <b>Infinity Mode:</b> Max 3 marks each! Dimmed mark vanishes next move.";
       modeRuleHint.classList.remove("hidden");
     } else if (ruleMode === "big5x5") {
-      modeRuleHint.innerHTML = "🔥 <b>5x5 Big Board:</b> Connect <b>4 in a row</b> horizontally, vertically, or diagonally!";
+      modeRuleHint.innerHTML = "🔥 <b>5x5 Big Board:</b> Connect <b>4 in a row</b> to win!";
       modeRuleHint.classList.remove("hidden");
     } else {
       modeRuleHint.classList.add("hidden");
@@ -379,7 +376,7 @@ function updateTimerUI() {
   timerBar.style.width = `${(turnTimeLeft / 10) * 100}%`;
 }
 
-/* ==================== SCORE SAVING (FIREBASE OR GUEST STORAGE) ==================== */
+/* ==================== SCORE SAVING ==================== */
 function recordPlayerWin() {
   winStreak++;
   streakBadge.textContent = `🔥 ${winStreak} Streak`;
@@ -416,7 +413,7 @@ function resetWinStreak() {
   streakBadge.classList.add("hidden");
 }
 
-/* ==================== POWER-UPS (BOMB & DOUBLE TURN) ==================== */
+/* ==================== POWER-UPS ==================== */
 function resetPowerUps() {
   bombAvailable = true;
   doubleTurnAvailable = true;
@@ -440,7 +437,7 @@ function updatePowerUpUI() {
 btnPowerBomb.addEventListener("click", () => {
   if (!bombAvailable || isBotThinking || checkWinner(board)) return;
   const oppSymbol = isXNext ? "O" : "X";
-  if (!board.includes(oppSymbol)) return; // Need at least 1 opponent tile to bomb
+  if (!board.includes(oppSymbol)) return;
   bombModeActive = !bombModeActive;
   playTone(400, "sawtooth", 0.1);
   updatePowerUpUI();
@@ -456,7 +453,6 @@ btnPowerDouble.addEventListener("click", () => {
   renderBoard();
 });
 
-/* ==================== APPLY MOVE ==================== */
 function applyMoveToState(player, idx) {
   board[idx] = player;
   moveHistory[player].push(idx);
@@ -469,7 +465,7 @@ function applyMoveToState(player, idx) {
   }
 }
 
-/* ==================== ONLINE MULTIPLAYER ==================== */
+/* ==================== ONLINE MULTIPLAYER (WEBRTC PEERJS) ==================== */
 function generateRoomCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "";
@@ -490,53 +486,56 @@ function spawnFloatingEmoji(emoji) {
 }
 
 document.querySelectorAll(".emoji-btn").forEach((btn) => {
-  btn.addEventListener("click", async () => {
+  btn.addEventListener("click", () => {
     const emoji = btn.getAttribute("data-emoji");
-    if (gameMode === "online" && roomRef) {
-      await update(roomRef, {
-        reaction: { emoji, sender: mySymbol, ts: Date.now() }
-      });
-    } else {
-      spawnFloatingEmoji(emoji);
+    spawnFloatingEmoji(emoji);
+    if (gameMode === "online" && conn && conn.open) {
+      conn.send({ type: "EMOJI", emoji });
     }
   });
 });
 
-btnCreateRoom.addEventListener("click", async () => {
+btnCreateRoom.addEventListener("click", () => {
+  if (typeof window.Peer === "undefined") {
+    lobbyErrorMsg.textContent = "Loading multiplayer engine... Tap again in 1 second.";
+    lobbyErrorMsg.classList.remove("hidden");
+    return;
+  }
+
   cleanupOnlineRoom();
   lobbyErrorMsg.classList.add("hidden");
+  btnCreateRoom.textContent = "⏳ Generating Code...";
+  btnCreateRoom.disabled = true;
 
   roomCode = generateRoomCode();
   mySymbol = "X";
   boardSize = ruleMode === "big5x5" ? 25 : 9;
-  roomRef = ref(db, `tictactoe_rooms/${roomCode}`);
+  board = Array(boardSize).fill(null);
+  moveHistory = { X: [], O: [] };
+  scores = { X: 0, O: 0, ties: 0 };
+  isXNext = true;
 
-  const initialRoomData = {
-    board: Array(boardSize).fill(""),
-    historyX: [],
-    historyO: [],
-    ruleMode: ruleMode,
-    hostName: getPlayerName(),
-    guestName: "Friend",
-    turn: "X",
-    status: "waiting",
-    scores: { X: 0, O: 0, ties: 0 },
-    updatedAt: Date.now()
-  };
+  peer = new window.Peer(`sat289-ttt-${roomCode}`);
 
-  try {
-    await set(roomRef, initialRoomData);
-    onDisconnect(roomRef).remove();
-
+  peer.on("open", () => {
+    btnCreateRoom.textContent = "⚡ Generate Room Code";
+    btnCreateRoom.disabled = false;
     generatedCodeText.textContent = roomCode;
     createdRoomBox.classList.remove("hidden");
     playTone(700, "sine", 0.12);
+  });
 
-    listenToRoomChanges();
-  } catch (err) {
-    lobbyErrorMsg.textContent = "Could not create room. Check connection.";
+  peer.on("connection", (incomingConn) => {
+    conn = incomingConn;
+    setupPeerConnection();
+  });
+
+  peer.on("error", (err) => {
+    btnCreateRoom.textContent = "⚡ Generate Room Code";
+    btnCreateRoom.disabled = false;
+    lobbyErrorMsg.textContent = "Error: " + (err.type || "Try generating again.");
     lobbyErrorMsg.classList.remove("hidden");
-  }
+  });
 });
 
 btnCopyCode.addEventListener("click", () => {
@@ -546,7 +545,7 @@ btnCopyCode.addEventListener("click", () => {
   setTimeout(() => (btnCopyCode.textContent = "📋 Copy"), 1500);
 });
 
-btnJoinRoom.addEventListener("click", async () => {
+btnJoinRoom.addEventListener("click", () => {
   const inputCode = joinCodeInput.value.trim().toUpperCase();
   if (inputCode.length !== 6) {
     lobbyErrorMsg.textContent = "Please enter a valid 6-character code.";
@@ -554,93 +553,139 @@ btnJoinRoom.addEventListener("click", async () => {
     return;
   }
 
+  if (typeof window.Peer === "undefined") {
+    lobbyErrorMsg.textContent = "Loading multiplayer engine... Tap again in 1 second.";
+    lobbyErrorMsg.classList.remove("hidden");
+    return;
+  }
+
   cleanupOnlineRoom();
   lobbyErrorMsg.classList.add("hidden");
+  btnJoinRoom.textContent = "⏳...";
+  btnJoinRoom.disabled = true;
 
   roomCode = inputCode;
   mySymbol = "O";
-  roomRef = ref(db, `tictactoe_rooms/${roomCode}`);
 
-  try {
-    const snap = await get(roomRef);
-    if (!snap.exists()) {
-      lobbyErrorMsg.textContent = "Room not found! Check the code.";
-      lobbyErrorMsg.classList.remove("hidden");
-      return;
-    }
+  peer = new window.Peer();
 
-    const data = snap.val();
-    ruleMode = data.ruleMode || "classic";
-    boardSize = ruleMode === "big5x5" ? 25 : 9;
+  peer.on("open", () => {
+    conn = peer.connect(`sat289-ttt-${roomCode}`, { reliable: true });
+    setupPeerConnection();
+  });
 
-    await update(roomRef, {
-      status: "playing",
-      guestName: getPlayerName(),
-      updatedAt: Date.now()
-    });
-    listenToRoomChanges();
-    startOnlineGameUI(data.hostName || "Host", getPlayerName());
-  } catch (err) {
-    lobbyErrorMsg.textContent = "Error joining room.";
+  peer.on("error", () => {
+    btnJoinRoom.textContent = "JOIN";
+    btnJoinRoom.disabled = false;
+    lobbyErrorMsg.textContent = "Room not found! Check the code.";
     lobbyErrorMsg.classList.remove("hidden");
-  }
+  });
 });
 
-function listenToRoomChanges() {
-  if (!roomRef) return;
+function setupPeerConnection() {
+  if (!conn) return;
 
-  onValue(roomRef, (snapshot) => {
-    if (!snapshot.exists()) {
-      if (gameMode === "online" && !gameScreen.classList.contains("hidden")) {
-        alert("Opponent left the room.");
-        cleanupOnlineRoom();
-        showScreen("menu");
-      }
-      return;
+  conn.on("open", () => {
+    btnJoinRoom.textContent = "JOIN";
+    btnJoinRoom.disabled = false;
+    opponentConnected = true;
+
+    if (mySymbol === "O") {
+      // Guest announces arrival to Host
+      conn.send({
+        type: "HELLO",
+        guestName: getPlayerName()
+      });
     }
-
-    const data = snapshot.val();
-
-    if (data.status === "playing" && !onlineLobbyScreen.classList.contains("hidden")) {
-      startOnlineGameUI(data.hostName || "Host", data.guestName || "Guest");
-    }
-
-    if (data.reaction && data.reaction.ts > lastReactionTimestamp) {
-      lastReactionTimestamp = data.reaction.ts;
-      spawnFloatingEmoji(data.reaction.emoji);
-    }
-
-    opponentConnected = data.status === "playing";
-    ruleMode = data.ruleMode || "classic";
-    boardSize = ruleMode === "big5x5" ? 25 : 9;
-    board = (data.board || Array(boardSize).fill("")).map((v) => (v === "" ? null : v));
-    moveHistory.X = data.historyX || [];
-    moveHistory.O = data.historyO || [];
-    isXNext = data.turn === "X";
-    scores = data.scores || { X: 0, O: 0, ties: 0 };
-
-    labelPlayerX.textContent = `X (${data.hostName || "Host"})`;
-    labelPlayerO.textContent = `O (${data.guestName || "Friend"})`;
-
-    const result = checkWinner(board);
-    if (!result) {
-      matchAwarded = false;
-      resetTurnTimer();
-    } else if (!matchAwarded) {
-      matchAwarded = true;
-      stopTurnTimer();
-      if (result.winner === mySymbol) {
-        recordPlayerWin();
-      } else if (result.winner === "Tie") {
-        sfxTie();
-      } else {
-        resetWinStreak();
-        sfxTie();
-      }
-    }
-
-    renderBoard();
   });
+
+  conn.on("data", (data) => {
+    if (!data || !data.type) return;
+
+    if (data.type === "HELLO" && mySymbol === "X") {
+      onlineNames.X = getPlayerName();
+      onlineNames.O = data.guestName || "Friend";
+      opponentConnected = true;
+
+      conn.send({
+        type: "START",
+        ruleMode,
+        hostName: onlineNames.X,
+        guestName: onlineNames.O,
+        board,
+        historyX: moveHistory.X,
+        historyO: moveHistory.O,
+        turn: "X",
+        scores
+      });
+
+      startOnlineGameUI(onlineNames.X, onlineNames.O);
+      resetTurnTimer();
+      renderBoard();
+    } else if (data.type === "START") {
+      ruleMode = data.ruleMode || "classic";
+      boardSize = ruleMode === "big5x5" ? 25 : 9;
+      board = data.board || Array(boardSize).fill(null);
+      moveHistory.X = data.historyX || [];
+      moveHistory.O = data.historyO || [];
+      isXNext = data.turn === "X";
+      scores = data.scores || { X: 0, O: 0, ties: 0 };
+      onlineNames.X = data.hostName || "Host";
+      onlineNames.O = data.guestName || "Friend";
+
+      startOnlineGameUI(onlineNames.X, onlineNames.O);
+      resetTurnTimer();
+      renderBoard();
+    } else if (data.type === "SYNC") {
+      board = data.board;
+      moveHistory.X = data.historyX || [];
+      moveHistory.O = data.historyO || [];
+      isXNext = data.turn === "X";
+      scores = data.scores || scores;
+      sfxMove(isXNext ? "O" : "X");
+
+      handleOnlinePostMoveCheck();
+      renderBoard();
+    } else if (data.type === "RESET") {
+      boardSize = ruleMode === "big5x5" ? 25 : 9;
+      board = Array(boardSize).fill(null);
+      moveHistory = { X: [], O: [] };
+      isXNext = true;
+      matchAwarded = false;
+      playTone(500, "sine", 0.08);
+      resetTurnTimer();
+      renderBoard();
+    } else if (data.type === "EMOJI") {
+      spawnFloatingEmoji(data.emoji);
+    }
+  });
+
+  conn.on("close", () => {
+    if (gameMode === "online" && !gameScreen.classList.contains("hidden")) {
+      alert("Friend disconnected from the room.");
+      cleanupOnlineRoom();
+      showScreen("menu");
+    }
+  });
+}
+
+function handleOnlinePostMoveCheck() {
+  const result = checkWinner(board);
+  if (!result) {
+    matchAwarded = false;
+    resetTurnTimer();
+  } else if (!matchAwarded) {
+    matchAwarded = true;
+    stopTurnTimer();
+    if (result.winner === mySymbol) {
+      recordPlayerWin();
+    } else if (result.winner === "Tie") {
+      sfxTie();
+    } else {
+      resetWinStreak();
+      sfxTie();
+    }
+  }
 }
 
 function startOnlineGameUI(hostName, guestName) {
@@ -655,9 +700,13 @@ function startOnlineGameUI(hostName, guestName) {
 
 function cleanupOnlineRoom() {
   stopTurnTimer();
-  if (roomRef) {
-    off(roomRef);
-    roomRef = null;
+  if (conn) {
+    try { conn.close(); } catch (e) {}
+    conn = null;
+  }
+  if (peer) {
+    try { peer.destroy(); } catch (e) {}
+    peer = null;
   }
   roomCode = null;
   opponentConnected = false;
@@ -748,7 +797,6 @@ function makeBotMove() {
   if (Math.random() < randomChance) {
     move = available[Math.floor(Math.random() * available.length)];
   } else if (ruleMode === "big5x5") {
-    // Tactical heuristic for 5x5 board
     move = findImmediateMove("O") ?? findImmediateMove("X");
     if (move === null) {
       const center = 12;
@@ -789,15 +837,14 @@ function makeBotMove() {
   renderBoard();
 }
 
-/* ==================== CELL CLICK & POWER-UP EXECUTION ==================== */
-async function handleCellClick(idx) {
+/* ==================== CELL CLICK & RESET ==================== */
+function handleCellClick(idx) {
   const result = checkWinner(board);
   if (result || isBotThinking) return;
 
   const currentPlayer = isXNext ? "X" : "O";
   const oppSymbol = isXNext ? "O" : "X";
 
-  // Handle Bomb Power-Up Click
   if (bombModeActive) {
     if (board[idx] === oppSymbol) {
       board[idx] = null;
@@ -815,26 +862,31 @@ async function handleCellClick(idx) {
 
   // Online Mode Handler
   if (gameMode === "online") {
-    if (!opponentConnected) return;
+    if (!opponentConnected || !conn || !conn.open) return;
     if (currentPlayer !== mySymbol) return;
 
     applyMoveToState(mySymbol, idx);
     sfxMove(mySymbol);
 
     const check = checkWinner(board);
-    const updatedScores = { ...scores };
-    if (check?.winner === "X") updatedScores.X++;
-    else if (check?.winner === "O") updatedScores.O++;
-    else if (check?.winner === "Tie") updatedScores.ties++;
+    if (check?.winner === "X") scores.X++;
+    else if (check?.winner === "O") scores.O++;
+    else if (check?.winner === "Tie") scores.ties++;
 
-    await update(roomRef, {
-      board: board.map((c) => c || ""),
+    const nextTurn = mySymbol === "X" ? "O" : "X";
+    isXNext = nextTurn === "X";
+
+    conn.send({
+      type: "SYNC",
+      board,
       historyX: moveHistory.X,
       historyO: moveHistory.O,
-      turn: mySymbol === "X" ? "O" : "X",
-      scores: updatedScores,
-      updatedAt: Date.now()
+      turn: nextTurn,
+      scores
     });
+
+    handleOnlinePostMoveCheck();
+    renderBoard();
     return;
   }
 
@@ -863,7 +915,6 @@ async function handleCellClick(idx) {
     return;
   }
 
-  // Check if Double Turn Power-Up is active
   if (extraTurnQueued) {
     extraTurnQueued = false;
     updatePowerUpUI();
@@ -885,25 +936,21 @@ async function handleCellClick(idx) {
   }
 }
 
-btnResetBoard.addEventListener("click", async () => {
+btnResetBoard.addEventListener("click", () => {
   playTone(500, "sine", 0.08);
   boardSize = ruleMode === "big5x5" ? 25 : 9;
-
-  if (gameMode === "online" && roomRef) {
-    await update(roomRef, {
-      board: Array(boardSize).fill(""),
-      historyX: [],
-      historyO: [],
-      turn: "X",
-      updatedAt: Date.now()
-    });
-    return;
-  }
   board = Array(boardSize).fill(null);
   moveHistory = { X: [], O: [] };
   isXNext = true;
   isBotThinking = false;
-  resetPowerUps();
+  matchAwarded = false;
+
+  if (gameMode === "online" && conn && conn.open) {
+    conn.send({ type: "RESET" });
+  } else {
+    resetPowerUps();
+  }
+
   resetTurnTimer();
   renderBoard();
 });
@@ -928,7 +975,6 @@ function renderBoard() {
     }
   }
 
-  // Adjust Grid Columns for 3x3 vs 5x5
   boardGrid.className =
     ruleMode === "big5x5"
       ? "board-3d grid grid-cols-5 gap-1.5 p-2.5 rounded-2xl bg-gradient-to-br from-[#1b2438] to-[#0a0e18] border border-white/15 shadow-[0_12px_30px_rgba(0,0,0,0.7)] w-full aspect-square max-w-[295px]"
