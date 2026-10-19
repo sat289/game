@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pro Ludo 3D - Multiplayer & Cloud Sync</title>
+  <title>Pro Ludo 3D - Firebase Live Multiplayer</title>
   <link rel="stylesheet" href="style.css">
   
-  <!-- ================= FIREBASE & AUTH SDKs ================= -->
+  <!-- ================= FIREBASE AUTO CLOUD SYNC & AUTH ================= -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-    import { getAuth, signInAnonymously, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-    import { getDatabase, ref, set, get, child, onValue } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js";
+    import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+    import { getDatabase, ref, set, get, child, onValue, update } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBzLchy5M2fLne4c7Ghw1KNN8wVrlZdd8M",
@@ -27,17 +27,15 @@
     const auth = getAuth(app);
     const db = getDatabase(app);
 
-    const GAME_KEY = "pro_ludo";
+    const GAME_KEY = "ludo_pro";
     let currentUser = null;
     let currentHighScore = parseInt(localStorage.getItem(`${GAME_KEY}_hi`) || "0", 10);
 
-    // Auth State Observer & Sync
+    // Auto sign-in anonymously if not logged in, to enable cloud storage seamlessly
     onAuthStateChanged(auth, async (user) => {
-      const authStatusEl = document.getElementById("auth-status");
       if (user) {
         currentUser = user;
-        authStatusEl.innerHTML = `Logged in as: <b>${user.email || 'Anonymous User'}</b> <button id="logout-btn" style="padding:2px 6px; font-size:11px;">Logout</button>`;
-        
+        document.getElementById("auth-status").textContent = `Logged in (${user.uid.substring(0,6)}...)`;
         try {
           const snapshot = await get(child(ref(db), `scores/${user.uid}/${GAME_KEY}_high`));
           if (snapshot.exists()) {
@@ -56,23 +54,11 @@
         }
       } else {
         currentUser = null;
-        authStatusEl.innerHTML = `
-          <span>Not Logged In (Using Local Storage)</span>
-          <div style="margin-top:5px; display:flex; gap:5px; justify-content:center;">
-            <button id="google-login-btn" class="secondary-btn" style="font-size:11px; padding:4px 8px;">Login with Google</button>
-            <button id="anon-login-btn" class="secondary-btn" style="font-size:11px; padding:4px 8px;">Guest Play</button>
-          </div>
-        `;
-        document.getElementById("google-login-btn")?.addEventListener("click", () => {
-          signInWithPopup(auth, new GoogleAuthProvider()).catch(console.error);
-        });
-        document.getElementById("anon-login-btn")?.addEventListener("click", () => {
-          signInAnonymously(auth).catch(console.error);
-        });
+        document.getElementById("auth-status").textContent = "Offline / Guest Mode (LocalStorage)";
       }
     });
 
-    // Score submission handling cloud vs local storage
+    // Universal score/stats submission helper (Conditional Firebase vs LocalStorage)
     window.submitScore = function(newScore) {
       const val = parseInt(newScore, 10);
       if (isNaN(val)) return;
@@ -86,71 +72,35 @@
       }
     };
 
-    // Multiplayer Room Code Generator & Handler System
-    window.createLudoRoom = function() {
-      const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-      document.getElementById("room-code-display").innerText = roomCode;
-      
-      const roomRef = ref(db, `ludo_rooms/${roomCode}`);
-      set(roomRef, { host: currentUser ? currentUser.uid : "guest", status: "waiting", timestamp: Date.now() });
-      
-      // Listen for changes in room
-      onValue(roomRef, (snapshot) => {
-        const data = snapshot.val();
-        if (data && data.status === "active") {
-          document.getElementById("status-message").innerText = "Opponent connected! Game starting...";
-        }
-      });
-      alert(`Room Created! Share code: ${roomCode}`);
-    };
-
-    window.joinLudoRoom = function() {
-      const code = document.getElementById("room-code-input").value.trim().toUpperCase();
-      if (!code) { alert("Please enter a valid room code!"); return; }
-
-      const roomRef = ref(db, `ludo_rooms/${code}`);
-      get(roomRef).then((snapshot) => {
-        if (snapshot.exists()) {
-          update(roomRef, { status: "active", guest: currentUser ? currentUser.uid : "guest" });
-          document.getElementById("status-message").innerText = `Joined Room ${code} successfully!`;
-          alert(`Successfully joined room ${code}!`);
-        } else {
-          alert("Room not found!");
-        }
-      });
-    };
+    // Expose Firebase DB & Auth to game.js for Live Multiplayer Rooms
+    window.LudoFirebase = { db, auth, ref, set, get, onValue, update };
   </script>
+  <!-- ============================================================ -->
 </head>
 <body>
   <div class="app-container">
-    <!-- Control Panel Sidebar -->
     <aside class="control-panel">
-      <h2>PRO LUDO 3D</h2>
-      
-      <!-- Authentication Status Box -->
-      <div id="auth-status" class="auth-box" style="font-size:12px; background:rgba(0,0,0,0.2); padding:8px; border-radius:6px; width:100%; text-align:center;">
-        Loading auth...
-      </div>
+      <h2>LUDO MULTIPLAYER</h2>
+      <div id="auth-status" class="auth-pill">Checking login state...</div>
 
-      <!-- Mode & Multiplayer Room Code Generator -->
       <div class="mode-selector">
         <label for="game-mode">Game Mode</label>
         <select id="game-mode">
           <option value="bot">Vs Smart Bot</option>
-          <option value="local">Pass & Play (Local)</option>
-          <option value="online">Online (Room Code)</option>
+          <option value="local">Pass & Play</option>
+          <option value="online">Live Room (Multiplayer)</option>
         </select>
       </div>
 
-      <!-- Multiplayer Box (Hidden unless Online selected) -->
-      <div id="multiplayer-box" class="room-box" style="display:none; width:100%; background:rgba(0,0,0,0.15); padding:8px; border-radius:6px;">
-        <p style="font-size:12px; margin-bottom:5px;">Multiplayer Room Code:</p>
-        <button onclick="createLudoRoom()" class="secondary-btn" style="margin-bottom:5px;">Create Room</button>
-        <div style="display:flex; gap:5px;">
-          <input type="text" id="room-code-input" placeholder="Enter Code" style="padding:4px; font-size:12px; width:65%;">
-          <button onclick="joinLudoRoom()" class="secondary-btn" style="font-size:12px; padding:4px;">Join</button>
+      <!-- Online Room Code Panel -->
+      <div id="room-panel" class="room-panel hidden">
+        <p class="room-info">Create or Join a 6-Digit Room</p>
+        <div class="room-code-display" id="display-room-code">------</div>
+        <input type="text" id="room-input-code" placeholder="Enter Code" maxlength="6">
+        <div class="room-btn-group">
+          <button id="create-room-btn" class="secondary-btn">Create Room</button>
+          <button id="join-room-btn" class="secondary-btn">Join Room</button>
         </div>
-        <p style="font-size:11px; margin-top:5px;">Active Room: <b id="room-code-display">None</b></p>
       </div>
 
       <div class="status-box">
@@ -173,23 +123,15 @@
       <button id="roll-btn" class="primary-btn">ROLL DICE</button>
 
       <div class="action-buttons">
-        <button id="new-game-btn" class="secondary-btn">New Game</button>
+        <button id="new-game-btn" class="secondary-btn">New Match</button>
       </div>
     </aside>
 
-    <!-- Main Ludo Board Container -->
     <main class="board-wrapper">
       <div id="ludo-board" class="ludo-board"></div>
     </main>
   </div>
 
   <script type="module" src="game.js"></script>
-  <script>
-    // Toggle multiplayer panel visibility based on dropdown
-    document.getElementById('game-mode').addEventListener('change', (e) => {
-      const isOnline = e.target.value === 'online';
-      document.getElementById('multiplayer-box').style.display = isOnline ? 'block' : 'none';
-    });
-  </script>
 </body>
 </html>
