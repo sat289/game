@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Monsoon Valley Escape - Ultimate Pro</title>
+    <title>Monsoon Valley - Hardcore Edition</title>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js" type="module"></script>
     <style>
@@ -105,6 +105,7 @@
             box-shadow: 0 6px 20px rgba(0,0,0,0.5);
             text-transform: uppercase;
             letter-spacing: 1px;
+            margin-top: 10px;
         }
         .footer-ui {
             text-align: center;
@@ -172,19 +173,19 @@
 </head>
 <body>
 
-    <div id="loading">ప్రో మోడ్ లోడ్ అవుతోంది...</div>
+    <div id="loading">Loading Hardcore Mode...</div>
 
-    <!-- స్టార్ట్ స్క్రీన్ & గైడ్ -->
+    <!-- Start Screen & Guide -->
     <div id="start-screen">
-        <h1>Monsoon Valley Pro</h1>
+        <h1>Monsoon Valley Hardcore</h1>
         <div class="guide-box">
-            <h3>ఆడే విధానం (Game Guide)</h3>
-            • <b>Swipe Left / Right:</b> లేన్స్ మార్చండి.<br>
-            • <b>Swipe Up:</b> రాళ్ల మీద నుంచి జంప్ చేయండి.<br>
-            • <b>Swipe Down:</b> చెట్టు వేర్ల కింద నుంచి స్లైడ్ అవ్వండి.<br>
-            • <b>Features:</b> వర్షం, కాయిన్స్ కలెక్షన్ & సౌండ్స్!
+            <h3>How to Play</h3>
+            • <b>Swipe Left / Right:</b> Change Lanes<br>
+            • <b>Swipe Up:</b> Jump over Rocks<br>
+            • <b>Swipe Down:</b> Flat Slide under Roots<br>
+            • <b>Challenge:</b> Strict side walls and fast runner action!
         </div>
-        <button class="mobile-btn" onclick="startGame()">ఆట మొదలుపెట్టు</button>
+        <button class="mobile-btn" onclick="startGame()">Start Game</button>
     </div>
 
     <div id="canvas-container"></div>
@@ -200,22 +201,49 @@
     </div>
 
     <div id="game-over">
-        <h2>రాక్షసుడు పట్టుకున్నాడు!</h2>
+        <h2>CAUGHT BY MONSTER!</h2>
         <p>Final Score: <span id="final-score">0</span></p>
         <p>Coins Collected: <span id="final-coins">0</span></p>
-        <button onclick="restartGame()">మళ్ళీ ప్రయత్నించు</button>
+        <button onclick="restartGame()">Play Again</button>
     </div>
 
     <script>
         let gameStarted = false;
 
-        // --- 1. ఆడియో సౌండ్ ఎఫెక్ట్స్ (Web Audio API) ---
+        // --- Audio Sound Effects ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        
-        function playSound(type) {
+        let natureSoundNode = null;
+
+        function startNatureAudio() {
             if (audioCtx.state === 'suspended') {
                 audioCtx.resume();
             }
+            const bufferSize = 2 * audioCtx.sampleRate;
+            const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const output = noiseBuffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                output[i] = Math.random() * 2 - 1;
+            }
+
+            const whiteNoise = audioCtx.createBufferSource();
+            whiteNoise.buffer = noiseBuffer;
+            whiteNoise.loop = true;
+
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 400;
+
+            const gain = audioCtx.createGain();
+            gain.gain.value = 0.15;
+
+            whiteNoise.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioCtx.destination);
+            whiteNoise.start();
+            natureSoundNode = whiteNoise;
+        }
+
+        function playSound(type) {
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.connect(gain);
@@ -257,11 +285,11 @@
             }
         }
 
-        // --- 2. సీన్ మరియు కెమెరా సెటప్ ---
+        // --- Scene Setup ---
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x0f241a);
-        scene.fog = new THREE.FogExp2(0x142b1f, 0.02);
+        scene.fog = new THREE.FogExp2(0x142b1f, 0.018);
 
         const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1000);
         camera.position.set(0, 3.2, 5.2);
@@ -272,23 +300,23 @@
         renderer.shadowMap.enabled = true;
         container.appendChild(renderer.domElement);
 
-        const ambientLight = new THREE.AmbientLight(0xc8e6c9, 0.8);
+        const ambientLight = new THREE.AmbientLight(0xc8e6c9, 0.9);
         scene.add(ambientLight);
 
-        const dirLight = new THREE.DirectionalLight(0xe8f5e9, 1.3);
-        dirLight.position.set(10, 25, 10);
+        const dirLight = new THREE.DirectionalLight(0xe8f5e9, 1.4);
+        dirLight.position.set(15, 30, 15);
         dirLight.castShadow = true;
         scene.add(dirLight);
 
-        // --- 3. వర్షపు పార్టికల్స్ (Rain Particles Effect) ---
+        // --- Rain Particles ---
         const rainCount = 400;
         const rainGeo = new THREE.BufferGeometry();
         const rainPositions = [];
         for (let i = 0; i < rainCount; i++) {
             rainPositions.push(
-                (Math.random() - 0.5) * 40,
-                Math.random() * 20,
-                (Math.random() - 0.5) * 100
+                (Math.random() - 0.5) * 50,
+                Math.random() * 25,
+                (Math.random() - 0.5) * 120
             );
         }
         rainGeo.setAttribute('position', new THREE.Float32BufferAttribute(rainPositions, 3));
@@ -296,15 +324,15 @@
         const rainSystem = new THREE.Points(rainGeo, rainMat);
         scene.add(rainSystem);
 
-        // --- 4. ఎన్విరాన్మెంట్ & కాయిన్స్ ---
+        // --- Track, Small Side Walls & Obstacles ---
         const laneWidth = 2.0;
-        const trackLength = 100;
+        const trackLength = 120;
         const roadGroup = new THREE.Group();
         scene.add(roadGroup);
 
         const streamMat = new THREE.MeshStandardMaterial({ color: 0x3e5c54, roughness: 0.6 });
-        const flowingWaterMat = new THREE.MeshStandardMaterial({ color: 0x80deea, roughness: 0.1, metalness: 0.8, transparent: true, opacity: 0.85 });
-        const waterfallSheetMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.6 });
+        const wallMat = new THREE.MeshStandardMaterial({ color: 0x2b382f, roughness: 0.8 }); // Small side walls material
+        const waterfallSheetMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.7 });
         const jungleGreenMat = new THREE.MeshStandardMaterial({ color: 0x1b5e20, roughness: 0.9 });
         const rockMat = new THREE.MeshStandardMaterial({ color: 0x4f5b52, roughness: 0.8 });
         const rootMat = new THREE.MeshStandardMaterial({ color: 0x3e2723, roughness: 0.9 });
@@ -314,7 +342,7 @@
         const obstacles = [];
         const coinsList = [];
 
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 6; i++) {
             const segment = new THREE.Group();
             
             const streamBed = new THREE.Mesh(new THREE.BoxGeometry(6, 0.3, trackLength), streamMat);
@@ -322,35 +350,41 @@
             streamBed.receiveShadow = true;
             segment.add(streamBed);
 
-            const streamWater = new THREE.Mesh(new THREE.PlaneGeometry(5.6, trackLength), flowingWaterMat);
-            streamWater.rotation.x = -Math.PI / 2;
-            streamWater.position.set(0, 0.02, 0);
-            segment.add(streamWater);
+            // Small side walls to make path challenging and structured
+            const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.8, trackLength), wallMat);
+            leftWall.position.set(-3.1, 0.25, 0);
+            leftWall.castShadow = true;
+            segment.add(leftWall);
 
-            const leftWaterfall = new THREE.Mesh(new THREE.PlaneGeometry(8, 18), waterfallSheetMat);
-            leftWaterfall.position.set(-12, 6, - (i * 30));
+            const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.8, trackLength), wallMat);
+            rightWall.position.set(3.1, 0.25, 0);
+            rightWall.castShadow = true;
+            segment.add(rightWall);
+
+            const leftWaterfall = new THREE.Mesh(new THREE.PlaneGeometry(10, 22), waterfallSheetMat);
+            leftWaterfall.position.set(-15, 8, - (i * 30));
             segment.add(leftWaterfall);
 
-            const rightWaterfall = new THREE.Mesh(new THREE.PlaneGeometry(8, 18), waterfallSheetMat);
-            rightWaterfall.position.set(12, 6, - (i * 30) + 15);
+            const rightWaterfall = new THREE.Mesh(new THREE.PlaneGeometry(10, 22), waterfallSheetMat);
+            rightWaterfall.position.set(15, 8, - (i * 30) + 15);
             segment.add(rightWaterfall);
 
-            for (let t = -40; t <= 40; t += 20) {
-                const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1.1, 7, 8), rootMat);
-                trunk.position.set(-10, 4, t);
-                segment.add(trunk);
+            for (let t = -50; t <= 50; t += 20) {
+                const trunkL = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.3, 8, 8), rootMat);
+                trunkL.position.set(-12, 4, t);
+                segment.add(trunkL);
                 
-                const foliage = new THREE.Mesh(new THREE.ConeGeometry(4, 8, 8), jungleGreenMat);
-                foliage.position.set(-10, 9, t);
-                segment.add(foliage);
+                const foliageL1 = new THREE.Mesh(new THREE.ConeGeometry(5, 7, 8), jungleGreenMat);
+                foliageL1.position.set(-12, 8, t);
+                segment.add(foliageL1);
 
-                const trunkR = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1.1, 7, 8), rootMat);
-                trunkR.position.set(10, 4, t);
+                const trunkR = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.3, 8, 8), rootMat);
+                trunkR.position.set(12, 4, t);
                 segment.add(trunkR);
 
-                const foliageR = new THREE.Mesh(new THREE.ConeGeometry(4, 8, 8), jungleGreenMat);
-                foliageR.position.set(10, 9, t);
-                segment.add(foliageR);
+                const foliageR1 = new THREE.Mesh(new THREE.ConeGeometry(5, 7, 8), jungleGreenMat);
+                foliageR1.position.set(12, 8, t);
+                segment.add(foliageR1);
             }
 
             if (i > 0) {
@@ -375,11 +409,11 @@
                 segment.add(obstacle);
                 obstacles.push(obstacle);
 
-                // బంగారు నాణ్యాలు (Coins) జతచేయడం
                 const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.08, 16), coinMat);
                 coin.rotation.x = Math.PI / 2;
                 const coinLane = (laneChoice === 0) ? 1 : 0;
                 coin.position.set(coinLane * laneWidth, 0.6, - (i * 20) + 6);
+                coin.userData = { collected: false };
                 segment.add(coin);
                 coinsList.push(coin);
             }
@@ -389,12 +423,12 @@
             segments.push(segment);
         }
 
-        // --- 5. మానవ రూపంలోని హ్యూమన్ రన్నర్ అవతార్ ---
+        // --- Human Runner Avatar ---
         const playerGroup = new THREE.Group();
         const skinMat = new THREE.MeshStandardMaterial({ color: 0xd8b29d, roughness: 0.6 });
-        const shirtMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7 });
-        const pantsMat = new THREE.MeshStandardMaterial({ color: 0x1f1f1f, roughness: 0.8 });
-        const hairMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.5 });
+        const jacketMat = new THREE.MeshStandardMaterial({ color: 0x2b4c7e, roughness: 0.6 });
+        const jeansMat = new THREE.MeshStandardMaterial({ color: 0x1b263b, roughness: 0.8 });
+        const hairMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.5 });
 
         const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 16, 16), skinMat);
         head.position.set(0, 1.8, 0);
@@ -404,31 +438,31 @@
         hair.position.set(0, 1.86, -0.01);
         playerGroup.add(hair);
 
-        const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.13, 0.6, 12), shirtMat);
+        const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.13, 0.6, 12), jacketMat);
         torso.position.set(0, 1.3, 0);
         playerGroup.add(torso);
 
         const limbGeo = new THREE.CylinderGeometry(0.045, 0.035, 0.55, 8);
-        const leftArm = new THREE.Mesh(limbGeo, shirtMat);
+        const leftArm = new THREE.Mesh(limbGeo, jacketMat);
         leftArm.position.set(-0.24, 1.35, 0);
         playerGroup.add(leftArm);
 
-        const rightArm = new THREE.Mesh(limbGeo, shirtMat);
+        const rightArm = new THREE.Mesh(limbGeo, jacketMat);
         rightArm.position.set(0.24, 1.35, 0);
         playerGroup.add(rightArm);
 
-        const leftLeg = new THREE.Mesh(limbGeo, pantsMat);
+        const leftLeg = new THREE.Mesh(limbGeo, jeansMat);
         leftLeg.position.set(-0.1, 0.75, 0);
         playerGroup.add(leftLeg);
 
-        const rightLeg = new THREE.Mesh(limbGeo, pantsMat);
+        const rightLeg = new THREE.Mesh(limbGeo, jeansMat);
         rightLeg.position.set(0.1, 0.75, 0);
         playerGroup.add(rightLeg);
 
         playerGroup.position.set(0, 0, 0);
         scene.add(playerGroup);
 
-        // --- 6. తరుముకొచ్చే రాక్షసుడు ---
+        // --- Chasing Monster ---
         const monkeyGroup = new THREE.Group();
         const monkeyMat = new THREE.MeshStandardMaterial({ color: 0x1b120c, roughness: 0.9 });
         
@@ -444,12 +478,12 @@
         rightEye.position.set(0.12, 1.6, 0.28);
         monkeyGroup.add(rightEye);
 
-        monkeyGroup.position.set(0, 0, 5.5);
+        monkeyGroup.position.set(0, 0, 2.5);
         scene.add(monkeyGroup);
 
         document.getElementById('loading').style.display = 'none';
 
-        // --- 7. టచ్ కంట్రోల్స్ & గేమ్‌ప్లే లాజిక్ ---
+        // --- Touch Controls & Logic ---
         let currentLane = 0;
         let targetX = 0;
         let isJumping = false;
@@ -457,7 +491,7 @@
         let jumpVelocity = 0;
         let slideTimer = 0;
         
-        let gameSpeed = 0.55;
+        let gameSpeed = 0.58; // Slightly increased speed for hardcore challenge
         let score = 0;
         let coins = 0;
         let isGameOver = false;
@@ -502,13 +536,14 @@
             document.getElementById('start-screen').style.display = 'none';
             document.getElementById('ui-overlay').style.display = 'flex';
             gameStarted = true;
+            startNatureAudio();
             clock.start();
             animate();
         }
 
         const clock = new THREE.Clock();
-        const initialMonkeyZ = 5.5;
-        const targetMonkeyZ = 2.8;
+        const initialMonkeyZ = 2.5;
+        const targetMonkeyZ = 5.5;
 
         function animate() {
             if (!gameStarted || isGameOver) return;
@@ -516,11 +551,10 @@
 
             const time = clock.getElapsedTime();
 
-            // వర్షపు పార్టికల్స్ కిందకు కదలడం
             const positions = rainGeo.attributes.position.array;
             for (let i = 1; i < positions.length; i += 3) {
                 positions[i] -= 0.8;
-                if (positions[i] < 0) positions[i] = 20;
+                if (positions[i] < 0) positions[i] = 25;
             }
             rainGeo.attributes.position.needsUpdate = true;
 
@@ -544,8 +578,8 @@
                 }
             }
 
-            if (time < 3.0) {
-                monkeyGroup.position.z = initialMonkeyZ - (initialMonkeyZ - targetMonkeyZ) * (time / 3.0);
+            if (time < 4.0) {
+                monkeyGroup.position.z = initialMonkeyZ + (targetMonkeyZ - initialMonkeyZ) * (time / 4.0);
             } else {
                 monkeyGroup.position.z = targetMonkeyZ;
             }
@@ -562,69 +596,12 @@
                 }
             });
 
-            // కాయిన్స్ కలెక్షన్ చెకింగ్
-            coinsList.forEach((coin, index) => {
-                const coinWorldPos = new THREE.Vector3();
-                coin.getWorldPosition(coinWorldPos);
-                if (Math.abs(coinWorldPos.z - playerGroup.position.z) < 0.6 && Math.abs(coinWorldPos.x - playerGroup.position.x) < 0.6) {
-                    coins += 10;
-                    playSound('coin');
-                    coin.position.y = -10; // స్క్రీన్ నుంచి కాయిన్ మాయం చేయడం
-                }
-            });
-
-            // అడ్డంకులతో కొలిజన్ చెకింగ్
-            obstacles.forEach(obs => {
-                const worldPos = new THREE.Vector3();
-                obs.getWorldPosition(worldPos);
-
-                if (Math.abs(worldPos.z - playerGroup.position.z) < 0.6 && currentLane === obs.userData.lane) {
-                    if (obs.userData.type === 'jump' && playerGroup.position.y < 0.4) {
-                        triggerGameOver();
-                    } else if (obs.userData.type === 'slide' && !isSliding) {
-                        triggerGameOver();
+            coinsList.forEach((coin) => {
+                if (!coin.userData.collected) {
+                    const coinWorldPos = new THREE.Vector3();
+                    coin.getWorldPosition(coinWorldPos);
+                    
+                    if (Math.abs(coinWorldPos.z - playerGroup.position.z) < 2.0 && Math.abs(coinWorldPos.x - playerGroup.position.x) < 1.5) {
+                        coin.position.x += (playerGroup.position.x - coin.position.x) * 0.2;
                     }
-                }
-            });
-
-            camera.position.x = playerGroup.position.x * 0.35;
-            camera.position.y = 3.2 + (isJumping ? 0.4 : 0);
-            camera.lookAt(playerGroup.position.x * 0.2, 1.5, -3);
-
-            score += Math.floor(gameSpeed * 2);
-            document.getElementById('score-val').innerText = score;
-            document.getElementById('coin-val').innerText = coins;
-
-            gameSpeed += 0.00015; // క్రమంగా వేగం పెరగడం
-            renderer.render(scene, camera);
-        }
-
-        function triggerGameOver() {
-            isGameOver = true;
-            playSound('gameover');
-            document.getElementById('final-score').innerText = score;
-            document.getElementById('final-coins').innerText = coins;
-            document.getElementById('game-over').style.display = 'block';
-        }
-
-        function restartGame() {
-            isGameOver = false;
-            score = 0;
-            coins = 0;
-            gameSpeed = 0.55;
-            currentLane = 0;
-            targetX = 0;
-            playerGroup.position.set(0, 0, 0);
-            clock.start();
-            document.getElementById('game-over').style.display = 'none';
-            animate();
-        }
-
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-    </script>
-</body>
-</html>
+                    if (Math.abs(coinWorldPos.z - playerGroup.position.z
