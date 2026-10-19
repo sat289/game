@@ -589,7 +589,7 @@ grafPlane.position.set(1.39, 1.9, 1.0);
 introTrainGroup.add(grafPlane);
 scene.add(introTrainGroup);
 
-// ================= 6. BARRIERS, COINS & ESCAPE ROUTES =================
+// ================= 6. BARRIERS, COINS & 🛹🧲🚀💎 RUNWAY SYMBOLS =================
 let obstacles = [];
 let coins = [];
 let powerups = [];
@@ -640,18 +640,80 @@ function spawnCoinArc(laneIndex, startZ, count = 5, baseHeight = 0.95, arcHeight
   }
 }
 
+// Cache 🛹, 🧲, 🚀, 💎 symbol textures for crisp 3D runway pickups
+const POWERUP_META = {
+  jetpack:       { emoji: "🚀", hex: "#ff5500", numHex: 0xff5500 },
+  magnet:        { emoji: "🧲", hex: "#00e5ff", numHex: 0x00e5ff },
+  boardPickup:   { emoji: "🛹", hex: "#7cfc00", numHex: 0x7cfc00 },
+  diamondPickup: { emoji: "💎", hex: "#00f5d4", numHex: 0x00f5d4 }
+};
+const powerupTextureCache = {};
+
+function getPowerupSymbolTexture(kind) {
+  if (powerupTextureCache[kind]) return powerupTextureCache[kind];
+  const meta = POWERUP_META[kind] || POWERUP_META.boardPickup;
+
+  const c = document.createElement("canvas");
+  c.width = 256;
+  c.height = 256;
+  const ctx = c.getContext("2d");
+
+  const grad = ctx.createRadialGradient(128, 128, 20, 128, 128, 118);
+  grad.addColorStop(0, "rgba(255, 255, 255, 0.95)");
+  grad.addColorStop(0.55, meta.hex);
+  grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(128, 128, 118, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 8;
+  ctx.beginPath();
+  ctx.arc(128, 128, 86, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.font = "115px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(meta.emoji, 128, 134);
+
+  const tex = new THREE.CanvasTexture(c);
+  powerupTextureCache[kind] = tex;
+  return tex;
+}
+
+const powerupRingGeo = new THREE.TorusGeometry(0.68, 0.07, 12, 28);
+
 function spawnPowerup(laneIndex, y, z) {
   const types = ["jetpack", "magnet", "boardPickup", "diamondPickup"];
   const kind = types[Math.floor(Math.random() * types.length)];
-  const colorMap = { jetpack: 0xff4500, magnet: 0x00e5ff, boardPickup: 0x7cfc00, diamondPickup: 0x00f5d4 };
-  const mesh = new THREE.Mesh(
-    new THREE.OctahedronGeometry(0.55, 0),
-    new THREE.MeshStandardMaterial({ color: colorMap[kind], emissive: colorMap[kind], emissiveIntensity: 0.5 })
-  );
-  mesh.position.set(LANES[laneIndex], y, z);
-  mesh.userData = { kind };
-  scene.add(mesh);
-  powerups.push(mesh);
+  const meta = POWERUP_META[kind];
+
+  const group = new THREE.Group();
+
+  const spriteMat = new THREE.SpriteMaterial({
+    map: getPowerupSymbolTexture(kind),
+    transparent: true
+  });
+  const symbolSprite = new THREE.Sprite(spriteMat);
+  symbolSprite.scale.set(1.45, 1.45, 1);
+  group.add(symbolSprite);
+
+  const ringMat = new THREE.MeshStandardMaterial({
+    color: meta.numHex,
+    emissive: meta.numHex,
+    emissiveIntensity: 0.7,
+    roughness: 0.2,
+    metalness: 0.8
+  });
+  const ringMesh = new THREE.Mesh(powerupRingGeo, ringMat);
+  group.add(ringMesh);
+
+  group.position.set(LANES[laneIndex], y + 0.2, z);
+  group.userData = { kind, ring: ringMesh, baseY: y + 0.2 };
+  scene.add(group);
+  powerups.push(group);
 }
 
 let nextSpawnZ = -45;
@@ -665,7 +727,6 @@ function spawnWave(zPos) {
     usedLanes.add(lane);
 
     if (Math.random() < 0.65) {
-      // Decide if train is moving FIRST; moving trains NEVER get a ramp
       const isMoving = Math.random() < 0.42;
       const hasRamp = !isMoving && Math.random() < 0.55;
       const trainLength = 15 + Math.floor(Math.random() * 5);
@@ -676,6 +737,9 @@ function spawnWave(zPos) {
 
       if (hasRamp) {
         spawnCoinArc(lane, zPos - 2, 4, 3.8, 0);
+        if (Math.random() < 0.35) {
+          spawnPowerup(lane, 4.1, zPos - trainLength / 2);
+        }
       }
     } else {
       const isHigh = Math.random() < 0.4;
@@ -689,8 +753,8 @@ function spawnWave(zPos) {
 
   for (let lane = 0; lane < 3; lane++) {
     if (!usedLanes.has(lane)) {
-      if (Math.random() < 0.28) {
-        spawnPowerup(lane, 1.1, zPos - 4);
+      if (Math.random() < 0.42) {
+        spawnPowerup(lane, 1.15, zPos - 4);
       } else {
         spawnCoinArc(lane, zPos, 5, 0.95, 0);
       }
