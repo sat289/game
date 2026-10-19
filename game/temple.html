@@ -97,7 +97,7 @@
             background: linear-gradient(135deg, #4CAF50, #2e7d32);
             border: 2px solid #a3ffb4;
             color: #fff;
-            padding: 14px 32px;
+            padding: 16px 36px;
             font-size: 18px;
             font-weight: bold;
             border-radius: 25px;
@@ -106,6 +106,8 @@
             text-transform: uppercase;
             letter-spacing: 1px;
             margin-top: 10px;
+            pointer-events: auto;
+            -webkit-tap-highlight-color: transparent;
         }
         .footer-ui {
             text-align: center;
@@ -185,7 +187,7 @@
             • <b>Swipe Down:</b> Flat Slide under Roots<br>
             • <b>Challenge:</b> Strict side walls and fast runner action!
         </div>
-        <button class="mobile-btn" onclick="startGame()">Start Game</button>
+        <button id="start-btn" class="mobile-btn">Start Game</button>
     </div>
 
     <div id="canvas-container"></div>
@@ -209,41 +211,58 @@
 
     <script>
         let gameStarted = false;
-
-        // --- Audio Sound Effects ---
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let audioCtx = null;
         let natureSoundNode = null;
 
-        function startNatureAudio() {
+        // Button Event Listener for robust mobile responsiveness
+        document.getElementById('start-btn').addEventListener('click', startGame);
+        document.getElementById('start-btn').addEventListener('touchend', (e) => {
+            e.preventDefault();
+            startGame();
+        });
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
             if (audioCtx.state === 'suspended') {
                 audioCtx.resume();
             }
-            const bufferSize = 2 * audioCtx.sampleRate;
-            const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-            const output = noiseBuffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) {
-                output[i] = Math.random() * 2 - 1;
+        }
+
+        function startNatureAudio() {
+            initAudio();
+            try {
+                const bufferSize = 2 * audioCtx.sampleRate;
+                const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const output = noiseBuffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    output[i] = Math.random() * 2 - 1;
+                }
+
+                const whiteNoise = audioCtx.createBufferSource();
+                whiteNoise.buffer = noiseBuffer;
+                whiteNoise.loop = true;
+
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.value = 400;
+
+                const gain = audioCtx.createGain();
+                gain.gain.value = 0.15;
+
+                whiteNoise.connect(filter);
+                filter.connect(gain);
+                gain.connect(audioCtx.destination);
+                whiteNoise.start();
+                natureSoundNode = whiteNoise;
+            } catch (e) {
+                console.log("Audio not supported or blocked");
             }
-
-            const whiteNoise = audioCtx.createBufferSource();
-            whiteNoise.buffer = noiseBuffer;
-            whiteNoise.loop = true;
-
-            const filter = audioCtx.createBiquadFilter();
-            filter.type = 'lowpass';
-            filter.frequency.value = 400;
-
-            const gain = audioCtx.createGain();
-            gain.gain.value = 0.15;
-
-            whiteNoise.connect(filter);
-            filter.connect(gain);
-            gain.connect(audioCtx.destination);
-            whiteNoise.start();
-            natureSoundNode = whiteNoise;
         }
 
         function playSound(type) {
+            if (!audioCtx) return;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.connect(gain);
@@ -324,14 +343,14 @@
         const rainSystem = new THREE.Points(rainGeo, rainMat);
         scene.add(rainSystem);
 
-        // --- Track, Small Side Walls & Obstacles ---
+        // --- Track & Obstacles ---
         const laneWidth = 2.0;
         const trackLength = 120;
         const roadGroup = new THREE.Group();
         scene.add(roadGroup);
 
         const streamMat = new THREE.MeshStandardMaterial({ color: 0x3e5c54, roughness: 0.6 });
-        const wallMat = new THREE.MeshStandardMaterial({ color: 0x2b382f, roughness: 0.8 }); // Small side walls material
+        const wallMat = new THREE.MeshStandardMaterial({ color: 0x2b382f, roughness: 0.8 });
         const waterfallSheetMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.7 });
         const jungleGreenMat = new THREE.MeshStandardMaterial({ color: 0x1b5e20, roughness: 0.9 });
         const rockMat = new THREE.MeshStandardMaterial({ color: 0x4f5b52, roughness: 0.8 });
@@ -350,7 +369,6 @@
             streamBed.receiveShadow = true;
             segment.add(streamBed);
 
-            // Small side walls to make path challenging and structured
             const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.8, trackLength), wallMat);
             leftWall.position.set(-3.1, 0.25, 0);
             leftWall.castShadow = true;
@@ -491,7 +509,7 @@
         let jumpVelocity = 0;
         let slideTimer = 0;
         
-        let gameSpeed = 0.58; // Slightly increased speed for hardcore challenge
+        let gameSpeed = 0.58;
         let score = 0;
         let coins = 0;
         let isGameOver = false;
@@ -604,4 +622,76 @@
                     if (Math.abs(coinWorldPos.z - playerGroup.position.z) < 2.0 && Math.abs(coinWorldPos.x - playerGroup.position.x) < 1.5) {
                         coin.position.x += (playerGroup.position.x - coin.position.x) * 0.2;
                     }
-                    if (Math.abs(coinWorldPos.z - playerGroup.position.z
+                    if (Math.abs(coinWorldPos.z - playerGroup.position.z) < 0.8 && Math.abs(coinWorldPos.x - playerGroup.position.x) < 0.8) {
+                        coins += 10;
+                        playSound('coin');
+                        coin.userData.collected = true;
+                        coin.visible = false;
+                    }
+                }
+            });
+
+            obstacles.forEach(obs => {
+                const worldPos = new THREE.Vector3();
+                obs.getWorldPosition(worldPos);
+
+                if (Math.abs(worldPos.z - playerGroup.position.z) < 0.6 && currentLane === obs.userData.lane) {
+                    if (obs.userData.type === 'jump' && playerGroup.position.y < 0.4) {
+                        triggerGameOver();
+                    } else if (obs.userData.type === 'slide' && !isSliding) {
+                        triggerGameOver();
+                    }
+                }
+            });
+
+            camera.position.x = playerGroup.position.x * 0.35 + Math.sin(time * 0.2) * 0.2;
+            camera.position.y = 3.2 + (isJumping ? 0.4 : 0);
+            camera.lookAt(playerGroup.position.x * 0.2, 1.5, -3);
+
+            score += Math.floor(gameSpeed * 2);
+            document.getElementById('score-val').innerText = score;
+            document.getElementById('coin-val').innerText = coins;
+
+            gameSpeed += 0.00015;
+            renderer.render(scene, camera);
+        }
+
+        function triggerGameOver() {
+            isGameOver = true;
+            if (natureSoundNode) natureSoundNode.stop();
+            playSound('gameover');
+            monkeyGroup.position.z = 2.0;
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('final-coins').innerText = coins;
+            document.getElementById('game-over').style.display = 'block';
+        }
+
+        function restartGame() {
+            isGameOver = false;
+            score = 0;
+            coins = 0;
+            gameSpeed = 0.58;
+            currentLane = 0;
+            targetX = 0;
+            playerGroup.position.set(0, 0, 0);
+            monkeyGroup.position.z = 2.5;
+            
+            coinsList.forEach(coin => {
+                coin.userData.collected = false;
+                coin.visible = true;
+            });
+
+            startNatureAudio();
+            clock.start();
+            document.getElementById('game-over').style.display = 'none';
+            animate();
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
