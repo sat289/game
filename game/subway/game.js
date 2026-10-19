@@ -17,27 +17,33 @@ const BOARD_SKIN_CATALOG = [
 
 // Authentic Indian Trains & train1.glb configuration
 const TRAIN_MODEL_CATALOG = [
-  { id: "train1", name: "Steam Locomotive", glbUrl: "models/train1.glb", scale: 1.2, isGlb: true },
+  { id: "train1", name: "Steam Locomotive", glbUrl: "models/train1.glb", scale: 1.2, isGlb: true, color: 0x1d3557, stripe: 0xffb703 },
   { 
     id: "vande_bharat", 
     name: "Vande Bharat Express", 
     glbUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Train/glTF/Train.gltf", 
     scale: 0.85, 
-    isGlb: true 
+    isGlb: true,
+    color: 0xf8f9fa,
+    stripe: 0x00509d
   },
   { 
     id: "wap7", 
     name: "WAP-7 Electric Locomotive", 
     glbUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Locomotive/glTF/Locomotive.gltf", 
     scale: 0.9, 
-    isGlb: true 
+    isGlb: true,
+    color: 0xd90429,
+    stripe: 0xffffff
   },
   { 
     id: "rajdhani", 
     name: "Rajdhani Express", 
     glbUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Train/glTF/Train.gltf", 
     scale: 0.85, 
-    isGlb: true 
+    isGlb: true,
+    color: 0xc1121f,
+    stripe: 0xffd166
   }
 ];
 
@@ -50,7 +56,7 @@ const defaultMissionsList = [
   { id: "m6", title: "Use 5 skateboards", target: 5, current: 0, rewardCoins: 1000, claimed: false }
 ];
 
-const savedProfile = JSON.parse(localStorage.getItem("carracing_profile") || "null");
+const savedProfile = JSON.parse(localStorage.getItem("subway_profile") || localStorage.getItem("carracing_profile") || "null");
 window.playerProfile = Object.assign(
   {
     coins: 300,
@@ -459,7 +465,38 @@ window.loadSelectedHumanAvatar = function () {
 // ================= 5. INDIAN TRAINS GLB LOADING & GROUNDING =================
 const trainGlbCache = {};
 
-function createRealistic3DTrain(length = 16, hasRamp = true, isMoving = false, forcedIndex = null) {
+function createTrainFallbackCoach(length, mainColor = 0xd90429, stripeColor = 0xffffff) {
+  const coachGroup = new THREE.Group();
+  const body = new THREE.Mesh(
+    new THREE.BoxGeometry(2.75, 2.95, length),
+    new THREE.MeshStandardMaterial({ color: mainColor, roughness: 0.35, metalness: 0.3 })
+  );
+  body.position.y = 1.85;
+  coachGroup.add(body);
+
+  const stripe = new THREE.Mesh(
+    new THREE.BoxGeometry(2.79, 0.35, length + 0.02),
+    new THREE.MeshBasicMaterial({ color: stripeColor })
+  );
+  stripe.position.y = 1.65;
+  coachGroup.add(stripe);
+
+  const windshield = new THREE.Mesh(
+    new THREE.BoxGeometry(2.3, 0.75, 0.1),
+    new THREE.MeshBasicMaterial({ color: 0x111927 })
+  );
+  windshield.position.set(0, 2.35, length / 2 + 0.02);
+  coachGroup.add(windshield);
+
+  return coachGroup;
+}
+
+function createRealistic3DTrain(length = 16, hasRamp = false, isMoving = false, forcedIndex = null) {
+  // CRITICAL FIX: Moving trains NEVER have sliders/ramps!
+  if (isMoving) {
+    hasRamp = false;
+  }
+
   const group = new THREE.Group();
   const wheels = [];
 
@@ -467,8 +504,13 @@ function createRealistic3DTrain(length = 16, hasRamp = true, isMoving = false, f
     ? TRAIN_MODEL_CATALOG[forcedIndex % TRAIN_MODEL_CATALOG.length]
     : TRAIN_MODEL_CATALOG[Math.floor(Math.random() * TRAIN_MODEL_CATALOG.length)];
 
+  // Add immediate visible coach body so train is never invisible while GLB loads
+  const baseCoach = createTrainFallbackCoach(length, trainConfig.color, trainConfig.stripe);
+  group.add(baseCoach);
+
   if (trainConfig.isGlb) {
     if (trainGlbCache[trainConfig.glbUrl]) {
+      baseCoach.visible = false;
       const clone = trainGlbCache[trainConfig.glbUrl].clone();
       clone.scale.set(trainConfig.scale, trainConfig.scale, trainConfig.scale);
       clone.position.set(0, 0, 0);
@@ -478,6 +520,7 @@ function createRealistic3DTrain(length = 16, hasRamp = true, isMoving = false, f
         trainConfig.glbUrl,
         (gltf) => {
           trainGlbCache[trainConfig.glbUrl] = gltf.scene;
+          baseCoach.visible = false;
           const clone = gltf.scene.clone();
           clone.scale.set(trainConfig.scale, trainConfig.scale, trainConfig.scale);
           clone.position.set(0, 0, 0);
@@ -485,19 +528,16 @@ function createRealistic3DTrain(length = 16, hasRamp = true, isMoving = false, f
         },
         undefined,
         () => {
-          const fallbackCoach = new THREE.Mesh(
-            new THREE.BoxGeometry(2.75, 2.95, length),
-            new THREE.MeshStandardMaterial({ color: 0xd90429, roughness: 0.3 })
-          );
-          fallbackCoach.position.y = 1.85;
-          group.add(fallbackCoach);
+          // Keep baseCoach visible if GLB fails
+          baseCoach.visible = true;
         }
       );
     }
   }
 
+  // Only stationary trains with hasRamp === true get a front boarding ramp
   let rampLength = 0;
-  if (hasRamp) {
+  if (hasRamp && !isMoving) {
     rampLength = 4.6;
     const ramp = new THREE.Mesh(
       new THREE.BoxGeometry(2.7, 0.28, 5.3),
@@ -508,13 +548,14 @@ function createRealistic3DTrain(length = 16, hasRamp = true, isMoving = false, f
     group.add(ramp);
   }
 
-  group.position.y = 0; // Lock perfectly to track level
+  group.position.y = 0; // Lock to track level
 
   group.userData = {
     type: "train",
+    name: trainConfig.name,
     length,
     height: 3.35,
-    hasRamp,
+    hasRamp: hasRamp && !isMoving,
     rampLength,
     isMoving,
     speedOffset: isMoving ? 18 : 0,
@@ -548,7 +589,7 @@ grafPlane.position.set(1.39, 1.9, 1.0);
 introTrainGroup.add(grafPlane);
 scene.add(introTrainGroup);
 
-// ================= 6. BARRIERS, COINS & DUAL ESCAPE ROUTES =================
+// ================= 6. BARRIERS, COINS & ESCAPE ROUTES =================
 let obstacles = [];
 let coins = [];
 let powerups = [];
@@ -615,29 +656,40 @@ function spawnPowerup(laneIndex, y, z) {
 
 let nextSpawnZ = -45;
 function spawnWave(zPos) {
-  const blockedLane = Math.floor(Math.random() * 3);
+  const usedLanes = new Set();
+  const numObstacles = Math.random() < 0.65 ? 2 : 1;
 
-  for (let lane = 0; lane < 3; lane++) {
-    if (lane === blockedLane) {
-      if (Math.random() < 0.65) {
-        const hasRamp = true;
-        const isMoving = Math.random() < 0.35;
-        const trainLength = 15 + Math.floor(Math.random() * 5);
-        const train = createRealistic3DTrain(trainLength, hasRamp, isMoving);
-        train.position.set(LANES[lane], 0, zPos - trainLength / 2);
-        scene.add(train);
-        obstacles.push(train);
+  for (let i = 0; i < numObstacles; i++) {
+    let lane = Math.floor(Math.random() * 3);
+    if (usedLanes.has(lane)) lane = (lane + 1) % 3;
+    usedLanes.add(lane);
 
+    if (Math.random() < 0.65) {
+      // Decide if train is moving FIRST; moving trains NEVER get a ramp
+      const isMoving = Math.random() < 0.42;
+      const hasRamp = !isMoving && Math.random() < 0.55;
+      const trainLength = 15 + Math.floor(Math.random() * 5);
+      const train = createRealistic3DTrain(trainLength, hasRamp, isMoving);
+      train.position.set(LANES[lane], 0, zPos - trainLength / 2);
+      scene.add(train);
+      obstacles.push(train);
+
+      if (hasRamp) {
         spawnCoinArc(lane, zPos - 2, 4, 3.8, 0);
-      } else {
-        const isHigh = Math.random() < 0.4;
-        const barrier = createBarrierMesh(isHigh);
-        barrier.position.set(LANES[lane], 0, zPos);
-        scene.add(barrier);
-        obstacles.push(barrier);
       }
     } else {
-      if (Math.random() < 0.3) {
+      const isHigh = Math.random() < 0.4;
+      const barrier = createBarrierMesh(isHigh);
+      barrier.position.set(LANES[lane], 0, zPos);
+      scene.add(barrier);
+      obstacles.push(barrier);
+      spawnCoinArc(lane, zPos + 3, 5, 0.95, isHigh ? 0 : 2.1);
+    }
+  }
+
+  for (let lane = 0; lane < 3; lane++) {
+    if (!usedLanes.has(lane)) {
+      if (Math.random() < 0.28) {
         spawnPowerup(lane, 1.1, zPos - 4);
       } else {
         spawnCoinArc(lane, zPos, 5, 0.95, 0);
@@ -650,6 +702,7 @@ function spawnWave(zPos) {
 let gameState = "IDLE_INTRO";
 let currentLane = 1;
 let previousLane = 1;
+let laneChangeTimer = 0;
 let playerY = 0;
 let playerVelY = 0;
 let groundHeight = 0;
@@ -689,7 +742,9 @@ function triggerPoliceChase(isStumble = false) {
       return;
     }
     dizzyTimer = 2.5;
-    showCallout("Inspector Chasing for 5s!");
+    chaserGroup.visible = true;
+    chaserGroup.position.set(playerGroup.position.x, playerGroup.position.y, 1.6);
+    showCallout("Stumbled! Inspector Chasing!");
   } else {
     SFX.whistle();
     SFX.bark();
@@ -1109,6 +1164,7 @@ function resetGameWorld() {
 
   currentLane = 1;
   previousLane = 1;
+  laneChangeTimer = 0;
   playerGroup.position.set(0, 0, 0);
   playerGroup.rotation.y = 0;
   playerY = 0;
@@ -1154,9 +1210,9 @@ function startNewRun() {
   document.getElementById("accountModal").style.display = "none";
   document.getElementById("hud").style.display = "block";
 
-  for (let z = -40; z >= -180; z -= 30) {
+  for (let z = -40; z >= -180; z -= 35) {
     spawnWave(z);
-    nextSpawnZ = z - 30;
+    nextSpawnZ = z - 35;
   }
 
   chaserGroup.visible = true;
@@ -1186,14 +1242,15 @@ function changeLane(dir) {
   if (target >= 0 && target <= 2) {
     previousLane = currentLane;
     currentLane = target;
+    laneChangeTimer = 0.28; // Track active lane change for side-swipe detection
     SFX.swoosh();
   }
 }
 
 function jump() {
   if (gameState !== "PLAYING" || jetpackTimer > 0) return;
-  if (playerY <= groundHeight + 0.08) {
-    playerVelY = 13.8;
+  if (playerY <= groundHeight + 0.12) {
+    playerVelY = 14.2;
     isRolling = false;
     SFX.jump();
   }
@@ -1395,6 +1452,10 @@ function animate(now) {
   if (gameState === "PLAYING") {
     playerGroup.rotation.y = 0;
 
+    if (laneChangeTimer > 0) {
+      laneChangeTimer -= dt;
+    }
+
     speed = Math.min(42, speed + dt * 0.38);
     const stepZ = speed * dt;
     const distDelta = stepZ * 0.45;
@@ -1410,8 +1471,8 @@ function animate(now) {
 
     nextSpawnZ += stepZ;
     if (nextSpawnZ > -185) {
-      spawnWave(nextSpawnZ - 30);
-      nextSpawnZ -= 30;
+      spawnWave(nextSpawnZ - 35);
+      nextSpawnZ -= 35;
     }
 
     const targetX = LANES[currentLane];
@@ -1444,23 +1505,33 @@ function animate(now) {
       const frontZ = obs.position.z + halfLen;
       const backZ = obs.position.z - halfLen;
 
-      if (jetpackTimer <= 0 && dx < 1.2) {
+      if (jetpackTimer <= 0 && dx < 1.25) {
         if (obs.userData.type === "train") {
           const rampFrontZ = frontZ + (obs.userData.hasRamp ? obs.userData.rampLength : 0);
 
-          if (obs.userData.hasRamp && frontZ >= -0.8 && rampFrontZ >= -0.5 && backZ <= 0.5) {
-            groundHeight = Math.max(groundHeight, obs.userData.height);
-            if (playerY < obs.userData.height) {
-              playerY = obs.userData.height;
+          // 1. FRONT RAMP CLIMBING: Only on stationary trains with a ramp, and ONLY within the front ramp zone!
+          if (obs.userData.hasRamp && !obs.userData.isMoving && rampFrontZ >= -0.4 && frontZ <= 0.6) {
+            const rampProgress = Math.min(1, Math.max(0, (rampFrontZ + 0.4) / (obs.userData.rampLength + 0.4)));
+            const rampY = rampProgress * obs.userData.height;
+            groundHeight = Math.max(groundHeight, rampY);
+            if (playerY < rampY) {
+              playerY = rampY;
               playerVelY = 0;
             }
-          } else if (frontZ >= -0.55 && backZ <= 0.55) {
-            if (playerY >= obs.userData.height - 0.45) {
+          }
+          // 2. TRAIN BODY COLLISION (frontZ > 0.6 to backZ <= 0.5)
+          else if (frontZ >= -0.55 && backZ <= 0.55) {
+            // Player is safely on top of the train roof
+            if (playerY >= obs.userData.height - 0.5) {
               groundHeight = Math.max(groundHeight, obs.userData.height);
             } else {
-              const isSideSwipe = Math.abs(targetX - playerGroup.position.x) > 0.28 && previousLane !== currentLane;
-              if (isSideSwipe) {
+              // Player is below the roof: Check if they swiped into the SIDE of the train vs hit the FRONT
+              const swipedIntoSide = (laneChangeTimer > 0 && previousLane !== currentLane) || frontZ > 1.35;
+
+              if (swipedIntoSide) {
+                // Bounce back to previous lane and summon Police Chaser!
                 currentLane = previousLane;
+                laneChangeTimer = 0;
                 playerGroup.position.x = LANES[currentLane];
                 triggerPoliceChase(true);
               } else if (hoverboardTimer > 0) {
@@ -1472,7 +1543,7 @@ function animate(now) {
                 obstacles.splice(i, 1);
                 continue;
               } else {
-                promptReviveOrGameOver("HIT BY EXPRESS TRAIN!");
+                promptReviveOrGameOver("HIT BY " + (obs.userData.name ? obs.userData.name.toUpperCase() : "EXPRESS TRAIN") + "!");
                 return;
               }
             }
@@ -1572,11 +1643,12 @@ function animate(now) {
       dizzyStarsGroup.visible = false;
     }
 
+    // FIXED: Police Chaser X and Z tracking so the Inspector visibly follows the player
     if (policeTimer > 0) {
       policeTimer -= dt;
       chaserGroup.visible = true;
-      chaserGroup.position.z += (2.1 - chaserGroup.position.z) * dt * 5;
-      chaserGroup.position.x += (playerGroup.position.x - playerGroup.position.x) * dt * 8;
+      chaserGroup.position.z += (1.9 - chaserGroup.position.z) * dt * 6;
+      chaserGroup.position.x += (playerGroup.position.x - chaserGroup.position.x) * dt * 10;
       chaserGroup.position.y = playerGroup.position.y;
     } else {
       chaserGroup.position.z += (11.5 - chaserGroup.position.z) * dt * 2.5;
