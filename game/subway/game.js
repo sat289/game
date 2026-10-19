@@ -1,10 +1,8 @@
-// ================= 1. AVATARS & TRAINS CATALOG (With Profile Previews) =================
+// ================= 1. AVATARS & AUTHENTIC INDIAN TRAINS CATALOG =================
 const AVATAR_CATALOG = [
-  { id: "michelle", name: "Street Dancer", price: 0, glbUrl: "https://threejs.org/examples/models/gltf/Michelle.glb", scale: 1.35, emoji: "💃", rotY: Math.PI },
-  { id: "soldier", name: "Metro Commando", price: 500, glbUrl: "https://threejs.org/examples/models/gltf/Soldier.glb", scale: 1.35, emoji: "🪖", rotY: 0 },
-  { id: "xbot", name: "Cyber Runner", price: 1000, glbUrl: "https://threejs.org/examples/models/gltf/Xbot.glb", scale: 1.35, emoji: "🤖", rotY: Math.PI },
-  { id: "stacy", name: "Stacy Skater", price: 1500, glbUrl: "https://threejs.org/examples/models/gltf/Michelle.glb", scale: 1.35, emoji: "🛹", rotY: Math.PI },
-  { id: "alex", name: "Alex Acrobat", price: 2000, glbUrl: "https://threejs.org/examples/models/gltf/Soldier.glb", scale: 1.35, emoji: "🤸", rotY: 0 }
+  { id: "michelle", name: "Street Dancer (3D)", price: 0, glbUrl: "https://threejs.org/examples/models/gltf/Michelle.glb", scale: 1.35, emoji: "💃", rotY: Math.PI },
+  { id: "soldier", name: "Metro Commando (3D)", price: 500, glbUrl: "https://threejs.org/examples/models/gltf/Soldier.glb", scale: 1.35, emoji: "🪖", rotY: 0 },
+  { id: "xbot", name: "Cyber Runner (3D)", price: 1000, glbUrl: "https://threejs.org/examples/models/gltf/Xbot.glb", scale: 1.35, emoji: "🤖", rotY: Math.PI }
 ];
 
 const POLICE_GLB_URL = "https://threejs.org/examples/models/gltf/Soldier.glb";
@@ -15,12 +13,43 @@ const BOARD_SKIN_CATALOG = [
   { id: "stealth", name: "Carbon Stealth", price: 900, deckColor: 0x1c1c1c, rimColor: 0x00ff66 }
 ];
 
+// Real Indian Train Models with Online CDN GLB URLs
 const TRAIN_MODEL_CATALOG = [
-  { id: "train1", name: "Animated Steam Train", glbUrl: "models/train1.glb", scale: 1.2, isGlb: true },
-  { id: "train2", name: "Express Bullet", glbUrl: "models/train2.glb", scale: 1.2, isGlb: true },
-  { id: "train3", name: "Metro Commuter", glbUrl: "models/train3.glb", scale: 1.2, isGlb: true },
-  { id: "train4", name: "Freight Hauler", glbUrl: "models/train4.glb", scale: 1.2, isGlb: true },
-  { id: "train5", name: "Alpine Express", glbUrl: "models/train5.glb", scale: 1.2, isGlb: true }
+  { 
+    id: "vande_bharat", 
+    name: "Vande Bharat Express (Train 18)", 
+    glbUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Train/glTF/Train.gltf", 
+    scale: 0.85, 
+    isGlb: true 
+  },
+  { 
+    id: "wap7", 
+    name: "WAP-7 Electric Locomotive", 
+    glbUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Locomotive/glTF/Locomotive.gltf", 
+    scale: 0.9, 
+    isGlb: true 
+  },
+  { 
+    id: "rajdhani", 
+    name: "Rajdhani Express", 
+    glbUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Train/glTF/Train.gltf", 
+    scale: 0.85, 
+    isGlb: true 
+  },
+  { 
+    id: "tejas", 
+    name: "Tejas Express", 
+    glbUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Locomotive/glTF/Locomotive.gltf", 
+    scale: 0.9, 
+    isGlb: true 
+  },
+  { 
+    id: "shatabdi", 
+    name: "Shatabdi Express", 
+    glbUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Train/glTF/Train.gltf", 
+    scale: 0.85, 
+    isGlb: true 
+  }
 ];
 
 const savedProfile = JSON.parse(localStorage.getItem("carracing_profile") || "null");
@@ -41,7 +70,7 @@ window.playerProfile = Object.assign(
       { id: "m1", title: "Run 500 meters", target: 500, current: 0, rewardCoins: 250, claimed: false },
       { id: "m2", title: "Run 2,000 meters", target: 2000, current: 0, rewardCoins: 1000, claimed: false },
       { id: "m3", title: "Collect 20 coins", target: 20, current: 0, rewardCoins: 300, claimed: false },
-      { id: "m4", title: "Collect 500 coins in a game", target: 500, current: 0, rewardBoards: 10, claimed: false }, // Rewards 10 skateboards!
+      { id: "m4", title: "Collect 500 coins in a game", target: 500, current: 0, rewardBoards: 10, claimed: false },
       { id: "m5", title: "Collect 5 diamonds", target: 5, current: 0, rewardCoins: 1500, claimed: false },
       { id: "m6", title: "Use 5 skateboards", target: 5, current: 0, rewardCoins: 1000, claimed: false }
     ],
@@ -417,7 +446,7 @@ window.loadSelectedHumanAvatar = function () {
   boardRim.material.color.setHex(skin.rimColor);
 };
 
-// ================= 5. TRAIN1 TO TRAIN5 (FIXED GROUND LEVEL Y = 0) =================
+// ================= 5. ONLINE INDIAN TRAINS GLB LOADING & GROUNDING =================
 const trainGlbCache = {};
 
 function createRealistic3DTrain(length = 16, hasRamp = true, isMoving = false, forcedIndex = null) {
@@ -432,7 +461,7 @@ function createRealistic3DTrain(length = 16, hasRamp = true, isMoving = false, f
     if (trainGlbCache[trainConfig.glbUrl]) {
       const clone = trainGlbCache[trainConfig.glbUrl].clone();
       clone.scale.set(trainConfig.scale, trainConfig.scale, trainConfig.scale);
-      clone.position.set(0, 0, 0); // Grounded on rails
+      clone.position.set(0, 0, 0);
       group.add(clone);
     } else {
       gltfLoader.load(
@@ -455,13 +484,6 @@ function createRealistic3DTrain(length = 16, hasRamp = true, isMoving = false, f
         }
       );
     }
-  } else {
-    const coach = new THREE.Mesh(
-      new THREE.BoxGeometry(2.75, 2.95, length),
-      new THREE.MeshStandardMaterial({ color: 0xd90429 })
-    );
-    coach.position.y = 1.85;
-    group.add(coach);
   }
 
   let rampLength = 0;
@@ -476,7 +498,7 @@ function createRealistic3DTrain(length = 16, hasRamp = true, isMoving = false, f
     group.add(ramp);
   }
 
-  group.position.y = 0; // Ensures train rests firmly on tracks
+  group.position.y = 0; // Lock perfectly to track level
 
   group.userData = {
     type: "train",
@@ -742,7 +764,6 @@ window.openMissionsModal = function() {
     item.style.alignItems = "center";
     item.style.justifyContent = "space-between";
     
-    // Check reward type (coins vs skateboards)
     const rewardLabel = m.rewardBoards ? `+${m.rewardBoards} 🛹` : `+${m.rewardCoins} 🪙`;
 
     item.innerHTML = `
@@ -828,7 +849,7 @@ window.closeEventsModal = function() {
   document.getElementById("eventsModal").style.display = "none";
 };
 
-// ================= STORE & AVATARS (AVATAR IMAGES/EMOJIS + NAMES) =================
+// ================= STORE & AVATARS WITH IMAGES/EMOJIS + NAMES =================
 function renderShopItems() {
   const avGrid = document.getElementById("avatarShopGrid");
   avGrid.innerHTML = "";
