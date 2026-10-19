@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Monsoon Jungle Escape - Realistic 3D</title>
-    <!-- Firebase SDK included as requested -->
+    <title>Monsoon Valley Mobile Escape</title>
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js" type="module"></script>
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #0b1f15;
+            background-color: #06140c;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             user-select: none;
             -webkit-user-select: none;
@@ -40,25 +40,59 @@
             align-items: center;
         }
         .hud-card {
-            background: rgba(0, 0, 0, 0.7);
-            border: 2px solid #2e7d32;
-            color: #a5d6a7;
+            background: rgba(0, 0, 0, 0.75);
+            border: 2px solid #4CAF50;
+            color: #a3ffb4;
             padding: 8px 14px;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: bold;
             border-radius: 10px;
             text-shadow: 1px 1px #000;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
             pointer-events: auto;
         }
-        .title-banner {
+        /* Mobile Start / Login Overlay */
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, rgba(6,20,12,0.95), rgba(11,31,21,0.95));
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            pointer-events: auto;
+            padding: 20px;
+            box-sizing: border-box;
             text-align: center;
-            color: #81c784;
-            font-size: 22px;
-            font-weight: 900;
+        }
+        #start-screen h1 {
+            color: #4CAF50;
+            font-size: 28px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(76, 175, 80, 0.6);
             text-transform: uppercase;
-            letter-spacing: 2px;
-            text-shadow: 2px 2px #000, 0 0 15px rgba(129, 199, 132, 0.6);
+        }
+        #start-screen p {
+            color: #c8e6c9;
+            font-size: 14px;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+        .mobile-btn {
+            background: linear-gradient(135deg, #4CAF50, #2e7d32);
+            border: 2px solid #a3ffb4;
+            color: #fff;
+            padding: 14px 32px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
         .footer-ui {
             text-align: center;
@@ -66,14 +100,13 @@
         }
         .instruction {
             display: inline-block;
-            background: linear-gradient(135deg, #1b5e20, #0a3610);
+            background: rgba(27, 94, 32, 0.85);
             color: #fff;
-            padding: 10px 20px;
+            padding: 8px 16px;
             border-radius: 20px;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
-            border: 1px solid #4caf50;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+            border: 1px solid #4CAF50;
             pointer-events: auto;
         }
         #game-over {
@@ -82,25 +115,25 @@
             left: 50%;
             transform: translate(-50%, -50%);
             background: rgba(0, 0, 0, 0.92);
-            border: 3px solid #4caf50;
+            border: 3px solid #4CAF50;
             padding: 25px 35px;
             text-align: center;
             border-radius: 16px;
             color: #fff;
             display: none;
             pointer-events: auto;
-            box-shadow: 0 0 40px rgba(76, 175, 80, 0.6);
             width: 80%;
-            max-width: 320px;
+            max-width: 300px;
+            z-index: 5;
         }
         #game-over h2 {
-            color: #4caf50;
+            color: #4CAF50;
             margin-top: 0;
-            font-size: 24px;
+            font-size: 22px;
         }
         #game-over button {
-            background: linear-gradient(135deg, #2e7d32, #1b5e20);
-            border: 1px solid #a5d6a7;
+            background: linear-gradient(135deg, #4CAF50, #2e7d32);
+            border: 1px solid #a3ffb4;
             color: #fff;
             padding: 12px 24px;
             font-size: 16px;
@@ -109,15 +142,14 @@
             cursor: pointer;
             margin-top: 15px;
             width: 100%;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
         }
         #loading {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            color: #4caf50;
-            font-size: 20px;
+            color: #4CAF50;
+            font-size: 18px;
             font-weight: bold;
             text-shadow: 2px 2px #000;
             pointer-events: none;
@@ -128,17 +160,24 @@
 </head>
 <body>
 
-    <div id="loading">వర్షాకాలపు అడవి మరియు జలపాతాలు లోడ్ అవుతున్నాయి...</div>
+    <div id="loading">గేమ్ లోడ్ అవుతోంది...</div>
+
+    <!-- మొబైల్ లాగిన్ / స్టార్ట్ స్క్రీన్ -->
+    <div id="start-screen">
+        <h1>Monsoon Valley Escape</h1>
+        <p>దట్టమైన అడవులు, జలపాతాలు మరియు నదుల మధ్య సాహసయాత్ర. మొబైల్ స్క్రీన్ పై స్వైప్ చేస్తూ రాక్షసుడి నుండి తప్పించుకోండి!</p>
+        <button class="mobile-btn" onclick="startGame()">ఆట మొదలుపెట్టండి</button>
+    </div>
+
     <div id="canvas-container"></div>
 
-    <div id="ui-overlay">
+    <div id="ui-overlay" style="display: none;" id="main-ui">
         <div class="header-ui">
             <div class="hud-card">SCORE: <span id="score-val">0</span></div>
             <div class="hud-card">🪙 <span id="coin-val">0</span></div>
         </div>
-        <div class="title-banner">Monsoon Valley Escape[span_1](start_span)[span_1](end_span)</div>
         <div class="footer-ui">
-            <div class="instruction">Swipe Left/Right: లేన్స్ | Swipe Up: జంప్ | Swipe Down: ఫ్లాట్ స్లైడ్</div>
+            <div class="instruction">⬅️ ➡️ స్వైప్: లేన్స్ మార్చండి | ⬆️ స్వైప్: జంప్ | ⬇️ స్వైప్: స్లైడ్</div>
         </div>
     </div>
 
@@ -149,11 +188,13 @@
     </div>
 
     <script>
-        // --- 1. సీన్ మరియు వాతావరణం (Scene & Atmosphere) ---
+        let gameStarted = false;
+
+        // --- 1. సీన్ మరియు వాతావరణం ---
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x0f241a); // దట్టమైన అడవి రంగు[span_2](start_span)[span_2](end_span)
-        scene.fog = new THREE.FogExp2(0x142b1f, 0.02); // వర్షాకాలపు పొగమంచు[span_3](start_span)[span_3](end_span)
+        scene.background = new THREE.Color(0x0f241a);
+        scene.fog = new THREE.FogExp2(0x142b1f, 0.02);
 
         const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1000);
         camera.position.set(0, 3.2, 5.2);
@@ -172,15 +213,15 @@
         dirLight.castShadow = true;
         scene.add(dirLight);
 
-        // --- 2. పచ్చటి చెట్లు, నదులు మరియు జలపాతాలు (గోడలు లేకుండా) ---
+        // --- 2. ఎన్విరాన్మెంట్ (నదులు, జలపాతాలు, చెట్లు) ---
         const laneWidth = 2.0;
         const trackLength = 100;
         const roadGroup = new THREE.Group();
         scene.add(roadGroup);
 
-        const streamMat = new THREE.MeshStandardMaterial({ color: 0x3e5c54, roughness: 0.6 });[span_4](start_span)[span_4](end_span)
+        const streamMat = new THREE.MeshStandardMaterial({ color: 0x3e5c54, roughness: 0.6 });
         const flowingWaterMat = new THREE.MeshStandardMaterial({ color: 0x80deea, roughness: 0.1, metalness: 0.8, transparent: true, opacity: 0.85 });
-        const waterfallSheetMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.6 });[span_5](start_span)[span_5](end_span)
+        const waterfallSheetMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.6 });
         const jungleGreenMat = new THREE.MeshStandardMaterial({ color: 0x1b5e20, roughness: 0.9 });
         const rockMat = new THREE.MeshStandardMaterial({ color: 0x4f5b52, roughness: 0.8 });
         const rootMat = new THREE.MeshStandardMaterial({ color: 0x3e2723, roughness: 0.9 });
@@ -191,7 +232,6 @@
         for (let i = 0; i < 5; i++) {
             const segment = new THREE.Group();
             
-            // మధ్యలో నది ప్రవాహం మార్గం (సైడ్స్ గోడలు పూర్తిగా తొలగించబడ్డాయి)[span_6](start_span)[span_6](end_span)
             const streamBed = new THREE.Mesh(new THREE.BoxGeometry(6, 0.3, trackLength), streamMat);
             streamBed.position.set(0, -0.15, 0);
             streamBed.receiveShadow = true;
@@ -202,7 +242,6 @@
             streamWater.position.set(0, 0.02, 0);
             segment.add(streamWater);
 
-            // సైడ్స్‌లో అందమైన జలపాతాలు మరియు నదులు[span_7](start_span)[span_7](end_span)
             const leftWaterfall = new THREE.Mesh(new THREE.PlaneGeometry(8, 18), waterfallSheetMat);
             leftWaterfall.position.set(-12, 6, - (i * 30));
             segment.add(leftWaterfall);
@@ -211,7 +250,6 @@
             rightWaterfall.position.set(12, 6, - (i * 30) + 15);
             segment.add(rightWaterfall);
 
-            // దట్టమైన పచ్చటి చెట్లు (Greenery Trees)[span_8](start_span)[span_8](end_span)
             for (let t = -40; t <= 40; t += 20) {
                 const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1.1, 7, 8), rootMat);
                 trunk.position.set(-10, 4, t);
@@ -230,7 +268,6 @@
                 segment.add(foliageR);
             }
 
-            // రాళ్లు మరియు చెట్టు వేర్లు (Obstacles)
             if (i > 0) {
                 const laneChoice = Math.floor(Math.random() * 3) - 1;
                 const isRock = Math.random() > 0.5;
@@ -259,14 +296,13 @@
             segments.push(segment);
         }
 
-        // --- 3. నిజమైన మనిషిలాంటి హ్యూమన్ రన్నర్ అవతార్ (రోబో కాదు) ---
+        // --- 3. హ్యూమన్ అవతార్ ---
         const playerGroup = new THREE.Group();
         const skinMat = new THREE.MeshStandardMaterial({ color: 0xd8b29d, roughness: 0.6 });
-        const shirtMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7 }); // తెల్లటి చొక్కా[span_9](start_span)[span_9](end_span)
-        const pantsMat = new THREE.MeshStandardMaterial({ color: 0x1f1f1f, roughness: 0.8 }); // నల్లటి ప్యాంట్[span_10](start_span)[span_10](end_span)
+        const shirtMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7 });
+        const pantsMat = new THREE.MeshStandardMaterial({ color: 0x1f1f1f, roughness: 0.8 });
         const hairMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.5 });
 
-        // తల మరియు ముఖం
         const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 16, 16), skinMat);
         head.position.set(0, 1.8, 0);
         playerGroup.add(head);
@@ -275,12 +311,10 @@
         hair.position.set(0, 1.86, -0.01);
         playerGroup.add(hair);
 
-        // మొండెం (Torso)
         const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.13, 0.6, 12), shirtMat);
         torso.position.set(0, 1.3, 0);
         playerGroup.add(torso);
 
-        // చేతులు మరియు కాళ్లు (సహజమైన రన్నింగ్ కదలికల కోసం)
         const limbGeo = new THREE.CylinderGeometry(0.045, 0.035, 0.55, 8);
         const leftArm = new THREE.Mesh(limbGeo, shirtMat);
         leftArm.position.set(-0.24, 1.35, 0);
@@ -301,7 +335,7 @@
         playerGroup.position.set(0, 0, 0);
         scene.add(playerGroup);
 
-        // --- 4. వెనక తరుముకొచ్చే చిన్న రాక్షసుడు (మొదటి 3 సెకన్లు దగ్గరకు రావడం) ---
+        // --- 4. మొబైల్ మాన్‌స్టర్ ---
         const monkeyGroup = new THREE.Group();
         const monkeyMat = new THREE.MeshStandardMaterial({ color: 0x1b120c, roughness: 0.9 });
         
@@ -322,8 +356,8 @@
 
         document.getElementById('loading').style.display = 'none';
 
-        // --- 5. టచ్ మరియు కీబోర్డ్ కంట్రోల్స్ ---
-        let currentLane = 0; // -1, 0, 1
+        // --- 5. మొబైల్ టచ్ కంట్రోల్స్ ---
+        let currentLane = 0;
         let targetX = 0;
         let isJumping = false;
         let isSliding = false;
@@ -344,51 +378,45 @@
         }, { passive: true });
 
         window.addEventListener('touchend', (e) => {
-            if (isGameOver) return;
+            if (!gameStarted || isGameOver) return;
             let deltaX = e.changedTouches[0].clientX - touchStartX;
             let deltaY = e.changedTouches[0].clientY - touchStartY;
 
             if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                if (deltaX > 35 && currentLane < 1) currentLane++;
-                else if (deltaX < -35 && currentLane > -1) currentLane--;
+                if (deltaX > 30 && currentLane < 1) currentLane++;
+                else if (deltaX < -30 && currentLane > -1) currentLane--;
             } else {
-                if (deltaY < -35 && !isJumping && !isSliding) {
+                if (deltaY < -30 && !isJumping && !isSliding) {
                     isJumping = true;
                     jumpVelocity = 0.25;
-                } else if (deltaY > 35 && !isJumping && !isSliding) {
+                } else if (deltaY > 30 && !isJumping && !isSliding) {
                     triggerSlide();
                 }
             }
             targetX = currentLane * laneWidth;
         }, { passive: true });
 
-        window.addEventListener('keydown', (e) => {
-            if (isGameOver) return;
-            if ((e.key === 'ArrowLeft' || e.key === 'a') && currentLane > -1) currentLane--;
-            else if ((e.key === 'ArrowRight' || e.key === 'd') && currentLane < 1) currentLane++;
-            else if ((e.key === 'ArrowUp' || e.key === 'w' || e.key === ' ') && !isJumping && !isSliding) {
-                isJumping = true;
-                jumpVelocity = 0.25;
-            } else if ((e.key === 'ArrowDown' || e.key === 's') && !isJumping && !isSliding) {
-                triggerSlide();
-            }
-            targetX = currentLane * laneWidth;
-        });
-
         function triggerSlide() {
             isSliding = true;
-            slideTimer = 120; // 2 సెకన్ల పాటు ఫ్లాట్ స్లైడ్ (కిందకు వంగి పరిగెత్తడం)
+            slideTimer = 120;
             playerGroup.scale.set(1, 0.35, 1.4);
             playerGroup.position.y = -0.3;
         }
 
-        // --- 6. యానిమేషన్ లూప్ ---
+        function startGame() {
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('ui-overlay').style.display = 'flex';
+            gameStarted = true;
+            clock.start();
+            animate();
+        }
+
         const clock = new THREE.Clock();
         const initialMonkeyZ = 5.5;
         const targetMonkeyZ = 2.8;
 
         function animate() {
-            if (isGameOver) return;
+            if (!gameStarted || isGameOver) return;
             requestAnimationFrame(animate);
 
             const time = clock.getElapsedTime();
@@ -413,14 +441,12 @@
                 }
             }
 
-            // మొదటి 3 సెకన్లలో రాక్షసుడు దగ్గరకు రావడం, ఆ తర్వాత దూరం స్థిరంగా ఉండటం
             if (time < 3.0) {
                 monkeyGroup.position.z = initialMonkeyZ - (initialMonkeyZ - targetMonkeyZ) * (time / 3.0);
             } else {
                 monkeyGroup.position.z = targetMonkeyZ;
             }
 
-            // సహజమైన మానవ రన్నింగ్ ఆర్మ్ & లెగ్ స్వింగ్
             leftArm.rotation.x = Math.sin(time * 18) * 0.8;
             rightArm.rotation.x = -Math.sin(time * 18) * 0.8;
             leftLeg.rotation.x = -Math.sin(time * 18) * 0.8;
@@ -433,7 +459,6 @@
                 }
             });
 
-            // రాళ్లు మరియు చెట్టు వేర్లతో ఢీకొనే సంఘటనలు (Collisions)
             obstacles.forEach(obs => {
                 const worldPos = new THREE.Vector3();
                 obs.getWorldPosition(worldPos);
@@ -477,8 +502,6 @@
             document.getElementById('game-over').style.display = 'none';
             animate();
         }
-
-        animate();
 
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
