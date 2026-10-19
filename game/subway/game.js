@@ -328,7 +328,7 @@ boardGroup.position.y = 0.07;
 boardGroup.visible = false;
 playerGroup.add(boardGroup);
 
-// ================= JETPACK 🚀 (DUAL THRUSTERS + GIANT FLAME TRAILS) =================
+// ================= JETPACK 🚀 =================
 const jetpackGroup = new THREE.Group();
 
 const jetpackBody = new THREE.Mesh(
@@ -1572,6 +1572,17 @@ function animate(now) {
       playerY += (8.5 - playerY) * dt * 5;
       playerVelY = 0;
 
+      speed = Math.min(42, speed + dt * 0.38);
+      const stepZ = speed * dt;
+      const distDelta = stepZ * 0.45;
+      distanceRun += distDelta;
+      window.score += distDelta * 2.2 * scoreMultiplier;
+
+      scrollingProps.forEach(row => {
+        row.position.z += stepZ;
+        if (row.position.z > 24) row.position.z -= 260;
+      });
+
       jetpackFlames.forEach((flame, idx) => {
         flame.scale.y = 1 + Math.sin(t * 25 + idx) * 0.35;
         flame.scale.x = 1 + Math.cos(t * 20) * 0.2;
@@ -1738,7 +1749,7 @@ function animate(now) {
       policeTimer -= dt;
       chaserGroup.visible = true;
       chaserGroup.position.z += (1.9 - chaserGroup.position.z) * dt * 6;
-      chaserGroup.position.x += (playerGroup.position.x - chaserGroup.position.x) * dt * 10;
+      chaserGroup.position.x += (playerGroup.position.x - playerGroup.position.x) * dt * 10;
       chaserGroup.position.y = playerGroup.position.y;
     } else {
       chaserGroup.position.z += (11.5 - chaserGroup.position.z) * dt * 2.5;
@@ -1803,12 +1814,10 @@ function animate(now) {
           window.playerProfile.boards++;
           showCallout("+1 Hoverboard! 🛹");
         } else if (p.userData.kind === "diamondPickup") {
-  window.playerProfile.diamonds += 1; // Gives 1 diamond
-  updateMissionsProgress(0, 0, 1, 0); // Updates mission progress by 1
-  showCallout("+1 Diamond! 💎");
-}
-
-
+          window.playerProfile.diamonds += 1; // 1 diamond = 1 diamond pickup
+          updateMissionsProgress(0, 0, 1, 0);
+          showCallout("+1 Diamond! 💎");
+        }
         scene.remove(p);
         powerups.splice(i, 1);
         continue;
