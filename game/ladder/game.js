@@ -1,6 +1,5 @@
-// Game Mapping Constants
-const snakes = { 16: 6, 47: 26, 49: 11, 56: 53, 62: 19, 64: 60, 87: 24, 93: 73, 95: 75, 98: 78 };
-const ladders = { 1: 38, 4: 14, 9: 31, 21: 42, 28: 84, 36: 44, 51: 67, 71: 91, 80: 100 };
+let snakes = {};
+let ladders = {};
 
 let gameState = {
     currentUser: null,
@@ -8,7 +7,8 @@ let gameState = {
     mode: "local",
     players: [],
     turnIndex: 0,
-    roomCode: null
+    roomCode: null,
+    selectedTheme: "classic"
 };
 
 // DOM Elements
@@ -17,10 +17,12 @@ const playerNameInput = document.getElementById('player-name');
 const userDisplayName = document.getElementById('user-display-name');
 const boardEl = document.getElementById('board');
 const diceEl = document.getElementById('dice');
+const diceStatus = document.getElementById('dice-status');
 const turnIndicator = document.getElementById('turn-indicator');
 const scoreboardEl = document.getElementById('scoreboard');
 const loginStatusBanner = document.getElementById('login-status-banner');
 const loginPopup = document.getElementById('login-popup');
+const themeSelect = document.getElementById('theme-select');
 
 // Audio elements
 const sfxTap = document.getElementById('sfx-tap');
@@ -46,46 +48,66 @@ function switchScreen(screenId) {
     }
 }
 
+// Randomizer to generate fresh snakes and ladders every match
+function generateRandomBoardLayout() {
+    snakes = {};
+    ladders = {};
+
+    // Generate 5 random ladders (bottom to top, ensuring bottom < top and reasonable gaps)
+    const ladderPairs = [[2, 38], [7, 14], [15, 44], [28, 84], [36, 52], [51, 67], [71, 91], [78, 98]];
+    // Shuffle and pick 4-5 ladders
+    shuffleArray(ladderPairs).slice(0, 5).forEach(([start, end]) => {
+        ladders[start] = end;
+    });
+
+    // Generate 5 random snakes (head to tail, head > tail)
+    const snakePairs = [[99, 10], [95, 75], [87, 24], [64, 36], [56, 19], [47, 26], [32, 5], [16, 6]];
+    shuffleArray(snakePairs).slice(0, 5).forEach(([start, end]) => {
+        snakes[start] = end;
+    });
+}
+
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     buildBoard();
 
-    // Check Firebase Auth state or Local Storage session
+    // Theme selector listener
+    themeSelect.addEventListener('change', (e) => {
+        gameState.selectedTheme = e.target.value;
+        boardEl.className = `theme-${gameState.selectedTheme}`;
+    });
+
     if (auth) {
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // User logged in via main login or Google
                 gameState.currentUser = user;
                 gameState.playerName = user.displayName || user.email.split('@')[0];
                 playerNameInput.value = gameState.playerName;
                 userDisplayName.innerText = gameState.playerName;
-                
                 loginStatusBanner.classList.remove('hidden');
-                loginPopup.classList.add('hidden'); // Hide popup if logged in
+                loginPopup.classList.add('hidden');
             } else {
-                // Not logged in -> Check local storage or show popup
                 const savedName = localStorage.getItem('snake_player_name');
-                if (savedName) {
-                    playerNameInput.value = savedName;
-                }
-                
-                // Show animated popup after a short delay prompting login
+                if (savedName) playerNameInput.value = savedName;
                 setTimeout(() => {
-                    if (!gameState.currentUser) {
-                        loginPopup.classList.remove('hidden');
-                    }
+                    if (!gameState.currentUser) loginPopup.classList.remove('hidden');
                 }, 600);
             }
         });
     } else {
-        // Fallback if Firebase isn't loaded
         const savedName = localStorage.getItem('snake_player_name');
         if (savedName) playerNameInput.value = savedName;
         loginPopup.classList.remove('hidden');
     }
 
-    // Popup button triggers
     document.getElementById('btn-goto-login-page').addEventListener('click', () => {
-        // Redirect to your main login page (e.g., login.html in root or relative path)
         window.location.href = "../login.html"; 
     });
 
@@ -94,7 +116,6 @@ document.addEventListener('DOMContentLoaded', () => {
         loginPopup.classList.add('hidden');
     });
 
-    // Continue to Menu Button
     document.getElementById('btn-continue').addEventListener('click', () => {
         const name = playerNameInput.value.trim() || "Player 1";
         gameState.playerName = name;
@@ -104,12 +125,8 @@ document.addEventListener('DOMContentLoaded', () => {
         switchScreen('menu-screen');
     });
 
-    // Google Sign-In button click handler
-    document.getElementById('by-google-login`' || 'btn-google-login').addEventListener('click', async () => {
-        if (!auth) {
-            alert("Firebase Auth unavailable.");
-            return;
-        }
+    document.getElementById('btn-google-login').addEventListener('click', async () => {
+        if (!auth) { alert("Firebase Auth unavailable."); return; }
         try {
             const provider = new firebase.auth.GoogleAuthProvider();
             const result = await auth.signInWithPopup(provider);
@@ -118,7 +135,6 @@ document.addEventListener('DOMContentLoaded', () => {
             gameState.playerName = user.displayName;
             playerNameInput.value = user.displayName;
             userDisplayName.innerText = user.displayName;
-            
             loginStatusBanner.classList.remove('hidden');
             loginPopup.classList.add('hidden');
             saveNameToLocalLeaderboard(user.displayName, 0);
@@ -129,7 +145,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Menu Navigation
     document.getElementById('btn-mode-bot').addEventListener('click', () => startGame('bot'));
     document.getElementById('btn-mode-pass').addEventListener('click', () => startGame('pass'));
     document.getElementById('btn-mode-online').addEventListener('click', () => switchScreen('lobby-screen'));
@@ -148,7 +163,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.getElementById('btn-quit-game').addEventListener('click', () => switchScreen('menu-screen'));
 
-    // Game Actions
     document.getElementById('btn-roll').addEventListener('click', rollDice);
     document.getElementById('btn-create-room').addEventListener('click', createOnlineRoom);
     document.getElementById('btn-join-room').addEventListener('click', joinOnlineRoom);
@@ -174,7 +188,12 @@ function buildBoard() {
             const cell = document.createElement('div');
             cell.classList.add('cell');
             cell.dataset.num = cellNum;
-            cell.innerText = cellNum;
+            
+            // Highlight current dynamic ladders and snakes visually on board
+            let cellText = cellNum;
+            if (ladders[cellNum]) cellText += ` 🪜→${ladders[cellNum]}`;
+            if (snakes[cellNum]) cellText += ` 🐍→${snakes[cellNum]}`;
+            cell.innerText = cellText;
             boardEl.appendChild(cell);
         }
     }
@@ -184,15 +203,19 @@ function startGame(mode) {
     gameState.mode = mode;
     gameState.turnIndex = 0;
     
+    // Generate fresh random snake and ladder configuration for this match
+    generateRandomBoardLayout();
+    buildBoard();
+
     if (mode === 'bot') {
         gameState.players = [
-            { name: gameState.playerName, pos: 0, colorClass: 'token-0' },
-            { name: 'Bot AI', pos: 0, colorClass: 'token-1' }
+            { name: gameState.playerName, pos: 0, started: false, colorClass: 'token-0' },
+            { name: 'Bot AI', pos: 0, started: false, colorClass: 'token-1' }
         ];
     } else if (mode === 'pass') {
         gameState.players = [
-            { name: gameState.playerName, pos: 0, colorClass: 'token-0' },
-            { name: 'Player 2', pos: 0, colorClass: 'token-1' }
+            { name: gameState.playerName, pos: 0, started: false, colorClass: 'token-0' },
+            { name: 'Player 2', pos: 0, started: false, colorClass: 'token-1' }
         ];
     }
 
@@ -217,10 +240,11 @@ function updateBoardUI() {
 
     const currentPlayer = gameState.players[gameState.turnIndex];
     turnIndicator.innerText = `Turn: ${currentPlayer.name}`;
+    diceStatus.innerText = currentPlayer.started ? "Roll to move!" : "Roll a 1 to start!";
     
     scoreboardEl.innerHTML = gameState.players.map(p => `
         <div style="background:#0f172a; padding:10px; border-radius:8px; margin-bottom:8px;">
-            <strong>${p.name}</strong><br>Square: ${p.pos}
+            <strong>${p.name}</strong><br>Status: ${p.started ? `Square ${p.pos}` : 'Waiting for 1 🎲'}
         </div>
     `).join('');
 }
@@ -231,16 +255,27 @@ function rollDice() {
     diceEl.innerText = ['⚀','⚁','⚂','⚃','⚄','⚅'][roll - 1];
 
     let player = gameState.players[gameState.turnIndex];
-    let newPos = player.pos + roll;
 
-    if (newPos <= 100) {
-        player.pos = newPos;
-        if (ladders[player.pos]) {
-            playSound(sfxLadder);
-            player.pos = ladders[player.pos];
-        } else if (snakes[player.pos]) {
-            playSound(sfxSnake);
-            player.pos = snakes[player.pos];
+    // RULE IMPLEMENTATION: Must roll a 1 to start moving out of square 0
+    if (!player.started) {
+        if (roll === 1) {
+            player.started = true;
+            player.pos = 1;
+            alert(`🎉 ${player.name} rolled a 1 and entered the board!`);
+        } else {
+            alert(`🎲 ${player.name} rolled a ${roll}. You need a 1 to start!`);
+        }
+    } else {
+        let newPos = player.pos + roll;
+        if (newPos <= 100) {
+            player.pos = newPos;
+            if (ladders[player.pos]) {
+                playSound(sfxLadder);
+                player.pos = ladders[player.pos];
+            } else if (snakes[player.pos]) {
+                playSound(sfxSnake);
+                player.pos = snakes[player.pos];
+            }
         }
     }
 
@@ -280,8 +315,8 @@ function createOnlineRoom() {
     alert(`Room Created! Code: ${code}`);
     gameState.mode = 'online';
     gameState.players = [
-        { name: gameState.playerName, pos: 0, colorClass: 'token-0' },
-        { name: 'Waiting for friend...', pos: 0, colorClass: 'token-1' }
+        { name: gameState.playerName, pos: 0, started: false, colorClass: 'token-0' },
+        { name: 'Waiting for friend...', pos: 0, started: false, colorClass: 'token-1' }
     ];
     switchScreen('game-screen');
     updateBoardUI();
@@ -296,8 +331,8 @@ function joinOnlineRoom() {
     gameState.roomCode = code;
     gameState.mode = 'online';
     gameState.players = [
-        { name: 'Host', pos: 0, colorClass: 'token-0' },
-        { name: gameState.playerName, pos: 0, colorClass: 'token-1' }
+        { name: 'Host', pos: 0, started: false, colorClass: 'token-0' },
+        { name: gameState.playerName, pos: 0, started: false, colorClass: 'token-1' }
     ];
     alert(`Joined room ${code}!`);
     switchScreen('game-screen');
