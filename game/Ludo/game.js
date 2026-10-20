@@ -26,13 +26,7 @@ class SoundFX {
 }
 const sfx = new SoundFX();
 
-// Dynamic Player Mode Configuration mapping
-const MODE_MAP = {
-  '1v1': ['red', 'yellow'],
-  '2v2': ['red', 'green', 'yellow', 'blue'], // Team: Red+Yellow vs Green+Blue
-  '1v3': ['red', 'green', 'yellow', 'blue'], // Solo Red vs 3 Bots
-  '4player': ['red', 'green', 'yellow', 'blue']
-};
+const PLAYERS = ['red', 'green', 'yellow', 'blue'];
 
 const MAIN_TRACK = [
   [6,1],[6,2],[6,3],[6,4],[6,5],
@@ -62,14 +56,13 @@ const HOME_PATHS = {
 const BASE_POSITIONS = {
   red:    [[1.5, 1.5], [1.5, 3.5], [3.5, 1.5], [3.5, 3.5]],
   green:  [[1.5, 10.5], [1.5, 12.5], [3.5, 10.5], [3.5, 12.5]],
-  yellow: [[10.5, 10.5], [10.5, 12.5], [13.5, 10.5], [13.5, 12.5]],
+  yellow: [[10.5, 10.5], [10.5, 12.5], [12.5, 10.5], [12.5, 12.5]],
   blue:   [[10.5, 1.5], [10.5, 3.5], [12.5, 1.5], [12.5, 3.5]]
 };
 
-const STORAGE_KEY = 'PRO_LUDO_CUSTOM_MODE_V1';
+const STORAGE_KEY = 'PRO_LUDO_FINAL_STATE_V9';
 
 let state = {
-  playerMode: '1v1',
   mode: 'bot',
   turnIndex: 0,
   diceValue: null,
@@ -94,7 +87,6 @@ const rollBtn = document.getElementById('roll-dice-btn');
 const diceCube = document.getElementById('dice-cube');
 const turnBadge = document.getElementById('turn-indicator');
 const scoreTracker = document.getElementById('score-tracker');
-const selectPlayerMode = document.getElementById('select-player-mode');
 const gameModeSelect = document.getElementById('game-mode-select');
 const onlineLobby = document.getElementById('online-lobby');
 const roomInputCode = document.getElementById('room-input-code');
@@ -107,12 +99,9 @@ function init() {
   const startBtn = document.getElementById('main-start-btn');
   if (startBtn) {
     startBtn.addEventListener('click', () => {
-      if (selectPlayerMode) {
-        state.playerMode = selectPlayerMode.value;
-      }
       homeScreen.classList.add('hidden');
       gameScreen.classList.remove('hidden');
-      startNewGame();
+      renderState();
     });
   }
 
@@ -172,10 +161,6 @@ function init() {
       e.target.textContent = sfx.muted ? '🔇 Sound: OFF' : '🔊 Sound: ON';
     });
   }
-}
-
-function getActivePlayers() {
-  return MODE_MAP[state.playerMode] || ['red', 'yellow'];
 }
 
 function connectToRoom(code) {
@@ -268,8 +253,7 @@ function drawWhiteYardBoxes() {
 }
 
 function getCurrentPlayer() {
-  const active = getActivePlayers();
-  return active[state.turnIndex % active.length];
+  return PLAYERS[state.turnIndex];
 }
 
 function getCoordinates(color, step) {
@@ -311,10 +295,7 @@ function handleRollDice() {
       state.waitingForMove = true;
       renderState();
       if (state.mode === 'bot' && player !== 'red') {
-        const isBotActive = state.playerMode === '1v3' ? player !== 'red' : player !== 'red';
-        if(isBotActive) {
-          setTimeout(() => runBotTurn(player, movable), 500);
-        }
+        setTimeout(() => runBotTurn(player, movable), 500);
       }
     }
   }, 750);
@@ -343,16 +324,17 @@ async function moveToken(color, tokenIdx) {
   state.isAnimating = true;
   let currentStep = state.tokens[color][tokenIdx];
 
+  // Correct step-by-step token hopping with "Tick Tick" sound
   if (currentStep === -1 && roll === 6) {
     state.tokens[color][tokenIdx] = 0;
     sfx.tickStep();
     state.score += 5;
     renderState(color, tokenIdx);
-    await new Promise(r => setTimeout(r, 160));
+    await new Promise(r => setTimeout(r, 180));
   } else {
     for (let s = 1; s <= roll; s++) {
       state.tokens[color][tokenIdx]++;
-      sfx.tickStep(); // "Tick Tick" step sound
+      sfx.tickStep(); 
       state.score += 1;
       renderState(color, tokenIdx);
       await new Promise(r => setTimeout(r, 140));
@@ -363,18 +345,12 @@ async function moveToken(color, tokenIdx) {
   const newStep = state.tokens[color][tokenIdx];
   let captured = false;
 
+  // Safe and accurate capture check only after completing full step movement
   if (newStep >= 0 && newStep <= 50) {
     const globalIdx = (START_INDEX[color] + newStep) % 52;
     if (!SAFE_INDICES.includes(globalIdx)) {
-      const activePlayers = getActivePlayers();
-      activePlayers.forEach(opp => {
+      PLAYERS.forEach(opp => {
         if (opp === color) return;
-        // 2v2 team check: teammates cannot capture each other
-        if (state.playerMode === '2v2') {
-          if ((color === 'red' || color === 'yellow') && (opp === 'red' || opp === 'yellow')) return;
-          if ((color === 'green' || color === 'blue') && (opp === 'green' || opp === 'blue')) return;
-        }
-
         state.tokens[opp].forEach((oppStep, oppIdx) => {
           if (oppStep >= 0 && oppStep <= 50) {
             const oppGlobalIdx = (START_INDEX[opp] + oppStep) % 52;
@@ -401,17 +377,8 @@ async function moveToken(color, tokenIdx) {
   syncState();
   renderState();
 
-  const activePlayers = getActivePlayers();
-  let hasWon = false;
-  if (state.playerMode === '2v2') {
-    const team1Done = state.tokens.red.every(s => s === 56) && state.tokens.yellow.every(s => s === 56);
-    const team2Done = state.tokens.green.every(s => s === 56) && state.tokens.blue.every(s => s === 56);
-    if (team1Done || team2Done) hasWon = true;
-  } else {
-    hasWon = state.tokens[color].every(s => s === 56);
-  }
-
-  if (hasWon) {
+  const allHome = state.tokens[color].every(s => s === 56);
+  if (allHome) {
     sfx.winGame();
     if (typeof confetti === 'function') {
       confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
@@ -422,8 +389,7 @@ async function moveToken(color, tokenIdx) {
 
   if (roll === 6 || captured || newStep === 56) {
     rollBtn.disabled = false;
-    const currentPlayer = getCurrentPlayer();
-    if (state.mode === 'bot' && currentPlayer !== 'red') {
+    if (state.mode === 'bot' && color !== 'red') {
       setTimeout(handleRollDice, 800);
     }
   } else {
@@ -432,8 +398,7 @@ async function moveToken(color, tokenIdx) {
 }
 
 function nextTurn() {
-  const activePlayers = getActivePlayers();
-  state.turnIndex = (state.turnIndex + 1) % activePlayers.length;
+  state.turnIndex = (state.turnIndex + 1) % PLAYERS.length;
   state.diceValue = null;
   state.waitingForMove = false;
   syncState();
@@ -479,12 +444,7 @@ function renderState(hoppingColor = null, hoppingIdx = null) {
     scoreTracker.textContent = `Score: ${state.score}`;
   }
 
-  const activePlayers = getActivePlayers();
-
   PLAYERS.forEach(color => {
-    // If a color is not in the active mode (e.g. green/blue in 1v1), skip rendering its tokens
-    if (!activePlayers.includes(color)) return;
-
     state.tokens[color].forEach((step, idx) => {
       let r, c;
       if (step === -1) {
@@ -523,33 +483,11 @@ function loadState() {
     try {
       state = { ...state, ...JSON.parse(saved), isAnimating: false };
       if (gameModeSelect) gameModeSelect.value = state.mode;
-      if (selectPlayerMode) selectPlayerMode.value = state.playerMode;
       if (onlineLobby) onlineLobby.classList.toggle('hidden', state.mode !== 'online');
     } catch (e) {
       console.error(e);
     }
   }
-}
-
-function startNewGame() {
-  state = {
-    playerMode: selectPlayerMode ? selectPlayerMode.value : '1v1',
-    mode: gameModeSelect ? gameModeSelect.value : 'bot',
-    turnIndex: 0,
-    diceValue: null,
-    waitingForMove: false,
-    isAnimating: false,
-    score: 0,
-    tokens: {
-      red:    [-1, -1, -1, -1],
-      green:  [-1, -1, -1, -1],
-      yellow: [-1, -1, -1, -1],
-      blue:   [-1, -1, -1, -1]
-    }
-  };
-  rollBtn.disabled = false;
-  syncState();
-  renderState();
 }
 
 init();
