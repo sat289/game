@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pro Ludo Ultimate - India's #1 Edition</title>
+  <title>Pro 3D Ludo King - Custom Mode Selection</title>
   <link rel="stylesheet" href="style.css">
 
-  <!-- Firebase SDK v10.9.0 & Auto Cloud Sync -->
+  <!-- Firebase Integration -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
@@ -26,7 +26,7 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app);
-    const GAME_KEY = "pro_ludo_ultimate_v5";
+    const GAME_KEY = "pro_ludo_custom_mode";
 
     let currentUser = null;
     let currentHighScore = parseInt(localStorage.getItem(`${GAME_KEY}_hi`) || "0", 10);
@@ -69,23 +69,25 @@
     window.LudoFirebase = { db, ref, set, get, onValue };
   </script>
 </head>
-<body data-theme="classic">
-
-  <!-- Daily Bonus Modal Popup -->
-  <div id="daily-bonus-modal" class="modal-overlay hidden">
-    <div class="modal-card">
-      <h2>🎁 Daily Login Bonus!</h2>
-      <p>Claim your free daily reward to boost your coin balance.</p>
-      <button id="claim-bonus-btn" class="glow-btn">Claim 250 Coins</button>
-    </div>
-  </div>
-
-  <!-- Entrance Home Screen -->
+<body>
+  <!-- Home Screen with Mode Selection -->
   <div id="home-screen" class="home-screen">
     <div class="home-card">
       <div class="game-badge">INDIA'S NO. 1 LUDO</div>
-      <h1 class="glow-title">PRO LUDO ULTIMATE</h1>
-      <p class="sub-text">Experience 2v2 Teams, Wall Blockades, Rush Mode, Custom Themes, and Live Room Multiplayer!</p>
+      <h1 class="glow-title">PRO LUDO 3D KING</h1>
+      <p class="sub-text">Select your preferred player mode and jump into the ultimate board battle!</p>
+      
+      <!-- Player Mode Selector on Home Page -->
+      <div class="home-mode-select">
+        <label for="select-player-mode">Choose Match Mode:</label>
+        <select id="select-player-mode">
+          <option value="1v1">1 vs 1 (Red vs Yellow)</option>
+          <option value="2v2">2 vs 2 (Team Battle: Red/Yellow vs Green/Blue)</option>
+          <option value="1v3">1 vs 3 (Solo vs 3 Bots)</option>
+          <option value="4player">4 Players Free-For-All</option>
+        </select>
+      </div>
+
       <div class="home-buttons">
         <button id="main-start-btn" class="glow-btn">🎮 START GAME</button>
       </div>
@@ -96,39 +98,16 @@
   <div id="game-screen" class="game-wrapper hidden">
     <!-- Sidebar Control Panel -->
     <div class="sidebar">
-      <div class="brand-title">👑 LUDO ULTIMATE</div>
-      <div class="economy-pills">
-        <span class="pill">🪙 <strong id="coin-count">500</strong></span>
-        <span class="pill">⭐ XP <strong id="xp-count">0</strong></span>
-      </div>
+      <div class="brand-title">👑 LUDO KING PRO</div>
       <div id="auth-status" class="auth-badge">Connecting...</div>
 
-      <!-- Settings & Customization Grid -->
-      <div class="settings-grid">
-        <div class="control-group">
-          <label>Game Mode</label>
-          <select id="game-mode-select">
-            <option value="bot">Play vs Smart Bot</option>
-            <option value="local">Pass & Play (Local)</option>
-            <option value="online">Online Room Code</option>
-          </select>
-        </div>
-        <div class="control-group">
-          <label>Match Type</label>
-          <select id="match-type-select">
-            <option value="classic">Classic (4 Tokens)</option>
-            <option value="rush">Quick Rush (2 Tokens)</option>
-            <option value="teams">2 vs 2 Team Battle</option>
-          </select>
-        </div>
-        <div class="control-group">
-          <label>Theme</label>
-          <select id="theme-select">
-            <option value="classic">Classic Board</option>
-            <option value="cyber">Neon Cyberpunk</option>
-            <option value="royal">Royal Gold</option>
-          </select>
-        </div>
+      <div class="control-group">
+        <label>Connection Mode</label>
+        <select id="game-mode-select">
+          <option value="bot">Play vs Smart Bot</option>
+          <option value="local">Pass & Play (Offline)</option>
+          <option value="online">Online Room (Multiplayer)</option>
+        </select>
       </div>
 
       <!-- Online Room Code Box -->
@@ -141,15 +120,8 @@
         </div>
       </div>
 
-      <!-- Turn & Timer Bar -->
       <div class="turn-display">
-        <div class="turn-header-row">
-          <div id="turn-indicator" class="turn-badge red">RED'S TURN</div>
-          <div class="timer-pill">⏱️ <span id="timer-sec">15</span>s</div>
-        </div>
-        <div class="timer-bar-bg">
-          <div id="timer-bar" class="timer-bar-fill"></div>
-        </div>
+        <div id="turn-indicator" class="turn-badge red">RED'S TURN</div>
         <div id="score-tracker" class="score-text">Score: 0</div>
       </div>
 
@@ -167,13 +139,12 @@
 
       <button id="roll-dice-btn" class="roll-btn">🎲 ROLL DICE</button>
 
-      <!-- Live Emoji Quick Chat Tray -->
+      <!-- Emoji Quick Chat -->
       <div class="emoji-tray">
         <button class="emoji-btn" data-emoji="😂">😂</button>
         <button class="emoji-btn" data-emoji="🔥">🔥</button>
         <button class="emoji-btn" data-emoji="👏">👏</button>
         <button class="emoji-btn" data-emoji="😎">😎</button>
-        <button class="emoji-btn" data-emoji="🎯">🎯</button>
       </div>
 
       <div class="bottom-actions">
