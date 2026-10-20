@@ -141,6 +141,94 @@ const shockBtnLabel = document.getElementById("shockBtnLabel");
 const emojiBar = document.getElementById("emojiBar");
 const emojiFloatContainer = document.getElementById("emojiFloatContainer");
 
+/* ==================== ARCADE WEB AUDIO SFX ENGINE ==================== */
+const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+const audioCtx = AudioContextClass ? new AudioContextClass() : null;
+
+function playTone(freq, type = "sine", duration = 0.09, gainVal = 0.12, slideToFreq = null) {
+  if (!soundEnabled || !audioCtx) return;
+  try {
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    if (slideToFreq) {
+      osc.frequency.exponentialRampToValueAtTime(slideToFreq, audioCtx.currentTime + duration);
+    }
+    gain.gain.setValueAtTime(gainVal, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration);
+  } catch (e) {}
+}
+
+const SFX = {
+  click: () => playTone(620, "sine", 0.06, 0.1),
+  turn: () => playTone(340, "triangle", 0.04, 0.06, 420),
+  eat: (combo = 1) => {
+    const base = 520 + Math.min(350, combo * 45);
+    playTone(base, "triangle", 0.09, 0.15);
+    setTimeout(() => playTone(base * 1.25, "sine", 0.11, 0.14), 55);
+  },
+  goldenEat: () => {
+    [587.33, 783.99, 987.77, 1174.66].forEach((f, i) => {
+      setTimeout(() => playTone(f, "sine", 0.14, 0.16), i * 55);
+    });
+  },
+  frenzy: () => {
+    [440, 554.37, 659.25, 880].forEach((f, i) => {
+      setTimeout(() => playTone(f, "sawtooth", 0.16, 0.12), i * 60);
+    });
+  },
+  magnet: () => {
+    playTone(300, "sine", 0.25, 0.15, 880);
+  },
+  fog: () => {
+    playTone(420, "sawtooth", 0.3, 0.15, 140);
+  },
+  shockwave: () => {
+    playTone(180, "sawtooth", 0.35, 0.24, 45);
+  },
+  win: () => {
+    [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
+      setTimeout(() => playTone(f, "triangle", 0.18, 0.16), i * 85);
+    });
+  },
+  crash: () => {
+    playTone(220, "sawtooth", 0.18, 0.22, 90);
+    setTimeout(() => playTone(130, "sawtooth", 0.3, 0.25, 45), 120);
+  }
+};
+
+soundToggleBtn.addEventListener("click", () => {
+  soundEnabled = !soundEnabled;
+  soundToggleBtn.textContent = soundEnabled ? "🔊" : "🔇";
+  if (soundEnabled) SFX.click();
+});
+
+musicToggleBtn.addEventListener("click", () => {
+  SFX.click();
+  if (!bgMusic) return;
+  if (musicPlaying) {
+    bgMusic.pause();
+    musicPlaying = false;
+    musicToggleBtn.textContent = "🎵 OFF";
+    musicToggleBtn.className = "bg-white/5 hover:bg-white/10 border border-white/10 px-2 py-1 rounded-full text-[10px] font-bold transition";
+  } else {
+    bgMusic.volume = 0.35;
+    bgMusic.play().then(() => {
+      musicPlaying = true;
+      musicToggleBtn.textContent = "🎵 ON";
+      musicToggleBtn.className = "bg-[#2ecc71]/20 border border-[#2ecc71] text-[#2ecc71] px-2 py-1 rounded-full text-[10px] font-bold transition";
+    }).catch(() => {
+      alert("Place song.mp3 inside creazy/song.mp3 or snake/song.mp3!");
+    });
+  }
+});
+
 /* ==================== FEATURE 6: VIPER RANKS & SKINS ==================== */
 function getRankDetails(bestPts) {
   if (bestPts >= 250) {
@@ -188,58 +276,13 @@ if (skinSelector) {
     if (bestPts >= (SKINS[chosen]?.req || 0)) {
       selectedSkin = chosen;
       localStorage.setItem("snake_skin", chosen);
-      playTone(650, "sine", 0.1);
+      SFX.click();
       drawArena();
     }
   });
 }
 
 refreshSkinAndRank();
-
-/* ==================== SOUND & MUSIC ==================== */
-const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-const audioCtx = AudioContextClass ? new AudioContextClass() : null;
-
-function playTone(freq, type = "sine", duration = 0.09, gainVal = 0.12) {
-  if (!soundEnabled || !audioCtx) return;
-  try {
-    if (audioCtx.state === "suspended") audioCtx.resume();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = type;
-    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-    gain.gain.setValueAtTime(gainVal, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + duration);
-  } catch (e) {}
-}
-
-soundToggleBtn.addEventListener("click", () => {
-  soundEnabled = !soundEnabled;
-  soundToggleBtn.textContent = soundEnabled ? "🔊" : "🔇";
-});
-
-musicToggleBtn.addEventListener("click", () => {
-  if (!bgMusic) return;
-  if (musicPlaying) {
-    bgMusic.pause();
-    musicPlaying = false;
-    musicToggleBtn.textContent = "🎵 OFF";
-    musicToggleBtn.className = "bg-white/5 hover:bg-white/10 border border-white/10 px-2 py-1 rounded-full text-[10px] font-bold transition";
-  } else {
-    bgMusic.volume = 0.35;
-    bgMusic.play().then(() => {
-      musicPlaying = true;
-      musicToggleBtn.textContent = "🎵 ON";
-      musicToggleBtn.className = "bg-[#2ecc71]/20 border border-[#2ecc71] text-[#2ecc71] px-2 py-1 rounded-full text-[10px] font-bold transition";
-    }).catch(() => {
-      alert("Place song.mp3 inside creazy/song.mp3 or snake/song.mp3!");
-    });
-  }
-});
 
 /* ==================== FEATURE 5: CUSTOM MAP CREATOR & HARDCORE ==================== */
 function renderCustomMiniGrid() {
@@ -254,7 +297,7 @@ function renderCustomMiniGrid() {
     }`;
     cell.addEventListener("click", () => {
       customMiniCells[idx] = !customMiniCells[idx];
-      playTone(500, "sine", 0.05);
+      SFX.click();
       renderCustomMiniGrid();
     });
     customMapGrid.appendChild(cell);
@@ -265,6 +308,7 @@ renderCustomMiniGrid();
 
 if (btnClearCustomMap) {
   btnClearCustomMap.addEventListener("click", () => {
+    SFX.click();
     customMiniCells = Array(50).fill(false);
     renderCustomMiniGrid();
   });
@@ -272,6 +316,7 @@ if (btnClearCustomMap) {
 
 document.querySelectorAll(".map-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
+    SFX.click();
     currentMap = btn.getAttribute("data-map") || "classic";
     document.querySelectorAll(".map-btn").forEach((b) => {
       b.className = "map-btn py-1.5 rounded-xl text-[10px] font-black transition text-white/60 hover:text-white";
@@ -281,7 +326,6 @@ document.querySelectorAll(".map-btn").forEach((btn) => {
     if (customMapBox) {
       customMapBox.classList.toggle("hidden", currentMap !== "custom");
     }
-    playTone(560, "sine", 0.08);
   });
 });
 
@@ -319,7 +363,7 @@ function buildMapObstacles() {
 /* ==================== FEATURE 4: GLOBAL LEADERBOARD ==================== */
 if (btnOpenLeaderboard) {
   btnOpenLeaderboard.addEventListener("click", async () => {
-    playTone(620, "sine", 0.08);
+    SFX.click();
     showScreen("leaderboard");
     leaderboardList.innerHTML = `<div class="text-xs text-white/50 text-center py-6 animate-pulse">⏳ Loading top vipers...</div>`;
 
@@ -359,6 +403,7 @@ if (btnOpenLeaderboard) {
 }
 
 btnBackFromLeaderboard.addEventListener("click", () => {
+  SFX.click();
   showScreen("menu");
 });
 
@@ -405,19 +450,19 @@ function showScreen(screenName) {
 }
 
 document.getElementById("btnGoOnline").addEventListener("click", () => {
-  playTone(600, "sine", 0.08);
+  SFX.click();
   createdRoomBox.classList.add("hidden");
   lobbyErrorMsg.classList.add("hidden");
   showScreen("lobby");
 });
 
 document.getElementById("btnGoBot").addEventListener("click", () => {
-  playTone(600, "sine", 0.08);
+  SFX.click();
   showScreen("botMenu");
 });
 
 document.getElementById("btnGoOffline").addEventListener("click", () => {
-  playTone(600, "sine", 0.08);
+  SFX.click();
   gameMode = "solo";
   activeModeBadge.textContent = "SOLO ARCADE";
   showScreen("game");
@@ -425,21 +470,25 @@ document.getElementById("btnGoOffline").addEventListener("click", () => {
 });
 
 document.getElementById("btnBackFromLobby").addEventListener("click", () => {
+  SFX.click();
   cleanupOnlineRoom();
   showScreen("menu");
 });
 
 document.getElementById("btnBackFromBot").addEventListener("click", () => {
+  SFX.click();
   showScreen("menu");
 });
 
 document.getElementById("btnLeaveGame").addEventListener("click", () => {
+  SFX.click();
   cleanupOnlineRoom();
   showScreen("menu");
 });
 
 document.querySelectorAll(".bot-diff-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
+    SFX.click();
     botDifficulty = btn.getAttribute("data-diff") || "medium";
     gameMode = "bot";
     activeModeBadge.textContent = `VS BOT (${botDifficulty.toUpperCase()})`;
@@ -496,13 +545,14 @@ function showHazardAlert(text, bgClass = "bg-red-600/90", duration = 2200) {
   setTimeout(() => hazardBanner.classList.add("hidden"), duration);
 }
 
-// 1. Magnet Power-Up (Pulls apple toward your snake head for 5 seconds)
+// 1. Magnet Power-Up
 btnPowerMagnet.addEventListener("click", () => {
   if (!magnetAvailable || isGameOver || !gameStarted) return;
   magnetAvailable = false;
   magnetUntil = Date.now() + 5000;
   updatePowerUpUI();
-  playTone(880, "triangle", 0.2, 0.2);
+  SFX.magnet();
+  if (typeof window.triggerBgPulse === "function") window.triggerBgPulse("#ffd700");
   showHazardAlert("🧲 APPLE MAGNET ACTIVE FOR 5s!", "bg-amber-600/90", 2000);
 });
 
@@ -511,7 +561,8 @@ btnPowerFog.addEventListener("click", () => {
   if (!fogAvailable || isGameOver || !gameStarted) return;
   fogAvailable = false;
   updatePowerUpUI();
-  playTone(240, "sawtooth", 0.25, 0.2);
+  SFX.fog();
+  if (typeof window.triggerBgPulse === "function") window.triggerBgPulse("#00f0ff");
 
   if (gameMode === "online" && conn && conn.open) {
     conn.send({ type: "SABOTAGE", weapon: "FOG" });
@@ -527,7 +578,8 @@ btnPowerShock.addEventListener("click", () => {
   if (!shockAvailable || isGameOver || !gameStarted) return;
   shockAvailable = false;
   updatePowerUpUI();
-  playTone(150, "sawtooth", 0.3, 0.22);
+  SFX.shockwave();
+  if (typeof window.triggerBgPulse === "function") window.triggerBgPulse("#a855f7");
 
   if (gameMode === "online" && conn && conn.open) {
     conn.send({ type: "SABOTAGE", weapon: "SHOCK" });
@@ -590,7 +642,7 @@ btnCreateRoom.addEventListener("click", () => {
     btnCreateRoom.disabled = false;
     generatedCodeText.textContent = roomCode;
     createdRoomBox.classList.remove("hidden");
-    playTone(700, "sine", 0.12);
+    SFX.click();
   });
 
   peer.on("connection", (incomingConn) => {
@@ -608,6 +660,7 @@ btnCreateRoom.addEventListener("click", () => {
 
 btnCopyCode.addEventListener("click", () => {
   if (!roomCode) return;
+  SFX.click();
   navigator.clipboard.writeText(roomCode);
   btnCopyCode.textContent = "✅ Copied!";
   setTimeout(() => (btnCopyCode.textContent = "📋 Copy"), 1500);
@@ -687,16 +740,17 @@ function setupPeerConnection() {
       if (data.weapon === "FOG") {
         fogOverlay.classList.remove("hidden");
         showHazardAlert("🌫️ FRIEND BLINDED YOU WITH FOG!", "bg-cyan-700/90", 3500);
-        playTone(180, "sawtooth", 0.3, 0.2);
+        SFX.fog();
         setTimeout(() => fogOverlay.classList.add("hidden"), 3500);
       } else if (data.weapon === "SHOCK") {
         arenaWrapper.classList.add("shockwave-shake");
         showHazardAlert("💥 HIT BY FRIEND'S SHOCKWAVE!", "bg-purple-700/90", 2500);
-        playTone(130, "sawtooth", 0.35, 0.25);
+        SFX.shockwave();
         setTimeout(() => arenaWrapper.classList.remove("shockwave-shake"), 2500);
       }
     } else if (data.type === "OPPONENT_CRASHED") {
       showHazardAlert("🏆 FRIEND CRASHED! YOU WIN THE ROUND!", "bg-emerald-600/90", 3000);
+      SFX.win();
       if (typeof confetti === "function") confetti();
     } else if (data.type === "EMOJI") {
       spawnFloatingEmoji(data.emoji);
@@ -879,12 +933,12 @@ function spawnPoisonSkull() {
 function createBurstParticles(gridX, gridY, color) {
   const cx = gridX * TILE_SIZE + TILE_SIZE / 2;
   const cy = gridY * TILE_SIZE + TILE_SIZE / 2;
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 12; i++) {
     particles.push({
       x: cx,
       y: cy,
-      vx: (Math.random() - 0.5) * 5,
-      vy: (Math.random() - 0.5) * 5,
+      vx: (Math.random() - 0.5) * 5.5,
+      vy: (Math.random() - 0.5) * 5.5,
       life: 1,
       color
     });
@@ -950,7 +1004,10 @@ function updateGameTick() {
   // Check Apple Eaten
   if (newHead.x === apple.x && newHead.y === apple.y) {
     applesEaten++;
+    const wasGolden = apple.golden;
     const now = Date.now();
+    const justTriggeredFrenzy = !frenzyActive && (now - lastAppleTime <= 4500) && (frenzyCount + 1 >= FRENZY_TARGET);
+
     if (now - lastAppleTime <= 4500) {
       frenzyCount++;
       if (frenzyCount >= FRENZY_TARGET) frenzyActive = true;
@@ -961,13 +1018,24 @@ function updateGameTick() {
     lastAppleTime = now;
     updateFrenzyUI();
 
-    const basePts = apple.golden ? 25 : 10;
+    const basePts = wasGolden ? 25 : 10;
     const earned = frenzyActive ? basePts * 2 : basePts;
     currentScore += earned;
     liveScoreEl.textContent = currentScore;
 
-    createBurstParticles(apple.x, apple.y, apple.golden ? "#ffd700" : "#ff4757");
-    playTone(540 + Math.min(400, frenzyCount * 45), "triangle", 0.1, 0.16);
+    // Trigger SFX & 2D Background Pulse Ring
+    if (justTriggeredFrenzy) {
+      SFX.frenzy();
+      if (typeof window.triggerBgPulse === "function") window.triggerBgPulse("#ffd700");
+    } else if (wasGolden) {
+      SFX.goldenEat();
+      if (typeof window.triggerBgPulse === "function") window.triggerBgPulse("#ffd700");
+    } else {
+      SFX.eat(frenzyCount);
+      if (typeof window.triggerBgPulse === "function") window.triggerBgPulse("#2ecc71");
+    }
+
+    createBurstParticles(apple.x, apple.y, wasGolden ? "#ffd700" : "#ff4757");
     spawnApple();
     if (hardcoreMode && applesEaten % 3 === 0) spawnPoisonSkull();
   } else {
@@ -1047,7 +1115,8 @@ function triggerGameOver(reason) {
   isGameOver = true;
   gameStarted = false;
   stopGameLoop();
-  playTone(140, "sawtooth", 0.35, 0.25);
+  SFX.crash();
+  if (typeof window.triggerBgPulse === "function") window.triggerBgPulse("#ff3838");
 
   if (gameMode === "online" && conn && conn.open) {
     conn.send({ type: "OPPONENT_CRASHED" });
@@ -1060,6 +1129,7 @@ function triggerGameOver(reason) {
       streakBadge.textContent = `🔥 ${winStreak}`;
       streakBadge.classList.remove("hidden");
     }
+    setTimeout(() => SFX.win(), 350);
     if (typeof confetti === "function") confetti({ particleCount: 60, spread: 60 });
   } else {
     winStreak = 0;
@@ -1081,7 +1151,7 @@ function triggerGameOver(reason) {
   refreshSkinAndRank();
 }
 
-/* ==================== RENDER 3D ARENA CANVAS ==================== */
+/* ==================== RENDER FLAT 2D ARENA CANVAS ==================== */
 function drawArena() {
   ctx.fillStyle = "#09131f";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -1185,10 +1255,13 @@ function setDirection(newDirStr) {
   if (!gameStarted && !isGameOver && !gameScreen.classList.contains("hidden")) {
     activateGreenStart();
   }
-  if (newDirStr === "UP" && dir.y === 0) nextDir = { x: 0, y: -1 };
-  else if (newDirStr === "DOWN" && dir.y === 0) nextDir = { x: 0, y: 1 };
-  else if (newDirStr === "LEFT" && dir.x === 0) nextDir = { x: -1, y: 0 };
-  else if (newDirStr === "RIGHT" && dir.x === 0) nextDir = { x: 1, y: 0 };
+  let changed = false;
+  if (newDirStr === "UP" && dir.y === 0) { nextDir = { x: 0, y: -1 }; changed = true; }
+  else if (newDirStr === "DOWN" && dir.y === 0) { nextDir = { x: 0, y: 1 }; changed = true; }
+  else if (newDirStr === "LEFT" && dir.x === 0) { nextDir = { x: -1, y: 0 }; changed = true; }
+  else if (newDirStr === "RIGHT" && dir.x === 0) { nextDir = { x: 1, y: 0 }; changed = true; }
+
+  if (changed) SFX.turn();
 }
 
 window.addEventListener("keydown", (e) => {
@@ -1202,7 +1275,6 @@ window.addEventListener("keydown", (e) => {
 document.querySelectorAll(".dpad-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
     const d = btn.getAttribute("data-dir");
-    playTone(400, "sine", 0.03, 0.04);
     setDirection(d);
   });
 });
@@ -1231,6 +1303,7 @@ canvas.addEventListener("touchend", (e) => {
 }, { passive: true });
 
 btnPlayAgain.addEventListener("click", () => {
+  SFX.click();
   startCountdownSequence();
 });
 
