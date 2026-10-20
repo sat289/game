@@ -1,9 +1,10 @@
+// Web Audio API Sound Synthesizer ("Tick Tick" sound for smooth hopping)
 class SoundFX {
   constructor() {
     this.ctx = new (window.AudioContext || window.webkitAudioContext)();
     this.muted = false;
   }
-  playTone(freq, type = 'sine', duration = 0.1, delay = 0) {
+  playTone(freq, type = 'sine', duration = 0.08, delay = 0) {
     if (this.muted) return;
     if (this.ctx.state === 'suspended') this.ctx.resume();
     setTimeout(() => {
@@ -11,7 +12,7 @@ class SoundFX {
       const gain = this.ctx.createGain();
       osc.type = type;
       osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-      gain.gain.setValueAtTime(0.18, this.ctx.currentTime);
+      gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
       osc.connect(gain);
       gain.connect(this.ctx.destination);
@@ -19,8 +20,8 @@ class SoundFX {
       osc.stop(this.ctx.currentTime + duration);
     }, delay);
   }
-  diceRoll() { [220, 310, 270, 390].forEach((f, i) => this.playTone(f, 'triangle', 0.05, i * 45)); }
-  hopStep() { this.playTone(550, 'sine', 0.07); }
+  diceRoll() { [200, 320, 260, 410].forEach((f, i) => this.playTone(f, 'triangle', 0.04, i * 40)); }
+  tickStep() { this.playTone(850, 'square', 0.04); } // "Tick Tick" hop sound
   capture() { [520, 390, 250].forEach((f, i) => this.playTone(f, 'sawtooth', 0.12, i * 80)); }
   winGame() { [523, 659, 783, 1046].forEach((f, i) => this.playTone(f, 'triangle', 0.2, i * 110)); }
 }
@@ -60,11 +61,16 @@ const BASE_POSITIONS = {
   blue:   [[10.5, 1.5], [10.5, 3.5], [12.5, 1.5], [12.5, 3.5]]
 };
 
-const STORAGE_KEY = 'REAL_LUDO_STATE_FINAL_V2';
+const STORAGE_KEY = 'PRO_LUDO_ULTIMATE_STATE_V6';
+const PROFILE_KEY = 'PRO_LUDO_PROFILE_V6';
+
+let profile = JSON.parse(localStorage.getItem(PROFILE_KEY)) || { coins: 500, xp: 0 };
 
 let state = {
   mode: 'bot',
+  matchType: 'classic', // 'classic', 'rush', 'teams'
   turnIndex: 0,
+  sixStreak: 0,
   diceValue: null,
   waitingForMove: false,
   isAnimating: false,
@@ -79,30 +85,38 @@ let state = {
 
 let activeRoomRef = null;
 let isRemoteSync = false;
+let turnTimer = null;
+let timeLeft = 15;
 
 const homeScreen = document.getElementById('home-screen');
 const gameScreen = document.getElementById('game-screen');
 const boardEl = document.getElementById('ludo-board');
 const rollBtn = document.getElementById('roll-dice-btn');
-const dice3D = document.getElementById('dice-3d');
+const diceCube = document.getElementById('dice-cube');
 const turnBadge = document.getElementById('turn-indicator');
 const scoreTracker = document.getElementById('score-tracker');
 const gameModeSelect = document.getElementById('game-mode-select');
+const matchTypeSelect = document.getElementById('match-type-select');
 const onlineLobby = document.getElementById('online-lobby');
 const roomInputCode = document.getElementById('room-input-code');
 const roomCodeLabel = document.getElementById('room-code-label');
+const timerSecEl = document.getElementById('timer-sec');
+const timerBarEl = document.getElementById('timer-bar');
+const coinEl = document.getElementById('coin-count');
+const xpEl = document.getElementById('xp-count');
 
 function init() {
+  checkDailyBonus();
   buildBoardGrid();
   loadState();
+  updateEconomyUI();
 
-  // Fix screen transition bug by properly referencing elements
   const startBtn = document.getElementById('main-start-btn');
   if (startBtn) {
     startBtn.addEventListener('click', () => {
       homeScreen.classList.add('hidden');
       gameScreen.classList.remove('hidden');
-      renderState();
+      startNewGame();
     });
   }
 
@@ -125,6 +139,17 @@ function init() {
       saveState();
     });
   }
+
+  if (matchTypeSelect) {
+    matchTypeSelect.addEventListener('change', (e) => {
+      state.matchType = e.target.value;
+      startNewGame();
+    });
+  }
+
+  document.getElementById('theme-select').addEventListener('change', (e) => {
+    document.body.dataset.theme = e.target.value;
+  });
 
   const createRoomBtn = document.getElementById('create-room-btn');
   if (createRoomBtn) {
@@ -151,12 +176,33 @@ function init() {
     });
   }
 
+  document.querySelectorAll('.emoji-btn').forEach(btn => {
+    btn.addEventListener('click', () => triggerEmoji(btn.dataset.emoji));
+  });
+
   const soundToggleBtn = document.getElementById('sound-toggle-btn');
   if (soundToggleBtn) {
     soundToggleBtn.addEventListener('click', (e) => {
       sfx.muted = !sfx.muted;
       e.target.textContent = sfx.muted ? '🔇 Sound: OFF' : '🔊 Sound: ON';
     });
+  }
+}
+
+function checkDailyBonus() {
+  const lastClaim = localStorage.getItem('LUDO_LAST_CLAIM');
+  const today = new Date().toDateString();
+  if (lastClaim !== today) {
+    document.getElementById('daily-bonus-modal').classList.remove('hidden');
+    document.getElementById('claim-bonus-btn').addEventListener('click', () => {
+      profile.coins += 250;
+      localStorage.setItem('LUDO_LAST_CLAIM', today);
+      localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+      updateEconomyUI();
+      document.getElementById('daily-bonus-modal').classList.add('hidden');
+    });
+  } else {
+    document.getElementById('daily-bonus-modal').classList.add('hidden');
   }
 }
 
@@ -187,6 +233,41 @@ function syncState() {
     const { set } = window.LudoFirebase;
     set(activeRoomRef, state);
   }
+}
+
+function resetTurnTimer() {
+  clearInterval(turnTimer);
+  timeLeft = 15;
+  if (timerSecEl) timerSecEl.textContent = timeLeft;
+  if (timerBarEl) timerBarEl.style.width = '100%';
+
+  turnTimer = setInterval(() => {
+    if (state.isAnimating) return;
+    timeLeft--;
+    if (timerSecEl) timerSecEl.textContent = timeLeft;
+    if (timerBarEl) timerBarEl.style.width = `${(timeLeft / 15) * 100}%`;
+
+    if (timeLeft <= 0) {
+      clearInterval(turnTimer);
+      if (!state.waitingForMove) {
+        handleRollDice();
+      } else {
+        const player = getCurrentPlayer();
+        const movable = getMovableTokens(player, state.diceValue);
+        if (movable.length > 0) runBotTurn(player, movable);
+        else nextTurn();
+      }
+    }
+  }, 1000);
+}
+
+function triggerEmoji(emoji) {
+  const floater = document.getElementById('emoji-floater');
+  if (!floater) return;
+  floater.textContent = emoji;
+  floater.classList.remove('pop');
+  void floater.offsetWidth;
+  floater.classList.add('pop');
 }
 
 function buildBoardGrid() {
@@ -273,8 +354,20 @@ function handleRollDice() {
 
   setTimeout(() => {
     const player = getCurrentPlayer();
-    const movable = getMovableTokens(player, roll);
 
+    // Three 6s penalty rule
+    if (roll === 6) {
+      state.sixStreak++;
+      if (state.sixStreak === 3) {
+        state.sixStreak = 0;
+        setTimeout(nextTurn, 900);
+        return;
+      }
+    } else {
+      state.sixStreak = 0;
+    }
+
+    const movable = getMovableTokens(player, roll);
     if (movable.length === 0) {
       setTimeout(nextTurn, 900);
     } else if (movable.length === 1 && (state.mode === 'bot' && player !== 'red')) {
@@ -298,8 +391,8 @@ function animate3DDice(roll) {
     5: 'rotateX(-90deg)',
     6: 'rotateX(90deg)'
   };
-  dice3D.style.transform = `translateZ(-35px) rotateX(720deg) rotateY(720deg) ${rotations[roll]}`;
-  const frontFace = dice3D.querySelector('.dice-face.face-front');
+  diceCube.style.transform = `translateZ(-34px) rotateX(720deg) rotateY(720deg) ${rotations[roll]}`;
+  const frontFace = diceCube.querySelector('.cube__face--1');
   if (frontFace) frontFace.textContent = roll;
 }
 
@@ -314,14 +407,14 @@ async function moveToken(color, tokenIdx) {
 
   if (currentStep === -1 && roll === 6) {
     state.tokens[color][tokenIdx] = 0;
-    sfx.hopStep();
+    sfx.tickStep();
     state.score += 5;
     renderState(color, tokenIdx);
     await new Promise(r => setTimeout(r, 160));
   } else {
     for (let s = 1; s <= roll; s++) {
       state.tokens[color][tokenIdx]++;
-      sfx.hopStep();
+      sfx.tickStep(); // "Tick Tick" step sound
       state.score += 1;
       renderState(color, tokenIdx);
       await new Promise(r => setTimeout(r, 140));
@@ -332,11 +425,14 @@ async function moveToken(color, tokenIdx) {
   const newStep = state.tokens[color][tokenIdx];
   let captured = false;
 
+  // Capture & Wall Blockade check
   if (newStep >= 0 && newStep <= 50) {
     const globalIdx = (START_INDEX[color] + newStep) % 52;
     if (!SAFE_INDICES.includes(globalIdx)) {
       PLAYERS.forEach(opp => {
-        if (opp === color) return;
+        if (opp === color) {
+          if (state.matchType === 'teams' && ((color === 'red' && opp === 'yellow') || (color === 'green' && opp === 'blue'))) return;
+        }
         state.tokens[opp].forEach((oppStep, oppIdx) => {
           if (oppStep >= 0 && oppStep <= 50) {
             const oppGlobalIdx = (START_INDEX[opp] + oppStep) % 52;
@@ -351,19 +447,35 @@ async function moveToken(color, tokenIdx) {
     }
   }
 
-  if (captured) sfx.capture();
+  if (captured) {
+    sfx.capture();
+    const boardWrap = document.getElementById('board-container');
+    if(boardWrap) {
+      boardEl.classList.add('shake');
+      setTimeout(() => boardEl.classList.remove('shake'), 400);
+    }
+    profile.coins += 15;
+    profile.xp += 30;
+  }
 
   syncState();
+  updateEconomyUI();
   renderState();
 
-  const allHome = state.tokens[color].every(s => s === 56);
-  if (allHome) {
+  const winLimit = state.matchType === 'rush' ? 2 : 4;
+  const finishedCount = state.tokens[color].filter(s => s === 56).length;
+  if (finishedCount >= winLimit) {
     sfx.winGame();
+    clearInterval(turnTimer);
+    profile.coins += 100;
+    profile.xp += 100;
+    updateEconomyUI();
     rollBtn.disabled = true;
     return;
   }
 
   if (roll === 6 || captured || newStep === 56) {
+    resetTurnTimer();
     rollBtn.disabled = false;
     if (state.mode === 'bot' && color !== 'red') {
       setTimeout(handleRollDice, 800);
@@ -379,6 +491,7 @@ function nextTurn() {
   state.waitingForMove = false;
   syncState();
   renderState();
+  resetTurnTimer();
 
   const currentPlayer = getCurrentPlayer();
   if (state.mode === 'bot' && currentPlayer !== 'red') {
@@ -410,6 +523,7 @@ function runBotTurn(botColor, movableIndices) {
 
 function renderState(hoppingColor = null, hoppingIdx = null) {
   document.querySelectorAll('.token').forEach(t => t.remove());
+  document.querySelectorAll('.wall-badge').forEach(w => w.remove());
 
   const currentPlayer = getCurrentPlayer();
   if (turnBadge) {
@@ -420,6 +534,9 @@ function renderState(hoppingColor = null, hoppingIdx = null) {
     scoreTracker.textContent = `Score: ${state.score}`;
   }
 
+  // Track positions to detect Walls (2 tokens of same color on same cell)
+  const cellTokenMap = {};
+
   PLAYERS.forEach(color => {
     state.tokens[color].forEach((step, idx) => {
       let r, c;
@@ -429,24 +546,78 @@ function renderState(hoppingColor = null, hoppingIdx = null) {
         [r, c] = getCoordinates(color, step);
       }
 
-      const cell = document.querySelector(`.cell[data-r="${Math.floor(r)}"][data-c="${Math.floor(c)}"]`);
-      if (!cell) return;
+      const cellKey = `${Math.floor(r)}_${Math.floor(c)}`;
+      if (!cellTokenMap[cellKey]) cellTokenMap[cellKey] = [];
+      cellTokenMap[cellKey].push({ color, idx, step });
+    });
+  });
 
+  // Render tokens & check Wall blockades
+  Object.keys(cellTokenMap).forEach(key => {
+    const tokensOnCell = cellTokenMap[key];
+    const [r, c] = key.split('_').map(Number);
+    const cell = document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
+    if (!cell) return;
+
+    // Check if 2 tokens of the same color share the cell (Wall Blockade)
+    const colorGroups = {};
+    tokensOnCell.forEach(t => {
+      if (!colorGroups[t.color]) colorGroups[t.color] = 0;
+      colorGroups[t.color]++;
+    });
+
+    tokensOnCell.forEach(t => {
       const token = document.createElement('div');
-      token.classList.add('token', color);
+      token.classList.add('token', t.color);
 
-      if (color === hoppingColor && idx === hoppingIdx) {
+      if (t.color === hoppingColor && t.idx === hoppingIdx) {
         token.classList.add('hopping');
       }
 
-      if (state.waitingForMove && color === currentPlayer && canTokenMove(color, idx, state.diceValue)) {
-        token.classList.add('movable');
-        token.addEventListener('click', () => moveToken(color, idx));
+      if (state.waitingForMove && t.color === currentPlayer && canTokenMove(t.color, t.idx, state.diceValue)) {
+        // If an opponent has a wall on target track cell, block movement
+        if (t.step >= 0 && t.step <= 50) {
+          const targetGlobal = (START_INDEX[t.color] + t.step + state.diceValue) % 52;
+          let isBlocked = false;
+          Object.keys(cellTokenMap).forEach(k => {
+            cellTokenMap[k].forEach(other => {
+              if (other.color !== t.color && other.step >= 0 && other.step <= 50) {
+                const otherGlobal = (START_INDEX[other.color] + other.step) % 52;
+                if (otherGlobal === targetGlobal && colorGroups[other.color] >= 2) {
+                  isBlocked = true;
+                }
+              }
+            });
+          });
+          if (!isBlocked) {
+            token.classList.add('movable');
+            token.addEventListener('click', () => moveToken(t.color, t.idx));
+          }
+        } else {
+          token.classList.add('movable');
+          token.addEventListener('click', () => moveToken(t.color, t.idx));
+        }
       }
 
       cell.appendChild(token);
     });
+
+    // Add visual Wall badge if 2+ tokens are stacked
+    Object.keys(colorGroups).forEach(col => {
+      if (colorGroups[col] >= 2) {
+        const wallBadge = document.createElement('div');
+        wallBadge.classList.add('wall-badge');
+        wallBadge.textContent = 'WALL';
+        cell.appendChild(wallBadge);
+      }
+    });
   });
+}
+
+function updateEconomyUI() {
+  if (coinEl) coinEl.textContent = profile.coins;
+  if (xpEl) xpEl.textContent = profile.xp;
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
 }
 
 function saveState() {
@@ -459,11 +630,38 @@ function loadState() {
     try {
       state = { ...state, ...JSON.parse(saved), isAnimating: false };
       if (gameModeSelect) gameModeSelect.value = state.mode;
+      if (matchTypeSelect) matchTypeSelect.value = state.matchType;
       if (onlineLobby) onlineLobby.classList.toggle('hidden', state.mode !== 'online');
     } catch (e) {
       console.error(e);
     }
   }
+}
+
+function startNewGame() {
+  const isRush = state.matchType === 'rush';
+  const initTokens = isRush ? [0, 0, -1, -1] : [-1, -1, -1, -1];
+
+  state = {
+    mode: gameModeSelect ? gameModeSelect.value : 'bot',
+    matchType: matchTypeSelect ? matchTypeSelect.value : 'classic',
+    turnIndex: 0,
+    sixStreak: 0,
+    diceValue: null,
+    waitingForMove: false,
+    isAnimating: false,
+    score: 0,
+    tokens: {
+      red:    [...initTokens],
+      green:  [...initTokens],
+      yellow: [...initTokens],
+      blue:   [...initTokens]
+    }
+  };
+  rollBtn.disabled = false;
+  syncState();
+  renderState();
+  resetTurnTimer();
 }
 
 init();
