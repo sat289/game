@@ -1,26 +1,38 @@
 const BOARD_CONFIGS = {
     "board1": {
+        ladders: { 9: 27, 18: 37, 25: 54, 28: 51, 56: 64, 68: 88, 76: 97, 79: 100 },
+        snakes: { 16: 7, 59: 17, 63: 19, 67: 30, 87: 24, 93: 69, 95: 75, 99: 77 },
         img: "board1.jpg"
     },
     "board2": {
+        ladders: { 4: 25, 13: 46, 33: 49, 42: 63, 50: 69, 62: 81, 74: 92 },
+        snakes: { 27: 5, 40: 3, 43: 18, 54: 31, 66: 45, 89: 53, 95: 77, 99: 41 },
         img: "board2.jpg"
     },
     "board3": {
+        ladders: { 3: 22, 10: 29, 25: 46, 50: 69, 59: 98, 64: 85 },
+        snakes: { 28: 9, 42: 16, 48: 15, 66: 58, 92: 72, 94: 68 },
         img: "board3.jpg"
     },
     "board4": {
+        ladders: { 7: 30, 16: 33, 20: 38, 36: 83, 50: 68, 63: 81, 71: 89, 86: 97 },
+        snakes: { 25: 3, 42: 1, 56: 48, 61: 43, 92: 67, 95: 12, 98: 80 },
         img: "board4.jpg"
     },
     "board5": {
+        ladders: { 4: 25, 13: 46, 42: 63, 50: 69, 62: 81, 74: 92 },
+        snakes: { 27: 5, 40: 3, 43: 18, 66: 45, 54: 31, 89: 53, 95: 77, 99: 41 },
         img: "https://images.unsplash.com/photo-1611996575749-79a3a250f948?w=800"
     },
     "board6": {
+        ladders: { 4: 23, 13: 46, 33: 49, 42: 63, 50: 69, 62: 81, 74: 92 },
+        snakes: { 27: 5, 40: 2, 43: 17, 54: 31, 66: 45, 89: 53, 95: 76, 99: 41 },
         img: "board6.jpg"
     }
 };
 
-let snakes = {};
-let ladders = {};
+let activeLadders = {};
+let activeSnakes = {};
 let isRolling = false;
 
 let gameState = {
@@ -71,35 +83,10 @@ function switchScreen(screenId) {
     }
 }
 
-// Generate randomized unique snakes and ladders layout for every match
-function generateRandomBoardLayout() {
-    snakes = {};
-    ladders = {};
-
-    // Generate random ladders (ensuring start < end)
-    const possibleLadders = [
-        {start: 2, end: 38}, {start: 4, end: 14}, {start: 9, end: 31},
-        {start: 21, end: 42}, {start: 28, end: 84}, {start: 36, end: 44},
-        {start: 51, end: 67}, {start: 71, end: 91}, {start: 80, end: 99}
-    ];
-    
-    // Generate random snakes (ensuring start > end)
-    const possibleSnakes = [
-        {start: 16, end: 6}, {start: 47, end: 26}, {start: 49, end: 11},
-        {start: 56, end: 53}, {start: 62, end: 19}, {start: 64, end: 60},
-        {start: 87, end: 24}, {start: 93, end: 73}, {start: 98, end: 78}
-    ];
-
-    // Shuffle and select 4 to 5 unique items
-    const shuffledLadders = [...possibleLadders].sort(() => 0.5 - Math.random()).slice(0, 5);
-    shuffledLadders.forEach(l => { ladders[l.start] = l.end; });
-
-    const shuffledSnakes = [...possibleSnakes].sort(() => 0.5 - Math.random()).slice(0, 5);
-    shuffledSnakes.forEach(s => { snakes[s.start] = s.end; });
-}
-
 function applySelectedBoard(boardId) {
     const config = BOARD_CONFIGS[boardId] || BOARD_CONFIGS["board5"];
+    activeLadders = { ...config.ladders };
+    activeSnakes = { ...config.snakes };
     boardEl.className = `board-${boardId}`;
     if (boardPreviewImg) {
         boardPreviewImg.src = config.img;
@@ -252,8 +239,6 @@ function startGame(mode) {
     isRolling = false;
     rollBtn.disabled = false;
 
-    // Generate randomized snake/ladder positions for this specific match
-    generateRandomBoardLayout();
     applySelectedBoard(gameState.selectedTheme);
     buildBoard();
 
@@ -264,7 +249,7 @@ function startGame(mode) {
         ];
     } else if (mode === 'pass') {
         gameState.players = [
-            { name: gameState.playerName, pos: 0, started: false, colorClass: 'token-0' },
+            { name: gameState.playerName, pos: 0, colorClass: 'token-0' },
             { name: 'Player 2', pos: 0, started: false, colorClass: 'token-1' }
         ];
     }
@@ -311,12 +296,12 @@ function rollDice() {
 
     let player = gameState.players[gameState.turnIndex];
 
-    // REQUIREMENT: User must roll a 1 to start moving from square 0
+    // STRICT LOGIC 1: Player must roll a 1 to start moving from square 0
     if (!player.started) {
         if (roll === 1) {
             player.started = true;
             player.pos = 1;
-            diceStatus.innerText = `🎉 ${player.name} rolled a 1 and started!`;
+            diceStatus.innerText = `🎉 ${player.name} rolled a 1 and entered the board!`;
         } else {
             diceStatus.innerText = `🎲 Rolled ${roll}. Need a 1 to start!`;
         }
@@ -325,6 +310,7 @@ function rollDice() {
         return;
     }
 
+    // STRICT LOGIC 2: Exact roll constraint to reach 100
     let nextPos = player.pos + roll;
     if (nextPos > 100) {
         diceStatus.innerText = `🎲 Rolled ${roll}. Need exact roll for 100!`;
@@ -336,19 +322,20 @@ function rollDice() {
     diceStatus.innerText = `${player.name} moved to ${nextPos}`;
     updateBoardUI();
 
-    if (ladders[nextPos]) {
+    // Check ladders and snakes logic safely with smooth pacing
+    if (activeLadders[nextPos]) {
         setTimeout(() => {
             playSound(sfxLadder);
-            const dest = ladders[nextPos];
+            const dest = activeLadders[nextPos];
             player.pos = dest;
             diceStatus.innerText = `🪜 Ladder! Climbed ${nextPos} → ${dest}!`;
             updateBoardUI();
             finishTurn();
         }, 550);
-    } else if (snakes[nextPos]) {
+    } else if (activeSnakes[nextPos]) {
         setTimeout(() => {
             playSound(sfxSnake);
-            const dest = snakes[nextPos];
+            const dest = activeSnakes[nextPos];
             player.pos = dest;
             diceStatus.innerText = `🐍 Snake! Slid ${nextPos} → ${dest}!`;
             updateBoardUI();
@@ -407,7 +394,6 @@ function createOnlineRoom() {
     gameState.roomCode = code;
     alert(`Room Created! Code: ${code}`);
     gameState.mode = 'online';
-    generateRandomBoardLayout();
     applySelectedBoard(gameState.selectedTheme);
     buildBoard();
     gameState.players = [
@@ -426,7 +412,6 @@ function joinOnlineRoom() {
     }
     gameState.roomCode = code;
     gameState.mode = 'online';
-    generateRandomBoardLayout();
     applySelectedBoard(gameState.selectedTheme);
     buildBoard();
     gameState.players = [
