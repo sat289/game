@@ -1,18 +1,119 @@
 body {
   font-family: 'Inter', sans-serif;
   touch-action: manipulation;
+  perspective: 1200px;
+}
+
+/* ==================== 3D SYNTHWAVE HORIZON BACKGROUND ==================== */
+.bg-3d-scene {
+  background: radial-gradient(circle at 50% 50%, #0d1b2a 0%, #04070d 85%);
+  perspective: 450px;
+}
+
+.cyber-grid-floor {
+  position: absolute;
+  bottom: -35%;
+  left: -50%;
+  width: 200%;
+  height: 95%;
+  background-image: 
+    linear-gradient(to right, rgba(46, 204, 113, 0.22) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 240, 255, 0.22) 1px, transparent 1px);
+  background-size: 48px 48px;
+  transform: rotateX(68deg);
+  transform-origin: center top;
+  mask-image: linear-gradient(to top, rgba(0,0,0,1) 15%, rgba(0,0,0,0) 90%);
+  -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,1) 15%, rgba(0,0,0,0) 90%);
+  animation: gridScrollFloor 2.4s linear infinite;
+}
+
+.cyber-grid-ceiling {
+  position: absolute;
+  top: -35%;
+  left: -50%;
+  width: 200%;
+  height: 85%;
+  background-image: 
+    linear-gradient(to right, rgba(0, 240, 255, 0.16) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(46, 204, 113, 0.16) 1px, transparent 1px);
+  background-size: 48px 48px;
+  transform: rotateX(-68deg);
+  transform-origin: center bottom;
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,0.85) 10%, rgba(0,0,0,0) 85%);
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.85) 10%, rgba(0,0,0,0) 85%);
+  animation: gridScrollCeiling 2.4s linear infinite;
+}
+
+.horizon-core {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 520px;
+  height: 180px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(ellipse at center, rgba(46, 204, 113, 0.22), rgba(0, 240, 255, 0.12), transparent 70%);
+  filter: blur(28px);
+}
+
+@keyframes gridScrollFloor {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 48px; }
+}
+
+@keyframes gridScrollCeiling {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 -48px; }
+}
+
+/* ==================== 3D EXTRUDED BACKSIDE CARD LAYERS ==================== */
+.card-3d-Stage {
+  transform-style: preserve-3d;
+  will-change: transform;
 }
 
 .game-card {
-  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.85);
+  transform-style: preserve-3d;
+  box-shadow: 
+    0 22px 60px rgba(0, 0, 0, 0.9),
+    0 0 35px rgba(46, 204, 113, 0.15),
+    inset 0 1px 2px rgba(255, 255, 255, 0.25);
 }
 
-.arena-3d {
-  transform: perspective(700px) rotateX(4deg);
+/* Backplate Layer 1 (-16px behind the card) */
+.card-backplate-1 {
+  position: absolute;
+  inset: -4px;
+  border-radius: 28px;
+  background: linear-gradient(135deg, rgba(46, 204, 113, 0.35), rgba(0, 240, 255, 0.35));
+  border: 1px solid rgba(46, 204, 113, 0.45);
+  transform: translateZ(-16px);
+  pointer-events: none;
+  z-index: -1;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.85);
+}
+
+/* Backplate Layer 2 (-32px deep neon chassis) */
+.card-backplate-2 {
+  position: absolute;
+  inset: -9px;
+  border-radius: 32px;
+  background: #060b14;
+  border: 2px solid rgba(0, 240, 255, 0.3);
+  transform: translateZ(-32px);
+  pointer-events: none;
+  z-index: -2;
   box-shadow: 
-    0 10px 0 #05080f,
-    0 18px 30px rgba(0, 0, 0, 0.8),
-    inset 0 1px 1px rgba(255, 255, 255, 0.12);
+    0 0 45px rgba(0, 240, 255, 0.25),
+    0 28px 50px rgba(0, 0, 0, 0.95);
+}
+
+/* ==================== 3D SNAKE ARENA BOARD ==================== */
+.arena-3d {
+  transform: perspective(700px) rotateX(6deg) translateZ(12px);
+  box-shadow: 
+    0 12px 0 #05080f,
+    0 20px 35px rgba(0, 0, 0, 0.85),
+    inset 0 1px 1px rgba(255, 255, 255, 0.15);
   transition: all 0.2s ease;
 }
 
@@ -20,17 +121,17 @@ body {
 .arena-frenzy-glow {
   border-color: #ffd700 !important;
   box-shadow: 
-    0 10px 0 #05080f,
-    0 0 28px rgba(255, 215, 0, 0.55) !important;
+    0 12px 0 #05080f,
+    0 0 32px rgba(255, 215, 0, 0.65) !important;
 }
 
 /* 💥 Shockwave Screen Shake Sabotage */
 @keyframes shockwaveShake {
-  0%, 100% { transform: perspective(700px) rotateX(4deg) translate(0, 0); }
-  20% { transform: perspective(700px) rotateX(4deg) translate(-7px, 4px); }
-  40% { transform: perspective(700px) rotateX(4deg) translate(7px, -4px); }
-  60% { transform: perspective(700px) rotateX(4deg) translate(-5px, -3px); }
-  80% { transform: perspective(700px) rotateX(4deg) translate(5px, 3px); }
+  0%, 100% { transform: perspective(700px) rotateX(6deg) translate(0, 0); }
+  20% { transform: perspective(700px) rotateX(6deg) translate(-7px, 4px); }
+  40% { transform: perspective(700px) rotateX(6deg) translate(7px, -4px); }
+  60% { transform: perspective(700px) rotateX(6deg) translate(-5px, -3px); }
+  80% { transform: perspective(700px) rotateX(6deg) translate(5px, 3px); }
 }
 
 .shockwave-shake {
