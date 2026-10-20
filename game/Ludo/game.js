@@ -1,4 +1,3 @@
-// ఆడియో సౌండ్ ఎఫెక్ట్స్
 class SoundFX {
   constructor() {
     this.ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -61,7 +60,7 @@ const BASE_POSITIONS = {
   blue:   [[10.5, 1.5], [10.5, 3.5], [12.5, 1.5], [12.5, 3.5]]
 };
 
-const STORAGE_KEY = 'REAL_LUDO_STATE_FINAL';
+const STORAGE_KEY = 'REAL_LUDO_STATE_FINAL_V2';
 
 let state = {
   mode: 'bot',
@@ -97,48 +96,68 @@ function init() {
   buildBoardGrid();
   loadState();
 
-  document.getElementById('main-start-btn').addEventListener('click', () => {
-    homeScreen.classList.add('hidden');
-    gameScreen.classList.remove('hidden');
-    renderState();
-  });
+  // Fix screen transition bug by properly referencing elements
+  const startBtn = document.getElementById('main-start-btn');
+  if (startBtn) {
+    startBtn.addEventListener('click', () => {
+      homeScreen.classList.add('hidden');
+      gameScreen.classList.remove('hidden');
+      renderState();
+    });
+  }
 
-  document.getElementById('back-home-btn').addEventListener('click', () => {
-    gameScreen.classList.add('hidden');
-    homeScreen.classList.remove('hidden');
-  });
+  const backHomeBtn = document.getElementById('back-home-btn');
+  if (backHomeBtn) {
+    backHomeBtn.addEventListener('click', () => {
+      gameScreen.classList.add('hidden');
+      homeScreen.classList.remove('hidden');
+    });
+  }
 
-  rollBtn.addEventListener('click', handleRollDice);
+  if (rollBtn) {
+    rollBtn.addEventListener('click', handleRollDice);
+  }
 
-  gameModeSelect.addEventListener('change', (e) => {
-    state.mode = e.target.value;
-    onlineLobby.classList.toggle('hidden', state.mode !== 'online');
-    saveState();
-  });
+  if (gameModeSelect) {
+    gameModeSelect.addEventListener('change', (e) => {
+      state.mode = e.target.value;
+      if (onlineLobby) onlineLobby.classList.toggle('hidden', state.mode !== 'online');
+      saveState();
+    });
+  }
 
-  document.getElementById('create-room-btn').addEventListener('click', () => {
-    if (!window.LudoFirebase) { alert("Firebase not loaded!"); return; }
-    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-    roomInputCode.value = code;
-    roomCodeLabel.textContent = `ROOM: ${code}`;
-    connectToRoom(code);
-  });
-
-  document.getElementById('join-room-btn').addEventListener('click', () => {
-    if (!window.LudoFirebase) { alert("Firebase not loaded!"); return; }
-    const code = roomInputCode.value.trim().toUpperCase();
-    if (code.length === 6) {
-      roomCodeLabel.textContent = `ROOM: ${code}`;
+  const createRoomBtn = document.getElementById('create-room-btn');
+  if (createRoomBtn) {
+    createRoomBtn.addEventListener('click', () => {
+      if (!window.LudoFirebase) { alert("Firebase not loaded!"); return; }
+      const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+      if (roomInputCode) roomInputCode.value = code;
+      if (roomCodeLabel) roomCodeLabel.textContent = `ROOM: ${code}`;
       connectToRoom(code);
-    } else {
-      alert("దయచేసి సరైన 6 అంకెల కోడ్ ఎంటర్ చేయండి.");
-    }
-  });
+    });
+  }
 
-  document.getElementById('sound-toggle-btn').addEventListener('click', (e) => {
-    sfx.muted = !sfx.muted;
-    e.target.textContent = sfx.muted ? '🔇 Sound: OFF' : '🔊 Sound: ON';
-  });
+  const joinRoomBtn = document.getElementById('join-room-btn');
+  if (joinRoomBtn) {
+    joinRoomBtn.addEventListener('click', () => {
+      if (!window.LudoFirebase) { alert("Firebase not loaded!"); return; }
+      const code = roomInputCode.value.trim().toUpperCase();
+      if (code.length === 6) {
+        if (roomCodeLabel) roomCodeLabel.textContent = `ROOM: ${code}`;
+        connectToRoom(code);
+      } else {
+        alert("Please enter a valid 6-digit room code.");
+      }
+    });
+  }
+
+  const soundToggleBtn = document.getElementById('sound-toggle-btn');
+  if (soundToggleBtn) {
+    soundToggleBtn.addEventListener('click', (e) => {
+      sfx.muted = !sfx.muted;
+      e.target.textContent = sfx.muted ? '🔇 Sound: OFF' : '🔊 Sound: ON';
+    });
+  }
 }
 
 function connectToRoom(code) {
@@ -156,7 +175,7 @@ function connectToRoom(code) {
   });
 
   set(activeRoomRef, state);
-  alert(`రూమ్ సక్సెస్ ఫుల్ గా కనెక్ట్ అయింది: ${code}`);
+  alert(`Successfully connected to Room: ${code}`);
 }
 
 function syncState() {
@@ -171,6 +190,7 @@ function syncState() {
 }
 
 function buildBoardGrid() {
+  if (!boardEl) return;
   boardEl.innerHTML = '';
   for (let r = 0; r < 15; r++) {
     for (let c = 0; c < 15; c++) {
@@ -279,7 +299,8 @@ function animate3DDice(roll) {
     6: 'rotateX(90deg)'
   };
   dice3D.style.transform = `translateZ(-35px) rotateX(720deg) rotateY(720deg) ${rotations[roll]}`;
-  dice3D.querySelector('.dice-face.face-front').textContent = roll;
+  const frontFace = dice3D.querySelector('.dice-face.face-front');
+  if (frontFace) frontFace.textContent = roll;
 }
 
 async function moveToken(color, tokenIdx) {
@@ -391,9 +412,13 @@ function renderState(hoppingColor = null, hoppingIdx = null) {
   document.querySelectorAll('.token').forEach(t => t.remove());
 
   const currentPlayer = getCurrentPlayer();
-  turnBadge.textContent = `${currentPlayer.toUpperCase()}'S TURN`;
-  turnBadge.className = `turn-badge ${currentPlayer}`;
-  scoreTracker.textContent = `Score: ${state.score}`;
+  if (turnBadge) {
+    turnBadge.textContent = `${currentPlayer.toUpperCase()}'S TURN`;
+    turnBadge.className = `turn-badge ${currentPlayer}`;
+  }
+  if (scoreTracker) {
+    scoreTracker.textContent = `Score: ${state.score}`;
+  }
 
   PLAYERS.forEach(color => {
     state.tokens[color].forEach((step, idx) => {
@@ -433,8 +458,8 @@ function loadState() {
   if (saved) {
     try {
       state = { ...state, ...JSON.parse(saved), isAnimating: false };
-      gameModeSelect.value = state.mode;
-      onlineLobby.classList.toggle('hidden', state.mode !== 'online');
+      if (gameModeSelect) gameModeSelect.value = state.mode;
+      if (onlineLobby) onlineLobby.classList.toggle('hidden', state.mode !== 'online');
     } catch (e) {
       console.error(e);
     }
