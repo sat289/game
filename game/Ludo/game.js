@@ -1,36 +1,51 @@
+// Safe Lazy-Initialized Web Audio Synthesizer (Never crashes on mobile load)
 class SoundFX {
   constructor() {
-    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    this.ctx = null;
     this.muted = false;
+  }
+  initContext() {
+    if (!this.ctx) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) this.ctx = new AudioCtx();
+    }
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
   }
   playTone(freq, type = 'sine', duration = 0.08, delay = 0) {
     if (this.muted) return;
-    if (this.ctx.state === 'suspended') this.ctx.resume();
-    setTimeout(() => {
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      osc.type = type;
-      osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-      gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
-      osc.connect(gain);
-      gain.connect(this.ctx.destination);
-      osc.start();
-      osc.stop(this.ctx.currentTime + duration);
-    }, delay);
+    try {
+      this.initContext();
+      if (!this.ctx) return;
+      setTimeout(() => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+        gain.gain.setValueAtTime(0.18, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + duration);
+      }, delay);
+    } catch (e) {}
   }
-  diceRoll() { [200, 320, 260, 410].forEach((f, i) => this.playTone(f, 'triangle', 0.04, i * 40)); }
-  tickStep() { this.playTone(850, 'square', 0.04); } // "Tick Tick" step sound
-  capture() { [520, 390, 250].forEach((f, i) => this.playTone(f, 'sawtooth', 0.12, i * 80)); }
-  winGame() { [523, 659, 783, 1046].forEach((f, i) => this.playTone(f, 'triangle', 0.2, i * 110)); }
+  diceRoll() { [220, 340, 280, 440].forEach((f, i) => this.playTone(f, 'triangle', 0.05, i * 40)); }
+  tickStep() { this.playTone(820, 'square', 0.045); } // Crisp "Tip Tip" step sound
+  capture() { [540, 380, 220].forEach((f, i) => this.playTone(f, 'sawtooth', 0.12, i * 80)); }
+  winGame() { [523, 659, 783, 1046].forEach((f, i) => this.playTone(f, 'triangle', 0.22, i * 110)); }
 }
+
 const sfx = new SoundFX();
 
 const MODE_MAP = {
   '1v1': ['red', 'yellow'],
   '2v2': ['red', 'green', 'yellow', 'blue'],
   '1v3': ['red', 'green', 'yellow', 'blue'],
-  '4player': ['red', 'green', 'yellow', 'blue']
+  '4player': ['red', 'green', 'yellow', 'blue'],
+  'rush': ['red', 'green', 'yellow', 'blue']
 };
 
 const MAIN_TRACK = [
@@ -58,17 +73,23 @@ const HOME_PATHS = {
   blue:   [[13,7],[12,7],[11,7],[10,7],[9,7],[8,7]]
 };
 
+// Exact integer grid cells inside the 4 white yards
 const BASE_POSITIONS = {
-  red:    [[1, 1], [1, 4], [4, 1], [4, 4]],
-  green:  [[1, 10], [1, 13], [4, 10], [4, 13]],
-  yellow: [[10, 10], [10, 13], [13, 10], [13, 13]],
-  blue:   [[10, 1], [10, 4], [13, 1], [13, 4]]
+  red:    [[2, 2], [2, 3], [3, 2], [3, 3]],
+  green:  [[2, 11], [2, 12], [3, 11], [3, 12]],
+  yellow: [[11, 11], [11, 12], [12, 11], [12, 12]],
+  blue:   [[11, 2], [11, 3], [12, 2], [12, 3]]
 };
 
-const STORAGE_KEY = 'PRO_LUDO_ULTIMATE_STATE_V11';
+const PROFILE_KEY = 'PRO_LUDO_PROFILE_V12';
+let profile = { coins: 500, xp: 0 };
+try {
+  const savedProf = localStorage.getItem(PROFILE_KEY);
+  if (savedProf) profile = JSON.parse(savedProf);
+} catch (e) {}
 
 let state = {
-  playerMode: '1v1',
+  playerMode: '4player',
   mode: 'bot',
   turnIndex: 0,
   sixStreak: 0,
@@ -89,102 +110,81 @@ let isRemoteSync = false;
 let turnTimer = null;
 let timeLeft = 15;
 
-const homeScreen = document.getElementById('home-screen');
-const gameScreen = document.getElementById('game-screen');
-const boardEl = document.getElementById('ludo-board');
-const rollBtn = document.getElementById('roll-dice-btn');
-const diceCube = document.getElementById('dice-cube');
-const turnBadge = document.getElementById('turn-indicator');
-const scoreTracker = document.getElementById('score-tracker');
-const selectPlayerMode = document.getElementById('select-player-mode');
-const gameModeSelect = document.getElementById('game-mode-select');
-const onlineLobby = document.getElementById('online-lobby');
-const roomInputCode = document.getElementById('room-input-code');
-const roomCodeLabel = document.getElementById('room-code-label');
-const timerSecEl = document.getElementById('timer-sec');
-const timerBarEl = document.getElementById('timer-bar');
+// ==========================================
+// GLOBAL FUNCTIONS FOR DIRECT HTML ONCLICK
+// ==========================================
+window.startLudoGame = function() {
+  sfx.initContext();
+  sfx.tickStep();
 
-function init() {
+  const selectPlayerMode = document.getElementById('select-player-mode');
+  if (selectPlayerMode) {
+    state.playerMode = selectPlayerMode.value;
+  }
+
+  document.getElementById('home-screen').classList.add('hidden');
+  document.getElementById('game-screen').classList.remove('hidden');
+
   buildBoardGrid();
-  loadState();
+  startNewGame();
+};
 
-  const startBtn = document.getElementById('main-start-btn');
-  if (startBtn) {
-    startBtn.addEventListener('click', () => {
-      if (selectPlayerMode) {
-        state.playerMode = selectPlayerMode.value;
-      }
-      homeScreen.classList.add('hidden');
-      gameScreen.classList.remove('hidden');
-      startNewGame();
-    });
+window.backToHome = function() {
+  clearInterval(turnTimer);
+  document.getElementById('game-screen').classList.add('hidden');
+  document.getElementById('home-screen').classList.remove('hidden');
+};
+
+window.changeConnectionMode = function(val) {
+  state.mode = val;
+  const lobby = document.getElementById('online-lobby');
+  if (lobby) lobby.classList.toggle('hidden', val !== 'online');
+};
+
+window.changeBoardTheme = function(val) {
+  document.body.dataset.theme = val;
+};
+
+window.toggleSound = function() {
+  sfx.muted = !sfx.muted;
+  const btn = document.getElementById('sound-toggle-btn');
+  if (btn) btn.textContent = sfx.muted ? '🔇 Sound: OFF' : '🔊 Sound: ON';
+};
+
+window.triggerEmoji = function(emoji) {
+  const floater = document.getElementById('emoji-floater');
+  if (!floater) return;
+  floater.textContent = emoji;
+  floater.classList.remove('pop');
+  void floater.offsetWidth;
+  floater.classList.add('pop');
+};
+
+window.claimDailyBonus = function() {
+  profile.coins += 250;
+  localStorage.setItem('LUDO_DAILY_DATE', new Date().toDateString());
+  updateEconomyUI();
+  document.getElementById('daily-bonus-modal').classList.add('hidden');
+};
+
+window.createOnlineRoom = function() {
+  if (!window.LudoFirebase) { alert("Firebase connection not ready!"); return; }
+  const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+  document.getElementById('room-input-code').value = code;
+  document.getElementById('room-code-label').textContent = `ROOM: ${code}`;
+  connectToRoom(code);
+};
+
+window.joinOnlineRoom = function() {
+  if (!window.LudoFirebase) { alert("Firebase connection not ready!"); return; }
+  const code = document.getElementById('room-input-code').value.trim().toUpperCase();
+  if (code.length === 6) {
+    document.getElementById('room-code-label').textContent = `ROOM: ${code}`;
+    connectToRoom(code);
+  } else {
+    alert("Please enter a valid 6-digit room code.");
   }
-
-  const backHomeBtn = document.getElementById('back-home-btn');
-  if (backHomeBtn) {
-    backHomeBtn.addEventListener('click', () => {
-      gameScreen.classList.add('hidden');
-      homeScreen.classList.remove('hidden');
-    });
-  }
-
-  if (rollBtn) {
-    rollBtn.addEventListener('click', handleRollDice);
-  }
-
-  if (gameModeSelect) {
-    gameModeSelect.addEventListener('change', (e) => {
-      state.mode = e.target.value;
-      if (onlineLobby) onlineLobby.classList.toggle('hidden', state.mode !== 'online');
-      saveState();
-    });
-  }
-
-  document.getElementById('theme-select').addEventListener('change', (e) => {
-    document.body.dataset.theme = e.target.value;
-  });
-
-  const createRoomBtn = document.getElementById('create-room-btn');
-  if (createRoomBtn) {
-    createRoomBtn.addEventListener('click', () => {
-      if (!window.LudoFirebase) { alert("Firebase not loaded!"); return; }
-      const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-      if (roomInputCode) roomInputCode.value = code;
-      if (roomCodeLabel) roomCodeLabel.textContent = `ROOM: ${code}`;
-      connectToRoom(code);
-    });
-  }
-
-  const joinRoomBtn = document.getElementById('join-room-btn');
-  if (joinRoomBtn) {
-    joinRoomBtn.addEventListener('click', () => {
-      if (!window.LudoFirebase) { alert("Firebase not loaded!"); return; }
-      const code = roomInputCode.value.trim().toUpperCase();
-      if (code.length === 6) {
-        if (roomCodeLabel) roomCodeLabel.textContent = `ROOM: ${code}`;
-        connectToRoom(code);
-      } else {
-        alert("Please enter a valid 6-digit room code.");
-      }
-    });
-  }
-
-  document.querySelectorAll('.emoji-btn').forEach(btn => {
-    btn.addEventListener('click', () => triggerEmoji(btn.dataset.emoji));
-  });
-
-  const soundToggleBtn = document.getElementById('sound-toggle-btn');
-  if (soundToggleBtn) {
-    soundToggleBtn.addEventListener('click', (e) => {
-      sfx.muted = !sfx.muted;
-      e.target.textContent = sfx.muted ? '🔇 Sound: OFF' : '🔊 Sound: ON';
-    });
-  }
-}
-
-function getActivePlayers() {
-  return MODE_MAP[state.playerMode] || ['red', 'yellow'];
-}
+};
 
 function connectToRoom(code) {
   const { db, ref, onValue, set } = window.LudoFirebase;
@@ -201,58 +201,36 @@ function connectToRoom(code) {
   });
 
   set(activeRoomRef, state);
-  alert(`Successfully connected to Room: ${code}`);
+  setStatus(`Connected to Room ${code}!`);
 }
 
-function syncState() {
-  saveState();
-  if (typeof window.submitScore === 'function') {
-    window.submitScore(state.score);
-  }
-  if (state.mode === 'online' && activeRoomRef && !isRemoteSync) {
-    const { set } = window.LudoFirebase;
-    set(activeRoomRef, state);
-  }
+function getActivePlayers() {
+  return MODE_MAP[state.playerMode] || ['red', 'green', 'yellow', 'blue'];
 }
 
-function resetTurnTimer() {
-  clearInterval(turnTimer);
-  timeLeft = 15;
-  if (timerSecEl) timerSecEl.textContent = timeLeft;
-  if (timerBarEl) timerBarEl.style.width = '100%';
-
-  turnTimer = setInterval(() => {
-    if (state.isAnimating) return;
-    timeLeft--;
-    if (timerSecEl) timerSecEl.textContent = timeLeft;
-    if (timerBarEl) timerBarEl.style.width = `${(timeLeft / 15) * 100}%`;
-
-    if (timeLeft <= 0) {
-      clearInterval(turnTimer);
-      if (!state.waitingForMove) {
-        handleRollDice();
-      } else {
-        const player = getCurrentPlayer();
-        const movable = getMovableTokens(player, state.diceValue);
-        if (movable.length > 0) runBotTurn(player, movable);
-        else nextTurn();
-      }
-    }
-  }, 1000);
+function getCurrentPlayer() {
+  const active = getActivePlayers();
+  return active[state.turnIndex % active.length];
 }
 
-function triggerEmoji(emoji) {
-  const floater = document.getElementById('emoji-floater');
-  if (!floater) return;
-  floater.textContent = emoji;
-  floater.classList.remove('pop');
-  void floater.offsetWidth;
-  floater.classList.add('pop');
+function setStatus(msg) {
+  const el = document.getElementById('status-msg');
+  if (el) el.textContent = msg;
+}
+
+function updateEconomyUI() {
+  const cEl = document.getElementById('coin-count');
+  const xEl = document.getElementById('xp-count');
+  if (cEl) cEl.textContent = profile.coins;
+  if (xEl) xEl.textContent = profile.xp;
+  try { localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); } catch (e) {}
 }
 
 function buildBoardGrid() {
+  const boardEl = document.getElementById('ludo-board');
   if (!boardEl) return;
   boardEl.innerHTML = '';
+
   for (let r = 0; r < 15; r++) {
     for (let c = 0; c < 15; c++) {
       const cell = document.createElement('div');
@@ -283,10 +261,8 @@ function buildBoardGrid() {
       boardEl.appendChild(cell);
     }
   }
-  drawWhiteYardBoxes();
-}
 
-function drawWhiteYardBoxes() {
+  // White Inner Yard Boxes & Base Token Spots
   const yards = [
     { rStart: 1, cStart: 1 }, { rStart: 1, cStart: 10 },
     { rStart: 10, cStart: 10 }, { rStart: 10, cStart: 1 }
@@ -294,16 +270,16 @@ function drawWhiteYardBoxes() {
   yards.forEach(y => {
     for (let r = y.rStart; r <= y.rStart + 3; r++) {
       for (let c = y.cStart; c <= y.cStart + 3; c++) {
-        const cell = boardEl.querySelector(`[data-r="${r}"][data-c="${c}"]`);
-        if (cell) cell.style.background = '#ffffff';
+        const cell = boardEl.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
+        if (cell) cell.classList.add('yard-white');
       }
     }
   });
-}
 
-function getCurrentPlayer() {
-  const active = getActivePlayers();
-  return active[state.turnIndex % active.length];
+  Object.values(BASE_POSITIONS).flat().forEach(([r, c]) => {
+    const cell = boardEl.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
+    if (cell) cell.classList.add('base-spot');
+  });
 }
 
 function getCoordinates(color, step) {
@@ -324,9 +300,10 @@ function getMovableTokens(color, roll) {
     .filter(i => canTokenMove(color, i, roll));
 }
 
-function handleRollDice() {
+window.handleRollDice = function() {
+  const rollBtn = document.getElementById('roll-dice-btn');
   if (state.waitingForMove || state.isAnimating) return;
-  rollBtn.disabled = true;
+  if (rollBtn) rollBtn.disabled = true;
 
   const roll = Math.floor(Math.random() * 6) + 1;
   state.diceValue = roll;
@@ -336,11 +313,13 @@ function handleRollDice() {
   setTimeout(() => {
     const player = getCurrentPlayer();
 
+    // 3 Consecutive Sixes Penalty
     if (roll === 6) {
       state.sixStreak++;
       if (state.sixStreak === 3) {
         state.sixStreak = 0;
-        setTimeout(nextTurn, 900);
+        setStatus(`Rolled three 6s! Turn forfeited.`);
+        setTimeout(nextTurn, 1000);
         return;
       }
     } else {
@@ -349,31 +328,35 @@ function handleRollDice() {
 
     const movable = getMovableTokens(player, roll);
     if (movable.length === 0) {
-      setTimeout(nextTurn, 900);
-    } else if (movable.length === 1 && (state.mode === 'bot' && player !== 'red')) {
+      setStatus(`Rolled ${roll}. No valid moves!`);
+      setTimeout(nextTurn, 950);
+    } else if (movable.length === 1) {
+      // Auto move when only 1 token can move
       moveToken(player, movable[0]);
     } else {
       state.waitingForMove = true;
+      setStatus(`Rolled ${roll}! Tap a glowing token to move.`);
       renderState();
       if (state.mode === 'bot' && player !== 'red') {
-        setTimeout(() => runBotTurn(player, movable), 500);
+        setTimeout(() => runBotTurn(player, movable), 550);
       }
     }
-  }, 750);
-}
+  }, 700);
+};
 
 function animate3DDice(roll) {
+  const diceCube = document.getElementById('dice-cube');
+  if (!diceCube) return;
   const rotations = {
-    1: 'rotateY(0deg)',
-    2: 'rotateY(180deg)',
-    3: 'rotateY(-90deg)',
-    4: 'rotateY(90deg)',
-    5: 'rotateX(-90deg)',
-    6: 'rotateX(90deg)'
+    1: 'rotateX(0deg) rotateY(0deg)',
+    2: 'rotateX(0deg) rotateY(-180deg)',
+    3: 'rotateX(0deg) rotateY(-90deg)',
+    4: 'rotateX(0deg) rotateY(90deg)',
+    5: 'rotateX(-90deg) rotateY(0deg)',
+    6: 'rotateX(90deg) rotateY(0deg)'
   };
-  diceCube.style.transform = `translateZ(-38px) rotateX(720deg) rotateY(720deg) ${rotations[roll]}`;
-  const frontFace = diceCube.querySelector('.cube__face--1');
-  if (frontFace) frontFace.textContent = roll;
+  const spin = (Math.floor(Math.random() * 2) + 2) * 360;
+  diceCube.style.transform = `translateZ(-36px) rotateX(${spin}deg) rotateY(${spin}deg) ${rotations[roll]}`;
 }
 
 async function moveToken(color, tokenIdx) {
@@ -390,14 +373,14 @@ async function moveToken(color, tokenIdx) {
     sfx.tickStep();
     state.score += 5;
     renderState(color, tokenIdx);
-    await new Promise(r => setTimeout(r, 160));
+    await new Promise(r => setTimeout(r, 170));
   } else {
     for (let s = 1; s <= roll; s++) {
       state.tokens[color][tokenIdx]++;
-      sfx.tickStep(); 
+      sfx.tickStep();
       state.score += 1;
       renderState(color, tokenIdx);
-      await new Promise(r => setTimeout(r, 140));
+      await new Promise(r => setTimeout(r, 145));
     }
   }
 
@@ -405,194 +388,4 @@ async function moveToken(color, tokenIdx) {
   const newStep = state.tokens[color][tokenIdx];
   let captured = false;
 
-  if (newStep >= 0 && newStep <= 50) {
-    const globalIdx = (START_INDEX[color] + newStep) % 52;
-    if (!SAFE_INDICES.includes(globalIdx)) {
-      const activePlayers = getActivePlayers();
-      activePlayers.forEach(opp => {
-        if (opp === color) return;
-        if (state.playerMode === '2v2') {
-          if ((color === 'red' || color === 'yellow') && (opp === 'red' || opp === 'yellow')) return;
-          if ((color === 'green' || color === 'blue') && (opp === 'green' || opp === 'blue')) return;
-        }
-
-        state.tokens[opp].forEach((oppStep, oppIdx) => {
-          if (oppStep >= 0 && oppStep <= 50) {
-            const oppGlobalIdx = (START_INDEX[opp] + oppStep) % 52;
-            if (oppGlobalIdx === globalIdx) {
-              state.tokens[opp][oppIdx] = -1;
-              captured = true;
-              state.score += 20;
-            }
-          }
-        });
-      });
-    }
-  }
-
-  if (captured) {
-    sfx.capture();
-    const boardWrap = document.getElementById('board-container');
-    if (boardWrap) {
-      boardEl.classList.add('shake');
-      setTimeout(() => boardEl.classList.remove('shake'), 400);
-    }
-  }
-
-  syncState();
-  renderState();
-
-  let hasWon = false;
-  if (state.playerMode === '2v2') {
-    const team1Done = state.tokens.red.every(s => s === 56) && state.tokens.yellow.every(s => s === 56);
-    const team2Done = state.tokens.green.every(s => s === 56) && state.tokens.blue.every(s => s === 56);
-    if (team1Done || team2Done) hasWon = true;
-  } else {
-    hasWon = state.tokens[color].every(s => s === 56);
-  }
-
-  if (hasWon) {
-    sfx.winGame();
-    if (typeof confetti === 'function') {
-      confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
-    }
-    rollBtn.disabled = true;
-    return;
-  }
-
-  if (roll === 6 || captured || newStep === 56) {
-    resetTurnTimer();
-    rollBtn.disabled = false;
-    const currentPlayer = getCurrentPlayer();
-    if (state.mode === 'bot' && currentPlayer !== 'red') {
-      setTimeout(handleRollDice, 800);
-    }
-  } else {
-    nextTurn();
-  }
-}
-
-function nextTurn() {
-  const activePlayers = getActivePlayers();
-  state.turnIndex = (state.turnIndex + 1) % activePlayers.length;
-  state.diceValue = null;
-  state.waitingForMove = false;
-  syncState();
-  renderState();
-  resetTurnTimer();
-
-  const currentPlayer = getCurrentPlayer();
-  if (state.mode === 'bot' && currentPlayer !== 'red') {
-    rollBtn.disabled = true;
-    setTimeout(handleRollDice, 700);
-  } else {
-    rollBtn.disabled = false;
-  }
-}
-
-function runBotTurn(botColor, movableIndices) {
-  const roll = state.diceValue;
-  let bestToken = movableIndices[0];
-  let bestScore = -1;
-
-  movableIndices.forEach(idx => {
-    const step = state.tokens[botColor][idx];
-    let score = step;
-    if (step === -1 && roll === 6) score = 90;
-    else if (step + roll === 56) score = 120;
-    if (score > bestScore) {
-      bestScore = score;
-      bestToken = idx;
-    }
-  });
-
-  moveToken(botColor, bestToken);
-}
-
-function renderState(hoppingColor = null, hoppingIdx = null) {
-  document.querySelectorAll('.token').forEach(t => t.remove());
-
-  const currentPlayer = getCurrentPlayer();
-  if (turnBadge) {
-    turnBadge.textContent = `${currentPlayer.toUpperCase()}'S TURN`;
-    turnBadge.className = `turn-badge ${currentPlayer}`;
-  }
-  if (scoreTracker) {
-    scoreTracker.textContent = `Score: ${state.score}`;
-  }
-
-  const activePlayers = getActivePlayers();
-
-  PLAYERS.forEach(color => {
-    if (!activePlayers.includes(color)) return;
-
-    state.tokens[color].forEach((step, idx) => {
-      let r, c;
-      if (step === -1) {
-        [r, c] = BASE_POSITIONS[color][idx];
-      } else {
-        [r, c] = getCoordinates(color, step);
-      }
-
-      const cell = document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
-      if (!cell) return;
-
-      const token = document.createElement('div');
-      token.classList.add('token', color);
-
-      if (color === hoppingColor && idx === hoppingIdx) {
-        token.classList.add('hopping');
-      }
-
-      if (state.waitingForMove && color === currentPlayer && canTokenMove(color, idx, state.diceValue)) {
-        token.classList.add('movable');
-        token.addEventListener('click', () => moveToken(color, idx));
-      }
-
-      cell.appendChild(token);
-    });
-  });
-}
-
-function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-}
-
-function loadState() {
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved) {
-    try {
-      state = { ...state, ...JSON.parse(saved), isAnimating: false };
-      if (gameModeSelect) gameModeSelect.value = state.mode;
-      if (selectPlayerMode) selectPlayerMode.value = state.playerMode;
-      if (onlineLobby) onlineLobby.classList.toggle('hidden', state.mode !== 'online');
-    } catch (e) {
-      console.error(e);
-    }
-  }
-}
-
-function startNewGame() {
-  state = {
-    playerMode: selectPlayerMode ? selectPlayerMode.value : '1v1',
-    mode: gameModeSelect ? gameModeSelect.value : 'bot',
-    turnIndex: 0,
-    sixStreak: 0,
-    diceValue: null,
-    waitingForMove: false,
-    isAnimating: false,
-    score: 0,
-    tokens: {
-      red:    [-1, -1, -1, -1],
-      green:  [-1, -1, -1, -1],
-      yellow: [-1, -1, -1, -1],
-      blue:   [-1, -1, -1, -1]
-    }
-  };
-  rollBtn.disabled = false;
-  syncState();
-  renderState();
-  resetTurnTimer();
-}
-
-init();
+  // Capture Check (Respects Safe Stars & 2v2
