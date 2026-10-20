@@ -1,6 +1,4 @@
-import { auth, db, googleProvider, signInWithPopup, signOut, onAuthStateChanged, doc, setDoc, getDoc, updateDoc, increment } from "./firebase.js";
-
-// Game Maps
+// Game Mapping Constants
 const snakes = { 16: 6, 47: 26, 49: 11, 56: 53, 62: 19, 64: 60, 87: 24, 93: 73, 95: 75, 98: 78 };
 const ladders = { 1: 38, 4: 14, 9: 31, 21: 42, 28: 84, 36: 44, 51: 67, 71: 91, 80: 100 };
 
@@ -13,7 +11,7 @@ let gameState = {
     roomCode: null
 };
 
-// UI Elements
+// DOM Elements
 const screens = document.querySelectorAll('.screen');
 const playerNameInput = document.getElementById('player-name');
 const userDisplayName = document.getElementById('user-display-name');
@@ -21,6 +19,8 @@ const boardEl = document.getElementById('board');
 const diceEl = document.getElementById('dice');
 const turnIndicator = document.getElementById('turn-indicator');
 const scoreboardEl = document.getElementById('scoreboard');
+const loginStatusBanner = document.getElementById('login-status-banner');
+const loginPopup = document.getElementById('login-popup');
 
 // Audio elements
 const sfxTap = document.getElementById('sfx-tap');
@@ -47,29 +47,55 @@ function switchScreen(screenId) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Check local storage fallback name
-    const savedName = localStorage.getItem('snake_player_name');
-    if (savedName) {
-        playerNameInput.value = savedName;
-    }
-
     buildBoard();
 
-    // Listen to Firebase Auth state changes automatically across pages/reloads
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            gameState.currentUser = user;
-            gameState.playerName = user.displayName || "Google User";
-            playerNameInput.value = gameState.playerName;
-            userDisplayName.innerText = gameState.playerName;
-            
-            // Auto-advance if signed in from main page check
-            localStorage.setItem('snake_player_name', gameState.playerName);
-        }
+    // Check Firebase Auth state or Local Storage session
+    if (auth) {
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // User logged in via main login or Google
+                gameState.currentUser = user;
+                gameState.playerName = user.displayName || user.email.split('@')[0];
+                playerNameInput.value = gameState.playerName;
+                userDisplayName.innerText = gameState.playerName;
+                
+                loginStatusBanner.classList.remove('hidden');
+                loginPopup.classList.add('hidden'); // Hide popup if logged in
+            } else {
+                // Not logged in -> Check local storage or show popup
+                const savedName = localStorage.getItem('snake_player_name');
+                if (savedName) {
+                    playerNameInput.value = savedName;
+                }
+                
+                // Show animated popup after a short delay prompting login
+                setTimeout(() => {
+                    if (!gameState.currentUser) {
+                        loginPopup.classList.remove('hidden');
+                    }
+                }, 600);
+            }
+        });
+    } else {
+        // Fallback if Firebase isn't loaded
+        const savedName = localStorage.getItem('snake_player_name');
+        if (savedName) playerNameInput.value = savedName;
+        loginPopup.classList.remove('hidden');
+    }
+
+    // Popup button triggers
+    document.getElementById('btn-goto-login-page').addEventListener('click', () => {
+        // Redirect to your main login page (e.g., login.html in root or relative path)
+        window.location.href = "../login.html"; 
     });
 
-    // Local / Username Play Button
-    document.getElementById('btn-local-play').addEventListener('click', () => {
+    document.getElementById('btn-dismiss-popup').addEventListener('click', () => {
+        playSound(sfxTap);
+        loginPopup.classList.add('hidden');
+    });
+
+    // Continue to Menu Button
+    document.getElementById('btn-continue').addEventListener('click', () => {
         const name = playerNameInput.value.trim() || "Player 1";
         gameState.playerName = name;
         localStorage.setItem('snake_player_name', name);
@@ -78,25 +104,32 @@ document.addEventListener('DOMContentLoaded', () => {
         switchScreen('menu-screen');
     });
 
-    // Google Sign-In Button Click Handler
-    document.getElementById('btn-google-login').addEventListener('click', async () => {
+    // Google Sign-In button click handler
+    document.getElementById('by-google-login`' || 'btn-google-login').addEventListener('click', async () => {
+        if (!auth) {
+            alert("Firebase Auth unavailable.");
+            return;
+        }
         try {
-            const result = await signInWithPopup(auth, googleProvider);
+            const provider = new firebase.auth.GoogleAuthProvider();
+            const result = await auth.signInWithPopup(provider);
             const user = result.user;
             gameState.currentUser = user;
             gameState.playerName = user.displayName;
             playerNameInput.value = user.displayName;
             userDisplayName.innerText = user.displayName;
             
+            loginStatusBanner.classList.remove('hidden');
+            loginPopup.classList.add('hidden');
             saveNameToLocalLeaderboard(user.displayName, 0);
             switchScreen('menu-screen');
         } catch (error) {
             console.error("Google Sign-In Error:", error);
-            alert("Google Sign-In failed. Please ensure your domain is added to Firebase Auth Authorized Domains.");
+            alert("Google Sign-In popup failed or was blocked.");
         }
     });
 
-    // Mode Selection & Navigation
+    // Menu Navigation
     document.getElementById('btn-mode-bot').addEventListener('click', () => startGame('bot'));
     document.getElementById('btn-mode-pass').addEventListener('click', () => startGame('pass'));
     document.getElementById('btn-mode-online').addEventListener('click', () => switchScreen('lobby-screen'));
@@ -108,12 +141,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-close-leaderboard').addEventListener('click', () => switchScreen('menu-screen'));
     document.getElementById('btn-back-menu').addEventListener('click', () => switchScreen('menu-screen'));
     document.getElementById('btn-logout').addEventListener('click', async () => {
-        if (auth.currentUser) await signOut(auth);
+        if (auth && auth.currentUser) await auth.signOut();
+        localStorage.removeItem('snake_player_name');
         switchScreen('auth-screen');
+        loginPopup.classList.remove('hidden');
     });
     document.getElementById('btn-quit-game').addEventListener('click', () => switchScreen('menu-screen'));
 
-    // Game Controls
+    // Game Actions
     document.getElementById('btn-roll').addEventListener('click', rollDice);
     document.getElementById('btn-create-room').addEventListener('click', createOnlineRoom);
     document.getElementById('btn-join-room').addEventListener('click', joinOnlineRoom);
@@ -225,20 +260,8 @@ function rollDice() {
     }
 }
 
-async function recordWin(winnerName) {
+function recordWin(winnerName) {
     saveNameToLocalLeaderboard(winnerName, 10);
-
-    if (db && gameState.currentUser) {
-        try {
-            const userRef = doc(db, "leaderboard", gameState.currentUser.uid);
-            await setDoc(userRef, {
-                name: winnerName,
-                score: increment(10)
-            }, { merge: true });
-        } catch (e) {
-            console.error("Firestore score update failed:", e);
-        }
-    }
 }
 
 function loadLeaderboard() {
