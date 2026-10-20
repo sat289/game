@@ -26,7 +26,12 @@ class SoundFX {
 }
 const sfx = new SoundFX();
 
-const PLAYERS = ['red', 'green', 'yellow', 'blue'];
+const MODE_MAP = {
+  '1v1': ['red', 'yellow'],
+  '2v2': ['red', 'green', 'yellow', 'blue'],
+  '1v3': ['red', 'green', 'yellow', 'blue'],
+  '4player': ['red', 'green', 'yellow', 'blue']
+};
 
 const MAIN_TRACK = [
   [6,1],[6,2],[6,3],[6,4],[6,5],
@@ -54,17 +59,19 @@ const HOME_PATHS = {
 };
 
 const BASE_POSITIONS = {
-  red:    [[1.5, 1.5], [1.5, 3.5], [3.5, 1.5], [3.5, 3.5]],
-  green:  [[1.5, 10.5], [1.5, 12.5], [3.5, 10.5], [3.5, 12.5]],
-  yellow: [[10.5, 10.5], [10.5, 12.5], [12.5, 10.5], [12.5, 12.5]],
-  blue:   [[10.5, 1.5], [10.5, 3.5], [12.5, 1.5], [12.5, 3.5]]
+  red:    [[1, 1], [1, 4], [4, 1], [4, 4]],
+  green:  [[1, 10], [1, 13], [4, 10], [4, 13]],
+  yellow: [[10, 10], [10, 13], [13, 10], [13, 13]],
+  blue:   [[10, 1], [10, 4], [13, 1], [13, 4]]
 };
 
-const STORAGE_KEY = 'PRO_LUDO_FINAL_STATE_V9';
+const STORAGE_KEY = 'PRO_LUDO_ULTIMATE_STATE_V11';
 
 let state = {
+  playerMode: '1v1',
   mode: 'bot',
   turnIndex: 0,
+  sixStreak: 0,
   diceValue: null,
   waitingForMove: false,
   isAnimating: false,
@@ -79,6 +86,8 @@ let state = {
 
 let activeRoomRef = null;
 let isRemoteSync = false;
+let turnTimer = null;
+let timeLeft = 15;
 
 const homeScreen = document.getElementById('home-screen');
 const gameScreen = document.getElementById('game-screen');
@@ -87,10 +96,13 @@ const rollBtn = document.getElementById('roll-dice-btn');
 const diceCube = document.getElementById('dice-cube');
 const turnBadge = document.getElementById('turn-indicator');
 const scoreTracker = document.getElementById('score-tracker');
+const selectPlayerMode = document.getElementById('select-player-mode');
 const gameModeSelect = document.getElementById('game-mode-select');
 const onlineLobby = document.getElementById('online-lobby');
 const roomInputCode = document.getElementById('room-input-code');
 const roomCodeLabel = document.getElementById('room-code-label');
+const timerSecEl = document.getElementById('timer-sec');
+const timerBarEl = document.getElementById('timer-bar');
 
 function init() {
   buildBoardGrid();
@@ -99,9 +111,12 @@ function init() {
   const startBtn = document.getElementById('main-start-btn');
   if (startBtn) {
     startBtn.addEventListener('click', () => {
+      if (selectPlayerMode) {
+        state.playerMode = selectPlayerMode.value;
+      }
       homeScreen.classList.add('hidden');
       gameScreen.classList.remove('hidden');
-      renderState();
+      startNewGame();
     });
   }
 
@@ -124,6 +139,10 @@ function init() {
       saveState();
     });
   }
+
+  document.getElementById('theme-select').addEventListener('change', (e) => {
+    document.body.dataset.theme = e.target.value;
+  });
 
   const createRoomBtn = document.getElementById('create-room-btn');
   if (createRoomBtn) {
@@ -163,6 +182,10 @@ function init() {
   }
 }
 
+function getActivePlayers() {
+  return MODE_MAP[state.playerMode] || ['red', 'yellow'];
+}
+
 function connectToRoom(code) {
   const { db, ref, onValue, set } = window.LudoFirebase;
   activeRoomRef = ref(db, `ludo_rooms/${code}`);
@@ -190,6 +213,32 @@ function syncState() {
     const { set } = window.LudoFirebase;
     set(activeRoomRef, state);
   }
+}
+
+function resetTurnTimer() {
+  clearInterval(turnTimer);
+  timeLeft = 15;
+  if (timerSecEl) timerSecEl.textContent = timeLeft;
+  if (timerBarEl) timerBarEl.style.width = '100%';
+
+  turnTimer = setInterval(() => {
+    if (state.isAnimating) return;
+    timeLeft--;
+    if (timerSecEl) timerSecEl.textContent = timeLeft;
+    if (timerBarEl) timerBarEl.style.width = `${(timeLeft / 15) * 100}%`;
+
+    if (timeLeft <= 0) {
+      clearInterval(turnTimer);
+      if (!state.waitingForMove) {
+        handleRollDice();
+      } else {
+        const player = getCurrentPlayer();
+        const movable = getMovableTokens(player, state.diceValue);
+        if (movable.length > 0) runBotTurn(player, movable);
+        else nextTurn();
+      }
+    }
+  }, 1000);
 }
 
 function triggerEmoji(emoji) {
@@ -253,7 +302,8 @@ function drawWhiteYardBoxes() {
 }
 
 function getCurrentPlayer() {
-  return PLAYERS[state.turnIndex];
+  const active = getActivePlayers();
+  return active[state.turnIndex % active.length];
 }
 
 function getCoordinates(color, step) {
@@ -285,8 +335,19 @@ function handleRollDice() {
 
   setTimeout(() => {
     const player = getCurrentPlayer();
-    const movable = getMovableTokens(player, roll);
 
+    if (roll === 6) {
+      state.sixStreak++;
+      if (state.sixStreak === 3) {
+        state.sixStreak = 0;
+        setTimeout(nextTurn, 900);
+        return;
+      }
+    } else {
+      state.sixStreak = 0;
+    }
+
+    const movable = getMovableTokens(player, roll);
     if (movable.length === 0) {
       setTimeout(nextTurn, 900);
     } else if (movable.length === 1 && (state.mode === 'bot' && player !== 'red')) {
@@ -324,13 +385,12 @@ async function moveToken(color, tokenIdx) {
   state.isAnimating = true;
   let currentStep = state.tokens[color][tokenIdx];
 
-  // Correct step-by-step token hopping with "Tick Tick" sound
   if (currentStep === -1 && roll === 6) {
     state.tokens[color][tokenIdx] = 0;
     sfx.tickStep();
     state.score += 5;
     renderState(color, tokenIdx);
-    await new Promise(r => setTimeout(r, 180));
+    await new Promise(r => setTimeout(r, 160));
   } else {
     for (let s = 1; s <= roll; s++) {
       state.tokens[color][tokenIdx]++;
@@ -345,12 +405,17 @@ async function moveToken(color, tokenIdx) {
   const newStep = state.tokens[color][tokenIdx];
   let captured = false;
 
-  // Safe and accurate capture check only after completing full step movement
   if (newStep >= 0 && newStep <= 50) {
     const globalIdx = (START_INDEX[color] + newStep) % 52;
     if (!SAFE_INDICES.includes(globalIdx)) {
-      PLAYERS.forEach(opp => {
+      const activePlayers = getActivePlayers();
+      activePlayers.forEach(opp => {
         if (opp === color) return;
+        if (state.playerMode === '2v2') {
+          if ((color === 'red' || color === 'yellow') && (opp === 'red' || opp === 'yellow')) return;
+          if ((color === 'green' || color === 'blue') && (opp === 'green' || opp === 'blue')) return;
+        }
+
         state.tokens[opp].forEach((oppStep, oppIdx) => {
           if (oppStep >= 0 && oppStep <= 50) {
             const oppGlobalIdx = (START_INDEX[opp] + oppStep) % 52;
@@ -377,8 +442,16 @@ async function moveToken(color, tokenIdx) {
   syncState();
   renderState();
 
-  const allHome = state.tokens[color].every(s => s === 56);
-  if (allHome) {
+  let hasWon = false;
+  if (state.playerMode === '2v2') {
+    const team1Done = state.tokens.red.every(s => s === 56) && state.tokens.yellow.every(s => s === 56);
+    const team2Done = state.tokens.green.every(s => s === 56) && state.tokens.blue.every(s => s === 56);
+    if (team1Done || team2Done) hasWon = true;
+  } else {
+    hasWon = state.tokens[color].every(s => s === 56);
+  }
+
+  if (hasWon) {
     sfx.winGame();
     if (typeof confetti === 'function') {
       confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
@@ -388,8 +461,10 @@ async function moveToken(color, tokenIdx) {
   }
 
   if (roll === 6 || captured || newStep === 56) {
+    resetTurnTimer();
     rollBtn.disabled = false;
-    if (state.mode === 'bot' && color !== 'red') {
+    const currentPlayer = getCurrentPlayer();
+    if (state.mode === 'bot' && currentPlayer !== 'red') {
       setTimeout(handleRollDice, 800);
     }
   } else {
@@ -398,11 +473,13 @@ async function moveToken(color, tokenIdx) {
 }
 
 function nextTurn() {
-  state.turnIndex = (state.turnIndex + 1) % PLAYERS.length;
+  const activePlayers = getActivePlayers();
+  state.turnIndex = (state.turnIndex + 1) % activePlayers.length;
   state.diceValue = null;
   state.waitingForMove = false;
   syncState();
   renderState();
+  resetTurnTimer();
 
   const currentPlayer = getCurrentPlayer();
   if (state.mode === 'bot' && currentPlayer !== 'red') {
@@ -444,7 +521,11 @@ function renderState(hoppingColor = null, hoppingIdx = null) {
     scoreTracker.textContent = `Score: ${state.score}`;
   }
 
+  const activePlayers = getActivePlayers();
+
   PLAYERS.forEach(color => {
+    if (!activePlayers.includes(color)) return;
+
     state.tokens[color].forEach((step, idx) => {
       let r, c;
       if (step === -1) {
@@ -453,7 +534,7 @@ function renderState(hoppingColor = null, hoppingIdx = null) {
         [r, c] = getCoordinates(color, step);
       }
 
-      const cell = document.querySelector(`.cell[data-r="${Math.floor(r)}"][data-c="${Math.floor(c)}"]`);
+      const cell = document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
       if (!cell) return;
 
       const token = document.createElement('div');
@@ -483,11 +564,35 @@ function loadState() {
     try {
       state = { ...state, ...JSON.parse(saved), isAnimating: false };
       if (gameModeSelect) gameModeSelect.value = state.mode;
+      if (selectPlayerMode) selectPlayerMode.value = state.playerMode;
       if (onlineLobby) onlineLobby.classList.toggle('hidden', state.mode !== 'online');
     } catch (e) {
       console.error(e);
     }
   }
+}
+
+function startNewGame() {
+  state = {
+    playerMode: selectPlayerMode ? selectPlayerMode.value : '1v1',
+    mode: gameModeSelect ? gameModeSelect.value : 'bot',
+    turnIndex: 0,
+    sixStreak: 0,
+    diceValue: null,
+    waitingForMove: false,
+    isAnimating: false,
+    score: 0,
+    tokens: {
+      red:    [-1, -1, -1, -1],
+      green:  [-1, -1, -1, -1],
+      yellow: [-1, -1, -1, -1],
+      blue:   [-1, -1, -1, -1]
+    }
+  };
+  rollBtn.disabled = false;
+  syncState();
+  renderState();
+  resetTurnTimer();
 }
 
 init();
