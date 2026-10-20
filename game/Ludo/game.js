@@ -81,6 +81,8 @@ let state = {
 let activeRoomRef = null;
 let isRemoteSync = false;
 
+const homeScreen = document.getElementById('home-screen');
+const gameScreen = document.getElementById('game-screen');
 const boardEl = document.getElementById('ludo-board');
 const rollBtn = document.getElementById('roll-dice-btn');
 const dice3D = document.getElementById('dice-3d');
@@ -94,10 +96,19 @@ const roomCodeLabel = document.getElementById('room-code-label');
 function init() {
   buildBoardGrid();
   loadState();
-  renderState();
+
+  document.getElementById('main-start-btn').addEventListener('click', () => {
+    homeScreen.classList.add('hidden');
+    gameScreen.classList.remove('hidden');
+    renderState();
+  });
+
+  document.getElementById('back-home-btn').addEventListener('click', () => {
+    gameScreen.classList.add('hidden');
+    homeScreen.classList.remove('hidden');
+  });
 
   rollBtn.addEventListener('click', handleRollDice);
-  document.getElementById('restart-btn').addEventListener('click', startNewGame);
 
   gameModeSelect.addEventListener('change', (e) => {
     state.mode = e.target.value;
@@ -280,7 +291,6 @@ async function moveToken(color, tokenIdx) {
   state.isAnimating = true;
   let currentStep = state.tokens[color][tokenIdx];
 
-  // టోకెన్ ఒక్కో గడి ముందుకు కదిలే యానిమేషన్ (Hopping)
   if (currentStep === -1 && roll === 6) {
     state.tokens[color][tokenIdx] = 0;
     sfx.hopStep();
@@ -429,26 +439,6 @@ function loadState() {
       console.error(e);
     }
   }
-}
-
-function startNewGame() {
-  state = {
-    mode: gameModeSelect.value,
-    turnIndex: 0,
-    diceValue: null,
-    waitingForMove: false,
-    isAnimating: false,
-    score: 0,
-    tokens: {
-      red:    [-1, -1, -1, -1],
-      green:  [-1, -1, -1, -1],
-      yellow: [-1, -1, -1, -1],
-      blue:   [-1, -1, -1, -1]
-    }
-  };
-  rollBtn.disabled = false;
-  syncState();
-  renderState();
 }
 
 init();
