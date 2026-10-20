@@ -34,6 +34,7 @@ const BOARD_CONFIGS = {
 let activeLadders = {};
 let activeSnakes = {};
 let isRolling = false;
+let isMusicPlaying = false;
 
 let gameState = {
     currentUser: null,
@@ -58,9 +59,11 @@ const loginPopup = document.getElementById('login-popup');
 const themeSelect = document.getElementById('theme-select');
 const boardPreviewImg = document.getElementById('board-preview-img');
 const rollBtn = document.getElementById('btn-roll');
+const googleLoginBtn = document.getElementById('btn-google-login');
 
 const sfxTap = document.getElementById('sfx-tap');
 const sfxDice = document.getElementById('sfx-dice');
+const sfxStep = document.getElementById('sfx-step');
 const sfxLadder = document.getElementById('sfx-ladder');
 const sfxSnake = document.getElementById('sfx-snake');
 const bgm = document.getElementById('bgm');
@@ -73,14 +76,23 @@ function playSound(audioEl) {
     } catch (e) {}
 }
 
+function toggleMusic() {
+    if (!bgm) return;
+    isMusicPlaying = !isMusicPlaying;
+    if (isMusicPlaying) {
+        bgm.volume = 0.25;
+        bgm.play().catch(() => {});
+        document.querySelectorAll('#btn-toggle-music, #btn-game-music').forEach(b => b.innerText = "🎵 Music: ON");
+    } else {
+        bgm.pause();
+        document.querySelectorAll('#btn-toggle-music, #btn-game-music').forEach(b => b.innerText = "🎵 Music: OFF");
+    }
+}
+
 function switchScreen(screenId) {
     playSound(sfxTap);
     screens.forEach(s => s.classList.remove('active'));
     document.getElementById(screenId).classList.add('active');
-    if (screenId !== 'auth-screen' && bgm) {
-        bgm.volume = 0.2;
-        bgm.play().catch(() => {});
-    }
 }
 
 function applySelectedBoard(boardId) {
@@ -107,6 +119,11 @@ document.addEventListener('DOMContentLoaded', () => {
         applySelectedBoard(gameState.selectedTheme);
     });
 
+    // Music buttons toggle listener
+    document.querySelectorAll('#btn-toggle-music, #btn-game-music').forEach(btn => {
+        btn.addEventListener('click', toggleMusic);
+    });
+
     if (typeof auth !== "undefined" && auth) {
         auth.onAuthStateChanged((user) => {
             if (user) {
@@ -119,9 +136,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 loginStatusBanner.classList.remove('hidden');
                 loginPopup.classList.add('hidden');
+                
+                // Remove sign-in option if user is logged in
+                if (googleLoginBtn) googleLoginBtn.classList.add('hidden');
             } else {
                 gameState.currentUser = null;
                 loginStatusBanner.classList.add('hidden');
+                if (googleLoginBtn) googleLoginBtn.classList.remove('hidden');
                 setTimeout(() => {
                     if (!gameState.currentUser) {
                         loginPopup.classList.remove('hidden');
@@ -153,31 +174,34 @@ document.addEventListener('DOMContentLoaded', () => {
         switchScreen('menu-screen');
     });
 
-    document.getElementById('btn-google-login').addEventListener('click', async () => {
-        if (typeof auth === "undefined" || !auth) {
-            alert("Firebase Auth unavailable. Please continue with a username.");
-            return;
-        }
-        try {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            const result = await auth.signInWithPopup(provider);
-            const user = result.user;
-            const autoName = user.displayName || (user.email ? user.email.split('@')[0] : "Player 1");
-            gameState.currentUser = user;
-            gameState.playerName = autoName;
-            playerNameInput.value = autoName;
-            userDisplayName.innerText = autoName;
-            localStorage.setItem('snake_player_name', autoName);
+    if (googleLoginBtn) {
+        googleLoginBtn.addEventListener('click', async () => {
+            if (typeof auth === "undefined" || !auth) {
+                alert("Firebase Auth unavailable.");
+                return;
+            }
+            try {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                const result = await auth.signInWithPopup(provider);
+                const user = result.user;
+                const autoName = user.displayName || (user.email ? user.email.split('@')[0] : "Player 1");
+                gameState.currentUser = user;
+                gameState.playerName = autoName;
+                playerNameInput.value = autoName;
+                userDisplayName.innerText = autoName;
+                localStorage.setItem('snake_player_name', autoName);
 
-            loginStatusBanner.classList.remove('hidden');
-            loginPopup.classList.add('hidden');
-            saveNameToLocalLeaderboard(autoName, 0);
-            switchScreen('menu-screen');
-        } catch (error) {
-            console.error("Google Sign-In Error:", error);
-            alert("Google Sign-In popup failed or was blocked.");
-        }
-    });
+                loginStatusBanner.classList.remove('hidden');
+                loginPopup.classList.add('hidden');
+                if (googleLoginBtn) googleLoginBtn.classList.add('hidden');
+                saveNameToLocalLeaderboard(autoName, 0);
+                switchScreen('menu-screen');
+            } catch (error) {
+                console.error("Google Sign-In Error:", error);
+                alert("Google Sign-In popup failed or was blocked.");
+            }
+        });
+    }
 
     document.getElementById('btn-mode-bot').addEventListener('click', () => startGame('bot'));
     document.getElementById('btn-mode-pass').addEventListener('click', () => startGame('pass'));
@@ -197,6 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('snake_player_name');
         playerNameInput.value = "";
         loginStatusBanner.classList.add('hidden');
+        if (googleLoginBtn) googleLoginBtn.classList.remove('hidden');
         switchScreen('auth-screen');
         loginPopup.classList.remove('hidden');
     });
@@ -285,65 +310,90 @@ function updateBoardUI() {
     `).join('');
 }
 
+// Helper function to animate movement step-by-step
+function animateStepByStep(player, targetPos, onComplete) {
+    if (player.pos >= targetPos) {
+        if (onComplete) onComplete();
+        return;
+    }
+
+    player.pos += 1;
+    playSound(sfxStep);
+    updateBoardUI();
+
+    setTimeout(() => {
+        animateStepByStep(player, targetPos, onComplete);
+    }, 200); // 200ms delay per step
+}
+
 function rollDice() {
     if (isRolling) return;
     isRolling = true;
     rollBtn.disabled = true;
 
     playSound(sfxDice);
-    const roll = Math.floor(Math.random() * 6) + 1;
-    diceEl.innerText = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'][roll - 1];
+    diceEl.classList.add('rolling');
 
-    let player = gameState.players[gameState.turnIndex];
+    let shuffleInterval = setInterval(() => {
+        const randomFace = Math.floor(Math.random() * 6) + 1;
+        diceEl.innerText = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'][randomFace - 1];
+    }, 90);
 
-    // STRICT LOGIC 1: Player must roll a 1 to start moving from square 0
-    if (!player.started) {
-        if (roll === 1) {
-            player.started = true;
-            player.pos = 1;
-            diceStatus.innerText = `🎉 ${player.name} rolled a 1 and entered the board!`;
-        } else {
-            diceStatus.innerText = `🎲 Rolled ${roll}. Need a 1 to start!`;
+    setTimeout(() => {
+        clearInterval(shuffleInterval);
+        diceEl.classList.remove('rolling');
+
+        const roll = Math.floor(Math.random() * 6) + 1;
+        diceEl.innerText = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'][roll - 1];
+
+        let player = gameState.players[gameState.turnIndex];
+
+        // Rule: Must roll 1 to start
+        if (!player.started) {
+            if (roll === 1) {
+                player.started = true;
+                player.pos = 1;
+                diceStatus.innerText = `🎉 ${player.name} rolled a 1 and entered!`;
+                updateBoardUI();
+                finishTurn();
+            } else {
+                diceStatus.innerText = `🎲 Rolled ${roll}. Need a 1 to start!`;
+                finishTurn();
+            }
+            return;
         }
-        updateBoardUI();
-        finishTurn();
-        return;
-    }
 
-    // STRICT LOGIC 2: Exact roll constraint to reach 100
-    let nextPos = player.pos + roll;
-    if (nextPos > 100) {
-        diceStatus.innerText = `🎲 Rolled ${roll}. Need exact roll for 100!`;
-        finishTurn();
-        return;
-    }
-
-    player.pos = nextPos;
-    diceStatus.innerText = `${player.name} moved to ${nextPos}`;
-    updateBoardUI();
-
-    // Check ladders and snakes logic safely with smooth pacing
-    if (activeLadders[nextPos]) {
-        setTimeout(() => {
-            playSound(sfxLadder);
-            const dest = activeLadders[nextPos];
-            player.pos = dest;
-            diceStatus.innerText = `🪜 Ladder! Climbed ${nextPos} → ${dest}!`;
-            updateBoardUI();
+        let nextPos = player.pos + roll;
+        if (nextPos > 100) {
+            diceStatus.innerText = `🎲 Rolled ${roll}. Need exact roll for 100!`;
             finishTurn();
-        }, 550);
-    } else if (activeSnakes[nextPos]) {
-        setTimeout(() => {
-            playSound(sfxSnake);
-            const dest = activeSnakes[nextPos];
-            player.pos = dest;
-            diceStatus.innerText = `🐍 Snake! Slid ${nextPos} → ${dest}!`;
-            updateBoardUI();
-            finishTurn();
-        }, 550);
-    } else {
-        finishTurn();
-    }
+            return;
+        }
+
+        diceStatus.innerText = `${player.name} rolled ${roll}! Moving...`;
+
+        // Step-by-step movement execution
+        animateStepByStep(player, nextPos, () => {
+            // After stepping ends, check snake or ladder
+            if (activeLadders[player.pos]) {
+                playSound(sfxLadder);
+                const dest = activeLadders[player.pos];
+                player.pos = dest;
+                diceStatus.innerText = `🪜 Ladder Climbed to ${dest}!`;
+                updateBoardUI();
+                finishTurn();
+            } else if (activeSnakes[player.pos]) {
+                playSound(sfxSnake);
+                const dest = activeSnakes[player.pos];
+                player.pos = dest;
+                diceStatus.innerText = `🐍 Snake Bit! Slid to ${dest}!`;
+                updateBoardUI();
+                finishTurn();
+            } else {
+                finishTurn();
+            }
+        });
+    }, 700);
 }
 
 function finishTurn() {
@@ -372,7 +422,7 @@ function finishTurn() {
             isRolling = false;
             rollBtn.disabled = false;
         }
-    }, 600);
+    }, 500);
 }
 
 function recordWin(winnerName) {
