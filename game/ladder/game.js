@@ -1,5 +1,39 @@
+const BOARD_CONFIGS = {
+    "board1": {
+        ladders: { 8: 27, 18: 37, 25: 54, 28: 51, 56: 64, 68: 88, 76: 97, 79: 100 },
+        snakes: { 16: 7, 59: 17, 63: 19, 67: 30, 87: 24, 93: 69, 95: 75, 99: 77 },
+        img: "board1.jpg"
+    },
+    "board2": {
+        ladders: { 4: 25, 13: 46, 33: 49, 42: 63, 50: 69, 62: 81, 74: 92 },
+        snakes: { 27: 5, 40: 3, 43: 18, 54: 31, 66: 45, 89: 53, 95: 77, 99: 41 },
+        img: "board2.jpg"
+    },
+    "board3": {
+        ladders: { 3: 20, 10: 29, 25: 46, 50: 69, 59: 98, 64: 85 },
+        snakes: { 28: 9, 42: 17, 48: 14, 66: 58, 92: 72, 94: 68 },
+        img: "board3.jpg"
+    },
+    "board4": {
+        ladders: { 7: 30, 16: 33, 20: 38, 36: 83, 50: 68, 63: 81, 71: 89, 86: 97 },
+        snakes: { 25: 3, 42: 1, 56: 48, 61: 43, 92: 67, 95: 12, 98: 79 },
+        img: "board4.jpg"
+    },
+    "board5": {
+        ladders: { 13: 42, 32: 68, 37: 64, 61: 83 },
+        snakes: { 16: 6, 47: 25, 75: 38, 93: 73, 98: 78 },
+        img: "https://images.unsplash.com/photo-1611996575749-79a3a250f948?w=800"
+    },
+    "board6": {
+        ladders: { 4: 25, 13: 46, 33: 49, 42: 63, 50: 69, 62: 81, 74: 92 },
+        snakes: { 27: 5, 40: 2, 43: 17, 54: 31, 66: 45, 89: 53, 95: 76, 99: 41 },
+        img: "board6.jpg"
+    }
+};
+
 let snakes = {};
 let ladders = {};
+let isRolling = false;
 
 let gameState = {
     currentUser: null,
@@ -8,10 +42,9 @@ let gameState = {
     players: [],
     turnIndex: 0,
     roomCode: null,
-    selectedTheme: "classic"
+    selectedTheme: "board5"
 };
 
-// DOM Elements
 const screens = document.querySelectorAll('.screen');
 const playerNameInput = document.getElementById('player-name');
 const userDisplayName = document.getElementById('user-display-name');
@@ -23,8 +56,9 @@ const scoreboardEl = document.getElementById('scoreboard');
 const loginStatusBanner = document.getElementById('login-status-banner');
 const loginPopup = document.getElementById('login-popup');
 const themeSelect = document.getElementById('theme-select');
+const boardPreviewImg = document.getElementById('board-preview-img');
+const rollBtn = document.getElementById('btn-roll');
 
-// Audio elements
 const sfxTap = document.getElementById('sfx-tap');
 const sfxDice = document.getElementById('sfx-dice');
 const sfxLadder = document.getElementById('sfx-ladder');
@@ -49,48 +83,30 @@ function switchScreen(screenId) {
     }
 }
 
-// Randomizer to generate fresh snakes and ladders every match
-function generateRandomBoardLayout() {
-    snakes = {};
-    ladders = {};
-
-    // Generate 5 random ladders (bottom to top)
-    const ladderPairs = [[2, 38], [7, 14], [15, 44], [28, 84], [36, 52], [51, 67], [71, 91], [78, 98]];
-    shuffleArray(ladderPairs).slice(0, 5).forEach(([start, end]) => {
-        ladders[start] = end;
-    });
-
-    // Generate 5 random snakes (head to tail)
-    const snakePairs = [[99, 10], [95, 75], [87, 24], [64, 36], [56, 19], [47, 26], [32, 5], [16, 6]];
-    shuffleArray(snakePairs).slice(0, 5).forEach(([start, end]) => {
-        snakes[start] = end;
-    });
-}
-
-function shuffleArray(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
+function applySelectedBoard(boardId) {
+    const config = BOARD_CONFIGS[boardId] || BOARD_CONFIGS["board5"];
+    ladders = { ...config.ladders };
+    snakes = { ...config.snakes };
+    boardEl.className = `board-${boardId}`;
+    if (boardPreviewImg) {
+        boardPreviewImg.src = config.img;
     }
-    return array;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     buildBoard();
+    applySelectedBoard(gameState.selectedTheme);
 
-    // Pre-fill saved username from mobile/browser localStorage if available
     const savedName = localStorage.getItem('snake_player_name');
     if (savedName) {
         playerNameInput.value = savedName;
     }
 
-    // Theme selector listener
     themeSelect.addEventListener('change', (e) => {
         gameState.selectedTheme = e.target.value;
-        boardEl.className = `theme-${gameState.selectedTheme}`;
+        applySelectedBoard(gameState.selectedTheme);
     });
 
-    // Check if user is already logged into Firebase from the main page
     if (typeof auth !== "undefined" && auth) {
         auth.onAuthStateChanged((user) => {
             if (user) {
@@ -117,20 +133,17 @@ document.addEventListener('DOMContentLoaded', () => {
         loginPopup.classList.remove('hidden');
     }
 
-    // Popup "Login Now" -> Redirect to main login page
     document.getElementById('btn-goto-login-page').addEventListener('click', () => {
         playSound(sfxTap);
         window.location.href = "../../login.html";
     });
 
-    // Popup "Continue with Username" -> Dismiss popup and use localStorage
     document.getElementById('btn-dismiss-popup').addEventListener('click', () => {
         playSound(sfxTap);
         loginPopup.classList.add('hidden');
         playerNameInput.focus();
     });
 
-    // "Continue to Game" button -> Saves name to localStorage and opens Menu
     document.getElementById('btn-continue').addEventListener('click', () => {
         const name = playerNameInput.value.trim() || "Player 1";
         gameState.playerName = name;
@@ -140,7 +153,6 @@ document.addEventListener('DOMContentLoaded', () => {
         switchScreen('menu-screen');
     });
 
-    // "Sign in with Google" button on welcome card
     document.getElementById('btn-google-login').addEventListener('click', async () => {
         if (typeof auth === "undefined" || !auth) {
             alert("Firebase Auth unavailable. Please continue with a username.");
@@ -190,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.getElementById('btn-quit-game').addEventListener('click', () => switchScreen('menu-screen'));
 
-    document.getElementById('btn-roll').addEventListener('click', rollDice);
+    rollBtn.addEventListener('click', rollDice);
     document.getElementById('btn-create-room').addEventListener('click', createOnlineRoom);
     document.getElementById('btn-join-room').addEventListener('click', joinOnlineRoom);
 });
@@ -215,11 +227,7 @@ function buildBoard() {
             const cell = document.createElement('div');
             cell.classList.add('cell');
             cell.dataset.num = cellNum;
-            
-            let cellText = cellNum;
-            if (ladders[cellNum]) cellText += ` 🪜→${ladders[cellNum]}`;
-            if (snakes[cellNum]) cellText += ` 🐍→${snakes[cellNum]}`;
-            cell.innerText = cellText;
+            cell.innerText = cellNum;
             boardEl.appendChild(cell);
         }
     }
@@ -228,8 +236,10 @@ function buildBoard() {
 function startGame(mode) {
     gameState.mode = mode;
     gameState.turnIndex = 0;
-    
-    generateRandomBoardLayout();
+    isRolling = false;
+    rollBtn.disabled = false;
+
+    applySelectedBoard(gameState.selectedTheme);
     buildBoard();
 
     if (mode === 'bot') {
@@ -257,7 +267,8 @@ function updateBoardUI() {
             if (cell) {
                 const token = document.createElement('div');
                 token.classList.add('token', player.colorClass);
-                token.style.transform = `translate(${(idx % 2) * 8}px, ${Math.floor(idx / 2) * 8}px)`;
+                const offset = (idx === 0) ? -5 : 5;
+                token.style.transform = `translate(${offset}px, ${offset}px)`;
                 cell.appendChild(token);
             }
         }
@@ -266,58 +277,99 @@ function updateBoardUI() {
     const currentPlayer = gameState.players[gameState.turnIndex];
     turnIndicator.innerText = `Turn: ${currentPlayer.name}`;
     diceStatus.innerText = currentPlayer.started ? "Roll to move!" : "Roll a 1 to start!";
-    
-    scoreboardEl.innerHTML = gameState.players.map(p => `
-        <div style="background:#0f172a; padding:10px; border-radius:8px; margin-bottom:8px;">
+
+    scoreboardEl.innerHTML = gameState.players.map((p, i) => `
+        <div style="background:#0f172a; padding:10px; border-radius:8px; margin-bottom:8px; border-left: 4px solid ${i === 0 ? '#ef4444' : '#2563eb'};">
             <strong>${p.name}</strong><br>Status: ${p.started ? `Square ${p.pos}` : 'Waiting for 1 🎲'}
         </div>
     `).join('');
 }
 
 function rollDice() {
+    if (isRolling) return;
+    isRolling = true;
+    rollBtn.disabled = true;
+
     playSound(sfxDice);
     const roll = Math.floor(Math.random() * 6) + 1;
-    diceEl.innerText = ['⚀','⚁','⚂','⚃','⚄','⚅'][roll - 1];
+    diceEl.innerText = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'][roll - 1];
 
     let player = gameState.players[gameState.turnIndex];
 
-    // Must roll a 1 to start moving out of square 0
     if (!player.started) {
         if (roll === 1) {
             player.started = true;
             player.pos = 1;
-            alert(`🎉 ${player.name} rolled a 1 and entered the board!`);
+            diceStatus.innerText = `🎉 ${player.name} rolled a 1 and started!`;
         } else {
-            alert(`🎲 ${player.name} rolled a ${roll}. You need a 1 to start!`);
+            diceStatus.innerText = `🎲 Rolled ${roll}. Need a 1 to start!`;
         }
-    } else {
-        let newPos = player.pos + roll;
-        if (newPos <= 100) {
-            player.pos = newPos;
-            if (ladders[player.pos]) {
-                playSound(sfxLadder);
-                player.pos = ladders[player.pos];
-            } else if (snakes[player.pos]) {
-                playSound(sfxSnake);
-                player.pos = snakes[player.pos];
-            }
-        }
+        updateBoardUI();
+        finishTurn();
+        return;
     }
 
+    let nextPos = player.pos + roll;
+    if (nextPos > 100) {
+        diceStatus.innerText = `🎲 Rolled ${roll}. Need exact roll for 100!`;
+        finishTurn();
+        return;
+    }
+
+    player.pos = nextPos;
+    diceStatus.innerText = `${player.name} moved to ${nextPos}`;
     updateBoardUI();
 
+    if (ladders[nextPos]) {
+        setTimeout(() => {
+            playSound(sfxLadder);
+            const dest = ladders[nextPos];
+            player.pos = dest;
+            diceStatus.innerText = `🪜 Ladder! Climbed ${nextPos} → ${dest}!`;
+            updateBoardUI();
+            finishTurn();
+        }, 550);
+    } else if (snakes[nextPos]) {
+        setTimeout(() => {
+            playSound(sfxSnake);
+            const dest = snakes[nextPos];
+            player.pos = dest;
+            diceStatus.innerText = `🐍 Snake! Slid ${nextPos} → ${dest}!`;
+            updateBoardUI();
+            finishTurn();
+        }, 550);
+    } else {
+        finishTurn();
+    }
+}
+
+function finishTurn() {
+    let player = gameState.players[gameState.turnIndex];
+
     if (player.pos === 100) {
-        alert(`🎉 ${player.name} Wins the Game!`);
-        recordWin(player.name);
-        switchScreen('menu-screen');
+        setTimeout(() => {
+            alert(`🎉 ${player.name} Wins the Game!`);
+            recordWin(player.name);
+            isRolling = false;
+            rollBtn.disabled = false;
+            switchScreen('menu-screen');
+        }, 300);
         return;
     }
 
     gameState.turnIndex = (gameState.turnIndex + 1) % gameState.players.length;
-
-    if (gameState.mode === 'bot' && gameState.turnIndex === 1) {
-        setTimeout(rollDice, 1200);
-    }
+    setTimeout(() => {
+        updateBoardUI();
+        if (gameState.mode === 'bot' && gameState.turnIndex === 1) {
+            setTimeout(() => {
+                isRolling = false;
+                rollDice();
+            }, 900);
+        } else {
+            isRolling = false;
+            rollBtn.disabled = false;
+        }
+    }, 600);
 }
 
 function recordWin(winnerName) {
@@ -339,6 +391,7 @@ function createOnlineRoom() {
     gameState.roomCode = code;
     alert(`Room Created! Code: ${code}`);
     gameState.mode = 'online';
+    applySelectedBoard(gameState.selectedTheme);
     gameState.players = [
         { name: gameState.playerName, pos: 0, started: false, colorClass: 'token-0' },
         { name: 'Waiting for friend...', pos: 0, started: false, colorClass: 'token-1' }
@@ -355,6 +408,7 @@ function joinOnlineRoom() {
     }
     gameState.roomCode = code;
     gameState.mode = 'online';
+    applySelectedBoard(gameState.selectedTheme);
     gameState.players = [
         { name: 'Host', pos: 0, started: false, colorClass: 'token-0' },
         { name: gameState.playerName, pos: 0, started: false, colorClass: 'token-1' }
