@@ -33,16 +33,17 @@ const bgm = document.getElementById('bgm');
 
 function playSound(audioEl) {
     try {
+        if (!audioEl) return;
         audioEl.currentTime = 0;
         audioEl.play().catch(() => {});
-    } catch(e) {}
+    } catch (e) {}
 }
 
 function switchScreen(screenId) {
     playSound(sfxTap);
     screens.forEach(s => s.classList.remove('active'));
     document.getElementById(screenId).classList.add('active');
-    if(screenId !== 'auth-screen') {
+    if (screenId !== 'auth-screen' && bgm) {
         bgm.volume = 0.2;
         bgm.play().catch(() => {});
     }
@@ -53,14 +54,13 @@ function generateRandomBoardLayout() {
     snakes = {};
     ladders = {};
 
-    // Generate 5 random ladders (bottom to top, ensuring bottom < top and reasonable gaps)
+    // Generate 5 random ladders (bottom to top)
     const ladderPairs = [[2, 38], [7, 14], [15, 44], [28, 84], [36, 52], [51, 67], [71, 91], [78, 98]];
-    // Shuffle and pick 4-5 ladders
     shuffleArray(ladderPairs).slice(0, 5).forEach(([start, end]) => {
         ladders[start] = end;
     });
 
-    // Generate 5 random snakes (head to tail, head > tail)
+    // Generate 5 random snakes (head to tail)
     const snakePairs = [[99, 10], [95, 75], [87, 24], [64, 36], [56, 19], [47, 26], [32, 5], [16, 6]];
     shuffleArray(snakePairs).slice(0, 5).forEach(([start, end]) => {
         snakes[start] = end;
@@ -78,44 +78,59 @@ function shuffleArray(array) {
 document.addEventListener('DOMContentLoaded', () => {
     buildBoard();
 
+    // Pre-fill saved username from mobile/browser localStorage if available
+    const savedName = localStorage.getItem('snake_player_name');
+    if (savedName) {
+        playerNameInput.value = savedName;
+    }
+
     // Theme selector listener
     themeSelect.addEventListener('change', (e) => {
         gameState.selectedTheme = e.target.value;
         boardEl.className = `theme-${gameState.selectedTheme}`;
     });
 
-    if (auth) {
-        onAuthStateChanged(auth, (user) => {
+    // Check if user is already logged into Firebase from the main page
+    if (typeof auth !== "undefined" && auth) {
+        auth.onAuthStateChanged((user) => {
             if (user) {
                 gameState.currentUser = user;
-                gameState.playerName = user.displayName || user.email.split('@')[0];
-                playerNameInput.value = gameState.playerName;
-                userDisplayName.innerText = gameState.playerName;
+                const autoName = user.displayName || (user.email ? user.email.split('@')[0] : "Player 1");
+                gameState.playerName = autoName;
+                playerNameInput.value = autoName;
+                userDisplayName.innerText = autoName;
+                localStorage.setItem('snake_player_name', autoName);
+
                 loginStatusBanner.classList.remove('hidden');
                 loginPopup.classList.add('hidden');
             } else {
-                const savedName = localStorage.getItem('snake_player_name');
-                if (savedName) playerNameInput.value = savedName;
+                gameState.currentUser = null;
+                loginStatusBanner.classList.add('hidden');
                 setTimeout(() => {
-                    if (!gameState.currentUser) loginPopup.classList.remove('hidden');
+                    if (!gameState.currentUser) {
+                        loginPopup.classList.remove('hidden');
+                    }
                 }, 600);
             }
         });
     } else {
-        const savedName = localStorage.getItem('snake_player_name');
-        if (savedName) playerNameInput.value = savedName;
         loginPopup.classList.remove('hidden');
     }
 
+    // Popup "Login Now" -> Redirect to main login page
     document.getElementById('btn-goto-login-page').addEventListener('click', () => {
-        window.location.href = "../login.html"; 
+        playSound(sfxTap);
+        window.location.href = "../../login.html";
     });
 
+    // Popup "Continue with Username" -> Dismiss popup and use localStorage
     document.getElementById('btn-dismiss-popup').addEventListener('click', () => {
         playSound(sfxTap);
         loginPopup.classList.add('hidden');
+        playerNameInput.focus();
     });
 
+    // "Continue to Game" button -> Saves name to localStorage and opens Menu
     document.getElementById('btn-continue').addEventListener('click', () => {
         const name = playerNameInput.value.trim() || "Player 1";
         gameState.playerName = name;
@@ -125,19 +140,26 @@ document.addEventListener('DOMContentLoaded', () => {
         switchScreen('menu-screen');
     });
 
+    // "Sign in with Google" button on welcome card
     document.getElementById('btn-google-login').addEventListener('click', async () => {
-        if (!auth) { alert("Firebase Auth unavailable."); return; }
+        if (typeof auth === "undefined" || !auth) {
+            alert("Firebase Auth unavailable. Please continue with a username.");
+            return;
+        }
         try {
             const provider = new firebase.auth.GoogleAuthProvider();
             const result = await auth.signInWithPopup(provider);
             const user = result.user;
+            const autoName = user.displayName || (user.email ? user.email.split('@')[0] : "Player 1");
             gameState.currentUser = user;
-            gameState.playerName = user.displayName;
-            playerNameInput.value = user.displayName;
-            userDisplayName.innerText = user.displayName;
+            gameState.playerName = autoName;
+            playerNameInput.value = autoName;
+            userDisplayName.innerText = autoName;
+            localStorage.setItem('snake_player_name', autoName);
+
             loginStatusBanner.classList.remove('hidden');
             loginPopup.classList.add('hidden');
-            saveNameToLocalLeaderboard(user.displayName, 0);
+            saveNameToLocalLeaderboard(autoName, 0);
             switchScreen('menu-screen');
         } catch (error) {
             console.error("Google Sign-In Error:", error);
@@ -156,8 +178,13 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-close-leaderboard').addEventListener('click', () => switchScreen('menu-screen'));
     document.getElementById('btn-back-menu').addEventListener('click', () => switchScreen('menu-screen'));
     document.getElementById('btn-logout').addEventListener('click', async () => {
-        if (auth && auth.currentUser) await auth.signOut();
+        if (typeof auth !== "undefined" && auth && auth.currentUser) {
+            await auth.signOut();
+        }
+        gameState.currentUser = null;
         localStorage.removeItem('snake_player_name');
+        playerNameInput.value = "";
+        loginStatusBanner.classList.add('hidden');
         switchScreen('auth-screen');
         loginPopup.classList.remove('hidden');
     });
@@ -189,7 +216,6 @@ function buildBoard() {
             cell.classList.add('cell');
             cell.dataset.num = cellNum;
             
-            // Highlight current dynamic ladders and snakes visually on board
             let cellText = cellNum;
             if (ladders[cellNum]) cellText += ` 🪜→${ladders[cellNum]}`;
             if (snakes[cellNum]) cellText += ` 🐍→${snakes[cellNum]}`;
@@ -203,7 +229,6 @@ function startGame(mode) {
     gameState.mode = mode;
     gameState.turnIndex = 0;
     
-    // Generate fresh random snake and ladder configuration for this match
     generateRandomBoardLayout();
     buildBoard();
 
@@ -256,7 +281,7 @@ function rollDice() {
 
     let player = gameState.players[gameState.turnIndex];
 
-    // RULE IMPLEMENTATION: Must roll a 1 to start moving out of square 0
+    // Must roll a 1 to start moving out of square 0
     if (!player.started) {
         if (roll === 1) {
             player.started = true;
