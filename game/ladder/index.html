@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake and Ladder - Epic Edition</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Firebase App (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <!-- Firebase Auth -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <!-- Firebase Firestore -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Auth / Welcome Screen -->
+        <div id="auth-screen" class="screen active">
+            <div class="card">
+                <h1>🐍 Snake & Ladder 🪜</h1>
+                <p>Roll the dice, climb ladders, and dodge snakes!</p>
+                
+                <div class="input-group">
+                    <label for="player-name">Your Nickname:</label>
+                    <input type="text" id="player-name" placeholder="Enter your name..." maxlength="15">
+                </div>
+
+                <div class="btn-container">
+                    <button id="btn-local-play" class="btn primary">Play Offline / Local</button>
+                    <button id="btn-google-login" class="btn google">Sign in with Google</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mode Selection Screen -->
+        <div id="menu-screen" class="screen">
+            <div class="card">
+                <h2>Welcome, <span id="user-display-name">Player</span>!</h2>
+                <div class="menu-options">
+                    <button id="btn-mode-bot" class="btn secondary">Play vs Bot</button>
+                    <button id="btn-mode-pass" class="btn secondary">Pass & Play (Local Multiplayer)</button>
+                    <button id="btn-mode-online" class="btn secondary">Play Online with Friends</button>
+                    <button id="btn-show-leaderboard" class="btn accent">Top 10 Leaderboard</button>
+                </div>
+                <button id="btn-logout" class="btn danger small">Switch User</button>
+            </div>
+        </div>
+
+        <!-- Online Lobby Screen -->
+        <div id="lobby-screen" class="screen">
+            <div class="card">
+                <h2>Multiplayer Room</h2>
+                <div class="room-actions">
+                    <button id="btn-create-room" class="btn primary">Create Room (Generate Code)</button>
+                    <div class="join-section">
+                        <input type="text" id="room-code-input" placeholder="Enter 6-digit Code" maxlength="6">
+                        <button id="btn-join-room" class="btn secondary">Join Room</button>
+                    </div>
+                </div>
+                <button id="btn-back-menu" class="btn small">Back to Menu</button>
+            </div>
+        </div>
+
+        <!-- Leaderboard Screen -->
+        <div id="leaderboard-screen" class="screen">
+            <div class="card">
+                <h2>🏆 Top 10 Leaderboard</h2>
+                <ul id="leaderboard-list">
+                    <li>Loading scores...</li>
+                </ul>
+                <button id="btn-close-leaderboard" class="btn primary">Back</button>
+            </div>
+        </div>
+
+        <!-- Game Board Screen -->
+        <div id="game-screen" class="screen">
+            <div class="game-header">
+                <div id="turn-indicator">Turn: Player 1</div>
+                <button id="btn-quit-game" class="btn danger small">Quit</button>
+            </div>
+            
+            <div class="game-container">
+                <div id="board"></div>
+                
+                <div class="sidebar">
+                    <div class="dice-section">
+                        <div id="dice" class="dice">🎲</div>
+                        <button id="btn-roll" class="btn primary">Roll Dice</button>
+                    </div>
+                    <div class="scoreboard" id="scoreboard">
+                        <!-- Dynamic Player Scorecards -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio Effects & BGM -->
+    <audio id="bgm" src="https://actions.google.com/sounds/v1/ambiences/forest_birds.ogg" loop></audio>
+    <audio id="sfx-tap" src="https://actions.google.com/sounds/v1/ui/button_click.ogg"></audio>
+    <audio id="sfx-dice" src="https://actions.google.com/sounds/v1/toys/dice_roll.ogg"></audio>
+    <audio id="sfx-ladder" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
+    <audio id="sfx-snake" src="https://actions.google.com/sounds/v1/creatures/snake_hiss.ogg"></audio>
+
+    <script src="firebase.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
