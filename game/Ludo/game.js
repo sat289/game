@@ -1,4 +1,3 @@
-// Web Audio API Sound Synthesizer ("Tick Tick" sound for smooth hopping)
 class SoundFX {
   constructor() {
     this.ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -21,13 +20,19 @@ class SoundFX {
     }, delay);
   }
   diceRoll() { [200, 320, 260, 410].forEach((f, i) => this.playTone(f, 'triangle', 0.04, i * 40)); }
-  tickStep() { this.playTone(850, 'square', 0.04); } // "Tick Tick" hop sound
+  tickStep() { this.playTone(850, 'square', 0.04); } // "Tick Tick" step sound
   capture() { [520, 390, 250].forEach((f, i) => this.playTone(f, 'sawtooth', 0.12, i * 80)); }
   winGame() { [523, 659, 783, 1046].forEach((f, i) => this.playTone(f, 'triangle', 0.2, i * 110)); }
 }
 const sfx = new SoundFX();
 
-const PLAYERS = ['red', 'green', 'yellow', 'blue'];
+// Dynamic Player Mode Configuration mapping
+const MODE_MAP = {
+  '1v1': ['red', 'yellow'],
+  '2v2': ['red', 'green', 'yellow', 'blue'], // Team: Red+Yellow vs Green+Blue
+  '1v3': ['red', 'green', 'yellow', 'blue'], // Solo Red vs 3 Bots
+  '4player': ['red', 'green', 'yellow', 'blue']
+};
 
 const MAIN_TRACK = [
   [6,1],[6,2],[6,3],[6,4],[6,5],
@@ -57,20 +62,16 @@ const HOME_PATHS = {
 const BASE_POSITIONS = {
   red:    [[1.5, 1.5], [1.5, 3.5], [3.5, 1.5], [3.5, 3.5]],
   green:  [[1.5, 10.5], [1.5, 12.5], [3.5, 10.5], [3.5, 12.5]],
-  yellow: [[10.5, 10.5], [10.5, 12.5], [12.5, 10.5], [12.5, 12.5]],
+  yellow: [[10.5, 10.5], [10.5, 12.5], [13.5, 10.5], [13.5, 12.5]],
   blue:   [[10.5, 1.5], [10.5, 3.5], [12.5, 1.5], [12.5, 3.5]]
 };
 
-const STORAGE_KEY = 'PRO_LUDO_ULTIMATE_STATE_V6';
-const PROFILE_KEY = 'PRO_LUDO_PROFILE_V6';
-
-let profile = JSON.parse(localStorage.getItem(PROFILE_KEY)) || { coins: 500, xp: 0 };
+const STORAGE_KEY = 'PRO_LUDO_CUSTOM_MODE_V1';
 
 let state = {
+  playerMode: '1v1',
   mode: 'bot',
-  matchType: 'classic', // 'classic', 'rush', 'teams'
   turnIndex: 0,
-  sixStreak: 0,
   diceValue: null,
   waitingForMove: false,
   isAnimating: false,
@@ -85,8 +86,6 @@ let state = {
 
 let activeRoomRef = null;
 let isRemoteSync = false;
-let turnTimer = null;
-let timeLeft = 15;
 
 const homeScreen = document.getElementById('home-screen');
 const gameScreen = document.getElementById('game-screen');
@@ -95,25 +94,22 @@ const rollBtn = document.getElementById('roll-dice-btn');
 const diceCube = document.getElementById('dice-cube');
 const turnBadge = document.getElementById('turn-indicator');
 const scoreTracker = document.getElementById('score-tracker');
+const selectPlayerMode = document.getElementById('select-player-mode');
 const gameModeSelect = document.getElementById('game-mode-select');
-const matchTypeSelect = document.getElementById('match-type-select');
 const onlineLobby = document.getElementById('online-lobby');
 const roomInputCode = document.getElementById('room-input-code');
 const roomCodeLabel = document.getElementById('room-code-label');
-const timerSecEl = document.getElementById('timer-sec');
-const timerBarEl = document.getElementById('timer-bar');
-const coinEl = document.getElementById('coin-count');
-const xpEl = document.getElementById('xp-count');
 
 function init() {
-  checkDailyBonus();
   buildBoardGrid();
   loadState();
-  updateEconomyUI();
 
   const startBtn = document.getElementById('main-start-btn');
   if (startBtn) {
     startBtn.addEventListener('click', () => {
+      if (selectPlayerMode) {
+        state.playerMode = selectPlayerMode.value;
+      }
       homeScreen.classList.add('hidden');
       gameScreen.classList.remove('hidden');
       startNewGame();
@@ -139,17 +135,6 @@ function init() {
       saveState();
     });
   }
-
-  if (matchTypeSelect) {
-    matchTypeSelect.addEventListener('change', (e) => {
-      state.matchType = e.target.value;
-      startNewGame();
-    });
-  }
-
-  document.getElementById('theme-select').addEventListener('change', (e) => {
-    document.body.dataset.theme = e.target.value;
-  });
 
   const createRoomBtn = document.getElementById('create-room-btn');
   if (createRoomBtn) {
@@ -189,21 +174,8 @@ function init() {
   }
 }
 
-function checkDailyBonus() {
-  const lastClaim = localStorage.getItem('LUDO_LAST_CLAIM');
-  const today = new Date().toDateString();
-  if (lastClaim !== today) {
-    document.getElementById('daily-bonus-modal').classList.remove('hidden');
-    document.getElementById('claim-bonus-btn').addEventListener('click', () => {
-      profile.coins += 250;
-      localStorage.setItem('LUDO_LAST_CLAIM', today);
-      localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
-      updateEconomyUI();
-      document.getElementById('daily-bonus-modal').classList.add('hidden');
-    });
-  } else {
-    document.getElementById('daily-bonus-modal').classList.add('hidden');
-  }
+function getActivePlayers() {
+  return MODE_MAP[state.playerMode] || ['red', 'yellow'];
 }
 
 function connectToRoom(code) {
@@ -233,32 +205,6 @@ function syncState() {
     const { set } = window.LudoFirebase;
     set(activeRoomRef, state);
   }
-}
-
-function resetTurnTimer() {
-  clearInterval(turnTimer);
-  timeLeft = 15;
-  if (timerSecEl) timerSecEl.textContent = timeLeft;
-  if (timerBarEl) timerBarEl.style.width = '100%';
-
-  turnTimer = setInterval(() => {
-    if (state.isAnimating) return;
-    timeLeft--;
-    if (timerSecEl) timerSecEl.textContent = timeLeft;
-    if (timerBarEl) timerBarEl.style.width = `${(timeLeft / 15) * 100}%`;
-
-    if (timeLeft <= 0) {
-      clearInterval(turnTimer);
-      if (!state.waitingForMove) {
-        handleRollDice();
-      } else {
-        const player = getCurrentPlayer();
-        const movable = getMovableTokens(player, state.diceValue);
-        if (movable.length > 0) runBotTurn(player, movable);
-        else nextTurn();
-      }
-    }
-  }, 1000);
 }
 
 function triggerEmoji(emoji) {
@@ -322,7 +268,8 @@ function drawWhiteYardBoxes() {
 }
 
 function getCurrentPlayer() {
-  return PLAYERS[state.turnIndex];
+  const active = getActivePlayers();
+  return active[state.turnIndex % active.length];
 }
 
 function getCoordinates(color, step) {
@@ -354,20 +301,8 @@ function handleRollDice() {
 
   setTimeout(() => {
     const player = getCurrentPlayer();
-
-    // Three 6s penalty rule
-    if (roll === 6) {
-      state.sixStreak++;
-      if (state.sixStreak === 3) {
-        state.sixStreak = 0;
-        setTimeout(nextTurn, 900);
-        return;
-      }
-    } else {
-      state.sixStreak = 0;
-    }
-
     const movable = getMovableTokens(player, roll);
+
     if (movable.length === 0) {
       setTimeout(nextTurn, 900);
     } else if (movable.length === 1 && (state.mode === 'bot' && player !== 'red')) {
@@ -376,7 +311,10 @@ function handleRollDice() {
       state.waitingForMove = true;
       renderState();
       if (state.mode === 'bot' && player !== 'red') {
-        setTimeout(() => runBotTurn(player, movable), 500);
+        const isBotActive = state.playerMode === '1v3' ? player !== 'red' : player !== 'red';
+        if(isBotActive) {
+          setTimeout(() => runBotTurn(player, movable), 500);
+        }
       }
     }
   }, 750);
@@ -391,7 +329,7 @@ function animate3DDice(roll) {
     5: 'rotateX(-90deg)',
     6: 'rotateX(90deg)'
   };
-  diceCube.style.transform = `translateZ(-34px) rotateX(720deg) rotateY(720deg) ${rotations[roll]}`;
+  diceCube.style.transform = `translateZ(-38px) rotateX(720deg) rotateY(720deg) ${rotations[roll]}`;
   const frontFace = diceCube.querySelector('.cube__face--1');
   if (frontFace) frontFace.textContent = roll;
 }
@@ -425,14 +363,18 @@ async function moveToken(color, tokenIdx) {
   const newStep = state.tokens[color][tokenIdx];
   let captured = false;
 
-  // Capture & Wall Blockade check
   if (newStep >= 0 && newStep <= 50) {
     const globalIdx = (START_INDEX[color] + newStep) % 52;
     if (!SAFE_INDICES.includes(globalIdx)) {
-      PLAYERS.forEach(opp => {
-        if (opp === color) {
-          if (state.matchType === 'teams' && ((color === 'red' && opp === 'yellow') || (color === 'green' && opp === 'blue'))) return;
+      const activePlayers = getActivePlayers();
+      activePlayers.forEach(opp => {
+        if (opp === color) return;
+        // 2v2 team check: teammates cannot capture each other
+        if (state.playerMode === '2v2') {
+          if ((color === 'red' || color === 'yellow') && (opp === 'red' || opp === 'yellow')) return;
+          if ((color === 'green' || color === 'blue') && (opp === 'green' || opp === 'blue')) return;
         }
+
         state.tokens[opp].forEach((oppStep, oppIdx) => {
           if (oppStep >= 0 && oppStep <= 50) {
             const oppGlobalIdx = (START_INDEX[opp] + oppStep) % 52;
@@ -450,34 +392,38 @@ async function moveToken(color, tokenIdx) {
   if (captured) {
     sfx.capture();
     const boardWrap = document.getElementById('board-container');
-    if(boardWrap) {
+    if (boardWrap) {
       boardEl.classList.add('shake');
       setTimeout(() => boardEl.classList.remove('shake'), 400);
     }
-    profile.coins += 15;
-    profile.xp += 30;
   }
 
   syncState();
-  updateEconomyUI();
   renderState();
 
-  const winLimit = state.matchType === 'rush' ? 2 : 4;
-  const finishedCount = state.tokens[color].filter(s => s === 56).length;
-  if (finishedCount >= winLimit) {
+  const activePlayers = getActivePlayers();
+  let hasWon = false;
+  if (state.playerMode === '2v2') {
+    const team1Done = state.tokens.red.every(s => s === 56) && state.tokens.yellow.every(s => s === 56);
+    const team2Done = state.tokens.green.every(s => s === 56) && state.tokens.blue.every(s => s === 56);
+    if (team1Done || team2Done) hasWon = true;
+  } else {
+    hasWon = state.tokens[color].every(s => s === 56);
+  }
+
+  if (hasWon) {
     sfx.winGame();
-    clearInterval(turnTimer);
-    profile.coins += 100;
-    profile.xp += 100;
-    updateEconomyUI();
+    if (typeof confetti === 'function') {
+      confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+    }
     rollBtn.disabled = true;
     return;
   }
 
   if (roll === 6 || captured || newStep === 56) {
-    resetTurnTimer();
     rollBtn.disabled = false;
-    if (state.mode === 'bot' && color !== 'red') {
+    const currentPlayer = getCurrentPlayer();
+    if (state.mode === 'bot' && currentPlayer !== 'red') {
       setTimeout(handleRollDice, 800);
     }
   } else {
@@ -486,12 +432,12 @@ async function moveToken(color, tokenIdx) {
 }
 
 function nextTurn() {
-  state.turnIndex = (state.turnIndex + 1) % PLAYERS.length;
+  const activePlayers = getActivePlayers();
+  state.turnIndex = (state.turnIndex + 1) % activePlayers.length;
   state.diceValue = null;
   state.waitingForMove = false;
   syncState();
   renderState();
-  resetTurnTimer();
 
   const currentPlayer = getCurrentPlayer();
   if (state.mode === 'bot' && currentPlayer !== 'red') {
@@ -523,7 +469,6 @@ function runBotTurn(botColor, movableIndices) {
 
 function renderState(hoppingColor = null, hoppingIdx = null) {
   document.querySelectorAll('.token').forEach(t => t.remove());
-  document.querySelectorAll('.wall-badge').forEach(w => w.remove());
 
   const currentPlayer = getCurrentPlayer();
   if (turnBadge) {
@@ -534,10 +479,12 @@ function renderState(hoppingColor = null, hoppingIdx = null) {
     scoreTracker.textContent = `Score: ${state.score}`;
   }
 
-  // Track positions to detect Walls (2 tokens of same color on same cell)
-  const cellTokenMap = {};
+  const activePlayers = getActivePlayers();
 
   PLAYERS.forEach(color => {
+    // If a color is not in the active mode (e.g. green/blue in 1v1), skip rendering its tokens
+    if (!activePlayers.includes(color)) return;
+
     state.tokens[color].forEach((step, idx) => {
       let r, c;
       if (step === -1) {
@@ -546,78 +493,24 @@ function renderState(hoppingColor = null, hoppingIdx = null) {
         [r, c] = getCoordinates(color, step);
       }
 
-      const cellKey = `${Math.floor(r)}_${Math.floor(c)}`;
-      if (!cellTokenMap[cellKey]) cellTokenMap[cellKey] = [];
-      cellTokenMap[cellKey].push({ color, idx, step });
-    });
-  });
+      const cell = document.querySelector(`.cell[data-r="${Math.floor(r)}"][data-c="${Math.floor(c)}"]`);
+      if (!cell) return;
 
-  // Render tokens & check Wall blockades
-  Object.keys(cellTokenMap).forEach(key => {
-    const tokensOnCell = cellTokenMap[key];
-    const [r, c] = key.split('_').map(Number);
-    const cell = document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
-    if (!cell) return;
-
-    // Check if 2 tokens of the same color share the cell (Wall Blockade)
-    const colorGroups = {};
-    tokensOnCell.forEach(t => {
-      if (!colorGroups[t.color]) colorGroups[t.color] = 0;
-      colorGroups[t.color]++;
-    });
-
-    tokensOnCell.forEach(t => {
       const token = document.createElement('div');
-      token.classList.add('token', t.color);
+      token.classList.add('token', color);
 
-      if (t.color === hoppingColor && t.idx === hoppingIdx) {
+      if (color === hoppingColor && idx === hoppingIdx) {
         token.classList.add('hopping');
       }
 
-      if (state.waitingForMove && t.color === currentPlayer && canTokenMove(t.color, t.idx, state.diceValue)) {
-        // If an opponent has a wall on target track cell, block movement
-        if (t.step >= 0 && t.step <= 50) {
-          const targetGlobal = (START_INDEX[t.color] + t.step + state.diceValue) % 52;
-          let isBlocked = false;
-          Object.keys(cellTokenMap).forEach(k => {
-            cellTokenMap[k].forEach(other => {
-              if (other.color !== t.color && other.step >= 0 && other.step <= 50) {
-                const otherGlobal = (START_INDEX[other.color] + other.step) % 52;
-                if (otherGlobal === targetGlobal && colorGroups[other.color] >= 2) {
-                  isBlocked = true;
-                }
-              }
-            });
-          });
-          if (!isBlocked) {
-            token.classList.add('movable');
-            token.addEventListener('click', () => moveToken(t.color, t.idx));
-          }
-        } else {
-          token.classList.add('movable');
-          token.addEventListener('click', () => moveToken(t.color, t.idx));
-        }
+      if (state.waitingForMove && color === currentPlayer && canTokenMove(color, idx, state.diceValue)) {
+        token.classList.add('movable');
+        token.addEventListener('click', () => moveToken(color, idx));
       }
 
       cell.appendChild(token);
     });
-
-    // Add visual Wall badge if 2+ tokens are stacked
-    Object.keys(colorGroups).forEach(col => {
-      if (colorGroups[col] >= 2) {
-        const wallBadge = document.createElement('div');
-        wallBadge.classList.add('wall-badge');
-        wallBadge.textContent = 'WALL';
-        cell.appendChild(wallBadge);
-      }
-    });
   });
-}
-
-function updateEconomyUI() {
-  if (coinEl) coinEl.textContent = profile.coins;
-  if (xpEl) xpEl.textContent = profile.xp;
-  localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
 }
 
 function saveState() {
@@ -630,7 +523,7 @@ function loadState() {
     try {
       state = { ...state, ...JSON.parse(saved), isAnimating: false };
       if (gameModeSelect) gameModeSelect.value = state.mode;
-      if (matchTypeSelect) matchTypeSelect.value = state.matchType;
+      if (selectPlayerMode) selectPlayerMode.value = state.playerMode;
       if (onlineLobby) onlineLobby.classList.toggle('hidden', state.mode !== 'online');
     } catch (e) {
       console.error(e);
@@ -639,29 +532,24 @@ function loadState() {
 }
 
 function startNewGame() {
-  const isRush = state.matchType === 'rush';
-  const initTokens = isRush ? [0, 0, -1, -1] : [-1, -1, -1, -1];
-
   state = {
+    playerMode: selectPlayerMode ? selectPlayerMode.value : '1v1',
     mode: gameModeSelect ? gameModeSelect.value : 'bot',
-    matchType: matchTypeSelect ? matchTypeSelect.value : 'classic',
     turnIndex: 0,
-    sixStreak: 0,
     diceValue: null,
     waitingForMove: false,
     isAnimating: false,
     score: 0,
     tokens: {
-      red:    [...initTokens],
-      green:  [...initTokens],
-      yellow: [...initTokens],
-      blue:   [...initTokens]
+      red:    [-1, -1, -1, -1],
+      green:  [-1, -1, -1, -1],
+      yellow: [-1, -1, -1, -1],
+      blue:   [-1, -1, -1, -1]
     }
   };
   rollBtn.disabled = false;
   syncState();
   renderState();
-  resetTurnTimer();
 }
 
 init();
