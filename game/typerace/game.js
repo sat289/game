@@ -7,7 +7,7 @@ const getPlayerName = () => {
   if (window._trFirebase && typeof window._trFirebase.getPlayerName === "function") {
     return window._trFirebase.getPlayerName();
   }
-  return localStorage.getItem("guestName") || localStorage.getItem("username") || "Guest";
+  return localStorage.getItem("guestName") || localStorage.getItem("username") || "Guest Racer";
 };
 
 // Ride Skins
@@ -40,6 +40,7 @@ const TRACK_QUOTES = {
   ]
 };
 
+// Core Race State
 let currentTrack = "classic";
 let targetText = TRACK_QUOTES.classic[0];
 let typedText = "";
@@ -52,9 +53,21 @@ let raceStarted = false;
 let winStreak = 0;
 let countdownTimers = [];
 
-// Power-Up State (1 per race)
+// Feature 1: Combo Drift Meter State
+let comboStreak = 0;
+const DRIFT_TARGET = 15;
+let driftBoostActive = false;
+let bonusWordsEarned = 0;
+
+// Feature 3: Hardcore Engine Stall State
+let hardcoreMode = false;
+let isStalled = false;
+let stallTimeout = null;
+
+// Feature 2: Power-Up & Sabotage State (1 per race)
 let nitroAvailable = true;
 let empAvailable = true;
+let shockAvailable = true;
 
 // Bot Race State
 let gameMode = "bot"; // 'online' | 'bot' | 'pvp'
@@ -83,13 +96,25 @@ const soundToggleBtn = document.getElementById("soundToggleBtn");
 const mainMenuScreen = document.getElementById("mainMenuScreen");
 const onlineLobbyScreen = document.getElementById("onlineLobbyScreen");
 const botMenuScreen = document.getElementById("botMenuScreen");
+const leaderboardScreen = document.getElementById("leaderboardScreen");
 const gameScreen = document.getElementById("gameScreen");
 const trackSelectorBar = document.getElementById("trackSelectorBar");
 const subHeaderText = document.getElementById("subHeaderText");
 const activeModeBadge = document.getElementById("activeModeBadge");
+const hardcoreActiveTag = document.getElementById("hardcoreActiveTag");
 
 const skinSelector = document.getElementById("skinSelector");
+const rankBadge = document.getElementById("rankBadge");
 const streakBadge = document.getElementById("streakBadge");
+
+const customTrackBox = document.getElementById("customTrackBox");
+const customTrackInput = document.getElementById("customTrackInput");
+const customCharCount = document.getElementById("customCharCount");
+const hardcoreToggleBtn = document.getElementById("hardcoreToggleBtn");
+
+const btnOpenLeaderboard = document.getElementById("btnOpenLeaderboard");
+const leaderboardList = document.getElementById("leaderboardList");
+const btnBackFromLeaderboard = document.getElementById("btnBackFromLeaderboard");
 
 const btnCreateRoom = document.getElementById("btnCreateRoom");
 const createdRoomBox = document.getElementById("createdRoomBox");
@@ -110,10 +135,16 @@ const lane4Label = document.getElementById("lane4Label");
 const lane3Row = document.getElementById("lane3Row");
 const lane4Row = document.getElementById("lane4Row");
 
+const quoteBox = document.getElementById("quoteBox");
+const hazardBanner = document.getElementById("hazardBanner");
 const typedTextSpan = document.getElementById("typedTextSpan");
 const currentCharSpan = document.getElementById("currentCharSpan");
 const remainingTextSpan = document.getElementById("remainingTextSpan");
 const typeInput = document.getElementById("typeInput");
+
+const driftStatusLabel = document.getElementById("driftStatusLabel");
+const driftMultiplierBadge = document.getElementById("driftMultiplierBadge");
+const driftBarFill = document.getElementById("driftBarFill");
 
 const liveWpm = document.getElementById("liveWpm");
 const liveAcc = document.getElementById("liveAcc");
@@ -126,6 +157,8 @@ const lightGreen = document.getElementById("lightGreen");
 const powerUpBar = document.getElementById("powerUpBar");
 const btnPowerNitro = document.getElementById("btnPowerNitro");
 const btnPowerEmp = document.getElementById("btnPowerEmp");
+const empBtnLabel = document.getElementById("empBtnLabel");
+const btnPowerShock = document.getElementById("btnPowerShock");
 const emojiBar = document.getElementById("emojiBar");
 const emojiFloatContainer = document.getElementById("emojiFloatContainer");
 
@@ -137,10 +170,30 @@ const finalAcc = document.getElementById("finalAcc");
 const changeQuoteBtn = document.getElementById("changeQuoteBtn");
 const nextRaceBtn = document.getElementById("nextRaceBtn");
 
-/* ==================== SKIN UNLOCK HANDLER ==================== */
-function refreshSkinOptions() {
-  if (!skinSelector) return;
+/* ==================== FEATURE 6: RACER RANK BADGE & SKINS ==================== */
+function getRankDetails(bestWpm) {
+  if (bestWpm >= 85) {
+    return { title: "💎 Cyber Legend", cls: "text-[10px] font-black bg-purple-500/20 text-purple-300 border border-purple-500/40 px-2.5 py-0.5 rounded-full whitespace-nowrap" };
+  }
+  if (bestWpm >= 60) {
+    return { title: "🥇 Nitro Master", cls: "text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2.5 py-0.5 rounded-full whitespace-nowrap" };
+  }
+  if (bestWpm >= 35) {
+    return { title: "🥈 Drift Pro", cls: "text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2.5 py-0.5 rounded-full whitespace-nowrap" };
+  }
+  return { title: "🥉 Street Rookie", cls: "text-[10px] font-black bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 px-2.5 py-0.5 rounded-full whitespace-nowrap" };
+}
+
+function refreshSkinAndRank() {
   const bestW = typeof window.score === "number" ? window.score : 0;
+
+  if (rankBadge) {
+    const r = getRankDetails(bestW);
+    rankBadge.textContent = r.title;
+    rankBadge.className = r.cls;
+  }
+
+  if (!skinSelector) return;
   Array.from(skinSelector.options).forEach((opt) => {
     const key = opt.value;
     const req = SKINS[key]?.req || 0;
@@ -154,7 +207,7 @@ function refreshSkinOptions() {
 }
 
 window.onScoreUpdated = () => {
-  refreshSkinOptions();
+  refreshSkinAndRank();
 };
 
 if (skinSelector) {
@@ -170,9 +223,9 @@ if (skinSelector) {
   });
 }
 
-refreshSkinOptions();
+refreshSkinAndRank();
 
-/* ==================== SOUND & MUSIC ==================== */
+/* ==================== SOUND & DYNAMIC ENGINE AUDIO ==================== */
 const AudioContextClass = window.AudioContext || window.webkitAudioContext;
 const audioCtx = AudioContextClass ? new AudioContextClass() : null;
 
@@ -191,6 +244,12 @@ function playTone(freq, type = "sine", duration = 0.08, gainVal = 0.1) {
     osc.start();
     osc.stop(audioCtx.currentTime + duration);
   } catch (e) {}
+}
+
+// Dynamic Engine Pitch scales with WPM & Combo Streak
+function playEngineKeystrokeSound() {
+  const basePitch = 360 + Math.min(450, wpm * 3.5) + (comboStreak * 8);
+  playTone(basePitch, driftBoostActive ? "sawtooth" : "triangle", 0.045, 0.06);
 }
 
 if (soundToggleBtn) {
@@ -221,7 +280,7 @@ if (musicToggleBtn) {
   });
 }
 
-/* ==================== TRACK CATEGORY SWITCHER ==================== */
+/* ==================== FEATURE 5: CUSTOM TRACK & HARDCORE TOGGLE ==================== */
 document.querySelectorAll(".track-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
     currentTrack = btn.getAttribute("data-track") || "classic";
@@ -229,15 +288,96 @@ document.querySelectorAll(".track-btn").forEach((btn) => {
       b.className = "track-btn py-1.5 rounded-xl text-[10px] font-black transition text-white/60 hover:text-white";
     });
     btn.className = "track-btn py-1.5 rounded-xl text-[10px] font-black transition bg-[#00f0ff] text-slate-950 shadow";
+
+    if (customTrackBox) {
+      customTrackBox.classList.toggle("hidden", currentTrack !== "custom");
+    }
     playTone(550, "sine", 0.08);
   });
 });
+
+if (customTrackInput) {
+  customTrackInput.addEventListener("input", () => {
+    if (customCharCount) {
+      customCharCount.textContent = `${customTrackInput.value.length}/180`;
+    }
+  });
+}
+
+if (hardcoreToggleBtn) {
+  hardcoreToggleBtn.addEventListener("click", () => {
+    hardcoreMode = !hardcoreMode;
+    hardcoreToggleBtn.textContent = hardcoreMode ? "ON 🔥" : "OFF";
+    hardcoreToggleBtn.className = hardcoreMode
+      ? "bg-red-500 text-white border border-red-400 px-3 py-1 rounded-lg text-[10px] font-black uppercase transition shadow-[0_0_12px_rgba(239,68,68,0.5)]"
+      : "bg-white/10 border border-white/20 text-white/60 px-3 py-1 rounded-lg text-[10px] font-black uppercase transition";
+    playTone(hardcoreMode ? 740 : 340, "sine", 0.1);
+  });
+}
+
+function getSelectedQuote() {
+  if (currentTrack === "custom" && customTrackInput) {
+    const cleaned = customTrackInput.value.trim().replace(/\s+/g, " ");
+    if (cleaned.length >= 15) return cleaned;
+  }
+  const quotesList = TRACK_QUOTES[currentTrack] || TRACK_QUOTES.classic;
+  return quotesList[Math.floor(Math.random() * quotesList.length)];
+}
+
+/* ==================== FEATURE 4: GLOBAL TOP 10 LEADERBOARD ==================== */
+if (btnOpenLeaderboard) {
+  btnOpenLeaderboard.addEventListener("click", async () => {
+    playTone(620, "sine", 0.08);
+    showScreen("leaderboard");
+    leaderboardList.innerHTML = `<div class="text-xs text-white/50 text-center py-6 animate-pulse">⏳ Fetching global records...</div>`;
+
+    const records = window._trFirebase?.fetchLeaderboard
+      ? await window._trFirebase.fetchLeaderboard()
+      : [];
+
+    if (!records.length) {
+      leaderboardList.innerHTML = `<div class="text-xs text-white/50 text-center py-6">No races recorded yet. Finish a race to claim #1!</div>`;
+      return;
+    }
+
+    leaderboardList.innerHTML = "";
+    records.forEach((rec, idx) => {
+      const medal = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `#${idx + 1}`;
+      const carIcon = SKINS[rec.skin]?.icon || "🏎️";
+      const rankInfo = getRankDetails(rec.wpm);
+      const row = document.createElement("div");
+      row.className = "flex items-center justify-between bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs";
+      row.innerHTML = `
+        <div class="flex items-center gap-2.5">
+          <span class="font-black text-sm w-6">${medal}</span>
+          <span class="text-base">${carIcon}</span>
+          <div>
+            <div class="font-bold text-white flex items-center gap-1">
+              <span>${rec.name || "Racer"}</span>
+              <span class="text-[9px] text-white/40">${rec.isCloud ? "☁️" : "👤"}</span>
+            </div>
+            <div class="text-[9px] text-cyan-300/80 font-semibold">${rankInfo.title} • Acc: ${rec.acc || 100}%</div>
+          </div>
+        </div>
+        <div class="font-['Orbitron'] font-black text-sm text-[#ffd700]">${rec.wpm} <span class="text-[9px] text-white/50">WPM</span></div>
+      `;
+      leaderboardList.appendChild(row);
+    });
+  });
+}
+
+if (btnBackFromLeaderboard) {
+  btnBackFromLeaderboard.addEventListener("click", () => {
+    showScreen("menu");
+  });
+}
 
 /* ==================== SCREEN NAVIGATION ==================== */
 function showScreen(screenName) {
   mainMenuScreen.classList.add("hidden");
   onlineLobbyScreen.classList.add("hidden");
   botMenuScreen.classList.add("hidden");
+  leaderboardScreen.classList.add("hidden");
   gameScreen.classList.add("hidden");
   trackSelectorBar.classList.add("hidden");
 
@@ -257,12 +397,16 @@ function showScreen(screenName) {
     botMenuScreen.classList.add("flex");
     trackSelectorBar.classList.remove("hidden");
     subHeaderText.textContent = "Choose Bot Difficulty";
+  } else if (screenName === "leaderboard") {
+    leaderboardScreen.classList.remove("hidden");
+    leaderboardScreen.classList.add("flex");
+    subHeaderText.textContent = "Global Leaderboard";
   } else if (screenName === "game") {
     gameScreen.classList.remove("hidden");
     gameScreen.classList.add("flex");
     subHeaderText.textContent = gameMode === "online" ? `Room Code: ${roomCode}` : "Live Speed Track";
-    powerUpBar.classList.toggle("hidden", gameMode === "online");
-    powerUpBar.classList.toggle("flex", gameMode !== "online");
+    if (hardcoreActiveTag) hardcoreActiveTag.classList.toggle("hidden", !hardcoreMode);
+    if (empBtnLabel) empBtnLabel.textContent = gameMode === "online" ? "Smoke Fog" : "EMP Freeze";
     emojiBar.classList.toggle("hidden", gameMode !== "online");
     emojiBar.classList.toggle("flex", gameMode === "online");
   }
@@ -306,22 +450,71 @@ document.querySelectorAll(".bot-diff-btn").forEach((btn) => {
   });
 });
 
-/* ==================== POWER-UPS ==================== */
+/* ==================== FEATURE 1: COMBO DRIFT METER ==================== */
+function updateDriftUI() {
+  const pct = Math.min(100, Math.round((comboStreak / DRIFT_TARGET) * 100));
+  if (driftBarFill) driftBarFill.style.width = `${pct}%`;
+
+  if (driftBoostActive) {
+    if (driftStatusLabel) {
+      driftStatusLabel.textContent = `🔥 DRIFT OVERDRIVE ACTIVE! (${comboStreak} STREAK)`;
+      driftStatusLabel.className = "text-[#ffd700] uppercase tracking-wider animate-pulse";
+    }
+    if (driftMultiplierBadge) {
+      driftMultiplierBadge.textContent = "⚡ 1.25x WPM BOOST";
+      driftMultiplierBadge.className = "text-[#00f0ff] font-black";
+    }
+    if (playerCar) playerCar.classList.add("car-drift-boost");
+  } else {
+    if (driftStatusLabel) {
+      driftStatusLabel.textContent = `🔥 Combo Drift Meter (${comboStreak}/${DRIFT_TARGET})`;
+      driftStatusLabel.className = "text-white/60 uppercase tracking-wider";
+    }
+    if (driftMultiplierBadge) {
+      driftMultiplierBadge.textContent = "1.0x Speed";
+      driftMultiplierBadge.className = "text-white/40";
+    }
+    if (playerCar) playerCar.classList.remove("car-drift-boost");
+  }
+}
+
+/* ==================== FEATURE 2: POWER-UPS & ONLINE SABOTAGES ==================== */
 function resetPowerUps() {
   nitroAvailable = true;
   empAvailable = true;
+  shockAvailable = true;
   empFrozenUntil = 0;
+  remainingTextSpan.classList.remove("smoke-fog");
+  quoteBox.classList.remove("shockwave-shake", "stall-flash");
+  hazardBanner.classList.add("hidden");
   updatePowerUpUI();
 }
 
 function updatePowerUpUI() {
-  if (!btnPowerNitro || !btnPowerEmp) return;
-  btnPowerNitro.disabled = !nitroAvailable;
-  btnPowerNitro.style.opacity = nitroAvailable ? "1" : "0.35";
-  btnPowerEmp.disabled = !empAvailable;
-  btnPowerEmp.style.opacity = empAvailable ? "1" : "0.35";
+  if (btnPowerNitro) {
+    btnPowerNitro.disabled = !nitroAvailable;
+    btnPowerNitro.style.opacity = nitroAvailable ? "1" : "0.35";
+  }
+  if (btnPowerEmp) {
+    btnPowerEmp.disabled = !empAvailable;
+    btnPowerEmp.style.opacity = empAvailable ? "1" : "0.35";
+  }
+  if (btnPowerShock) {
+    btnPowerShock.disabled = !shockAvailable;
+    btnPowerShock.style.opacity = shockAvailable ? "1" : "0.35";
+  }
 }
 
+function showHazardAlert(text, bgClass, durationMs) {
+  if (!hazardBanner) return;
+  hazardBanner.textContent = text;
+  hazardBanner.className = `absolute inset-x-0 top-0 ${bgClass} text-white text-[10px] font-black text-center py-0.5 uppercase tracking-widest z-20`;
+  setTimeout(() => {
+    hazardBanner.classList.add("hidden");
+  }, durationMs);
+}
+
+// 1. Nitro Word Power-Up
 btnPowerNitro.addEventListener("click", () => {
   if (!nitroAvailable || isFinished || !raceStarted) return;
   nitroAvailable = false;
@@ -333,7 +526,6 @@ btnPowerNitro.addEventListener("click", () => {
     if (gameMode === "bot" || gameMode === "pvp") startBotSimulation();
   }
 
-  // Auto-complete the current word + space
   const remaining = targetText.slice(typedText.length);
   const nextSpaceIdx = remaining.indexOf(" ");
   if (nextSpaceIdx !== -1) {
@@ -345,16 +537,43 @@ btnPowerNitro.addEventListener("click", () => {
   typeInput.value = typedText;
   updateTextUI();
   updateTracksUI();
+  syncOnlineProgress();
   checkRaceCompletion();
   typeInput.focus();
 });
 
+// 2. EMP Freeze (Solo) / Smoke Screen Fog (Online PvP)
 btnPowerEmp.addEventListener("click", () => {
   if (!empAvailable || isFinished || !raceStarted) return;
   empAvailable = false;
-  empFrozenUntil = Date.now() + 3500; // Freeze bots for 3.5 seconds
   updatePowerUpUI();
-  playTone(180, "sawtooth", 0.25, 0.18);
+  playTone(220, "sawtooth", 0.25, 0.18);
+
+  if (gameMode === "online" && conn && conn.open) {
+    conn.send({ type: "SABOTAGE", weapon: "SMOKE" });
+  } else {
+    empFrozenUntil = Date.now() + 3500;
+    showHazardAlert("❄️ BOTS FROZEN FOR 3.5 SECONDS!", "bg-cyan-600/90", 2000);
+  }
+  typeInput.focus();
+});
+
+// 3. Shockwave Sabotage (Shakes online friend's screen OR pushes bots back 12%)
+btnPowerShock.addEventListener("click", () => {
+  if (!shockAvailable || isFinished || !raceStarted) return;
+  shockAvailable = false;
+  updatePowerUpUI();
+  playTone(140, "sawtooth", 0.3, 0.22);
+
+  if (gameMode === "online" && conn && conn.open) {
+    conn.send({ type: "SABOTAGE", weapon: "SHOCKWAVE" });
+  } else {
+    bot1Progress = Math.max(0, bot1Progress - 12);
+    bot2Progress = Math.max(0, bot2Progress - 12);
+    bot3Progress = Math.max(0, bot3Progress - 12);
+    updateTracksUI();
+    showHazardAlert("💥 SHOCKWAVE PUSHED BOTS BACK!", "bg-purple-600/90", 2000);
+  }
   typeInput.focus();
 });
 
@@ -488,13 +707,13 @@ function setupPeerConnection() {
       onlineNames.host = getPlayerName();
       opponentConnected = true;
 
-      const quotesList = TRACK_QUOTES[currentTrack] || TRACK_QUOTES.classic;
-      targetText = quotesList[Math.floor(Math.random() * quotesList.length)];
+      targetText = getSelectedQuote();
 
       conn.send({
         type: "START",
         currentTrack,
         targetText,
+        hardcoreMode,
         hostName: onlineNames.host,
         guestName: onlineNames.guest
       });
@@ -503,6 +722,7 @@ function setupPeerConnection() {
     } else if (data.type === "START") {
       currentTrack = data.currentTrack || "classic";
       targetText = data.targetText;
+      hardcoreMode = !!data.hardcoreMode;
       onlineNames.host = data.hostName || "Host";
       onlineNames.guest = data.guestName || "Friend";
 
@@ -524,6 +744,18 @@ function setupPeerConnection() {
         activeControls.classList.add("hidden");
         finishedBanner.classList.remove("hidden");
       }
+    } else if (data.type === "SABOTAGE") {
+      if (data.weapon === "SMOKE") {
+        remainingTextSpan.classList.add("smoke-fog");
+        showHazardAlert("🌫️ HIT BY SMOKE SCREEN! (3s)", "bg-cyan-700/90", 3000);
+        playTone(190, "sawtooth", 0.3, 0.2);
+        setTimeout(() => remainingTextSpan.classList.remove("smoke-fog"), 3000);
+      } else if (data.weapon === "SHOCKWAVE") {
+        quoteBox.classList.add("shockwave-shake");
+        showHazardAlert("💥 HIT BY SHOCKWAVE!", "bg-purple-700/90", 2500);
+        playTone(130, "sawtooth", 0.35, 0.25);
+        setTimeout(() => quoteBox.classList.remove("shockwave-shake"), 2500);
+      }
     } else if (data.type === "EMOJI") {
       spawnFloatingEmoji(data.emoji);
     }
@@ -536,6 +768,13 @@ function setupPeerConnection() {
       showScreen("menu");
     }
   });
+}
+
+function syncOnlineProgress() {
+  if (gameMode === "online" && conn && conn.open) {
+    const playerProgress = (typedText.length / targetText.length) * 100;
+    conn.send({ type: "PROGRESS", progress: playerProgress, wpm });
+  }
 }
 
 function startOnlineRaceUI(hostName, guestName, pickRandom = true) {
@@ -599,6 +838,10 @@ function startOfflineOrGhostGame() {
 function clearAllCountdowns() {
   countdownTimers.forEach((t) => clearTimeout(t));
   countdownTimers = [];
+  if (stallTimeout) {
+    clearTimeout(stallTimeout);
+    stallTimeout = null;
+  }
 }
 
 function activateGreenLight() {
@@ -607,7 +850,7 @@ function activateGreenLight() {
   lightYellow.className = "w-3 h-3 rounded-full bg-amber-400/30 border border-amber-400/50";
   lightGreen.className = "w-3 h-3 rounded-full bg-emerald-400 border border-emerald-400 shadow-[0_0_12px_#2ecc71]";
   raceStatusText.textContent = "GO! TYPE NOW!";
-  raceStatusText.className = "text-xs font-black text-[#2ecc71] ml-1 animate-pulse";
+  raceStatusText.className = "text-[11px] font-black text-[#2ecc71] ml-1 animate-pulse";
   playTone(880, "sine", 0.22, 0.18);
 
   raceStarted = true;
@@ -621,8 +864,7 @@ function startCountdownSequence(pickNewQuote = true) {
   stopBotSimulation();
 
   if (pickNewQuote) {
-    const quotesList = TRACK_QUOTES[currentTrack] || TRACK_QUOTES.classic;
-    targetText = quotesList[Math.floor(Math.random() * quotesList.length)];
+    targetText = getSelectedQuote();
   }
 
   typedText = "";
@@ -630,23 +872,27 @@ function startCountdownSequence(pickNewQuote = true) {
   wpm = 0;
   accuracy = 100;
   mistakes = 0;
+  comboStreak = 0;
+  driftBoostActive = false;
+  bonusWordsEarned = 0;
+  isStalled = false;
   isFinished = false;
   raceStarted = false;
   bot1Progress = 0;
   bot2Progress = 0;
   bot3Progress = 0;
   resetPowerUps();
+  updateDriftUI();
 
-  // Keep input unlocked so mobile keyboards can open anytime
   typeInput.disabled = false;
   typeInput.value = "";
-  typeInput.placeholder = "Get ready... Green light in 2s!";
+  typeInput.placeholder = "Get ready... Green light in 1.5s!";
 
   lightRed.className = "w-3 h-3 rounded-full bg-red-500 border border-red-500 shadow-[0_0_10px_#ef4444]";
   lightYellow.className = "w-3 h-3 rounded-full bg-amber-400/30 border border-amber-400/50";
   lightGreen.className = "w-3 h-3 rounded-full bg-emerald-400/30 border border-emerald-400/50";
   raceStatusText.textContent = "READY...";
-  raceStatusText.className = "text-xs font-black text-red-400 ml-1";
+  raceStatusText.className = "text-[11px] font-black text-red-400 ml-1";
 
   mistakeCounter.textContent = "Mistakes: 0";
   finishedBanner.classList.add("hidden");
@@ -659,7 +905,7 @@ function startCountdownSequence(pickNewQuote = true) {
   const t1 = setTimeout(() => {
     lightYellow.className = "w-3 h-3 rounded-full bg-amber-400 border border-amber-400 shadow-[0_0_10px_#fbbf24]";
     raceStatusText.textContent = "SET...";
-    raceStatusText.className = "text-xs font-black text-amber-400 ml-1";
+    raceStatusText.className = "text-[11px] font-black text-amber-400 ml-1";
     playTone(480, "sine", 0.12);
   }, 750);
 
@@ -682,7 +928,7 @@ function startBotSimulation() {
 
   botInterval = setInterval(() => {
     if (!startTime || isFinished) return;
-    if (Date.now() < empFrozenUntil) return; // Bots frozen by EMP power-up
+    if (Date.now() < empFrozenUntil) return;
 
     bot1Progress = Math.min(100, bot1Progress + (Math.random() * 1.8 + 0.9) * speedMult);
     if (gameMode === "bot") {
@@ -749,7 +995,7 @@ function checkRaceCompletion() {
 
     winStreak++;
     if (streakBadge) {
-      streakBadge.textContent = `🔥 ${winStreak} Wins`;
+      streakBadge.textContent = `🔥 ${winStreak}`;
       streakBadge.classList.remove("hidden");
     }
 
@@ -763,7 +1009,7 @@ function checkRaceCompletion() {
     if (typeof window.submitScore === "function") {
       window.submitScore(wpm, { accuracy, streak: winStreak, skin: selectedSkin });
     }
-    refreshSkinOptions();
+    refreshSkinAndRank();
 
     if (typeof confetti === "function") confetti();
     playTone(1046.5, "sine", 0.3, 0.2);
@@ -774,7 +1020,12 @@ function checkRaceCompletion() {
 typeInput.addEventListener("input", (e) => {
   if (isFinished) return;
 
-  // If player starts typing before countdown finishes, force-activate Green light immediately
+  // Ignore typing while Engine is Stalled in Hardcore Mode
+  if (isStalled) {
+    e.target.value = typedText;
+    return;
+  }
+
   if (!raceStarted) {
     activateGreenLight();
   }
@@ -788,43 +1039,67 @@ typeInput.addEventListener("input", (e) => {
 
   // Check if typed string matches target prefix
   if (targetText.startsWith(val)) {
+    const addedChars = Math.max(1, val.length - typedText.length);
     typedText = val;
-    playTone(520, "triangle", 0.04, 0.05);
+
+    // Increment Combo Drift Meter
+    comboStreak += addedChars;
+    if (comboStreak >= DRIFT_TARGET) {
+      if (!driftBoostActive) {
+        driftBoostActive = true;
+        playTone(960, "triangle", 0.15, 0.15);
+      }
+      bonusWordsEarned += addedChars * 0.05; // 1.25x WPM boost while drifting
+    }
+    updateDriftUI();
+    playEngineKeystrokeSound();
 
     if (startTime) {
       const elapsedMin = (Date.now() - startTime) / 60000;
-      const words = val.length / 5;
-      wpm = Math.round(words / Math.max(0.01, elapsedMin));
+      const effectiveWords = (val.length / 5) + bonusWordsEarned;
+      wpm = Math.round(effectiveWords / Math.max(0.01, elapsedMin));
     }
 
     updateTextUI();
     updateTracksUI();
-
-    if (gameMode === "online" && conn && conn.open) {
-      const playerProgress = (typedText.length / targetText.length) * 100;
-      conn.send({ type: "PROGRESS", progress: playerProgress, wpm });
-    }
-
+    syncOnlineProgress();
     checkRaceCompletion();
   } else {
-    // Mistake made
+    // Mistake made -> Reset Combo Drift Meter
     mistakes++;
+    comboStreak = 0;
+    driftBoostActive = false;
+    updateDriftUI();
+
     mistakeCounter.textContent = `Mistakes: ${mistakes}`;
     accuracy = Math.max(20, Math.round(100 - (mistakes / targetText.length) * 100));
     liveAcc.textContent = `${accuracy}%`;
-    playTone(160, "sawtooth", 0.1, 0.12);
+    playTone(150, "sawtooth", 0.12, 0.14);
     e.target.value = typedText;
+
+    // Feature 3: Hardcore Engine Stall Penalty (1.5s lock)
+    if (hardcoreMode && !isStalled) {
+      isStalled = true;
+      quoteBox.classList.add("stall-flash");
+      showHazardAlert("🛑 ENGINE STALLED! LOCKED FOR 1.5s!", "bg-red-600/95", 1500);
+      playTone(110, "sawtooth", 0.35, 0.25);
+
+      stallTimeout = setTimeout(() => {
+        isStalled = false;
+        quoteBox.classList.remove("stall-flash");
+      }, 1500);
+    }
   }
 });
 
 changeQuoteBtn.addEventListener("click", () => {
   if (gameMode === "online" && conn && conn.open) {
-    const quotesList = TRACK_QUOTES[currentTrack] || TRACK_QUOTES.classic;
-    targetText = quotesList[Math.floor(Math.random() * quotesList.length)];
+    targetText = getSelectedQuote();
     conn.send({
       type: "START",
       currentTrack,
       targetText,
+      hardcoreMode,
       hostName: onlineNames.host,
       guestName: onlineNames.guest
     });
@@ -836,12 +1111,12 @@ changeQuoteBtn.addEventListener("click", () => {
 
 nextRaceBtn.addEventListener("click", () => {
   if (gameMode === "online" && conn && conn.open) {
-    const quotesList = TRACK_QUOTES[currentTrack] || TRACK_QUOTES.classic;
-    targetText = quotesList[Math.floor(Math.random() * quotesList.length)];
+    targetText = getSelectedQuote();
     conn.send({
       type: "START",
       currentTrack,
       targetText,
+      hardcoreMode,
       hostName: onlineNames.host,
       guestName: onlineNames.guest
     });
