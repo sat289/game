@@ -70,6 +70,7 @@
         body.dark-theme .popular-section {
             background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
             border-top: 2px solid rgba(250, 204, 21, 0.35);
+            border-bottom: 2px solid rgba(250, 204, 21, 0.2);
         }
 
         body.dark-theme .popular-section::before {
@@ -252,8 +253,8 @@
         </div>
     </div>
 
-    <!-- MAIN CONTENT -->
-    <main class="max-w-5xl w-full mx-auto px-3.5 sm:px-6 pt-3 pb-12">
+    <!-- MAIN CONTENT (FIRST 10 GAMES ABOVE POPULAR) -->
+    <main class="max-w-5xl w-full mx-auto px-3.5 sm:px-6 pt-3 pb-8">
 
         <!-- 2. ST GAMES TOP NAVIGATION HEADER -->
         <header class="sticky top-2.5 z-30 mb-4">
@@ -275,7 +276,7 @@
 
                 <!-- Quick Action Icons & Account -->
                 <div class="flex items-center justify-around flex-1 max-w-md ml-2 sm:ml-4 text-[#002b5b] theme-text-primary">
-                    <button onclick="filterByCategory('popular')" title="Popular Games" class="p-2 rounded-xl hover:bg-slate-500/10 active:scale-90 transition">
+                    <button onclick="jumpToPopular()" title="Popular Games" class="p-2 rounded-xl hover:bg-slate-500/10 active:scale-90 transition">
                         <i class="fa-solid fa-fire-flame-curved text-lg sm:text-xl text-orange-500"></i>
                     </button>
                     <button onclick="pickRandomGame()" title="Surprise Me" class="p-2 rounded-xl hover:bg-slate-500/10 active:scale-90 transition">
@@ -315,7 +316,7 @@
             </div>
         </header>
 
-        <!-- 3. SOCIAL CHANNELS & CONTROLS (Positioned below header) -->
+        <!-- 3. SOCIAL CHANNELS & CONTROLS -->
         <div class="space-y-2.5 mb-4">
             <div class="flex items-center justify-between gap-2">
                 <div class="bg-[#002b5b] text-white rounded-2xl px-3.5 py-2 shadow-md flex items-center gap-2 border border-white/10">
@@ -380,6 +381,9 @@
                 <button onclick="filterByCategory('all')" data-cat="all" class="cat-btn active-cat shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-[#002b5b] text-white">
                     <i class="fa-solid fa-border-all"></i> All Games
                 </button>
+                <button onclick="filterByCategory('popular')" data-cat="popular" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
+                    <i class="fa-solid fa-fire text-orange-500"></i> Popular
+                </button>
                 <button onclick="filterByCategory('classic')" data-cat="classic" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
                     <i class="fa-solid fa-ghost text-emerald-500"></i> Classic & Snake
                 </button>
@@ -398,7 +402,7 @@
             </div>
         </section>
 
-        <!-- 5. MAIN GAMES GRID -->
+        <!-- 5. TOP 10 GAMES GRID (ABOVE POPULAR) -->
         <section>
             <div id="gamesGrid" class="poki-grid"></div>
             <div id="emptyState" class="hidden bg-white/90 rounded-3xl p-8 text-center my-4 shadow-md">
@@ -411,17 +415,35 @@
 
     </main>
 
-    <!-- 6. POPULAR GAMES SECTION -->
-    <section class="popular-section pt-5 pb-12 px-4 sm:px-6 mt-6 shadow-inner">
+    <!-- 6. POPULAR GAMES SECTION (HORIZONTAL SCROLL) -->
+    <section id="popularSection" class="popular-section pt-5 pb-8 px-4 sm:px-6 mt-4 shadow-inner">
         <div class="max-w-5xl mx-auto">
-            <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-2.5">
                     <i class="fa-solid fa-fire text-xl sm:text-2xl text-[#002b5b] popular-heading"></i>
                     <h2 class="brand-font text-xl sm:text-2xl font-bold text-[#002b5b] popular-heading">Popular Games</h2>
+                    <span id="popularCountBadge" class="bg-[#002b5b] text-amber-300 text-xs font-extrabold px-2.5 py-0.5 rounded-full">0</span>
+                </div>
+
+                <!-- Left & Right Scroll Buttons -->
+                <div class="flex items-center gap-2">
+                    <button onclick="scrollPopular(-1)" aria-label="Scroll Left" class="w-9 h-9 rounded-full bg-[#002b5b] text-white flex items-center justify-center shadow hover:scale-105 active:scale-95 transition">
+                        <i class="fa-solid fa-chevron-left text-xs"></i>
+                    </button>
+                    <button onclick="scrollPopular(1)" aria-label="Scroll Right" class="w-9 h-9 rounded-full bg-[#002b5b] text-white flex items-center justify-center shadow hover:scale-105 active:scale-95 transition">
+                        <i class="fa-solid fa-chevron-right text-xs"></i>
+                    </button>
                 </div>
             </div>
-            <div id="popularGamesRow" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3.5 sm:gap-4"></div>
+
+            <!-- Horizontal Scroll Row -->
+            <div id="popularGamesRow" class="flex items-center gap-3.5 sm:gap-4 overflow-x-auto no-scrollbar scroll-smooth snap-x snap-mandatory py-2 px-1"></div>
         </div>
+    </section>
+
+    <!-- 7. REMAINING GAMES SECTION (GAME #11 ONWARDS - BELOW POPULAR) -->
+    <section id="remainingGamesSection" class="max-w-5xl w-full mx-auto px-3.5 sm:px-6 pt-8 pb-16">
+        <div id="remainingGamesGrid" class="poki-grid"></div>
     </section>
 
     <!-- Background Audio Element -->
@@ -473,9 +495,15 @@
 
         /**
          * FULL GAMES CATALOG
+         * - The FIRST 10 games (1 to 10) appear ABOVE the Popular section.
+         * - Any game with 'popular' in categories: [...] automatically goes into the Popular horizontal slider.
+         * - All REMAINING games (from #11 onwards) automatically appear BELOW the Popular section!
          */
+        const TOP_GAMES_LIMIT = 10;
+
         const GAMES_DATA = [
-          {
+            // --- GAMES 1 TO 10 (SHOWN ABOVE POPULAR SECTION) ---
+            {
                 id: 'subway-runner',
                 title: 'Street Subway Runner',
                 url: 'game/subway/index.html',
@@ -552,7 +580,6 @@
                 badge: '1v1',
                 bg: 'linear-gradient(135deg, #ef4444, #7f1d1d)'
             },
-
             {
                 id: 'snake-ladder',
                 title: 'snake and ladder',
@@ -564,7 +591,6 @@
                 badge: 'HOT',
                 bg: 'linear-gradient(135deg, #f97316, #c2410c)'
             },
-
             {
                 id: 'hitknite.',
                 title: 'Hit Knife ',
@@ -576,7 +602,6 @@
                 badge: 'CO-OP',
                 bg: 'linear-gradient(135deg, #8b5cf6, #5b21b6)'
             },
-
             {
                 id: 'typing-race',
                 title: 'typing race pro',
@@ -584,10 +609,12 @@
                 logo: 'logo/typerace.jpg',
                 icon: 'fa-solid fa-truck',
                 size: 'large',
-                categories: ['racing', 'single'],
+                categories: ['racing', 'single', 'popular'],
                 badge: '',
                 bg: 'linear-gradient(135deg, #64748b, #334155)'
             },
+
+            // --- GAME 11 ONWARDS (AUTOMATICALLY SHOWN BELOW POPULAR SECTION) ---
             {
                 id: 'Mini ludo game',
                 title: 'mini ludo game',
@@ -598,57 +625,91 @@
                 categories: ['classic', 'single'],
                 badge: '',
                 bg: 'linear-gradient(135deg, #84cc16, #4d7c0f)'
+            },
+            {
+                id: 'sports',
+                title: 'Badminton Duel',
+                url: 'game/sports.html',
+                logo: 'logo/game.jpg',
+                icon: 'fa-solid fa-medal',
+                size: 'normal',
+                categories: ['1v1', 'sports', 'popular'],
+                badge: '1v1',
+                bg: 'linear-gradient(135deg, #059669, #065f46)'
+            },
+            {
+                id: 'subway-mini',
+                title: 'subway surfers mini',
+                url: 'game/subway.html',
+                logo: 'logo/subway.jpg',
+                icon: 'fa-solid fa-circle-dot',
+                size: 'normal',
+                categories: ['single'],
+                badge: '',
+                bg: 'linear-gradient(135deg, #334155, #1e293b)'
             }
+            // Add any new games below this line and they will automatically appear after the Popular section!
         ];
 
-        const POPULAR_ROW_DATA = [
-            { id: 'subway', title: 'subway surfers mini', url: 'game/subway.html', logo: 'logo/subway.jpg', icon: 'fa-solid fa-circle-dot', categories: ['single', 'popular'], bg: '#334155' },
-            { id: 'tictactoa', title: 'tic-tac-toe pro', url: 'game/tictactoe/index.html', logo: 'logo/tic-tac-toe.png', icon: 'fa-solid fa-water', categories: ['racing', 'popular'], bg: '#0284c7' },
-            { id: 'bird-game', title: 'old bird game', url: 'game/clumsy.html', logo: 'logo/bird.jpg', icon: 'fa-solid fa-futbol', categories: ['1v1', 'sports', 'popular'], bg: '#16a34a' },
-            { id: 'typerace', title: 'type racing pro', url: 'game/typerace/index.html', logo: 'logo/typerace.jpg', icon: 'fa-solid fa-bullseye', categories: ['1v1', 'popular'], bg: '#6366f1' },
-            { id: 'snake', title: 'old snake game', url: 'game/snake/index.html', logo: 'logo/snake.jpg', icon: 'fa-solid fa-car-side', categories: ['racing', 'popular'], bg: '#dc2626' },
-            { id: 'sports', title: 'Badminton Duel', url: 'game/sports.html', logo: 'logo/game.jpg', icon: 'fa-solid fa-medal', categories: ['1v1', 'sports', 'popular'], bg: '#059669' }
-        ];
-
-        const ALL_COMBINED = [...GAMES_DATA, ...POPULAR_ROW_DATA];
         let currentCategory = 'all';
         let currentSearch = '';
 
         function renderGames() {
-            const gridEl = document.getElementById('gamesGrid');
+            const topGridEl = document.getElementById('gamesGrid');
             const popularRowEl = document.getElementById('popularGamesRow');
+            const remainingSectionEl = document.getElementById('remainingGamesSection');
+            const remainingGridEl = document.getElementById('remainingGamesGrid');
             const emptyEl = document.getElementById('emptyState');
 
-            const filteredMain = GAMES_DATA.filter(game => {
-                const matchesCat = currentCategory === 'all' || game.categories.includes(currentCategory);
+            // Filter all games by category and search
+            const filteredGames = GAMES_DATA.filter(game => {
+                const matchesCat = currentCategory === 'all' || (game.categories && game.categories.includes(currentCategory));
                 const matchesSearch = game.title.toLowerCase().includes(currentSearch.toLowerCase()) ||
                                       game.url.toLowerCase().includes(currentSearch.toLowerCase());
                 return matchesCat && matchesSearch;
             });
 
-            const filteredPopular = POPULAR_ROW_DATA.filter(game => {
-                const matchesCat = currentCategory === 'all' || game.categories.includes(currentCategory);
-                const matchesSearch = game.title.toLowerCase().includes(currentSearch.toLowerCase()) ||
-                                      game.url.toLowerCase().includes(currentSearch.toLowerCase());
-                return matchesCat && matchesSearch;
-            });
+            // Split into First 10 (Above Popular) and Remaining (Below Popular)
+            const topTenGames = filteredGames.slice(0, TOP_GAMES_LIMIT);
+            const remainingGames = filteredGames.slice(TOP_GAMES_LIMIT);
 
-            document.getElementById('liveGameCount').textContent = ALL_COMBINED.length;
-
-            if (filteredMain.length === 0) {
-                gridEl.innerHTML = '';
+            // Render Top 10 Games Grid
+            if (topTenGames.length === 0) {
+                topGridEl.innerHTML = '';
                 emptyEl.classList.remove('hidden');
             } else {
                 emptyEl.classList.add('hidden');
-                gridEl.innerHTML = filteredMain.map(g => createCardHTML(g, true)).join('');
+                topGridEl.innerHTML = topTenGames.map(g => createCardHTML(g, true, false)).join('');
             }
 
-            popularRowEl.innerHTML = (filteredPopular.length > 0 ? filteredPopular : POPULAR_ROW_DATA)
-                .map(g => createCardHTML(g, false)).join('');
+            // Render Popular Horizontal Scroll Row (Any game with 'popular' in categories)
+            const popularGames = GAMES_DATA.filter(game => {
+                const isPopular = game.categories && game.categories.includes('popular');
+                const matchesSearch = !currentSearch ||
+                                      game.title.toLowerCase().includes(currentSearch.toLowerCase()) ||
+                                      game.url.toLowerCase().includes(currentSearch.toLowerCase());
+                return isPopular && matchesSearch;
+            });
+
+            document.getElementById('popularCountBadge').textContent = popularGames.length;
+            popularRowEl.innerHTML = popularGames.map(g => createCardHTML(g, false, true)).join('');
+
+            // Render Remaining Games Grid (Game #11 onwards below Popular)
+            if (remainingGames.length === 0) {
+                remainingSectionEl.classList.add('hidden');
+                remainingGridEl.innerHTML = '';
+            } else {
+                remainingSectionEl.classList.remove('hidden');
+                remainingGridEl.innerHTML = remainingGames.map(g => createCardHTML(g, true, false)).join('');
+            }
+
+            // Update Total Online Count
+            document.getElementById('liveGameCount').textContent = GAMES_DATA.length;
         }
 
-        function createCardHTML(game, allowLarge) {
+        function createCardHTML(game, allowLarge, isHorizontalScroll) {
             const spanClass = (allowLarge && game.size === 'large') ? 'tile-large' : '';
+            const horizontalClass = isHorizontalScroll ? 'w-36 sm:w-44 md:w-48 shrink-0 snap-start' : '';
             const badge = game.badge ? `
                 <div class="absolute top-2.5 left-2.5 z-10 bg-white/95 text-[#002b5b] text-[10px] font-extrabold px-2 py-0.5 rounded-lg shadow">
                     ${game.badge}
@@ -656,7 +717,7 @@
             ` : '';
 
             return `
-                <a href="${game.url}" class="game-card ${spanClass}" style="background: ${game.bg};">
+                <a href="${game.url}" class="game-card ${spanClass} ${horizontalClass}" style="background: ${game.bg};">
                     ${badge}
                     <img src="${game.logo}" alt="${game.title}"
                          onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');"
@@ -667,10 +728,22 @@
                     </div>
                     <div class="game-card-overlay absolute inset-0 flex flex-col justify-end p-3 text-white">
                         <h3 class="font-extrabold text-xs sm:text-sm truncate">${game.title}</h3>
-                        <span class="text-[10px] text-cyan-300 font-semibold">${game.url}</span>
+                        <span class="text-[10px] text-cyan-300 font-semibold truncate">${game.url}</span>
                     </div>
                 </a>
             `;
+        }
+
+        function scrollPopular(direction) {
+            const row = document.getElementById('popularGamesRow');
+            row.scrollBy({ left: direction * 320, behavior: 'smooth' });
+        }
+
+        function jumpToPopular() {
+            const popSec = document.getElementById('popularSection');
+            if (popSec) {
+                popSec.scrollIntoView({ behavior: 'smooth' });
+            }
         }
 
         function filterByCategory(category) {
@@ -704,7 +777,7 @@
         }
 
         function pickRandomGame() {
-            const rnd = ALL_COMBINED[Math.floor(Math.random() * ALL_COMBINED.length)];
+            const rnd = GAMES_DATA[Math.floor(Math.random() * GAMES_DATA.length)];
             window.location.href = rnd.url;
         }
 
@@ -712,7 +785,6 @@
         function toggleTheme() {
             isDark = !isDark;
             document.body.classList.toggle('dark-theme', isDark);
-            document.getElementById('themeModeLabel').textContent = isDark ? 'Dark' : 'Light';
         }
 
         window.onload = () => {
