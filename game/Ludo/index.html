@@ -1,12 +1,14 @@
 <!DOCTYPE html>
-<html lang="te">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pro 3D Ludo King - Ultimate Edition</title>
+  <title>Pro Ludo 3D King - Ultimate Edition</title>
   <link rel="stylesheet" href="style.css">
+  <!-- Canvas Confetti Library for Winning Celebrations -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
-  <!-- Firebase & Cloud Sync Integration -->
+  <!-- Firebase Integration -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
@@ -26,7 +28,7 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app);
-    const GAME_KEY = "pro_ludo_fixed_v9";
+    const GAME_KEY = "pro_ludo_ultimate_final";
 
     let currentUser = null;
     let currentHighScore = parseInt(localStorage.getItem(`${GAME_KEY}_hi`) || "0", 10);
@@ -69,13 +71,24 @@
     window.LudoFirebase = { db, ref, set, get, onValue };
   </script>
 </head>
-<body>
-  <!-- Home Screen / Entrance Page -->
+<body data-theme="classic">
+  <!-- Entrance Home Screen -->
   <div id="home-screen" class="home-screen">
     <div class="home-card">
       <div class="game-badge">INDIA'S NO. 1 LUDO</div>
       <h1 class="glow-title">PRO LUDO 3D KING</h1>
-      <p class="sub-text">Smooth token hopping, real 3D dice rolls, and live room multiplayer!</p>
+      <p class="sub-text">Choose your battle mode and enjoy seamless multiplayer action!</p>
+      
+      <div class="home-mode-select">
+        <label for="select-player-mode">Choose Match Mode:</label>
+        <select id="select-player-mode">
+          <option value="1v1">1 vs 1 (Red vs Yellow)</option>
+          <option value="2v2">2 vs 2 (Team Battle)</option>
+          <option value="1v3">1 vs 3 (Solo vs Bots)</option>
+          <option value="4player">4 Players Free-For-All</option>
+        </select>
+      </div>
+
       <div class="home-buttons">
         <button id="main-start-btn" class="glow-btn">🎮 START GAME</button>
       </div>
@@ -86,15 +99,29 @@
   <div id="game-screen" class="game-wrapper hidden">
     <div class="sidebar">
       <div class="brand-title">👑 LUDO KING PRO</div>
+      <div class="economy-pills">
+        <span class="pill">🪙 <strong id="coin-count">500</strong></span>
+        <span class="pill">⭐ XP <strong id="xp-count">0</strong></span>
+      </div>
       <div id="auth-status" class="auth-badge">Connecting...</div>
 
-      <div class="control-group">
-        <label>Game Mode</label>
-        <select id="game-mode-select">
-          <option value="bot">Play vs Smart Bot</option>
-          <option value="local">Pass & Play (Offline)</option>
-          <option value="online">Online Room (Multiplayer)</option>
-        </select>
+      <div class="settings-grid">
+        <div class="control-group">
+          <label>Connection</label>
+          <select id="game-mode-select">
+            <option value="bot">Play vs Smart Bot</option>
+            <option value="local">Pass & Play (Offline)</option>
+            <option value="online">Online Room (Multiplayer)</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>Theme</label>
+          <select id="theme-select">
+            <option value="classic">Classic Board</option>
+            <option value="cyber">Neon Cyberpunk</option>
+            <option value="royal">Royal Gold</option>
+          </select>
+        </div>
       </div>
 
       <div id="online-lobby" class="online-lobby hidden">
@@ -107,44 +134,6 @@
       </div>
 
       <div class="turn-display">
-        <div id="turn-indicator" class="turn-badge red">RED'S TURN</div>
-        <div id="score-tracker" class="score-text">Score: 0</div>
-      </div>
-
-      <!-- Real 3D Dice Box -->
-      <div class="scene">
-        <div class="cube" id="dice-cube">
-          <div class="cube__face cube__face--1">1</div>
-          <div class="cube__face cube__face--2">2</div>
-          <div class="cube__face cube__face--3">3</div>
-          <div class="cube__face cube__face--4">4</div>
-          <div class="cube__face cube__face--5">5</div>
-          <div class="cube__face cube__face--6">6</div>
-        </div>
-      </div>
-
-      <button id="roll-dice-btn" class="roll-btn">🎲 ROLL DICE</button>
-
-      <div class="emoji-tray">
-        <button class="emoji-btn" data-emoji="😂">😂</button>
-        <button class="emoji-btn" data-emoji="🔥">🔥</button>
-        <button class="emoji-btn" data-emoji="👏">👏</button>
-        <button class="emoji-btn" data-emoji="😎">😎</button>
-      </div>
-
-      <div class="bottom-actions">
-        <button id="back-home-btn" class="btn-action">Home Menu</button>
-        <button id="sound-toggle-btn" class="btn-action">🔊 Sound: ON</button>
-      </div>
-    </div>
-
-    <!-- Ludo Board Area -->
-    <main class="board-container" id="board-container">
-      <div id="emoji-floater" class="emoji-floater"></div>
-      <div id="ludo-board" class="ludo-board"></div>
-    </main>
-  </div>
-
-  <script type="module" src="game.js"></script>
-</body>
-</html>
+        <div class="turn-header-row">
+          <div id="turn-indicator" class="turn-badge red">RED'S TURN</div>
+          <div class="timer-pill">⏱️
