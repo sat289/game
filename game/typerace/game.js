@@ -46,6 +46,7 @@ let accuracy = 100;
 let mistakes = 0;
 let isFinished = false;
 let raceStarted = false;
+let countdownTimeouts = [];
 
 // Power-Up State (1 per race)
 let nitroAvailable = true;
@@ -83,7 +84,6 @@ const subHeaderText = document.getElementById("subHeaderText");
 const activeModeBadge = document.getElementById("activeModeBadge");
 
 const skinSelector = document.getElementById("skinSelector");
-const streakBadge = document.getElementById("streakBadge");
 const scoreElem = document.getElementById("score");
 
 const btnCreateRoom = document.getElementById("btnCreateRoom");
@@ -135,7 +135,7 @@ const nextRaceBtn = document.getElementById("nextRaceBtn");
 
 /* ==================== SKIN UNLOCK HANDLER ==================== */
 function refreshSkinOptions() {
-  const bestW = typeof window.bestWpm === "number" ? window.bestWpm : 0;
+  const bestW = typeof window.score === "number" ? window.score : 0;
   Array.from(skinSelector.options).forEach((opt) => {
     const key = opt.value;
     const req = SKINS[key]?.req || 0;
@@ -154,7 +154,7 @@ window.onScoreUpdated = (val) => {
 
 skinSelector.addEventListener("change", (e) => {
   const chosen = e.target.value;
-  const bestW = typeof window.bestWpm === "number" ? window.bestWpm : 0;
+  const bestW = typeof window.score === "number" ? window.score : 0;
   if (bestW >= SKINS[chosen].req) {
     selectedSkin = chosen;
     localStorage.setItem("typerace_skin", chosen);
@@ -231,6 +231,7 @@ function showScreen(screenName) {
 
   if (screenName === "menu") {
     stopBotSimulation();
+    clearAllCountdowns();
     mainMenuScreen.classList.remove("hidden");
     trackSelectorBar.classList.remove("hidden");
     subHeaderText.textContent = "Select Race Mode";
@@ -312,7 +313,6 @@ btnPowerNitro.addEventListener("click", () => {
   updatePowerUpUI();
   playTone(880, "triangle", 0.2, 0.2);
 
-  // Jump ahead 15% instantly
   const targetLen = targetText.length;
   const currentLen = typedText.length;
   const advance = Math.min(targetLen, currentLen + Math.floor(targetLen * 0.15));
@@ -327,8 +327,6 @@ btnPowerEmp.addEventListener("click", () => {
   updatePowerUpUI();
   playTone(150, "sawtooth", 0.3, 0.2);
 
-  // Slow down all bots for 3 seconds
-  const oldB1 = bot1Progress, oldB2 = bot2Progress, oldB3 = bot3Progress;
   bot1Progress = Math.max(0, bot1Progress - 12);
   bot2Progress = Math.max(0, bot2Progress - 12);
   bot3Progress = Math.max(0, bot3Progress - 12);
@@ -368,7 +366,7 @@ document.querySelectorAll(".emoji-btn").forEach((btn) => {
 btnCreateRoom.addEventListener("click", () => {
   if (typeof window.Peer === "undefined") {
     lobbyErrorMsg.textContent = "Loading multiplayer engine... Tap again in 1 second.";
-    lobbyErrorMsg.classList.remove("hidden");
+    lobbyErrorMsg.classList.add("hidden");
     return;
   }
 
@@ -485,7 +483,7 @@ function setupPeerConnection() {
 
       startOnlineRaceUI(onlineNames.host, onlineNames.guest);
     } else if (data.type === "PROGRESS") {
-      bot1Progress = data.progress; // Used for opponent lane
+      bot1Progress = data.progress;
       updateTracksUI();
     } else if (data.type === "EMOJI") {
       spawnFloatingEmoji(data.emoji);
@@ -515,6 +513,7 @@ function startOnlineRaceUI(hostName, guestName) {
 
 function cleanupOnlineRoom() {
   stopBotSimulation();
+  clearAllCountdowns();
   if (conn) {
     try { conn.close(); } catch (e) {}
     conn = null;
@@ -557,7 +556,15 @@ function startOfflineOrGhostGame() {
 }
 
 /* ==================== COUNTDOWN & START SEQUENCE ==================== */
+function clearAllCountdowns() {
+  countdownTimeouts.forEach((t) => clearTimeout(t));
+  countdownTimeouts = [];
+}
+
 function startCountdownSequence() {
+  clearAllCountdowns();
+  stopBotSimulation();
+
   const quotesList = TRACK_QUOTES[currentTrack];
   targetText = quotesList[Math.floor(Math.random() * quotesList.length)];
   typedText = '';
@@ -583,17 +590,19 @@ function startCountdownSequence() {
   updateTextUI();
   updateTracksUI();
   mistakeCounter.textContent = "Mistakes: 0";
+  finishedBanner.classList.add('hidden');
+  activeControls.classList.remove('hidden');
 
   playTone(300, "sine", 0.15);
 
-  setTimeout(() => {
+  const t1 = setTimeout(() => {
     lightYellow.className = "w-3 h-3 rounded-full bg-amber-400 border border-amber-400 shadow-[0_0_10px_#fbbf24]";
     raceStatusText.textContent = "SET...";
     raceStatusText.className = "text-xs font-black text-amber-400 ml-1";
     playTone(450, "sine", 0.15);
   }, 1000);
 
-  setTimeout(() => {
+  const t2 = setTimeout(() => {
     lightGreen.className = "w-3 h-3 rounded-full bg-emerald-400 border border-emerald-400 shadow-[0_0_10px_#2ecc71]";
     raceStatusText.textContent = "GO! RACE!";
     raceStatusText.className = "text-xs font-black text-[#2ecc71] ml-1";
@@ -603,6 +612,8 @@ function startCountdownSequence() {
     typeInput.disabled = false;
     typeInput.focus();
   }, 2000);
+
+  countdownTimeouts.push(t1, t2);
 }
 
 /* ==================== BOT SIMULATION ENGINE ==================== */
@@ -679,7 +690,6 @@ typeInput.addEventListener('input', (e) => {
     if (gameMode === "bot") startBotSimulation();
   }
 
-  // Strict prefix validation
   if (targetText.startsWith(val)) {
     typedText = val;
     playTone(520, "triangle", 0.04, 0.05);
@@ -703,6 +713,8 @@ typeInput.addEventListener('input', (e) => {
       typeInput.disabled = true;
       stopBotSimulation();
 
+      finishHeadline.textContent = "🏆 1ST PLACE VICTORY!";
+      finishHeadline.className = "text-sm font-black text-[#2ecc71] flex items-center justify-center gap-1.5 mb-1";
       finalWpm.textContent = `${wpm} WPM`;
       finalAcc.textContent = `${accuracy}%`;
       activeControls.classList.add('hidden');
@@ -717,13 +729,12 @@ typeInput.addEventListener('input', (e) => {
       playTone(1046.5, "sine", 0.3, 0.2);
     }
   } else {
-    // Mistake made
     mistakes++;
     mistakeCounter.textContent = `Mistakes: ${mistakes}`;
     accuracy = Math.max(20, Math.round(100 - (mistakes / targetText.length) * 100));
     liveAcc.textContent = `${accuracy}%`;
     playTone(160, "sawtooth", 0.1, 0.12);
-    e.target.value = typedText; // Revert incorrect char
+    e.target.value = typedText;
   }
 });
 
