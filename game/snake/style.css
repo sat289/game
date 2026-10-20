@@ -1,151 +1,109 @@
 body {
   font-family: 'Inter', sans-serif;
   touch-action: manipulation;
-  perspective: 1200px;
 }
 
-/* ==================== 3D SYNTHWAVE HORIZON BACKGROUND ==================== */
-.bg-3d-scene {
-  background: radial-gradient(circle at 50% 50%, #0d1b2a 0%, #04070d 85%);
-  perspective: 450px;
+/* ==================== 2D ANIMATED BACKGROUND EFFECTS ==================== */
+.bg-2d-wrapper {
+  background: radial-gradient(circle at 50% 30%, #0d1829 0%, #050811 85%);
 }
 
-.cyber-grid-floor {
+.bg-dot-pattern {
   position: absolute;
-  bottom: -35%;
-  left: -50%;
-  width: 200%;
-  height: 95%;
-  background-image: 
-    linear-gradient(to right, rgba(46, 204, 113, 0.22) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(0, 240, 255, 0.22) 1px, transparent 1px);
-  background-size: 48px 48px;
-  transform: rotateX(68deg);
-  transform-origin: center top;
-  mask-image: linear-gradient(to top, rgba(0,0,0,1) 15%, rgba(0,0,0,0) 90%);
-  -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,1) 15%, rgba(0,0,0,0) 90%);
-  animation: gridScrollFloor 2.4s linear infinite;
+  inset: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+  background-size: 28px 28px;
+  animation: driftDots 18s linear infinite;
 }
 
-.cyber-grid-ceiling {
-  position: absolute;
-  top: -35%;
-  left: -50%;
-  width: 200%;
-  height: 85%;
-  background-image: 
-    linear-gradient(to right, rgba(0, 240, 255, 0.16) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(46, 204, 113, 0.16) 1px, transparent 1px);
-  background-size: 48px 48px;
-  transform: rotateX(-68deg);
-  transform-origin: center bottom;
-  mask-image: linear-gradient(to bottom, rgba(0,0,0,0.85) 10%, rgba(0,0,0,0) 85%);
-  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.85) 10%, rgba(0,0,0,0) 85%);
-  animation: gridScrollCeiling 2.4s linear infinite;
-}
-
-.horizon-core {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 520px;
-  height: 180px;
-  transform: translate(-50%, -50%);
-  background: radial-gradient(ellipse at center, rgba(46, 204, 113, 0.22), rgba(0, 240, 255, 0.12), transparent 70%);
-  filter: blur(28px);
-}
-
-@keyframes gridScrollFloor {
+@keyframes driftDots {
   0% { background-position: 0 0; }
-  100% { background-position: 0 48px; }
+  100% { background-position: 28px 28px; }
 }
 
-@keyframes gridScrollCeiling {
-  0% { background-position: 0 0; }
-  100% { background-position: 0 -48px; }
+.aurora-orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(75px);
+  opacity: 0.35;
+  animation: floatOrb 12s ease-in-out infinite alternate;
 }
 
-/* ==================== 3D EXTRUDED BACKSIDE CARD LAYERS ==================== */
-.card-3d-Stage {
-  transform-style: preserve-3d;
-  will-change: transform;
+.orb-green {
+  width: 320px;
+  height: 320px;
+  top: -60px;
+  left: -80px;
+  background: #2ecc71;
 }
 
+.orb-cyan {
+  width: 340px;
+  height: 340px;
+  bottom: -80px;
+  right: -80px;
+  background: #00f0ff;
+  animation-delay: -4s;
+}
+
+.orb-pink {
+  width: 260px;
+  height: 260px;
+  top: 40%;
+  left: 55%;
+  background: #ff007f;
+  opacity: 0.2;
+  animation-delay: -8s;
+}
+
+@keyframes floatOrb {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(35px, -30px) scale(1.12); }
+  100% { transform: translate(-25px, 25px) scale(0.92); }
+}
+
+/* ==================== FLAT 2D GAME CARD & ARENA ==================== */
 .game-card {
-  transform-style: preserve-3d;
   box-shadow: 
-    0 22px 60px rgba(0, 0, 0, 0.9),
-    0 0 35px rgba(46, 204, 113, 0.15),
-    inset 0 1px 2px rgba(255, 255, 255, 0.25);
+    0 20px 50px rgba(0, 0, 0, 0.85),
+    0 0 25px rgba(46, 204, 113, 0.1);
 }
 
-/* Backplate Layer 1 (-16px behind the card) */
-.card-backplate-1 {
-  position: absolute;
-  inset: -4px;
-  border-radius: 28px;
-  background: linear-gradient(135deg, rgba(46, 204, 113, 0.35), rgba(0, 240, 255, 0.35));
-  border: 1px solid rgba(46, 204, 113, 0.45);
-  transform: translateZ(-16px);
-  pointer-events: none;
-  z-index: -1;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.85);
-}
-
-/* Backplate Layer 2 (-32px deep neon chassis) */
-.card-backplate-2 {
-  position: absolute;
-  inset: -9px;
-  border-radius: 32px;
-  background: #060b14;
-  border: 2px solid rgba(0, 240, 255, 0.3);
-  transform: translateZ(-32px);
-  pointer-events: none;
-  z-index: -2;
+.arena-2d {
   box-shadow: 
-    0 0 45px rgba(0, 240, 255, 0.25),
-    0 28px 50px rgba(0, 0, 0, 0.95);
+    0 8px 25px rgba(0, 0, 0, 0.75),
+    inset 0 0 15px rgba(0, 0, 0, 0.6);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
-/* ==================== 3D SNAKE ARENA BOARD ==================== */
-.arena-3d {
-  transform: perspective(700px) rotateX(6deg) translateZ(12px);
-  box-shadow: 
-    0 12px 0 #05080f,
-    0 20px 35px rgba(0, 0, 0, 0.85),
-    inset 0 1px 1px rgba(255, 255, 255, 0.15);
-  transition: all 0.2s ease;
-}
-
-/* 🔥 Frenzy Overdrive Border Glow */
+/* 🔥 Frenzy Overdrive 2D Border Pulse */
 .arena-frenzy-glow {
   border-color: #ffd700 !important;
   box-shadow: 
-    0 12px 0 #05080f,
-    0 0 32px rgba(255, 215, 0, 0.65) !important;
+    0 0 25px rgba(255, 215, 0, 0.55),
+    inset 0 0 15px rgba(255, 215, 0, 0.25) !important;
 }
 
-/* 💥 Shockwave Screen Shake Sabotage */
-@keyframes shockwaveShake {
-  0%, 100% { transform: perspective(700px) rotateX(6deg) translate(0, 0); }
-  20% { transform: perspective(700px) rotateX(6deg) translate(-7px, 4px); }
-  40% { transform: perspective(700px) rotateX(6deg) translate(7px, -4px); }
-  60% { transform: perspective(700px) rotateX(6deg) translate(-5px, -3px); }
-  80% { transform: perspective(700px) rotateX(6deg) translate(5px, 3px); }
+/* 💥 Flat 2D Shockwave Screen Shake */
+@keyframes shockwaveShake2D {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-6px, 3px); }
+  40% { transform: translate(6px, -3px); }
+  60% { transform: translate(-4px, -2px); }
+  80% { transform: translate(4px, 2px); }
 }
 
 .shockwave-shake {
-  animation: shockwaveShake 0.25s infinite;
+  animation: shockwaveShake2D 0.25s infinite;
   border-color: #a855f7 !important;
 }
 
 .dpad-btn {
-  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.5);
-  transition: transform 0.08s ease;
+  transition: transform 0.08s ease, background-color 0.15s ease;
 }
 
 .dpad-btn:active {
-  transform: translateY(2px);
+  transform: scale(0.92);
 }
 
 @keyframes floatUpEmoji {
