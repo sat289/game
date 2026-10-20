@@ -20,8 +20,8 @@ const BOARD_CONFIGS = {
         img: "board4.jpg"
     },
     "board5": {
-        ladders: { 13: 42, 32: 68, 37: 64, 61: 83 },
-        snakes: { 16: 6, 47: 25, 75: 38, 93: 73, 98: 78 },
+        ladders: { 4: 25, 13: 46, 42: 63, 50: 69, 62: 81, 74: 92 },
+        snakes: { 27: 5, 40: 3,43: 18, 66: 45, 54: 31, 89: 53, 95: 77, 99: 41 },
         img: "https://images.unsplash.com/photo-1611996575749-79a3a250f948?w=800"
     },
     "board6": {
