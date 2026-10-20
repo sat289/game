@@ -5,11 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Snake and Ladder - Epic Edition</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Firebase App (Compat) -->
+    <!-- Firebase App & Auth SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <!-- Firebase Auth -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <!-- Firebase Firestore -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
@@ -20,19 +18,35 @@
                 <h1>🐍 Snake & Ladder 🪜</h1>
                 <p>Roll the dice, climb ladders, and dodge snakes!</p>
                 
+                <div id="login-status-banner" class="status-banner hidden">
+                    <span id="success-msg">✅ User Login Success!</span>
+                </div>
+
                 <div class="input-group">
                     <label for="player-name">Your Nickname:</label>
                     <input type="text" id="player-name" placeholder="Enter your name..." maxlength="15">
                 </div>
 
                 <div class="btn-container">
-                    <button id="btn-local-play" class="btn primary">Play Offline / Local</button>
+                    <button id="btn-continue" class="btn primary">Continue to Game</button>
                     <button id="btn-google-login" class="btn google">Sign in with Google</button>
                 </div>
             </div>
         </div>
 
-        <!-- Mode Selection Screen -->
+        <!-- Animated Popup for Guests / Non-logged in users -->
+        <div id="login-popup" class="popup-overlay hidden">
+            <div class="popup-card">
+                <h3>✨ Unlock More Features!</h3>
+                <p>Login to save your scores, sync progress, and access exclusive online multiplayer features.</p>
+                <div class="popup-btn-group">
+                    <button id="btn-goto-login-page" class="btn primary">Login Now</button>
+                    <button id="btn-dismiss-popup" class="btn secondary">Continue with Username</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Menu Screen -->
         <div id="menu-screen" class="screen">
             <div class="card">
                 <h2>Welcome, <span id="user-display-name">Player</span>!</h2>
@@ -42,7 +56,7 @@
                     <button id="btn-mode-online" class="btn secondary">Play Online with Friends</button>
                     <button id="btn-show-leaderboard" class="btn accent">Top 10 Leaderboard</button>
                 </div>
-                <button id="btn-logout" class="btn danger small">Switch User</button>
+                <button id="btn-logout" class="btn danger small">Switch User / Logout</button>
             </div>
         </div>
 
@@ -87,9 +101,7 @@
                         <div id="dice" class="dice">🎲</div>
                         <button id="btn-roll" class="btn primary">Roll Dice</button>
                     </div>
-                    <div class="scoreboard" id="scoreboard">
-                        <!-- Dynamic Player Scorecards -->
-                    </div>
+                    <div class="scoreboard" id="scoreboard"></div>
                 </div>
             </div>
         </div>
