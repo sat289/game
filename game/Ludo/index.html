@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ludo King India - Pro 3D Edition</title>
+  <title>Pro Ludo Ultimate - India's #1 Edition</title>
   <link rel="stylesheet" href="style.css">
 
-  <!-- Firebase & Cloud Sync Integration -->
+  <!-- Firebase SDK v10.9.0 & Auto Cloud Sync -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
@@ -26,15 +26,15 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app);
-    const GAME_KEY = "number_one_ludo_india";
+    const GAME_KEY = "pro_ludo_ultimate_v5";
 
     let currentUser = null;
     let currentHighScore = parseInt(localStorage.getItem(`${GAME_KEY}_hi`) || "0", 10);
 
     onAuthStateChanged(auth, async (user) => {
+      const statusEl = document.getElementById("auth-status");
       if (user) {
         currentUser = user;
-        const statusEl = document.getElementById("auth-status");
         if(statusEl) statusEl.textContent = "Cloud Synced (Online)";
         try {
           const snapshot = await get(child(ref(db), `scores/${user.uid}/${GAME_KEY}_high`));
@@ -50,7 +50,6 @@
         }
       } else {
         currentUser = null;
-        const statusEl = document.getElementById("auth-status");
         if(statusEl) statusEl.textContent = "Guest Mode (Local Storage)";
       }
     });
@@ -70,34 +69,66 @@
     window.LudoFirebase = { db, ref, set, get, onValue };
   </script>
 </head>
-<body>
-  <!-- Ultra Attractive Entrance Home Screen -->
+<body data-theme="classic">
+
+  <!-- Daily Bonus Modal Popup -->
+  <div id="daily-bonus-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <h2>🎁 Daily Login Bonus!</h2>
+      <p>Claim your free daily reward to boost your coin balance.</p>
+      <button id="claim-bonus-btn" class="glow-btn">Claim 250 Coins</button>
+    </div>
+  </div>
+
+  <!-- Entrance Home Screen -->
   <div id="home-screen" class="home-screen">
     <div class="home-card">
       <div class="game-badge">INDIA'S NO. 1 LUDO</div>
-      <h1 class="glow-title">PRO LUDO 3D KING</h1>
-      <p class="sub-text">Experience smooth token hopping, real 3D dice rolls, and play live with friends via Room Code!</p>
-      
+      <h1 class="glow-title">PRO LUDO ULTIMATE</h1>
+      <p class="sub-text">Experience 2v2 Teams, Wall Blockades, Rush Mode, Custom Themes, and Live Room Multiplayer!</p>
       <div class="home-buttons">
         <button id="main-start-btn" class="glow-btn">🎮 START GAME</button>
       </div>
     </div>
   </div>
 
-  <!-- Main Game Screen Container -->
+  <!-- Main Game Screen -->
   <div id="game-screen" class="game-wrapper hidden">
     <!-- Sidebar Control Panel -->
     <div class="sidebar">
-      <div class="brand-title">👑 LUDO KING PRO</div>
+      <div class="brand-title">👑 LUDO ULTIMATE</div>
+      <div class="economy-pills">
+        <span class="pill">🪙 <strong id="coin-count">500</strong></span>
+        <span class="pill">⭐ XP <strong id="xp-count">0</strong></span>
+      </div>
       <div id="auth-status" class="auth-badge">Connecting...</div>
 
-      <div class="control-group">
-        <label>Game Mode</label>
-        <select id="game-mode-select">
-          <option value="bot">Play vs Smart Bot</option>
-          <option value="local">Pass & Play (Offline)</option>
-          <option value="online">Online Room (Multiplayer)</option>
-        </select>
+      <!-- Settings & Customization Grid -->
+      <div class="settings-grid">
+        <div class="control-group">
+          <label>Game Mode</label>
+          <select id="game-mode-select">
+            <option value="bot">Play vs Smart Bot</option>
+            <option value="local">Pass & Play (Local)</option>
+            <option value="online">Online Room Code</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>Match Type</label>
+          <select id="match-type-select">
+            <option value="classic">Classic (4 Tokens)</option>
+            <option value="rush">Quick Rush (2 Tokens)</option>
+            <option value="teams">2 vs 2 Team Battle</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>Theme</label>
+          <select id="theme-select">
+            <option value="classic">Classic Board</option>
+            <option value="cyber">Neon Cyberpunk</option>
+            <option value="royal">Royal Gold</option>
+          </select>
+        </div>
       </div>
 
       <!-- Online Room Code Box -->
@@ -110,24 +141,40 @@
         </div>
       </div>
 
+      <!-- Turn & Timer Bar -->
       <div class="turn-display">
-        <div id="turn-indicator" class="turn-badge red">RED'S TURN</div>
+        <div class="turn-header-row">
+          <div id="turn-indicator" class="turn-badge red">RED'S TURN</div>
+          <div class="timer-pill">⏱️ <span id="timer-sec">15</span>s</div>
+        </div>
+        <div class="timer-bar-bg">
+          <div id="timer-bar" class="timer-bar-fill"></div>
+        </div>
         <div id="score-tracker" class="score-text">Score: 0</div>
       </div>
 
-      <!-- Crystal Clear 3D Dice Box -->
-      <div class="dice-viewport">
-        <div class="dice-3d" id="dice-3d">
-          <div class="dice-face face-front">1</div>
-          <div class="dice-face face-back">6</div>
-          <div class="dice-face face-right">3</div>
-          <div class="dice-face face-left">4</div>
-          <div class="dice-face face-top">5</div>
-          <div class="dice-face face-bottom">2</div>
+      <!-- Real 3D Dice Box -->
+      <div class="scene">
+        <div class="cube" id="dice-cube">
+          <div class="cube__face cube__face--1">1</div>
+          <div class="cube__face cube__face--2">2</div>
+          <div class="cube__face cube__face--3">3</div>
+          <div class="cube__face cube__face--4">4</div>
+          <div class="cube__face cube__face--5">5</div>
+          <div class="cube__face cube__face--6">6</div>
         </div>
       </div>
 
       <button id="roll-dice-btn" class="roll-btn">🎲 ROLL DICE</button>
+
+      <!-- Live Emoji Quick Chat Tray -->
+      <div class="emoji-tray">
+        <button class="emoji-btn" data-emoji="😂">😂</button>
+        <button class="emoji-btn" data-emoji="🔥">🔥</button>
+        <button class="emoji-btn" data-emoji="👏">👏</button>
+        <button class="emoji-btn" data-emoji="😎">😎</button>
+        <button class="emoji-btn" data-emoji="🎯">🎯</button>
+      </div>
 
       <div class="bottom-actions">
         <button id="back-home-btn" class="btn-action">Home Menu</button>
@@ -135,8 +182,9 @@
       </div>
     </div>
 
-    <!-- Main Ludo Board Area -->
-    <main class="board-container">
+    <!-- Ludo Board Area -->
+    <main class="board-container" id="board-container">
+      <div id="emoji-floater" class="emoji-floater"></div>
       <div id="ludo-board" class="ludo-board"></div>
     </main>
   </div>
