@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Real 3D Ludo - Online & Offline</title>
+  <title>Real Ludo Game - Ultimate Timepass</title>
   <link rel="stylesheet" href="style.css">
 
   <!-- Firebase & Cloud Sync Integration -->
@@ -34,7 +34,7 @@
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         currentUser = user;
-        document.getElementById("auth-status").textContent = "☁️ Cloud Synced (Online)";
+        document.getElementById("auth-status").textContent = "☁️ క్లౌడ్ సింక్ అయింది (Online)";
         try {
           const snapshot = await get(child(ref(db), `scores/${user.uid}/${GAME_KEY}_high`));
           if (snapshot.exists()) {
@@ -49,7 +49,7 @@
         }
       } else {
         currentUser = null;
-        document.getElementById("auth-status").textContent = "💾 Guest Mode (Local Storage)";
+        document.getElementById("auth-status").textContent = "💾 లోకల్ స్టోరేజ్ మోడ్ (Offline)";
       }
     });
 
@@ -70,56 +70,56 @@
 </head>
 <body>
   <div class="game-wrapper">
-    <!-- కంట్రోల్ ప్యానెల్ సైడ్‌బార్ -->
+    <!-- సైడ్‌బార్ కంట్రోల్ ప్యానెల్ -->
     <div class="sidebar">
-      <div class="brand-title">🎲 REAL LUDO 3D</div>
-      <div id="auth-status" class="auth-badge">Checking connection...</div>
+      <div class="brand-title">🎲 PRO LUDO 3D</div>
+      <div id="auth-status" class="auth-badge">కనెక్షన్ తనిఖీ చేయబడుతోంది...</div>
 
       <div class="control-group">
-        <label>Game Mode</label>
+        <label>గేమ్ మోడ్ (Game Mode)</label>
         <select id="game-mode-select">
-          <option value="bot">Vs Smart Bot</option>
-          <option value="local">Pass & Play (1v1 / 4P)</option>
-          <option value="online">Online Multiplayer (Room Code)</option>
+          <option value="bot">స్మార్ట్ బాట్‌తో ఆడండి (Vs Bot)</option>
+          <option value="local">ఫ్రెండ్స్‌తో కలిసి ఆడండి (Pass & Play)</option>
+          <option value="online">ఆన్‌లైన్ రూమ్ కోడ్ (Online)</option>
         </select>
       </div>
 
-      <!-- ఆన్‌లైన్ రూమ్ కోడ్ ప్యానెల్ -->
+      <!-- ఆన్‌లైన్ రూమ్ కోడ్ బాక్స్ -->
       <div id="online-lobby" class="online-lobby hidden">
         <div class="room-code-display" id="room-code-label">ROOM: ------</div>
-        <input type="text" id="room-input-code" placeholder="Enter 6-digit Code" maxlength="6">
+        <input type="text" id="room-input-code" placeholder="6 అంకెల కోడ్ ఎంటర్ చేయండి" maxlength="6">
         <div class="room-btn-row">
-          <button id="create-room-btn" class="btn-sm">Create Room</button>
-          <button id="join-room-btn" class="btn-sm">Join Room</button>
+          <button id="create-room-btn" class="btn-sm">రూమ్ సృష్టించు</button>
+          <button id="join-room-btn" class="btn-sm">జాయిన్ అవ్వು</button>
         </div>
       </div>
 
       <div class="turn-display">
         <div id="turn-indicator" class="turn-badge red">RED'S TURN</div>
-        <div id="score-tracker" class="score-text">Score: 0</div>
+        <div id="score-tracker" class="score-text">స్కోర్: 0</div>
       </div>
 
-      <!-- క్లియర్ 3D డైస్ బాక్స్ -->
+      <!-- స్పష్టమైన క్లియర్ 3D డైస్ -->
       <div class="dice-viewport">
         <div class="dice-3d" id="dice-3d">
-          <div class="dice-face face-1"><span>•</span></div>
-          <div class="dice-face face-2"><span>• •</span></div>
-          <div class="dice-face face-3"><span>• • •</span></div>
-          <div class="dice-face face-4"><span>• •<br>• •</span></div>
-          <div class="dice-face face-5"><span>• •<br> • <br>• •</span></div>
-          <div class="dice-face face-6"><span>•••<br>•••</span></div>
+          <div class="dice-face face-front">1</div>
+          <div class="dice-face face-back">6</div>
+          <div class="dice-face face-right">3</div>
+          <div class="dice-face face-left">4</div>
+          <div class="dice-face face-top">5</div>
+          <div class="dice-face face-bottom">2</div>
         </div>
       </div>
 
-      <button id="roll-dice-btn" class="roll-btn">ROLL DICE</button>
+      <button id="roll-dice-btn" class="roll-btn">డైస్ రోల్ చేయండి (ROLL)</button>
 
       <div class="bottom-actions">
-        <button id="restart-btn" class="btn-action">New Game</button>
-        <button id="sound-toggle-btn" class="btn-action">🔊 Sound: ON</button>
+        <button id="restart-btn" class="btn-action">కొత్త గేమ్</button>
+        <button id="sound-toggle-btn" class="btn-action">🔊 సౌండ్: ఆన్</button>
       </div>
     </div>
 
-    <!-- లూడో బోర్డ్ మెయిన్ ఏరియా -->
+    <!-- లూడో బోర్డ్ ఏరియా -->
     <div class="board-container">
       <div id="ludo-board" class="ludo-board"></div>
     </div>
