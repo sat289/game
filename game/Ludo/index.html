@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="te">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pro 3D Ludo King - Custom Mode Selection</title>
+  <title>Pro 3D Ludo King - Ultimate Edition</title>
   <link rel="stylesheet" href="style.css">
 
-  <!-- Firebase Integration -->
+  <!-- Firebase & Cloud Sync Integration -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
@@ -26,7 +26,7 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app);
-    const GAME_KEY = "pro_ludo_custom_mode";
+    const GAME_KEY = "pro_ludo_fixed_v9";
 
     let currentUser = null;
     let currentHighScore = parseInt(localStorage.getItem(`${GAME_KEY}_hi`) || "0", 10);
@@ -70,24 +70,12 @@
   </script>
 </head>
 <body>
-  <!-- Home Screen with Mode Selection -->
+  <!-- Home Screen / Entrance Page -->
   <div id="home-screen" class="home-screen">
     <div class="home-card">
       <div class="game-badge">INDIA'S NO. 1 LUDO</div>
       <h1 class="glow-title">PRO LUDO 3D KING</h1>
-      <p class="sub-text">Select your preferred player mode and jump into the ultimate board battle!</p>
-      
-      <!-- Player Mode Selector on Home Page -->
-      <div class="home-mode-select">
-        <label for="select-player-mode">Choose Match Mode:</label>
-        <select id="select-player-mode">
-          <option value="1v1">1 vs 1 (Red vs Yellow)</option>
-          <option value="2v2">2 vs 2 (Team Battle: Red/Yellow vs Green/Blue)</option>
-          <option value="1v3">1 vs 3 (Solo vs 3 Bots)</option>
-          <option value="4player">4 Players Free-For-All</option>
-        </select>
-      </div>
-
+      <p class="sub-text">Smooth token hopping, real 3D dice rolls, and live room multiplayer!</p>
       <div class="home-buttons">
         <button id="main-start-btn" class="glow-btn">🎮 START GAME</button>
       </div>
@@ -96,13 +84,12 @@
 
   <!-- Main Game Screen -->
   <div id="game-screen" class="game-wrapper hidden">
-    <!-- Sidebar Control Panel -->
     <div class="sidebar">
       <div class="brand-title">👑 LUDO KING PRO</div>
       <div id="auth-status" class="auth-badge">Connecting...</div>
 
       <div class="control-group">
-        <label>Connection Mode</label>
+        <label>Game Mode</label>
         <select id="game-mode-select">
           <option value="bot">Play vs Smart Bot</option>
           <option value="local">Pass & Play (Offline)</option>
@@ -110,7 +97,6 @@
         </select>
       </div>
 
-      <!-- Online Room Code Box -->
       <div id="online-lobby" class="online-lobby hidden">
         <div class="room-code-display" id="room-code-label">ROOM: ------</div>
         <input type="text" id="room-input-code" placeholder="Enter 6-Digit Code" maxlength="6">
@@ -139,7 +125,6 @@
 
       <button id="roll-dice-btn" class="roll-btn">🎲 ROLL DICE</button>
 
-      <!-- Emoji Quick Chat -->
       <div class="emoji-tray">
         <button class="emoji-btn" data-emoji="😂">😂</button>
         <button class="emoji-btn" data-emoji="🔥">🔥</button>
