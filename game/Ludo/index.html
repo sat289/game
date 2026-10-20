@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="te">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pro Ludo Ultimate - 1v1, 2v2, 3v3</title>
+  <title>Real 3D Ludo - Online & Offline</title>
   <link rel="stylesheet" href="style.css">
-  
-  <!-- Firebase & Auto Cloud Sync Integration -->
+
+  <!-- Firebase & Cloud Sync Integration -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-    import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js";
+    import { getDatabase, ref, set, get, child, onValue } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBzLchy5M2fLne4c7Ghw1KNN8wVrlZdd8M",
@@ -26,7 +26,7 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app);
-    const GAME_KEY = "ludo_ultimate";
+    const GAME_KEY = "real_ludo_game";
 
     let currentUser = null;
     let currentHighScore = parseInt(localStorage.getItem(`${GAME_KEY}_hi`) || "0", 10);
@@ -34,7 +34,7 @@
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         currentUser = user;
-        document.getElementById("login-status").textContent = "Cloud Sync: Active (Online)";
+        document.getElementById("auth-status").textContent = "☁️ Cloud Synced (Online)";
         try {
           const snapshot = await get(child(ref(db), `scores/${user.uid}/${GAME_KEY}_high`));
           if (snapshot.exists()) {
@@ -49,7 +49,7 @@
         }
       } else {
         currentUser = null;
-        document.getElementById("login-status").textContent = "Guest Mode (Local Storage)";
+        document.getElementById("auth-status").textContent = "💾 Guest Mode (Local Storage)";
       }
     });
 
@@ -64,53 +64,65 @@
         }
       }
     };
+
+    window.LudoFirebase = { db, ref, set, get, onValue };
   </script>
 </head>
 <body>
-  <div class="app-container">
-    <!-- కంట్రోల్ ప్యానెల్ (Sidebar) -->
-    <aside class="control-panel">
-      <h2>ULTIMATE LUDO</h2>
-      <div id="login-status" class="status-pill">Loading Auth...</div>
+  <div class="game-wrapper">
+    <!-- కంట్రోల్ ప్యానెల్ సైడ్‌బార్ -->
+    <div class="sidebar">
+      <div class="brand-title">🎲 REAL LUDO 3D</div>
+      <div id="auth-status" class="auth-badge">Checking connection...</div>
 
-      <div class="setting-group">
-        <label>Game Mode / Players</label>
-        <select id="match-mode">
-          <option value="1v1">1 vs 1 (Red vs Yellow)</option>
-          <option value="2v2">2 vs 2 (Team Battle)</option>
-          <option value="3v3">3 vs 3 (Multiplayer)</option>
+      <div class="control-group">
+        <label>Game Mode</label>
+        <select id="game-mode-select">
           <option value="bot">Vs Smart Bot</option>
+          <option value="local">Pass & Play (1v1 / 4P)</option>
+          <option value="online">Online Multiplayer (Room Code)</option>
         </select>
       </div>
 
-      <div class="turn-box">
-        <div id="turn-badge" class="turn-indicator red">RED'S TURN</div>
-        <div id="step-counter" class="step-counter">Steps Moved: 0</div>
-      </div>
-
-      <!-- 3D క్లియర్ డైస్ (3D Dice UI) -->
-      <div class="dice-container">
-        <div class="dice-cube" id="dice-cube">
-          <div class="face front">1</div>
-          <div class="face back">6</div>
-          <div class="face right">3</div>
-          <div class="face left">4</div>
-          <div class="face top">5</div>
-          <div class="face bottom">2</div>
+      <!-- ఆన్‌లైన్ రూమ్ కోడ్ ప్యానెల్ -->
+      <div id="online-lobby" class="online-lobby hidden">
+        <div class="room-code-display" id="room-code-label">ROOM: ------</div>
+        <input type="text" id="room-input-code" placeholder="Enter 6-digit Code" maxlength="6">
+        <div class="room-btn-row">
+          <button id="create-room-btn" class="btn-sm">Create Room</button>
+          <button id="join-room-btn" class="btn-sm">Join Room</button>
         </div>
       </div>
-      <button id="roll-dice-btn" class="primary-btn">🎲 ROLL DICE</button>
 
-      <div class="footer-buttons">
-        <button id="new-game-btn" class="secondary-btn">New Match</button>
-        <button id="sound-toggle-btn" class="secondary-btn">🔊 Sound: ON</button>
+      <div class="turn-display">
+        <div id="turn-indicator" class="turn-badge red">RED'S TURN</div>
+        <div id="score-tracker" class="score-text">Score: 0</div>
       </div>
-    </aside>
 
-    <!-- లూడో బోర్డ్ (Main Board) -->
-    <main class="board-wrapper">
+      <!-- క్లియర్ 3D డైస్ బాక్స్ -->
+      <div class="dice-viewport">
+        <div class="dice-3d" id="dice-3d">
+          <div class="dice-face face-1"><span>•</span></div>
+          <div class="dice-face face-2"><span>• •</span></div>
+          <div class="dice-face face-3"><span>• • •</span></div>
+          <div class="dice-face face-4"><span>• •<br>• •</span></div>
+          <div class="dice-face face-5"><span>• •<br> • <br>• •</span></div>
+          <div class="dice-face face-6"><span>•••<br>•••</span></div>
+        </div>
+      </div>
+
+      <button id="roll-dice-btn" class="roll-btn">ROLL DICE</button>
+
+      <div class="bottom-actions">
+        <button id="restart-btn" class="btn-action">New Game</button>
+        <button id="sound-toggle-btn" class="btn-action">🔊 Sound: ON</button>
+      </div>
+    </div>
+
+    <!-- లూడో బోర్డ్ మెయిన్ ఏరియా -->
+    <div class="board-container">
       <div id="ludo-board" class="ludo-board"></div>
-    </main>
+    </div>
   </div>
 
   <script type="module" src="game.js"></script>
