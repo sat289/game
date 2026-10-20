@@ -1,4 +1,4 @@
-// ఆడియో సౌండ్ ఎఫెక్ట్స్ ఇంప్రూవ్‌మెంట్
+// ఆడియో సౌండ్ ఎఫెక్ట్స్
 class SoundFX {
   constructor() {
     this.ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -61,7 +61,7 @@ const BASE_POSITIONS = {
   blue:   [[10.5, 1.5], [10.5, 3.5], [12.5, 1.5], [12.5, 3.5]]
 };
 
-const STORAGE_KEY = 'REAL_LUDO_STATE_V4';
+const STORAGE_KEY = 'REAL_LUDO_STATE_FINAL';
 
 let state = {
   mode: 'bot',
@@ -105,7 +105,6 @@ function init() {
     saveState();
   });
 
-  // Online Room Code Handlers
   document.getElementById('create-room-btn').addEventListener('click', () => {
     if (!window.LudoFirebase) { alert("Firebase not loaded!"); return; }
     const code = Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -121,7 +120,7 @@ function init() {
       roomCodeLabel.textContent = `ROOM: ${code}`;
       connectToRoom(code);
     } else {
-      alert("Please enter a valid 6-digit room code.");
+      alert("దయచేసి సరైన 6 అంకెల కోడ్ ఎంటర్ చేయండి.");
     }
   });
 
@@ -146,7 +145,7 @@ function connectToRoom(code) {
   });
 
   set(activeRoomRef, state);
-  alert(`Successfully joined/created Room: ${code}`);
+  alert(`రూమ్ సక్సెస్ ఫుల్ గా కనెక్ట్ అయింది: ${code}`);
 }
 
 function syncState() {
@@ -256,7 +255,7 @@ function handleRollDice() {
         setTimeout(() => runBotTurn(player, movable), 500);
       }
     }
-  }, 800);
+  }, 750);
 }
 
 function animate3DDice(roll) {
@@ -268,8 +267,8 @@ function animate3DDice(roll) {
     5: 'rotateX(-90deg)',
     6: 'rotateX(90deg)'
   };
-  dice3D.style.transform = `translateZ(-40px) rotateX(720deg) rotateY(720deg) ${rotations[roll]}`;
-  dice3D.querySelector('.dice-face.front').textContent = roll;
+  dice3D.style.transform = `translateZ(-35px) rotateX(720deg) rotateY(720deg) ${rotations[roll]}`;
+  dice3D.querySelector('.dice-face.face-front').textContent = roll;
 }
 
 async function moveToken(color, tokenIdx) {
