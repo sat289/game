@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="te">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pro 3D Ludo - Online & Offline</title>
+  <title>Ludo King India - Pro 3D Edition</title>
   <link rel="stylesheet" href="style.css">
 
   <!-- Firebase & Cloud Sync Integration -->
@@ -26,7 +26,7 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app);
-    const GAME_KEY = "real_ludo_game";
+    const GAME_KEY = "number_one_ludo_india";
 
     let currentUser = null;
     let currentHighScore = parseInt(localStorage.getItem(`${GAME_KEY}_hi`) || "0", 10);
@@ -34,7 +34,8 @@
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         currentUser = user;
-        document.getElementById("auth-status").textContent = "☁️ క్లౌడ్ సింక్ అయింది (Online)";
+        const statusEl = document.getElementById("auth-status");
+        if(statusEl) statusEl.textContent = "Cloud Synced (Online)";
         try {
           const snapshot = await get(child(ref(db), `scores/${user.uid}/${GAME_KEY}_high`));
           if (snapshot.exists()) {
@@ -49,7 +50,8 @@
         }
       } else {
         currentUser = null;
-        document.getElementById("auth-status").textContent = "💾 లోకల్ స్టోరేజ్ మోడ్ (Offline)";
+        const statusEl = document.getElementById("auth-status");
+        if(statusEl) statusEl.textContent = "Guest Mode (Local Storage)";
       }
     });
 
@@ -69,11 +71,12 @@
   </script>
 </head>
 <body>
-  <!-- అట్రాక్టివ్ హోమ్ స్క్రీన్ (Entrance Animation Screen) -->
+  <!-- Ultra Attractive Entrance Home Screen -->
   <div id="home-screen" class="home-screen">
     <div class="home-card">
-      <div class="glow-title">🎲 PRO LUDO 3D 🎲</div>
-      <p class="sub-text">స్నేహితులతో ఆన్‌లైన్‌లో లేదా బాట్‌తో ఆడి ఎంజాయ్ చేయండి!</p>
+      <div class="game-badge">INDIA'S NO. 1 LUDO</div>
+      <h1 class="glow-title">PRO LUDO 3D KING</h1>
+      <p class="sub-text">Experience smooth token hopping, real 3D dice rolls, and play live with friends via Room Code!</p>
       
       <div class="home-buttons">
         <button id="main-start-btn" class="glow-btn">🎮 START GAME</button>
@@ -81,38 +84,38 @@
     </div>
   </div>
 
-  <!-- మెయిన్ గేమ్ స్క్రీన్ (ఆట మొదలయ్యాక కనిపించేది) -->
+  <!-- Main Game Screen Container -->
   <div id="game-screen" class="game-wrapper hidden">
-    <!-- సైడ్‌బార్ కంట్రోల్ ప్యానెల్ -->
+    <!-- Sidebar Control Panel -->
     <div class="sidebar">
-      <div class="brand-title">🎲 LUDO ARENA</div>
-      <div id="auth-status" class="auth-badge">కనెక్షన్ తనిఖీ చేయబడుతోంది...</div>
+      <div class="brand-title">👑 LUDO KING PRO</div>
+      <div id="auth-status" class="auth-badge">Connecting...</div>
 
       <div class="control-group">
-        <label>గేమ్ మోడ్ (Game Mode)</label>
+        <label>Game Mode</label>
         <select id="game-mode-select">
-          <option value="bot">స్మార్ట్ బాట్‌తో ఆడండి (Vs Bot)</option>
-          <option value="local">ఫ్రెండ్స్‌తో (Pass & Play)</option>
-          <option value="online">ఆన్‌లైన్ రూమ్ కోడ్ (Multiplayer)</option>
+          <option value="bot">Play vs Smart Bot</option>
+          <option value="local">Pass & Play (Offline)</option>
+          <option value="online">Online Room (Multiplayer)</option>
         </select>
       </div>
 
-      <!-- ఆన్‌లైన్ రూమ్ కోడ్ ప్యానెల్ -->
+      <!-- Online Room Code Box -->
       <div id="online-lobby" class="online-lobby hidden">
         <div class="room-code-display" id="room-code-label">ROOM: ------</div>
-        <input type="text" id="room-input-code" placeholder="6 అంకెల కోడ్ ఎంటర్ చేయండి" maxlength="6">
+        <input type="text" id="room-input-code" placeholder="Enter 6-Digit Code" maxlength="6">
         <div class="room-btn-row">
-          <button id="create-room-btn" class="btn-sm">రూమ్ సృష్టించు</button>
-          <button id="join-room-btn" class="btn-sm">జాయిన్ అవ్వు</button>
+          <button id="create-room-btn" class="btn-sm">Create Room</button>
+          <button id="join-room-btn" class="btn-sm">Join Room</button>
         </div>
       </div>
 
       <div class="turn-display">
         <div id="turn-indicator" class="turn-badge red">RED'S TURN</div>
-        <div id="score-tracker" class="score-text">స్కోర్: 0</div>
+        <div id="score-tracker" class="score-text">Score: 0</div>
       </div>
 
-      <!-- స్పష్టమైన క్లియర్ 3D డైస్ -->
+      <!-- Crystal Clear 3D Dice Box -->
       <div class="dice-viewport">
         <div class="dice-3d" id="dice-3d">
           <div class="dice-face face-front">1</div>
@@ -124,18 +127,18 @@
         </div>
       </div>
 
-      <button id="roll-dice-btn" class="roll-btn">డైస్ రోల్ చేయండి (ROLL)</button>
+      <button id="roll-dice-btn" class="roll-btn">🎲 ROLL DICE</button>
 
       <div class="bottom-actions">
-        <button id="back-home-btn" class="btn-action">హోమ్ పేజీ</button>
-        <button id="sound-toggle-btn" class="btn-action">🔊 సౌండ్: ఆన్</button>
+        <button id="back-home-btn" class="btn-action">Home Menu</button>
+        <button id="sound-toggle-btn" class="btn-action">🔊 Sound: ON</button>
       </div>
     </div>
 
-    <!-- లూడో బోర్డ్ ఏరియా -->
-    <div class="board-container">
+    <!-- Main Ludo Board Area -->
+    <main class="board-container">
       <div id="ludo-board" class="ludo-board"></div>
-    </div>
+    </main>
   </div>
 
   <script type="module" src="game.js"></script>
