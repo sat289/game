@@ -75,7 +75,6 @@
             justify-content: center;
         }
 
-        /* Card Pull Wrapper: starts off-screen right */
         #cardPullWrapper {
             position: relative;
             width: 100%;
@@ -83,6 +82,7 @@
             transform: translateX(120vw);
             transition: transform 2.4s cubic-bezier(0.22, 0.61, 0.36, 1);
             z-index: 20;
+            perspective: 1400px;
         }
 
         #cardPullWrapper.pulled-in {
@@ -117,7 +117,6 @@
             }
         }
 
-        /* Speech Bubble above Character */
         #speechBubble {
             position: absolute;
             top: -54px;
@@ -155,7 +154,6 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.22);
         }
 
-        /* Character Limb Origins */
         .rig-head { transform-origin: 70px 72px; animation: headBob 2.5s ease-in-out infinite; }
         .rig-arm-l { transform-origin: 48px 112px; transition: transform 0.3s ease; }
         .rig-arm-r { transform-origin: 92px 112px; transition: transform 0.3s ease; }
@@ -169,7 +167,6 @@
             50% { transform: translateY(2px) rotate(1.5deg); }
         }
 
-        /* STATE 1: Waving Hello */
         .actor-wave .rig-arm-l {
             animation: waveHand 0.55s ease-in-out infinite alternate;
         }
@@ -178,152 +175,151 @@
             100% { transform: rotate(155deg); }
         }
 
-        /* STATE 2: Walking Right to grab the form */
-        .actor-walk-right .rig-svg {
-            transform: scaleX(1);
-        }
-        .actor-walk-right .rig-backpack {
-            opacity: 1;
-            transform: translateX(-12px);
-        }
-        .actor-walk-right .rig-body {
-            transform: rotate(6deg);
-        }
-        .actor-walk-right .rig-leg-l {
-            animation: walkLegA 0.38s ease-in-out infinite alternate;
-        }
-        .actor-walk-right .rig-leg-r {
-            animation: walkLegB 0.38s ease-in-out infinite alternate;
-        }
-        .actor-walk-right .rig-arm-l {
-            animation: walkArmB 0.38s ease-in-out infinite alternate;
-        }
-        .actor-walk-right .rig-arm-r {
-            animation: walkArmA 0.38s ease-in-out infinite alternate;
-        }
+        .actor-walk-right .rig-svg { transform: scaleX(1); }
+        .actor-walk-right .rig-backpack { opacity: 1; transform: translateX(-12px); }
+        .actor-walk-right .rig-body { transform: rotate(6deg); }
+        .actor-walk-right .rig-leg-l { animation: walkLegA 0.38s ease-in-out infinite alternate; }
+        .actor-walk-right .rig-leg-r { animation: walkLegB 0.38s ease-in-out infinite alternate; }
+        .actor-walk-right .rig-arm-l { animation: walkArmB 0.38s ease-in-out infinite alternate; }
+        .actor-walk-right .rig-arm-r { animation: walkArmA 0.38s ease-in-out infinite alternate; }
 
-        /* STATE 3: Pulling the Login Form backward from Right to Center */
-        .actor-pull .rig-body {
-            transform: rotate(-16deg) translateY(3px);
-        }
-        .actor-pull .rig-head {
-            transform: rotate(10deg);
-        }
-        .actor-pull .rig-backpack {
-            opacity: 1;
-            transform: translateX(-14px) rotate(-12deg);
-        }
+        .actor-pull .rig-body { transform: rotate(-16deg) translateY(3px); }
+        .actor-pull .rig-head { transform: rotate(10deg); }
+        .actor-pull .rig-backpack { opacity: 1; transform: translateX(-14px) rotate(-12deg); }
         .actor-pull .rig-arm-r,
-        .actor-pull .rig-arm-l {
-            transform: rotate(-75deg) translateX(8px);
-        }
-        .actor-pull .rig-leg-l {
-            animation: walkLegA 0.45s ease-in-out infinite alternate;
-        }
-        .actor-pull .rig-leg-r {
-            animation: walkLegB 0.45s ease-in-out infinite alternate;
-        }
+        .actor-pull .rig-arm-l { transform: rotate(-75deg) translateX(8px); }
+        .actor-pull .rig-leg-l { animation: walkLegA 0.45s ease-in-out infinite alternate; }
+        .actor-pull .rig-leg-r { animation: walkLegB 0.45s ease-in-out infinite alternate; }
 
-        @keyframes walkLegA {
-            0% { transform: rotate(-28deg); }
-            100% { transform: rotate(28deg); }
-        }
-        @keyframes walkLegB {
-            0% { transform: rotate(28deg); }
-            100% { transform: rotate(-28deg); }
-        }
-        @keyframes walkArmA {
-            0% { transform: rotate(-24deg); }
-            100% { transform: rotate(24deg); }
-        }
-        @keyframes walkArmB {
-            0% { transform: rotate(24deg); }
-            100% { transform: rotate(-24deg); }
-        }
+        @keyframes walkLegA { 0% { transform: rotate(-28deg); } 100% { transform: rotate(28deg); } }
+        @keyframes walkLegB { 0% { transform: rotate(28deg); } 100% { transform: rotate(-28deg); } }
+        @keyframes walkArmA { 0% { transform: rotate(-24deg); } 100% { transform: rotate(24deg); } }
+        @keyframes walkArmB { 0% { transform: rotate(24deg); } 100% { transform: rotate(-24deg); } }
 
         /* =====================================================
-           LOGIN FORM V7 - 3D FLIP CARD & GLASSMORPHISM (VIDEO 2)
+           LOGIN FORM V7 - GLASS MORPH & TRIANGLE TRANSITION
            ===================================================== */
-        .flip-scene {
-            perspective: 1500px;
-            width: 100%;
-        }
-
-        .flip-card-inner {
+        .v7-morph-card {
             position: relative;
             width: 100%;
-            transform-style: preserve-3d;
-            transition: transform 0.85s cubic-bezier(0.4, 0.0, 0.2, 1);
-        }
-
-        .flip-card-inner.is-flipped {
-            transform: rotateY(180deg);
-        }
-
-        .card-face {
-            width: 100%;
-            backface-visibility: hidden;
-            -webkit-backface-visibility: hidden;
             border-radius: 28px;
-            background: rgba(14, 16, 22, 0.84);
-            backdrop-filter: blur(22px);
-            -webkit-backdrop-filter: blur(22px);
-            border: 1.5px solid rgba(255, 255, 255, 0.12);
+            background: rgba(18, 20, 26, 0.78);
+            backdrop-filter: blur(26px);
+            -webkit-backdrop-filter: blur(26px);
+            border: 1.5px solid rgba(255, 255, 255, 0.14);
             box-shadow: 
-                0 25px 60px -15px rgba(0, 0, 0, 0.85),
-                0 0 28px rgba(59, 130, 246, 0.18),
-                inset 0 1px 1px rgba(255, 255, 255, 0.15);
-            padding: 28px 26px;
-            position: relative;
+                0 28px 65px -12px rgba(0, 0, 0, 0.92),
+                0 0 36px rgba(245, 158, 11, 0.12),
+                inset 0 1px 2px rgba(255, 255, 255, 0.2);
             overflow: hidden;
-            transition: border-color 0.4s ease, box-shadow 0.4s ease;
+            transform-style: preserve-3d;
+            transition: 
+                height 0.58s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.58s cubic-bezier(0.22, 1, 0.36, 1),
+                border-color 0.45s ease,
+                box-shadow 0.45s ease;
         }
 
-        .card-face.v7-gold-border {
-            border-color: rgba(245, 158, 11, 0.32);
+        /* Mid-Transition 3D Perspective Morph Pulse (Exactly like Video 2 @ 00:02) */
+        .v7-morph-card.is-morphing {
+            transform: scale(0.95) rotateX(9deg) rotateY(-7deg);
+            border-color: rgba(255, 255, 255, 0.28);
             box-shadow: 
-                0 25px 60px -15px rgba(0, 0, 0, 0.9),
-                0 0 32px rgba(245, 158, 11, 0.14),
-                inset 0 1px 1px rgba(255, 255, 255, 0.18);
-        }
-
-        /* Back Face (Sign Up) */
-        .card-face-back {
-            position: absolute;
-            top: 0;
-            left: 0;
-            transform: rotateY(180deg);
+                0 35px 75px -10px rgba(0, 0, 0, 0.95),
+                0 0 48px rgba(245, 158, 11, 0.24),
+                inset 0 0 28px rgba(255, 255, 255, 0.12);
         }
 
         /* V7 Frosted Glass Geometric Triangles inside the Card */
-        .glass-triangle-1 {
+        .v7-triangle {
             position: absolute;
-            top: 18px;
-            left: 18px;
-            width: 65px;
-            height: 65px;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.01));
-            clip-path: polygon(0 0, 100% 0, 0 100%);
-            border-top-left-radius: 14px;
             pointer-events: none;
+            z-index: 1;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.11) 0%, rgba(255, 255, 255, 0.02) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
+            transition: all 0.62s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
-        .glass-triangle-2 {
-            position: absolute;
-            bottom: 18px;
-            right: 18px;
-            width: 75px;
-            height: 75px;
-            background: linear-gradient(315deg, rgba(245, 158, 11, 0.09), rgba(255, 255, 255, 0.01));
+        /* Top-Left Rounded Right-Triangle */
+        .v7-triangle-tl {
+            top: 38px;
+            left: 38px;
+            width: 118px;
+            height: 118px;
+            border-radius: 18px;
+            clip-path: polygon(0 0, 100% 0, 0 100%);
+            opacity: 0.32;
+            transform: translate(0, 0) rotate(0deg) scale(0.92);
+        }
+
+        /* Bottom-Right Rounded Right-Triangle */
+        .v7-triangle-br {
+            bottom: 38px;
+            right: 38px;
+            width: 128px;
+            height: 128px;
+            border-radius: 18px;
             clip-path: polygon(100% 0, 100% 100%, 0 100%);
-            border-bottom-right-radius: 14px;
+            background: linear-gradient(315deg, rgba(255, 255, 255, 0.11) 0%, rgba(245, 158, 11, 0.05) 100%);
+            opacity: 0.32;
+            transform: translate(0, 0) rotate(0deg) scale(0.92);
+        }
+
+        /* When morphing between forms, the 2 glass triangles glow & shift toward center (Video 2 @ 00:02) */
+        .v7-morph-card.is-morphing .v7-triangle-tl {
+            opacity: 0.88;
+            transform: translate(18px, 24px) rotate(-6deg) scale(1.08);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .v7-morph-card.is-morphing .v7-triangle-br {
+            opacity: 0.88;
+            transform: translate(-18px, -24px) rotate(-6deg) scale(1.08);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Subtle alternate rest positions when on Sign Up vs Sign In */
+        .v7-morph-card.mode-signup .v7-triangle-tl {
+            transform: translate(8px, 10px) rotate(4deg) scale(0.96);
+        }
+        .v7-morph-card.mode-signup .v7-triangle-br {
+            transform: translate(-8px, -10px) rotate(4deg) scale(0.96);
+        }
+
+        /* Form Panels Inside Morph Card */
+        .v7-form-panel {
+            position: relative;
+            z-index: 10;
+            padding: 28px 26px;
+            transition: 
+                opacity 0.24s ease,
+                transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+                filter 0.24s ease;
+        }
+
+        .v7-form-panel.panel-hidden {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
             pointer-events: none;
+            transform: scale(0.92) translateY(10px);
+            filter: blur(8px);
+        }
+
+        .v7-form-panel.panel-active {
+            position: relative;
+            opacity: 1;
+            pointer-events: auto;
+            transform: scale(1) translateY(0);
+            filter: blur(0px);
         }
 
         /* V7 Inputs & Buttons */
         .v7-input {
             width: 100%;
-            background: rgba(9, 11, 16, 0.9);
+            background: rgba(9, 11, 16, 0.88);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 12px;
             padding: 11px 14px;
@@ -398,9 +394,13 @@
         </a>
 
         <div class="flex items-center gap-2">
-            <button onclick="replayBoyAnimation()" class="text-xs font-bold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-400/30 px-3 py-2 rounded-xl transition flex items-center gap-1.5">
-                <i class="fa-solid fa-rotate-right"></i>
-                <span>Replay Intro</span>
+            <button id="sfxToggleBtn" onclick="toggleSFX()" class="text-xs font-bold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-400/30 px-3 py-2 rounded-xl transition flex items-center gap-1.5" title="Toggle Whoosh & UI Sound Effects">
+                <i id="sfxIcon" class="fa-solid fa-volume-high"></i>
+                <span id="sfxText">SFX ON</span>
+            </button>
+            <button onclick="replayBoyAnimation()" class="text-xs font-bold text-slate-200 bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-2 rounded-xl transition flex items-center gap-1.5">
+                <i class="fa-solid fa-rotate-right text-amber-400"></i>
+                <span class="hidden sm:inline">Replay Intro</span>
             </button>
             <button id="skipIntroBtn" onclick="skipBoyAnimation()" class="text-xs font-semibold text-slate-400 hover:text-white bg-white/5 px-3 py-2 rounded-xl border border-white/10 transition">
                 Skip
@@ -408,40 +408,35 @@
         </div>
     </header>
 
-    <!-- 2. MAIN INTERACTIVE STAGE (CHARACTER + 3D FLIP LOGIN FORM) -->
+    <!-- 2. MAIN INTERACTIVE STAGE (CHARACTER + V7 MORPH LOGIN FORM) -->
     <main class="stage-container mx-auto my-auto py-4">
 
         <!-- 3D BOY CHARACTER ACTOR (FROM VIDEO 1) -->
         <div id="boyActor" class="actor-wave">
             <div id="speechBubble" class="show">Wait a second! Let me grab the login form for you! 👋</div>
 
-            <!-- 3D-Shaded Articulated SVG Boy (Red Beanie, Glasses, Grey Hoodie, Blue Backpack) -->
+            <!-- 3D-Shaded Articulated SVG Boy -->
             <svg class="rig-svg w-full h-full drop-shadow-[0_14px_18px_rgba(0,0,0,0.75)]" viewBox="0 0 140 260" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <defs>
-                    <!-- 3D Skin Gradient -->
                     <radialGradient id="skin3D" cx="45%" cy="38%" r="58%">
                         <stop offset="0%" stop-color="#ffdfc4"/>
                         <stop offset="65%" stop-color="#e8b48f"/>
                         <stop offset="100%" stop-color="#b87d56"/>
                     </radialGradient>
-                    <!-- 3D Red Beanie Gradient -->
                     <linearGradient id="beanie3D" x1="0" y1="0" x2="1" y2="1">
                         <stop offset="0%" stop-color="#ef4444"/>
                         <stop offset="55%" stop-color="#dc2626"/>
                         <stop offset="100%" stop-color="#7f1d1d"/>
                     </linearGradient>
-                    <!-- 3D Grey Hoodie Gradient -->
                     <linearGradient id="hoodie3D" x1="0" y1="0" x2="1" y2="1">
                         <stop offset="0%" stop-color="#9ca3af"/>
                         <stop offset="50%" stop-color="#6b7280"/>
                         <stop offset="100%" stop-color="#374151"/>
                     </linearGradient>
-                    <!-- 3D Blue Backpack Gradient -->
                     <linearGradient id="pack3D" x1="0" y1="0" x2="1" y2="1">
                         <stop offset="0%" stop-color="#3b82f6"/>
                         <stop offset="100%" stop-color="#1e3a8a"/>
                     </linearGradient>
-                    <!-- 3D Dark Jeans Gradient -->
                     <linearGradient id="pants3D" x1="0" y1="0" x2="1" y2="0">
                         <stop offset="0%" stop-color="#334155"/>
                         <stop offset="50%" stop-color="#1e293b"/>
@@ -449,10 +444,9 @@
                     </linearGradient>
                 </defs>
 
-                <!-- Floor Shadow -->
                 <ellipse cx="70" cy="248" rx="34" ry="7" fill="rgba(0,0,0,0.55)"/>
 
-                <!-- Blue Backpack (Visible when turning/walking/pulling) -->
+                <!-- Blue Backpack -->
                 <g class="rig-backpack">
                     <rect x="30" y="102" width="32" height="58" rx="12" fill="url(#pack3D)" stroke="#1d4ed8" stroke-width="1.5"/>
                     <rect x="33" y="122" width="22" height="28" rx="7" fill="#1d4ed8"/>
@@ -462,9 +456,7 @@
                 <!-- Left Leg -->
                 <g class="rig-leg-l">
                     <rect x="50" y="172" width="16" height="58" rx="8" fill="url(#pants3D)"/>
-                    <!-- Knee Patch -->
                     <rect x="52" y="196" width="12" height="10" rx="3" fill="#0f172a" opacity="0.6"/>
-                    <!-- Left Sneaker -->
                     <path d="M44 234 C44 226, 68 226, 68 234 L68 242 L42 242 Z" fill="#111827"/>
                     <rect x="42" y="240" width="27" height="4.5" rx="2" fill="#f8fafc"/>
                 </g>
@@ -472,33 +464,23 @@
                 <!-- Right Leg -->
                 <g class="rig-leg-r">
                     <rect x="74" y="172" width="16" height="58" rx="8" fill="url(#pants3D)"/>
-                    <!-- Knee Patch -->
                     <rect x="76" y="196" width="12" height="10" rx="3" fill="#0f172a" opacity="0.6"/>
-                    <!-- Right Sneaker -->
                     <path d="M72 234 C72 226, 96 226, 96 234 L98 242 L72 242 Z" fill="#111827"/>
                     <rect x="72" y="240" width="27" height="4.5" rx="2" fill="#f8fafc"/>
                 </g>
 
                 <!-- Torso / Grey Hoodie -->
                 <g class="rig-body">
-                    <!-- Left Arm (Waving / Swinging) -->
                     <g class="rig-arm-l">
                         <rect x="33" y="106" width="15" height="54" rx="7.5" fill="url(#hoodie3D)"/>
                         <circle cx="40.5" cy="163" r="7" fill="url(#skin3D)"/>
                     </g>
-
-                    <!-- Hoodie Body -->
                     <rect x="45" y="100" width="50" height="78" rx="16" fill="url(#hoodie3D)"/>
-                    <!-- Hoodie Pocket -->
                     <path d="M52 148 L88 148 L91 168 L49 168 Z" fill="#4b5563" opacity="0.7"/>
-                    <!-- Backpack Straps on Chest -->
                     <path d="M51 102 C48 122, 48 145, 51 162" stroke="#1e3a8a" stroke-width="4" stroke-linecap="round"/>
                     <path d="M89 102 C92 122, 92 145, 89 162" stroke="#1e3a8a" stroke-width="4" stroke-linecap="round"/>
-                    <!-- Hoodie Drawstrings -->
                     <line x1="65" y1="104" x2="65" y2="124" stroke="#e5e7eb" stroke-width="2" stroke-linecap="round"/>
                     <line x1="75" y1="104" x2="75" y2="124" stroke="#e5e7eb" stroke-width="2" stroke-linecap="round"/>
-
-                    <!-- Right Arm -->
                     <g class="rig-arm-r">
                         <rect x="92" y="106" width="15" height="54" rx="7.5" fill="url(#hoodie3D)"/>
                         <circle cx="99.5" cy="163" r="7" fill="url(#skin3D)"/>
@@ -507,42 +489,26 @@
 
                 <!-- 3D Head, Glasses & Red Beanie -->
                 <g class="rig-head">
-                    <!-- Neck -->
                     <rect x="63" y="88" width="14" height="16" rx="5" fill="#c68b63"/>
-                    <!-- Ears -->
                     <circle cx="42" cy="64" r="6" fill="url(#skin3D)"/>
                     <circle cx="98" cy="64" r="6" fill="url(#skin3D)"/>
-                    <!-- Face -->
                     <rect x="44" y="34" width="52" height="58" rx="25" fill="url(#skin3D)"/>
-                    
-                    <!-- Dark Hair Fringe under Beanie -->
                     <path d="M45 50 Q70 43 95 50 L96 42 L44 42 Z" fill="#1f1610"/>
-
-                    <!-- Eyebrows -->
                     <path d="M53 54 Q59 51 64 54" stroke="#2c1d12" stroke-width="2.5" stroke-linecap="round"/>
                     <path d="M76 54 Q81 51 87 54" stroke="#2c1d12" stroke-width="2.5" stroke-linecap="round"/>
-
-                    <!-- Eyes -->
                     <circle cx="58.5" cy="62" r="3.8" fill="#1e1b18"/>
                     <circle cx="59.8" cy="60.8" r="1.3" fill="#ffffff"/>
                     <circle cx="81.5" cy="62" r="3.8" fill="#1e1b18"/>
                     <circle cx="82.8" cy="60.8" r="1.3" fill="#ffffff"/>
-
-                    <!-- Black-Rimmed Glasses -->
                     <rect x="49" y="55" width="19" height="14" rx="4" fill="rgba(255,255,255,0.12)" stroke="#111827" stroke-width="2.6"/>
                     <rect x="72" y="55" width="19" height="14" rx="4" fill="rgba(255,255,255,0.12)" stroke="#111827" stroke-width="2.6"/>
                     <line x1="68" y1="61" x2="72" y2="61" stroke="#111827" stroke-width="2.6"/>
                     <line x1="44" y1="60" x2="49" y2="60" stroke="#111827" stroke-width="2.2"/>
                     <line x1="91" y1="60" x2="96" y2="60" stroke="#111827" stroke-width="2.2"/>
-
-                    <!-- Nose & Friendly Smile -->
                     <path d="M70 64 L68 71 L72 71" stroke="#b87d56" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     <path d="M63 79 Q70 84 77 79" stroke="#7c4728" stroke-width="2.4" stroke-linecap="round"/>
-
-                    <!-- Red Ribbed Beanie -->
                     <path d="M43 44 C43 18, 97 18, 97 44 Z" fill="url(#beanie3D)"/>
                     <rect x="41" y="38" width="58" height="12" rx="6" fill="url(#beanie3D)" stroke="#991b1b" stroke-width="1"/>
-                    <!-- Beanie Rib Lines -->
                     <line x1="52" y1="39" x2="52" y2="49" stroke="#7f1d1d" stroke-width="1.5"/>
                     <line x1="61" y1="39" x2="61" y2="49" stroke="#7f1d1d" stroke-width="1.5"/>
                     <line x1="70" y1="39" x2="70" y2="49" stroke="#7f1d1d" stroke-width="1.5"/>
@@ -555,39 +521,34 @@
         <!-- CARD WRAPPER PULLED IN BY BOY CHARACTER -->
         <div id="cardPullWrapper">
 
-            <!-- LOGGED OUT: 3D FLIP LOGIN / SIGN UP CARD (VIDEO 2 V7) -->
-            <div id="loggedOutState" class="flip-scene">
-                <div id="flipCardInner" class="flip-card-inner">
+            <!-- LOGGED OUT: V7 GLASS MORPH CARD (VIDEO 2) -->
+            <div id="loggedOutState">
+                <div id="v7MorphCard" class="v7-morph-card">
+                    
+                    <!-- Floating Frosted Glass Triangles (Revealed prominently during switch) -->
+                    <div class="v7-triangle v7-triangle-tl"></div>
+                    <div class="v7-triangle v7-triangle-br"></div>
 
                     <!-- ==========================================
-                         FRONT FACE: WELCOME BACK (SIGN IN)
+                         PANEL 1: WELCOME BACK (SIGN IN)
                          ========================================== -->
-                    <div id="signInFace" class="card-face v7-gold-border">
-                        <div class="glass-triangle-1"></div>
-                        <div class="glass-triangle-2"></div>
-
-                        <div class="text-center mb-6 relative z-10">
+                    <div id="signInPanel" class="v7-form-panel panel-active">
+                        <div class="text-center mb-6">
                             <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
                                 Welcome <span class="text-amber-400">Back</span>
                             </h1>
                             <p class="text-xs text-slate-400 mt-1">Enter your credentials to access your account</p>
                         </div>
 
-                        <form id="signInForm" class="space-y-4 relative z-10">
+                        <form id="signInForm" class="space-y-4">
                             <div>
-                                <label class="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
-                                    <i class="fa-solid fa-envelope text-amber-400 text-[11px]"></i>
-                                    <span>Email Address</span>
-                                </label>
-                                <input type="text" id="signInEmail" required placeholder="developer@codexr.com"
+                                <label class="block text-xs font-semibold text-slate-300 mb-1.5">Email Address</label>
+                                <input type="text" id="signInEmail" required placeholder="name@domain.com"
                                        class="v7-input">
                             </div>
 
                             <div>
-                                <label class="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
-                                    <i class="fa-solid fa-lock text-amber-400 text-[11px]"></i>
-                                    <span>Password</span>
-                                </label>
+                                <label class="block text-xs font-semibold text-slate-300 mb-1.5">Password</label>
                                 <div class="relative">
                                     <input type="password" id="signInPassword" required placeholder="••••••••" minlength="6"
                                            class="v7-input pr-10">
@@ -615,29 +576,29 @@
                         </form>
 
                         <!-- Divider -->
-                        <div class="flex items-center my-5 relative z-10">
+                        <div class="flex items-center my-5">
                             <div class="flex-1 border-t border-white/10"></div>
                             <span class="px-3 text-[10px] text-slate-500 font-bold uppercase tracking-wider">Or continue with</span>
                             <div class="flex-1 border-t border-white/10"></div>
                         </div>
 
                         <!-- Social Login Row -->
-                        <div class="grid grid-cols-2 gap-3 relative z-10">
+                        <div class="grid grid-cols-2 gap-3">
                             <button type="button" class="google-login-trigger v7-social-btn">
                                 <i class="fa-brands fa-google text-white"></i>
                                 <span>Google</span>
                             </button>
-                            <button type="button" class="google-login-trigger v7-social-btn" title="Continue with Google / Apple">
+                            <button type="button" class="google-login-trigger v7-social-btn">
                                 <i class="fa-brands fa-apple text-white text-base"></i>
                                 <span>Apple</span>
                             </button>
                         </div>
 
-                        <!-- Flip to Sign Up -->
-                        <div class="text-center mt-5 relative z-10">
+                        <!-- Morph to Sign Up -->
+                        <div class="text-center mt-5">
                             <p class="text-xs text-slate-400">
                                 Don't have an account?
-                                <button type="button" onclick="flipCard(true)" class="text-amber-400 hover:underline font-bold ml-1">
+                                <button type="button" onclick="switchV7Form(true)" class="text-amber-400 hover:underline font-bold ml-1">
                                     Sign up
                                 </button>
                             </p>
@@ -645,20 +606,17 @@
                     </div>
 
                     <!-- ==========================================
-                         BACK FACE: CREATE ACCOUNT (SIGN UP)
+                         PANEL 2: CREATE ACCOUNT (SIGN UP)
                          ========================================== -->
-                    <div id="signUpFace" class="card-face card-face-back v7-gold-border">
-                        <div class="glass-triangle-1"></div>
-                        <div class="glass-triangle-2"></div>
-
-                        <div class="text-center mb-5 relative z-10">
+                    <div id="signUpPanel" class="v7-form-panel panel-hidden">
+                        <div class="text-center mb-5">
                             <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
                                 Create <span class="text-amber-400">Account</span>
                             </h2>
                             <p class="text-xs text-slate-400 mt-1">Join us today and unlock your personal workspace</p>
                         </div>
 
-                        <form id="signUpForm" class="space-y-3.5 relative z-10">
+                        <form id="signUpForm" class="space-y-3.5">
                             <div>
                                 <label class="block text-xs font-semibold text-slate-300 mb-1">Full Name</label>
                                 <input type="text" id="signUpName" required placeholder="John Doe"
@@ -707,14 +665,14 @@
                         </form>
 
                         <!-- Divider -->
-                        <div class="flex items-center my-4 relative z-10">
+                        <div class="flex items-center my-4">
                             <div class="flex-1 border-t border-white/10"></div>
                             <span class="px-3 text-[10px] text-slate-500 font-bold uppercase tracking-wider">Or register with</span>
                             <div class="flex-1 border-t border-white/10"></div>
                         </div>
 
                         <!-- Social Login Row -->
-                        <div class="grid grid-cols-2 gap-3 relative z-10">
+                        <div class="grid grid-cols-2 gap-3">
                             <button type="button" class="google-login-trigger v7-social-btn">
                                 <i class="fa-brands fa-google text-white"></i>
                                 <span>Google</span>
@@ -725,11 +683,11 @@
                             </button>
                         </div>
 
-                        <!-- Flip back to Sign In -->
-                        <div class="text-center mt-4 relative z-10">
+                        <!-- Morph back to Sign In -->
+                        <div class="text-center mt-4">
                             <p class="text-xs text-slate-400">
                                 Already have an account?
-                                <button type="button" onclick="flipCard(false)" class="text-amber-400 hover:underline font-bold ml-1">
+                                <button type="button" onclick="switchV7Form(false)" class="text-amber-400 hover:underline font-bold ml-1">
                                     Sign in
                                 </button>
                             </p>
@@ -751,11 +709,11 @@
             </div>
 
             <!-- LOGGED IN PROFILE BOX -->
-            <div id="loggedInState" class="hidden card-face v7-gold-border text-center space-y-5">
-                <div class="glass-triangle-1"></div>
-                <div class="glass-triangle-2"></div>
+            <div id="loggedInState" class="hidden v7-morph-card p-7 text-center space-y-5">
+                <div class="v7-triangle v7-triangle-tl"></div>
+                <div class="v7-triangle v7-triangle-br"></div>
 
-                <div class="relative w-24 h-24 mx-auto flex items-center justify-center">
+                <div class="relative w-24 h-24 mx-auto flex items-center justify-center z-10">
                     <img id="userAvatarImg" src="" alt="Avatar" class="hidden w-full h-full rounded-full border-4 border-amber-400 object-cover shadow-xl">
                     <div id="userLetterBadge" class="w-full h-full rounded-full border-4 border-amber-400 bg-gradient-to-tr from-amber-500 to-yellow-600 flex items-center justify-center text-3xl font-extrabold text-slate-950 uppercase shadow-xl">
                         U
@@ -763,7 +721,7 @@
                     <span class="absolute bottom-0.5 right-0.5 w-5 h-5 bg-emerald-500 rounded-full border-2 border-slate-950"></span>
                 </div>
 
-                <div>
+                <div class="relative z-10">
                     <span class="text-[10px] font-extrabold uppercase tracking-widest text-amber-400 bg-amber-500/10 border border-amber-400/30 px-2.5 py-0.5 rounded-full">Verified Player</span>
                     <h3 id="userName" class="text-xl font-extrabold text-white mt-2"></h3>
                     <p id="userEmail" class="text-xs text-slate-400 mt-0.5"></p>
@@ -789,47 +747,228 @@
     </footer>
 
     <!-- =========================================================
-         3D CHARACTER TIMELINE & CARD FLIP CONTROLLER
+         WEB AUDIO API V7 CINEMATIC WHOOSH & UI SOUND ENGINE
          ========================================================= -->
     <script>
+        let audioCtx = null;
+        let sfxEnabled = localStorage.getItem('st_login_sfx') !== 'off';
+
+        function getAudioCtx() {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) {
+                    audioCtx = new AudioContextClass();
+                }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        const V7SoundFX = {
+            // Exact V7 Transition Sound: Filtered Air Whoosh + Deep Sub-Bass Thump + Glass Lock Click
+            morphWhoosh(toSignUp = true) {
+                if (!sfxEnabled) return;
+                const ctx = getAudioCtx();
+                if (!ctx) return;
+
+                const now = ctx.currentTime;
+                const duration = 0.48;
+
+                // 1. Filtered White-Noise Air Whoosh
+                const bufferSize = Math.floor(ctx.sampleRate * duration);
+                const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+                const output = noiseBuffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    output[i] = Math.random() * 2 - 1;
+                }
+
+                const whiteNoise = ctx.createBufferSource();
+                whiteNoise.buffer = noiseBuffer;
+
+                const filter = ctx.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.Q.setValueAtTime(1.8, now);
+                // Sweep frequency up on Sign Up, down on Sign In
+                filter.frequency.setValueAtTime(toSignUp ? 220 : 320, now);
+                filter.frequency.exponentialRampToValueAtTime(toSignUp ? 1450 : 1150, now + 0.21);
+                filter.frequency.exponentialRampToValueAtTime(180, now + duration);
+
+                const noiseGain = ctx.createGain();
+                noiseGain.gain.setValueAtTime(0.001, now);
+                noiseGain.gain.linearRampToValueAtTime(0.28, now + 0.16);
+                noiseGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+                whiteNoise.connect(filter);
+                filter.connect(noiseGain);
+                noiseGain.connect(ctx.destination);
+
+                whiteNoise.start(now);
+                whiteNoise.stop(now + duration);
+
+                // 2. Deep Cinematic Sub-Bass Thud
+                const subOsc = ctx.createOscillator();
+                const subGain = ctx.createGain();
+                subOsc.type = 'sine';
+                subOsc.frequency.setValueAtTime(135, now);
+                subOsc.frequency.exponentialRampToValueAtTime(36, now + 0.34);
+
+                subGain.gain.setValueAtTime(0.32, now);
+                subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.36);
+
+                subOsc.connect(subGain);
+                subGain.connect(ctx.destination);
+                subOsc.start(now);
+                subOsc.stop(now + 0.37);
+
+                // 3. Subtle Glass Shimmer Lock when the new form settles in
+                const lockOsc = ctx.createOscillator();
+                const lockGain = ctx.createGain();
+                lockOsc.type = 'triangle';
+                lockOsc.frequency.setValueAtTime(toSignUp ? 680 : 540, now + 0.24);
+                lockOsc.frequency.exponentialRampToValueAtTime(toSignUp ? 1020 : 780, now + 0.34);
+
+                lockGain.gain.setValueAtTime(0.001, now + 0.24);
+                lockGain.gain.linearRampToValueAtTime(0.06, now + 0.26);
+                lockGain.gain.exponentialRampToValueAtTime(0.001, now + 0.36);
+
+                lockOsc.connect(lockGain);
+                lockGain.connect(ctx.destination);
+                lockOsc.start(now + 0.24);
+                lockOsc.stop(now + 0.37);
+            },
+
+            // Crisp tactile click for eye toggle & buttons
+            click() {
+                if (!sfxEnabled) return;
+                const ctx = getAudioCtx();
+                if (!ctx) return;
+                const now = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(620, now);
+                osc.frequency.exponentialRampToValueAtTime(920, now + 0.045);
+                gain.gain.setValueAtTime(0.07, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.055);
+            },
+
+            // Success Chime when logged in
+            success() {
+                if (!sfxEnabled) return;
+                const ctx = getAudioCtx();
+                if (!ctx) return;
+                const now = ctx.currentTime;
+                [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    const start = now + i * 0.055;
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, start);
+                    gain.gain.setValueAtTime(0.11, start);
+                    gain.gain.exponentialRampToValueAtTime(0.001, start + 0.16);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(start);
+                    osc.stop(start + 0.17);
+                });
+            }
+        };
+
+        function updateSFXUI() {
+            const icon = document.getElementById('sfxIcon');
+            const text = document.getElementById('sfxText');
+            const btn = document.getElementById('sfxToggleBtn');
+            if (sfxEnabled) {
+                icon.className = 'fa-solid fa-volume-high';
+                text.textContent = 'SFX ON';
+                btn.classList.remove('opacity-60');
+            } else {
+                icon.className = 'fa-solid fa-volume-xmark';
+                text.textContent = 'SFX OFF';
+                btn.classList.add('opacity-60');
+            }
+        }
+
+        function toggleSFX() {
+            sfxEnabled = !sfxEnabled;
+            localStorage.setItem('st_login_sfx', sfxEnabled ? 'on' : 'off');
+            updateSFXUI();
+            if (sfxEnabled) V7SoundFX.click();
+        }
+
+        /* =========================================================
+           V7 GLASS MORPH TRANSITION & 3D BOY TIMELINE
+           ========================================================= */
         const boyActor = document.getElementById('boyActor');
         const speechBubble = document.getElementById('speechBubble');
         const cardPullWrapper = document.getElementById('cardPullWrapper');
-        const flipCardInner = document.getElementById('flipCardInner');
-        const signInFace = document.getElementById('signInFace');
-        const signUpFace = document.getElementById('signUpFace');
+        const v7MorphCard = document.getElementById('v7MorphCard');
+        const signInPanel = document.getElementById('signInPanel');
+        const signUpPanel = document.getElementById('signUpPanel');
         const skipIntroBtn = document.getElementById('skipIntroBtn');
 
         let animTimers = [];
+        let isSwitchingForm = false;
 
         function clearAnimTimers() {
             animTimers.forEach(t => clearTimeout(t));
             animTimers = [];
         }
 
-        function updateCardHeight() {
-            const isFlipped = flipCardInner.classList.contains('is-flipped');
-            const activeFace = isFlipped ? signUpFace : signInFace;
-            if (activeFace && activeFace.offsetHeight > 0) {
-                flipCardInner.style.height = activeFace.offsetHeight + 'px';
-            }
-        }
+        // Exact Video 2 V7 Form Switch Animation + Whoosh SFX
+        function switchV7Form(toSignUp) {
+            if (isSwitchingForm) return;
+            isSwitchingForm = true;
 
-        // Flip between Sign In (false) and Create Account (true)
-        function flipCard(toSignUp) {
-            if (toSignUp) {
-                flipCardInner.classList.add('is-flipped');
-                speechBubble.textContent = "Creating a new account! 🚀";
-            } else {
-                flipCardInner.classList.remove('is-flipped');
-                speechBubble.textContent = "Here is your form! ✨";
-            }
+            // Play the V7 Whoosh + Sub-bass SFX immediately
+            V7SoundFX.morphWhoosh(toSignUp);
+
+            const outgoingPanel = toSignUp ? signInPanel : signUpPanel;
+            const incomingPanel = toSignUp ? signUpPanel : signInPanel;
+
+            // Lock current height so CSS can smoothly interpolate to the new height
+            const startHeight = v7MorphCard.offsetHeight;
+            v7MorphCard.style.height = startHeight + 'px';
+
+            // 1. Trigger 3D Glass Morph state & reveal floating triangles
+            v7MorphCard.classList.add('is-morphing');
+            v7MorphCard.classList.toggle('mode-signup', toSignUp);
+
+            // Fade & blur out current form
+            outgoingPanel.classList.remove('panel-active');
+            outgoingPanel.classList.add('panel-hidden');
+
+            speechBubble.textContent = toSignUp ? "Creating a new account! 🚀" : "Welcome back! ✨";
             speechBubble.classList.add('show');
-            setTimeout(updateCardHeight, 50);
+
+            // 2. Halfway through the whoosh (230ms): measure incoming panel, animate height, and fade in
+            setTimeout(() => {
+                incomingPanel.classList.remove('panel-hidden');
+                incomingPanel.classList.add('panel-active');
+
+                const targetHeight = incomingPanel.offsetHeight;
+                v7MorphCard.style.height = targetHeight + 'px';
+            }, 230);
+
+            // 3. Settle card 3D perspective & unlock height after morph completes
+            setTimeout(() => {
+                v7MorphCard.classList.remove('is-morphing');
+            }, 390);
+
+            setTimeout(() => {
+                v7MorphCard.style.height = 'auto';
+                isSwitchingForm = false;
+            }, 620);
         }
 
-        // Toggle password visibility eye icon
         function togglePassVisibility(inputId, btn) {
+            V7SoundFX.click();
             const input = document.getElementById(inputId);
             const icon = btn.querySelector('i');
             if (input.type === 'password') {
@@ -841,12 +980,10 @@
             }
         }
 
-        // Run the Video 1 Boy Pull-In Sequence
         function playBoyIntroAnimation() {
             clearAnimTimers();
             skipIntroBtn.classList.remove('hidden');
 
-            // Reset initial positions
             cardPullWrapper.classList.remove('pulled-in', 'instant-in');
             boyActor.style.transition = 'none';
             boyActor.style.left = window.innerWidth < 768 ? '6%' : '10%';
@@ -854,10 +991,9 @@
             speechBubble.textContent = 'Wait a second! Let me grab the login form for you! 👋';
             speechBubble.classList.add('show');
 
-            // Force reflow
             void boyActor.offsetWidth;
 
-            // Step 1 (1.7s): Hide bubble & walk right toward off-screen form
+            // Step 1 (1.7s): Walk right toward off-screen form
             animTimers.push(setTimeout(() => {
                 speechBubble.classList.remove('show');
                 boyActor.className = 'actor-walk-right';
@@ -865,25 +1001,26 @@
                 boyActor.style.left = window.innerWidth < 768 ? '78%' : '82%';
             }, 1700));
 
-            // Step 2 (3.6s): Grab the form edge & pull it backward into the center
+            // Step 2 (3.6s): Grab form & pull it into center
             animTimers.push(setTimeout(() => {
                 boyActor.className = 'actor-pull';
                 boyActor.style.transition = 'left 2.4s cubic-bezier(0.22, 0.61, 0.36, 1)';
                 boyActor.style.left = window.innerWidth < 768 ? '2%' : '11%';
                 cardPullWrapper.classList.add('pulled-in');
+                V7SoundFX.morphWhoosh(false);
             }, 3600));
 
-            // Step 3 (6.0s): Form is in place! Face front, wave, and show "Here is your form! ✨"
+            // Step 3 (6.0s): Wave & present form
             animTimers.push(setTimeout(() => {
                 boyActor.className = 'actor-wave';
                 speechBubble.textContent = 'Here is your form! ✨';
                 speechBubble.classList.add('show');
                 skipIntroBtn.classList.add('hidden');
-                updateCardHeight();
             }, 6050));
         }
 
         function skipBoyAnimation() {
+            V7SoundFX.click();
             clearAnimTimers();
             cardPullWrapper.classList.add('instant-in');
             boyActor.style.transition = 'none';
@@ -892,16 +1029,15 @@
             speechBubble.textContent = 'Here is your form! ✨';
             speechBubble.classList.add('show');
             skipIntroBtn.classList.add('hidden');
-            updateCardHeight();
         }
 
         function replayBoyAnimation() {
+            V7SoundFX.click();
             playBoyIntroAnimation();
         }
 
-        window.addEventListener('resize', updateCardHeight);
         window.addEventListener('DOMContentLoaded', () => {
-            updateCardHeight();
+            updateSFXUI();
             playBoyIntroAnimation();
         });
     </script>
@@ -958,6 +1094,7 @@
         }
 
         function showSuccess(msg) {
+            V7SoundFX.success();
             authError.classList.add('hidden');
             authSuccessMsg.textContent = msg;
             authSuccess.classList.remove('hidden');
@@ -972,7 +1109,7 @@
         function getFriendlyErrorMessage(errCode) {
             switch (errCode) {
                 case 'auth/email-already-in-use':
-                    return 'This email is already registered! Please flip to "Sign In" or use "Google".';
+                    return 'This email is already registered! Please switch to "Sign in" or use "Google".';
                 case 'auth/invalid-credential':
                 case 'auth/wrong-password':
                     return 'Incorrect password or no account found with these credentials.';
@@ -1035,6 +1172,7 @@
         // 1. SIGN IN FORM SUBMIT
         document.getElementById('signInForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            V7SoundFX.click();
             clearAlerts();
             const spinner = document.getElementById('signInSpinner');
             const btn = document.getElementById('signInSubmitBtn');
@@ -1059,6 +1197,7 @@
         // 2. CREATE ACCOUNT (SIGN UP) FORM SUBMIT
         document.getElementById('signUpForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            V7SoundFX.click();
             clearAlerts();
 
             const displayName = document.getElementById('signUpName').value.trim();
@@ -1093,6 +1232,7 @@
 
         // 3. FORGOT PASSWORD
         document.getElementById('forgotPasswordBtn').addEventListener('click', async () => {
+            V7SoundFX.click();
             clearAlerts();
             const emailInput = document.getElementById('signInEmail').value.trim();
             if (!emailInput) {
@@ -1110,6 +1250,7 @@
         // 4. GOOGLE / SOCIAL SIGN-IN BUTTONS
         document.querySelectorAll('.google-login-trigger').forEach(btn => {
             btn.addEventListener('click', async () => {
+                V7SoundFX.click();
                 clearAlerts();
                 try {
                     const result = await signInWithPopup(auth, googleProvider);
@@ -1123,6 +1264,7 @@
 
         // 5. SIGN OUT
         document.getElementById('logoutBtn').addEventListener('click', async () => {
+            V7SoundFX.morphWhoosh(false);
             await signOut(auth);
             showSuccess('Signed out successfully.');
         });
