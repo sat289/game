@@ -3,133 +3,912 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Gaming Hub</title>
+    <title>Login - ST Games</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
     <style>
+        :root {
+            --gold-primary: #f59e0b;
+            --gold-bright: #fbbf24;
+            --blue-neon: #3b82f6;
+        }
+
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #090d16 0%, #0f172a 50%, #1e1b4b 100%);
+            background-color: #050507;
+            color: #f8fafc;
+            overflow-x: hidden;
+            user-select: none;
         }
-        .brand-font { font-family: 'Fredoka', sans-serif; }
+
+        /* V7 Golden 3D Wave Background */
+        .v7-bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background: 
+                radial-gradient(ellipse at 18% 15%, rgba(245, 158, 11, 0.16) 0%, transparent 50%),
+                radial-gradient(ellipse at 82% 85%, rgba(217, 119, 6, 0.14) 0%, transparent 55%),
+                radial-gradient(circle at 50% 50%, #0d0f14 0%, #040406 100%);
+            overflow: hidden;
+        }
+
+        .gold-ribbon {
+            position: absolute;
+            width: 150%;
+            height: 360px;
+            left: -25%;
+            border-radius: 50%;
+            border: 2px solid rgba(245, 158, 11, 0.22);
+            box-shadow: 
+                0 0 50px rgba(245, 158, 11, 0.12),
+                inset 0 0 40px rgba(245, 158, 11, 0.08);
+            transform: rotate(-18deg);
+            pointer-events: none;
+            animation: ribbonFloat 12s ease-in-out infinite;
+        }
+
+        .gold-ribbon-1 { top: -110px; }
+        .gold-ribbon-2 { bottom: -140px; border-color: rgba(251, 191, 36, 0.18); animation-delay: -6s; }
+
+        @keyframes ribbonFloat {
+            0%, 100% { transform: rotate(-18deg) translateY(0px) scale(1); }
+            50% { transform: rotate(-15deg) translateY(18px) scale(1.03); }
+        }
+
+        /* =====================================================
+           STAGE & PULL-IN ANIMATION WRAPPER (VIDEO 1)
+           ===================================================== */
+        .stage-container {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 980px;
+            min-height: 620px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Card Pull Wrapper: starts off-screen right */
+        #cardPullWrapper {
+            position: relative;
+            width: 100%;
+            max-width: 440px;
+            transform: translateX(120vw);
+            transition: transform 2.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+            z-index: 20;
+        }
+
+        #cardPullWrapper.pulled-in {
+            transform: translateX(0);
+        }
+
+        #cardPullWrapper.instant-in {
+            transition: none !important;
+            transform: translateX(0) !important;
+        }
+
+        /* =====================================================
+           3D BOY CHARACTER RIG & ANIMATIONS (VIDEO 1)
+           ===================================================== */
+        #boyActor {
+            position: absolute;
+            bottom: 55px;
+            left: 8%;
+            width: 135px;
+            height: 270px;
+            z-index: 30;
+            pointer-events: none;
+            transition: left 1.8s linear, transform 0.35s ease;
+        }
+
+        @media (max-width: 768px) {
+            #boyActor {
+                width: 96px;
+                height: 195px;
+                bottom: 12px;
+                left: 4%;
+            }
+        }
+
+        /* Speech Bubble above Character */
+        #speechBubble {
+            position: absolute;
+            top: -54px;
+            left: 50%;
+            transform: translateX(-50%) scale(0.85);
+            white-space: nowrap;
+            background: rgba(17, 24, 39, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 7px 13px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 40;
+        }
+
+        #speechBubble.show {
+            opacity: 1;
+            transform: translateX(-50%) scale(1);
+        }
+
+        #speechBubble::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%) rotate(45deg);
+            width: 10px;
+            height: 10px;
+            background: rgba(17, 24, 39, 0.95);
+            border-right: 1px solid rgba(255, 255, 255, 0.22);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+        }
+
+        /* Character Limb Origins */
+        .rig-head { transform-origin: 70px 72px; animation: headBob 2.5s ease-in-out infinite; }
+        .rig-arm-l { transform-origin: 48px 112px; transition: transform 0.3s ease; }
+        .rig-arm-r { transform-origin: 92px 112px; transition: transform 0.3s ease; }
+        .rig-leg-l { transform-origin: 58px 175px; transition: transform 0.3s ease; }
+        .rig-leg-r { transform-origin: 82px 175px; transition: transform 0.3s ease; }
+        .rig-body  { transform-origin: 70px 140px; transition: transform 0.3s ease; }
+        .rig-backpack { opacity: 0.35; transition: opacity 0.3s ease, transform 0.3s ease; }
+
+        @keyframes headBob {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(2px) rotate(1.5deg); }
+        }
+
+        /* STATE 1: Waving Hello */
+        .actor-wave .rig-arm-l {
+            animation: waveHand 0.55s ease-in-out infinite alternate;
+        }
+        @keyframes waveHand {
+            0% { transform: rotate(125deg); }
+            100% { transform: rotate(155deg); }
+        }
+
+        /* STATE 2: Walking Right to grab the form */
+        .actor-walk-right .rig-svg {
+            transform: scaleX(1);
+        }
+        .actor-walk-right .rig-backpack {
+            opacity: 1;
+            transform: translateX(-12px);
+        }
+        .actor-walk-right .rig-body {
+            transform: rotate(6deg);
+        }
+        .actor-walk-right .rig-leg-l {
+            animation: walkLegA 0.38s ease-in-out infinite alternate;
+        }
+        .actor-walk-right .rig-leg-r {
+            animation: walkLegB 0.38s ease-in-out infinite alternate;
+        }
+        .actor-walk-right .rig-arm-l {
+            animation: walkArmB 0.38s ease-in-out infinite alternate;
+        }
+        .actor-walk-right .rig-arm-r {
+            animation: walkArmA 0.38s ease-in-out infinite alternate;
+        }
+
+        /* STATE 3: Pulling the Login Form backward from Right to Center */
+        .actor-pull .rig-body {
+            transform: rotate(-16deg) translateY(3px);
+        }
+        .actor-pull .rig-head {
+            transform: rotate(10deg);
+        }
+        .actor-pull .rig-backpack {
+            opacity: 1;
+            transform: translateX(-14px) rotate(-12deg);
+        }
+        .actor-pull .rig-arm-r,
+        .actor-pull .rig-arm-l {
+            transform: rotate(-75deg) translateX(8px);
+        }
+        .actor-pull .rig-leg-l {
+            animation: walkLegA 0.45s ease-in-out infinite alternate;
+        }
+        .actor-pull .rig-leg-r {
+            animation: walkLegB 0.45s ease-in-out infinite alternate;
+        }
+
+        @keyframes walkLegA {
+            0% { transform: rotate(-28deg); }
+            100% { transform: rotate(28deg); }
+        }
+        @keyframes walkLegB {
+            0% { transform: rotate(28deg); }
+            100% { transform: rotate(-28deg); }
+        }
+        @keyframes walkArmA {
+            0% { transform: rotate(-24deg); }
+            100% { transform: rotate(24deg); }
+        }
+        @keyframes walkArmB {
+            0% { transform: rotate(24deg); }
+            100% { transform: rotate(-24deg); }
+        }
+
+        /* =====================================================
+           LOGIN FORM V7 - 3D FLIP CARD & GLASSMORPHISM (VIDEO 2)
+           ===================================================== */
+        .flip-scene {
+            perspective: 1500px;
+            width: 100%;
+        }
+
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.85s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+
+        .flip-card-inner.is-flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            width: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            border-radius: 28px;
+            background: rgba(14, 16, 22, 0.84);
+            backdrop-filter: blur(22px);
+            -webkit-backdrop-filter: blur(22px);
+            border: 1.5px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 
+                0 25px 60px -15px rgba(0, 0, 0, 0.85),
+                0 0 28px rgba(59, 130, 246, 0.18),
+                inset 0 1px 1px rgba(255, 255, 255, 0.15);
+            padding: 28px 26px;
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.4s ease, box-shadow 0.4s ease;
+        }
+
+        .card-face.v7-gold-border {
+            border-color: rgba(245, 158, 11, 0.32);
+            box-shadow: 
+                0 25px 60px -15px rgba(0, 0, 0, 0.9),
+                0 0 32px rgba(245, 158, 11, 0.14),
+                inset 0 1px 1px rgba(255, 255, 255, 0.18);
+        }
+
+        /* Back Face (Sign Up) */
+        .card-face-back {
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform: rotateY(180deg);
+        }
+
+        /* V7 Frosted Glass Geometric Triangles inside the Card */
+        .glass-triangle-1 {
+            position: absolute;
+            top: 18px;
+            left: 18px;
+            width: 65px;
+            height: 65px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.01));
+            clip-path: polygon(0 0, 100% 0, 0 100%);
+            border-top-left-radius: 14px;
+            pointer-events: none;
+        }
+
+        .glass-triangle-2 {
+            position: absolute;
+            bottom: 18px;
+            right: 18px;
+            width: 75px;
+            height: 75px;
+            background: linear-gradient(315deg, rgba(245, 158, 11, 0.09), rgba(255, 255, 255, 0.01));
+            clip-path: polygon(100% 0, 100% 100%, 0 100%);
+            border-bottom-right-radius: 14px;
+            pointer-events: none;
+        }
+
+        /* V7 Inputs & Buttons */
+        .v7-input {
+            width: 100%;
+            background: rgba(9, 11, 16, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 11px 14px;
+            font-size: 13px;
+            color: #ffffff;
+            transition: all 0.2s ease;
+        }
+
+        .v7-input:focus {
+            outline: none;
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18);
+        }
+
+        .v7-btn-gold {
+            background: linear-gradient(90deg, #f59e0b 0%, #eab308 50%, #f59e0b 100%);
+            background-size: 200% auto;
+            color: #090d16;
+            font-weight: 800;
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 13.5px;
+            box-shadow: 0 8px 22px -4px rgba(245, 158, 11, 0.5);
+            transition: all 0.25s ease;
+        }
+
+        .v7-btn-gold:hover {
+            background-position: right center;
+            transform: translateY(-1px);
+            box-shadow: 0 12px 26px -4px rgba(245, 158, 11, 0.65);
+        }
+
+        .v7-btn-gold:active {
+            transform: scale(0.98);
+        }
+
+        .v7-social-btn {
+            background: rgba(24, 27, 36, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .v7-social-btn:hover {
+            background: rgba(38, 43, 56, 0.95);
+            border-color: rgba(245, 158, 11, 0.35);
+            transform: translateY(-1px);
+        }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4 text-white">
+<body class="min-h-screen flex flex-col justify-between p-3 sm:p-6">
 
-    <div class="max-w-md w-full bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl relative">
-        
-        <!-- Back Button -->
-        <a href="index.html" class="inline-flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-white mb-6 transition">
-            <i class="fa-solid fa-arrow-left"></i> Back to Games
-        </a>
-
-        <!-- Header -->
-        <div class="text-center mb-6">
-            <div class="brand-font text-3xl font-bold tracking-tight text-white mb-1">
-                <span>gaming</span><span class="bg-[#002b5b] text-[#5be7c4] px-2 py-0.5 rounded-xl ml-1 text-2xl border border-cyan-400/30">HUB</span>
-            </div>
-            <h2 id="authHeading" class="text-lg font-bold text-slate-200">Sign in to your account</h2>
-            <p class="text-xs text-slate-400 mt-0.5">Save game records, high scores & play multiplayer</p>
-        </div>
-
-        <!-- Logged Out Container -->
-        <div id="loggedOutState" class="space-y-4">
-            
-            <!-- Google Sign-in Button -->
-            <button id="googleLoginBtn" class="w-full bg-white hover:bg-slate-100 text-slate-900 font-bold py-3 px-4 rounded-2xl flex items-center justify-center gap-3 shadow-lg active:scale-95 transition-all">
-                <svg class="w-5 h-5" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-                </svg>
-                <span class="text-sm">Continue with Google</span>
-            </button>
-
-            <div class="flex items-center my-3">
-                <div class="flex-1 border-t border-slate-700"></div>
-                <span class="px-3 text-xs text-slate-500 font-semibold uppercase">Or with Email / Username</span>
-                <div class="flex-1 border-t border-slate-700"></div>
-            </div>
-
-            <!-- Email & Password Form -->
-            <form id="emailAuthForm" class="space-y-3">
-                <div id="usernameField" class="hidden">
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">Your Name</label>
-                    <input type="text" id="authDisplayName" placeholder="Enter your display name"
-                           class="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-cyan-400">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">Email / Username</label>
-                    <input type="text" id="authEmail" required placeholder="username@gmail.com"
-                           class="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-cyan-400">
-                </div>
-
-                <div>
-                    <div class="flex justify-between items-center mb-1">
-                        <label class="block text-xs font-semibold text-slate-300">Password</label>
-                        <button type="button" id="forgotPasswordBtn" class="text-[11px] text-cyan-400 hover:underline">Forgot?</button>
-                    </div>
-                    <input type="password" id="authPassword" required placeholder="••••••••" minlength="6"
-                           class="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-cyan-400">
-                </div>
-
-                <button type="submit" id="submitAuthBtn" class="w-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold py-2.5 rounded-xl text-sm transition-all shadow-md active:scale-95 flex items-center justify-center gap-2">
-                    <span id="submitBtnText">Sign In</span>
-                    <i id="submitSpinner" class="fa-solid fa-circle-notch fa-spin hidden text-sm"></i>
-                </button>
-            </form>
-
-            <!-- Toggle Sign In / Sign Up -->
-            <div class="text-center pt-2">
-                <button type="button" id="toggleModeBtn" class="text-xs text-cyan-400 hover:underline font-semibold">
-                    Don't have an account? Sign Up
-                </button>
-            </div>
-
-            <!-- Clear Error Alert -->
-            <div id="authError" class="hidden text-xs text-rose-300 bg-rose-950/60 p-3 rounded-xl border border-rose-800/80 flex items-start gap-2.5">
-                <i class="fa-solid fa-triangle-exclamation text-rose-400 mt-0.5"></i>
-                <div id="authErrorMsg"></div>
-            </div>
-
-            <!-- Clear Success Alert -->
-            <div id="authSuccess" class="hidden text-xs text-emerald-300 bg-emerald-950/60 p-3 rounded-xl border border-emerald-800/80 flex items-start gap-2.5">
-                <i class="fa-solid fa-circle-check text-emerald-400 mt-0.5"></i>
-                <div id="authSuccessMsg"></div>
-            </div>
-        </div>
-
-        <!-- Logged In Profile Box -->
-        <div id="loggedInState" class="hidden text-center space-y-4">
-            <div class="relative w-20 h-20 mx-auto flex items-center justify-center">
-                <img id="userAvatarImg" src="" alt="Avatar" class="hidden w-full h-full rounded-full border-4 border-cyan-400 object-cover shadow-lg">
-                <div id="userLetterBadge" class="w-full h-full rounded-full border-4 border-cyan-400 bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-3xl font-extrabold text-white uppercase shadow-lg">
-                    U
-                </div>
-                <span class="absolute bottom-0 right-0 w-5 h-5 bg-emerald-500 rounded-full border-2 border-slate-900"></span>
-            </div>
-            
-            <div>
-                <h3 id="userName" class="text-lg font-bold text-white"></h3>
-                <p id="userEmail" class="text-xs text-slate-400"></p>
-            </div>
-
-            <div class="pt-4 flex gap-3">
-                <a href="index.html" class="flex-1 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 transition">
-                    <i class="fa-solid fa-play"></i> Play Games
-                </a>
-                <button id="logoutBtn" class="flex-1 bg-slate-800 hover:bg-slate-700 text-rose-400 border border-rose-500/30 font-bold py-2.5 rounded-xl text-xs transition">
-                    Sign Out
-                </button>
-            </div>
-        </div>
-
+    <!-- 0. V7 GOLDEN 3D WAVES BACKGROUND -->
+    <div class="v7-bg" aria-hidden="true">
+        <div class="gold-ribbon gold-ribbon-1"></div>
+        <div class="gold-ribbon gold-ribbon-2"></div>
     </div>
 
-    <!-- Firebase Script -->
+    <!-- 1. TOP NAVIGATION BAR -->
+    <header class="relative z-30 max-w-5xl w-full mx-auto flex items-center justify-between py-2 px-2">
+        <a href="index.html" class="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-300 hover:text-amber-400 bg-white/5 hover:bg-white/10 border border-white/10 px-3.5 py-2 rounded-xl transition">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Back to ST Games</span>
+        </a>
+
+        <div class="flex items-center gap-2">
+            <button onclick="replayBoyAnimation()" class="text-xs font-bold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-400/30 px-3 py-2 rounded-xl transition flex items-center gap-1.5">
+                <i class="fa-solid fa-rotate-right"></i>
+                <span>Replay Intro</span>
+            </button>
+            <button id="skipIntroBtn" onclick="skipBoyAnimation()" class="text-xs font-semibold text-slate-400 hover:text-white bg-white/5 px-3 py-2 rounded-xl border border-white/10 transition">
+                Skip
+            </button>
+        </div>
+    </header>
+
+    <!-- 2. MAIN INTERACTIVE STAGE (CHARACTER + 3D FLIP LOGIN FORM) -->
+    <main class="stage-container mx-auto my-auto py-4">
+
+        <!-- 3D BOY CHARACTER ACTOR (FROM VIDEO 1) -->
+        <div id="boyActor" class="actor-wave">
+            <div id="speechBubble" class="show">Wait a second! Let me grab the login form for you! 👋</div>
+
+            <!-- 3D-Shaded Articulated SVG Boy (Red Beanie, Glasses, Grey Hoodie, Blue Backpack) -->
+            <svg class="rig-svg w-full h-full drop-shadow-[0_14px_18px_rgba(0,0,0,0.75)]" viewBox="0 0 140 260" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <!-- 3D Skin Gradient -->
+                    <radialGradient id="skin3D" cx="45%" cy="38%" r="58%">
+                        <stop offset="0%" stop-color="#ffdfc4"/>
+                        <stop offset="65%" stop-color="#e8b48f"/>
+                        <stop offset="100%" stop-color="#b87d56"/>
+                    </radialGradient>
+                    <!-- 3D Red Beanie Gradient -->
+                    <linearGradient id="beanie3D" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="#ef4444"/>
+                        <stop offset="55%" stop-color="#dc2626"/>
+                        <stop offset="100%" stop-color="#7f1d1d"/>
+                    </linearGradient>
+                    <!-- 3D Grey Hoodie Gradient -->
+                    <linearGradient id="hoodie3D" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="#9ca3af"/>
+                        <stop offset="50%" stop-color="#6b7280"/>
+                        <stop offset="100%" stop-color="#374151"/>
+                    </linearGradient>
+                    <!-- 3D Blue Backpack Gradient -->
+                    <linearGradient id="pack3D" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="#3b82f6"/>
+                        <stop offset="100%" stop-color="#1e3a8a"/>
+                    </linearGradient>
+                    <!-- 3D Dark Jeans Gradient -->
+                    <linearGradient id="pants3D" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stop-color="#334155"/>
+                        <stop offset="50%" stop-color="#1e293b"/>
+                        <stop offset="100%" stop-color="#0f172a"/>
+                    </linearGradient>
+                </defs>
+
+                <!-- Floor Shadow -->
+                <ellipse cx="70" cy="248" rx="34" ry="7" fill="rgba(0,0,0,0.55)"/>
+
+                <!-- Blue Backpack (Visible when turning/walking/pulling) -->
+                <g class="rig-backpack">
+                    <rect x="30" y="102" width="32" height="58" rx="12" fill="url(#pack3D)" stroke="#1d4ed8" stroke-width="1.5"/>
+                    <rect x="33" y="122" width="22" height="28" rx="7" fill="#1d4ed8"/>
+                    <line x1="38" y1="126" x2="50" y2="126" stroke="#93c5fd" stroke-width="2" stroke-linecap="round"/>
+                </g>
+
+                <!-- Left Leg -->
+                <g class="rig-leg-l">
+                    <rect x="50" y="172" width="16" height="58" rx="8" fill="url(#pants3D)"/>
+                    <!-- Knee Patch -->
+                    <rect x="52" y="196" width="12" height="10" rx="3" fill="#0f172a" opacity="0.6"/>
+                    <!-- Left Sneaker -->
+                    <path d="M44 234 C44 226, 68 226, 68 234 L68 242 L42 242 Z" fill="#111827"/>
+                    <rect x="42" y="240" width="27" height="4.5" rx="2" fill="#f8fafc"/>
+                </g>
+
+                <!-- Right Leg -->
+                <g class="rig-leg-r">
+                    <rect x="74" y="172" width="16" height="58" rx="8" fill="url(#pants3D)"/>
+                    <!-- Knee Patch -->
+                    <rect x="76" y="196" width="12" height="10" rx="3" fill="#0f172a" opacity="0.6"/>
+                    <!-- Right Sneaker -->
+                    <path d="M72 234 C72 226, 96 226, 96 234 L98 242 L72 242 Z" fill="#111827"/>
+                    <rect x="72" y="240" width="27" height="4.5" rx="2" fill="#f8fafc"/>
+                </g>
+
+                <!-- Torso / Grey Hoodie -->
+                <g class="rig-body">
+                    <!-- Left Arm (Waving / Swinging) -->
+                    <g class="rig-arm-l">
+                        <rect x="33" y="106" width="15" height="54" rx="7.5" fill="url(#hoodie3D)"/>
+                        <circle cx="40.5" cy="163" r="7" fill="url(#skin3D)"/>
+                    </g>
+
+                    <!-- Hoodie Body -->
+                    <rect x="45" y="100" width="50" height="78" rx="16" fill="url(#hoodie3D)"/>
+                    <!-- Hoodie Pocket -->
+                    <path d="M52 148 L88 148 L91 168 L49 168 Z" fill="#4b5563" opacity="0.7"/>
+                    <!-- Backpack Straps on Chest -->
+                    <path d="M51 102 C48 122, 48 145, 51 162" stroke="#1e3a8a" stroke-width="4" stroke-linecap="round"/>
+                    <path d="M89 102 C92 122, 92 145, 89 162" stroke="#1e3a8a" stroke-width="4" stroke-linecap="round"/>
+                    <!-- Hoodie Drawstrings -->
+                    <line x1="65" y1="104" x2="65" y2="124" stroke="#e5e7eb" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="75" y1="104" x2="75" y2="124" stroke="#e5e7eb" stroke-width="2" stroke-linecap="round"/>
+
+                    <!-- Right Arm -->
+                    <g class="rig-arm-r">
+                        <rect x="92" y="106" width="15" height="54" rx="7.5" fill="url(#hoodie3D)"/>
+                        <circle cx="99.5" cy="163" r="7" fill="url(#skin3D)"/>
+                    </g>
+                </g>
+
+                <!-- 3D Head, Glasses & Red Beanie -->
+                <g class="rig-head">
+                    <!-- Neck -->
+                    <rect x="63" y="88" width="14" height="16" rx="5" fill="#c68b63"/>
+                    <!-- Ears -->
+                    <circle cx="42" cy="64" r="6" fill="url(#skin3D)"/>
+                    <circle cx="98" cy="64" r="6" fill="url(#skin3D)"/>
+                    <!-- Face -->
+                    <rect x="44" y="34" width="52" height="58" rx="25" fill="url(#skin3D)"/>
+                    
+                    <!-- Dark Hair Fringe under Beanie -->
+                    <path d="M45 50 Q70 43 95 50 L96 42 L44 42 Z" fill="#1f1610"/>
+
+                    <!-- Eyebrows -->
+                    <path d="M53 54 Q59 51 64 54" stroke="#2c1d12" stroke-width="2.5" stroke-linecap="round"/>
+                    <path d="M76 54 Q81 51 87 54" stroke="#2c1d12" stroke-width="2.5" stroke-linecap="round"/>
+
+                    <!-- Eyes -->
+                    <circle cx="58.5" cy="62" r="3.8" fill="#1e1b18"/>
+                    <circle cx="59.8" cy="60.8" r="1.3" fill="#ffffff"/>
+                    <circle cx="81.5" cy="62" r="3.8" fill="#1e1b18"/>
+                    <circle cx="82.8" cy="60.8" r="1.3" fill="#ffffff"/>
+
+                    <!-- Black-Rimmed Glasses -->
+                    <rect x="49" y="55" width="19" height="14" rx="4" fill="rgba(255,255,255,0.12)" stroke="#111827" stroke-width="2.6"/>
+                    <rect x="72" y="55" width="19" height="14" rx="4" fill="rgba(255,255,255,0.12)" stroke="#111827" stroke-width="2.6"/>
+                    <line x1="68" y1="61" x2="72" y2="61" stroke="#111827" stroke-width="2.6"/>
+                    <line x1="44" y1="60" x2="49" y2="60" stroke="#111827" stroke-width="2.2"/>
+                    <line x1="91" y1="60" x2="96" y2="60" stroke="#111827" stroke-width="2.2"/>
+
+                    <!-- Nose & Friendly Smile -->
+                    <path d="M70 64 L68 71 L72 71" stroke="#b87d56" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M63 79 Q70 84 77 79" stroke="#7c4728" stroke-width="2.4" stroke-linecap="round"/>
+
+                    <!-- Red Ribbed Beanie -->
+                    <path d="M43 44 C43 18, 97 18, 97 44 Z" fill="url(#beanie3D)"/>
+                    <rect x="41" y="38" width="58" height="12" rx="6" fill="url(#beanie3D)" stroke="#991b1b" stroke-width="1"/>
+                    <!-- Beanie Rib Lines -->
+                    <line x1="52" y1="39" x2="52" y2="49" stroke="#7f1d1d" stroke-width="1.5"/>
+                    <line x1="61" y1="39" x2="61" y2="49" stroke="#7f1d1d" stroke-width="1.5"/>
+                    <line x1="70" y1="39" x2="70" y2="49" stroke="#7f1d1d" stroke-width="1.5"/>
+                    <line x1="79" y1="39" x2="79" y2="49" stroke="#7f1d1d" stroke-width="1.5"/>
+                    <line x1="88" y1="39" x2="88" y2="49" stroke="#7f1d1d" stroke-width="1.5"/>
+                </g>
+            </svg>
+        </div>
+
+        <!-- CARD WRAPPER PULLED IN BY BOY CHARACTER -->
+        <div id="cardPullWrapper">
+
+            <!-- LOGGED OUT: 3D FLIP LOGIN / SIGN UP CARD (VIDEO 2 V7) -->
+            <div id="loggedOutState" class="flip-scene">
+                <div id="flipCardInner" class="flip-card-inner">
+
+                    <!-- ==========================================
+                         FRONT FACE: WELCOME BACK (SIGN IN)
+                         ========================================== -->
+                    <div id="signInFace" class="card-face v7-gold-border">
+                        <div class="glass-triangle-1"></div>
+                        <div class="glass-triangle-2"></div>
+
+                        <div class="text-center mb-6 relative z-10">
+                            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+                                Welcome <span class="text-amber-400">Back</span>
+                            </h1>
+                            <p class="text-xs text-slate-400 mt-1">Enter your credentials to access your account</p>
+                        </div>
+
+                        <form id="signInForm" class="space-y-4 relative z-10">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-envelope text-amber-400 text-[11px]"></i>
+                                    <span>Email Address</span>
+                                </label>
+                                <input type="text" id="signInEmail" required placeholder="developer@codexr.com"
+                                       class="v7-input">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-lock text-amber-400 text-[11px]"></i>
+                                    <span>Password</span>
+                                </label>
+                                <div class="relative">
+                                    <input type="password" id="signInPassword" required placeholder="••••••••" minlength="6"
+                                           class="v7-input pr-10">
+                                    <button type="button" onclick="togglePassVisibility('signInPassword', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-amber-400 text-xs">
+                                        <i class="fa-regular fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between text-xs pt-0.5">
+                                <label class="flex items-center gap-2 text-slate-400 cursor-pointer">
+                                    <input type="checkbox" checked class="accent-amber-500 rounded">
+                                    <span>Remember me</span>
+                                </label>
+                                <button type="button" id="forgotPasswordBtn" class="text-amber-400 hover:underline font-semibold">
+                                    Forgot password?
+                                </button>
+                            </div>
+
+                            <button type="submit" id="signInSubmitBtn" class="v7-btn-gold w-full flex items-center justify-center gap-2">
+                                <span>Sign In</span>
+                                <i class="fa-solid fa-arrow-right text-xs"></i>
+                                <i id="signInSpinner" class="fa-solid fa-circle-notch fa-spin hidden text-xs"></i>
+                            </button>
+                        </form>
+
+                        <!-- Divider -->
+                        <div class="flex items-center my-5 relative z-10">
+                            <div class="flex-1 border-t border-white/10"></div>
+                            <span class="px-3 text-[10px] text-slate-500 font-bold uppercase tracking-wider">Or continue with</span>
+                            <div class="flex-1 border-t border-white/10"></div>
+                        </div>
+
+                        <!-- Social Login Row -->
+                        <div class="grid grid-cols-2 gap-3 relative z-10">
+                            <button type="button" class="google-login-trigger v7-social-btn">
+                                <i class="fa-brands fa-google text-white"></i>
+                                <span>Google</span>
+                            </button>
+                            <button type="button" class="google-login-trigger v7-social-btn" title="Continue with Google / Apple">
+                                <i class="fa-brands fa-apple text-white text-base"></i>
+                                <span>Apple</span>
+                            </button>
+                        </div>
+
+                        <!-- Flip to Sign Up -->
+                        <div class="text-center mt-5 relative z-10">
+                            <p class="text-xs text-slate-400">
+                                Don't have an account?
+                                <button type="button" onclick="flipCard(true)" class="text-amber-400 hover:underline font-bold ml-1">
+                                    Sign up
+                                </button>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- ==========================================
+                         BACK FACE: CREATE ACCOUNT (SIGN UP)
+                         ========================================== -->
+                    <div id="signUpFace" class="card-face card-face-back v7-gold-border">
+                        <div class="glass-triangle-1"></div>
+                        <div class="glass-triangle-2"></div>
+
+                        <div class="text-center mb-5 relative z-10">
+                            <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+                                Create <span class="text-amber-400">Account</span>
+                            </h2>
+                            <p class="text-xs text-slate-400 mt-1">Join us today and unlock your personal workspace</p>
+                        </div>
+
+                        <form id="signUpForm" class="space-y-3.5 relative z-10">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 mb-1">Full Name</label>
+                                <input type="text" id="signUpName" required placeholder="John Doe"
+                                       class="v7-input">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 mb-1">Email Address</label>
+                                <input type="text" id="signUpEmail" required placeholder="name@domain.com"
+                                       class="v7-input">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2.5">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-300 mb-1">Password</label>
+                                    <div class="relative">
+                                        <input type="password" id="signUpPassword" required placeholder="••••••••" minlength="6"
+                                               class="v7-input pr-8">
+                                        <button type="button" onclick="togglePassVisibility('signUpPassword', this)" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-amber-400 text-[11px]">
+                                            <i class="fa-regular fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-300 mb-1">Confirm Password</label>
+                                    <div class="relative">
+                                        <input type="password" id="signUpConfirmPassword" required placeholder="••••••••" minlength="6"
+                                               class="v7-input pr-8">
+                                        <button type="button" onclick="togglePassVisibility('signUpConfirmPassword', this)" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-amber-400 text-[11px]">
+                                            <i class="fa-regular fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <label class="flex items-center gap-2 text-xs text-slate-400 pt-0.5 cursor-pointer">
+                                <input type="checkbox" required checked class="accent-amber-500 rounded">
+                                <span>I agree to the <strong class="text-white">Terms</strong> & <strong class="text-white">Privacy Policy</strong></span>
+                            </label>
+
+                            <button type="submit" id="signUpSubmitBtn" class="v7-btn-gold w-full flex items-center justify-center gap-2">
+                                <span>Create Account</span>
+                                <i class="fa-solid fa-arrow-right text-xs"></i>
+                                <i id="signUpSpinner" class="fa-solid fa-circle-notch fa-spin hidden text-xs"></i>
+                            </button>
+                        </form>
+
+                        <!-- Divider -->
+                        <div class="flex items-center my-4 relative z-10">
+                            <div class="flex-1 border-t border-white/10"></div>
+                            <span class="px-3 text-[10px] text-slate-500 font-bold uppercase tracking-wider">Or register with</span>
+                            <div class="flex-1 border-t border-white/10"></div>
+                        </div>
+
+                        <!-- Social Login Row -->
+                        <div class="grid grid-cols-2 gap-3 relative z-10">
+                            <button type="button" class="google-login-trigger v7-social-btn">
+                                <i class="fa-brands fa-google text-white"></i>
+                                <span>Google</span>
+                            </button>
+                            <button type="button" class="google-login-trigger v7-social-btn">
+                                <i class="fa-brands fa-apple text-white text-base"></i>
+                                <span>Apple</span>
+                            </button>
+                        </div>
+
+                        <!-- Flip back to Sign In -->
+                        <div class="text-center mt-4 relative z-10">
+                            <p class="text-xs text-slate-400">
+                                Already have an account?
+                                <button type="button" onclick="flipCard(false)" class="text-amber-400 hover:underline font-bold ml-1">
+                                    Sign in
+                                </button>
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Status Alerts Below Card -->
+                <div id="authError" class="hidden mt-3 text-xs text-rose-300 bg-rose-950/80 backdrop-blur-md p-3 rounded-2xl border border-rose-700/80 flex items-start gap-2.5 shadow-lg">
+                    <i class="fa-solid fa-triangle-exclamation text-rose-400 mt-0.5"></i>
+                    <div id="authErrorMsg"></div>
+                </div>
+
+                <div id="authSuccess" class="hidden mt-3 text-xs text-emerald-300 bg-emerald-950/80 backdrop-blur-md p-3 rounded-2xl border border-emerald-700/80 flex items-start gap-2.5 shadow-lg">
+                    <i class="fa-solid fa-circle-check text-emerald-400 mt-0.5"></i>
+                    <div id="authSuccessMsg"></div>
+                </div>
+            </div>
+
+            <!-- LOGGED IN PROFILE BOX -->
+            <div id="loggedInState" class="hidden card-face v7-gold-border text-center space-y-5">
+                <div class="glass-triangle-1"></div>
+                <div class="glass-triangle-2"></div>
+
+                <div class="relative w-24 h-24 mx-auto flex items-center justify-center">
+                    <img id="userAvatarImg" src="" alt="Avatar" class="hidden w-full h-full rounded-full border-4 border-amber-400 object-cover shadow-xl">
+                    <div id="userLetterBadge" class="w-full h-full rounded-full border-4 border-amber-400 bg-gradient-to-tr from-amber-500 to-yellow-600 flex items-center justify-center text-3xl font-extrabold text-slate-950 uppercase shadow-xl">
+                        U
+                    </div>
+                    <span class="absolute bottom-0.5 right-0.5 w-5 h-5 bg-emerald-500 rounded-full border-2 border-slate-950"></span>
+                </div>
+
+                <div>
+                    <span class="text-[10px] font-extrabold uppercase tracking-widest text-amber-400 bg-amber-500/10 border border-amber-400/30 px-2.5 py-0.5 rounded-full">Verified Player</span>
+                    <h3 id="userName" class="text-xl font-extrabold text-white mt-2"></h3>
+                    <p id="userEmail" class="text-xs text-slate-400 mt-0.5"></p>
+                </div>
+
+                <div class="pt-3 flex gap-3 relative z-10">
+                    <a href="index.html" class="flex-1 v7-btn-gold flex items-center justify-center gap-2 text-xs">
+                        <i class="fa-solid fa-gamepad"></i>
+                        <span>Play Games</span>
+                    </a>
+                    <button id="logoutBtn" class="flex-1 bg-slate-900 hover:bg-slate-800 text-rose-400 border border-rose-500/30 font-bold py-3 rounded-xl text-xs transition">
+                        Sign Out
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer Note -->
+    <footer class="relative z-20 text-center text-[11px] text-slate-500 pb-2">
+        ST GAMES • Skill | Strategy | Victory
+    </footer>
+
+    <!-- =========================================================
+         3D CHARACTER TIMELINE & CARD FLIP CONTROLLER
+         ========================================================= -->
+    <script>
+        const boyActor = document.getElementById('boyActor');
+        const speechBubble = document.getElementById('speechBubble');
+        const cardPullWrapper = document.getElementById('cardPullWrapper');
+        const flipCardInner = document.getElementById('flipCardInner');
+        const signInFace = document.getElementById('signInFace');
+        const signUpFace = document.getElementById('signUpFace');
+        const skipIntroBtn = document.getElementById('skipIntroBtn');
+
+        let animTimers = [];
+
+        function clearAnimTimers() {
+            animTimers.forEach(t => clearTimeout(t));
+            animTimers = [];
+        }
+
+        function updateCardHeight() {
+            const isFlipped = flipCardInner.classList.contains('is-flipped');
+            const activeFace = isFlipped ? signUpFace : signInFace;
+            if (activeFace && activeFace.offsetHeight > 0) {
+                flipCardInner.style.height = activeFace.offsetHeight + 'px';
+            }
+        }
+
+        // Flip between Sign In (false) and Create Account (true)
+        function flipCard(toSignUp) {
+            if (toSignUp) {
+                flipCardInner.classList.add('is-flipped');
+                speechBubble.textContent = "Creating a new account! 🚀";
+            } else {
+                flipCardInner.classList.remove('is-flipped');
+                speechBubble.textContent = "Here is your form! ✨";
+            }
+            speechBubble.classList.add('show');
+            setTimeout(updateCardHeight, 50);
+        }
+
+        // Toggle password visibility eye icon
+        function togglePassVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fa-regular fa-eye-slash text-amber-400';
+            } else {
+                input.type = 'password';
+                icon.className = 'fa-regular fa-eye';
+            }
+        }
+
+        // Run the Video 1 Boy Pull-In Sequence
+        function playBoyIntroAnimation() {
+            clearAnimTimers();
+            skipIntroBtn.classList.remove('hidden');
+
+            // Reset initial positions
+            cardPullWrapper.classList.remove('pulled-in', 'instant-in');
+            boyActor.style.transition = 'none';
+            boyActor.style.left = window.innerWidth < 768 ? '6%' : '10%';
+            boyActor.className = 'actor-wave';
+            speechBubble.textContent = 'Wait a second! Let me grab the login form for you! 👋';
+            speechBubble.classList.add('show');
+
+            // Force reflow
+            void boyActor.offsetWidth;
+
+            // Step 1 (1.7s): Hide bubble & walk right toward off-screen form
+            animTimers.push(setTimeout(() => {
+                speechBubble.classList.remove('show');
+                boyActor.className = 'actor-walk-right';
+                boyActor.style.transition = 'left 1.8s linear';
+                boyActor.style.left = window.innerWidth < 768 ? '78%' : '82%';
+            }, 1700));
+
+            // Step 2 (3.6s): Grab the form edge & pull it backward into the center
+            animTimers.push(setTimeout(() => {
+                boyActor.className = 'actor-pull';
+                boyActor.style.transition = 'left 2.4s cubic-bezier(0.22, 0.61, 0.36, 1)';
+                boyActor.style.left = window.innerWidth < 768 ? '2%' : '11%';
+                cardPullWrapper.classList.add('pulled-in');
+            }, 3600));
+
+            // Step 3 (6.0s): Form is in place! Face front, wave, and show "Here is your form! ✨"
+            animTimers.push(setTimeout(() => {
+                boyActor.className = 'actor-wave';
+                speechBubble.textContent = 'Here is your form! ✨';
+                speechBubble.classList.add('show');
+                skipIntroBtn.classList.add('hidden');
+                updateCardHeight();
+            }, 6050));
+        }
+
+        function skipBoyAnimation() {
+            clearAnimTimers();
+            cardPullWrapper.classList.add('instant-in');
+            boyActor.style.transition = 'none';
+            boyActor.style.left = window.innerWidth < 768 ? '2%' : '11%';
+            boyActor.className = 'actor-wave';
+            speechBubble.textContent = 'Here is your form! ✨';
+            speechBubble.classList.add('show');
+            skipIntroBtn.classList.add('hidden');
+            updateCardHeight();
+        }
+
+        function replayBoyAnimation() {
+            playBoyIntroAnimation();
+        }
+
+        window.addEventListener('resize', updateCardHeight);
+        window.addEventListener('DOMContentLoaded', () => {
+            updateCardHeight();
+            playBoyIntroAnimation();
+        });
+    </script>
+
+    <!-- =========================================================
+         FIREBASE AUTHENTICATION LOGIC
+         ========================================================= -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { 
@@ -159,8 +938,6 @@
         const auth = getAuth(app);
         const googleProvider = new GoogleAuthProvider();
 
-        let isSignUpMode = false;
-
         const loggedOutState = document.getElementById('loggedOutState');
         const loggedInState = document.getElementById('loggedInState');
         const userAvatarImg = document.getElementById('userAvatarImg');
@@ -171,24 +948,20 @@
         const authErrorMsg = document.getElementById('authErrorMsg');
         const authSuccess = document.getElementById('authSuccess');
         const authSuccessMsg = document.getElementById('authSuccessMsg');
-        const toggleModeBtn = document.getElementById('toggleModeBtn');
-        const usernameField = document.getElementById('usernameField');
-        const submitAuthBtn = document.getElementById('submitAuthBtn');
-        const submitBtnText = document.getElementById('submitBtnText');
-        const submitSpinner = document.getElementById('submitSpinner');
-        const authHeading = document.getElementById('authHeading');
-        const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
+        const speechBubble = document.getElementById('speechBubble');
 
         function showError(msg) {
             authSuccess.classList.add('hidden');
             authErrorMsg.textContent = msg;
             authError.classList.remove('hidden');
+            speechBubble.textContent = "Oops! Check your details 😅";
         }
 
         function showSuccess(msg) {
             authError.classList.add('hidden');
             authSuccessMsg.textContent = msg;
             authSuccess.classList.remove('hidden');
+            speechBubble.textContent = "Awesome! You're in! 🎉";
         }
 
         function clearAlerts() {
@@ -196,26 +969,15 @@
             authSuccess.classList.add('hidden');
         }
 
-        function setLoading(loading) {
-            if (loading) {
-                submitSpinner.classList.remove('hidden');
-                submitAuthBtn.disabled = true;
-            } else {
-                submitSpinner.classList.add('hidden');
-                submitAuthBtn.disabled = false;
-            }
-        }
-
-        // Translate Firebase error codes into clear messages
         function getFriendlyErrorMessage(errCode) {
             switch (errCode) {
                 case 'auth/email-already-in-use':
-                    return 'This email is already registered! Please switch to "Sign In" or use "Continue with Google".';
+                    return 'This email is already registered! Please flip to "Sign In" or use "Google".';
                 case 'auth/invalid-credential':
                 case 'auth/wrong-password':
                     return 'Incorrect password or no account found with these credentials.';
                 case 'auth/user-not-found':
-                    return 'No user found with this email. Please click "Sign Up" below to create an account.';
+                    return 'No user found with this email. Click "Sign up" below to create an account.';
                 case 'auth/weak-password':
                     return 'Password is too weak. Please use at least 6 characters.';
                 case 'auth/invalid-email':
@@ -226,23 +988,6 @@
                     return 'Authentication failed. Please check your details and try again.';
             }
         }
-
-        // Toggle Sign In vs Sign Up
-        toggleModeBtn.addEventListener('click', () => {
-            isSignUpMode = !isSignUpMode;
-            clearAlerts();
-            if (isSignUpMode) {
-                usernameField.classList.remove('hidden');
-                submitBtnText.textContent = 'Create Account';
-                authHeading.textContent = 'Create a New Account';
-                toggleModeBtn.textContent = 'Already have an account? Sign In';
-            } else {
-                usernameField.classList.add('hidden');
-                submitBtnText.textContent = 'Sign In';
-                authHeading.textContent = 'Sign in to your account';
-                toggleModeBtn.textContent = "Don't have an account? Sign Up";
-            }
-        });
 
         function formatEmail(input) {
             const val = input.trim();
@@ -272,6 +1017,7 @@
 
             loggedOutState.classList.add('hidden');
             loggedInState.classList.remove('hidden');
+            speechBubble.textContent = `Welcome back, ${name}! 🎮`;
         }
 
         onAuthStateChanged(auth, (user) => {
@@ -286,64 +1032,96 @@
             }
         });
 
-        // Email & Password Submit
-        document.getElementById('emailAuthForm').addEventListener('submit', async (e) => {
+        // 1. SIGN IN FORM SUBMIT
+        document.getElementById('signInForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             clearAlerts();
-            setLoading(true);
+            const spinner = document.getElementById('signInSpinner');
+            const btn = document.getElementById('signInSubmitBtn');
+            spinner.classList.remove('hidden');
+            btn.disabled = true;
 
-            const email = formatEmail(document.getElementById('authEmail').value);
-            const password = document.getElementById('authPassword').value;
-            const displayName = document.getElementById('authDisplayName').value.trim();
+            const email = formatEmail(document.getElementById('signInEmail').value);
+            const password = document.getElementById('signInPassword').value;
 
             try {
-                if (isSignUpMode) {
-                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                    if (displayName) {
-                        await updateProfile(userCredential.user, { displayName });
-                    }
-                    showSuccess('Account created successfully!');
-                    displayUserProfile(userCredential.user);
-                } else {
-                    const res = await signInWithEmailAndPassword(auth, email, password);
-                    showSuccess('Signed in successfully!');
-                    displayUserProfile(res.user);
-                }
+                const res = await signInWithEmailAndPassword(auth, email, password);
+                showSuccess('Signed in successfully!');
+                displayUserProfile(res.user);
             } catch (err) {
                 showError(getFriendlyErrorMessage(err.code));
             } finally {
-                setLoading(false);
+                spinner.classList.add('hidden');
+                btn.disabled = false;
             }
         });
 
-        // Forgot Password
-        forgotPasswordBtn.addEventListener('click', async () => {
-            const emailInput = document.getElementById('authEmail').value.trim();
+        // 2. CREATE ACCOUNT (SIGN UP) FORM SUBMIT
+        document.getElementById('signUpForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearAlerts();
+
+            const displayName = document.getElementById('signUpName').value.trim();
+            const email = formatEmail(document.getElementById('signUpEmail').value);
+            const password = document.getElementById('signUpPassword').value;
+            const confirmPassword = document.getElementById('signUpConfirmPassword').value;
+
+            if (password !== confirmPassword) {
+                showError('Passwords do not match! Please check both password fields.');
+                return;
+            }
+
+            const spinner = document.getElementById('signUpSpinner');
+            const btn = document.getElementById('signUpSubmitBtn');
+            spinner.classList.remove('hidden');
+            btn.disabled = true;
+
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                if (displayName) {
+                    await updateProfile(userCredential.user, { displayName });
+                }
+                showSuccess('Account created successfully!');
+                displayUserProfile(userCredential.user);
+            } catch (err) {
+                showError(getFriendlyErrorMessage(err.code));
+            } finally {
+                spinner.classList.add('hidden');
+                btn.disabled = false;
+            }
+        });
+
+        // 3. FORGOT PASSWORD
+        document.getElementById('forgotPasswordBtn').addEventListener('click', async () => {
+            clearAlerts();
+            const emailInput = document.getElementById('signInEmail').value.trim();
             if (!emailInput) {
-                showError('Please enter your email above first, then click Forgot Password.');
+                showError('Please enter your email address first, then click "Forgot password?".');
                 return;
             }
             try {
                 await sendPasswordResetEmail(auth, formatEmail(emailInput));
-                showSuccess('Password reset link has been sent to your email.');
+                showSuccess('Password reset link has been sent to your email!');
             } catch (err) {
                 showError(getFriendlyErrorMessage(err.code));
             }
         });
 
-        // Google Sign-In
-        document.getElementById('googleLoginBtn').addEventListener('click', async () => {
-            clearAlerts();
-            try {
-                const result = await signInWithPopup(auth, googleProvider);
-                showSuccess('Signed in with Google successfully!');
-                displayUserProfile(result.user);
-            } catch (err) {
-                showError(getFriendlyErrorMessage(err.code));
-            }
+        // 4. GOOGLE / SOCIAL SIGN-IN BUTTONS
+        document.querySelectorAll('.google-login-trigger').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                clearAlerts();
+                try {
+                    const result = await signInWithPopup(auth, googleProvider);
+                    showSuccess('Signed in with Google successfully!');
+                    displayUserProfile(result.user);
+                } catch (err) {
+                    showError(getFriendlyErrorMessage(err.code));
+                }
+            });
         });
 
-        // Logout
+        // 5. SIGN OUT
         document.getElementById('logoutBtn').addEventListener('click', async () => {
             await signOut(auth);
             showSuccess('Signed out successfully.');
