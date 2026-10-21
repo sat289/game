@@ -19,31 +19,120 @@
             --poki-navy: #002b5b;
         }
 
+        /* Animated Gradient Background */
+        @keyframes gradientFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Ambient Floating Glow Blobs */
+        @keyframes floatSlow {
+            0%, 100% { transform: translate(0px, 0px) scale(1); }
+            33% { transform: translate(35px, -25px) scale(1.08); }
+            66% { transform: translate(-25px, 20px) scale(0.95); }
+        }
+
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #4cd4b0;
-            background-image: 
-                radial-gradient(circle at 15% 20%, rgba(126, 255, 220, 0.7) 0%, transparent 45%),
-                radial-gradient(circle at 85% 60%, rgba(32, 178, 170, 0.5) 0%, transparent 50%),
-                linear-gradient(135deg, #5ef2d5 0%, #37c9ef 50%, #5ce1e6 100%);
+            background: linear-gradient(-45deg, #2dd4bf, #38bdf8, #34d399, #22d3ee, #06b6d4);
+            background-size: 300% 300%;
+            animation: gradientFlow 16s ease infinite;
             background-attachment: fixed;
             overflow-x: hidden;
             user-select: none;
-            transition: background 0.35s ease, color 0.35s ease;
+            transition: background 0.5s ease, color 0.35s ease;
+            position: relative;
         }
 
         /* DARK THEME OVERRIDES */
         body.dark-theme {
-            background-color: #0b1120;
-            background-image: 
-                radial-gradient(circle at 15% 20%, rgba(56, 189, 248, 0.16) 0%, transparent 45%),
-                radial-gradient(circle at 85% 60%, rgba(168, 85, 247, 0.16) 0%, transparent 50%),
-                linear-gradient(135deg, #090d16 0%, #0f172a 50%, #1e1b4b 100%);
+            background: linear-gradient(-45deg, #060913, #0f172a, #1e1b4b, #091526, #0f172a);
+            background-size: 300% 300%;
+            animation: gradientFlow 18s ease infinite;
             color: #f8fafc;
         }
 
+        /* Background Particle & Ambient Aura Layer */
+        #bgEffectsWrapper {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        #particleCanvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Foreground Interactive Burst Canvas (Above Cards) */
+        #burstCanvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 55;
+            display: block;
+        }
+
+        .ambient-orb {
+            position: absolute;
+            border-radius: 9999px;
+            filter: blur(75px);
+            opacity: 0.45;
+            animation: floatSlow 14s ease-in-out infinite;
+            transition: background 0.5s ease, opacity 0.5s ease;
+        }
+
+        .orb-1 {
+            width: 340px;
+            height: 340px;
+            top: 8%;
+            left: -60px;
+            background: rgba(255, 255, 255, 0.55);
+        }
+
+        .orb-2 {
+            width: 400px;
+            height: 400px;
+            bottom: 10%;
+            right: -80px;
+            background: rgba(250, 204, 21, 0.35);
+            animation-delay: -5s;
+        }
+
+        .orb-3 {
+            width: 280px;
+            height: 280px;
+            top: 48%;
+            left: 40%;
+            background: rgba(167, 243, 208, 0.45);
+            animation-delay: -9s;
+        }
+
+        body.dark-theme .orb-1 {
+            background: rgba(56, 189, 248, 0.22);
+            opacity: 0.6;
+        }
+
+        body.dark-theme .orb-2 {
+            background: rgba(168, 85, 247, 0.22);
+            opacity: 0.6;
+        }
+
+        body.dark-theme .orb-3 {
+            background: rgba(236, 72, 153, 0.15);
+            opacity: 0.5;
+        }
+
         body.dark-theme .theme-surface {
-            background-color: rgba(30, 41, 59, 0.95) !important;
+            background-color: rgba(30, 41, 59, 0.9) !important;
             border-color: rgba(255, 255, 255, 0.12) !important;
             color: #f8fafc !important;
         }
@@ -56,25 +145,14 @@
             color: #94a3b8 !important;
         }
 
-        body.dark-theme .cat-btn-inactive {
-            background-color: rgba(30, 41, 59, 0.9) !important;
-            color: #e2e8f0 !important;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        body.dark-theme .cat-btn-active {
-            background-color: #38bdf8 !important;
-            color: #0f172a !important;
-        }
-
         body.dark-theme .popular-section {
-            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            background: linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%);
             border-top: 2px solid rgba(250, 204, 21, 0.35);
             border-bottom: 2px solid rgba(250, 204, 21, 0.2);
         }
 
         body.dark-theme .popular-section::before {
-            background: #1e293b;
+            background: rgba(30, 41, 59, 0.95);
         }
 
         body.dark-theme .popular-heading {
@@ -142,17 +220,21 @@
         }
 
         .game-card:hover {
-            transform: translateY(-5px) scale(1.03);
-            box-shadow: 0 16px 28px -6px rgba(0, 43, 91, 0.38);
+            transform: translateY(-6px) scale(1.035);
+            box-shadow: 0 18px 30px -6px rgba(0, 43, 91, 0.42), 0 0 18px rgba(94, 242, 213, 0.45);
             z-index: 10;
         }
 
+        body.dark-theme .game-card:hover {
+            box-shadow: 0 18px 30px -6px rgba(0, 0, 0, 0.7), 0 0 22px rgba(56, 189, 248, 0.55);
+        }
+
         .game-card:active {
-            transform: scale(0.95);
+            transform: scale(0.94);
         }
 
         .game-card-overlay {
-            background: linear-gradient(to top, rgba(0, 22, 48, 0.9) 0%, rgba(0, 22, 48, 0.3) 60%, transparent 100%);
+            background: linear-gradient(to top, rgba(0, 22, 48, 0.92) 0%, rgba(0, 22, 48, 0.3) 60%, transparent 100%);
             opacity: 0;
             transition: opacity 0.2s ease;
         }
@@ -201,6 +283,7 @@
         .popular-section {
             background: linear-gradient(180deg, #ffef62 0%, #ffd93d 100%);
             position: relative;
+            z-index: 10;
         }
 
         .popular-section::before {
@@ -216,6 +299,17 @@
     </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between text-slate-900">
+
+    <!-- 0A. TINY PARTICLES & AMBIENT BACKGROUND ENGINE -->
+    <div id="bgEffectsWrapper" aria-hidden="true">
+        <div class="ambient-orb orb-1"></div>
+        <div class="ambient-orb orb-2"></div>
+        <div class="ambient-orb orb-3"></div>
+        <canvas id="particleCanvas"></canvas>
+    </div>
+
+    <!-- 0B. FOREGROUND INTERACTIVE BURST CANVAS -->
+    <canvas id="burstCanvas" aria-hidden="true"></canvas>
 
     <!-- 1. TOP NOTICE MARQUEE -->
     <div class="bg-[#002b5b] text-white py-2 overflow-hidden border-b border-white/15 relative z-40 shadow-md">
@@ -254,11 +348,11 @@
     </div>
 
     <!-- MAIN CONTENT (FIRST 10 GAMES ABOVE POPULAR) -->
-    <main class="max-w-5xl w-full mx-auto px-3.5 sm:px-6 pt-3 pb-8">
+    <main class="max-w-5xl w-full mx-auto px-3.5 sm:px-6 pt-3 pb-8 relative z-10">
 
         <!-- 2. ST GAMES TOP NAVIGATION HEADER -->
         <header class="sticky top-2.5 z-30 mb-4">
-            <div class="theme-surface bg-white rounded-2xl shadow-xl border border-white/80 px-3 sm:px-5 py-2.5 flex items-center justify-between">
+            <div class="theme-surface bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/80 px-3 sm:px-5 py-2.5 flex items-center justify-between">
                 
                 <!-- Logo & Website Name -->
                 <div class="flex items-center gap-3 pr-3 sm:pr-5 border-r border-slate-200/60 min-w-0">
@@ -276,20 +370,20 @@
 
                 <!-- Quick Action Icons & Account -->
                 <div class="flex items-center justify-around flex-1 max-w-md ml-2 sm:ml-4 text-[#002b5b] theme-text-primary">
-                    <button onclick="jumpToPopular()" title="Popular Games" class="p-2 rounded-xl hover:bg-slate-500/10 active:scale-90 transition">
+                    <button onclick="jumpToPopular(event)" title="Popular Games" class="ui-btn p-2 rounded-xl hover:bg-slate-500/10 active:scale-90 transition">
                         <i class="fa-solid fa-fire-flame-curved text-lg sm:text-xl text-orange-500"></i>
                     </button>
-                    <button onclick="pickRandomGame()" title="Surprise Me" class="p-2 rounded-xl hover:bg-slate-500/10 active:scale-90 transition">
+                    <button onclick="pickRandomGame(event)" title="Surprise Me" class="ui-btn p-2 rounded-xl hover:bg-slate-500/10 active:scale-90 transition">
                         <i class="fa-solid fa-gamepad text-lg sm:text-xl"></i>
                     </button>
-                    <button onclick="toggleSearchBar()" title="Search Games" class="p-2 rounded-xl hover:bg-slate-500/10 active:scale-90 transition">
+                    <button onclick="toggleSearchBar(event)" title="Search Games" class="ui-btn p-2 rounded-xl hover:bg-slate-500/10 active:scale-90 transition">
                         <i class="fa-solid fa-magnifying-glass text-lg sm:text-xl"></i>
                     </button>
-                    <button onclick="toggleTheme()" title="Switch Theme" class="p-2 rounded-xl hover:bg-slate-500/10 active:scale-90 transition">
+                    <button onclick="toggleTheme(event)" title="Switch Theme" class="ui-btn p-2 rounded-xl hover:bg-slate-500/10 active:scale-90 transition">
                         <span class="text-lg sm:text-xl leading-none">🌓</span>
                     </button>
                     
-                    <a href="login.html" id="navAvatarLink" title="User Profile / Login" class="p-1 rounded-xl hover:bg-slate-500/10 active:scale-90 transition inline-flex items-center justify-center">
+                    <a href="login.html" id="navAvatarLink" title="User Profile / Login" class="ui-btn p-1 rounded-xl hover:bg-slate-500/10 active:scale-90 transition inline-flex items-center justify-center">
                         <div id="defaultAvatarIcon" class="relative inline-flex items-center justify-center">
                             <i class="fa-regular fa-circle-user text-2xl text-blue-600"></i>
                             <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 absolute top-0 right-0 border-2 border-white"></span>
@@ -302,7 +396,7 @@
             </div>
 
             <!-- Search Drawer -->
-            <div id="searchDrawer" class="theme-surface hidden mt-2 bg-white rounded-2xl p-2.5 shadow-lg border border-slate-200">
+            <div id="searchDrawer" class="theme-surface hidden mt-2 bg-white/95 backdrop-blur-md rounded-2xl p-2.5 shadow-lg border border-slate-200">
                 <div class="relative flex items-center">
                     <i class="fa-solid fa-magnifying-glass text-slate-500 absolute left-3.5 z-10"></i>
                     <input id="gameSearchInput" type="text" 
@@ -328,7 +422,7 @@
 
             <!-- Instagram Card -->
             <a href="https://instagram.com/_satish_official_16" target="_blank" rel="noopener noreferrer" 
-               class="theme-surface w-full bg-white/95 backdrop-blur-md rounded-2xl p-2.5 sm:px-4 shadow-md border border-white flex items-center justify-between gap-3 hover:scale-[1.01] transition-all">
+               class="ui-btn theme-surface w-full bg-white/95 backdrop-blur-md rounded-2xl p-2.5 sm:px-4 shadow-md border border-white flex items-center justify-between gap-3 hover:scale-[1.01] transition-all">
                 <div class="flex items-center gap-3">
                     <div class="w-11 h-11 rounded-full p-[2px] ig-gradient shrink-0 shadow-sm">
                         <img src="logo/Insta.jpg" alt="Instagram" 
@@ -352,7 +446,7 @@
 
             <!-- YouTube Card -->
             <a href="https://youtube.com/@nanu16-h3g?si=2jyeQ-V78uTGvBzW" target="_blank" rel="noopener noreferrer" 
-               class="theme-surface w-full bg-white/95 backdrop-blur-md rounded-2xl p-2.5 sm:px-4 shadow-md border border-white flex items-center justify-between gap-3 hover:scale-[1.01] transition-all">
+               class="ui-btn theme-surface w-full bg-white/95 backdrop-blur-md rounded-2xl p-2.5 sm:px-4 shadow-md border border-white flex items-center justify-between gap-3 hover:scale-[1.01] transition-all">
                 <div class="flex items-center gap-3">
                     <div class="w-11 h-11 rounded-full p-[2px] yt-gradient shrink-0 shadow-sm">
                         <img src="logo/sub.jpg" alt="YouTube" 
@@ -378,25 +472,25 @@
         <!-- 4. CATEGORY SELECTORS -->
         <section class="mb-5">
             <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1" id="categoryButtonsContainer">
-                <button onclick="filterByCategory('all')" data-cat="all" class="cat-btn active-cat shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-[#002b5b] text-white">
+                <button onclick="filterByCategory('all', event)" data-cat="all" class="cat-btn active-cat shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-[#002b5b] text-white">
                     <i class="fa-solid fa-border-all"></i> All Games
                 </button>
-                <button onclick="filterByCategory('popular')" data-cat="popular" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
+                <button onclick="filterByCategory('popular', event)" data-cat="popular" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
                     <i class="fa-solid fa-fire text-orange-500"></i> Popular
                 </button>
-                <button onclick="filterByCategory('classic')" data-cat="classic" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
+                <button onclick="filterByCategory('classic', event)" data-cat="classic" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
                     <i class="fa-solid fa-ghost text-emerald-500"></i> Classic & Snake
                 </button>
-                <button onclick="filterByCategory('racing')" data-cat="racing" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
+                <button onclick="filterByCategory('racing', event)" data-cat="racing" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
                     <i class="fa-solid fa-car-burst text-amber-500"></i> Racing
                 </button>
-                <button onclick="filterByCategory('1v1')" data-cat="1v1" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
+                <button onclick="filterByCategory('1v1', event)" data-cat="1v1" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
                     <i class="fa-solid fa-people-arrows text-rose-500"></i> 1v1 Battle
                 </button>
-                <button onclick="filterByCategory('single')" data-cat="single" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
+                <button onclick="filterByCategory('single', event)" data-cat="single" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
                     <i class="fa-solid fa-user-astronaut text-indigo-500"></i> Single Player
                 </button>
-                <button onclick="filterByCategory('sports')" data-cat="sports" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
+                <button onclick="filterByCategory('sports', event)" data-cat="sports" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
                     <i class="fa-solid fa-baseball-bat-ball text-sky-500"></i> Sports
                 </button>
             </div>
@@ -427,10 +521,10 @@
 
                 <!-- Left & Right Scroll Buttons -->
                 <div class="flex items-center gap-2">
-                    <button onclick="scrollPopular(-1)" aria-label="Scroll Left" class="w-9 h-9 rounded-full bg-[#002b5b] text-white flex items-center justify-center shadow hover:scale-105 active:scale-95 transition">
+                    <button onclick="scrollPopular(-1, event)" aria-label="Scroll Left" class="ui-btn w-9 h-9 rounded-full bg-[#002b5b] text-white flex items-center justify-center shadow hover:scale-105 active:scale-95 transition">
                         <i class="fa-solid fa-chevron-left text-xs"></i>
                     </button>
-                    <button onclick="scrollPopular(1)" aria-label="Scroll Right" class="w-9 h-9 rounded-full bg-[#002b5b] text-white flex items-center justify-center shadow hover:scale-105 active:scale-95 transition">
+                    <button onclick="scrollPopular(1, event)" aria-label="Scroll Right" class="ui-btn w-9 h-9 rounded-full bg-[#002b5b] text-white flex items-center justify-center shadow hover:scale-105 active:scale-95 transition">
                         <i class="fa-solid fa-chevron-right text-xs"></i>
                     </button>
                 </div>
@@ -442,7 +536,7 @@
     </section>
 
     <!-- 7. REMAINING GAMES SECTION (GAME #11 ONWARDS - BELOW POPULAR) -->
-    <section id="remainingGamesSection" class="max-w-5xl w-full mx-auto px-3.5 sm:px-6 pt-8 pb-16">
+    <section id="remainingGamesSection" class="max-w-5xl w-full mx-auto px-3.5 sm:px-6 pt-8 pb-16 relative z-10">
         <div id="remainingGamesGrid" class="poki-grid"></div>
     </section>
 
@@ -451,19 +545,516 @@
       <source src="creazy/song.mp3" type="audio/mpeg">
     </audio>
 
-    <!-- Floating Sound Control Button -->
-    <button onclick="toggleAudio()" id="soundToggleBtn" class="fixed bottom-5 right-5 z-50 bg-slate-900/90 border border-cyan-500/40 text-cyan-400 px-3.5 py-2.5 rounded-2xl shadow-lg shadow-cyan-500/20 backdrop-blur-md hover:scale-105 transition flex items-center gap-2 text-xs font-bold">
-      <i class="fa-solid fa-volume-xmark text-sm" id="soundIcon"></i>
-      <span id="soundText">Play Music 🎵</span>
-    </button>
+    <!-- Floating Audio Controls Dock (SFX + Background Music) -->
+    <div class="fixed bottom-5 right-5 z-50 flex items-center gap-2">
+        <button onclick="toggleSFX(event)" id="sfxToggleBtn" title="Toggle Arcade UI Sounds" class="bg-slate-900/90 border border-amber-400/40 text-amber-300 px-3 py-2.5 rounded-2xl shadow-lg shadow-amber-500/10 backdrop-blur-md hover:scale-105 active:scale-95 transition flex items-center gap-1.5 text-xs font-bold">
+            <i class="fa-solid fa-wand-magic-sparkles text-xs" id="sfxIcon"></i>
+            <span id="sfxText">SFX ON</span>
+        </button>
+
+        <button onclick="toggleAudio(event)" id="soundToggleBtn" class="bg-slate-900/90 border border-cyan-500/40 text-cyan-400 px-3.5 py-2.5 rounded-2xl shadow-lg shadow-cyan-500/20 backdrop-blur-md hover:scale-105 active:scale-95 transition flex items-center gap-2 text-xs font-bold">
+            <i class="fa-solid fa-volume-xmark text-sm" id="soundIcon"></i>
+            <span id="soundText">Play Music 🎵</span>
+        </button>
+    </div>
 
     <script>
+        /* =========================================================
+           1. WEB AUDIO API ARCADE SOUND SYNTHESIZER
+           ========================================================= */
+        let audioCtx = null;
+        let sfxEnabled = localStorage.getItem('st_sfx') !== 'off';
+        let lastHoverSoundTime = 0;
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) {
+                    audioCtx = new AudioContextClass();
+                }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        const ArcadeSFX = {
+            // Crisp high-tech arcade hover blip
+            hover() {
+                if (!sfxEnabled) return;
+                const nowMs = performance.now();
+                if (nowMs - lastHoverSoundTime < 45) return; // Prevent overlap spam
+                lastHoverSoundTime = nowMs;
+
+                const ctx = getAudioContext();
+                if (!ctx) return;
+
+                const now = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(540, now);
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.045);
+
+                gain.gain.setValueAtTime(0.06, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.start(now);
+                osc.stop(now + 0.055);
+            },
+
+            // Two-tone arcade button confirm chime
+            click() {
+                if (!sfxEnabled) return;
+                const ctx = getAudioContext();
+                if (!ctx) return;
+
+                const now = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(587.33, now); // D5
+                osc.frequency.setValueAtTime(880, now + 0.045); // A5
+
+                gain.gain.setValueAtTime(0.11, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.start(now);
+                osc.stop(now + 0.135);
+            },
+
+            // 3-note power-up chime when launching a game card
+            launch() {
+                if (!sfxEnabled) return;
+                const ctx = getAudioContext();
+                if (!ctx) return;
+
+                const now = ctx.currentTime;
+                const notes = [523.25, 659.25, 1046.50]; // C5 -> E5 -> C6
+                notes.forEach((freq, idx) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    const start = now + idx * 0.045;
+
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, start);
+
+                    gain.gain.setValueAtTime(0.13, start);
+                    gain.gain.exponentialRampToValueAtTime(0.001, start + 0.11);
+
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+
+                    osc.start(start);
+                    osc.stop(start + 0.115);
+                });
+            }
+        };
+
+        function updateSFXButtonUI() {
+            const sfxIcon = document.getElementById('sfxIcon');
+            const sfxText = document.getElementById('sfxText');
+            const sfxBtn = document.getElementById('sfxToggleBtn');
+            if (sfxEnabled) {
+                sfxIcon.className = "fa-solid fa-wand-magic-sparkles text-xs text-amber-300";
+                sfxText.innerText = "SFX ON";
+                sfxBtn.classList.remove('opacity-60');
+            } else {
+                sfxIcon.className = "fa-solid fa-volume-off text-xs text-slate-400";
+                sfxText.innerText = "SFX OFF";
+                sfxBtn.classList.add('opacity-60');
+            }
+        }
+
+        function toggleSFX(e) {
+            sfxEnabled = !sfxEnabled;
+            localStorage.setItem('st_sfx', sfxEnabled ? 'on' : 'off');
+            updateSFXButtonUI();
+            if (sfxEnabled) {
+                ArcadeSFX.click();
+            }
+            if (e) {
+                spawnParticleBurst(e.clientX, e.clientY, 18);
+            }
+        }
+
+        /* =========================================================
+           2. FOREGROUND TINY PARTICLE BURST & HOVER SPARKLE ENGINE
+           ========================================================= */
+        const burstCanvas = document.getElementById('burstCanvas');
+        const bCtx = burstCanvas.getContext('2d');
+        let burstParticles = [];
+        let shockwaves = [];
+
+        const BURST_COLORS = ['#fef08a', '#38bdf8', '#5eead4', '#f472b6', '#a78bfa', '#ffffff', '#fb923c'];
+
+        class BurstParticle {
+            constructor(x, y, isHover = false) {
+                this.x = x + (Math.random() - 0.5) * (isHover ? 18 : 6);
+                this.y = y + (Math.random() - 0.5) * (isHover ? 18 : 6);
+
+                const angle = Math.random() * Math.PI * 2;
+                const speed = isHover
+                    ? (Math.random() * 1.9 + 0.6)
+                    : (Math.random() * 5.2 + 1.4);
+
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed - (isHover ? 0.6 : 0.9);
+                this.gravity = isHover ? -0.015 : 0.12;
+                this.friction = 0.96;
+
+                // Tiny particle radius (1.2px to 3.4px)
+                this.size = isHover ? (Math.random() * 1.8 + 1.1) : (Math.random() * 2.4 + 1.3);
+                this.alpha = 1;
+                this.decay = isHover ? (Math.random() * 0.03 + 0.024) : (Math.random() * 0.022 + 0.016);
+                this.color = BURST_COLORS[Math.floor(Math.random() * BURST_COLORS.length)];
+                this.isStar = Math.random() < 0.45;
+                this.rotation = Math.random() * Math.PI * 2;
+                this.spin = (Math.random() - 0.5) * 0.18;
+            }
+
+            update() {
+                this.vx *= this.friction;
+                this.vy *= this.friction;
+                this.vy += this.gravity;
+                this.x += this.vx;
+                this.y += this.vy;
+                this.rotation += this.spin;
+                this.alpha -= this.decay;
+            }
+
+            draw() {
+                if (this.alpha <= 0) return;
+                bCtx.save();
+                bCtx.globalAlpha = Math.max(0, this.alpha);
+                bCtx.fillStyle = this.color;
+                bCtx.shadowBlur = 8;
+                bCtx.shadowColor = this.color;
+                bCtx.translate(this.x, this.y);
+                bCtx.rotate(this.rotation);
+
+                if (this.isStar) {
+                    const s = this.size * 1.45;
+                    bCtx.beginPath();
+                    bCtx.moveTo(0, -s);
+                    bCtx.lineTo(s * 0.35, -s * 0.35);
+                    bCtx.lineTo(s, 0);
+                    bCtx.lineTo(s * 0.35, s * 0.35);
+                    bCtx.lineTo(0, s);
+                    bCtx.lineTo(-s * 0.35, s * 0.35);
+                    bCtx.lineTo(-s, 0);
+                    bCtx.lineTo(-s * 0.35, -s * 0.35);
+                    bCtx.closePath();
+                    bCtx.fill();
+                } else {
+                    bCtx.beginPath();
+                    bCtx.arc(0, 0, this.size, 0, Math.PI * 2);
+                    bCtx.fill();
+                }
+                bCtx.restore();
+            }
+        }
+
+        class ShockwaveRing {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.radius = 4;
+                this.maxRadius = 46;
+                this.alpha = 0.75;
+                this.color = isDark ? '#38bdf8' : '#fef08a';
+            }
+
+            update() {
+                this.radius += (this.maxRadius - this.radius) * 0.18;
+                this.alpha -= 0.045;
+            }
+
+            draw() {
+                if (this.alpha <= 0) return;
+                bCtx.save();
+                bCtx.globalAlpha = Math.max(0, this.alpha);
+                bCtx.strokeStyle = this.color;
+                bCtx.lineWidth = 2;
+                bCtx.shadowBlur = 10;
+                bCtx.shadowColor = this.color;
+                bCtx.beginPath();
+                bCtx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                bCtx.stroke();
+                bCtx.restore();
+            }
+        }
+
+        function spawnParticleBurst(x, y, count = 26, isHover = false) {
+            for (let i = 0; i < count; i++) {
+                burstParticles.push(new BurstParticle(x, y, isHover));
+            }
+            if (!isHover) {
+                shockwaves.push(new ShockwaveRing(x, y));
+            }
+        }
+
+        function spawnCardPerimeterSparkles(cardEl) {
+            const rect = cardEl.getBoundingClientRect();
+            for (let i = 0; i < 10; i++) {
+                const px = rect.left + Math.random() * rect.width;
+                const py = rect.top + Math.random() * rect.height;
+                burstParticles.push(new BurstParticle(px, py, true));
+            }
+        }
+
+        function animateBurstCanvas() {
+            bCtx.clearRect(0, 0, burstCanvas.width, burstCanvas.height);
+
+            for (let i = shockwaves.length - 1; i >= 0; i--) {
+                shockwaves[i].update();
+                shockwaves[i].draw();
+                if (shockwaves[i].alpha <= 0) {
+                    shockwaves.splice(i, 1);
+                }
+            }
+
+            for (let i = burstParticles.length - 1; i >= 0; i--) {
+                burstParticles[i].update();
+                burstParticles[i].draw();
+                if (burstParticles[i].alpha <= 0) {
+                    burstParticles.splice(i, 1);
+                }
+            }
+
+            requestAnimationFrame(animateBurstCanvas);
+        }
+
+        /* =========================================================
+           3. BACKGROUND TINY PARTICLE ENGINE (CANVAS)
+           ========================================================= */
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+        let particlesArray = [];
+        let isDark = false;
+
+        const pointer = {
+            x: null,
+            y: null,
+            radius: 110
+        };
+
+        window.addEventListener('mousemove', (e) => {
+            pointer.x = e.clientX;
+            pointer.y = e.clientY;
+        });
+
+        window.addEventListener('touchmove', (e) => {
+            if (e.touches.length > 0) {
+                pointer.x = e.touches[0].clientX;
+                pointer.y = e.touches[0].clientY;
+            }
+        }, { passive: true });
+
+        window.addEventListener('touchend', () => {
+            pointer.x = null;
+            pointer.y = null;
+        });
+
+        window.addEventListener('mouseout', () => {
+            pointer.x = null;
+            pointer.y = null;
+        });
+
+        const LIGHT_PALETTE = ['#ffffff', '#fef08a', '#a5f3fc', '#d9f99d', '#ffffff'];
+        const DARK_PALETTE  = ['#38bdf8', '#c084fc', '#f472b6', '#facc15', '#e2e8f0'];
+
+        class TinyParticle {
+            constructor() {
+                this.reset(true);
+            }
+
+            reset(initial = false) {
+                this.x = Math.random() * canvas.width;
+                this.y = initial ? Math.random() * canvas.height : canvas.height + 10;
+                this.size = Math.random() * 2.2 + 1;
+                this.speedY = -(Math.random() * 0.55 + 0.18);
+                this.speedX = (Math.random() - 0.5) * 0.4;
+                this.swayAngle = Math.random() * Math.PI * 2;
+                this.swaySpeed = Math.random() * 0.02 + 0.008;
+                this.alpha = Math.random() * 0.65 + 0.2;
+                this.alphaChange = (Math.random() * 0.012 + 0.004) * (Math.random() < 0.5 ? 1 : -1);
+                this.isSparkle = Math.random() < 0.18;
+                this.pickColor();
+            }
+
+            pickColor() {
+                const palette = isDark ? DARK_PALETTE : LIGHT_PALETTE;
+                this.color = palette[Math.floor(Math.random() * palette.length)];
+            }
+
+            update() {
+                this.y += this.speedY;
+                this.swayAngle += this.swaySpeed;
+                this.x += this.speedX + Math.sin(this.swayAngle) * 0.25;
+
+                this.alpha += this.alphaChange;
+                if (this.alpha >= 0.9 || this.alpha <= 0.15) {
+                    this.alphaChange = -this.alphaChange;
+                }
+
+                if (pointer.x !== null && pointer.y !== null) {
+                    const dx = this.x - pointer.x;
+                    const dy = this.y - pointer.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < pointer.radius && dist > 0) {
+                        const force = (pointer.radius - dist) / pointer.radius;
+                        this.x += (dx / dist) * force * 1.8;
+                        this.y += (dy / dist) * force * 1.8;
+                    }
+                }
+
+                if (this.y < -10) {
+                    this.reset(false);
+                }
+                if (this.x < -10) this.x = canvas.width + 10;
+                if (this.x > canvas.width + 10) this.x = -10;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0.1, Math.min(1, this.alpha));
+                ctx.fillStyle = this.color;
+                ctx.shadowBlur = isDark ? 8 : 4;
+                ctx.shadowColor = this.color;
+
+                if (this.isSparkle) {
+                    const s = this.size * 1.35;
+                    ctx.beginPath();
+                    ctx.moveTo(this.x, this.y - s);
+                    ctx.lineTo(this.x + s * 0.35, this.y - s * 0.35);
+                    ctx.lineTo(this.x + s, this.y);
+                    ctx.lineTo(this.x + s * 0.35, this.y + s * 0.35);
+                    ctx.lineTo(this.x, this.y + s);
+                    ctx.lineTo(this.x - s * 0.35, this.y + s * 0.35);
+                    ctx.lineTo(this.x - s, this.y);
+                    ctx.lineTo(this.x - s * 0.35, this.y - s * 0.35);
+                    ctx.closePath();
+                    ctx.fill();
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+        }
+
+        function initParticles() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            burstCanvas.width = window.innerWidth;
+            burstCanvas.height = window.innerHeight;
+
+            const count = Math.min(140, Math.max(65, Math.floor((canvas.width * canvas.height) / 11000)));
+            particlesArray = [];
+            for (let i = 0; i < count; i++) {
+                particlesArray.push(new TinyParticle());
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particlesArray.length; i++) {
+                particlesArray[i].update();
+                particlesArray[i].draw();
+            }
+            requestAnimationFrame(animateParticles);
+        }
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            burstCanvas.width = window.innerWidth;
+            burstCanvas.height = window.innerHeight;
+        });
+
+        /* =========================================================
+           4. INTERACTIVE CARD & UI DELEGATION LISTENERS
+           ========================================================= */
+        let lastMoveSparkle = 0;
+
+        function setupCardInteractions() {
+            // Hover enter on Game Cards & UI buttons
+            document.addEventListener('mouseover', (e) => {
+                const card = e.target.closest('.game-card');
+                if (card && !card.contains(e.relatedTarget)) {
+                    ArcadeSFX.hover();
+                    spawnCardPerimeterSparkles(card);
+                    return;
+                }
+
+                const btn = e.target.closest('.cat-btn, .ui-btn');
+                if (btn && !btn.contains(e.relatedTarget)) {
+                    ArcadeSFX.hover();
+                }
+            });
+
+            // Subtle trailing tiny particles while moving cursor over a Game Card
+            document.addEventListener('mousemove', (e) => {
+                const card = e.target.closest('.game-card');
+                if (card) {
+                    const now = performance.now();
+                    if (now - lastMoveSparkle > 42) {
+                        lastMoveSparkle = now;
+                        spawnParticleBurst(e.clientX, e.clientY, 2, true);
+                    }
+                }
+            });
+
+            // Click Nova Burst + Launch Sound on Game Cards
+            document.addEventListener('click', (e) => {
+                const card = e.target.closest('.game-card');
+                if (card) {
+                    const rect = card.getBoundingClientRect();
+                    const clickX = e.clientX || (rect.left + rect.width / 2);
+                    const clickY = e.clientY || (rect.top + rect.height / 2);
+
+                    spawnParticleBurst(clickX, clickY, 28, false);
+                    ArcadeSFX.launch();
+
+                    // Allow Ctrl/Cmd/Middle-click to open in new tab normally
+                    if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) {
+                        return;
+                    }
+
+                    const targetUrl = card.getAttribute('href');
+                    if (targetUrl) {
+                        e.preventDefault();
+                        setTimeout(() => {
+                            window.location.href = targetUrl;
+                        }, 180);
+                    }
+                }
+            });
+        }
+
+        /* =========================================================
+           5. AUDIO & PORTAL CATALOG LOGIC
+           ========================================================= */
         const music = document.getElementById('bgMusic');
         const soundIcon = document.getElementById('soundIcon');
         const soundText = document.getElementById('soundText');
         let isPlaying = false;
 
-        function toggleAudio() {
+        function toggleAudio(e) {
+            if (e) {
+                spawnParticleBurst(e.clientX, e.clientY, 18);
+            }
             if (isPlaying) {
                 music.pause();
                 isPlaying = false;
@@ -476,13 +1067,19 @@
                     soundIcon.className = "fa-solid fa-volume-high text-sm animate-pulse";
                     soundText.innerText = "Music 🎵 ON 🔊";
                     localStorage.setItem('hub_sound', 'on');
-                }).catch(e => {
-                    console.log("Playback error:", e);
+                }).catch(err => {
+                    console.log("Playback error:", err);
                 });
             }
         }
 
         window.addEventListener('DOMContentLoaded', () => {
+            initParticles();
+            animateParticles();
+            animateBurstCanvas();
+            setupCardInteractions();
+            updateSFXButtonUI();
+
             const savedSound = localStorage.getItem('hub_sound');
             if (savedSound === 'on') {
                 music.play().then(() => {
@@ -493,12 +1090,6 @@
             }
         });
 
-        /**
-         * FULL GAMES CATALOG
-         * - The FIRST 10 games (1 to 10) appear ABOVE the Popular section.
-         * - Any game with 'popular' in categories: [...] automatically goes into the Popular horizontal slider.
-         * - All REMAINING games (from #11 onwards) automatically appear BELOW the Popular section!
-         */
         const TOP_GAMES_LIMIT = 10;
 
         const GAMES_DATA = [
@@ -648,7 +1239,6 @@
                 badge: '',
                 bg: 'linear-gradient(135deg, #334155, #1e293b)'
             }
-            // Add any new games below this line and they will automatically appear after the Popular section!
         ];
 
         let currentCategory = 'all';
@@ -661,7 +1251,6 @@
             const remainingGridEl = document.getElementById('remainingGamesGrid');
             const emptyEl = document.getElementById('emptyState');
 
-            // Filter all games by category and search
             const filteredGames = GAMES_DATA.filter(game => {
                 const matchesCat = currentCategory === 'all' || (game.categories && game.categories.includes(currentCategory));
                 const matchesSearch = game.title.toLowerCase().includes(currentSearch.toLowerCase()) ||
@@ -669,11 +1258,9 @@
                 return matchesCat && matchesSearch;
             });
 
-            // Split into First 10 (Above Popular) and Remaining (Below Popular)
             const topTenGames = filteredGames.slice(0, TOP_GAMES_LIMIT);
             const remainingGames = filteredGames.slice(TOP_GAMES_LIMIT);
 
-            // Render Top 10 Games Grid
             if (topTenGames.length === 0) {
                 topGridEl.innerHTML = '';
                 emptyEl.classList.remove('hidden');
@@ -682,7 +1269,6 @@
                 topGridEl.innerHTML = topTenGames.map(g => createCardHTML(g, true, false)).join('');
             }
 
-            // Render Popular Horizontal Scroll Row (Any game with 'popular' in categories)
             const popularGames = GAMES_DATA.filter(game => {
                 const isPopular = game.categories && game.categories.includes('popular');
                 const matchesSearch = !currentSearch ||
@@ -694,7 +1280,6 @@
             document.getElementById('popularCountBadge').textContent = popularGames.length;
             popularRowEl.innerHTML = popularGames.map(g => createCardHTML(g, false, true)).join('');
 
-            // Render Remaining Games Grid (Game #11 onwards below Popular)
             if (remainingGames.length === 0) {
                 remainingSectionEl.classList.add('hidden');
                 remainingGridEl.innerHTML = '';
@@ -703,7 +1288,6 @@
                 remainingGridEl.innerHTML = remainingGames.map(g => createCardHTML(g, true, false)).join('');
             }
 
-            // Update Total Online Count
             document.getElementById('liveGameCount').textContent = GAMES_DATA.length;
         }
 
@@ -734,19 +1318,25 @@
             `;
         }
 
-        function scrollPopular(direction) {
+        function scrollPopular(direction, e) {
+            ArcadeSFX.click();
+            if (e) spawnParticleBurst(e.clientX, e.clientY, 14);
             const row = document.getElementById('popularGamesRow');
             row.scrollBy({ left: direction * 320, behavior: 'smooth' });
         }
 
-        function jumpToPopular() {
+        function jumpToPopular(e) {
+            ArcadeSFX.click();
+            if (e) spawnParticleBurst(e.clientX, e.clientY, 18);
             const popSec = document.getElementById('popularSection');
             if (popSec) {
                 popSec.scrollIntoView({ behavior: 'smooth' });
             }
         }
 
-        function filterByCategory(category) {
+        function filterByCategory(category, e) {
+            ArcadeSFX.click();
+            if (e) spawnParticleBurst(e.clientX, e.clientY, 20);
             currentCategory = category;
             document.querySelectorAll('.cat-btn').forEach(btn => {
                 const active = btn.getAttribute('data-cat') === category;
@@ -757,7 +1347,9 @@
             renderGames();
         }
 
-        function toggleSearchBar() {
+        function toggleSearchBar(e) {
+            ArcadeSFX.click();
+            if (e) spawnParticleBurst(e.clientX, e.clientY, 16);
             const drawer = document.getElementById('searchDrawer');
             drawer.classList.toggle('hidden');
             if (!drawer.classList.contains('hidden')) {
@@ -771,26 +1363,32 @@
         }
 
         function clearSearch() {
+            ArcadeSFX.click();
             document.getElementById('gameSearchInput').value = '';
             currentSearch = '';
             renderGames();
         }
 
-        function pickRandomGame() {
+        function pickRandomGame(e) {
+            ArcadeSFX.launch();
+            if (e) spawnParticleBurst(e.clientX, e.clientY, 28);
             const rnd = GAMES_DATA[Math.floor(Math.random() * GAMES_DATA.length)];
-            window.location.href = rnd.url;
+            setTimeout(() => {
+                window.location.href = rnd.url;
+            }, 180);
         }
 
-        let isDark = false;
-        function toggleTheme() {
+        function toggleTheme(e) {
+            ArcadeSFX.click();
+            if (e) spawnParticleBurst(e.clientX, e.clientY, 22);
             isDark = !isDark;
             document.body.classList.toggle('dark-theme', isDark);
+            particlesArray.forEach(p => p.pickColor());
         }
 
         window.onload = () => {
             renderGames();
 
-            // Load saved user state from login.html
             const savedLetter = localStorage.getItem('gh_user_letter');
             const savedPhoto = localStorage.getItem('gh_user_photo');
 
