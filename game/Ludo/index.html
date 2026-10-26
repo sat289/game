@@ -1,233 +1,51 @@
-<!DOCTYPE html>
+html
+
+<!doctype html
+
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pro Ludo 3D King - Ultimate Edition</title>
-  <link rel="stylesheet" href="style.css">
-  <!-- Confetti Library for Winning Celebrations -->
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-</head>
-<body data-theme="classic">
 
-  <!-- Daily Bonus Popup -->
-  <div id="daily-bonus-modal" class="modal-overlay hidden">
-    <div class="modal-card">
-      <h2>🎁 DAILY LOGIN BONUS!</h2>
-      <p>Claim your free daily reward to boost your coins!</p>
-      <button type="button" onclick="window.claimDailyBonus()" class="glow-btn">🪙 CLAIM +250 COINS</button>
-    </div>
-  </div>
+<head
 
-  <!-- Entrance Home Screen -->
-  <div id="home-screen" class="home-screen">
-    <!-- Floating Background Decorations -->
-    <div class="bg-floating-items">
-      <span class="float-item">🎲</span>
-      <span class="float-item">👑</span>
-      <span class="float-item">🔴</span>
-      <span class="float-item">🟢</span>
-      <span class="float-item">🟡</span>
-      <span class="float-item">🔵</span>
-    </div>
+<meta charset-"utf-8" />
 
-    <div class="home-card">
-      <div class="game-badge">INDIA'S NO. 1 LUDO</div>
-      <h1 class="glow-title">PRO LUDO 3D KING</h1>
-      <p class="sub-text">Parabolic Jumping Tokens, Wall Blockades, 3D Dice, and Live Room Multiplayer!</p>
-      
-      <div class="home-settings">
-        <div class="select-box">
-          <label for="select-player-mode">Players / Teams:</label>
-          <select id="select-player-mode">
-            <option value="1v1">1 vs 1 (Red vs Yellow)</option>
-            <option value="1v3">1 vs 3 (Solo vs 3 Players/Bots)</option>
-            <option value="2v2">2 vs 2 (Team Battle: Red+Yellow vs Green+Blue)</option>
-            <option value="4player">4 Players Classic</option>
-          </select>
-        </div>
+<meta name-"viewport" content="width-device-width, initial-scale-1" /> <title>Ludo - Home</title
 
-        <div class="select-box">
-          <label for="select-rule-mode">Game Rules:</label>
-          <select id="select-rule-mode">
-            <option value="classic">Classic Mode (All 4 in Base)</option>
-            <option value="rush">Quick Rush Mode (2 Tokens Unlocked!)</option>
-          </select>
-        </div>
-      </div>
+<style>
 
-      <!-- Direct onclick ensures it ALWAYS starts -->
-      <button type="button" id="main-start-btn" class="glow-btn" onclick="window.launchLudoGame()">
-        🎮 START GAME
-      </button>
-    </div>
-  </div>
+bodylfont-family system-ui, Segoe
 
-  <!-- Main Game Screen -->
-  <div id="game-screen" class="game-wrapper hidden">
-    <aside class="sidebar">
-      <div class="brand-title">👑 LUDO KING PRO</div>
-      
-      <div class="economy-pills">
-        <span class="pill">🪙 <strong id="coin-count">500</strong></span>
-        <span class="pill">⭐ XP <strong id="xp-count">0</strong></span>
-        <span class="pill">🏆 Hi: <strong id="hi-score-count">0</strong></span>
-      </div>
-      
-      <div id="auth-status" class="auth-badge">Guest Mode (Local Storage)</div>
+UI, Roboto, Arial, margin:0; padding:30px; background: #f7f769, color:#11} .card{max-width:720px; margin:20px
 
-      <div class="settings-grid">
-        <div class="control-group">
-          <label>Opponent Mode</label>
-          <select id="game-mode-select" onchange="window.changeOpponentMode(this.value)">
-            <option value="bot">Vs Smart Bot</option>
-            <option value="local">Pass & Play (Friends)</option>
-            <option value="online">Online Room Code</option>
-          </select>
-        </div>
-        <div class="control-group">
-          <label>Board Theme</label>
-          <select id="theme-select" onchange="document.body.dataset.theme = this.value">
-            <option value="classic">Classic Board</option>
-            <option value="cyber">Neon Cyberpunk</option>
-            <option value="royal">Royal Gold</option>
-          </select>
-        </div>
-      </div>
+auto; padding:20px; border-radius: 10px; background #fff; box-shadow:) 6px 18px rgba(0,0,0,.08)}
 
-      <!-- Online Multiplayer Room Box -->
-      <div id="online-lobby" class="online-lobby hidden">
-        <div class="room-code-display" id="room-code-label">ROOM: ------</div>
-        <input type="text" id="room-input-code" placeholder="Enter 6-Digit Code" maxlength="6">
-        <div class="room-btn-row">
-          <button type="button" onclick="window.createOnlineRoom()" class="btn-sm">Create Room</button>
-          <button type="button" onclick="window.joinOnlineRoom()" class="btn-sm">Join Room</button>
-        </div>
-      </div>
+hH{margin-top:0}
 
-      <!-- Turn & Auto-Play Timer -->
-      <div class="turn-display">
-        <div class="turn-header-row">
-          <div id="turn-indicator" class="turn-badge red">RED'S TURN</div>
-          <div class="timer-pill">⏱️ <span id="timer-sec">15</span>s</div>
-        </div>
-        <div class="timer-bar-bg">
-          <div id="timer-bar" class="timer-bar-fill"></div>
-        </div>
-        <div id="status-message" class="status-msg">Tap Roll Dice to start!</div>
-      </div>
+.btn{display inline-block; margin:6px, padding:10px
 
-      <!-- True 3D Dice with Dots -->
-      <div class="scene" onclick="window.triggerRollDice()">
-        <div class="cube" id="dice-cube">
-          <div class="cube__face cube__face--1" data-face="1"><span class="pip"></span></div>
-          <div class="cube__face cube__face--2" data-face="2"><span class="pip"></span><span class="pip"></span></div>
-          <div class="cube__face cube__face--3" data-face="3"><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-          <div class="cube__face cube__face--4" data-face="4"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-          <div class="cube__face cube__face--5" data-face="5"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-          <div class="cube__face cube__face--6" data-face="6"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-        </div>
-      </div>
+19px; border-radius 6px; background:#368266; color: #ff f. text-decoration:none)
 
-      <button type="button" id="roll-dice-btn" class="roll-btn" onclick="window.triggerRollDice()">
-        🎲 ROLL DICE
-      </button>
+</style>
 
-      <!-- Live Emoji & Quick Chat -->
-      <div class="emoji-tray">
-        <button type="button" class="emoji-btn" onclick="window.sendReaction('😂')">😂</button>
-        <button type="button" class="emoji-btn" onclick="window.sendReaction('🔥')">🔥</button>
-        <button type="button" class="emoji-btn" onclick="window.sendReaction('👏')">👏</button>
-        <button type="button" class="emoji-btn" onclick="window.sendReaction('😎')">😎</button>
-        <button type="button" class="emoji-btn" onclick="window.sendReaction('Hurry Up! ⏳')">⏳</button>
-      </div>
+</head
 
-      <div class="bottom-actions">
-        <button type="button" onclick="window.goHomeMenu()" class="btn-action">🏠 Home</button>
-        <button type="button" onclick="window.resetMatch()" class="btn-action">🔄 Restart</button>
-        <button type="button" id="sound-toggle-btn" onclick="window.toggleAudio()" class="btn-action">🔊 Sound</button>
-      </div>
-    </aside>
+<body>
 
-    <!-- Ludo Board Area -->
-    <main class="board-container" id="board-container">
-      <div id="emoji-floater" class="emoji-floater"></div>
-      <div id="ludo-board" class="ludo-board"></div>
-    </main>
-  </div>
+<div class="card">
 
-  <!-- Standard Script (Loads fast & never blocks on CORS) -->
-  <script src="game.js"></script>
+<hl>Real Iudo - Demo</ht>
 
-  <!-- Firebase Auto Cloud Sync & Live Multiplayer -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-    import { getDatabase, ref, set, get, child, onValue } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js";
+<p>Four-page demo: start game, read rules, set players in lobby, and play on one device. For online multiplayer, use a server (Web Socket / Socket. io) for state sync. (citation:6)</p>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBzLchy5M2fLne4c7Ghw1KNN8wVrlZdd8M",
-      authDomain: "friendsgame-872f5.firebaseapp.com",
-      databaseURL: "https://friendsgame-872f5-default-rtdb.firebaseio.com",
-      projectId: "friendsgame-872f5",
-      storageBucket: "friendsgame-872f5.firebasestorage.app",
-      messagingSenderId: "522534013233",
-      appId: "1:522534013233:web:f5faa6e6795023d0420810",
-      measurementId: "G-PW5H3G97QR"
-    };
+<a class="btn" href="lobby.html">Open Lobby</a
 
-    try {
-      const app = initializeApp(firebaseConfig);
-      const auth = getAuth(app);
-      const db = getDatabase(app);
-      const GAME_KEY = "ludo_king_india";
+<a class="btn" href="rules. html">Rules</a>
 
-      let currentUser = null;
-      let currentHighScore = parseInt(localStorage.getItem(`${GAME_KEY}_hi`) || "0", 10);
-      const hiEl = document.getElementById("hi-score-count");
-      if (hiEl) hiEl.textContent = currentHighScore;
+<a class="btn" href="game.html">Quick Play (2 players)</a
 
-      onAuthStateChanged(auth, async (user) => {
-        const statusEl = document.getElementById("auth-status");
-        if (user) {
-          currentUser = user;
-          if (statusEl) statusEl.textContent = "☁️ Cloud Synced (Online)";
-          try {
-            const snapshot = await get(child(ref(db), `scores/${user.uid}/${GAME_KEY}_high`));
-            if (snapshot.exists()) {
-              const cloudScore = parseInt(snapshot.val(), 10) || 0;
-              if (cloudScore > currentHighScore) {
-                currentHighScore = cloudScore;
-                localStorage.setItem(`${GAME_KEY}_hi`, currentHighScore.toString());
-                if (hiEl) hiEl.textContent = currentHighScore;
-              }
-            }
-          } catch (err) {
-            console.warn("Firebase score read error:", err);
-          }
-        } else {
-          currentUser = null;
-          if (statusEl) statusEl.textContent = "💾 Guest Mode (Local Storage)";
-        }
-      });
+</div>
 
-      window.submitScore = function(newScore) {
-        const val = parseInt(newScore, 10);
-        if (isNaN(val)) return;
-        if (val > currentHighScore) {
-          currentHighScore = val;
-          localStorage.setItem(`${GAME_KEY}_hi`, currentHighScore.toString());
-          if (hiEl) hiEl.textContent = currentHighScore;
-          if (currentUser) {
-            set(ref(db, `scores/${currentUser.uid}/${GAME_KEY}_high`), currentHighScore);
-          }
-        }
-      };
+<footer style="text-align center; color: #666; font-size 13px">Built for demonstration extend for networking or 41. (citation:6]</footer>
 
-      window.LudoFirebase = { db, ref, set, get, onValue };
-    } catch (e) {
-      console.warn("Firebase offline fallback active:", e);
-    }
-  </script>
 </body>
+
 </html>
