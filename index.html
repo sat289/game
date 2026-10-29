@@ -461,6 +461,20 @@
         @media (prefers-reduced-motion: reduce) {
             .single-notice-track { animation-duration: 60s !important; }
         }
+
+        /* Player / leaderboard / local admin upgrade */
+        .feature-hub { border:1px solid rgba(56,189,248,.35); background:rgba(255,255,255,.88); backdrop-filter:blur(16px); box-shadow:0 10px 28px rgba(14,116,144,.08),0 0 24px rgba(56,189,248,.12); }
+        body.dark-theme .feature-hub { background:rgba(8,18,38,.91)!important; color:#eaf7ff; border-color:rgba(56,189,248,.38); }
+        .neon-input { width:100%; min-width:0; border:1px solid rgba(56,189,248,.42); background:rgba(240,249,255,.92); color:#0f172a; border-radius:12px; padding:10px 12px; font-size:12px; font-weight:650; outline:none; }
+        .neon-input:focus { border-color:#38bdf8; box-shadow:0 0 0 3px rgba(56,189,248,.17),0 0 16px rgba(56,189,248,.18); }
+        body.dark-theme .neon-input { background:#0f172a; color:#f8fafc; }
+        .neon-action { border:1px solid rgba(56,189,248,.4); border-radius:12px; padding:9px 12px; background:linear-gradient(120deg,#0e7490,#2563eb); color:white; font-size:11px; font-weight:800; box-shadow:0 0 16px rgba(56,189,248,.16); }
+        .neon-action:hover { box-shadow:0 0 22px rgba(56,189,248,.34); }
+        .feature-row { display:flex; align-items:center; justify-content:space-between; gap:10px; border:1px solid rgba(56,189,248,.15); border-radius:12px; padding:10px 12px; background:rgba(224,242,254,.32); }
+        body.dark-theme .feature-row { background:rgba(15,23,42,.55); }
+        .tiny-label { display:block; font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:#0284c7; margin:0 0 5px; }
+        body.dark-theme .tiny-label { color:#7dd3fc; }
+        @media(max-width:639px){ .feature-hub { border-radius:18px; } }
     </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between text-slate-900">
@@ -570,6 +584,57 @@
                 <div class="flex justify-between items-center gap-3 mb-2"><span class="text-[11px] font-bold text-slate-200">PLAYER XP</span><span id="xpLabel" class="text-[10px] font-bold text-cyan-200">0 / 100 XP</span></div>
                 <div class="progress-track"><div id="xpProgress" class="progress-fill"></div></div>
                 <p id="achievementText" class="text-[10px] text-slate-400 mt-2">Launch games to earn XP and unlock milestones.</p>
+            </div>
+        </section>
+
+        <!-- PLAYER PROFILE, LOCAL LEADERBOARD AND ADMIN TOOLS -->
+        <section class="grid lg:grid-cols-3 gap-3 mb-5 relative z-10" aria-label="Player features">
+            <div id="playerProfilePanel" class="feature-hub rounded-2xl p-4 min-w-0">
+                <div class="flex items-center justify-between gap-2 mb-3">
+                    <h3 class="brand-font font-bold text-base theme-text-primary"><i class="fa-solid fa-user-astronaut text-sky-500 mr-2"></i>Player Profile</h3>
+                    <span class="text-[9px] font-extrabold uppercase tracking-wider text-sky-600">On this device</span>
+                </div>
+                <div class="flex items-center gap-3 mb-3">
+                    <div id="profileAvatar" class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 text-white text-lg font-black bg-gradient-to-br from-sky-400 to-blue-700 shadow-lg shadow-sky-500/20">S</div>
+                    <div class="min-w-0"><div id="profileDisplayName" class="font-extrabold theme-text-primary truncate">ST Player</div><div id="profileRank" class="text-[10px] text-sky-600 font-bold">Rookie • Level 1</div></div>
+                </div>
+                <label class="tiny-label" for="playerNameInput">Player name</label>
+                <input id="playerNameInput" class="neon-input mb-2" maxlength="22" placeholder="Enter your player name" autocomplete="nickname">
+                <button class="neon-action w-full" onclick="savePlayerProfile()"><i class="fa-solid fa-floppy-disk mr-1"></i> Save profile</button>
+                <div class="grid grid-cols-3 gap-2 mt-3 text-center">
+                    <div class="feature-row flex-col gap-1"><b id="profileGamesStat" class="text-base">0</b><span class="text-[9px] opacity-70">Played</span></div>
+                    <div class="feature-row flex-col gap-1"><b id="profileXPStat" class="text-base">0</b><span class="text-[9px] opacity-70">XP</span></div>
+                    <div class="feature-row flex-col gap-1"><b id="profileFavStat" class="text-base">0</b><span class="text-[9px] opacity-70">Faves</span></div>
+                </div>
+            </div>
+
+            <div id="leaderboardPanel" class="feature-hub rounded-2xl p-4 min-w-0">
+                <div class="flex items-center justify-between gap-2 mb-2">
+                    <h3 class="brand-font font-bold text-base theme-text-primary"><i class="fa-solid fa-trophy text-amber-500 mr-2"></i>Leaderboard</h3>
+                    <span class="text-[9px] font-extrabold uppercase tracking-wider text-sky-600">Local</span>
+                </div>
+                <p class="text-[10px] opacity-70 mb-3">Top profiles saved in this browser. A shared online leaderboard needs a server/database.</p>
+                <div id="leaderboardList" class="space-y-2"><div class="text-xs opacity-60 py-4 text-center">Play a game to start your score.</div></div>
+                <button onclick="refreshLeaderboard()" class="mt-3 text-[10px] font-extrabold text-sky-600 hover:text-blue-700"><i class="fa-solid fa-rotate mr-1"></i>Refresh scores</button>
+            </div>
+
+            <div id="adminPanel" class="feature-hub rounded-2xl p-4 min-w-0">
+                <div class="flex items-center justify-between gap-2 mb-2">
+                    <h3 class="brand-font font-bold text-base theme-text-primary"><i class="fa-solid fa-screwdriver-wrench text-sky-500 mr-2"></i>Admin Tools</h3>
+                    <button id="adminToggleBtn" class="neon-action" onclick="toggleAdminPanel()">Open</button>
+                </div>
+                <p class="text-[10px] opacity-70 mb-3">Manage locally-added game cards on this device. These browser-only tools are not secure admin authentication and do not publish changes to other visitors.</p>
+                <div id="adminToolsBody" class="hidden border-t border-sky-200/40 pt-3">
+                    <form onsubmit="addCustomGame(event)" class="space-y-2">
+                        <div><label class="tiny-label" for="adminGameTitle">Game title</label><input id="adminGameTitle" class="neon-input" required maxlength="50" placeholder="e.g. Space Runner"></div>
+                        <div><label class="tiny-label" for="adminGamePath">Existing game path</label><input id="adminGamePath" class="neon-input" required placeholder="game/mygame/index.html"></div>
+                        <div><label class="tiny-label" for="adminGameImage">Logo image path (optional)</label><input id="adminGameImage" class="neon-input" placeholder="logo/mygame.jpg"></div>
+                        <div><label class="tiny-label" for="adminGameCategory">Category</label><select id="adminGameCategory" class="neon-input"><option value="single">Single player</option><option value="sports">Sports</option><option value="racing">Racing</option><option value="arcade">Arcade</option><option value="2-player">2 player</option></select></div>
+                        <button class="neon-action w-full" type="submit"><i class="fa-solid fa-plus mr-1"></i>Add game card</button>
+                    </form>
+                    <div class="mt-4"><div class="tiny-label">Your local additions</div><div id="customGamesAdminList" class="space-y-2"></div></div>
+                    <button onclick="resetCustomGames()" class="mt-3 text-[10px] font-bold text-rose-500 underline">Remove all locally added cards</button>
+                </div>
             </div>
         </section>
 
@@ -1425,6 +1490,13 @@
         let favoritesOnly = false;
         const favoriteGames = new Set(JSON.parse(localStorage.getItem('st_favorite_games') || '[]'));
         const playedGames = new Set(JSON.parse(localStorage.getItem('st_played_games') || '[]'));
+        const safeReadJSON = (key, fallback) => { try { const value = JSON.parse(localStorage.getItem(key) || 'null'); return value == null ? fallback : value; } catch (_) { return fallback; } };
+        let playerProfile = safeReadJSON('st_player_profile', { name: 'ST Player' });
+        let customGames = safeReadJSON('st_custom_games', []);
+        let localScores = safeReadJSON('st_local_leaderboard', []);
+        if (!Array.isArray(customGames)) customGames = [];
+        if (!Array.isArray(localScores)) localScores = [];
+        customGames.forEach(game => { if (game && game.id && !GAMES_DATA.some(existing => existing.id === game.id)) GAMES_DATA.push(game); });
 
         function savePlayerData() {
             localStorage.setItem('st_favorite_games', JSON.stringify([...favoriteGames]));
@@ -1447,9 +1519,87 @@
             setText('achievementText', played >= 10 ? 'Achievement unlocked: Arcade Legend! Keep going.' : played >= 5 ? 'Achievement unlocked: Game Explorer! Try 10 different games.' : 'Play games to earn 25 XP per unique game. Favourites earn 5 bonus XP.');
             const bar = document.getElementById('xpProgress'); if (bar) bar.style.width = xpInLevel + '%';
             setText('favoriteCount', favoriteGames.size);
+            setText('profileDisplayName', playerProfile.name || 'ST Player');
+            setText('profileAvatar', (playerProfile.name || 'ST Player').trim().charAt(0).toUpperCase() || 'S');
+            setText('profileRank', (level >= 10 ? 'Arcade Master' : level >= 5 ? 'Pro Gamer' : level >= 3 ? 'Game Explorer' : 'Rookie') + ' • Level ' + level);
+            setText('profileGamesStat', played); setText('profileXPStat', xp); setText('profileFavStat', favoriteGames.size);
+            const nameInput = document.getElementById('playerNameInput');
+            if (nameInput && document.activeElement !== nameInput && !nameInput.value) nameInput.value = playerProfile.name || 'ST Player';
+            syncLocalLeaderboard(xp, level, played);
         }
         function markGamePlayed(id) {
+            const wasNew = !playedGames.has(id);
             playedGames.add(id); savePlayerData(); updatePlayerDashboard();
+            if (wasNew) showMiniToast('+' + 25 + ' XP • Game added to your profile');
+        }
+        function showMiniToast(message) {
+            let toast = document.getElementById('stMiniToast');
+            if (!toast) { toast = document.createElement('div'); toast.id = 'stMiniToast'; toast.className = 'fixed left-1/2 bottom-5 -translate-x-1/2 z-[80] rounded-xl px-4 py-3 text-xs font-extrabold text-white bg-slate-950 border border-sky-400/60 shadow-xl'; document.body.appendChild(toast); }
+            toast.textContent = message; toast.style.display = 'block';
+            clearTimeout(window.__stToastTimer); window.__stToastTimer = setTimeout(() => { toast.style.display = 'none'; }, 1700);
+        }
+        function savePlayerProfile() {
+            const input = document.getElementById('playerNameInput');
+            const name = (input.value || '').trim().replace(/[<>]/g, '').slice(0,22);
+            if (!name) { showMiniToast('Enter a player name first'); return; }
+            playerProfile = { name };
+            localStorage.setItem('st_player_profile', JSON.stringify(playerProfile));
+            const old = localScores.find(item => item.name.toLowerCase() === name.toLowerCase());
+            if (old) { old.xp = Math.max(old.xp || 0, getCurrentXP()); old.level = Math.max(old.level || 1, Math.floor(getCurrentXP()/100)+1); old.games = Math.max(old.games || 0, playedGames.size); }
+            updatePlayerDashboard(); refreshLeaderboard(); showMiniToast('Player profile saved');
+        }
+        function getCurrentXP() { return playedGames.size * 25 + favoriteGames.size * 5; }
+        function syncLocalLeaderboard(xp, level, played) {
+            const name = (playerProfile.name || 'ST Player').trim().slice(0,22) || 'ST Player';
+            let row = localScores.find(item => item.name.toLowerCase() === name.toLowerCase());
+            if (!row) { row = { name, xp: 0, level: 1, games: 0 }; localScores.push(row); }
+            row.name = name; row.xp = Math.max(0, xp); row.level = level; row.games = played;
+            localScores = localScores.slice(-50);
+            try { localStorage.setItem('st_local_leaderboard', JSON.stringify(localScores)); } catch (_) {}
+            refreshLeaderboard(false);
+        }
+        function refreshLeaderboard(save = true) {
+            const list = document.getElementById('leaderboardList'); if (!list) return;
+            const sorted = [...localScores].sort((a,b) => (b.xp||0)-(a.xp||0) || (b.games||0)-(a.games||0)).slice(0,5);
+            list.innerHTML = sorted.length ? sorted.map((row,i) => `<div class="feature-row"><div class="flex items-center gap-2 min-w-0"><span class="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black ${i===0?'bg-amber-300 text-slate-900':'bg-sky-100 text-sky-800'}">${i+1}</span><div class="min-w-0"><div class="font-extrabold text-xs truncate">${escapeHTML(row.name || 'ST Player')}</div><div class="text-[9px] opacity-65">Level ${Number(row.level)||1} · ${Number(row.games)||0} games</div></div></div><b class="text-xs text-sky-600 whitespace-nowrap">${Number(row.xp)||0} XP</b></div>`).join('') : '<div class="text-xs opacity-60 py-4 text-center">Play a game to start your score.</div>';
+            if (save) { try { localStorage.setItem('st_local_leaderboard', JSON.stringify(localScores)); } catch (_) {} }
+        }
+        function escapeHTML(value) { return String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+        function toggleAdminPanel() {
+            const body = document.getElementById('adminToolsBody'); const btn = document.getElementById('adminToggleBtn');
+            const opening = body.classList.contains('hidden'); body.classList.toggle('hidden', !opening); btn.textContent = opening ? 'Close' : 'Open';
+            if (opening) renderCustomGamesAdmin();
+        }
+        function addCustomGame(event) {
+            event.preventDefault();
+            const title = document.getElementById('adminGameTitle').value.trim();
+            const url = document.getElementById('adminGamePath').value.trim();
+            const logo = document.getElementById('adminGameImage').value.trim() || 'logo/game.jpg';
+            const category = document.getElementById('adminGameCategory').value;
+            if (!title || !url || /^(javascript:|data:|https?:)/i.test(url)) { showMiniToast('Use a relative path to an existing game file'); return; }
+            if (GAMES_DATA.some(game => game.url === url || game.title.toLowerCase() === title.toLowerCase())) { showMiniToast('That game title or path already exists'); return; }
+            const id = 'custom-' + Date.now().toString(36);
+            const game = { id, title, url, logo, icon:'fa-solid fa-gamepad', size:'normal', categories:[category], badge:'NEW', bg:'linear-gradient(135deg,#0284c7,#1d4ed8)', custom:true };
+            customGames.push(game); GAMES_DATA.push(game);
+            try { localStorage.setItem('st_custom_games', JSON.stringify(customGames)); } catch (_) {}
+            document.getElementById('adminGameTitle').value=''; document.getElementById('adminGamePath').value=''; document.getElementById('adminGameImage').value='';
+            renderGames(); renderCustomGamesAdmin(); updatePlayerDashboard(); showMiniToast('Game card added on this device');
+        }
+        function removeCustomGame(id) {
+            customGames = customGames.filter(game => game.id !== id);
+            const index = GAMES_DATA.findIndex(game => game.id === id); if (index >= 0) GAMES_DATA.splice(index,1);
+            try { localStorage.setItem('st_custom_games', JSON.stringify(customGames)); } catch (_) {}
+            renderGames(); renderCustomGamesAdmin(); updatePlayerDashboard();
+        }
+        function resetCustomGames() {
+            if (!customGames.length) { showMiniToast('No local additions to remove'); return; }
+            if (!confirm('Remove all game cards added through this local admin panel? Original game links will remain unchanged.')) return;
+            [...customGames].forEach(game => { const index = GAMES_DATA.findIndex(item => item.id === game.id); if (index >= 0) GAMES_DATA.splice(index,1); });
+            customGames = []; localStorage.removeItem('st_custom_games'); renderGames(); renderCustomGamesAdmin(); updatePlayerDashboard(); showMiniToast('Local additions removed');
+        }
+        function renderCustomGamesAdmin() {
+            const el = document.getElementById('customGamesAdminList'); if (!el) return;
+            el.innerHTML = customGames.length ? customGames.map(game => `<div class="feature-row"><div class="min-w-0"><div class="font-bold text-xs truncate">${escapeHTML(game.title)}</div><div class="text-[9px] opacity-60 truncate">${escapeHTML(game.url)}</div></div><button class="text-rose-500 font-extrabold text-xs px-2" onclick="removeCustomGame('${game.id}')" aria-label="Remove ${escapeHTML(game.title)}">Remove</button></div>`).join('') : '<p class="text-[10px] opacity-60">No locally added games yet.</p>';
         }
         function toggleFavorite(e, id) {
             if (e) { e.preventDefault(); e.stopPropagation(); }
@@ -1627,6 +1777,8 @@
             document.body.classList.toggle('dark-theme', isDark);
             renderGames();
             updatePlayerDashboard();
+            refreshLeaderboard();
+            renderCustomGamesAdmin();
 
             const savedLetter = localStorage.getItem('gh_user_letter');
             const savedPhoto = localStorage.getItem('gh_user_photo');
