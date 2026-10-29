@@ -477,30 +477,10 @@
         @media(max-width:639px){ .feature-hub { border-radius:18px; } }
     </style>
 
-    <!-- ST GAMES premium light-blue neon polish; existing game logic, paths, and assets are preserved -->
-    <style id="st-games-premium-polish">
-      :root { --st-cyan:#38bdf8; --st-sky:#7dd3fc; --st-blue:#0284c7; --st-ink:#07182d; }
-      html { scroll-padding-top:90px; }
-      body { background-color:#eef8ff; background-image:radial-gradient(ellipse at 0% 8%,rgba(56,189,248,.22),transparent 36%),radial-gradient(ellipse at 100% 28%,rgba(96,165,250,.18),transparent 38%),radial-gradient(ellipse at 50% 100%,rgba(125,211,252,.22),transparent 42%); }
-      body.dark-theme { background-color:#06101f; background-image:radial-gradient(ellipse at 0% 8%,rgba(14,165,233,.25),transparent 36%),radial-gradient(ellipse at 100% 28%,rgba(37,99,235,.20),transparent 38%),radial-gradient(ellipse at 50% 100%,rgba(56,189,248,.16),transparent 42%); }
-      .top-notice-bar { min-height:40px;padding:11px 0;background:linear-gradient(90deg,#062449 0%,#075985 48%,#0b3674 100%);border-bottom:1px solid rgba(125,211,252,.9);box-shadow:0 4px 24px rgba(14,165,233,.28),inset 0 -1px 8px rgba(125,211,252,.12); }
-      .single-notice-track { animation-duration:26s !important; }
-      .single-notice-message { color:#effaff;text-shadow:0 0 10px rgba(125,211,252,.45); }
-      header .theme-surface { border:1px solid rgba(56,189,248,.36)!important;box-shadow:0 10px 28px rgba(7,89,133,.12),0 0 22px rgba(56,189,248,.12)!important; }
-      body.dark-theme header .theme-surface { background:rgba(7,24,45,.92)!important;border-color:rgba(56,189,248,.38)!important;box-shadow:0 10px 30px rgba(0,0,0,.3),0 0 24px rgba(56,189,248,.14)!important; }
-      .hero-panel { border-color:rgba(56,189,248,.45)!important;box-shadow:0 18px 44px rgba(7,89,133,.18),0 0 28px rgba(56,189,248,.13)!important; }
-      .dashboard-panel,.feature-hub { border-color:rgba(56,189,248,.30)!important;box-shadow:0 10px 30px rgba(7,89,133,.08),0 0 18px rgba(56,189,248,.07)!important; }
-      .game-card { border:1px solid rgba(56,189,248,.25)!important;box-shadow:0 8px 22px rgba(7,24,45,.12),0 0 0 1px rgba(56,189,248,.05)!important; }
-      .game-card:hover,.game-card:focus-visible { transform:translateY(-3px);border-color:rgba(56,189,248,.82)!important;box-shadow:0 14px 30px rgba(7,24,45,.16),0 0 24px rgba(56,189,248,.25)!important;outline:none; }
-      .glow-button { background:linear-gradient(105deg,#0284c7,#2563eb)!important;border:1px solid rgba(186,230,253,.55);box-shadow:0 7px 22px rgba(14,165,233,.28),inset 0 1px rgba(255,255,255,.2); }
-      .glow-button:hover { filter:brightness(1.08);box-shadow:0 9px 26px rgba(14,165,233,.38); }
-      .favorite-btn { backdrop-filter:blur(10px); }
-      .filter-control:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible { outline:2px solid #38bdf8;outline-offset:3px; }
-      .progress-fill { background:linear-gradient(90deg,#38bdf8,#2563eb)!important; }
-      .feature-row { border-color:rgba(56,189,248,.17); }
-      body.dark-theme .dashboard-panel,body.dark-theme .feature-hub,body.dark-theme #emptyState { background:rgba(8,23,43,.92)!important;border-color:rgba(56,189,248,.24)!important;box-shadow:0 10px 30px rgba(0,0,0,.18),0 0 20px rgba(56,189,248,.07)!important; }
-      @media(max-width:639px) { .top-notice-bar{padding:10px 0}.single-notice-message{font-size:12px}.poki-grid{gap:10px}main{padding-left:12px!important;padding-right:12px!important}.dashboard-panel,.feature-hub{border-radius:18px} }
-      @media(prefers-reduced-motion:reduce) { .single-notice-track{animation-duration:60s!important}.game-card,.glow-button{transition:none!important} }
+    <style id="st-games-admin-shortcut-style">
+      .admin-mini-button{display:inline-flex;align-items:center;justify-content:center;gap:3px;padding:6px 10px;border-radius:10px;font-size:11px;font-weight:800;color:#eaf8ff;background:linear-gradient(110deg,#075985,#0369a1);border:1px solid rgba(125,211,252,.8);box-shadow:0 0 15px rgba(56,189,248,.2);text-decoration:none;transition:transform .18s ease,box-shadow .18s ease}
+      .admin-mini-button:hover{transform:translateY(-1px);box-shadow:0 0 22px rgba(56,189,248,.42)}
+      @media(max-width:640px){.admin-mini-button{padding:6px 8px;font-size:10px}}
     </style>
 
 </head>
@@ -645,22 +625,10 @@
                 <button onclick="refreshLeaderboard()" class="mt-3 text-[10px] font-extrabold text-sky-600 hover:text-blue-700"><i class="fa-solid fa-rotate mr-1"></i>Refresh scores</button>
             </div>
 
-            <div id="adminPanel" class="feature-hub rounded-2xl p-4 min-w-0">
-                <div class="flex items-center justify-between gap-2 mb-2">
-                    <h3 class="brand-font font-bold text-base theme-text-primary"><i class="fa-solid fa-screwdriver-wrench text-sky-500 mr-2"></i>Admin Tools</h3>
-                    <button id="adminToggleBtn" class="neon-action" onclick="toggleAdminPanel()">Open</button>
-                </div>
-                <p class="text-[10px] opacity-70 mb-3">Manage locally-added game cards on this device. These browser-only tools are not secure admin authentication and do not publish changes to other visitors.</p>
-                <div id="adminToolsBody" class="hidden border-t border-sky-200/40 pt-3">
-                    <form onsubmit="addCustomGame(event)" class="space-y-2">
-                        <div><label class="tiny-label" for="adminGameTitle">Game title</label><input id="adminGameTitle" class="neon-input" required maxlength="50" placeholder="e.g. Space Runner"></div>
-                        <div><label class="tiny-label" for="adminGamePath">Existing game path</label><input id="adminGamePath" class="neon-input" required placeholder="game/mygame/index.html"></div>
-                        <div><label class="tiny-label" for="adminGameImage">Logo image path (optional)</label><input id="adminGameImage" class="neon-input" placeholder="logo/mygame.jpg"></div>
-                        <div><label class="tiny-label" for="adminGameCategory">Category</label><select id="adminGameCategory" class="neon-input"><option value="single">Single player</option><option value="sports">Sports</option><option value="racing">Racing</option><option value="arcade">Arcade</option><option value="2-player">2 player</option></select></div>
-                        <button class="neon-action w-full" type="submit"><i class="fa-solid fa-plus mr-1"></i>Add game card</button>
-                    </form>
-                    <div class="mt-4"><div class="tiny-label">Your local additions</div><div id="customGamesAdminList" class="space-y-2"></div></div>
-                    <button onclick="resetCustomGames()" class="mt-3 text-[10px] font-bold text-rose-500 underline">Remove all locally added cards</button>
+            <div class="feature-hub rounded-2xl p-4 min-w-0 flex flex-col justify-center">
+                <div class="flex items-center justify-between gap-2">
+                    <div><h3 class="brand-font font-bold text-base theme-text-primary"><i class="fa-solid fa-shield-halved text-sky-500 mr-2"></i>Admin</h3><p class="text-[10px] opacity-70 mt-1">Manage game cards</p></div>
+                    <a href="admin.html" class="admin-mini-button" aria-label="Open admin page"><i class="fa-solid fa-lock mr-1"></i> Admin</a>
                 </div>
             </div>
         </section>
