@@ -1,0 +1,177 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ST GAMES - Player Profile</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 20px 15px 100px;
+  font-family: Arial, sans-serif;
+  background: #f2f6ff;
+  color: #172033;
+}
+
+header {
+  max-width: 700px;
+  margin: auto;
+  font-size: 23px;
+  font-weight: bold;
+  color: #075985;
+}
+
+.container {
+  max-width: 700px;
+  margin: 22px auto;
+}
+
+.card {
+  background: white;
+  border: 1px solid #dbeafe;
+  border-radius: 18px;
+  padding: 22px;
+  margin-bottom: 16px;
+  box-shadow: 0 5px 20px #0f172a08;
+}
+
+.avatar {
+  width: 75px;
+  height: 75px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #dff4ff;
+  color: #0369a1;
+  font-size: 30px;
+  font-weight: bold;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.stat {
+  background: #f0f8ff;
+  padding: 13px;
+  border-radius: 12px;
+}
+
+.number {
+  font-size: 25px;
+  font-weight: bold;
+  color: #0284c7;
+}
+
+.muted { color: #64748b; }
+
+button, .button {
+  display: inline-block;
+  border: 0;
+  border-radius: 10px;
+  padding: 12px 15px;
+  background: #0284c7;
+  color: white;
+  font-weight: bold;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.progress {
+  height: 12px;
+  background: #e2e8f0;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+#progressBar {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, #06b6d4, #6366f1);
+}
+
+@media(max-width: 480px) {
+  .stats { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+
+<body>
+<header>🎮 ST GAMES</header>
+
+<main class="container">
+  <section class="card">
+    <div class="avatar" id="avatar">P</div>
+    <h1 id="playerName">Player Profile</h1>
+    <p class="muted" id="playerEmail">Welcome to ST GAMES!</p>
+    <a class="button" href="index.html">Play Games</a>
+  </section>
+
+  <section class="card">
+    <h2>Player Progress</h2>
+    <div class="stats">
+      <div class="stat">
+        <div class="muted">Level</div>
+        <div class="number" id="level">1</div>
+      </div>
+      <div class="stat">
+        <div class="muted">Total XP</div>
+        <div class="number" id="xp">0</div>
+      </div>
+      <div class="stat">
+        <div class="muted">Games Played</div>
+        <div class="number" id="games">0</div>
+      </div>
+    </div>
+
+    <p id="xpText">0 / 100 XP to next level</p>
+    <div class="progress">
+      <div id="progressBar"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>My Gaming</h2>
+    <p><a href="achievements.html">🏆 View Achievements</a></p>
+    <p><a href="levels.html">⚡ View Levels</a></p>
+  </section>
+</main>
+
+<script>
+function getNumber(key) {
+  return Math.max(0, Number(localStorage.getItem(key) || 0) || 0);
+}
+
+const name =
+  localStorage.getItem("gh_user_name") || "Player";
+
+const xp = getNumber("st_player_xp");
+const games = getNumber("st_games_launched");
+const level = Math.floor(xp / 100) + 1;
+const currentXP = xp % 100;
+
+document.getElementById("playerName").textContent = name;
+document.getElementById("avatar").textContent =
+  (name.trim()[0] || "P").toUpperCase();
+
+document.getElementById("playerEmail").textContent =
+  localStorage.getItem("st_player_email") ||
+  "Your ST GAMES account";
+
+document.getElementById("level").textContent = level;
+document.getElementById("xp").textContent = xp;
+document.getElementById("games").textContent = games;
+document.getElementById("xpText").textContent =
+  currentXP + " / 100 XP to next level";
+
+document.getElementById("progressBar").style.width =
+  currentXP + "%";
+</script>
+</body>
+</html>
