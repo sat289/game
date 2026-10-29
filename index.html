@@ -1,1877 +1,1650 @@
 <!DOCTYPE html>
-< lang="en">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ST Games - Skill | Strategy | Victory</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ST Games - Skill | Strategy | Victory</title>
 
-    <style>
-        :root {
-            --poki-cyan: #5be7c4;
-            --poki-teal: #34c7a5;
-            --poki-yellow: #ffea59;
-            --poki-navy: #002b5b;
-        }
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
 
-        /* Animated Gradient Background */
-        @keyframes gradientFlow {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 
-        /* Ambient Floating Glow Blobs */
-        @keyframes floatSlow {
-            0%, 100% { transform: translate(0px, 0px) scale(1); }
-            33% { transform: translate(35px, -25px) scale(1.08); }
-            66% { transform: translate(-25px, 20px) scale(0.95); }
-        }
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background: radial-gradient(circle at 8% 12%, rgba(56, 189, 248, 0.22), transparent 27%), radial-gradient(circle at 92% 24%, rgba(168, 85, 247, 0.18), transparent 28%), radial-gradient(circle at 52% 92%, rgba(34, 211, 238, 0.16), transparent 30%), #f3f6fb;
-            background-attachment: fixed;
-            overflow-x: hidden;
-            user-select: none;
-            transition: background 0.5s ease, color 0.35s ease;
-            position: relative;
-        }
+  <style>
+    :root {
+      --poki-cyan: #5be7c4;
+      --poki-teal: #34c7a5;
+      --poki-yellow: #ffea59;
+      --poki-navy: #002b5b;
+      --neon-cyan: #22d3ee;
+      --neon-violet: #8b5cf6;
+      --neon-pink: #ec4899;
+    }
 
-        /* DARK THEME OVERRIDES */
-        body.dark-theme {
-            background: radial-gradient(circle at 8% 12%, rgba(14, 165, 233, 0.24), transparent 28%), radial-gradient(circle at 92% 24%, rgba(168, 85, 247, 0.24), transparent 30%), radial-gradient(circle at 52% 92%, rgba(236, 72, 153, 0.15), transparent 32%), #0f172a;
-            background-attachment: fixed;
-            animation: none;
-            color: #f8fafc;
-        }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f3f6fb;
+      background-image:
+        radial-gradient(circle at 8% 12%, rgba(56, 189, 248, 0.22), transparent 27%),
+        radial-gradient(circle at 92% 24%, rgba(168, 85, 247, 0.18), transparent 28%),
+        radial-gradient(circle at 52% 92%, rgba(34, 211, 238, 0.16), transparent 30%);
+      background-attachment: fixed;
+      overflow-x: hidden;
+      user-select: none;
+      transition: background 0.5s ease, color 0.35s ease;
+      position: relative;
+      padding-bottom: calc(82px + env(safe-area-inset-bottom, 0px));
+    }
 
-        /* Background Particle & Ambient Aura Layer */
-        #bgEffectsWrapper {
-            display: none !important;
-        }
+    /* Static Neon Glow Accents */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background:
+        radial-gradient(ellipse at 0% 12%, rgba(56, 189, 248, 0.24), transparent 38%),
+        radial-gradient(ellipse at 100% 35%, rgba(96, 165, 250, 0.20), transparent 40%),
+        radial-gradient(ellipse at 50% 100%, rgba(125, 211, 252, 0.18), transparent 42%);
+    }
 
-        #particleCanvas {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.95;
+      background:
+        radial-gradient(ellipse at 8% 22%, rgba(125, 211, 252, 0.20), transparent 36%),
+        radial-gradient(ellipse at 92% 58%, rgba(59, 130, 246, 0.16), transparent 38%),
+        radial-gradient(ellipse at 50% 100%, rgba(56, 189, 248, 0.14), transparent 40%);
+    }
 
-        /* Foreground Interactive Burst Canvas (Above Cards) */
-        #burstCanvas {
-            display: none !important;
-        }
+    body > * {
+      position: relative;
+      z-index: 1;
+    }
 
-        .ambient-orb {
-            position: absolute;
-            border-radius: 9999px;
-            filter: blur(75px);
-            opacity: 0.45;
-            animation: floatSlow 14s ease-in-out infinite;
-            transition: background 0.5s ease, opacity 0.5s ease;
-        }
+    /* DARK THEME OVERRIDES */
+    body.dark-theme {
+      background-color: #080d1b;
+      background-image:
+        radial-gradient(circle at 8% 12%, rgba(14, 165, 233, 0.24), transparent 28%),
+        radial-gradient(circle at 92% 24%, rgba(168, 85, 247, 0.24), transparent 30%),
+        radial-gradient(circle at 52% 92%, rgba(236, 72, 153, 0.15), transparent 32%);
+      color: #f8fafc;
+    }
 
-        .orb-1 {
-            width: 340px;
-            height: 340px;
-            top: 8%;
-            left: -60px;
-            background: rgba(255, 255, 255, 0.55);
-        }
+    body.dark-theme::before {
+      background:
+        radial-gradient(ellipse at 0% 12%, rgba(56, 189, 248, 0.28), transparent 38%),
+        radial-gradient(ellipse at 100% 35%, rgba(96, 165, 250, 0.24), transparent 40%),
+        radial-gradient(ellipse at 50% 100%, rgba(125, 211, 252, 0.20), transparent 42%);
+    }
 
-        .orb-2 {
-            width: 400px;
-            height: 400px;
-            bottom: 10%;
-            right: -80px;
-            background: rgba(250, 204, 21, 0.35);
-            animation-delay: -5s;
-        }
+    body.dark-theme::after {
+      opacity: 1;
+      background:
+        radial-gradient(ellipse at 8% 22%, rgba(125, 211, 252, 0.23), transparent 36%),
+        radial-gradient(ellipse at 92% 58%, rgba(59, 130, 246, 0.20), transparent 38%),
+        radial-gradient(ellipse at 50% 100%, rgba(56, 189, 248, 0.17), transparent 40%);
+    }
 
-        .orb-3 {
-            width: 280px;
-            height: 280px;
-            top: 48%;
-            left: 40%;
-            background: rgba(167, 243, 208, 0.45);
-            animation-delay: -9s;
-        }
+    body.dark-theme .theme-surface {
+      background-color: rgba(30, 41, 59, 0.9) !important;
+      border-color: rgba(255, 255, 255, 0.12) !important;
+      color: #f8fafc !important;
+    }
 
-        body.dark-theme .orb-1 {
-            background: rgba(56, 189, 248, 0.22);
-            opacity: 0.6;
-        }
+    body.dark-theme .theme-text-primary {
+      color: #f8fafc !important;
+    }
 
-        body.dark-theme .orb-2 {
-            background: rgba(168, 85, 247, 0.22);
-            opacity: 0.6;
-        }
+    body.dark-theme .theme-text-sub {
+      color: #94a3b8 !important;
+    }
 
-        body.dark-theme .orb-3 {
-            background: rgba(236, 72, 153, 0.15);
-            opacity: 0.5;
-        }
+    .brand-font {
+      font-family: 'Fredoka', sans-serif;
+    }
 
-        body.dark-theme .theme-surface {
-            background-color: rgba(30, 41, 59, 0.9) !important;
-            border-color: rgba(255, 255, 255, 0.12) !important;
-            color: #f8fafc !important;
-        }
+    /* Top Scrolling Announcement Bar */
+    .top-notice-bar {
+      width: 100%;
+      overflow: hidden;
+      position: relative;
+      z-index: 40;
+      padding: 11px 0;
+      color: #eaf8ff;
+      background: linear-gradient(90deg, #061b38, #075985, #082f49);
+      border-bottom: 1px solid rgba(125, 211, 252, 0.85);
+      box-shadow: 0 0 14px rgba(56, 189, 248, 0.45), inset 0 -1px 8px rgba(56, 189, 248, 0.14);
+    }
 
-        body.dark-theme .theme-text-primary {
-            color: #f8fafc !important;
-        }
+    .single-notice-track {
+      display: flex;
+      width: max-content;
+      flex-wrap: nowrap;
+      justify-content: flex-start;
+      gap: 64px;
+      white-space: nowrap;
+      animation: singleNoticeScroll 24s linear infinite;
+      will-change: transform;
+    }
 
-        body.dark-theme .theme-text-sub {
-            color: #94a3b8 !important;
-        }
+    .single-notice-message {
+      flex: 0 0 auto;
+      white-space: nowrap;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.035em;
+      color: #e0f2fe;
+      text-shadow: 0 0 8px rgba(125, 211, 252, 0.7);
+    }
 
-        body.dark-theme .popular-section {
-            background: linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%);
-            border-top: 2px solid rgba(250, 204, 21, 0.35);
-            border-bottom: 2px solid rgba(250, 204, 21, 0.2);
-        }
+    .top-notice-bar:hover .single-notice-track {
+      animation-play-state: paused;
+    }
 
-        body.dark-theme .popular-section::before {
-            background: rgba(30, 41, 59, 0.95);
-        }
+    @keyframes singleNoticeScroll {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
+    }
 
-        body.dark-theme .popular-heading {
-            color: #facc15 !important;
-        }
+    @media (max-width: 480px) {
+      .top-notice-bar { padding: 10px 0; }
+      .single-notice-message { font-size: 12px; }
+    }
 
-        .brand-font {
-            font-family: 'Fredoka', sans-serif;
-        }
+    /* Header & Hero */
+    header .theme-surface {
+      border-color: rgba(34, 211, 238, 0.24) !important;
+      box-shadow: 0 8px 30px rgba(15, 23, 42, 0.08), 0 0 22px rgba(34, 211, 238, 0.08);
+    }
 
-        /* Marquee Animation */
-        @keyframes marquee {
-            0% { transform: translateX(0%); }
-            100% { transform: translateX(-50%); }
-        }
+    body.dark-theme header .theme-surface {
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3), 0 0 26px rgba(34, 211, 238, 0.1);
+    }
 
-        .marquee-track {
-            display: flex;
-            width: max-content;
-            animation: none;
-            flex-wrap: wrap;
-            width: 100%;
-            justify-content: center;
-        }
+    .hero-panel {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(34, 211, 238, 0.25);
+      background: linear-gradient(120deg, #07152d 0%, #10274b 55%, #29134c 100%);
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.18), 0 0 30px rgba(34, 211, 238, 0.10);
+    }
 
-        .marquee-track:hover {
-            animation-play-state: paused;
-        }
+    .hero-panel::before {
+      content: "";
+      position: absolute;
+      width: 260px;
+      height: 260px;
+      right: -65px;
+      top: -100px;
+      border-radius: 50%;
+      background: rgba(34, 211, 238, 0.22);
+      filter: blur(50px);
+      pointer-events: none;
+    }
 
-        /* Responsive Grid */
-        .poki-grid {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            grid-auto-rows: 1fr;
-            gap: 14px;
-            grid-auto-flow: dense;
-        }
+    .hero-panel::after {
+      content: "";
+      position: absolute;
+      width: 220px;
+      height: 220px;
+      right: 110px;
+      bottom: -145px;
+      border-radius: 50%;
+      background: rgba(168, 85, 247, 0.25);
+      filter: blur(45px);
+      pointer-events: none;
+    }
 
-        @media (min-width: 640px) {
-            .poki-grid {
-                grid-template-columns: repeat(4, minmax(0, 1fr));
-                gap: 18px;
-            }
-        }
+    .hero-content {
+      position: relative;
+      z-index: 1;
+    }
 
-        @media (min-width: 1024px) {
-            .poki-grid {
-                grid-template-columns: repeat(6, minmax(0, 1fr));
-                gap: 20px;
-            }
-        }
+    .stat-pill {
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      background: rgba(255, 255, 255, 0.07);
+      border-radius: 14px;
+      padding: 9px 12px;
+    }
 
-        .tile-large {
-            grid-column: span 2;
-            grid-row: span 2;
-        }
+    .progress-track {
+      height: 7px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.25);
+      overflow: hidden;
+    }
 
-        .game-card {
-            aspect-ratio: 1 / 1;
-            position: relative;
-            border-radius: 24px;
-            overflow: hidden;
-            box-shadow: 0 8px 20px -4px rgba(0, 43, 91, 0.25), 0 2px 6px rgba(0,0,0,0.1);
-            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
-            background: #fff;
-            cursor: pointer;
-            display: block;
-        }
+    .progress-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #22d3ee, #8b5cf6);
+      width: 0;
+      transition: width 0.2s ease;
+    }
 
-        .game-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 24px -8px rgba(0, 43, 91, 0.22);
-            z-index: 10;
-        }
+    .glow-button {
+      background: linear-gradient(100deg, #0891b2, #4f46e5);
+      box-shadow: 0 6px 18px rgba(34, 211, 238, 0.22);
+    }
 
-        body.dark-theme .game-card:hover {
-            box-shadow: 0 18px 30px -6px rgba(0, 0, 0, 0.7), 0 0 22px rgba(56, 189, 248, 0.55);
-        }
+    .glow-button:hover {
+      box-shadow: 0 8px 24px rgba(34, 211, 238, 0.34);
+    }
 
-        .game-card:active {
-            transform: scale(0.94);
-        }
+    /* Feature Hub / Profile / Leaderboard / Admin */
+    .feature-hub {
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 10px 28px rgba(14, 116, 144, 0.08), 0 0 24px rgba(56, 189, 248, 0.12);
+    }
 
-        .game-card-overlay {
-            background: linear-gradient(to top, rgba(0, 22, 48, 0.92) 0%, rgba(0, 22, 48, 0.3) 60%, transparent 100%);
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        }
+    body.dark-theme .feature-hub {
+      background: rgba(8, 18, 38, 0.91) !important;
+      color: #eaf7ff;
+      border-color: rgba(56, 189, 248, 0.38);
+    }
 
-        .game-card:hover .game-card-overlay {
-            opacity: 1;
-        }
+    .neon-input {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid rgba(56, 189, 248, 0.42);
+      background: rgba(240, 249, 255, 0.92);
+      color: #0f172a;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      outline: none;
+    }
 
-        .ig-gradient {
-            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
-        }
+    .neon-input:focus {
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.17), 0 0 16px rgba(56, 189, 248, 0.18);
+    }
 
-        .yt-gradient {
-            background: linear-gradient(45deg, #ff0000 0%, #e60000 50%, #cc0000 100%);
-        }
+    body.dark-theme .neon-input {
+      background: #0f172a;
+      color: #f8fafc;
+    }
 
-        /* Glowing Animations */
-        @keyframes glowPulsePink {
-            0% { box-shadow: 0 0 5px rgba(225, 48, 108, 0.4), 0 0 10px rgba(225, 48, 108, 0.2); }
-            50% { box-shadow: 0 0 16px rgba(225, 48, 108, 0.8), 0 0 24px rgba(254, 44, 85, 0.6); }
-            100% { box-shadow: 0 0 5px rgba(225, 48, 108, 0.4), 0 0 10px rgba(225, 48, 108, 0.2); }
-        }
+    .neon-action {
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      border-radius: 12px;
+      padding: 9px 12px;
+      background: linear-gradient(120deg, #0e7490, #2563eb);
+      color: white;
+      font-size: 11px;
+      font-weight: 800;
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.16);
+    }
 
-        @keyframes glowPulseRed {
-            0% { box-shadow: 0 0 5px rgba(255, 0, 0, 0.4), 0 0 10px rgba(255, 0, 0, 0.2); }
-            50% { box-shadow: 0 0 16px rgba(255, 0, 0, 0.8), 0 0 24px rgba(255, 75, 75, 0.6); }
-            100% { box-shadow: 0 0 5px rgba(255, 0, 0, 0.4), 0 0 10px rgba(255, 0, 0, 0.2); }
-        }
+    .neon-action:hover {
+      box-shadow: 0 0 22px rgba(56, 189, 248, 0.34);
+    }
 
-        .btn-glow-pink {
-            animation: none;
-        }
+    .feature-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border: 1px solid rgba(56, 189, 248, 0.15);
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: rgba(224, 242, 254, 0.32);
+    }
 
-        .btn-glow-red {
-            animation: none;
-        }
+    body.dark-theme .feature-row {
+      background: rgba(15, 23, 42, 0.55);
+    }
 
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
+    .tiny-label {
+      display: block;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #0284c7;
+      margin: 0 0 5px;
+    }
 
-        .popular-section {
-            background: linear-gradient(180deg, #ffef62 0%, #ffd93d 100%);
-            position: relative;
-            z-index: 10;
-        }
+    body.dark-theme .tiny-label {
+      color: #7dd3fc;
+    }
 
-        .popular-section::before {
-            content: '';
-            position: absolute;
-            top: -28px;
-            left: 0;
-            right: 0;
-            height: 35px;
-            background: #ffef62;
-            clip-path: polygon(0 65%, 100% 0, 100% 100%, 0% 100%);
-        }
-    
-        /* Clean, static layout: no animated backgrounds, particles, marquees, or pulsing buttons */
-        *, *::before, *::after {
-            animation: none !important;
-            scroll-behavior: auto;
-        }
-        .marquee-track {
-            width: 100%;
-            justify-content: center;
-            flex-wrap: wrap;
-            white-space: normal;
-            padding: 0 12px;
-            gap: 8px 18px;
-        }
-        .marquee-track > div { flex-wrap: wrap; justify-content: center; gap: 8px 18px; }
-        /* Static neon glow accents: glowing atmosphere without moving background effects */
-        .ambient-orb, #bgEffectsWrapper, #particleCanvas, #burstCanvas { display: none !important; }
-        body::before {
-            content: "";
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            z-index: 0;
-            background:
-                radial-gradient(ellipse at 12% 38%, rgba(56, 189, 248, 0.10), transparent 34%),
-                radial-gradient(ellipse at 88% 68%, rgba(139, 92, 246, 0.10), transparent 34%);
-        }
-        body > * { position: relative; z-index: 1; }
-        body.dark-theme::before {
-            background:
-                radial-gradient(ellipse at 12% 38%, rgba(34, 211, 238, 0.12), transparent 34%),
-                radial-gradient(ellipse at 88% 68%, rgba(168, 85, 247, 0.14), transparent 34%);
-        }
-        .game-card { box-shadow: 0 5px 16px rgba(15, 23, 42, .10), 0 0 0 1px rgba(99, 102, 241, .05); }
-        .game-card:hover { transform: none; }
-        .btn-glow-pink, .btn-glow-red { box-shadow: none; }
+    .admin-mini-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      padding: 6px 10px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 800;
+      color: #eaf8ff;
+      background: linear-gradient(110deg, #075985, #0369a1);
+      border: 1px solid rgba(125, 211, 252, 0.8);
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+      text-decoration: none;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
 
-        /* ST GAMES premium dashboard upgrade */
-        :root { --neon-cyan: #22d3ee; --neon-violet: #8b5cf6; --neon-pink: #ec4899; }
-        body { background-color:#f3f6fb; }
-        body.dark-theme { background-color:#080d1b; }
-        body::after { content:""; position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.75;
-            background: radial-gradient(ellipse at 5% 20%, rgba(34,211,238,.12), transparent 35%),
-                        radial-gradient(ellipse at 96% 42%, rgba(139,92,246,.13), transparent 36%),
-                        radial-gradient(ellipse at 50% 100%, rgba(236,72,153,.08), transparent 38%); }
-        body.dark-theme::after { opacity:1; background: radial-gradient(ellipse at 5% 20%, rgba(34,211,238,.15), transparent 35%), radial-gradient(ellipse at 96% 42%, rgba(139,92,246,.18), transparent 36%), radial-gradient(ellipse at 50% 100%, rgba(236,72,153,.10), transparent 38%); }
-        body > * { position:relative; z-index:1; }
-        header .theme-surface { border-color:rgba(34,211,238,.24)!important; box-shadow:0 8px 30px rgba(15,23,42,.08),0 0 22px rgba(34,211,238,.08); }
-        body.dark-theme header .theme-surface { box-shadow:0 8px 30px rgba(0,0,0,.3),0 0 26px rgba(34,211,238,.1); }
-        .hero-panel { position:relative; overflow:hidden; border:1px solid rgba(34,211,238,.25); background:linear-gradient(120deg,#07152d 0%,#10274b 55%,#29134c 100%); box-shadow:0 18px 45px rgba(15,23,42,.18),0 0 30px rgba(34,211,238,.10); }
-        .hero-panel::before { content:""; position:absolute; width:260px;height:260px;right:-65px;top:-100px;border-radius:50%;background:rgba(34,211,238,.22);filter:blur(50px);pointer-events:none; }
-        .hero-panel::after { content:""; position:absolute;width:220px;height:220px;right:110px;bottom:-145px;border-radius:50%;background:rgba(168,85,247,.25);filter:blur(45px);pointer-events:none; }
-        .hero-content { position:relative;z-index:1; }
-        .stat-pill { border:1px solid rgba(148,163,184,.22);background:rgba(255,255,255,.07);border-radius:14px;padding:9px 12px; }
-        .dashboard-panel { border:1px solid rgba(148,163,184,.18);box-shadow:0 8px 26px rgba(15,23,42,.05); }
-        body.dark-theme .dashboard-panel, body.dark-theme #emptyState { background:rgba(15,23,42,.88)!important;color:#f8fafc;border-color:rgba(148,163,184,.18); }
-        .game-card { border:1px solid rgba(148,163,184,.18); box-shadow:0 8px 22px rgba(15,23,42,.10),0 0 0 1px rgba(34,211,238,.04); transition:box-shadow .2s ease,border-color .2s ease,transform .2s ease; }
-        .game-card:hover { transform:translateY(-3px);border-color:rgba(34,211,238,.65);box-shadow:0 14px 28px rgba(15,23,42,.16),0 0 22px rgba(34,211,238,.20); }
-        .game-card-overlay { opacity:1; background:linear-gradient(to top,rgba(2,6,23,.90),rgba(2,6,23,.10) 68%,transparent); }
-        .favorite-btn { position:absolute;right:9px;top:9px;z-index:12;width:34px;height:34px;border-radius:12px;background:rgba(2,6,23,.70);border:1px solid rgba(255,255,255,.28);color:white;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px); }
-        .favorite-btn.is-favorite { color:#fb7185;border-color:rgba(251,113,133,.65);box-shadow:0 0 14px rgba(251,113,133,.22); }
-        .game-card-badge { box-shadow:0 2px 10px rgba(0,0,0,.18); }
-        .filter-control { border:1px solid rgba(148,163,184,.28);border-radius:12px;padding:9px 12px;background:rgba(255,255,255,.92);color:#0f172a;font-size:12px;font-weight:700; }
-        body.dark-theme .filter-control { background:#1e293b;color:#f8fafc;border-color:rgba(148,163,184,.25); }
-        .cat-btn { border:1px solid rgba(148,163,184,.15); }
-        body.dark-theme .cat-btn:not([data-cat="all"]) { background:rgba(30,41,59,.9)!important;color:#e2e8f0!important;border-color:rgba(148,163,184,.2); }
-        body.dark-theme .cat-btn[data-cat="all"] { background:#22d3ee!important;color:#082f49!important; }
-        .progress-track { height:7px;border-radius:999px;background:rgba(148,163,184,.25);overflow:hidden; }
-        .progress-fill { height:100%;border-radius:999px;background:linear-gradient(90deg,#22d3ee,#8b5cf6);width:0;transition:width .2s ease; }
-        .glow-button { background:linear-gradient(100deg,#0891b2,#4f46e5);box-shadow:0 6px 18px rgba(34,211,238,.22); }
-        .glow-button:hover { box-shadow:0 8px 24px rgba(34,211,238,.34); }
-        @media(max-width:639px) { .poki-grid { grid-template-columns:repeat(2,minmax(0,1fr));gap:11px; } .tile-large { grid-column:span 2;grid-row:span 1;aspect-ratio:16/9; } .game-card { border-radius:18px; } .hero-panel { border-radius:22px; } .fixed.bottom-5.right-5 { right:10px;bottom:10px;transform:scale(.88);transform-origin:bottom right; } }
-        @media(prefers-reduced-motion:reduce) { *,*::before,*::after { scroll-behavior:auto!important;transition:none!important; } }
+    .admin-mini-button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0 22px rgba(56, 189, 248, 0.42);
+    }
 
+    /* Social Gradients */
+    .ig-gradient {
+      background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+    }
 
-        /* Requested update: scrolling top notice + brighter light-blue screen glow */
-        .marquee-track {
-            display: flex !important;
-            width: max-content !important;
-            flex-wrap: nowrap !important;
-            justify-content: flex-start !important;
-            white-space: nowrap !important;
-            gap: 2.5rem !important;
-            animation: marquee 28s linear infinite !important;
-            will-change: transform;
-        }
-        .marquee-track > div {
-            display: flex !important;
-            flex-wrap: nowrap !important;
-            justify-content: flex-start !important;
-            gap: 2.5rem !important;
-            white-space: nowrap !important;
-        }
-        .marquee-track:hover { animation-play-state: paused !important; }
-        /* Give the notice bar a clean cyan edge glow */
-        body > div.bg-\[\#002b5b\] {
-            background: linear-gradient(90deg, #06366b, #075985, #123b83) !important;
-            border-bottom: 1px solid rgba(125, 211, 252, .85) !important;
-            box-shadow: 0 4px 24px rgba(56, 189, 248, .28), 0 0 12px rgba(125, 211, 252, .22) !important;
-        }
-        /* Stronger, static light-blue glow around the full page */
-        body::before {
-            background:
-                radial-gradient(ellipse at 0% 12%, rgba(56, 189, 248, .24), transparent 38%),
-                radial-gradient(ellipse at 100% 35%, rgba(96, 165, 250, .20), transparent 40%),
-                radial-gradient(ellipse at 50% 100%, rgba(125, 211, 252, .18), transparent 42%) !important;
-        }
-        body::after {
-            opacity: .95 !important;
-            background:
-                radial-gradient(ellipse at 8% 22%, rgba(125, 211, 252, .20), transparent 36%),
-                radial-gradient(ellipse at 92% 58%, rgba(59, 130, 246, .16), transparent 38%),
-                radial-gradient(ellipse at 50% 100%, rgba(56, 189, 248, .14), transparent 40%) !important;
-        }
-        body.dark-theme::before {
-            background:
-                radial-gradient(ellipse at 0% 12%, rgba(56, 189, 248, .28), transparent 38%),
-                radial-gradient(ellipse at 100% 35%, rgba(96, 165, 250, .24), transparent 40%),
-                radial-gradient(ellipse at 50% 100%, rgba(125, 211, 252, .20), transparent 42%) !important;
-        }
-        body.dark-theme::after {
-            opacity: 1 !important;
-            background:
-                radial-gradient(ellipse at 8% 22%, rgba(125, 211, 252, .23), transparent 36%),
-                radial-gradient(ellipse at 92% 58%, rgba(59, 130, 246, .20), transparent 38%),
-                radial-gradient(ellipse at 50% 100%, rgba(56, 189, 248, .17), transparent 40%) !important;
-        }
-        @media (prefers-reduced-motion: reduce) {
-            .marquee-track { animation: none !important; }
-        }
-    </style>
-    <style>
-        /* One clean scrolling announcement at the very top */
-        .top-notice-bar {
-            width: 100%;
-            overflow: hidden;
-            position: relative;
-            z-index: 40;
-            padding: 11px 0;
-            color: #eaf8ff;
-            background: linear-gradient(90deg, #061b38, #075985, #082f49);
-            border-bottom: 1px solid rgba(125, 211, 252, .85);
-            box-shadow: 0 0 14px rgba(56, 189, 248, .45), inset 0 -1px 8px rgba(56, 189, 248, .14);
-        }
-        .single-notice-track {
-            display: flex !important;
-            width: max-content;
-            flex-wrap: nowrap !important;
-            justify-content: flex-start !important;
-            gap: 64px;
-            white-space: nowrap;
-            animation: singleNoticeScroll 24s linear infinite !important;
-        }
-        .single-notice-message {
-            flex: 0 0 auto;
-            white-space: nowrap;
-            font-size: 13px;
-            font-weight: 700;
-            letter-spacing: .035em;
-            color: #e0f2fe;
-            text-shadow: 0 0 8px rgba(125, 211, 252, .7);
-        }
-        .top-notice-bar:hover .single-notice-track { animation-play-state: paused !important; }
-        @keyframes singleNoticeScroll {
-            from { transform: translateX(0); }
-            to { transform: translateX(-50%); }
-        }
-        @media (max-width: 480px) {
-            .top-notice-bar { padding: 10px 0; }
-            .single-notice-message { font-size: 12px; }
-        }
-        @media (prefers-reduced-motion: reduce) {
-            .single-notice-track { animation-duration: 60s !important; }
-        }
+    .yt-gradient {
+      background: linear-gradient(45deg, #ff0000 0%, #e60000 50%, #cc0000 100%);
+    }
 
-        /* Player / leaderboard / local admin upgrade */
-        .feature-hub { border:1px solid rgba(56,189,248,.35); background:rgba(255,255,255,.88); backdrop-filter:blur(16px); box-shadow:0 10px 28px rgba(14,116,144,.08),0 0 24px rgba(56,189,248,.12); }
-        body.dark-theme .feature-hub { background:rgba(8,18,38,.91)!important; color:#eaf7ff; border-color:rgba(56,189,248,.38); }
-        .neon-input { width:100%; min-width:0; border:1px solid rgba(56,189,248,.42); background:rgba(240,249,255,.92); color:#0f172a; border-radius:12px; padding:10px 12px; font-size:12px; font-weight:650; outline:none; }
-        .neon-input:focus { border-color:#38bdf8; box-shadow:0 0 0 3px rgba(56,189,248,.17),0 0 16px rgba(56,189,248,.18); }
-        body.dark-theme .neon-input { background:#0f172a; color:#f8fafc; }
-        .neon-action { border:1px solid rgba(56,189,248,.4); border-radius:12px; padding:9px 12px; background:linear-gradient(120deg,#0e7490,#2563eb); color:white; font-size:11px; font-weight:800; box-shadow:0 0 16px rgba(56,189,248,.16); }
-        .neon-action:hover { box-shadow:0 0 22px rgba(56,189,248,.34); }
-        .feature-row { display:flex; align-items:center; justify-content:space-between; gap:10px; border:1px solid rgba(56,189,248,.15); border-radius:12px; padding:10px 12px; background:rgba(224,242,254,.32); }
-        body.dark-theme .feature-row { background:rgba(15,23,42,.55); }
-        .tiny-label { display:block; font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:#0284c7; margin:0 0 5px; }
-        body.dark-theme .tiny-label { color:#7dd3fc; }
-        @media(max-width:639px){ .feature-hub { border-radius:18px; } }
-    </style>
+    /* Filters & Category Buttons */
+    .dashboard-panel {
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      box-shadow: 0 8px 26px rgba(15, 23, 42, 0.05);
+    }
 
-    <style id="st-games-admin-shortcut-style">
-      .admin-mini-button{display:inline-flex;align-items:center;justify-content:center;gap:3px;padding:6px 10px;border-radius:10px;font-size:11px;font-weight:800;color:#eaf8ff;background:linear-gradient(110deg,#075985,#0369a1);border:1px solid rgba(125,211,252,.8);box-shadow:0 0 15px rgba(56,189,248,.2);text-decoration:none;transition:transform .18s ease,box-shadow .18s ease}
-      .admin-mini-button:hover{transform:translateY(-1px);box-shadow:0 0 22px rgba(56,189,248,.42)}
-      @media(max-width:640px){.admin-mini-button{padding:6px 8px;font-size:10px}}
-    </style>
+    body.dark-theme .dashboard-panel,
+    body.dark-theme #emptyState {
+      background: rgba(15, 23, 42, 0.88) !important;
+      color: #f8fafc;
+      border-color: rgba(148, 163, 184, 0.18);
+    }
 
+    .filter-control {
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 12px;
+      padding: 9px 12px;
+      background: rgba(255, 255, 255, 0.92);
+      color: #0f172a;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    body.dark-theme .filter-control {
+      background: #1e293b;
+      color: #f8fafc;
+      border-color: rgba(148, 163, 184, 0.25);
+    }
+
+    .cat-btn {
+      border: 1px solid rgba(148, 163, 184, 0.15);
+    }
+
+    body.dark-theme .cat-btn:not(.active-cat) {
+      background: rgba(30, 41, 59, 0.9) !important;
+      color: #e2e8f0 !important;
+      border-color: rgba(148, 163, 184, 0.2);
+    }
+
+    body.dark-theme .cat-btn.active-cat {
+      background: #22d3ee !important;
+      color: #082f49 !important;
+    }
+
+    /* Responsive Game Grid & Cards */
+    .poki-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-auto-rows: 1fr;
+      gap: 14px;
+      grid-auto-flow: dense;
+    }
+
+    @media (min-width: 640px) {
+      .poki-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 18px;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .poki-grid {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 20px;
+      }
+    }
+
+    .tile-large {
+      grid-column: span 2;
+      grid-row: span 2;
+    }
+
+    .game-card {
+      aspect-ratio: 1 / 1;
+      position: relative;
+      border-radius: 24px;
+      overflow: hidden;
+      background: #fff;
+      cursor: pointer;
+      display: block;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      box-shadow: 0 8px 22px rgba(15, 23, 42, 0.10), 0 0 0 1px rgba(34, 211, 238, 0.04);
+      transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+    }
+
+    .game-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(34, 211, 238, 0.65);
+      box-shadow: 0 14px 28px rgba(15, 23, 42, 0.16), 0 0 22px rgba(34, 211, 238, 0.20);
+      z-index: 10;
+    }
+
+    body.dark-theme .game-card:hover {
+      box-shadow: 0 18px 30px -6px rgba(0, 0, 0, 0.7), 0 0 22px rgba(56, 189, 248, 0.55);
+    }
+
+    .game-card:active {
+      transform: scale(0.96);
+    }
+
+    .game-card-overlay {
+      opacity: 1;
+      background: linear-gradient(to top, rgba(2, 6, 23, 0.90), rgba(2, 6, 23, 0.10) 68%, transparent);
+    }
+
+    .favorite-btn {
+      position: absolute;
+      right: 9px;
+      top: 9px;
+      z-index: 12;
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      background: rgba(2, 6, 23, 0.70);
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(8px);
+    }
+
+    .favorite-btn.is-favorite {
+      color: #fb7185;
+      border-color: rgba(251, 113, 133, 0.65);
+      box-shadow: 0 0 14px rgba(251, 113, 133, 0.22);
+    }
+
+    .game-card-badge {
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+    }
+
+    /* Popular Section */
+    .popular-section {
+      background: linear-gradient(180deg, #ffef62 0%, #ffd93d 100%);
+      position: relative;
+      z-index: 10;
+    }
+
+    .popular-section::before {
+      content: '';
+      position: absolute;
+      top: -28px;
+      left: 0;
+      right: 0;
+      height: 35px;
+      background: #ffef62;
+      clip-path: polygon(0 65%, 100% 0, 100% 100%, 0% 100%);
+    }
+
+    body.dark-theme .popular-section {
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%);
+      border-top: 2px solid rgba(250, 204, 21, 0.35);
+      border-bottom: 2px solid rgba(250, 204, 21, 0.2);
+    }
+
+    body.dark-theme .popular-section::before {
+      background: rgba(30, 41, 59, 0.95);
+    }
+
+    body.dark-theme .popular-heading {
+      color: #facc15 !important;
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* Bottom Navigation Bar */
+    .st-bottom-nav {
+      position: fixed;
+      z-index: 9999;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 4px;
+      padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
+      background: rgba(255, 255, 255, 0.97);
+      border-top: 1px solid #dbeafe;
+      box-shadow: 0 -5px 22px rgba(15, 23, 42, 0.12);
+    }
+
+    body.dark-theme .st-bottom-nav {
+      background: rgba(15, 23, 42, 0.96);
+      border-color: rgba(56, 189, 248, 0.25);
+      box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.45);
+    }
+
+    .st-bottom-nav a {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      min-width: 0;
+      padding: 5px 2px;
+      border-radius: 12px;
+      color: #334155;
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 700;
+      transition: background 0.15s ease;
+    }
+
+    body.dark-theme .st-bottom-nav a {
+      color: #cbd5e1;
+    }
+
+    .st-bottom-nav .nav-icon {
+      font-size: 20px;
+      line-height: 1.1;
+      color: #087eb7;
+    }
+
+    body.dark-theme .st-bottom-nav .nav-icon {
+      color: #38bdf8;
+    }
+
+    .st-bottom-nav a:active {
+      background: #e0f2fe;
+    }
+
+    body.dark-theme .st-bottom-nav a:active {
+      background: rgba(56, 189, 248, 0.15);
+    }
+
+    @media (min-width: 768px) {
+      .st-bottom-nav {
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        width: min(560px, calc(100% - 32px));
+        border: 1px solid #dbeafe;
+        border-bottom: 0;
+        border-radius: 18px 18px 0 0;
+      }
+    }
+
+    @media (max-width: 639px) {
+      .poki-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 11px;
+      }
+      .tile-large {
+        grid-column: span 2;
+        grid-row: span 1;
+        aspect-ratio: 16 / 9;
+      }
+      .game-card, .feature-hub {
+        border-radius: 18px;
+      }
+      .hero-panel {
+        border-radius: 22px;
+      }
+      .admin-mini-button {
+        padding: 6px 8px;
+        font-size: 10px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        transition: none !important;
+      }
+      .single-notice-track {
+        animation: none !important;
+      }
+    }
+  </style>
 </head>
+
 <body class="min-h-screen flex flex-col justify-between text-slate-900">
 
-    <!-- 0A. TINY PARTICLES & AMBIENT BACKGROUND ENGINE -->
-    <div id="bgEffectsWrapper" aria-hidden="true">
-        <div class="ambient-orb orb-1"></div>
-        <div class="ambient-orb orb-2"></div>
-        <div class="ambient-orb orb-3"></div>
-        <canvas id="particleCanvas"></canvas>
+  <!-- 1. SINGLE TOP SCROLLING NOTICE -->
+  <div class="top-notice-bar" role="status" aria-label="Website announcement">
+    <div class="marquee-track single-notice-track">
+      <span class="single-notice-message">📢 NOTICE: Welcome to ST GAMES — Enjoy playing and check back for new games and updates!</span>
+      <span class="single-notice-message" aria-hidden="true">📢 NOTICE: Welcome to ST GAMES — Enjoy playing and check back for new games and updates!</span>
     </div>
+  </div>
 
-    <!-- 0B. FOREGROUND INTERACTIVE BURST CANVAS -->
-    <canvas id="burstCanvas" aria-hidden="true"></canvas>
+  <!-- MAIN CONTENT (FIRST 10 GAMES ABOVE POPULAR) -->
+  <main class="max-w-5xl w-full mx-auto px-3.5 sm:px-6 pt-3 pb-8 relative z-10">
 
-    <!-- 1. SINGLE TOP SCROLLING NOTICE -->
-    <div class="top-notice-bar" role="status" aria-label="Website announcement">
-        <div class="marquee-track single-notice-track">
-            <span class="single-notice-message">ðŸ“¢ NOTICE: Welcome to ST GAMES â€” Enjoy playing and check back for new games and updates!</span>
-            <span class="single-notice-message" aria-hidden="true">ðŸ“¢ NOTICE: Welcome to ST GAMES â€” Enjoy playing and check back for new games and updates!</span>
-        </div>
-    </div>
-
-    <!-- MAIN CONTENT (FIRST 10 GAMES ABOVE POPULAR) -->
-    <main class="max-w-5xl w-full mx-auto px-3.5 sm:px-6 pt-3 pb-8 relative z-10">
-
-        <!-- 2. ST GAMES TOP NAVIGATION HEADER -->
-        <header class="sticky top-2.5 z-30 mb-4">
-            <div class="theme-surface bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/80 px-3 sm:px-5 py-2.5 flex items-center justify-between">
-                
-                <!-- Logo & Website Name -->
-                <div class="flex items-center gap-3 pr-3 sm:pr-5 border-r border-slate-200/60 min-w-0">
-                    <a href="index.html" class="flex items-center gap-2.5 group">
-                        <div class="w-10 h-10 rounded-xl overflow-hidden border-2 border-cyan-400 shadow-md shrink-0 bg-slate-900 flex items-center justify-center">
-                            <img src="logo/logo.jpg" alt="ST Games Logo" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');" class="w-full h-full object-cover">
-                            <i class="fa-solid fa-gamepad text-cyan-400 text-lg hidden"></i>
-                        </div>
-                        <div class="min-w-0">
-                            <h1 class="brand-font text-base sm:text-lg font-bold tracking-tight text-[#002b5b] theme-text-primary uppercase truncate">ST GAMES</h1>
-                            <p class="text-[9px] font-bold text-slate-500 uppercase tracking-tighter truncate">Skill | Strategy | Victory</p>
-                        </div>
-                    </a>
-                </div>
-
-                <!-- Quick Action Icons & Account -->
-                <div class="flex items-center justify-around flex-1 max-w-md ml-2 sm:ml-4 text-[#002b5b] theme-text-primary">
-                    <button onclick="jumpToPopular(event)" title="Popular Games" class="ui-btn p-2 rounded-xl hover:bg-slate-500/10 active:scale-90 transition">
-                        <i class="fa-solid fa-fire-flame-curved text-lg sm:text-xl text-orange-500"></i>
-                    </button>
-                    <button onclick="pickRandomGame(event)" title="Surprise Me" class="ui-btn p-2 rounded-xl hover:bg-slate-500/10 active:scale-90 transition">
-                        <i class="fa-solid fa-gamepad text-lg sm:text-xl"></i>
-                    </button>
-                    <button onclick="toggleSearchBar(event)" title="Search Games" class="ui-btn p-2 rounded-xl hover:bg-slate-500/10 active:scale-90 transition">
-                        <i class="fa-solid fa-magnifying-glass text-lg sm:text-xl"></i>
-                    </button>
-                    <button onclick="toggleTheme(event)" title="Switch Theme" class="ui-btn p-2 rounded-xl hover:bg-slate-500/10 active:scale-90 transition">
-                        <span class="text-lg sm:text-xl leading-none">ðŸŒ“</span>
-                    </button>
-                    
-                    <a href="login.html" id="navAvatarLink" title="User Profile / Login" class="ui-btn p-1 rounded-xl hover:bg-slate-500/10 active:scale-90 transition inline-flex items-center justify-center">
-                        <div id="defaultAvatarIcon" class="relative inline-flex items-center justify-center">
-                            <i class="fa-regular fa-circle-user text-2xl text-blue-600"></i>
-                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 absolute top-0 right-0 border-2 border-white"></span>
-                        </div>
-                        <div id="userBadgeNav" class="hidden w-8 h-8 rounded-full bg-gradient-to-tr from-cyan-500 to-indigo-600 border-2 border-white text-white font-extrabold text-sm flex items-center justify-center shadow overflow-hidden">
-                            U
-                        </div>
-                    </a>
-                </div>
+    <!-- 2. ST GAMES TOP NAVIGATION HEADER -->
+    <header class="sticky top-2.5 z-30 mb-4">
+      <div class="theme-surface bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/80 px-3 sm:px-5 py-2.5 flex items-center justify-between">
+        <!-- Logo & Website Name -->
+        <div class="flex items-center gap-3 pr-3 sm:pr-5 border-r border-slate-200/60 min-w-0">
+          <a href="index.html" class="flex items-center gap-2.5 group">
+            <div class="w-10 h-10 rounded-xl overflow-hidden border-2 border-cyan-400 shadow-md shrink-0 bg-slate-900 flex items-center justify-center">
+              <img src="logo/logo.jpg" alt="ST Games Logo" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');" class="w-full h-full object-cover">
+              <i class="fa-solid fa-gamepad text-cyan-400 text-lg hidden"></i>
             </div>
-
-            <!-- Search Drawer -->
-            <div id="searchDrawer" class="theme-surface hidden mt-2 bg-white/95 backdrop-blur-md rounded-2xl p-2.5 shadow-lg border border-slate-200">
-                <div class="relative flex items-center">
-                    <i class="fa-solid fa-magnifying-glass text-slate-500 absolute left-3.5 z-10"></i>
-                    <input id="gameSearchInput" type="text" 
-                           placeholder="Search (e.g., Snake, Car, Arcade, Bus, 1v1)..." 
-                           oninput="handleSearch(this.value)"
-                           class="w-full pl-10 pr-20 py-2.5 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-500 rounded-xl text-sm font-semibold border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-400">
-                    <button onclick="clearSearch()" class="absolute right-2 text-xs bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 text-slate-800 dark:text-slate-100 font-bold px-3 py-1.5 rounded-lg z-10">
-                        Clear
-                    </button>
-                </div>
+            <div class="min-w-0">
+              <h1 class="brand-font text-base sm:text-lg font-bold tracking-tight text-[#002b5b] theme-text-primary uppercase truncate">ST GAMES</h1>
+              <p class="text-[9px] font-bold text-slate-500 uppercase tracking-tighter truncate">Skill | Strategy | Victory</p>
             </div>
-        </header>
-
-        <!-- PREMIUM HERO + PLAYER PROGRESS -->
-        <section class="hero-panel rounded-3xl p-5 sm:p-7 mb-4 text-white">
-            <div class="hero-content grid sm:grid-cols-[1.4fr_.8fr] gap-5 items-center">
-                <div>
-                    <div class="inline-flex items-center gap-2 rounded-full bg-cyan-300/10 border border-cyan-200/20 px-3 py-1 text-[10px] font-extrabold tracking-[.18em] uppercase text-cyan-200 mb-3"><span class="w-2 h-2 rounded-full bg-emerald-400"></span> Your gaming zone</div>
-                    <h2 class="brand-font text-3xl sm:text-4xl font-bold leading-tight">PLAY. <span class="text-cyan-300">COMPETE.</span><br>LEVEL UP.</h2>
-                    <p class="text-slate-300 text-xs sm:text-sm mt-3 max-w-md">Discover your next challenge. Pick a game, beat your best, and build your ST GAMES streak.</p>
-                    <div class="flex flex-wrap gap-2 mt-5">
-                        <button onclick="playFeaturedGame(event)" class="glow-button rounded-xl px-4 py-2.5 text-xs font-extrabold text-white"><i class="fa-solid fa-play mr-2"></i>Play a Random Game</button>
-                        <button onclick="jumpToGames()" class="rounded-xl px-4 py-2.5 text-xs font-extrabold text-white bg-white/10 border border-white/15 hover:bg-white/15">Explore Games <i class="fa-solid fa-arrow-down ml-1"></i></button>
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-2 text-white">
-                    <div class="stat-pill"><i class="fa-solid fa-gamepad text-cyan-300 mb-2"></i><div id="heroTotalGames" class="text-2xl font-extrabold">0</div><div class="text-[10px] text-slate-300">Games in library</div></div>
-                    <div class="stat-pill"><i class="fa-solid fa-heart text-pink-300 mb-2"></i><div id="favoriteCount" class="text-2xl font-extrabold">0</div><div class="text-[10px] text-slate-300">Your favourites</div></div>
-                    <div class="stat-pill"><i class="fa-solid fa-trophy text-amber-300 mb-2"></i><div id="playedCount" class="text-2xl font-extrabold">0</div><div class="text-[10px] text-slate-300">Games launched</div></div>
-                    <div class="stat-pill"><i class="fa-solid fa-bolt text-violet-300 mb-2"></i><div id="levelLabel" class="text-2xl font-extrabold">LVL 1</div><div class="text-[10px] text-slate-300">Player level</div></div>
-                </div>
-            </div>
-            <div class="hero-content mt-5 pt-4 border-t border-white/10">
-                <div class="flex justify-between items-center gap-3 mb-2"><span class="text-[11px] font-bold text-slate-200">PLAYER XP</span><span id="xpLabel" class="text-[10px] font-bold text-cyan-200">0 / 100 XP</span></div>
-                <div class="progress-track"><div id="xpProgress" class="progress-fill"></div></div>
-                <p id="achievementText" class="text-[10px] text-slate-400 mt-2">Launch games to earn XP and unlock milestones.</p>
-            </div>
-        </section>
-
-        <!-- PLAYER PROFILE, LOCAL LEADERBOARD AND ADMIN TOOLS -->
-        <section class="grid lg:grid-cols-3 gap-3 mb-5 relative z-10" aria-label="Player features">
-            <div id="playerProfilePanel" class="feature-hub rounded-2xl p-4 min-w-0">
-                <div class="flex items-center justify-between gap-2 mb-3">
-                    <h3 class="brand-font font-bold text-base theme-text-primary"><i class="fa-solid fa-user-astronaut text-sky-500 mr-2"></i>Player Profile</h3>
-                    <span class="text-[9px] font-extrabold uppercase tracking-wider text-sky-600">On this device</span>
-                </div>
-                <div class="flex items-center gap-3 mb-3">
-                    <div id="profileAvatar" class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 text-white text-lg font-black bg-gradient-to-br from-sky-400 to-blue-700 shadow-lg shadow-sky-500/20">S</div>
-                    <div class="min-w-0"><div id="profileDisplayName" class="font-extrabold theme-text-primary truncate">ST Player</div><div id="profileRank" class="text-[10px] text-sky-600 font-bold">Rookie â€¢ Level 1</div></div>
-                </div>
-                <label class="tiny-label" for="playerNameInput">Player name</label>
-                <input id="playerNameInput" class="neon-input mb-2" maxlength="22" placeholder="Enter your player name" autocomplete="nickname">
-                <button class="neon-action w-full" onclick="savePlayerProfile()"><i class="fa-solid fa-floppy-disk mr-1"></i> Save profile</button>
-                <div class="grid grid-cols-3 gap-2 mt-3 text-center">
-                    <div class="feature-row flex-col gap-1"><b id="profileGamesStat" class="text-base">0</b><span class="text-[9px] opacity-70">Played</span></div>
-                    <div class="feature-row flex-col gap-1"><b id="profileXPStat" class="text-base">0</b><span class="text-[9px] opacity-70">XP</span></div>
-                    <div class="feature-row flex-col gap-1"><b id="profileFavStat" class="text-base">0</b><span class="text-[9px] opacity-70">Faves</span></div>
-                </div>
-            </div>
-
-            <div id="leaderboardPanel" class="feature-hub rounded-2xl p-4 min-w-0">
-                <div class="flex items-center justify-between gap-2 mb-2">
-                    <h3 class="brand-font font-bold text-base theme-text-primary"><i class="fa-solid fa-trophy text-amber-500 mr-2"></i>Leaderboard</h3>
-                    <span class="text-[9px] font-extrabold uppercase tracking-wider text-sky-600">Local</span>
-                </div>
-                <p class="text-[10px] opacity-70 mb-3">Top profiles saved in this browser. A shared online leaderboard needs a server/database.</p>
-                <div id="leaderboardList" class="space-y-2"><div class="text-xs opacity-60 py-4 text-center">Play a game to start your score.</div></div>
-                <button onclick="refreshLeaderboard()" class="mt-3 text-[10px] font-extrabold text-sky-600 hover:text-blue-700"><i class="fa-solid fa-rotate mr-1"></i>Refresh scores</button>
-            </div>
-
-            <div class="feature-hub rounded-2xl p-4 min-w-0 flex flex-col justify-center">
-                <div class="flex items-center justify-between gap-2">
-                    <div><h3 class="brand-font font-bold text-base theme-text-primary"><i class="fa-solid fa-shield-halved text-sky-500 mr-2"></i>Admin</h3><p class="text-[10px] opacity-70 mt-1">Manage game cards</p></div>
-                    <a href="admin.html" class="admin-mini-button" aria-label="Open admin page"><i class="fa-solid fa-lock mr-1"></i> Admin</a>
-                </div>
-            </div>
-        </section>
-
-        <!-- 3. SOCIAL CHANNELS & CONTROLS -->
-        <div class="space-y-2.5 mb-4">
-            <div class="flex items-center justify-between gap-2">
-                <div class="bg-[#002b5b] text-white rounded-2xl px-3.5 py-2 shadow-md flex items-center gap-2 border border-white/10">
-                    <i class="fa-solid fa-layer-group text-amber-300 text-xs"></i>
-                    <span id="liveGameCount" class="font-extrabold text-sm tabular-nums text-white">0</span>
-                    <span class="text-xs text-slate-300 font-medium">Games Online</span>
-                </div>
-            </div>
-
-            <!-- Instagram Card -->
-            <a href="https://instagram.com/_satish_official_16" target="_blank" rel="noopener noreferrer" 
-               class="ui-btn theme-surface w-full bg-white/95 backdrop-blur-md rounded-2xl p-2.5 sm:px-4 shadow-md border border-white flex items-center justify-between gap-3 hover:scale-[1.01] transition-all">
-                <div class="flex items-center gap-3">
-                    <div class="w-11 h-11 rounded-full p-[2px] ig-gradient shrink-0 shadow-sm">
-                        <img src="logo/Insta.jpg" alt="Instagram" 
-                             onerror="this.onerror=null; this.src='https://cdn-icons-png.flaticon.com/518/3955/3955024.png';"
-                             class="w-full h-full object-cover rounded-full bg-white">
-                    </div>
-                    <div>
-                        <div class="flex items-center gap-1.5">
-                            <span class="theme-text-primary font-extrabold text-xs sm:text-sm text-[#002b5b]">@_satish_official_16</span>
-                            <i class="fa-solid fa-circle-check text-blue-500 text-[11px]" title="Verified"></i>
-                        </div>
-                        <p class="theme-text-sub text-[11px] text-slate-500 font-medium">Official Gaming & Daily Updates</p>
-                    </div>
-                </div>
-
-                <div class="btn-glow-pink px-4 py-1.5 rounded-xl ig-gradient text-white text-xs font-bold flex items-center gap-1.5 hover:opacity-95 transition-all shrink-0">
-                    <i class="fa-brands fa-instagram text-sm"></i>
-                    <span>Follow</span>
-                </div>
-            </a>
-
-            <!-- YouTube Card -->
-            <a href="https://youtube.com/@nanu16-h3g?si=2jyeQ-V78uTGvBzW" target="_blank" rel="noopener noreferrer" 
-               class="ui-btn theme-surface w-full bg-white/95 backdrop-blur-md rounded-2xl p-2.5 sm:px-4 shadow-md border border-white flex items-center justify-between gap-3 hover:scale-[1.01] transition-all">
-                <div class="flex items-center gap-3">
-                    <div class="w-11 h-11 rounded-full p-[2px] yt-gradient shrink-0 shadow-sm">
-                        <img src="logo/sub.jpg" alt="YouTube" 
-                             onerror="this.onerror=null; this.src='https://cdn-icons-png.flaticon.com/518/1384/1384060.png';"
-                             class="w-full h-full object-cover rounded-full bg-white">
-                    </div>
-                    <div>
-                        <div class="flex items-center gap-1.5">
-                            <span class="theme-text-primary font-extrabold text-xs sm:text-sm text-[#002b5b]">@Tarun-Bhai</span>
-                            <i class="fa-solid fa-circle-check text-red-500 text-[11px]" title="Creator"></i>
-                        </div>
-                        <p class="theme-text-sub text-[11px] text-slate-500 font-medium">Official YouTube Channel â€¢ Gameplay & Vlogs</p>
-                    </div>
-                </div>
-
-                <div class="btn-glow-red px-4 py-1.5 rounded-xl yt-gradient text-white text-xs font-bold flex items-center gap-1.5 hover:opacity-95 transition-all shrink-0">
-                    <i class="fa-brands fa-youtube text-sm"></i>
-                    <span>Subscribe</span>
-                </div>
-            </a>
+          </a>
         </div>
 
-        <!-- 4. CATEGORY SELECTORS -->
-        <section class="mb-5">
-            <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1" id="categoryButtonsContainer">
-                <button onclick="filterByCategory('all', event)" data-cat="all" class="cat-btn active-cat shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-[#002b5b] text-white">
-                    <i class="fa-solid fa-border-all"></i> All Games
-                </button>
-                <button onclick="filterByCategory('popular', event)" data-cat="popular" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
-                    <i class="fa-solid fa-fire text-orange-500"></i> Popular
-                </button>
-                <button onclick="filterByCategory('classic', event)" data-cat="classic" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
-                    <i class="fa-solid fa-ghost text-emerald-500"></i> Classic & Snake
-                </button>
-                <button onclick="filterByCategory('racing', event)" data-cat="racing" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
-                    <i class="fa-solid fa-car-burst text-amber-500"></i> Racing
-                </button>
-                <button onclick="filterByCategory('1v1', event)" data-cat="1v1" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
-                    <i class="fa-solid fa-people-arrows text-rose-500"></i> 1v1 Battle
-                </button>
-                <button onclick="filterByCategory('single', event)" data-cat="single" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
-                    <i class="fa-solid fa-user-astronaut text-indigo-500"></i> Single Player
-                </button>
-                <button onclick="filterByCategory('sports', event)" data-cat="sports" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
-                    <i class="fa-solid fa-baseball-bat-ball text-sky-500"></i> Sports
-                </button>
+        <!-- Quick Action Icons & Account -->
+        <div class="flex items-center justify-around flex-1 max-w-md ml-2 sm:ml-4 text-[#002b5b] theme-text-primary">
+          <button onclick="jumpToPopular(event)" title="Popular Games" class="ui-btn p-2 rounded-xl hover:bg-slate-500/10 active:scale-90 transition">
+            <i class="fa-solid fa-fire-flame-curved text-lg sm:text-xl text-orange-500"></i>
+          </button>
+          <button onclick="pickRandomGame(event)" title="Surprise Me" class="ui-btn p-2 rounded-xl hover:bg-slate-500/10 active:scale-90 transition">
+            <i class="fa-solid fa-gamepad text-lg sm:text-xl"></i>
+          </button>
+          <button onclick="toggleSearchBar(event)" title="Search Games" class="ui-btn p-2 rounded-xl hover:bg-slate-500/10 active:scale-90 transition">
+            <i class="fa-solid fa-magnifying-glass text-lg sm:text-xl"></i>
+          </button>
+          <button onclick="toggleTheme(event)" title="Switch Theme" class="ui-btn p-2 rounded-xl hover:bg-slate-500/10 active:scale-90 transition">
+            <span class="text-lg sm:text-xl leading-none">🌓</span>
+          </button>
+          <a href="login.html" id="navAvatarLink" title="User Profile / Login" class="ui-btn p-1 rounded-xl hover:bg-slate-500/10 active:scale-90 transition inline-flex items-center justify-center">
+            <div id="defaultAvatarIcon" class="relative inline-flex items-center justify-center">
+              <i class="fa-regular fa-circle-user text-2xl text-blue-600"></i>
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 absolute top-0 right-0 border-2 border-white"></span>
             </div>
-        </section>
-
-        <div class="dashboard-panel theme-surface rounded-2xl p-3 mb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div class="flex items-center gap-2"><i class="fa-solid fa-sliders text-cyan-500"></i><span class="theme-text-primary text-xs font-extrabold">Library controls</span><span id="resultsCount" class="text-[10px] text-slate-500">Showing all games</span></div>
-            <div class="flex flex-wrap gap-2 items-center">
-                <select id="sortGames" class="filter-control" aria-label="Sort games" onchange="changeSort(this.value)"><option value="default">Sort: Featured</option><option value="az">Name: Aâ€“Z</option><option value="za">Name: Zâ€“A</option></select>
-                <button id="favoritesFilterBtn" onclick="toggleFavoritesFilter()" class="filter-control"><i class="fa-regular fa-heart mr-1 text-pink-500"></i> Favourites only</button>
-                <button onclick="clearAllFilters()" class="filter-control"><i class="fa-solid fa-rotate-left mr-1"></i> Reset</button>
+            <div id="userBadgeNav" class="hidden w-8 h-8 rounded-full bg-gradient-to-tr from-cyan-500 to-indigo-600 border-2 border-white text-white font-extrabold text-sm flex items-center justify-center shadow overflow-hidden">
+              U
             </div>
+          </a>
         </div>
+      </div>
 
-        <!-- 5. TOP 10 GAMES GRID (ABOVE POPULAR) -->
-        <section>
-            <div id="gamesGrid" class="poki-grid"></div>
-            <div id="emptyState" class="hidden bg-white/90 rounded-3xl p-8 text-center my-4 shadow-md">
-                <i class="fa-solid fa-gamepad text-4xl text-slate-400 mb-2"></i>
-                <h3 class="font-extrabold text-lg text-[#002b5b]">No games found</h3>
-                <p class="text-xs text-slate-500 mt-1 mb-4">Try clearing your search query.</p>
-                <button onclick="clearSearch()" class="bg-[#002b5b] text-white text-xs font-bold px-4 py-2 rounded-xl">Show All Games</button>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- 6. POPULAR GAMES SECTION (HORIZONTAL SCROLL) -->
-    <section id="popularSection" class="popular-section pt-5 pb-8 px-4 sm:px-6 mt-4 shadow-inner">
-        <div class="max-w-5xl mx-auto">
-            <div class="flex items-center justify-between mb-3">
-                <div class="flex items-center gap-2.5">
-                    <i class="fa-solid fa-fire text-xl sm:text-2xl text-[#002b5b] popular-heading"></i>
-                    <h2 class="brand-font text-xl sm:text-2xl font-bold text-[#002b5b] popular-heading">Popular Games</h2>
-                    <span id="popularCountBadge" class="bg-[#002b5b] text-amber-300 text-xs font-extrabold px-2.5 py-0.5 rounded-full">0</span>
-                </div>
-
-                <!-- Left & Right Scroll Buttons -->
-                <div class="flex items-center gap-2">
-                    <button onclick="scrollPopular(-1, event)" aria-label="Scroll Left" class="ui-btn w-9 h-9 rounded-full bg-[#002b5b] text-white flex items-center justify-center shadow hover:scale-105 active:scale-95 transition">
-                        <i class="fa-solid fa-chevron-left text-xs"></i>
-                    </button>
-                    <button onclick="scrollPopular(1, event)" aria-label="Scroll Right" class="ui-btn w-9 h-9 rounded-full bg-[#002b5b] text-white flex items-center justify-center shadow hover:scale-105 active:scale-95 transition">
-                        <i class="fa-solid fa-chevron-right text-xs"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Horizontal Scroll Row -->
-            <div id="popularGamesRow" class="flex items-center gap-3.5 sm:gap-4 overflow-x-auto no-scrollbar scroll-smooth snap-x snap-mandatory py-2 px-1"></div>
+      <!-- Search Drawer -->
+      <div id="searchDrawer" class="theme-surface hidden mt-2 bg-white/95 backdrop-blur-md rounded-2xl p-2.5 shadow-lg border border-slate-200">
+        <div class="relative flex items-center">
+          <i class="fa-solid fa-magnifying-glass text-slate-500 absolute left-3.5 z-10"></i>
+          <input id="gameSearchInput" type="text" placeholder="Search (e.g., Snake, Car, Arcade, Bus, 1v1)..." oninput="handleSearch(this.value)" class="w-full pl-10 pr-20 py-2.5 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-500 rounded-xl text-sm font-semibold border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-400">
+          <button onclick="clearSearch()" class="absolute right-2 text-xs bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 text-slate-800 dark:text-slate-100 font-bold px-3 py-1.5 rounded-lg z-10">
+            Clear
+          </button>
         </div>
+      </div>
+    </header>
+
+    <!-- PREMIUM HERO + PLAYER PROGRESS -->
+    <section class="hero-panel rounded-3xl p-5 sm:p-7 mb-4 text-white">
+      <div class="hero-content grid sm:grid-cols-[1.4fr_.8fr] gap-5 items-center">
+        <div>
+          <div class="inline-flex items-center gap-2 rounded-full bg-cyan-300/10 border border-cyan-200/20 px-3 py-1 text-[10px] font-extrabold tracking-[.18em] uppercase text-cyan-200 mb-3">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Your gaming zone
+          </div>
+          <h2 class="brand-font text-3xl sm:text-4xl font-bold leading-tight">PLAY. <span class="text-cyan-300">COMPETE.</span><br>LEVEL UP.</h2>
+          <p class="text-slate-300 text-xs sm:text-sm mt-3 max-w-md">Discover your next challenge. Pick a game, beat your best, and build your ST GAMES streak.</p>
+          <div class="flex flex-wrap gap-2 mt-5">
+            <button onclick="playFeaturedGame(event)" class="glow-button rounded-xl px-4 py-2.5 text-xs font-extrabold text-white">
+              <i class="fa-solid fa-play mr-2"></i>Play a Random Game
+            </button>
+            <button onclick="jumpToGames()" class="rounded-xl px-4 py-2.5 text-xs font-extrabold text-white bg-white/10 border border-white/15 hover:bg-white/15">
+              Explore Games <i class="fa-solid fa-arrow-down ml-1"></i>
+            </button>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-white">
+          <div class="stat-pill">
+            <i class="fa-solid fa-gamepad text-cyan-300 mb-2"></i>
+            <div id="heroTotalGames" class="text-2xl font-extrabold">0</div>
+            <div class="text-[10px] text-slate-300">Games in library</div>
+          </div>
+          <div class="stat-pill">
+            <i class="fa-solid fa-heart text-pink-300 mb-2"></i>
+            <div id="favoriteCount" class="text-2xl font-extrabold">0</div>
+            <div class="text-[10px] text-slate-300">Your favourites</div>
+          </div>
+          <div class="stat-pill">
+            <i class="fa-solid fa-trophy text-amber-300 mb-2"></i>
+            <div id="playedCount" class="text-2xl font-extrabold">0</div>
+            <div class="text-[10px] text-slate-300">Games launched</div>
+          </div>
+          <div class="stat-pill">
+            <i class="fa-solid fa-bolt text-violet-300 mb-2"></i>
+            <div id="levelLabel" class="text-2xl font-extrabold">LVL 1</div>
+            <div class="text-[10px] text-slate-300">Player level</div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-content mt-5 pt-4 border-t border-white/10">
+        <div class="flex justify-between items-center gap-3 mb-2">
+          <span class="text-[11px] font-bold text-slate-200">PLAYER XP</span>
+          <span id="xpLabel" class="text-[10px] font-bold text-cyan-200">0 / 100 XP</span>
+        </div>
+        <div class="progress-track">
+          <div id="xpProgress" class="progress-fill"></div>
+        </div>
+        <p id="achievementText" class="text-[10px] text-slate-400 mt-2">Launch games to earn XP and unlock milestones.</p>
+      </div>
     </section>
 
-    <!-- 7. REMAINING GAMES SECTION (GAME #11 ONWARDS - BELOW POPULAR) -->
-    <section id="remainingGamesSection" class="max-w-5xl w-full mx-auto px-3.5 sm:px-6 pt-8 pb-16 relative z-10">
-        <div id="remainingGamesGrid" class="poki-grid"></div>
+    <!-- PLAYER PROFILE, LOCAL LEADERBOARD AND ADMIN TOOLS -->
+    <section class="grid lg:grid-cols-3 gap-3 mb-5 relative z-10" aria-label="Player features">
+      <div id="playerProfilePanel" class="feature-hub rounded-2xl p-4 min-w-0">
+        <div class="flex items-center justify-between gap-2 mb-3">
+          <h3 class="brand-font font-bold text-base theme-text-primary"><i class="fa-solid fa-user-astronaut text-sky-500 mr-2"></i>Player Profile</h3>
+          <span class="text-[9px] font-extrabold uppercase tracking-wider text-sky-600">On this device</span>
+        </div>
+        <div class="flex items-center gap-3 mb-3">
+          <div id="profileAvatar" class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 text-white text-lg font-black bg-gradient-to-br from-sky-400 to-blue-700 shadow-lg shadow-sky-500/20">S</div>
+          <div class="min-w-0">
+            <div id="profileDisplayName" class="font-extrabold theme-text-primary truncate">ST Player</div>
+            <div id="profileRank" class="text-[10px] text-sky-600 font-bold">Rookie • Level 1</div>
+          </div>
+        </div>
+        <label class="tiny-label" for="playerNameInput">Player name</label>
+        <input id="playerNameInput" class="neon-input mb-2" maxlength="22" placeholder="Enter your player name" autocomplete="nickname">
+        <button class="neon-action w-full" onclick="savePlayerProfile()">
+          <i class="fa-solid fa-floppy-disk mr-1"></i> Save profile
+        </button>
+        <div class="grid grid-cols-3 gap-2 mt-3 text-center">
+          <div class="feature-row flex-col gap-1"><b id="profileGamesStat" class="text-base">0</b><span class="text-[9px] opacity-70">Played</span></div>
+          <div class="feature-row flex-col gap-1"><b id="profileXPStat" class="text-base">0</b><span class="text-[9px] opacity-70">XP</span></div>
+          <div class="feature-row flex-col gap-1"><b id="profileFavStat" class="text-base">0</b><span class="text-[9px] opacity-70">Faves</span></div>
+        </div>
+      </div>
+
+      <div id="leaderboardPanel" class="feature-hub rounded-2xl p-4 min-w-0">
+        <div class="flex items-center justify-between gap-2 mb-2">
+          <h3 class="brand-font font-bold text-base theme-text-primary"><i class="fa-solid fa-trophy text-amber-500 mr-2"></i>Leaderboard</h3>
+          <span class="text-[9px] font-extrabold uppercase tracking-wider text-sky-600">Local</span>
+        </div>
+        <p class="text-[10px] opacity-70 mb-3">Top profiles saved in this browser. A shared online leaderboard needs a server/database.</p>
+        <div id="leaderboardList" class="space-y-2">
+          <div class="text-xs opacity-60 py-4 text-center">Play a game to start your score.</div>
+        </div>
+        <button onclick="refreshLeaderboard()" class="mt-3 text-[10px] font-extrabold text-sky-600 hover:text-blue-700">
+          <i class="fa-solid fa-rotate mr-1"></i>Refresh scores
+        </button>
+      </div>
+
+      <div class="feature-hub rounded-2xl p-4 min-w-0 flex flex-col justify-center">
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <h3 class="brand-font font-bold text-base theme-text-primary"><i class="fa-solid fa-shield-halved text-sky-500 mr-2"></i>Admin</h3>
+            <p class="text-[10px] opacity-70 mt-1">Manage game cards</p>
+          </div>
+          <a href="admin.html" class="admin-mini-button" aria-label="Open admin page">
+            <i class="fa-solid fa-lock mr-1"></i> Admin
+          </a>
+        </div>
+      </div>
     </section>
 
-    <footer class="theme-surface max-w-5xl w-full mx-auto px-4 py-5 mb-20 sm:mb-6 rounded-2xl border border-slate-200 text-center text-[10px] text-slate-500">
-        <div class="brand-font text-sm font-bold tracking-wide theme-text-primary">ST GAMES <span class="text-cyan-500">â€¢</span> SKILL | STRATEGY | VICTORY</div>
-        <p class="mt-1">Your favourites, level and progress are saved on this device.</p>
-        <button onclick="clearPlayerProgress()" class="mt-3 underline underline-offset-2 hover:text-pink-500">Reset player progress</button>
-    </footer>
+    <!-- 3. SOCIAL CHANNELS & CONTROLS -->
+    <div class="space-y-2.5 mb-4">
+      <div class="flex items-center justify-between gap-2">
+        <div class="bg-[#002b5b] text-white rounded-2xl px-3.5 py-2 shadow-md flex items-center gap-2 border border-white/10">
+          <i class="fa-solid fa-layer-group text-amber-300 text-xs"></i>
+          <span id="liveGameCount" class="font-extrabold text-sm tabular-nums text-white">0</span>
+          <span class="text-xs text-slate-300 font-medium">Games Online</span>
+        </div>
+      </div>
 
-    <!-- Background Audio Element -->
-    <audio id="bgMusic" loop>
-      <source src="creazy/song.mp3" type="audio/mpeg">
-    </audio>
+      <!-- Instagram Card -->
+      <a href="https://instagram.com/_satish_official_16" target="_blank" rel="noopener noreferrer" class="ui-btn theme-surface w-full bg-white/95 backdrop-blur-md rounded-2xl p-2.5 sm:px-4 shadow-md border border-white flex items-center justify-between gap-3 hover:scale-[1.01] transition-all">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-full p-[2px] ig-gradient shrink-0 shadow-sm">
+            <img src="logo/Insta.jpg" alt="Instagram" onerror="this.onerror=null; this.src='https://cdn-icons-png.flaticon.com/512/3955/3955024.png';" class="w-full h-full object-cover rounded-full bg-white">
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="theme-text-primary font-extrabold text-xs sm:text-sm text-[#002b5b]">@_satish_official_16</span>
+              <i class="fa-solid fa-circle-check text-blue-500 text-[11px]" title="Verified"></i>
+            </div>
+            <p class="theme-text-sub text-[11px] text-slate-500 font-medium">Official Gaming &amp; Daily Updates</p>
+          </div>
+        </div>
+        <div class="px-4 py-1.5 rounded-xl ig-gradient text-white text-xs font-bold flex items-center gap-1.5 hover:opacity-95 transition-all shrink-0">
+          <i class="fa-brands fa-instagram text-sm"></i>
+          <span>Follow</span>
+        </div>
+      </a>
 
-    <!-- Floating Audio Controls Dock (SFX + Background Music) -->
-    <div class="fixed bottom-5 right-5 z-50 flex items-center gap-2">
-        <button onclick="toggleSFX(event)" id="sfxToggleBtn" title="Toggle Arcade UI Sounds" class="bg-slate-900/90 border border-amber-400/40 text-amber-300 px-3 py-2.5 rounded-2xl shadow-lg shadow-amber-500/10 backdrop-blur-md hover:scale-105 active:scale-95 transition flex items-center gap-1.5 text-xs font-bold">
-            <i class="fa-solid fa-wand-magic-sparkles text-xs" id="sfxIcon"></i>
-            <span id="sfxText">SFX ON</span>
-        </button>
-
-        <button onclick="toggleAudio(event)" id="soundToggleBtn" class="bg-slate-900/90 border border-cyan-500/40 text-cyan-400 px-3.5 py-2.5 rounded-2xl shadow-lg shadow-cyan-500/20 backdrop-blur-md hover:scale-105 active:scale-95 transition flex items-center gap-2 text-xs font-bold">
-            <i class="fa-solid fa-volume-xmark text-sm" id="soundIcon"></i>
-            <span id="soundText">Play Music ðŸŽµ</span>
-        </button>
+      <!-- YouTube Card -->
+      <a href="https://youtube.com/@nanu16-h3g?si=2jyeQ-V78uTGvBzW" target="_blank" rel="noopener noreferrer" class="ui-btn theme-surface w-full bg-white/95 backdrop-blur-md rounded-2xl p-2.5 sm:px-4 shadow-md border border-white flex items-center justify-between gap-3 hover:scale-[1.01] transition-all">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-full p-[2px] yt-gradient shrink-0 shadow-sm">
+            <img src="logo/sub.jpg" alt="YouTube" onerror="this.onerror=null; this.src='https://cdn-icons-png.flaticon.com/512/1384/1384060.png';" class="w-full h-full object-cover rounded-full bg-white">
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="theme-text-primary font-extrabold text-xs sm:text-sm text-[#002b5b]">@Tarun-Bhai</span>
+              <i class="fa-solid fa-circle-check text-red-500 text-[11px]" title="Creator"></i>
+            </div>
+            <p class="theme-text-sub text-[11px] text-slate-500 font-medium">Official YouTube Channel • Gameplay &amp; Vlogs</p>
+          </div>
+        </div>
+        <div class="px-4 py-1.5 rounded-xl yt-gradient text-white text-xs font-bold flex items-center gap-1.5 hover:opacity-95 transition-all shrink-0">
+          <i class="fa-brands fa-youtube text-sm"></i>
+          <span>Subscribe</span>
+        </div>
+      </a>
     </div>
 
-    <script>
-        /* =========================================================
-           1. WEB AUDIO API ARCADE SOUND SYNTHESIZER
-           ========================================================= */
-        let audioCtx = null;
-        let sfxEnabled = localStorage.getItem('st_sfx') !== 'off';
-        let lastHoverSoundTime = 0;
+    <!-- 4. CATEGORY SELECTORS -->
+    <section class="mb-5">
+      <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1" id="categoryButtonsContainer">
+        <button onclick="filterByCategory('all', event)" data-cat="all" class="cat-btn active-cat shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-[#002b5b] text-white">
+          <i class="fa-solid fa-border-all"></i> All Games
+        </button>
+        <button onclick="filterByCategory('popular', event)" data-cat="popular" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
+          <i class="fa-solid fa-fire text-orange-500"></i> Popular
+        </button>
+        <button onclick="filterByCategory('classic', event)" data-cat="classic" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
+          <i class="fa-solid fa-ghost text-emerald-500"></i> Classic &amp; Snake
+        </button>
+        <button onclick="filterByCategory('racing', event)" data-cat="racing" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
+          <i class="fa-solid fa-car-burst text-amber-500"></i> Racing
+        </button>
+        <button onclick="filterByCategory('1v1', event)" data-cat="1v1" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
+          <i class="fa-solid fa-people-arrows text-rose-500"></i> 1v1 Battle
+        </button>
+        <button onclick="filterByCategory('single', event)" data-cat="single" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
+          <i class="fa-solid fa-user-astronaut text-indigo-500"></i> Single Player
+        </button>
+        <button onclick="filterByCategory('sports', event)" data-cat="sports" class="cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 bg-white/90 text-[#002b5b]">
+          <i class="fa-solid fa-baseball-bat-ball text-sky-500"></i> Sports
+        </button>
+      </div>
+    </section>
 
-        function getAudioContext() {
-            if (!audioCtx) {
-                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-                if (AudioContextClass) {
-                    audioCtx = new AudioContextClass();
-                }
-            }
-            if (audioCtx && audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-            return audioCtx;
+    <div class="dashboard-panel theme-surface rounded-2xl p-3 mb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-sliders text-cyan-500"></i>
+        <span class="theme-text-primary text-xs font-extrabold">Library controls</span>
+        <span id="resultsCount" class="text-[10px] text-slate-500">Showing all games</span>
+      </div>
+      <div class="flex flex-wrap gap-2 items-center">
+        <select id="sortGames" class="filter-control" aria-label="Sort games" onchange="changeSort(this.value)">
+          <option value="default">Sort: Featured</option>
+          <option value="az">Name: A–Z</option>
+          <option value="za">Name: Z–A</option>
+        </select>
+        <button id="favoritesFilterBtn" onclick="toggleFavoritesFilter()" class="filter-control">
+          <i class="fa-regular fa-heart mr-1 text-pink-500"></i> Favourites only
+        </button>
+        <button onclick="clearAllFilters()" class="filter-control">
+          <i class="fa-solid fa-rotate-left mr-1"></i> Reset
+        </button>
+      </div>
+    </div>
+
+    <!-- 5. TOP 10 GAMES GRID (ABOVE POPULAR) -->
+    <section>
+      <div id="gamesGrid" class="poki-grid"></div>
+      <div id="emptyState" class="hidden bg-white/90 rounded-3xl p-8 text-center my-4 shadow-md">
+        <i class="fa-solid fa-gamepad text-4xl text-slate-400 mb-2"></i>
+        <h3 class="font-extrabold text-lg text-[#002b5b] theme-text-primary">No games found</h3>
+        <p class="text-xs text-slate-500 mt-1 mb-4">Try clearing your filters or search query.</p>
+        <button onclick="clearAllFilters()" class="bg-[#002b5b] text-white text-xs font-bold px-4 py-2 rounded-xl">Show All Games</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- 6. POPULAR GAMES SECTION (HORIZONTAL SCROLL) -->
+  <section id="popularSection" class="popular-section pt-5 pb-8 px-4 sm:px-6 mt-4 shadow-inner">
+    <div class="max-w-5xl mx-auto">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2.5">
+          <i class="fa-solid fa-fire text-xl sm:text-2xl text-[#002b5b] popular-heading"></i>
+          <h2 class="brand-font text-xl sm:text-2xl font-bold text-[#002b5b] popular-heading">Popular Games</h2>
+          <span id="popularCountBadge" class="bg-[#002b5b] text-amber-300 text-xs font-extrabold px-2.5 py-0.5 rounded-full">0</span>
+        </div>
+
+        <!-- Left & Right Scroll Buttons -->
+        <div class="flex items-center gap-2">
+          <button onclick="scrollPopular(-1)" aria-label="Scroll Left" class="ui-btn w-9 h-9 rounded-full bg-[#002b5b] text-white flex items-center justify-center shadow hover:scale-105 active:scale-95 transition">
+            <i class="fa-solid fa-chevron-left text-xs"></i>
+          </button>
+          <button onclick="scrollPopular(1)" aria-label="Scroll Right" class="ui-btn w-9 h-9 rounded-full bg-[#002b5b] text-white flex items-center justify-center shadow hover:scale-105 active:scale-95 transition">
+            <i class="fa-solid fa-chevron-right text-xs"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Horizontal Scroll Row -->
+      <div id="popularGamesRow" class="flex items-center gap-3.5 sm:gap-4 overflow-x-auto no-scrollbar scroll-smooth snap-x snap-mandatory py-2 px-1"></div>
+    </div>
+  </section>
+
+  <!-- 7. REMAINING GAMES SECTION (GAME #11 ONWARDS - BELOW POPULAR) -->
+  <section id="remainingGamesSection" class="max-w-5xl w-full mx-auto px-3.5 sm:px-6 pt-8 pb-16 relative z-10">
+    <div id="remainingGamesGrid" class="poki-grid"></div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="theme-surface max-w-5xl w-full mx-auto px-4 py-5 mb-20 sm:mb-6 rounded-2xl border border-slate-200 text-center text-[10px] text-slate-500">
+    <div class="brand-font text-sm font-bold tracking-wide theme-text-primary">ST GAMES <span class="text-cyan-500">•</span> SKILL | STRATEGY | VICTORY</div>
+    <p class="mt-1">Your favourites, level and progress are saved on this device.</p>
+    <button onclick="clearPlayerProgress()" class="mt-3 underline underline-offset-2 hover:text-pink-500">Reset player progress</button>
+  </footer>
+
+  <!-- Background Audio Element -->
+  <audio id="bgMusic" loop>
+    <source src="creazy/song.mp3" type="audio/mpeg">
+  </audio>
+
+  <!-- Floating Audio Controls Dock (Positioned above bottom nav) -->
+  <div class="fixed bottom-20 right-3 sm:right-5 z-50 flex items-center gap-2">
+    <button onclick="toggleSFX()" id="sfxToggleBtn" title="Toggle Arcade UI Sounds" class="bg-slate-900/90 border border-amber-400/40 text-amber-300 px-3 py-2.5 rounded-2xl shadow-lg shadow-amber-500/10 backdrop-blur-md hover:scale-105 active:scale-95 transition flex items-center gap-1.5 text-xs font-bold">
+      <i class="fa-solid fa-wand-magic-sparkles text-xs" id="sfxIcon"></i>
+      <span id="sfxText">SFX ON</span>
+    </button>
+    <button onclick="toggleAudio()" id="soundToggleBtn" class="bg-slate-900/90 border border-cyan-500/40 text-cyan-400 px-3.5 py-2.5 rounded-2xl shadow-lg shadow-cyan-500/20 backdrop-blur-md hover:scale-105 active:scale-95 transition flex items-center gap-2 text-xs font-bold">
+      <i class="fa-solid fa-volume-xmark text-sm" id="soundIcon"></i>
+      <span id="soundText">Play Music 🎵</span>
+    </button>
+  </div>
+
+  <!-- Bottom Navigation Bar -->
+  <nav class="st-bottom-nav" aria-label="ST GAMES navigation">
+    <a href="index.html">
+      <span class="nav-icon">⌂</span>
+      <span>Home</span>
+    </a>
+    <a href="login.html">
+      <span class="nav-icon">♙</span>
+      <span>Profile</span>
+    </a>
+    <a href="achievements.html">
+      <span class="nav-icon">🏆</span>
+      <span>Achievements</span>
+    </a>
+    <a href="levels.html">
+      <span class="nav-icon">⚡</span>
+      <span>Levels</span>
+    </a>
+  </nav>
+
+  <script>
+    /* =========================================================
+       1. WEB AUDIO API ARCADE SOUND SYNTHESIZER
+       ========================================================= */
+    let audioCtx = null;
+    let sfxEnabled = localStorage.getItem('st_sfx') !== 'off';
+    let lastHoverSoundTime = 0;
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          audioCtx = new AudioContextClass();
         }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
 
-        const ArcadeSFX = {
-            // Crisp high-tech arcade hover blip
-            hover() {
-                if (!sfxEnabled) return;
-                const nowMs = performance.now();
-                if (nowMs - lastHoverSoundTime < 45) return; // Prevent overlap spam
-                lastHoverSoundTime = nowMs;
+    const ArcadeSFX = {
+      hover() {
+        if (!sfxEnabled) return;
+        const nowMs = performance.now();
+        if (nowMs - lastHoverSoundTime < 45) return;
+        lastHoverSoundTime = nowMs;
 
-                const ctx = getAudioContext();
-                if (!ctx) return;
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
 
-                const now = ctx.currentTime;
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(540, now);
+        osc.frequency.exponentialRampToValueAtTime(880, now + 0.045);
 
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(540, now);
-                osc.frequency.exponentialRampToValueAtTime(880, now + 0.045);
+        gain.gain.setValueAtTime(0.06, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
 
-                gain.gain.setValueAtTime(0.06, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.055);
+      },
 
-                osc.connect(gain);
-                gain.connect(ctx.destination);
+      click() {
+        if (!sfxEnabled) return;
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
 
-                osc.start(now);
-                osc.stop(now + 0.055);
-            },
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(587.33, now);
+        osc.frequency.setValueAtTime(880, now + 0.045);
 
-            // Two-tone arcade button confirm chime
-            click() {
-                if (!sfxEnabled) return;
-                const ctx = getAudioContext();
-                if (!ctx) return;
+        gain.gain.setValueAtTime(0.11, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
 
-                const now = ctx.currentTime;
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.135);
+      },
 
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(587.33, now); // D5
-                osc.frequency.setValueAtTime(880, now + 0.045); // A5
+      launch() {
+        if (!sfxEnabled) return;
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        const notes = [523.25, 659.25, 1046.50];
 
-                gain.gain.setValueAtTime(0.11, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+        notes.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          const start = now + idx * 0.045;
 
-                osc.connect(gain);
-                gain.connect(ctx.destination);
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, start);
+          gain.gain.setValueAtTime(0.13, start);
+          gain.gain.exponentialRampToValueAtTime(0.001, start + 0.11);
 
-                osc.start(now);
-                osc.stop(now + 0.135);
-            },
-
-            // 3-note power-up chime when launching a game card
-            launch() {
-                if (!sfxEnabled) return;
-                const ctx = getAudioContext();
-                if (!ctx) return;
-
-                const now = ctx.currentTime;
-                const notes = [523.25, 659.25, 1046.50]; // C5 -> E5 -> C6
-                notes.forEach((freq, idx) => {
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    const start = now + idx * 0.045;
-
-                    osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(freq, start);
-
-                    gain.gain.setValueAtTime(0.13, start);
-                    gain.gain.exponentialRampToValueAtTime(0.001, start + 0.11);
-
-                    osc.connect(gain);
-                    gain.connect(ctx.destination);
-
-                    osc.start(start);
-                    osc.stop(start + 0.115);
-                });
-            }
-        };
-
-        function updateSFXButtonUI() {
-            const sfxIcon = document.getElementById('sfxIcon');
-            const sfxText = document.getElementById('sfxText');
-            const sfxBtn = document.getElementById('sfxToggleBtn');
-            if (sfxEnabled) {
-                sfxIcon.className = "fa-solid fa-wand-magic-sparkles text-xs text-amber-300";
-                sfxText.innerText = "SFX ON";
-                sfxBtn.classList.remove('opacity-60');
-            } else {
-                sfxIcon.className = "fa-solid fa-volume-off text-xs text-slate-400";
-                sfxText.innerText = "SFX OFF";
-                sfxBtn.classList.add('opacity-60');
-            }
-        }
-
-        function toggleSFX(e) {
-            sfxEnabled = !sfxEnabled;
-            localStorage.setItem('st_sfx', sfxEnabled ? 'on' : 'off');
-            updateSFXButtonUI();
-            if (sfxEnabled) {
-                ArcadeSFX.click();
-            }
-            if (e) {
-                spawnParticleBurst(e.clientX, e.clientY, 18);
-            }
-        }
-
-        /* =========================================================
-           2. FOREGROUND TINY PARTICLE BURST & HOVER SPARKLE ENGINE
-           ========================================================= */
-        const burstCanvas = document.getElementById('burstCanvas');
-        const bCtx = burstCanvas.getContext('2d');
-        let burstParticles = [];
-        let shockwaves = [];
-
-        const BURST_COLORS = ['#fef08a', '#38bdf8', '#5eead4', '#f472b6', '#a78bfa', '#ffffff', '#fb923c'];
-
-        class BurstParticle {
-            constructor(x, y, isHover = false) {
-                this.x = x + (Math.random() - 0.5) * (isHover ? 18 : 6);
-                this.y = y + (Math.random() - 0.5) * (isHover ? 18 : 6);
-
-                const angle = Math.random() * Math.PI * 2;
-                const speed = isHover
-                    ? (Math.random() * 1.9 + 0.6)
-                    : (Math.random() * 5.2 + 1.4);
-
-                this.vx = Math.cos(angle) * speed;
-                this.vy = Math.sin(angle) * speed - (isHover ? 0.6 : 0.9);
-                this.gravity = isHover ? -0.015 : 0.12;
-                this.friction = 0.96;
-
-                // Tiny particle radius (1.2px to 3.4px)
-                this.size = isHover ? (Math.random() * 1.8 + 1.1) : (Math.random() * 2.4 + 1.3);
-                this.alpha = 1;
-                this.decay = isHover ? (Math.random() * 0.03 + 0.024) : (Math.random() * 0.022 + 0.016);
-                this.color = BURST_COLORS[Math.floor(Math.random() * BURST_COLORS.length)];
-                this.isStar = Math.random() < 0.45;
-                this.rotation = Math.random() * Math.PI * 2;
-                this.spin = (Math.random() - 0.5) * 0.18;
-            }
-
-            update() {
-                this.vx *= this.friction;
-                this.vy *= this.friction;
-                this.vy += this.gravity;
-                this.x += this.vx;
-                this.y += this.vy;
-                this.rotation += this.spin;
-                this.alpha -= this.decay;
-            }
-
-            draw() {
-                if (this.alpha <= 0) return;
-                bCtx.save();
-                bCtx.globalAlpha = Math.max(0, this.alpha);
-                bCtx.fillStyle = this.color;
-                bCtx.shadowBlur = 8;
-                bCtx.shadowColor = this.color;
-                bCtx.translate(this.x, this.y);
-                bCtx.rotate(this.rotation);
-
-                if (this.isStar) {
-                    const s = this.size * 1.45;
-                    bCtx.beginPath();
-                    bCtx.moveTo(0, -s);
-                    bCtx.lineTo(s * 0.35, -s * 0.35);
-                    bCtx.lineTo(s, 0);
-                    bCtx.lineTo(s * 0.35, s * 0.35);
-                    bCtx.lineTo(0, s);
-                    bCtx.lineTo(-s * 0.35, s * 0.35);
-                    bCtx.lineTo(-s, 0);
-                    bCtx.lineTo(-s * 0.35, -s * 0.35);
-                    bCtx.closePath();
-                    bCtx.fill();
-                } else {
-                    bCtx.beginPath();
-                    bCtx.arc(0, 0, this.size, 0, Math.PI * 2);
-                    bCtx.fill();
-                }
-                bCtx.restore();
-            }
-        }
-
-        class ShockwaveRing {
-            constructor(x, y) {
-                this.x = x;
-                this.y = y;
-                this.radius = 4;
-                this.maxRadius = 46;
-                this.alpha = 0.75;
-                this.color = isDark ? '#38bdf8' : '#fef08a';
-            }
-
-            update() {
-                this.radius += (this.maxRadius - this.radius) * 0.18;
-                this.alpha -= 0.045;
-            }
-
-            draw() {
-                if (this.alpha <= 0) return;
-                bCtx.save();
-                bCtx.globalAlpha = Math.max(0, this.alpha);
-                bCtx.strokeStyle = this.color;
-                bCtx.lineWidth = 2;
-                bCtx.shadowBlur = 10;
-                bCtx.shadowColor = this.color;
-                bCtx.beginPath();
-                bCtx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                bCtx.stroke();
-                bCtx.restore();
-            }
-        }
-
-        function spawnParticleBurst(x, y, count = 26, isHover = false) {
-            for (let i = 0; i < count; i++) {
-                burstParticles.push(new BurstParticle(x, y, isHover));
-            }
-            if (!isHover) {
-                shockwaves.push(new ShockwaveRing(x, y));
-            }
-        }
-
-        function spawnCardPerimeterSparkles(cardEl) {
-            const rect = cardEl.getBoundingClientRect();
-            for (let i = 0; i < 10; i++) {
-                const px = rect.left + Math.random() * rect.width;
-                const py = rect.top + Math.random() * rect.height;
-                burstParticles.push(new BurstParticle(px, py, true));
-            }
-        }
-
-        function animateBurstCanvas() {
-            bCtx.clearRect(0, 0, burstCanvas.width, burstCanvas.height);
-
-            for (let i = shockwaves.length - 1; i >= 0; i--) {
-                shockwaves[i].update();
-                shockwaves[i].draw();
-                if (shockwaves[i].alpha <= 0) {
-                    shockwaves.splice(i, 1);
-                }
-            }
-
-            for (let i = burstParticles.length - 1; i >= 0; i--) {
-                burstParticles[i].update();
-                burstParticles[i].draw();
-                if (burstParticles[i].alpha <= 0) {
-                    burstParticles.splice(i, 1);
-                }
-            }
-
-            requestAnimationFrame(animateBurstCanvas);
-        }
-
-        /* =========================================================
-           3. BACKGROUND TINY PARTICLE ENGINE (CANVAS)
-           ========================================================= */
-        const canvas = document.getElementById('particleCanvas');
-        const ctx = canvas.getContext('2d');
-        let particlesArray = [];
-        let isDark = false;
-
-        const pointer = {
-            x: null,
-            y: null,
-            radius: 110
-        };
-
-        window.addEventListener('mousemove', (e) => {
-            pointer.x = e.clientX;
-            pointer.y = e.clientY;
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(start);
+          osc.stop(start + 0.115);
         });
+      }
+    };
 
-        window.addEventListener('touchmove', (e) => {
-            if (e.touches.length > 0) {
-                pointer.x = e.touches[0].clientX;
-                pointer.y = e.touches[0].clientY;
-            }
-        }, { passive: true });
+    function updateSFXButtonUI() {
+      const sfxIcon = document.getElementById('sfxIcon');
+      const sfxText = document.getElementById('sfxText');
+      const sfxBtn = document.getElementById('sfxToggleBtn');
+      if (sfxEnabled) {
+        sfxIcon.className = "fa-solid fa-wand-magic-sparkles text-xs text-amber-300";
+        sfxText.innerText = "SFX ON";
+        sfxBtn.classList.remove('opacity-60');
+      } else {
+        sfxIcon.className = "fa-solid fa-volume-off text-xs text-slate-400";
+        sfxText.innerText = "SFX OFF";
+        sfxBtn.classList.add('opacity-60');
+      }
+    }
 
-        window.addEventListener('touchend', () => {
-            pointer.x = null;
-            pointer.y = null;
-        });
+    function toggleSFX() {
+      sfxEnabled = !sfxEnabled;
+      localStorage.setItem('st_sfx', sfxEnabled ? 'on' : 'off');
+      updateSFXButtonUI();
+      if (sfxEnabled) {
+        ArcadeSFX.click();
+      }
+    }
 
-        window.addEventListener('mouseout', () => {
-            pointer.x = null;
-            pointer.y = null;
-        });
-
-        const LIGHT_PALETTE = ['#ffffff', '#fef08a', '#a5f3fc', '#d9f99d', '#ffffff'];
-        const DARK_PALETTE  = ['#38bdf8', '#c084fc', '#f472b6', '#facc15', '#e2e8f0'];
-
-        class TinyParticle {
-            constructor() {
-                this.reset(true);
-            }
-
-            reset(initial = false) {
-                this.x = Math.random() * canvas.width;
-                this.y = initial ? Math.random() * canvas.height : canvas.height + 10;
-                this.size = Math.random() * 2.2 + 1;
-                this.speedY = -(Math.random() * 0.55 + 0.18);
-                this.speedX = (Math.random() - 0.5) * 0.4;
-                this.swayAngle = Math.random() * Math.PI * 2;
-                this.swaySpeed = Math.random() * 0.02 + 0.008;
-                this.alpha = Math.random() * 0.65 + 0.2;
-                this.alphaChange = (Math.random() * 0.012 + 0.004) * (Math.random() < 0.5 ? 1 : -1);
-                this.isSparkle = Math.random() < 0.18;
-                this.pickColor();
-            }
-
-            pickColor() {
-                const palette = isDark ? DARK_PALETTE : LIGHT_PALETTE;
-                this.color = palette[Math.floor(Math.random() * palette.length)];
-            }
-
-            update() {
-                this.y += this.speedY;
-                this.swayAngle += this.swaySpeed;
-                this.x += this.speedX + Math.sin(this.swayAngle) * 0.25;
-
-                this.alpha += this.alphaChange;
-                if (this.alpha >= 0.9 || this.alpha <= 0.15) {
-                    this.alphaChange = -this.alphaChange;
-                }
-
-                if (pointer.x !== null && pointer.y !== null) {
-                    const dx = this.x - pointer.x;
-                    const dy = this.y - pointer.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    if (dist < pointer.radius && dist > 0) {
-                        const force = (pointer.radius - dist) / pointer.radius;
-                        this.x += (dx / dist) * force * 1.8;
-                        this.y += (dy / dist) * force * 1.8;
-                    }
-                }
-
-                if (this.y < -10) {
-                    this.reset(false);
-                }
-                if (this.x < -10) this.x = canvas.width + 10;
-                if (this.x > canvas.width + 10) this.x = -10;
-            }
-
-            draw() {
-                ctx.save();
-                ctx.globalAlpha = Math.max(0.1, Math.min(1, this.alpha));
-                ctx.fillStyle = this.color;
-                ctx.shadowBlur = isDark ? 8 : 4;
-                ctx.shadowColor = this.color;
-
-                if (this.isSparkle) {
-                    const s = this.size * 1.35;
-                    ctx.beginPath();
-                    ctx.moveTo(this.x, this.y - s);
-                    ctx.lineTo(this.x + s * 0.35, this.y - s * 0.35);
-                    ctx.lineTo(this.x + s, this.y);
-                    ctx.lineTo(this.x + s * 0.35, this.y + s * 0.35);
-                    ctx.lineTo(this.x, this.y + s);
-                    ctx.lineTo(this.x - s * 0.35, this.y + s * 0.35);
-                    ctx.lineTo(this.x - s, this.y);
-                    ctx.lineTo(this.x - s * 0.35, this.y - s * 0.35);
-                    ctx.closePath();
-                    ctx.fill();
-                } else {
-                    ctx.beginPath();
-                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-                ctx.restore();
-            }
+    /* =========================================================
+       2. INTERACTIVE CARD & UI DELEGATION LISTENERS
+       ========================================================= */
+    function setupCardInteractions() {
+      document.addEventListener('mouseover', (e) => {
+        const card = e.target.closest('.game-card');
+        if (card && !card.contains(e.relatedTarget)) {
+          ArcadeSFX.hover();
+          return;
         }
-
-        function initParticles() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            burstCanvas.width = window.innerWidth;
-            burstCanvas.height = window.innerHeight;
-
-            const count = Math.min(140, Math.max(65, Math.floor((canvas.width * canvas.height) / 11000)));
-            particlesArray = [];
-            for (let i = 0; i < count; i++) {
-                particlesArray.push(new TinyParticle());
-            }
+        const btn = e.target.closest('.cat-btn, .ui-btn');
+        if (btn && !btn.contains(e.relatedTarget)) {
+          ArcadeSFX.hover();
         }
+      });
 
-        function animateParticles() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            for (let i = 0; i < particlesArray.length; i++) {
-                particlesArray[i].update();
-                particlesArray[i].draw();
-            }
-            requestAnimationFrame(animateParticles);
-        }
+      document.addEventListener('click', (e) => {
+        if (e.target.closest('.favorite-btn')) return;
 
-        window.addEventListener('resize', () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            burstCanvas.width = window.innerWidth;
-            burstCanvas.height = window.innerHeight;
-        });
-
-        /* =========================================================
-           4. INTERACTIVE CARD & UI DELEGATION LISTENERS
-           ========================================================= */
-        let lastMoveSparkle = 0;
-
-        function setupCardInteractions() {
-            // Hover enter on Game Cards & UI buttons
-            document.addEventListener('mouseover', (e) => {
-                const card = e.target.closest('.game-card');
-                if (card && !card.contains(e.relatedTarget)) {
-                    ArcadeSFX.hover();
-                    spawnCardPerimeterSparkles(card);
-                    return;
-                }
-
-                const btn = e.target.closest('.cat-btn, .ui-btn');
-                if (btn && !btn.contains(e.relatedTarget)) {
-                    ArcadeSFX.hover();
-                }
-            });
-
-            // Subtle trailing tiny particles while moving cursor over a Game Card
-            document.addEventListener('mousemove', (e) => {
-                const card = e.target.closest('.game-card');
-                if (card) {
-                    const now = performance.now();
-                    if (now - lastMoveSparkle > 42) {
-                        lastMoveSparkle = now;
-                        spawnParticleBurst(e.clientX, e.clientY, 2, true);
-                    }
-                }
-            });
-
-            // Click Nova Burst + Launch Sound on Game Cards
-            document.addEventListener('click', (e) => {
-                const card = e.target.closest('.game-card');
-                if (card) {
-                    const rect = card.getBoundingClientRect();
-                    const clickX = e.clientX || (rect.left + rect.width / 2);
-                    const clickY = e.clientY || (rect.top + rect.height / 2);
-
-                    spawnParticleBurst(clickX, clickY, 28, false);
-                    ArcadeSFX.launch();
-
-                    // Allow Ctrl/Cmd/Middle-click to open in new tab normally
-                    if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) {
-                        return;
-                    }
-
-                    const targetUrl = card.getAttribute('href');
-                    if (targetUrl) {
-                        e.preventDefault();
-                        setTimeout(() => {
-                            window.location.href = targetUrl;
-                        }, 180);
-                    }
-                }
-            });
-        }
-
-        /* =========================================================
-           5. AUDIO & PORTAL CATALOG LOGIC
-           ========================================================= */
-        const music = document.getElementById('bgMusic');
-        const soundIcon = document.getElementById('soundIcon');
-        const soundText = document.getElementById('soundText');
-        let isPlaying = false;
-
-        function toggleAudio(e) {
-            if (e) {
-                spawnParticleBurst(e.clientX, e.clientY, 18);
-            }
-            if (isPlaying) {
-                music.pause();
-                isPlaying = false;
-                soundIcon.className = "fa-solid fa-volume-xmark text-sm";
-                soundText.innerText = "Music ðŸŽ¶ OFF ðŸ“´";
-                localStorage.setItem('hub_sound', 'off');
-            } else {
-                music.play().then(() => {
-                    isPlaying = true;
-                    soundIcon.className = "fa-solid fa-volume-high text-sm animate-pulse";
-                    soundText.innerText = "Music ðŸŽµ ON ðŸ”Š";
-                    localStorage.setItem('hub_sound', 'on');
-                }).catch(err => {
-                    console.log("Playback error:", err);
-                });
-            }
-        }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            initParticles();
-            animateParticles();
-            animateBurstCanvas();
-            setupCardInteractions();
-            updateSFXButtonUI();
-
-            const savedSound = localStorage.getItem('hub_sound');
-            if (savedSound === 'on') {
-                music.play().then(() => {
-                    isPlaying = true;
-                    soundIcon.className = "fa-solid fa-volume-high text-sm animate-pulse";
-                    soundText.innerText = "Sound ON ðŸ”Š";
-                }).catch(() => {});
-            }
-        });
-
-        const TOP_GAMES_LIMIT = 10;
-
-        const GAMES_DATA = [
-            // --- GAMES 1 TO 10 (SHOWN ABOVE POPULAR SECTION) ---
-            {
-                id: 'subway-runner',
-                title: 'Street Subway Runner',
-                url: 'game/subway/index.html',
-                logo: 'logo/subway.jpg',
-                icon: 'fa-solid fa-person-running',
-                size: 'large',
-                categories: ['single', 'popular'],
-                badge: 'HIT',
-                bg: 'linear-gradient(135deg, #f59e0b, #b45309)'
-            },
-            {
-                id: 'tic-tac-toe',
-                title: 'Pro tic-tac-toe',
-                url: 'game/tictactoe/index.html',
-                logo: 'logo/tic-tac-toe.png',
-                icon: 'fa-solid fa-baseball-bat-ball',
-                size: 'normal',
-                categories: ['sports', 'single', 'popular'],
-                badge: 'TOP',
-                bg: 'linear-gradient(135deg, #14b8a6, #0f766e)'
-            },
-            {
-                id: 'snake',
-                title: 'Cyber Snake Retro',
-                url: 'game/snake/index.html',
-                logo: 'logo/snake.jpg',
-                icon: 'fa-solid fa-staff-snake',
-                size: 'normal',
-                categories: ['classic', 'single', 'popular'],
-                badge: 'OLD',
-                bg: 'linear-gradient(135deg, #10b981, #047857)'
-            },
-            {
-                id: 'carracing',
-                title: 'Turbo Street Car Racing',
-                url: 'game/carracing.html',
-                logo: 'logo/car-race.jpg',
-                icon: 'fa-solid fa-car',
-                size: 'normal',
-                categories: ['racing', 'single', 'popular'],
-                badge: 'HOT',
-                bg: 'linear-gradient(135deg, #3b82f6, #1d4ed8)'
-            },
-            {
-                id: 'fruit game',
-                title: 'fruit Arcade Pro',
-                url: 'game/gamezop.html',
-                logo: 'logo/fruit.jpg',
-                icon: 'fa-solid fa-bolt',
-                size: 'normal',
-                categories: ['classic', 'single', 'popular'],
-                badge: 'LIVE',
-                bg: 'linear-gradient(135deg, #ec4899, #8b5cf6)'
-            },
-            {
-                id: 'bird game',
-                title: 'bird Action Mania',
-                url: 'game/clumsy.html',
-                logo: 'logo/bird.jpg',
-                icon: 'fa-solid fa-rocket',
-                size: 'normal',
-                categories: ['classic', 'single', 'popular'],
-                badge: 'NEW',
-                bg: 'linear-gradient(135deg, #f43f5e, #fb923c)'
-            },
-            {
-                id: 'game-hub-battle',
-                title: 'Multi Battle Arena',
-                url: 'game/fight.html',
-                logo: 'logo/fight.jpg',
-                icon: 'fa-solid fa-gamepad',
-                size: 'normal',
-                categories: ['1v1', 'popular'],
-                badge: '1v1',
-                bg: 'linear-gradient(135deg, #ef4444, #7f1d1d)'
-            },
-            {
-                id: 'snake-ladder',
-                title: 'snake and ladder',
-                url: 'game/ladder/index.html',
-                logo: 'logo/ladder.jpg',
-                icon: 'fa-solid fa-motorcycle',
-                size: 'normal',
-                categories: ['racing', 'single', 'popular'],
-                badge: 'HOT',
-                bg: 'linear-gradient(135deg, #f97316, #c2410c)'
-            },
-            {
-                id: 'hitknite.',
-                title: 'Hit Knife ',
-                url: 'game/hitknite.html',
-                logo: 'logo/craft.jpg',
-                icon: 'fa-solid fa-cube',
-                size: 'normal',
-                categories: ['1v1', 'classic', 'popular'],
-                badge: 'CO-OP',
-                bg: 'linear-gradient(135deg, #8b5cf6, #5b21b6)'
-            },
-            {
-                id: 'typing-race',
-                title: 'typing race pro',
-                url: 'game/typerace/index.html',
-                logo: 'logo/typerace.jpg',
-                icon: 'fa-solid fa-truck',
-                size: 'large',
-                categories: ['racing', 'single', 'popular'],
-                badge: '',
-                bg: 'linear-gradient(135deg, #64748b, #334155)'
-            },
-
-            // --- GAME 11 ONWARDS (AUTOMATICALLY SHOWN BELOW POPULAR SECTION) ---
-            {
-                id: 'ludo game',
-                title: 'ludo game',
-                url: 'game/Ludo/index.html',
-                logo: 'logo/ludo.jpg',
-                icon: 'fa-solid fa-paw',
-                size: 'normal',
-                categories: ['classic', 'single'],
-                badge: '',
-                bg: 'linear-gradient(135deg, #84cc16, #4d7c0f)'
-            },
-            {
-                id: 'sports',
-                title: 'Badminton Duel',
-                url: 'game/sports.html',
-                logo: 'logo/game.jpg',
-                icon: 'fa-solid fa-medal',
-                size: 'normal',
-                categories: ['1v1', 'sports', 'popular'],
-                badge: '1v1',
-                bg: 'linear-gradient(135deg, #059669, #065f46)'
-            },
-            {
-                id: 'subway-mini',
-                title: 'subway surfers mini',
-                url: 'game/subway.html',
-                logo: 'logo/subway.jpg',
-                icon: 'fa-solid fa-circle-dot',
-                size: 'normal',
-                categories: ['single'],
-                badge: '',
-                bg: 'linear-gradient(135deg, #334155, #1e293b)'
-            }
-        ];
-
-        let currentCategory = 'all';
-        let currentSearch = '';
-        let currentSort = 'default';
-        let favoritesOnly = false;
-        const favoriteGames = new Set(JSON.parse(localStorage.getItem('st_favorite_games') || '[]'));
-        const playedGames = new Set(JSON.parse(localStorage.getItem('st_played_games') || '[]'));
-        const safeReadJSON = (key, fallback) => { try { const value = JSON.parse(localStorage.getItem(key) || 'null'); return value == null ? fallback : value; } catch (_) { return fallback; } };
-        let playerProfile = safeReadJSON('st_player_profile', { name: 'ST Player' });
-        let customGames = safeReadJSON('st_custom_games', []);
-        let localScores = safeReadJSON('st_local_leaderboard', []);
-        if (!Array.isArray(customGames)) customGames = [];
-        if (!Array.isArray(localScores)) localScores = [];
-        customGames.forEach(game => { if (game && game.id && !GAMES_DATA.some(existing => existing.id === game.id)) GAMES_DATA.push(game); });
-
-        function savePlayerData() {
-            localStorage.setItem('st_favorite_games', JSON.stringify([...favoriteGames]));
-            localStorage.setItem('st_played_games', JSON.stringify([...playedGames]));
-        }
-        function clearPlayerProgress() {
-            if (!confirm('Reset favourites, XP and played-game progress on this device?')) return;
-            favoriteGames.clear(); playedGames.clear(); savePlayerData(); updatePlayerDashboard(); renderGames();
-        }
-        function updatePlayerDashboard() {
-            const total = GAMES_DATA.length;
-            const played = playedGames.size;
-            const xp = played * 25 + favoriteGames.size * 5;
-            const level = Math.floor(xp / 100) + 1;
-            const xpInLevel = xp % 100;
-            const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
-            setText('heroTotalGames', total); setText('liveGameCount', total);
-            setText('favoriteCount', favoriteGames.size); setText('playedCount', played);
-            setText('levelLabel', 'LVL ' + level); setText('xpLabel', xpInLevel + ' / 100 XP');
-            setText('achievementText', played >= 10 ? 'Achievement unlocked: Arcade Legend! Keep going.' : played >= 5 ? 'Achievement unlocked: Game Explorer! Try 10 different games.' : 'Play games to earn 25 XP per unique game. Favourites earn 5 bonus XP.');
-            const bar = document.getElementById('xpProgress'); if (bar) bar.style.width = xpInLevel + '%';
-            setText('favoriteCount', favoriteGames.size);
-            setText('profileDisplayName', playerProfile.name || 'ST Player');
-            setText('profileAvatar', (playerProfile.name || 'ST Player').trim().charAt(0).toUpperCase() || 'S');
-            setText('profileRank', (level >= 10 ? 'Arcade Master' : level >= 5 ? 'Pro Gamer' : level >= 3 ? 'Game Explorer' : 'Rookie') + ' â€¢ Level ' + level);
-            setText('profileGamesStat', played); setText('profileXPStat', xp); setText('profileFavStat', favoriteGames.size);
-            const nameInput = document.getElementById('playerNameInput');
-            if (nameInput && document.activeElement !== nameInput && !nameInput.value) nameInput.value = playerProfile.name || 'ST Player';
-            syncLocalLeaderboard(xp, level, played);
-        }
-        function markGamePlayed(id) {
-            const wasNew = !playedGames.has(id);
-            playedGames.add(id); savePlayerData(); updatePlayerDashboard();
-            if (wasNew) showMiniToast('+' + 25 + ' XP â€¢ Game added to your profile');
-        }
-        function showMiniToast(message) {
-            let toast = document.getElementById('stMiniToast');
-            if (!toast) { toast = document.createElement('div'); toast.id = 'stMiniToast'; toast.className = 'fixed left-1/2 bottom-5 -translate-x-1/2 z-[80] rounded-xl px-4 py-3 text-xs font-extrabold text-white bg-slate-950 border border-sky-400/60 shadow-xl'; document.body.appendChild(toast); }
-            toast.textContent = message; toast.style.display = 'block';
-            clearTimeout(window.__stToastTimer); window.__stToastTimer = setTimeout(() => { toast.style.display = 'none'; }, 1700);
-        }
-        function savePlayerProfile() {
-            const input = document.getElementById('playerNameInput');
-            const name = (input.value || '').trim().replace(/[<>]/g, '').slice(0,22);
-            if (!name) { showMiniToast('Enter a player name first'); return; }
-            playerProfile = { name };
-            localStorage.setItem('st_player_profile', JSON.stringify(playerProfile));
-            const old = localScores.find(item => item.name.toLowerCase() === name.toLowerCase());
-            if (old) { old.xp = Math.max(old.xp || 0, getCurrentXP()); old.level = Math.max(old.level || 1, Math.floor(getCurrentXP()/100)+1); old.games = Math.max(old.games || 0, playedGames.size); }
-            updatePlayerDashboard(); refreshLeaderboard(); showMiniToast('Player profile saved');
-        }
-        function getCurrentXP() { return playedGames.size * 25 + favoriteGames.size * 5; }
-        function syncLocalLeaderboard(xp, level, played) {
-            const name = (playerProfile.name || 'ST Player').trim().slice(0,22) || 'ST Player';
-            let row = localScores.find(item => item.name.toLowerCase() === name.toLowerCase());
-            if (!row) { row = { name, xp: 0, level: 1, games: 0 }; localScores.push(row); }
-            row.name = name; row.xp = Math.max(0, xp); row.level = level; row.games = played;
-            localScores = localScores.slice(-50);
-            try { localStorage.setItem('st_local_leaderboard', JSON.stringify(localScores)); } catch (_) {}
-            refreshLeaderboard(false);
-        }
-        function refreshLeaderboard(save = true) {
-            const list = document.getElementById('leaderboardList'); if (!list) return;
-            const sorted = [...localScores].sort((a,b) => (b.xp||0)-(a.xp||0) || (b.games||0)-(a.games||0)).slice(0,5);
-            list.innerHTML = sorted.length ? sorted.map((row,i) => `<div class="feature-row"><div class="flex items-center gap-2 min-w-0"><span class="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black ${i===0?'bg-amber-300 text-slate-900':'bg-sky-100 text-sky-800'}">${i+1}</span><div class="min-w-0"><div class="font-extrabold text-xs truncate">${escapeHTML(row.name || 'ST Player')}</div><div class="text-[9px] opacity-65">Level ${Number(row.level)||1} Â· ${Number(row.games)||0} games</div></div></div><b class="text-xs text-sky-600 whitespace-nowrap">${Number(row.xp)||0} XP</b></div>`).join('') : '<div class="text-xs opacity-60 py-4 text-center">Play a game to start your score.</div>';
-            if (save) { try { localStorage.setItem('st_local_leaderboard', JSON.stringify(localScores)); } catch (_) {} }
-        }
-        function escapeHTML(value) { return String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
-        function toggleAdminPanel() {
-            const body = document.getElementById('adminToolsBody'); const btn = document.getElementById('adminToggleBtn');
-            const opening = body.classList.contains('hidden'); body.classList.toggle('hidden', !opening); btn.textContent = opening ? 'Close' : 'Open';
-            if (opening) renderCustomGamesAdmin();
-        }
-        function addCustomGame(event) {
-            event.preventDefault();
-            const title = document.getElementById('adminGameTitle').value.trim();
-            const url = document.getElementById('adminGamePath').value.trim();
-            const logo = document.getElementById('adminGameImage').value.trim() || 'logo/game.jpg';
-            const category = document.getElementById('adminGameCategory').value;
-            if (!title || !url || /^(javascript:|data:|https?:)/i.test(url)) { showMiniToast('Use a relative path to an existing game file'); return; }
-            if (GAMES_DATA.some(game => game.url === url || game.title.toLowerCase() === title.toLowerCase())) { showMiniToast('That game title or path already exists'); return; }
-            const id = 'custom-' + Date.now().toString(36);
-            const game = { id, title, url, logo, icon:'fa-solid fa-gamepad', size:'normal', categories:[category], badge:'NEW', bg:'linear-gradient(135deg,#0284c7,#1d4ed8)', custom:true };
-            customGames.push(game); GAMES_DATA.push(game);
-            try { localStorage.setItem('st_custom_games', JSON.stringify(customGames)); } catch (_) {}
-            document.getElementById('adminGameTitle').value=''; document.getElementById('adminGamePath').value=''; document.getElementById('adminGameImage').value='';
-            renderGames(); renderCustomGamesAdmin(); updatePlayerDashboard(); showMiniToast('Game card added on this device');
-        }
-        function removeCustomGame(id) {
-            customGames = customGames.filter(game => game.id !== id);
-            const index = GAMES_DATA.findIndex(game => game.id === id); if (index >= 0) GAMES_DATA.splice(index,1);
-            try { localStorage.setItem('st_custom_games', JSON.stringify(customGames)); } catch (_) {}
-            renderGames(); renderCustomGamesAdmin(); updatePlayerDashboard();
-        }
-        function resetCustomGames() {
-            if (!customGames.length) { showMiniToast('No local additions to remove'); return; }
-            if (!confirm('Remove all game cards added through this local admin panel? Original game links will remain unchanged.')) return;
-            [...customGames].forEach(game => { const index = GAMES_DATA.findIndex(item => item.id === game.id); if (index >= 0) GAMES_DATA.splice(index,1); });
-            customGames = []; localStorage.removeItem('st_custom_games'); renderGames(); renderCustomGamesAdmin(); updatePlayerDashboard(); showMiniToast('Local additions removed');
-        }
-        function renderCustomGamesAdmin() {
-            const el = document.getElementById('customGamesAdminList'); if (!el) return;
-            el.innerHTML = customGames.length ? customGames.map(game => `<div class="feature-row"><div class="min-w-0"><div class="font-bold text-xs truncate">${escapeHTML(game.title)}</div><div class="text-[9px] opacity-60 truncate">${escapeHTML(game.url)}</div></div><button class="text-rose-500 font-extrabold text-xs px-2" onclick="removeCustomGame('${game.id}')" aria-label="Remove ${escapeHTML(game.title)}">Remove</button></div>`).join('') : '<p class="text-[10px] opacity-60">No locally added games yet.</p>';
-        }
-        function toggleFavorite(e, id) {
-            if (e) { e.preventDefault(); e.stopPropagation(); }
-            if (favoriteGames.has(id)) favoriteGames.delete(id); else favoriteGames.add(id);
-            savePlayerData(); updatePlayerDashboard(); renderGames();
-        }
-        function toggleFavoritesFilter() {
-            favoritesOnly = !favoritesOnly;
-            const btn = document.getElementById('favoritesFilterBtn');
-            if (btn) { btn.classList.toggle('text-pink-600', favoritesOnly); btn.classList.toggle('border-pink-400', favoritesOnly); btn.innerHTML = favoritesOnly ? '<i class="fa-solid fa-heart mr-1 text-pink-500"></i> Favourites only: ON' : '<i class="fa-regular fa-heart mr-1 text-pink-500"></i> Favourites only'; }
-            renderGames();
-        }
-        function changeSort(value) { currentSort = value; renderGames(); }
-        function clearAllFilters() {
-            currentCategory = 'all'; currentSearch = ''; currentSort = 'default'; favoritesOnly = false;
-            const input = document.getElementById('gameSearchInput'); if (input) input.value = '';
-            const sort = document.getElementById('sortGames'); if (sort) sort.value = 'default';
-            const btn = document.getElementById('favoritesFilterBtn'); if (btn) { btn.classList.remove('text-pink-600','border-pink-400'); btn.innerHTML = '<i class="fa-regular fa-heart mr-1 text-pink-500"></i> Favourites only'; }
-            document.querySelectorAll('.cat-btn').forEach(b => { const active = b.dataset.cat === 'all'; b.classList.toggle('bg-[#002b5b]', active); b.classList.toggle('text-white', active); });
-            renderGames();
-        }
-        function jumpToGames() { const el = document.getElementById('categoryButtonsContainer'); if (el) el.scrollIntoView({behavior:'smooth',block:'center'}); }
-        function playFeaturedGame(e) { pickRandomGame(e); }
-
-
-        function renderGames() {
-            const topGridEl = document.getElementById('gamesGrid');
-            const popularRowEl = document.getElementById('popularGamesRow');
-            const remainingSectionEl = document.getElementById('remainingGamesSection');
-            const remainingGridEl = document.getElementById('remainingGamesGrid');
-            const emptyEl = document.getElementById('emptyState');
-
-            let filteredGames = GAMES_DATA.filter(game => {
-                const matchesCat = currentCategory === 'all' || (game.categories && game.categories.includes(currentCategory));
-                const searchable = (game.title + ' ' + game.url + ' ' + (game.categories || []).join(' ')).toLowerCase();
-                const matchesSearch = searchable.includes(currentSearch.toLowerCase());
-                const matchesFavorites = !favoritesOnly || favoriteGames.has(game.id);
-                return matchesCat && matchesSearch && matchesFavorites;
-            });
-            if (currentSort === 'az') filteredGames.sort((a,b) => a.title.localeCompare(b.title));
-            if (currentSort === 'za') filteredGames.sort((a,b) => b.title.localeCompare(a.title));
-            const resultsCountEl = document.getElementById('resultsCount');
-            if (resultsCountEl) resultsCountEl.textContent = `Showing ${filteredGames.length} of ${GAMES_DATA.length} games`;
-            const topTenGames = filteredGames.slice(0, TOP_GAMES_LIMIT);
-            const remainingGames = filteredGames.slice(TOP_GAMES_LIMIT);
-
-            if (topTenGames.length === 0) {
-                topGridEl.innerHTML = '';
-                emptyEl.classList.remove('hidden');
-            } else {
-                emptyEl.classList.add('hidden');
-                topGridEl.innerHTML = topTenGames.map(g => createCardHTML(g, true, false)).join('');
-            }
-
-            const popularGames = GAMES_DATA.filter(game => {
-                const isPopular = game.categories && game.categories.includes('popular');
-                const matchesSearch = !currentSearch ||
-                                      game.title.toLowerCase().includes(currentSearch.toLowerCase()) ||
-                                      game.url.toLowerCase().includes(currentSearch.toLowerCase());
-                return isPopular && matchesSearch;
-            });
-
-            document.getElementById('popularCountBadge').textContent = popularGames.length;
-            popularRowEl.innerHTML = popularGames.map(g => createCardHTML(g, false, true)).join('');
-
-            if (remainingGames.length === 0) {
-                remainingSectionEl.classList.add('hidden');
-                remainingGridEl.innerHTML = '';
-            } else {
-                remainingSectionEl.classList.remove('hidden');
-                remainingGridEl.innerHTML = remainingGames.map(g => createCardHTML(g, true, false)).join('');
-            }
-
-            document.getElementById('liveGameCount').textContent = GAMES_DATA.length;
-        }
-
-        function createCardHTML(game, allowLarge, isHorizontalScroll) {
-            const spanClass = (allowLarge && game.size === 'large') ? 'tile-large' : '';
-            const horizontalClass = isHorizontalScroll ? 'w-36 sm:w-44 md:w-48 shrink-0 snap-start' : '';
-            const badge = game.badge ? `
-                <div class="game-card-badge absolute top-2.5 left-2.5 z-10 bg-white/95 text-[#002b5b] text-[10px] font-extrabold px-2 py-0.5 rounded-lg shadow">
-                    ${game.badge}
-                </div>
-            ` : '';
-
-            return `
-                <a href="${game.url}" onclick="markGamePlayed('${game.id}')" class="game-card ${spanClass} ${horizontalClass}" style="background: ${game.bg};">
-                    ${badge}
-                    <button type="button" class="favorite-btn ${favoriteGames.has(game.id) ? 'is-favorite' : ''}" aria-label="${favoriteGames.has(game.id) ? 'Remove from favourites' : 'Add to favourites'}" title="${favoriteGames.has(game.id) ? 'Remove from favourites' : 'Add to favourites'}" onclick="toggleFavorite(event, '${game.id}')"><i class="fa-${favoriteGames.has(game.id) ? 'solid' : 'regular'} fa-heart"></i></button>
-                    <img src="${game.logo}" alt="${game.title}"
-                         onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');"
-                         class="w-full h-full object-cover">
-                    <div class="hidden w-full h-full flex flex-col items-center justify-center text-white p-3 text-center">
-                        <i class="${game.icon} text-3xl sm:text-4xl mb-1 drop-shadow"></i>
-                        <span class="text-[11px] font-extrabold leading-tight drop-shadow">${game.title}</span>
-                    </div>
-                    <div class="game-card-overlay absolute inset-0 flex flex-col justify-end p-3 text-white">
-                        <h3 class="font-extrabold text-xs sm:text-sm truncate">${game.title}</h3>
-                        <span class="text-[10px] text-cyan-300 font-semibold truncate">${(game.categories || []).filter(c => c !== 'popular').slice(0,2).join(' â€¢ ') || 'Arcade game'}</span>
-                    </div>
-                </a>
-            `;
-        }
-
-        function scrollPopular(direction, e) {
-            ArcadeSFX.click();
-            if (e) spawnParticleBurst(e.clientX, e.clientY, 14);
-            const row = document.getElementById('popularGamesRow');
-            row.scrollBy({ left: direction * 320, behavior: 'smooth' });
-        }
-
-        function jumpToPopular(e) {
-            ArcadeSFX.click();
-            if (e) spawnParticleBurst(e.clientX, e.clientY, 18);
-            const popSec = document.getElementById('popularSection');
-            if (popSec) {
-                popSec.scrollIntoView({ behavior: 'smooth' });
-            }
-        }
-
-        function filterByCategory(category, e) {
-            ArcadeSFX.click();
-            if (e) spawnParticleBurst(e.clientX, e.clientY, 20);
-            currentCategory = category;
-            document.querySelectorAll('.cat-btn').forEach(btn => {
-                const active = btn.getAttribute('data-cat') === category;
-                btn.className = active 
-                    ? 'cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-md flex items-center gap-2 bg-[#002b5b] text-white scale-105 transition-all'
-                    : 'cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm flex items-center gap-2 bg-white/90 text-[#002b5b] transition-all';
-            });
-            renderGames();
-        }
-
-        function toggleSearchBar(e) {
-            ArcadeSFX.click();
-            if (e) spawnParticleBurst(e.clientX, e.clientY, 16);
-            const drawer = document.getElementById('searchDrawer');
-            drawer.classList.toggle('hidden');
-            if (!drawer.classList.contains('hidden')) {
-                document.getElementById('gameSearchInput').focus();
-            }
-        }
-
-        function handleSearch(val) {
-            currentSearch = val.trim();
-            renderGames();
-        }
-
-        function clearSearch() {
-            ArcadeSFX.click();
-            document.getElementById('gameSearchInput').value = '';
-            currentSearch = '';
-            renderGames();
-        }
-
-        function pickRandomGame(e) {
-            ArcadeSFX.launch();
-            if (e) spawnParticleBurst(e.clientX, e.clientY, 28);
-            const rnd = GAMES_DATA[Math.floor(Math.random() * GAMES_DATA.length)];
+        const card = e.target.closest('.game-card');
+        if (card) {
+          ArcadeSFX.launch();
+          if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) {
+            return;
+          }
+          const targetUrl = card.getAttribute('href');
+          if (targetUrl) {
+            e.preventDefault();
             setTimeout(() => {
-                window.location.href = rnd.url;
+              window.location.href = targetUrl;
             }, 180);
+          }
         }
+      });
+    }
 
-        function toggleTheme(e) {
-            ArcadeSFX.click();
-            if (e) spawnParticleBurst(e.clientX, e.clientY, 22);
-            isDark = !document.body.classList.contains('dark-theme');
-            document.body.classList.toggle('dark-theme', isDark);
-            localStorage.setItem('st_theme', isDark ? 'dark' : 'light');
+    /* =========================================================
+       3. AUDIO & PORTAL CATALOG LOGIC
+       ========================================================= */
+    const music = document.getElementById('bgMusic');
+    const soundIcon = document.getElementById('soundIcon');
+    const soundText = document.getElementById('soundText');
+    let isPlaying = false;
+    let isDark = false;
+
+    function toggleAudio() {
+      if (isPlaying) {
+        music.pause();
+        isPlaying = false;
+        soundIcon.className = "fa-solid fa-volume-xmark text-sm";
+        soundText.innerText = "Music 🎶 OFF 🔇";
+        localStorage.setItem('hub_sound', 'off');
+      } else {
+        music.play().then(() => {
+          isPlaying = true;
+          soundIcon.className = "fa-solid fa-volume-high text-sm";
+          soundText.innerText = "Music 🎵 ON 🔊";
+          localStorage.setItem('hub_sound', 'on');
+        }).catch(err => {
+          console.log("Playback error:", err);
+        });
+      }
+    }
+
+    const TOP_GAMES_LIMIT = 10;
+
+    const GAMES_DATA = [
+      // --- GAMES 1 TO 10 (SHOWN ABOVE POPULAR SECTION) ---
+      { id: 'subway-runner', title: 'Street Subway Runner', url: 'game/subway/index.html', logo: 'logo/subway.jpg', icon: 'fa-solid fa-person-running', size: 'large', categories: ['single', 'popular'], badge: 'HIT', bg: 'linear-gradient(135deg, #f59e0b, #b45309)' },
+      { id: 'tic-tac-toe', title: 'Pro tic-tac-toe', url: 'game/tictactoe/index.html', logo: 'logo/tic-tac-toe.png', icon: 'fa-solid fa-baseball-bat-ball', size: 'normal', categories: ['sports', 'single', 'popular'], badge: 'TOP', bg: 'linear-gradient(135deg, #14b8a6, #0f766e)' },
+      { id: 'snake', title: 'Cyber Snake Retro', url: 'game/snake/index.html', logo: 'logo/snake.jpg', icon: 'fa-solid fa-staff-snake', size: 'normal', categories: ['classic', 'single', 'popular'], badge: 'OLD', bg: 'linear-gradient(135deg, #10b981, #047857)' },
+      { id: 'carracing', title: 'Turbo Street Car Racing', url: 'game/carracing.html', logo: 'logo/car-race.jpg', icon: 'fa-solid fa-car', size: 'normal', categories: ['racing', 'single', 'popular'], badge: 'HOT', bg: 'linear-gradient(135deg, #3b82f6, #1d4ed8)' },
+      { id: 'fruit game', title: 'Fruit Arcade Pro', url: 'game/gamezop.html', logo: 'logo/fruit.jpg', icon: 'fa-solid fa-bolt', size: 'normal', categories: ['classic', 'single', 'popular'], badge: 'LIVE', bg: 'linear-gradient(135deg, #ec4899, #8b5cf6)' },
+      { id: 'bird game', title: 'Bird Action Mania', url: 'game/clumsy.html', logo: 'logo/bird.jpg', icon: 'fa-solid fa-rocket', size: 'normal', categories: ['classic', 'single', 'popular'], badge: 'NEW', bg: 'linear-gradient(135deg, #f43f5e, #fb923c)' },
+      { id: 'game-hub-battle', title: 'Multi Battle Arena', url: 'game/fight.html', logo: 'logo/fight.jpg', icon: 'fa-solid fa-gamepad', size: 'normal', categories: ['1v1', 'popular'], badge: '1v1', bg: 'linear-gradient(135deg, #ef4444, #7f1d1d)' },
+      { id: 'snake-ladder', title: 'Snake and Ladder', url: 'game/ladder/index.html', logo: 'logo/ladder.jpg', icon: 'fa-solid fa-motorcycle', size: 'normal', categories: ['racing', 'single', 'popular'], badge: 'HOT', bg: 'linear-gradient(135deg, #f97316, #c2410c)' },
+      { id: 'hitknite.', title: 'Hit Knife', url: 'game/hitknite.html', logo: 'logo/craft.jpg', icon: 'fa-solid fa-cube', size: 'normal', categories: ['1v1', 'classic', 'popular'], badge: 'CO-OP', bg: 'linear-gradient(135deg, #8b5cf6, #5b21b6)' },
+      { id: 'typing-race', title: 'Typing Race Pro', url: 'game/typerace/index.html', logo: 'logo/typerace.jpg', icon: 'fa-solid fa-truck', size: 'large', categories: ['racing', 'single', 'popular'], badge: '', bg: 'linear-gradient(135deg, #64748b, #334155)' },
+
+      // --- GAME 11 ONWARDS (AUTOMATICALLY SHOWN BELOW POPULAR SECTION) ---
+      { id: 'ludo game', title: 'Ludo Game', url: 'game/Ludo/index.html', logo: 'logo/ludo.jpg', icon: 'fa-solid fa-paw', size: 'normal', categories: ['classic', 'single'], badge: '', bg: 'linear-gradient(135deg, #84cc16, #4d7c0f)' },
+      { id: 'sports', title: 'Badminton Duel', url: 'game/sports.html', logo: 'logo/game.jpg', icon: 'fa-solid fa-medal', size: 'normal', categories: ['1v1', 'sports', 'popular'], badge: '1v1', bg: 'linear-gradient(135deg, #059669, #065f46)' },
+      { id: 'subway-mini', title: 'Subway Surfers Mini', url: 'game/subway.html', logo: 'logo/subway.jpg', icon: 'fa-solid fa-circle-dot', size: 'normal', categories: ['single'], badge: '', bg: 'linear-gradient(135deg, #334155, #1e293b)' }
+    ];
+
+    let currentCategory = 'all';
+    let currentSearch = '';
+    let currentSort = 'default';
+    let favoritesOnly = false;
+
+    const safeReadJSON = (key, fallback) => {
+      try {
+        const value = JSON.parse(localStorage.getItem(key) || 'null');
+        return value == null ? fallback : value;
+      } catch (_) {
+        return fallback;
+      }
+    };
+
+    const favoriteGames = new Set(safeReadJSON('st_favorite_games', []));
+    const playedGames = new Set(safeReadJSON('st_played_games', []));
+    let playerProfile = safeReadJSON('st_player_profile', { name: 'ST Player' });
+    let customGames = safeReadJSON('st_custom_games', []);
+    let localScores = safeReadJSON('st_local_leaderboard', []);
+
+    if (!Array.isArray(customGames)) customGames = [];
+    if (!Array.isArray(localScores)) localScores = [];
+
+    customGames.forEach(game => {
+      if (game && game.id && !GAMES_DATA.some(existing => existing.id === game.id)) {
+        GAMES_DATA.push(game);
+      }
+    });
+
+    function savePlayerData() {
+      localStorage.setItem('st_favorite_games', JSON.stringify([...favoriteGames]));
+      localStorage.setItem('st_played_games', JSON.stringify([...playedGames]));
+    }
+
+    function clearPlayerProgress() {
+      if (!confirm('Reset favourites, XP and played-game progress on this device?')) return;
+      favoriteGames.clear();
+      playedGames.clear();
+      savePlayerData();
+      updatePlayerDashboard();
+      renderGames();
+    }
+
+    function getCurrentXP() {
+      return playedGames.size * 25 + favoriteGames.size * 5;
+    }
+
+    function updatePlayerDashboard() {
+      const total = GAMES_DATA.length;
+      const played = playedGames.size;
+      const xp = getCurrentXP();
+      const level = Math.floor(xp / 100) + 1;
+      const xpInLevel = xp % 100;
+
+      const setText = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+      };
+
+      setText('heroTotalGames', total);
+      setText('liveGameCount', total);
+      setText('favoriteCount', favoriteGames.size);
+      setText('playedCount', played);
+      setText('levelLabel', 'LVL ' + level);
+      setText('xpLabel', xpInLevel + ' / 100 XP');
+      setText(
+        'achievementText',
+        played >= 10
+          ? 'Achievement unlocked: Arcade Legend! Keep going.'
+          : played >= 5
+          ? 'Achievement unlocked: Game Explorer! Try 10 different games.'
+          : 'Play games to earn 25 XP per unique game. Favourites earn 5 bonus XP.'
+      );
+
+      const bar = document.getElementById('xpProgress');
+      if (bar) bar.style.width = xpInLevel + '%';
+
+      setText('profileDisplayName', playerProfile.name || 'ST Player');
+      setText('profileAvatar', (playerProfile.name || 'ST Player').trim().charAt(0).toUpperCase() || 'S');
+      setText(
+        'profileRank',
+        (level >= 10 ? 'Arcade Master' : level >= 5 ? 'Pro Gamer' : level >= 3 ? 'Game Explorer' : 'Rookie') + ' • Level ' + level
+      );
+      setText('profileGamesStat', played);
+      setText('profileXPStat', xp);
+      setText('profileFavStat', favoriteGames.size);
+
+      const nameInput = document.getElementById('playerNameInput');
+      if (nameInput && document.activeElement !== nameInput && !nameInput.value) {
+        nameInput.value = playerProfile.name || 'ST Player';
+      }
+
+      syncLocalLeaderboard(xp, level, played);
+    }
+
+    function markGamePlayed(id) {
+      const wasNew = !playedGames.has(id);
+      playedGames.add(id);
+      savePlayerData();
+      updatePlayerDashboard();
+      if (wasNew) showMiniToast('+25 XP • Game added to your profile');
+    }
+
+    function showMiniToast(message) {
+      let toast = document.getElementById('stMiniToast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'stMiniToast';
+        toast.className = 'fixed left-1/2 bottom-24 -translate-x-1/2 z-[10000] rounded-xl px-4 py-3 text-xs font-extrabold text-white bg-slate-950 border border-sky-400/60 shadow-xl';
+        document.body.appendChild(toast);
+      }
+      toast.textContent = message;
+      toast.style.display = 'block';
+      clearTimeout(window.__stToastTimer);
+      window.__stToastTimer = setTimeout(() => {
+        toast.style.display = 'none';
+      }, 1700);
+    }
+
+    function savePlayerProfile() {
+      const input = document.getElementById('playerNameInput');
+      const name = (input.value || '').trim().replace(/[<>]/g, '').slice(0, 22);
+      if (!name) {
+        showMiniToast('Enter a player name first');
+        return;
+      }
+      playerProfile = { name };
+      localStorage.setItem('st_player_profile', JSON.stringify(playerProfile));
+
+      const old = localScores.find(item => item.name.toLowerCase() === name.toLowerCase());
+      if (old) {
+        old.xp = Math.max(old.xp || 0, getCurrentXP());
+        old.level = Math.max(old.level || 1, Math.floor(getCurrentXP() / 100) + 1);
+        old.games = Math.max(old.games || 0, playedGames.size);
+      }
+      updatePlayerDashboard();
+      refreshLeaderboard();
+      showMiniToast('Player profile saved');
+    }
+
+    function syncLocalLeaderboard(xp, level, played) {
+      const name = (playerProfile.name || 'ST Player').trim().slice(0, 22) || 'ST Player';
+      let row = localScores.find(item => item.name.toLowerCase() === name.toLowerCase());
+      if (!row) {
+        row = { name, xp: 0, level: 1, games: 0 };
+        localScores.push(row);
+      }
+      row.name = name;
+      row.xp = Math.max(0, xp);
+      row.level = level;
+      row.games = played;
+      localScores = localScores.slice(-50);
+      try {
+        localStorage.setItem('st_local_leaderboard', JSON.stringify(localScores));
+      } catch (_) {}
+      refreshLeaderboard(false);
+    }
+
+    function escapeHTML(value) {
+      return String(value).replace(/[&<>"']/g, ch => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[ch]));
+    }
+
+    function refreshLeaderboard(save = true) {
+      const list = document.getElementById('leaderboardList');
+      if (!list) return;
+      const sorted = [...localScores]
+        .sort((a, b) => (b.xp || 0) - (a.xp || 0) || (b.games || 0) - (a.games || 0))
+        .slice(0, 5);
+
+      list.innerHTML = sorted.length
+        ? sorted.map((row, i) => `
+            <div class="feature-row">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black ${i === 0 ? 'bg-amber-300 text-slate-900' : 'bg-sky-100 text-sky-800'}">${i + 1}</span>
+                <div class="min-w-0">
+                  <div class="font-extrabold text-xs truncate">${escapeHTML(row.name || 'ST Player')}</div>
+                  <div class="text-[9px] opacity-65">Level ${Number(row.level) || 1} · ${Number(row.games) || 0} games</div>
+                </div>
+              </div>
+              <b class="text-xs text-sky-600 whitespace-nowrap">${Number(row.xp) || 0} XP</b>
+            </div>
+          `).join('')
+        : '<div class="text-xs opacity-60 py-4 text-center">Play a game to start your score.</div>';
+
+      if (save) {
+        try {
+          localStorage.setItem('st_local_leaderboard', JSON.stringify(localScores));
+        } catch (_) {}
+      }
+    }
+
+    function toggleFavorite(e, id) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      if (favoriteGames.has(id)) {
+        favoriteGames.delete(id);
+      } else {
+        favoriteGames.add(id);
+      }
+      savePlayerData();
+      updatePlayerDashboard();
+      renderGames();
+    }
+
+    function toggleFavoritesFilter() {
+      favoritesOnly = !favoritesOnly;
+      const btn = document.getElementById('favoritesFilterBtn');
+      if (btn) {
+        btn.classList.toggle('text-pink-600', favoritesOnly);
+        btn.classList.toggle('border-pink-400', favoritesOnly);
+        btn.innerHTML = favoritesOnly
+          ? '<i class="fa-solid fa-heart mr-1 text-pink-500"></i> Favourites only: ON'
+          : '<i class="fa-regular fa-heart mr-1 text-pink-500"></i> Favourites only';
+      }
+      renderGames();
+    }
+
+    function changeSort(value) {
+      currentSort = value;
+      renderGames();
+    }
+
+    function clearAllFilters() {
+      currentCategory = 'all';
+      currentSearch = '';
+      currentSort = 'default';
+      favoritesOnly = false;
+
+      const input = document.getElementById('gameSearchInput');
+      if (input) input.value = '';
+
+      const sort = document.getElementById('sortGames');
+      if (sort) sort.value = 'default';
+
+      const btn = document.getElementById('favoritesFilterBtn');
+      if (btn) {
+        btn.classList.remove('text-pink-600', 'border-pink-400');
+        btn.innerHTML = '<i class="fa-regular fa-heart mr-1 text-pink-500"></i> Favourites only';
+      }
+
+      document.querySelectorAll('.cat-btn').forEach(b => {
+        const active = b.dataset.cat === 'all';
+        b.classList.toggle('active-cat', active);
+        b.classList.toggle('bg-[#002b5b]', active);
+        b.classList.toggle('text-white', active);
+        b.classList.toggle('bg-white/90', !active);
+        b.classList.toggle('text-[#002b5b]', !active);
+      });
+
+      renderGames();
+    }
+
+    function jumpToGames() {
+      const el = document.getElementById('categoryButtonsContainer');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function playFeaturedGame(e) {
+      pickRandomGame(e);
+    }
+
+    function renderGames() {
+      const topGridEl = document.getElementById('gamesGrid');
+      const popularRowEl = document.getElementById('popularGamesRow');
+      const remainingSectionEl = document.getElementById('remainingGamesSection');
+      const remainingGridEl = document.getElementById('remainingGamesGrid');
+      const emptyEl = document.getElementById('emptyState');
+
+      let filteredGames = GAMES_DATA.filter(game => {
+        const matchesCat = currentCategory === 'all' || (game.categories && game.categories.includes(currentCategory));
+        const searchable = (game.title + ' ' + game.url + ' ' + (game.categories || []).join(' ')).toLowerCase();
+        const matchesSearch = searchable.includes(currentSearch.toLowerCase());
+        const matchesFavorites = !favoritesOnly || favoriteGames.has(game.id);
+        return matchesCat && matchesSearch && matchesFavorites;
+      });
+
+      if (currentSort === 'az') filteredGames.sort((a, b) => a.title.localeCompare(b.title));
+      if (currentSort === 'za') filteredGames.sort((a, b) => b.title.localeCompare(a.title));
+
+      const resultsCountEl = document.getElementById('resultsCount');
+      if (resultsCountEl) resultsCountEl.textContent = `Showing ${filteredGames.length} of ${GAMES_DATA.length} games`;
+
+      const topTenGames = filteredGames.slice(0, TOP_GAMES_LIMIT);
+      const remainingGames = filteredGames.slice(TOP_GAMES_LIMIT);
+
+      if (topTenGames.length === 0) {
+        topGridEl.innerHTML = '';
+        emptyEl.classList.remove('hidden');
+      } else {
+        emptyEl.classList.add('hidden');
+        topGridEl.innerHTML = topTenGames.map(g => createCardHTML(g, true, false)).join('');
+      }
+
+      const popularGames = GAMES_DATA.filter(game => {
+        const isPopular = game.categories && game.categories.includes('popular');
+        const matchesSearch = !currentSearch ||
+          game.title.toLowerCase().includes(currentSearch.toLowerCase()) ||
+          game.url.toLowerCase().includes(currentSearch.toLowerCase());
+        return isPopular && matchesSearch;
+      });
+
+      document.getElementById('popularCountBadge').textContent = popularGames.length;
+      popularRowEl.innerHTML = popularGames.map(g => createCardHTML(g, false, true)).join('');
+
+      if (remainingGames.length === 0) {
+        remainingSectionEl.classList.add('hidden');
+        remainingGridEl.innerHTML = '';
+      } else {
+        remainingSectionEl.classList.remove('hidden');
+        remainingGridEl.innerHTML = remainingGames.map(g => createCardHTML(g, true, false)).join('');
+      }
+
+      document.getElementById('liveGameCount').textContent = GAMES_DATA.length;
+    }
+
+    function createCardHTML(game, allowLarge, isHorizontalScroll) {
+      const spanClass = (allowLarge && game.size === 'large') ? 'tile-large' : '';
+      const horizontalClass = isHorizontalScroll ? 'w-36 sm:w-44 md:w-48 shrink-0 snap-start' : '';
+      const isFav = favoriteGames.has(game.id);
+      const badge = game.badge ? `
+        <div class="game-card-badge absolute top-2.5 left-2.5 z-10 bg-white/95 text-[#002b5b] text-[10px] font-extrabold px-2 py-0.5 rounded-lg shadow">
+          ${escapeHTML(game.badge)}
+        </div>
+      ` : '';
+
+      return `
+        <a href="${escapeHTML(game.url)}" onclick="markGamePlayed('${escapeHTML(game.id)}')" class="game-card ${spanClass} ${horizontalClass}" style="background: ${game.bg};">
+          ${badge}
+          <button type="button" class="favorite-btn ${isFav ? 'is-favorite' : ''}" aria-label="${isFav ? 'Remove from favourites' : 'Add to favourites'}" title="${isFav ? 'Remove from favourites' : 'Add to favourites'}" onclick="toggleFavorite(event, '${escapeHTML(game.id)}')">
+            <i class="fa-${isFav ? 'solid' : 'regular'} fa-heart"></i>
+          </button>
+          <img src="${escapeHTML(game.logo)}" alt="${escapeHTML(game.title)}" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');" class="w-full h-full object-cover">
+          <div class="hidden w-full h-full flex flex-col items-center justify-center text-white p-3 text-center">
+            <i class="${escapeHTML(game.icon)} text-3xl sm:text-4xl mb-1 drop-shadow"></i>
+            <span class="text-[11px] font-extrabold leading-tight drop-shadow">${escapeHTML(game.title)}</span>
+          </div>
+          <div class="game-card-overlay absolute inset-0 flex flex-col justify-end p-3 text-white">
+            <h3 class="font-extrabold text-xs sm:text-sm truncate">${escapeHTML(game.title)}</h3>
+            <span class="text-[10px] text-cyan-300 font-semibold truncate">${(game.categories || []).filter(c => c !== 'popular').slice(0, 2).join(' • ') || 'Arcade game'}</span>
+          </div>
+        </a>
+      `;
+    }
+
+    function scrollPopular(direction) {
+      ArcadeSFX.click();
+      const row = document.getElementById('popularGamesRow');
+      if (row) {
+        row.scrollBy({ left: direction * 320, behavior: 'smooth' });
+      }
+    }
+
+    function jumpToPopular() {
+      ArcadeSFX.click();
+      const popSec = document.getElementById('popularSection');
+      if (popSec) {
+        popSec.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    function filterByCategory(category) {
+      ArcadeSFX.click();
+      currentCategory = category;
+
+      document.querySelectorAll('.cat-btn').forEach(btn => {
+        const active = btn.getAttribute('data-cat') === category;
+        btn.className = active
+          ? 'cat-btn active-cat shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-md flex items-center gap-2 bg-[#002b5b] text-white scale-105 transition-all'
+          : 'cat-btn shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs sm:text-sm shadow-sm flex items-center gap-2 bg-white/90 text-[#002b5b] transition-all';
+      });
+
+      renderGames();
+    }
+
+    function toggleSearchBar() {
+      ArcadeSFX.click();
+      const drawer = document.getElementById('searchDrawer');
+      drawer.classList.toggle('hidden');
+      if (!drawer.classList.contains('hidden')) {
+        document.getElementById('gameSearchInput').focus();
+      }
+    }
+
+    function handleSearch(val) {
+      currentSearch = val.trim();
+      renderGames();
+    }
+
+    function clearSearch() {
+      ArcadeSFX.click();
+      document.getElementById('gameSearchInput').value = '';
+      currentSearch = '';
+      renderGames();
+    }
+
+    function pickRandomGame() {
+      ArcadeSFX.launch();
+      const rnd = GAMES_DATA[Math.floor(Math.random() * GAMES_DATA.length)];
+      setTimeout(() => {
+        window.location.href = rnd.url;
+      }, 180);
+    }
+
+    function toggleTheme() {
+      ArcadeSFX.click();
+      isDark = !document.body.classList.contains('dark-theme');
+      document.body.classList.toggle('dark-theme', isDark);
+      localStorage.setItem('st_theme', isDark ? 'dark' : 'light');
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      isDark = localStorage.getItem('st_theme') === 'dark';
+      document.body.classList.toggle('dark-theme', isDark);
+
+      setupCardInteractions();
+      updateSFXButtonUI();
+      renderGames();
+      updatePlayerDashboard();
+      refreshLeaderboard();
+
+      const savedSound = localStorage.getItem('hub_sound');
+      if (savedSound === 'on') {
+        music.play().then(() => {
+          isPlaying = true;
+          soundIcon.className = "fa-solid fa-volume-high text-sm";
+          soundText.innerText = "Music 🎵 ON 🔊";
+        }).catch(() => {});
+      }
+
+      const savedLetter = localStorage.getItem('gh_user_letter');
+      const savedPhoto = localStorage.getItem('gh_user_photo');
+      if (savedLetter) {
+        document.getElementById('defaultAvatarIcon').classList.add('hidden');
+        const badge = document.getElementById('userBadgeNav');
+        badge.classList.remove('hidden');
+        if (savedPhoto) {
+          badge.innerHTML = `<img src="${escapeHTML(savedPhoto)}" alt="User Avatar" class="w-full h-full rounded-full object-cover">`;
+        } else {
+          badge.textContent = savedLetter;
         }
-
-        window.onload = () => {
-            isDark = localStorage.getItem('st_theme') === 'dark';
-            document.body.classList.toggle('dark-theme', isDark);
-            renderGames();
-            updatePlayerDashboard();
-            refreshLeaderboard();
-            renderCustomGamesAdmin();
-
-            const savedLetter = localStorage.getItem('gh_user_letter');
-            const savedPhoto = localStorage.getItem('gh_user_photo');
-
-            if (savedLetter) {
-                document.getElementById('defaultAvatarIcon').classList.add('hidden');
-                const badge = document.getElementById('userBadgeNav');
-                badge.classList.remove('hidden');
-                if (savedPhoto) {
-                    badge.innerHTML = `<img src="${savedPhoto}" class="w-full h-full rounded-full object-cover">`;
-                } else {
-                    badge.textContent = savedLetter;
-                }
-            }
-        };
-    </script>
-  
-<style>
-body {
-  padding-bottom: calc(82px + env(safe-area-inset-bottom, 0px));
-}
-
-.st-bottom-nav {
-  position: fixed;
-  z-index: 9999;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 4px;
-  padding: 8px 8px
-    calc(8px + env(safe-area-inset-bottom, 0px));
-  background: rgba(255, 255, 255, 0.97);
-  border-top: 1px solid #dbeafe;
-  box-shadow: 0 -5px 22px rgba(15, 23, 42, 0.12);
-  font-family: Arial, sans-serif;
-}
-
-.st-bottom-nav a {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  min-width: 0;
-  padding: 5px 2px;
-  border-radius: 12px;
-  color: #334155;
-  text-decoration: none;
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.st-bottom-nav .nav-icon {
-  font-size: 23px;
-  line-height: 1.1;
-  color: #087eb7;
-}
-
-.st-bottom-nav a:active {
-  background: #e0f2fe;
-}
-
-@media (min-width: 768px) {
-  .st-bottom-nav {
-    left: 50%;
-    right: auto;
-    transform: translateX(-50%);
-    width: min(560px, calc(100% - 32px));
-    border: 1px solid #dbeafe;
-    border-bottom: 0;
-    border-radius: 18px 18px 0 0;
-  }
-}
-</style>
-
-<nav class="st-bottom-nav" aria-label="ST GAMES navigation">
-  <a href="index.html">
-    <span class="nav-icon">⌂</span>
-    <span>Home</span>
-  </a>
-
-  <a href="login.html">
-    <span class="nav-icon">♙</span>
-    <span>Profile</span>
-  </a>
-
-  <a href="achievements.html">
-    <span class="nav-icon">🏆</span>
-    <span>Achievements</span>
-  </a>
-
-  <a href="levels.html">
-    <span class="nav-icon">⚡</span>
-    <span>Levels</span>
-  </a>
-</nav>
+      }
+    });
+  </script>
 </body>
 </html>
