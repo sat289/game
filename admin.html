@@ -3,21 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ST Games - Admin Portal</title>
+  <title>ST Games - Admin & GitHub Studio</title>
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
 
   <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <style>
     :root {
-      --poki-navy: #002b5b;
       --neon-cyan: #22d3ee;
+      --neon-violet: #8b5cf6;
+      --neon-pink: #ec4899;
     }
 
     body {
@@ -29,9 +30,9 @@
         radial-gradient(circle at 52% 92%, rgba(34, 211, 238, 0.16), transparent 30%);
       background-attachment: fixed;
       overflow-x: hidden;
-      user-select: none;
-      transition: background 0.4s ease, color 0.3s ease;
-      padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+      transition: background 0.5s ease, color 0.35s ease;
+      position: relative;
+      padding-bottom: calc(86px + env(safe-area-inset-bottom, 0px));
     }
 
     body.dark-theme {
@@ -47,29 +48,19 @@
       font-family: 'Fredoka', sans-serif;
     }
 
-    body.dark-theme .theme-surface {
-      background-color: rgba(30, 41, 59, 0.92) !important;
-      border-color: rgba(255, 255, 255, 0.12) !important;
-      color: #f8fafc !important;
-    }
-
-    body.dark-theme .theme-text-primary {
-      color: #f8fafc !important;
-    }
-
-    body.dark-theme .theme-text-sub {
-      color: #94a3b8 !important;
+    .code-font {
+      font-family: 'JetBrains Mono', monospace;
     }
 
     .feature-hub {
       border: 1px solid rgba(56, 189, 248, 0.35);
-      background: rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.90);
       backdrop-filter: blur(16px);
       box-shadow: 0 10px 28px rgba(14, 116, 144, 0.08), 0 0 24px rgba(56, 189, 248, 0.12);
     }
 
     body.dark-theme .feature-hub {
-      background: rgba(12, 22, 44, 0.92) !important;
+      background: rgba(8, 18, 38, 0.92) !important;
       color: #eaf7ff;
       border-color: rgba(56, 189, 248, 0.38);
     }
@@ -77,14 +68,13 @@
     .neon-input {
       width: 100%;
       border: 1px solid rgba(56, 189, 248, 0.42);
-      background: rgba(240, 249, 255, 0.95);
+      background: rgba(240, 249, 255, 0.92);
       color: #0f172a;
       border-radius: 12px;
-      padding: 10px 12px;
+      padding: 9px 12px;
       font-size: 12px;
       font-weight: 600;
       outline: none;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
     .neon-input:focus {
@@ -97,52 +87,76 @@
       color: #f8fafc;
     }
 
-    .tiny-label {
-      display: block;
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #0284c7;
-      margin: 0 0 5px;
+    .code-textarea {
+      width: 100%;
+      min-height: 380px;
+      background: #090d16;
+      color: #e2e8f0;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: 14px;
+      padding: 14px;
+      font-size: 12px;
+      line-height: 1.55;
+      outline: none;
+      resize: vertical;
+      tab-size: 2;
+      white-space: pre;
+      overflow-wrap: normal;
+      overflow-x: auto;
     }
 
-    body.dark-theme .tiny-label {
-      color: #7dd3fc;
+    .code-textarea:focus {
+      border-color: #22d3ee;
+      box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.18);
     }
 
     .neon-action {
-      border: 1px solid rgba(56, 189, 248, 0.45);
+      border: 1px solid rgba(56, 189, 248, 0.4);
       border-radius: 12px;
-      padding: 10px 14px;
+      padding: 9px 14px;
       background: linear-gradient(120deg, #0e7490, #2563eb);
       color: white;
       font-size: 12px;
       font-weight: 800;
-      box-shadow: 0 4px 16px rgba(56, 189, 248, 0.22);
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.2);
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
     }
 
-    .neon-action:hover {
+    .neon-action:hover:not(:disabled) {
+      box-shadow: 0 0 24px rgba(56, 189, 248, 0.4);
       transform: translateY(-1px);
-      box-shadow: 0 6px 22px rgba(56, 189, 248, 0.36);
     }
 
-    .game-card-preview {
-      aspect-ratio: 1 / 1;
-      width: 185px;
-      position: relative;
-      border-radius: 24px;
-      overflow: hidden;
-      border: 1px solid rgba(148, 163, 184, 0.25);
-      box-shadow: 0 12px 26px rgba(15, 23, 42, 0.18);
+    .neon-action:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
     }
 
-    .game-card-overlay {
-      background: linear-gradient(to top, rgba(2, 6, 23, 0.92), rgba(2, 6, 23, 0.12) 68%, transparent);
+    .chip-btn {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      background: rgba(56, 189, 248, 0.1);
+      color: #0284c7;
+      transition: all 0.15s ease;
     }
 
-    /* Bottom Navigation Bar */
+    body.dark-theme .chip-btn {
+      color: #7dd3fc;
+      background: rgba(56, 189, 248, 0.12);
+    }
+
+    .chip-btn:hover {
+      background: rgba(56, 189, 248, 0.25);
+    }
+
+    /* 3-Button Bottom Navigation Bar */
     .st-bottom-nav {
       position: fixed;
       z-index: 9999;
@@ -150,7 +164,7 @@
       right: 0;
       bottom: 0;
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 4px;
       padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
       background: rgba(255, 255, 255, 0.97);
@@ -161,6 +175,7 @@
     body.dark-theme .st-bottom-nav {
       background: rgba(15, 23, 42, 0.96);
       border-color: rgba(56, 189, 248, 0.25);
+      box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.45);
     }
 
     .st-bottom-nav a {
@@ -169,6 +184,7 @@
       align-items: center;
       justify-content: center;
       gap: 3px;
+      min-width: 0;
       padding: 5px 2px;
       border-radius: 12px;
       color: #334155;
@@ -177,26 +193,15 @@
       font-weight: 700;
     }
 
-    body.dark-theme .st-bottom-nav a {
-      color: #cbd5e1;
-    }
-
-    .st-bottom-nav .nav-icon {
-      font-size: 20px;
-      line-height: 1.1;
-      color: #087eb7;
-    }
-
-    body.dark-theme .st-bottom-nav .nav-icon {
-      color: #38bdf8;
-    }
+    body.dark-theme .st-bottom-nav a { color: #cbd5e1; }
+    .st-bottom-nav .nav-icon { font-size: 20px; line-height: 1.1; color: #087eb7; }
+    body.dark-theme .st-bottom-nav .nav-icon { color: #38bdf8; }
 
     @media (min-width: 768px) {
       .st-bottom-nav {
         left: 50%;
-        right: auto;
         transform: translateX(-50%);
-        width: min(560px, calc(100% - 32px));
+        width: min(500px, calc(100% - 32px));
         border: 1px solid #dbeafe;
         border-bottom: 0;
         border-radius: 18px 18px 0 0;
@@ -204,608 +209,994 @@
     }
   </style>
 </head>
+
 <body class="min-h-screen flex flex-col justify-between text-slate-900">
+  <main class="max-w-5xl w-full mx-auto px-3.5 sm:px-6 pt-4 pb-12 relative z-10">
 
-  <!-- MAIN CONTAINER -->
-  <main class="max-w-5xl w-full mx-auto px-3.5 sm:px-6 pt-4 pb-10 relative z-10">
-
-    <!-- TOP HEADER -->
-    <header class="sticky top-2.5 z-30 mb-5">
-      <div class="theme-surface bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-cyan-400/30 px-4 py-3 flex items-center justify-between gap-3">
-        <a href="index.html" class="flex items-center gap-2.5">
-          <div class="w-10 h-10 rounded-xl overflow-hidden border-2 border-cyan-400 shadow-md shrink-0 bg-slate-900 flex items-center justify-center">
-            <img src="logo/logo.jpg" alt="ST Games Logo" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');" class="w-full h-full object-cover">
-            <i class="fa-solid fa-shield-halved text-cyan-400 text-lg hidden"></i>
-          </div>
-          <div>
-            <h1 class="brand-font text-base sm:text-lg font-bold tracking-tight text-[#002b5b] theme-text-primary uppercase">ST GAMES ADMIN</h1>
-            <p class="text-[10px] font-bold text-sky-500 uppercase tracking-wider">Firebase Cloud + Local Sync</p>
-          </div>
+    <!-- Header -->
+    <header class="feature-hub rounded-2xl p-4 mb-5 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="index.html" class="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-cyan-400 hover:scale-105 transition shadow">
+          <i class="fa-solid fa-arrow-left"></i>
         </a>
-
-        <div class="flex items-center gap-2">
-          <span id="firebaseStatusBadge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-extrabold bg-amber-500/15 text-amber-600 border border-amber-400/30">
-            <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span> Connecting...
-          </span>
-          <button onclick="toggleTheme()" title="Switch Theme" class="p-2 rounded-xl hover:bg-slate-500/10 transition">
-            <span class="text-lg leading-none">🌓</span>
-          </button>
-          <a href="index.html" class="px-3 py-2 rounded-xl bg-[#002b5b] text-white text-xs font-extrabold hover:opacity-90 transition">
-            <i class="fa-solid fa-arrow-left mr-1"></i> Hub
-          </a>
+        <div>
+          <h1 class="brand-font text-lg sm:text-xl font-bold uppercase text-[#002b5b] dark:text-white flex items-center gap-2">
+            <i class="fa-solid fa-shield-halved text-sky-500"></i> ST Games Admin &amp; GitHub Studio
+          </h1>
+          <p class="text-[11px] text-slate-500 font-semibold">Edit repository code directly &amp; manage game cards</p>
         </div>
       </div>
+      <button onclick="toggleTheme()" title="Switch Theme" class="w-9 h-9 rounded-xl border border-sky-400/40 flex items-center justify-center text-lg hover:scale-105 transition">
+        🌓
+      </button>
     </header>
 
-    <!-- PIN LOCK OVERLAY -->
-    <section id="adminLockSection" class="feature-hub rounded-3xl p-6 sm:p-8 max-w-md mx-auto my-8 text-center">
-      <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-700 text-white flex items-center justify-center mx-auto mb-4 text-2xl shadow-lg shadow-sky-500/25">
-        <i class="fa-solid fa-user-shield"></i>
+    <!-- =========================================================
+         1. GITHUB DIRECT CODE EDITOR & REPOSITORY MANAGER
+         ========================================================= -->
+    <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-sky-400/20">
+        <div>
+          <h2 class="brand-font text-base sm:text-lg font-bold text-[#002b5b] dark:text-cyan-300 flex items-center gap-2">
+            <i class="fa-brands fa-github text-lg"></i> Direct GitHub Code Studio
+          </h2>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">Pull, edit, create, or delete files directly in your GitHub repository</p>
+        </div>
+        <span id="ghConnectionBadge" class="text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full bg-slate-500/15 text-slate-500">
+          Not Connected
+        </span>
       </div>
-      <h2 class="brand-font text-2xl font-bold theme-text-primary">Admin Verification</h2>
-      <p class="text-xs theme-text-sub mt-1 mb-5">Enter your admin PIN to manage games, notices, and Firebase cloud sync. (Default PIN: <b>1616</b>)</p>
-      <form onsubmit="verifyAdminPin(event)" class="space-y-3">
-        <input id="adminPinInput" type="password" inputmode="numeric" maxlength="8" placeholder="Enter PIN (1616)" class="neon-input text-center text-base tracking-[0.3em] font-extrabold" required>
-        <button type="submit" class="neon-action w-full py-3">
-          <i class="fa-solid fa-unlock-keyhole mr-1.5"></i> Unlock Dashboard
+
+      <!-- GitHub Repository & Token Configuration -->
+      <div class="grid sm:grid-cols-4 gap-3 mb-4">
+        <div>
+          <label class="block text-[10px] font-extrabold uppercase text-sky-600 mb-1" for="ghOwner">GitHub Username / Owner</label>
+          <input id="ghOwner" class="neon-input" placeholder="e.g., satishkommana" autocomplete="off">
+        </div>
+        <div>
+          <label class="block text-[10px] font-extrabold uppercase text-sky-600 mb-1" for="ghRepo">Repository Name</label>
+          <input id="ghRepo" class="neon-input" placeholder="e.g., st-games" autocomplete="off">
+        </div>
+        <div>
+          <label class="block text-[10px] font-extrabold uppercase text-sky-600 mb-1" for="ghBranch">Branch</label>
+          <input id="ghBranch" class="neon-input" value="main" placeholder="main">
+        </div>
+        <div>
+          <label class="block text-[10px] font-extrabold uppercase text-sky-600 mb-1" for="ghToken">Personal Access Token</label>
+          <div class="relative flex items-center">
+            <input id="ghToken" type="password" class="neon-input pr-9" placeholder="ghp_xxxxxxxxxxxx" autocomplete="off">
+            <button type="button" onclick="toggleTokenVisibility()" class="absolute right-2.5 text-slate-400 hover:text-sky-500 text-xs" title="Show/Hide Token">
+              <i id="tokenEyeIcon" class="fa-regular fa-eye"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div class="flex flex-wrap gap-2">
+          <button type="button" onclick="saveGitHubConfig()" class="neon-action">
+            <i class="fa-solid fa-plug"></i> Save &amp; Connect Repo
+          </button>
+          <button type="button" onclick="browseRepoDirectory('')" class="chip-btn">
+            <i class="fa-solid fa-folder-tree mr-1"></i> Browse Repo Files
+          </button>
+          <button type="button" onclick="clearGitHubConfig()" class="text-[11px] font-bold text-rose-500 px-2.5 py-1 hover:underline">
+            Forget Token
+          </button>
+        </div>
+        <span class="text-[10px] text-slate-500">
+          Need a token? GitHub Settings → Developer settings → Personal access tokens (`repo` / Contents write).
+        </span>
+      </div>
+
+      <!-- Interactive Repository File Browser Drawer -->
+      <div id="repoBrowserPanel" class="hidden mb-4 p-3 rounded-xl border border-sky-400/30 bg-slate-900/5 dark:bg-slate-950/60">
+        <div class="flex items-center justify-between gap-2 mb-2">
+          <div class="flex items-center gap-1.5 text-xs font-extrabold text-sky-600 dark:text-sky-300 truncate">
+            <i class="fa-regular fa-folder-open"></i>
+            <span>Path:</span>
+            <span id="browserCurrentDir" class="code-font">/root</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="browseParentDir()" class="text-[11px] font-bold text-sky-500 hover:underline">
+              <i class="fa-solid fa-level-up-alt mr-1"></i>Up
+            </button>
+            <button type="button" onclick="document.getElementById('repoBrowserPanel').classList.add('hidden')" class="text-[11px] font-bold text-slate-400 hover:text-rose-400">
+              Close ✕
+            </button>
+          </div>
+        </div>
+        <div id="repoFilesList" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-48 overflow-y-auto p-1"></div>
+      </div>
+
+      <!-- Quick File Presets -->
+      <div class="flex flex-wrap items-center gap-1.5 mb-3">
+        <span class="text-[10px] font-extrabold uppercase text-slate-400 mr-1">Quick Load:</span>
+        <button type="button" onclick="quickLoadFile('index.html')" class="chip-btn">index.html</button>
+        <button type="button" onclick="quickLoadFile('admin.html')" class="chip-btn">admin.html</button>
+        <button type="button" onclick="quickLoadFile('achievements.html')" class="chip-btn">achievements.html</button>
+        <button type="button" onclick="quickLoadFile('login.html')" class="chip-btn">login.html</button>
+        <button type="button" onclick="loadStarterGameTemplate()" class="chip-btn !border-emerald-500/40 !text-emerald-600 dark:!text-emerald-300">
+          <i class="fa-solid fa-wand-magic-sparkles mr-1"></i>+ New Game Template
         </button>
+      </div>
+
+      <!-- Target File Path + Fetch / Action Bar -->
+      <div class="grid sm:grid-cols-[1fr_auto] gap-2.5 mb-3">
+        <div class="relative flex items-center">
+          <i class="fa-solid fa-file-code text-sky-500 absolute left-3.5 text-xs"></i>
+          <input id="ghFilePath" class="neon-input pl-9 code-font" placeholder="File path in repo (e.g., index.html or game/mygame/index.html)" value="index.html">
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" id="btnFetchFile" onclick="fetchFileFromGitHub()" class="neon-action">
+            <i class="fa-solid fa-cloud-arrow-down"></i> Load from GitHub
+          </button>
+          <button type="button" onclick="openLivePreview()" class="chip-btn">
+            <i class="fa-solid fa-eye mr-1"></i> Live Preview
+          </button>
+          <button type="button" onclick="formatCodeLines()" class="chip-btn" title="Trim trailing spaces">
+            <i class="fa-solid fa-broom"></i> Clean
+          </button>
+        </div>
+      </div>
+
+      <!-- Status Bar Above Editor -->
+      <div class="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 rounded-t-xl bg-slate-900 text-slate-300 text-[11px] code-font border border-b-0 border-sky-500/30">
+        <div class="flex items-center gap-3">
+          <span id="editorFileStatus" class="text-cyan-400 font-semibold">Ready</span>
+          <span id="editorShaBadge" class="text-[10px] text-slate-400 hidden">SHA: —</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="editorMetrics">0 lines · 0 chars</span>
+          <button type="button" onclick="copyEditorCode()" class="hover:text-cyan-300"><i class="fa-regular fa-copy mr-1"></i>Copy</button>
+        </div>
+      </div>
+
+      <!-- Main Code Editor Textarea -->
+      <textarea id="ghCodeEditor" class="code-textarea code-font rounded-t-none mb-3" spellcheck="false" placeholder="Click 'Load from GitHub' to edit an existing file, or write/paste new HTML, CSS, or JS code here to create a new file in your repository..."></textarea>
+
+      <!-- Commit Message & Push / Delete Controls -->
+      <div class="grid sm:grid-cols-[1fr_auto] gap-2.5 items-center">
+        <input id="ghCommitMsg" class="neon-input" placeholder="Commit message (e.g., Update index.html via ST Games Admin Studio)">
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="button" id="btnPushFile" onclick="pushFileToGitHub()" class="neon-action !bg-gradient-to-r !from-emerald-600 !to-cyan-600">
+            <i class="fa-solid fa-cloud-arrow-up"></i> Commit &amp; Push to GitHub
+          </button>
+          <button type="button" onclick="deleteFileFromGitHub()" class="px-3 py-2 rounded-xl text-xs font-extrabold bg-rose-500/15 text-rose-500 border border-rose-500/30 hover:bg-rose-500/25 transition">
+            <i class="fa-solid fa-trash-can mr-1"></i> Delete File
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         2. QUICK STATS & LOCAL CUSTOM GAME CARDS
+         ========================================================= -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5 text-center">
+      <div class="feature-hub rounded-xl p-3">
+        <div class="text-[10px] font-extrabold text-sky-600 uppercase">Custom Games</div>
+        <div id="statCustom" class="text-xl font-extrabold mt-1">0</div>
+      </div>
+      <div class="feature-hub rounded-xl p-3">
+        <div class="text-[10px] font-extrabold text-emerald-600 uppercase">Total Played</div>
+        <div id="statPlayed" class="text-xl font-extrabold mt-1">0</div>
+      </div>
+      <div class="feature-hub rounded-xl p-3">
+        <div class="text-[10px] font-extrabold text-pink-600 uppercase">Favourites</div>
+        <div id="statFavs" class="text-xl font-extrabold mt-1">0</div>
+      </div>
+      <div class="feature-hub rounded-xl p-3">
+        <div class="text-[10px] font-extrabold text-violet-600 uppercase">Scores Logged</div>
+        <div id="statScores" class="text-xl font-extrabold mt-1">0</div>
+      </div>
+    </div>
+
+    <!-- Add Local Game Card Form -->
+    <section class="feature-hub rounded-2xl p-5 mb-5">
+      <h2 class="brand-font text-base font-bold text-[#002b5b] dark:text-cyan-300 mb-4 flex items-center gap-2">
+        <i class="fa-solid fa-plus-circle"></i> Add Custom Game Card (Device LocalStorage)
+      </h2>
+      <form id="addGameForm" onsubmit="handleAddGame(event)" class="space-y-3">
+        <div class="grid sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] font-bold text-sky-600 mb-1" for="gameTitle">Game Title *</label>
+            <input id="gameTitle" required class="neon-input" placeholder="e.g., Pixel Dunker" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-sky-600 mb-1" for="gamePath">Game File / Path *</label>
+            <input id="gamePath" required class="neon-input" placeholder="e.g., game/dunk/index.html" />
+          </div>
+        </div>
+
+        <div class="grid sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-[11px] font-bold text-sky-600 mb-1" for="gameLogo">Logo / Image URL</label>
+            <input id="gameLogo" class="neon-input" placeholder="logo/dunk.jpg" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-sky-600 mb-1" for="gameCategory">Category</label>
+            <select id="gameCategory" class="neon-input">
+              <option value="classic">Classic &amp; Retro</option>
+              <option value="racing">Racing</option>
+              <option value="1v1">1v1 Battle</option>
+              <option value="single">Single Player</option>
+              <option value="sports">Sports</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-sky-600 mb-1" for="gameBadge">Badge Tag</label>
+            <input id="gameBadge" class="neon-input" placeholder="NEW, HOT, VIP" maxlength="6" />
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-2">
+          <label class="inline-flex items-center gap-2 text-xs font-bold cursor-pointer">
+            <input type="checkbox" id="markPopular" class="w-4 h-4 accent-cyan-500 rounded">
+            Include in Popular Games row
+          </label>
+          <button type="submit" class="neon-action">
+            <i class="fa-solid fa-floppy-disk"></i> Save Local Game Card
+          </button>
+        </div>
       </form>
     </section>
 
-    <!-- UNLOCKED ADMIN CONTENT -->
-    <div id="adminMainDashboard" class="hidden space-y-5">
+    <!-- Custom Games List -->
+    <section class="feature-hub rounded-2xl p-5 mb-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="brand-font text-base font-bold text-[#002b5b] dark:text-cyan-300 flex items-center gap-2">
+          <i class="fa-solid fa-list-check"></i> Locally Registered Games
+        </h2>
+        <button onclick="wipeAllCustomGames()" class="text-xs font-bold text-rose-500 hover:underline">
+          Clear All Custom
+        </button>
+      </div>
+      <div id="customGamesContainer" class="space-y-2">
+        <div class="text-xs opacity-60 py-4 text-center">No custom games added yet.</div>
+      </div>
+    </section>
 
-      <!-- STATS ROW -->
-      <section class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div class="feature-hub rounded-2xl p-4">
-          <div class="text-[10px] font-extrabold uppercase text-sky-500">Default Games</div>
-          <div class="text-2xl font-black theme-text-primary mt-1">13</div>
-          <div class="text-[10px] theme-text-sub">Built-in catalog</div>
-        </div>
-        <div class="feature-hub rounded-2xl p-4">
-          <div class="text-[10px] font-extrabold uppercase text-emerald-500">Custom Games</div>
-          <div id="statCustomCount" class="text-2xl font-black theme-text-primary mt-1">0</div>
-          <div class="text-[10px] theme-text-sub">Synced with Firebase</div>
-        </div>
-        <div class="feature-hub rounded-2xl p-4">
-          <div class="text-[10px] font-extrabold uppercase text-amber-500">Leaderboard</div>
-          <div id="statPlayersCount" class="text-2xl font-black theme-text-primary mt-1">0</div>
-          <div class="text-[10px] theme-text-sub">Active player scores</div>
-        </div>
-        <div class="feature-hub rounded-2xl p-4">
-          <div class="text-[10px] font-extrabold uppercase text-purple-500">Firebase Project</div>
-          <div class="text-sm font-black theme-text-primary mt-2 truncate">stgames-289</div>
-          <div class="text-[10px] theme-text-sub">Realtime Cloud</div>
-        </div>
-      </section>
-
-      <!-- ADD / PREVIEW NEW GAME CARD -->
-      <section class="grid lg:grid-cols-[1.45fr_.85fr] gap-4">
-        <div class="feature-hub rounded-3xl p-5 sm:p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h2 class="brand-font text-lg sm:text-xl font-bold theme-text-primary">
-              <i class="fa-solid fa-plus-circle text-sky-500 mr-2"></i>Add New Game Card
-            </h2>
-            <span class="text-[10px] font-extrabold text-sky-500 uppercase">Pushes to Firebase + Device</span>
-          </div>
-
-          <form id="addGameForm" onsubmit="handleCreateGame(event)" class="grid sm:grid-cols-2 gap-3.5">
-            <div>
-              <label class="tiny-label" for="gameTitle">Game Title *</label>
-              <input id="gameTitle" type="text" class="neon-input" placeholder="e.g., Cyber Drift 3D" maxlength="32" oninput="updateLivePreview()" required>
-            </div>
-
-            <div>
-              <label class="tiny-label" for="gameUrl">Game File Path / URL *</label>
-              <input id="gameUrl" type="text" class="neon-input" placeholder="e.g., game/drift/index.html" oninput="updateLivePreview()" required>
-            </div>
-
-            <div>
-              <label class="tiny-label" for="gameLogo">Logo Path / Image URL</label>
-              <input id="gameLogo" type="text" class="neon-input" placeholder="e.g., logo/drift.jpg" oninput="updateLivePreview()">
-            </div>
-
-            <div>
-              <label class="tiny-label" for="gameCategory">Primary Category</label>
-              <select id="gameCategory" class="neon-input" onchange="updateLivePreview()">
-                <option value="popular">Popular</option>
-                <option value="single">Single Player</option>
-                <option value="classic">Classic &amp; Snake</option>
-                <option value="racing">Racing</option>
-                <option value="1v1">1v1 Battle</option>
-                <option value="sports">Sports</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="tiny-label" for="gameBadge">Corner Badge</label>
-              <select id="gameBadge" class="neon-input" onchange="updateLivePreview()">
-                <option value="NEW">NEW</option>
-                <option value="HOT">HOT</option>
-                <option value="HIT">HIT</option>
-                <option value="TOP">TOP</option>
-                <option value="1v1">1v1</option>
-                <option value="LIVE">LIVE</option>
-                <option value="CO-OP">CO-OP</option>
-                <option value="">None</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="tiny-label" for="gameSize">Tile Size on Grid</label>
-              <select id="gameSize" class="neon-input" onchange="updateLivePreview()">
-                <option value="normal">Normal (1x1 Square)</option>
-                <option value="large">Large Featured (2x2 Tile)</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="tiny-label" for="gameIcon">Fallback Icon</label>
-              <select id="gameIcon" class="neon-input" onchange="updateLivePreview()">
-                <option value="fa-solid fa-gamepad">Gamepad</option>
-                <option value="fa-solid fa-car-burst">Racing Car</option>
-                <option value="fa-solid fa-rocket">Rocket</option>
-                <option value="fa-solid fa-dragon">Dragon</option>
-                <option value="fa-solid fa-trophy">Trophy</option>
-                <option value="fa-solid fa-bolt">Lightning</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="tiny-label" for="gameBg">Card Gradient Theme</label>
-              <select id="gameBg" class="neon-input" onchange="updateLivePreview()">
-                <option value="linear-gradient(135deg, #0284c7, #1d4ed8)">Electric Cyan &amp; Blue</option>
-                <option value="linear-gradient(135deg, #f59e0b, #b45309)">Amber Gold</option>
-                <option value="linear-gradient(135deg, #10b981, #047857)">Emerald Neon</option>
-                <option value="linear-gradient(135deg, #ec4899, #8b5cf6)">Cyber Pink &amp; Violet</option>
-                <option value="linear-gradient(135deg, #ef4444, #7f1d1d)">Crimson Arena</option>
-                <option value="linear-gradient(135deg, #8b5cf6, #4c1d95)">Deep Purple</option>
-              </select>
-            </div>
-
-            <div class="sm:col-span-2 flex items-center gap-2 pt-1">
-              <input id="alsoMarkPopular" type="checkbox" checked class="w-4 h-4 accent-sky-500 rounded">
-              <label for="alsoMarkPopular" class="text-xs font-bold theme-text-primary">Also show in the horizontal "Popular Games" row</label>
-            </div>
-
-            <div class="sm:col-span-2 pt-2">
-              <button type="submit" class="neon-action w-full py-3">
-                <i class="fa-solid fa-cloud-arrow-up mr-1.5"></i> Publish Game to ST Games
-              </button>
-            </div>
-          </form>
-        </div>
-
-        <!-- LIVE CARD PREVIEW & NOTICE BAR EDITOR -->
-        <div class="space-y-4">
-          <div class="feature-hub rounded-3xl p-5 flex flex-col items-center text-center">
-            <span class="tiny-label">Live Card Preview</span>
-            <div id="previewCardBox" class="game-card-preview my-3" style="background: linear-gradient(135deg, #0284c7, #1d4ed8);">
-              <div id="previewBadge" class="absolute top-2.5 left-2.5 z-10 bg-white/95 text-[#002b5b] text-[10px] font-extrabold px-2 py-0.5 rounded-lg shadow">NEW</div>
-              <img id="previewImg" src="logo/game.jpg" alt="Preview" onerror="this.style.display='none'; document.getElementById('previewFallback').classList.remove('hidden');" class="w-full h-full object-cover">
-              <div id="previewFallback" class="hidden w-full h-full flex flex-col items-center justify-center text-white p-3 text-center">
-                <i id="previewIcon" class="fa-solid fa-gamepad text-4xl mb-1 drop-shadow"></i>
-                <span id="previewFallbackTitle" class="text-xs font-extrabold leading-tight drop-shadow">Cyber Drift 3D</span>
-              </div>
-              <div class="game-card-overlay absolute inset-0 flex flex-col justify-end p-3 text-white text-left">
-                <h3 id="previewTitle" class="font-extrabold text-sm truncate">Cyber Drift 3D</h3>
-                <span id="previewCat" class="text-[10px] text-cyan-300 font-semibold truncate">popular</span>
-              </div>
-            </div>
-            <p class="text-[11px] theme-text-sub">Appears immediately in your catalog &amp; Firebase</p>
-          </div>
-
-          <!-- TOP NOTICE EDITOR -->
-          <div class="feature-hub rounded-3xl p-5">
-            <h3 class="brand-font text-base font-bold theme-text-primary mb-2">
-              <i class="fa-solid fa-bullhorn text-amber-500 mr-1.5"></i>Top Notice Banner
-            </h3>
-            <label class="tiny-label" for="noticeBannerInput">Scrolling Announcement Text</label>
-            <input id="noticeBannerInput" type="text" class="neon-input mb-2.5" maxlength="140" placeholder="📢 NOTICE: Welcome to ST GAMES — Enjoy playing!">
-            <button onclick="saveNoticeBanner()" class="neon-action w-full">
-              <i class="fa-solid fa-paper-plane mr-1"></i> Update Notice Banner
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <!-- MANAGE CUSTOM GAMES & LEADERBOARD -->
-      <section class="grid lg:grid-cols-2 gap-4">
-        <div class="feature-hub rounded-3xl p-5">
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="brand-font text-lg font-bold theme-text-primary">
-              <i class="fa-solid fa-layer-group text-sky-500 mr-2"></i>Published Custom Games
-            </h3>
-            <button onclick="clearAllCustomGames()" class="text-xs font-extrabold text-rose-500 hover:underline">
-              <i class="fa-solid fa-trash-can mr-1"></i>Reset All
-            </button>
-          </div>
-          <div id="adminCustomGamesList" class="space-y-2.5 max-h-80 overflow-y-auto pr-1"></div>
-        </div>
-
-        <div class="feature-hub rounded-3xl p-5">
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="brand-font text-lg font-bold theme-text-primary">
-              <i class="fa-solid fa-trophy text-amber-500 mr-2"></i>Leaderboard Moderation
-            </h3>
-            <button onclick="clearLeaderboardScores()" class="text-xs font-extrabold text-rose-500 hover:underline">
-              <i class="fa-solid fa-broom mr-1"></i>Clear Scores
-            </button>
-          </div>
-          <div id="adminLeaderboardList" class="space-y-2.5 max-h-80 overflow-y-auto pr-1"></div>
-        </div>
-      </section>
-
-    </div>
+    <!-- Data Tools (Export / Import / Wipe) -->
+    <section class="feature-hub rounded-2xl p-5 mb-6">
+      <h2 class="brand-font text-base font-bold text-[#002b5b] dark:text-cyan-300 mb-3 flex items-center gap-2">
+        <i class="fa-solid fa-database"></i> Storage &amp; Backup
+      </h2>
+      <div class="flex flex-wrap gap-2.5">
+        <button onclick="exportData()" class="neon-action !bg-gradient-to-r !from-emerald-600 !to-teal-700">
+          <i class="fa-solid fa-download"></i> Export Backup (.json)
+        </button>
+        <label class="neon-action cursor-pointer">
+          <i class="fa-solid fa-upload"></i> Import Backup
+          <input type="file" id="importInput" accept=".json" onchange="importData(event)" class="hidden">
+        </label>
+        <button onclick="resetLeaderboard()" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-500/15 text-amber-600 border border-amber-400/30 hover:bg-amber-500/25">
+          Reset Leaderboard
+        </button>
+      </div>
+    </section>
   </main>
 
-  <!-- BOTTOM NAVIGATION -->
+  <!-- LIVE CODE PREVIEW MODAL -->
+  <div id="previewModal" class="fixed inset-0 z-[10000] hidden bg-slate-950/80 backdrop-blur-sm p-3 sm:p-6 flex flex-col">
+    <div class="bg-slate-900 text-white rounded-t-2xl px-4 py-3 flex items-center justify-between border border-b-0 border-cyan-500/30">
+      <div class="flex items-center gap-2 text-xs font-extrabold text-cyan-300">
+        <i class="fa-solid fa-display"></i>
+        <span>Live Sandbox Preview</span>
+      </div>
+      <button onclick="closeLivePreview()" class="px-3 py-1 rounded-lg bg-rose-500/20 text-rose-300 text-xs font-bold hover:bg-rose-500/30">
+        Close Preview ✕
+      </button>
+    </div>
+    <iframe id="previewFrame" class="w-full flex-1 bg-white rounded-b-2xl border border-cyan-500/30" sandbox="allow-scripts allow-same-origin"></iframe>
+  </div>
+
+  <!-- 3-BUTTON BOTTOM NAVIGATION BAR (Synced with index.html) -->
   <nav class="st-bottom-nav" aria-label="ST GAMES navigation">
     <a href="index.html">
       <span class="nav-icon">⌂</span>
       <span>Home</span>
     </a>
-    <a href="login.html">
-      <span class="nav-icon">♙</span>
-      <span>Profile</span>
+
+    <a href="login.html" id="bottomNavLogin" title="Login / Profile">
+      <span id="bottomDefaultIcon" class="nav-icon">
+        <i class="fa-regular fa-circle-user"></i>
+      </span>
+      <div id="bottomUserLogo" class="hidden w-6 h-6 rounded-full overflow-hidden border-2 border-cyan-400 bg-gradient-to-tr from-cyan-500 to-indigo-600 text-white font-extrabold text-[11px] flex items-center justify-center shadow-sm">
+        U
+      </div>
+      <span id="bottomLoginLabel" class="truncate max-w-[90px]">Login</span>
     </a>
+
     <a href="achievements.html">
       <span class="nav-icon">🏆</span>
       <span>Achievements</span>
     </a>
-    <a href="levels.html">
-      <span class="nav-icon">⚡</span>
-      <span>Levels</span>
-    </a>
   </nav>
 
-  <!-- FIREBASE & ADMIN LOGIC -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-analytics.js";
-    import { getDatabase, ref, set, remove, onValue } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-database.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyDOFx0_vpPDRDCkUW-deQjMNK5msOsGSnI",
-      authDomain: "stgames-289.firebaseapp.com",
-      databaseURL: "https://stgames-289-default-rtdb.firebaseio.com",
-      projectId: "stgames-289",
-      storageBucket: "stgames-289.firebasestorage.app",
-      messagingSenderId: "916146081741",
-      appId: "1:916146081741:web:eb343c4dc0c6648388fe84",
-      measurementId: "G-P8RQ074PWX"
-    };
-
-    const ADMIN_PIN = "1616";
-    let db = null;
-    let firebaseReady = false;
-
+  <script>
+    /* =========================================================
+       UTILITIES & UTF-8 SAFE BASE64 ENCODING FOR GITHUB API
+       ========================================================= */
     const safeReadJSON = (key, fallback) => {
       try {
-        const val = JSON.parse(localStorage.getItem(key) || "null");
+        const val = JSON.parse(localStorage.getItem(key) || 'null');
         return val == null ? fallback : val;
-      } catch (_) {
-        return fallback;
-      }
+      } catch (_) { return fallback; }
     };
 
-    let customGames = safeReadJSON("st_custom_games", []);
-    let leaderboard = safeReadJSON("st_local_leaderboard", []);
+    function escapeHTML(s) {
+      return String(s).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[c]));
+    }
 
-    function setStatusBadge(online, text) {
-      const badge = document.getElementById("firebaseStatusBadge");
-      if (!badge) return;
-      if (online) {
-        badge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-extrabold bg-emerald-500/15 text-emerald-500 border border-emerald-400/30";
-        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span> ${text}`;
-      } else {
-        badge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-extrabold bg-sky-500/15 text-sky-500 border border-sky-400/30";
-        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-sky-400"></span> ${text}`;
+    // Encode UTF-8 string (including emojis/Telugu/symbols) to Base64
+    function utf8ToBase64(str) {
+      const bytes = new TextEncoder().encode(str);
+      let binary = '';
+      const chunkSize = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
       }
+      return btoa(binary);
     }
 
-    try {
-      const app = initializeApp(firebaseConfig);
-      getAnalytics(app);
-      db = getDatabase(app);
-
-      // Listen for live custom games in Firebase
-      onValue(ref(db, "st_games/custom_games"), (snapshot) => {
-        firebaseReady = true;
-        setStatusBadge(true, "Firebase Live");
-        const data = snapshot.val();
-        if (data && typeof data === "object") {
-          customGames = Object.values(data);
-          localStorage.setItem("st_custom_games", JSON.stringify(customGames));
-        }
-        renderAdminLists();
-      }, () => {
-        setStatusBadge(false, "Local Sync Mode");
-      });
-
-      // Listen for live leaderboard in Firebase
-      onValue(ref(db, "st_games/leaderboard"), (snapshot) => {
-        const data = snapshot.val();
-        if (data && typeof data === "object") {
-          leaderboard = Object.values(data);
-          localStorage.setItem("st_local_leaderboard", JSON.stringify(leaderboard));
-        }
-        renderAdminLists();
-      });
-
-      // Listen for custom notice banner
-      onValue(ref(db, "st_games/site_notice"), (snapshot) => {
-        const text = snapshot.val();
-        if (text) {
-          localStorage.setItem("st_site_notice", text);
-          const input = document.getElementById("noticeBannerInput");
-          if (input && !input.value) input.value = text;
-        }
-      });
-    } catch (err) {
-      setStatusBadge(false, "Local Sync Mode");
+    // Decode Base64 from GitHub API back to UTF-8 string
+    function base64ToUtf8(base64) {
+      const cleaned = base64.replace(/\s/g, '');
+      const binary = atob(cleaned);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return new TextDecoder('utf-8').decode(bytes);
     }
 
-    function escapeHTML(value) {
-      return String(value).replace(/[&<>"']/g, ch => ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        "\"": "&quot;",
-        "'": "&#39;"
-      }[ch]));
-    }
-
-    function showToast(msg) {
-      let toast = document.getElementById("adminToast");
+    function showToast(message, isError = false) {
+      let toast = document.getElementById('adminToast');
       if (!toast) {
-        toast = document.createElement("div");
-        toast.id = "adminToast";
-        toast.className = "fixed left-1/2 bottom-24 -translate-x-1/2 z-[10000] rounded-xl px-4 py-3 text-xs font-extrabold text-white bg-slate-950 border border-sky-400/60 shadow-xl";
+        toast = document.createElement('div');
+        toast.id = 'adminToast';
         document.body.appendChild(toast);
       }
-      toast.textContent = msg;
-      toast.style.display = "block";
+      toast.className = `fixed left-1/2 bottom-24 -translate-x-1/2 z-[10001] rounded-xl px-4 py-3 text-xs font-extrabold text-white shadow-xl border ${
+        isError ? 'bg-rose-950 border-rose-400' : 'bg-slate-950 border-cyan-400'
+      }`;
+      toast.textContent = message;
+      toast.style.display = 'block';
       clearTimeout(window.__adminToastTimer);
       window.__adminToastTimer = setTimeout(() => {
-        toast.style.display = "none";
-      }, 2000);
+        toast.style.display = 'none';
+      }, 2600);
     }
 
-    window.verifyAdminPin = function(e) {
-      e.preventDefault();
-      const pin = document.getElementById("adminPinInput").value.trim();
-      if (pin === ADMIN_PIN) {
-        sessionStorage.setItem("st_admin_unlocked", "true");
-        document.getElementById("adminLockSection").classList.add("hidden");
-        document.getElementById("adminMainDashboard").classList.remove("hidden");
-        renderAdminLists();
-        showToast("Admin portal unlocked");
-      } else {
-        showToast("Incorrect PIN — Default is 1616");
+    /* =========================================================
+       GITHUB API CONFIGURATION & DIRECT CODE STUDIO
+       ========================================================= */
+    let currentFileSha = null;
+    let currentBrowsePath = '';
+
+    function getGitHubCreds() {
+      return {
+        owner: document.getElementById('ghOwner').value.trim(),
+        repo: document.getElementById('ghRepo').value.trim(),
+        branch: document.getElementById('ghBranch').value.trim() || 'main',
+        token: document.getElementById('ghToken').value.trim()
+      };
+    }
+
+    function loadGitHubConfig() {
+      const saved = safeReadJSON('st_github_config', {});
+      if (saved.owner) document.getElementById('ghOwner').value = saved.owner;
+      if (saved.repo) document.getElementById('ghRepo').value = saved.repo;
+      if (saved.branch) document.getElementById('ghBranch').value = saved.branch;
+      if (saved.token) document.getElementById('ghToken').value = saved.token;
+
+      // Auto-detect owner & repo if hosted on *.github.io
+      if (!saved.owner && window.location.hostname.endsWith('.github.io')) {
+        const hostParts = window.location.hostname.split('.');
+        document.getElementById('ghOwner').value = hostParts[0];
+        const pathParts = window.location.pathname.split('/').filter(Boolean);
+        if (pathParts.length > 0 && !pathParts[0].endsWith('.html')) {
+          document.getElementById('ghRepo').value = pathParts[0];
+        }
       }
-    };
+      updateConnectionBadge();
+    }
 
-    window.updateLivePreview = function() {
-      const title = document.getElementById("gameTitle").value.trim() || "Cyber Drift 3D";
-      const logo = document.getElementById("gameLogo").value.trim() || "logo/game.jpg";
-      const cat = document.getElementById("gameCategory").value;
-      const badge = document.getElementById("gameBadge").value;
-      const icon = document.getElementById("gameIcon").value;
-      const bg = document.getElementById("gameBg").value;
-
-      document.getElementById("previewCardBox").style.background = bg;
-      document.getElementById("previewTitle").textContent = title;
-      document.getElementById("previewFallbackTitle").textContent = title;
-      document.getElementById("previewCat").textContent = cat;
-      document.getElementById("previewIcon").className = `${icon} text-4xl mb-1 drop-shadow`;
-
-      const badgeEl = document.getElementById("previewBadge");
-      if (badge) {
-        badgeEl.textContent = badge;
-        badgeEl.classList.remove("hidden");
-      } else {
-        badgeEl.classList.add("hidden");
+    function saveGitHubConfig() {
+      const creds = getGitHubCreds();
+      if (!creds.owner || !creds.repo || !creds.token) {
+        showToast('Enter GitHub Owner, Repo Name, and Personal Access Token', true);
+        return;
       }
+      localStorage.setItem('st_github_config', JSON.stringify(creds));
+      updateConnectionBadge(true);
+      showToast('GitHub repository credentials saved!');
+      browseRepoDirectory('');
+    }
 
-      const imgEl = document.getElementById("previewImg");
-      const fallbackEl = document.getElementById("previewFallback");
-      fallbackEl.classList.add("hidden");
-      imgEl.style.display = "block";
-      imgEl.src = logo;
-    };
+    function clearGitHubConfig() {
+      localStorage.removeItem('st_github_config');
+      document.getElementById('ghToken').value = '';
+      updateConnectionBadge(false);
+      showToast('Saved GitHub token cleared from this device');
+    }
 
-    window.handleCreateGame = async function(e) {
-      e.preventDefault();
-      const title = document.getElementById("gameTitle").value.trim();
-      const url = document.getElementById("gameUrl").value.trim();
-      const logo = document.getElementById("gameLogo").value.trim() || "logo/game.jpg";
-      const cat = document.getElementById("gameCategory").value;
-      const badge = document.getElementById("gameBadge").value;
-      const size = document.getElementById("gameSize").value;
-      const icon = document.getElementById("gameIcon").value;
-      const bg = document.getElementById("gameBg").value;
-      const includePopular = document.getElementById("alsoMarkPopular").checked;
+    function updateConnectionBadge(connected) {
+      const creds = getGitHubCreds();
+      const badge = document.getElementById('ghConnectionBadge');
+      const isReady = connected ?? Boolean(creds.owner && creds.repo && creds.token);
+      if (isReady) {
+        badge.className = 'text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-500 border border-emerald-500/30';
+        badge.textContent = `Connected: ${creds.owner}/${creds.repo} (${creds.branch})`;
+      } else {
+        badge.className = 'text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full bg-slate-500/15 text-slate-500';
+        badge.textContent = 'Not Connected';
+      }
+    }
 
-      if (!title || !url || /^(javascript:|data:)/i.test(url)) {
-        showToast("Please enter a valid title and game path");
+    function toggleTokenVisibility() {
+      const input = document.getElementById('ghToken');
+      const icon = document.getElementById('tokenEyeIcon');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'fa-regular fa-eye-slash';
+      } else {
+        input.type = 'password';
+        icon.className = 'fa-regular fa-eye';
+      }
+    }
+
+    function getGitHubHeaders(token) {
+      const headers = {
+        'Accept': 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28'
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      return headers;
+    }
+
+    // Browse folders/files in the repository
+    async function browseRepoDirectory(dirPath = '') {
+      const { owner, repo, branch, token } = getGitHubCreds();
+      if (!owner || !repo) {
+        showToast('Please enter your GitHub Owner and Repository Name first', true);
         return;
       }
 
-      const categories = [cat];
-      if (includePopular && !categories.includes("popular")) {
-        categories.push("popular");
+      const panel = document.getElementById('repoBrowserPanel');
+      const listEl = document.getElementById('repoFilesList');
+      const dirLabel = document.getElementById('browserCurrentDir');
+      panel.classList.remove('hidden');
+      currentBrowsePath = dirPath;
+      dirLabel.textContent = '/' + (dirPath || '');
+      listEl.innerHTML = '<div class="col-span-full text-xs text-slate-400 py-2">Loading repository contents...</div>';
+
+      try {
+        const cleanPath = dirPath.replace(/^\/+|\/+$/g, '');
+        const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${cleanPath}?ref=${encodeURIComponent(branch)}`;
+        const res = await fetch(url, { headers: getGitHubHeaders(token), cache: 'no-store' });
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.message || `Status ${res.status}`);
+        }
+
+        if (!Array.isArray(data)) {
+          listEl.innerHTML = '<div class="col-span-full text-xs text-slate-400">Selected path is a single file.</div>';
+          return;
+        }
+
+        // Sort folders first, then files alphabetically
+        data.sort((a, b) => (a.type === b.type ? a.name.localeCompare(b.name) : a.type === 'dir' ? -1 : 1));
+
+        listEl.innerHTML = data.map(item => {
+          const isDir = item.type === 'dir';
+          const safePath = escapeHTML(item.path);
+          const safeName = escapeHTML(item.name);
+          return `
+            <button type="button"
+              onclick="${isDir ? `browseRepoDirectory('${safePath}')` : `quickLoadFile('${safePath}')`}"
+              class="flex items-center gap-2 p-2 rounded-lg text-left text-xs font-bold border border-sky-400/20 bg-white/80 dark:bg-slate-900/90 hover:border-cyan-400 transition truncate">
+              <i class="${isDir ? 'fa-solid fa-folder text-amber-400' : 'fa-regular fa-file-code text-sky-400'} shrink-0"></i>
+              <span class="truncate">${safeName}</span>
+            </button>
+          `;
+        }).join('');
+      } catch (err) {
+        listEl.innerHTML = `<div class="col-span-full text-xs text-rose-500 py-2">Error: ${escapeHTML(err.message)}</div>`;
+      }
+    }
+
+    function browseParentDir() {
+      if (!currentBrowsePath) return;
+      const parts = currentBrowsePath.split('/').filter(Boolean);
+      parts.pop();
+      browseRepoDirectory(parts.join('/'));
+    }
+
+    function quickLoadFile(path) {
+      document.getElementById('ghFilePath').value = path;
+      fetchFileFromGitHub();
+    }
+
+    // Pull file content from GitHub API
+    async function fetchFileFromGitHub() {
+      const { owner, repo, branch, token } = getGitHubCreds();
+      const filePath = document.getElementById('ghFilePath').value.trim().replace(/^\/+/, '');
+
+      if (!owner || !repo || !filePath) {
+        showToast('Enter GitHub Owner, Repo Name, and a File Path to load', true);
+        return;
       }
 
-      const id = "custom-" + Date.now().toString(36);
+      const statusEl = document.getElementById('editorFileStatus');
+      const shaBadge = document.getElementById('editorShaBadge');
+      const editor = document.getElementById('ghCodeEditor');
+      const btn = document.getElementById('btnFetchFile');
+
+      statusEl.textContent = `Fetching ${filePath}...`;
+      btn.disabled = true;
+
+      try {
+        const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${filePath}?ref=${encodeURIComponent(branch)}`;
+        const res = await fetch(url, { headers: getGitHubHeaders(token), cache: 'no-store' });
+        const data = await res.json();
+
+        if (res.status === 404) {
+          currentFileSha = null;
+          shaBadge.classList.add('hidden');
+          statusEl.textContent = `New File (${filePath}) — Ready to create`;
+          showToast(`File "${filePath}" does not exist yet. Write code & push to create it!`);
+          return;
+        }
+
+        if (!res.ok) {
+          throw new Error(data.message || `HTTP ${res.status}`);
+        }
+
+        currentFileSha = data.sha;
+        shaBadge.textContent = `SHA: ${data.sha.slice(0, 7)}`;
+        shaBadge.classList.remove('hidden');
+
+        const decoded = base64ToUtf8(data.content || '');
+        editor.value = decoded;
+        statusEl.textContent = `Loaded: ${filePath}`;
+        document.getElementById('ghCommitMsg').value = `Update ${filePath} via ST Games Admin Studio`;
+        updateEditorMetrics();
+        showToast(`Loaded ${filePath} from GitHub!`);
+      } catch (err) {
+        statusEl.textContent = 'Load failed';
+        showToast(`GitHub Error: ${err.message}`, true);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    // Create or Update file on GitHub via PUT /repos/{owner}/{repo}/contents/{path}
+    async function pushFileToGitHub() {
+      const { owner, repo, branch, token } = getGitHubCreds();
+      const filePath = document.getElementById('ghFilePath').value.trim().replace(/^\/+/, '');
+      const code = document.getElementById('ghCodeEditor').value;
+      const commitMsgInput = document.getElementById('ghCommitMsg').value.trim();
+
+      if (!owner || !repo || !token) {
+        showToast('GitHub Owner, Repo Name, and Personal Access Token are required to push!', true);
+        return;
+      }
+      if (!filePath) {
+        showToast('Enter a target file path (e.g., index.html)', true);
+        return;
+      }
+
+      const btn = document.getElementById('btnPushFile');
+      const statusEl = document.getElementById('editorFileStatus');
+      const shaBadge = document.getElementById('editorShaBadge');
+
+      btn.disabled = true;
+      statusEl.textContent = `Committing ${filePath} to ${branch}...`;
+
+      try {
+        const apiUrl = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${filePath}`;
+
+        // Always verify latest SHA on GitHub before pushing so we never get a 409/422 conflict
+        let latestSha = currentFileSha;
+        const checkRes = await fetch(`${apiUrl}?ref=${encodeURIComponent(branch)}`, {
+          headers: getGitHubHeaders(token),
+          cache: 'no-store'
+        });
+        if (checkRes.ok) {
+          const existingData = await checkRes.json();
+          if (existingData && existingData.sha) {
+            latestSha = existingData.sha;
+          }
+        } else if (checkRes.status === 404) {
+          latestSha = null; // Creating a brand-new file
+        }
+
+        const payload = {
+          message: commitMsgInput || `${latestSha ? 'Update' : 'Create'} ${filePath} via ST Games Admin`,
+          content: utf8ToBase64(code),
+          branch: branch
+        };
+
+        if (latestSha) {
+          payload.sha = latestSha;
+        }
+
+        const putRes = await fetch(apiUrl, {
+          method: 'PUT',
+          headers: {
+            ...getGitHubHeaders(token),
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await putRes.json();
+        if (!putRes.ok) {
+          throw new Error(result.message || `HTTP ${putRes.status}`);
+        }
+
+        currentFileSha = result.content.sha;
+        shaBadge.textContent = `SHA: ${currentFileSha.slice(0, 7)}`;
+        shaBadge.classList.remove('hidden');
+        statusEl.textContent = `Pushed: ${filePath} ✓`;
+        showToast(`Committed ${filePath} to ${owner}/${repo}@${branch}!`);
+      } catch (err) {
+        statusEl.textContent = 'Push failed';
+        showToast(`Push Failed: ${err.message}`, true);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    // Delete a file from GitHub repository
+    async function deleteFileFromGitHub() {
+      const { owner, repo, branch, token } = getGitHubCreds();
+      const filePath = document.getElementById('ghFilePath').value.trim().replace(/^\/+/, '');
+
+      if (!owner || !repo || !token || !filePath) {
+        showToast('Connect repo and specify a file path first', true);
+        return;
+      }
+      if (!confirm(`Permanently delete "${filePath}" from ${owner}/${repo} (${branch})?`)) return;
+
+      try {
+        const apiUrl = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${filePath}`;
+
+        // Fetch SHA if not loaded
+        let shaToDelete = currentFileSha;
+        if (!shaToDelete) {
+          const checkRes = await fetch(`${apiUrl}?ref=${encodeURIComponent(branch)}`, {
+            headers: getGitHubHeaders(token),
+            cache: 'no-store'
+          });
+          if (!checkRes.ok) throw new Error('File not found on repository');
+          const fileInfo = await checkRes.json();
+          shaToDelete = fileInfo.sha;
+        }
+
+        const delRes = await fetch(apiUrl, {
+          method: 'DELETE',
+          headers: {
+            ...getGitHubHeaders(token),
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: `Delete ${filePath} via ST Games Admin`,
+            sha: shaToDelete,
+            branch
+          })
+        });
+
+        const resData = await delRes.json();
+        if (!delRes.ok) throw new Error(resData.message || `HTTP ${delRes.status}`);
+
+        currentFileSha = null;
+        document.getElementById('editorShaBadge').classList.add('hidden');
+        document.getElementById('ghCodeEditor').value = '';
+        document.getElementById('editorFileStatus').textContent = `Deleted ${filePath}`;
+        updateEditorMetrics();
+        showToast(`Deleted ${filePath} from GitHub!`);
+      } catch (err) {
+        showToast(`Delete Error: ${err.message}`, true);
+      }
+    }
+
+    /* =========================================================
+       EDITOR HELPERS (STARTER TEMPLATE, PREVIEW, TAB KEY)
+       ========================================================= */
+    function loadStarterGameTemplate() {
+      const newPath = prompt('Enter new game path in repo:', 'game/new-arcade/index.html');
+      if (!newPath) return;
+      document.getElementById('ghFilePath').value = newPath.trim();
+      currentFileSha = null;
+      document.getElementById('editorShaBadge').classList.add('hidden');
+      document.getElementById('ghCommitMsg').value = `Add new game at ${newPath.trim()}`;
+
+      document.getElementById('ghCodeEditor').value = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ST Games - New Arcade Game</title>
+  <style>
+    body { margin: 0; background: #0f172a; color: #f8fafc; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+    canvas { background: #1e293b; border: 2px solid #22d3ee; border-radius: 16px; box-shadow: 0 0 25px rgba(34,211,238,0.25); }
+    .top-bar { margin-bottom: 12px; display: flex; gap: 16px; align-items: center; }
+    a { color: #22d3ee; text-decoration: none; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="../../index.html">← Back to ST Games</a>
+    <span>Score: <b id="score">0</b></span>
+  </div>
+  <canvas id="gameCanvas" width="360" height="480"></canvas>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#22d3ee';
+    ctx.font = 'bold 20px sans-serif';
+    ctx.fillText('ST GAMES READY!', 95, 240);
+  <\/script>
+</body>
+</html>`;
+      document.getElementById('editorFileStatus').textContent = `Drafting new file: ${newPath}`;
+      updateEditorMetrics();
+    }
+
+    function updateEditorMetrics() {
+      const val = document.getElementById('ghCodeEditor').value;
+      const lines = val ? val.split('\n').length : 0;
+      document.getElementById('editorMetrics').textContent = `${lines} lines · ${val.length} chars`;
+    }
+
+    function formatCodeLines() {
+      const editor = document.getElementById('ghCodeEditor');
+      editor.value = editor.value
+        .split('\n')
+        .map(line => line.replace(/\s+$/, ''))
+        .join('\n');
+      updateEditorMetrics();
+      showToast('Trimmed trailing whitespace');
+    }
+
+    function copyEditorCode() {
+      const editor = document.getElementById('ghCodeEditor');
+      navigator.clipboard.writeText(editor.value).then(() => {
+        showToast('Code copied to clipboard');
+      });
+    }
+
+    function openLivePreview() {
+      const code = document.getElementById('ghCodeEditor').value;
+      const modal = document.getElementById('previewModal');
+      const frame = document.getElementById('previewFrame');
+      modal.classList.remove('hidden');
+      frame.srcdoc = code || '<h3 style="font-family:sans-serif;padding:20px;">Editor is empty.</h3>';
+    }
+
+    function closeLivePreview() {
+      const modal = document.getElementById('previewModal');
+      const frame = document.getElementById('previewFrame');
+      frame.srcdoc = '';
+      modal.classList.add('hidden');
+    }
+
+    /* =========================================================
+       LOCAL STORAGE CATALOG & BACKUP MANAGEMENT
+       ========================================================= */
+    function refreshStats() {
+      const custom = safeReadJSON('st_custom_games', []);
+      const played = safeReadJSON('st_played_games', []);
+      const favs = safeReadJSON('st_favorite_games', []);
+      const scores = safeReadJSON('st_local_leaderboard', []);
+
+      document.getElementById('statCustom').textContent = custom.length;
+      document.getElementById('statPlayed').textContent = played.length;
+      document.getElementById('statFavs').textContent = favs.length;
+      document.getElementById('statScores').textContent = scores.length;
+    }
+
+    function renderCustomGames() {
+      const list = safeReadJSON('st_custom_games', []);
+      const container = document.getElementById('customGamesContainer');
+      if (!list.length) {
+        container.innerHTML = '<div class="text-xs opacity-60 py-4 text-center">No custom games added yet.</div>';
+        return;
+      }
+
+      container.innerHTML = list.map(g => `
+        <div class="flex items-center justify-between p-3 rounded-xl border border-sky-400/20 bg-sky-500/5 gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-10 h-10 rounded-lg overflow-hidden bg-slate-800 shrink-0">
+              <img src="${escapeHTML(g.logo)}" onerror="this.src='logo/game.jpg'" class="w-full h-full object-cover">
+            </div>
+            <div class="min-w-0">
+              <div class="font-extrabold text-sm truncate">${escapeHTML(g.title)}</div>
+              <div class="text-[10px] text-slate-500 truncate">${escapeHTML(g.url)} · ${(g.categories || []).join(', ')}</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="quickLoadFile('${escapeHTML(g.url)}')" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-sky-500 hover:bg-sky-500/10">
+              Edit Code
+            </button>
+            <button onclick="removeGame('${escapeHTML(g.id)}')" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-rose-500 hover:bg-rose-500/10">
+              Delete
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function handleAddGame(e) {
+      e.preventDefault();
+      const title = document.getElementById('gameTitle').value.trim();
+      const url = document.getElementById('gamePath').value.trim();
+      const logo = document.getElementById('gameLogo').value.trim() || 'logo/game.jpg';
+      const category = document.getElementById('gameCategory').value;
+      const badge = document.getElementById('gameBadge').value.trim().toUpperCase();
+      const isPopular = document.getElementById('markPopular').checked;
+
+      const categories = [category];
+      if (isPopular) categories.push('popular');
+
+      const customGames = safeReadJSON('st_custom_games', []);
       const newGame = {
-        id,
+        id: 'custom-' + Date.now().toString(36),
         title,
         url,
         logo,
-        icon,
-        size,
+        icon: 'fa-solid fa-gamepad',
+        size: 'normal',
         categories,
-        badge,
-        bg,
+        badge: badge || 'NEW',
+        bg: 'linear-gradient(135deg, #0284c7, #1d4ed8)',
         custom: true
       };
 
       customGames.push(newGame);
-      localStorage.setItem("st_custom_games", JSON.stringify(customGames));
+      localStorage.setItem('st_custom_games', JSON.stringify(customGames));
 
-      if (db) {
+      document.getElementById('addGameForm').reset();
+      renderCustomGames();
+      refreshStats();
+      showToast('Game card saved!');
+    }
+
+    function removeGame(id) {
+      if (!confirm('Remove this game card?')) return;
+      let list = safeReadJSON('st_custom_games', []);
+      list = list.filter(g => g.id !== id);
+      localStorage.setItem('st_custom_games', JSON.stringify(list));
+      renderCustomGames();
+      refreshStats();
+    }
+
+    function wipeAllCustomGames() {
+      if (!confirm('Wipe all local custom game cards?')) return;
+      localStorage.removeItem('st_custom_games');
+      renderCustomGames();
+      refreshStats();
+    }
+
+    function resetLeaderboard() {
+      if (!confirm('Clear all local leaderboard records?')) return;
+      localStorage.removeItem('st_local_leaderboard');
+      refreshStats();
+      showToast('Leaderboard reset.');
+    }
+
+    function exportData() {
+      const backup = {
+        profile: safeReadJSON('st_player_profile', {}),
+        customGames: safeReadJSON('st_custom_games', []),
+        played: safeReadJSON('st_played_games', []),
+        favorites: safeReadJSON('st_favorite_games', []),
+        leaderboard: safeReadJSON('st_local_leaderboard', []),
+        exportedAt: new Date().toISOString()
+      };
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `st-games-backup-${Date.now()}.json`;
+      a.click();
+    }
+
+    function importData(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
         try {
-          await set(ref(db, `st_games/custom_games/${id}`), newGame);
-        } catch (_) {}
-      }
+          const data = JSON.parse(evt.target.result);
+          if (data.customGames) localStorage.setItem('st_custom_games', JSON.stringify(data.customGames));
+          if (data.played) localStorage.setItem('st_played_games', JSON.stringify(data.played));
+          if (data.favorites) localStorage.setItem('st_favorite_games', JSON.stringify(data.favorites));
+          if (data.leaderboard) localStorage.setItem('st_local_leaderboard', JSON.stringify(data.leaderboard));
+          if (data.profile) localStorage.setItem('st_player_profile', JSON.stringify(data.profile));
+          renderCustomGames();
+          refreshStats();
+          showToast('Backup imported successfully!');
+        } catch (_) {
+          showToast('Invalid JSON backup file.', true);
+        }
+      };
+      reader.readAsText(file);
+    }
 
-      document.getElementById("addGameForm").reset();
-      window.updateLivePreview();
-      renderAdminLists();
-      showToast("Game published to ST Games!");
-    };
+    function toggleTheme() {
+      const isDark = !document.body.classList.contains('dark-theme');
+      document.body.classList.toggle('dark-theme', isDark);
+      localStorage.setItem('st_theme', isDark ? 'dark' : 'light');
+    }
 
-    window.deleteCustomGame = async function(id) {
-      customGames = customGames.filter(g => g.id !== id);
-      localStorage.setItem("st_custom_games", JSON.stringify(customGames));
-      if (db) {
-        try {
-          await remove(ref(db, `st_games/custom_games/${id}`));
-        } catch (_) {}
-      }
-      renderAdminLists();
-      showToast("Game removed");
-    };
+    function updateBottomNavUser() {
+      const savedPhoto = localStorage.getItem('gh_user_photo') || localStorage.getItem('st_user_photo');
+      const savedLetter = localStorage.getItem('gh_user_letter');
+      const savedName = localStorage.getItem('gh_user_name');
+      const profileObj = safeReadJSON('st_player_profile', null);
 
-    window.clearAllCustomGames = async function() {
-      if (!customGames.length) {
-        showToast("No custom games to clear");
+      const defaultIcon = document.getElementById('bottomDefaultIcon');
+      const userLogo = document.getElementById('bottomUserLogo');
+      const loginLabel = document.getElementById('bottomLoginLabel');
+
+      const hasLogin = Boolean(
+        savedPhoto ||
+        savedLetter ||
+        savedName ||
+        (profileObj && profileObj.name && profileObj.name !== 'ST Player')
+      );
+
+      if (!hasLogin) {
+        defaultIcon.classList.remove('hidden');
+        userLogo.classList.add('hidden');
+        loginLabel.textContent = 'Login';
         return;
       }
-      if (!confirm("Delete all custom added games?")) return;
-      customGames = [];
-      localStorage.removeItem("st_custom_games");
-      if (db) {
-        try {
-          await remove(ref(db, "st_games/custom_games"));
-        } catch (_) {}
-      }
-      renderAdminLists();
-      showToast("All custom games cleared");
-    };
 
-    window.saveNoticeBanner = async function() {
-      const text = document.getElementById("noticeBannerInput").value.trim();
-      if (!text) {
-        showToast("Enter notice text first");
-        return;
-      }
-      localStorage.setItem("st_site_notice", text);
-      if (db) {
-        try {
-          await set(ref(db, "st_games/site_notice"), text);
-        } catch (_) {}
-      }
-      showToast("Notice banner updated!");
-    };
+      defaultIcon.classList.add('hidden');
+      userLogo.classList.remove('hidden');
 
-    window.deletePlayerScore = async function(name) {
-      leaderboard = leaderboard.filter(row => (row.name || "").toLowerCase() !== name.toLowerCase());
-      localStorage.setItem("st_local_leaderboard", JSON.stringify(leaderboard));
-      if (db) {
-        const safeKey = name.toLowerCase().replace(/[^a-z0-9_-]/g, "_");
-        try {
-          await remove(ref(db, `st_games/leaderboard/${safeKey}`));
-        } catch (_) {}
-      }
-      renderAdminLists();
-      showToast("Player score removed");
-    };
+      const displayName = savedName || (profileObj && profileObj.name) || 'Profile';
+      loginLabel.textContent = displayName;
 
-    window.clearLeaderboardScores = async function() {
-      if (!confirm("Clear all leaderboard scores?")) return;
-      leaderboard = [];
-      localStorage.removeItem("st_local_leaderboard");
-      if (db) {
-        try {
-          await remove(ref(db, "st_games/leaderboard"));
-        } catch (_) {}
-      }
-      renderAdminLists();
-      showToast("Leaderboard reset");
-    };
-
-    function renderAdminLists() {
-      document.getElementById("statCustomCount").textContent = customGames.length;
-      document.getElementById("statPlayersCount").textContent = leaderboard.length;
-
-      const gamesEl = document.getElementById("adminCustomGamesList");
-      if (gamesEl) {
-        gamesEl.innerHTML = customGames.length
-          ? customGames.map(g => `
-              <div class="flex items-center justify-between gap-3 p-3 rounded-2xl bg-sky-500/10 border border-sky-400/20">
-                <div class="flex items-center gap-3 min-w-0">
-                  <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0" style="background: ${g.bg};">
-                    <i class="${escapeHTML(g.icon || 'fa-solid fa-gamepad')}"></i>
-                  </div>
-                  <div class="min-w-0">
-                    <div class="font-extrabold text-xs theme-text-primary truncate">${escapeHTML(g.title)}</div>
-                    <div class="text-[10px] theme-text-sub truncate">${escapeHTML(g.url)} • ${(g.categories || []).join(", ")}</div>
-                  </div>
-                </div>
-                <button onclick="deleteCustomGame('${escapeHTML(g.id)}')" class="px-2.5 py-1.5 rounded-xl bg-rose-500/15 text-rose-500 text-xs font-extrabold hover:bg-rose-500 hover:text-white transition">
-                  Remove
-                </button>
-              </div>
-            `).join("")
-          : '<div class="text-xs theme-text-sub py-6 text-center">No custom games added yet. Use the form above to publish one!</div>';
-      }
-
-      const lbEl = document.getElementById("adminLeaderboardList");
-      if (lbEl) {
-        const sorted = [...leaderboard].sort((a, b) => (b.xp || 0) - (a.xp || 0));
-        lbEl.innerHTML = sorted.length
-          ? sorted.map((row, idx) => `
-              <div class="flex items-center justify-between gap-3 p-3 rounded-2xl bg-sky-500/10 border border-sky-400/20">
-                <div class="flex items-center gap-2.5 min-w-0">
-                  <span class="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black ${idx === 0 ? 'bg-amber-400 text-slate-900' : 'bg-sky-500/20 text-sky-400'}">${idx + 1}</span>
-                  <div class="min-w-0">
-                    <div class="font-extrabold text-xs theme-text-primary truncate">${escapeHTML(row.name || 'ST Player')}</div>
-                    <div class="text-[10px] theme-text-sub">Level ${Number(row.level) || 1} • ${Number(row.games) || 0} games • ${Number(row.xp) || 0} XP</div>
-                  </div>
-                </div>
-                <button onclick="deletePlayerScore('${escapeHTML(row.name || 'ST Player')}')" class="px-2.5 py-1.5 rounded-xl bg-rose-500/15 text-rose-500 text-xs font-extrabold hover:bg-rose-500 hover:text-white transition">
-                  Delete
-                </button>
-              </div>
-            `).join("")
-          : '<div class="text-xs theme-text-sub py-6 text-center">No player scores recorded yet.</div>';
+      if (savedPhoto) {
+        userLogo.innerHTML = `<img src="${escapeHTML(savedPhoto)}" alt="User Logo" class="w-full h-full rounded-full object-cover">`;
+      } else {
+        const initial = (savedLetter || displayName.charAt(0) || 'U').toUpperCase();
+        userLogo.textContent = initial;
       }
     }
 
-    window.toggleTheme = function() {
-      const isDark = !document.body.classList.contains("dark-theme");
-      document.body.classList.toggle("dark-theme", isDark);
-      localStorage.setItem("st_theme", isDark ? "dark" : "light");
-    };
-
-    window.addEventListener("DOMContentLoaded", () => {
-      const isDark = localStorage.getItem("st_theme") === "dark";
-      document.body.classList.toggle("dark-theme", isDark);
-
-      const savedNotice = localStorage.getItem("st_site_notice");
-      if (savedNotice) {
-        document.getElementById("noticeBannerInput").value = savedNotice;
+    window.addEventListener('DOMContentLoaded', () => {
+      if (localStorage.getItem('st_theme') === 'dark') {
+        document.body.classList.add('dark-theme');
       }
 
-      if (sessionStorage.getItem("st_admin_unlocked") === "true") {
-        document.getElementById("adminLockSection").classList.add("hidden");
-        document.getElementById("adminMainDashboard").classList.remove("hidden");
-      }
+      // Support Tab key indentation inside the code editor
+      const editor = document.getElementById('ghCodeEditor');
+      editor.addEventListener('input', updateEditorMetrics);
+      editor.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab') {
+          e.preventDefault();
+          const start = editor.selectionStart;
+          const end = editor.selectionEnd;
+          editor.value = editor.value.substring(0, start) + '  ' + editor.value.substring(end);
+          editor.selectionStart = editor.selectionEnd = start + 2;
+          updateEditorMetrics();
+        }
+      });
 
-      window.updateLivePreview();
-      renderAdminLists();
+      loadGitHubConfig();
+      refreshStats();
+      renderCustomGames();
+      updateBottomNavUser();
     });
   </script>
 </body>
