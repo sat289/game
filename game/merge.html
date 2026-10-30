@@ -1,17 +1,19 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#210b29">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Merge Mania</title>
 <style>
 :root{--bg:#210b29;--cyan:#52c9ff;--pink:#d64cc8;--yellow:#ffc928}
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#210b29;color:#fff;font-family:Arial,Helvetica,sans-serif;touch-action:none}
-body{display:flex;justify-content:center}
-#app{position:relative;width:min(100vw,520px);height:100dvh;min-height:560px;overflow:hidden;background:radial-gradient(ellipse at 50% 48%,#35123b 0,#210b29 62%,#18071e 100%);isolation:isolate}
+body{display:block}
+#app{position:fixed;inset:0;width:100vw;height:100dvh;min-height:0;max-width:none;overflow:hidden;background:radial-gradient(ellipse at 50% 48%,#35123b 0,#210b29 62%,#18071e 100%);isolation:isolate}
 #stars{position:absolute;inset:0;pointer-events:none;z-index:0}
 .star{position:absolute;border-radius:50%;background:#fff;box-shadow:0 0 8px 2px #ffffff55;animation:twinkle 3s ease-in-out infinite alternate}
 @keyframes twinkle{from{opacity:.22;transform:scale(.7)}to{opacity:.95;transform:scale(1.2)}}
@@ -54,8 +56,10 @@ body{display:flex;justify-content:center}
 .modal h2{font-size:32px;color:#ffce2a;margin:0 0 12px;text-shadow:0 3px 0 #8c3d26}
 .modal p{font-weight:900;line-height:2;color:#a9eaff;margin:0 0 15px}
 .modal button{border:0;border-radius:30px;padding:13px 25px;background:linear-gradient(#ffe84b,#ff9816);color:#60231c;font-size:16px;font-weight:1000;box-shadow:0 5px 0 #a8451c;cursor:pointer}
-#toast{position:absolute;z-index:15;top:90px;left:50%;transform:translateX(-50%);background:#54225d;border:1px solid #7ce7ff;border-radius:30px;padding:9px 17px;color:#fff;font-weight:900;font-size:13px;box-shadow:0 0 15px #39baff88;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}
+#toast{position:absolute;z-index:15;top:calc(env(safe-area-inset-top) + 90px);left:50%;transform:translateX(-50%);background:#54225d;border:1px solid #7ce7ff;border-radius:30px;padding:9px 17px;color:#fff;font-weight:900;font-size:13px;box-shadow:0 0 15px #39baff88;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}
 @media(max-height:680px){#hud{height:70px}#launcherWrap{height:95px}#hint{height:20px}.hudBtn{width:48px;height:48px}.playBtn{width:95px;height:95px}.soundBtn{width:78px;height:78px}#launcherDraggable{width:60px;height:60px;font-size:24px}}
+/* Fullscreen layout: use every available pixel without changing the game's visual style. */
+@media (orientation:landscape){#hud{height:64px}#launcherWrap{height:88px}#hint{height:20px}}
 </style>
 </head>
 <body>
@@ -81,12 +85,10 @@ body{display:flex;justify-content:center}
   </header>
   <section id="boardWrap"><canvas id="board"></canvas></section>
   <section id="launcherWrap">
-   <div id="launcher">
-    <div class="laneSlot"></div><div class="laneSlot"></div><div class="laneSlot"></div><div class="laneSlot"></div><div class="laneSlot"></div>
-   </div>
+   <div id="launcher"><div class="laneSlot"></div><div class="laneSlot"></div><div class="laneSlot"></div><div class="laneSlot"></div><div class="laneSlot"></div></div>
    <div id="launcherDraggable">4</div>
   </section>
-  <div id="hint">HOLD & DRAG TILE, RELEASE TO SHOOT UPWARDS</div>
+  <div id="hint">HOLD &amp; DRAG TILE, RELEASE TO SHOOT UPWARDS</div>
  </main>
  <div id="toast"></div>
  <section id="overlay"><div class="modal"><h2 id="modalTitle">PAUSED</h2><p id="modalText">Take a break!</p><button id="resumeBtn">RESUME</button> <button id="restartBtn">RESTART</button></div></section>
@@ -95,159 +97,50 @@ body{display:flex;justify-content:center}
 (()=>{'use strict';
 const $=id=>document.getElementById(id),canvas=$('board'),ctx=canvas.getContext('2d');
 const COLORS={4:['#c65bbd','#8f2e9d'],8:['#ef7aaf','#c63f88'],16:['#45d2df','#1497b5'],32:['#4f9eea','#2364bd'],64:['#ffb52b','#ed701c'],128:['#a7d94d','#5b9b29'],256:['#ff7d54','#cf3e36'],512:['#b28aff','#7244c2'],1024:['#70e3c0','#239d85'],2048:['#ffe45e','#e7a91c'],4096:['#ff8de0','#b63caa']};
-let W=0,H=0,dpr=1,cell=0,rows=0,grid=[],score=0,best=+(localStorage.getItem('mergeManiaBest')||0),next=4,aim=2,playing=false,paused=false,over=false,anim=0,last=0,particles=[],shooting=false;
-let isDragging=false,dragX=0;
-
+let W=0,H=0,dpr=1,cell=0,rows=0,grid=[],score=0,best=+(localStorage.getItem('mergeManiaBest')||0),next=4,aim=2,playing=false,paused=false,over=false,anim=0,last=0,particles=[],shooting=false,isDragging=false,dragX=0,peakTile=4;
 $('menuBest').textContent=best;$('bestValue').textContent=best;
 function makeStars(){for(let i=0;i<55;i++){let s=document.createElement('i');s.className='star';let z=2+Math.random()*5;s.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;width:${z}px;height:${z}px;animation-delay:${Math.random()*4}s;animation-duration:${2+Math.random()*4}s`;$('stars').appendChild(s)}}
 makeStars();
 function color(v){return COLORS[v]||['#ffdb62','#db861d']}
-function randomTile(){return Math.random()<.78?4:8}
-function resize(){
- const r=$('boardWrap').getBoundingClientRect();W=r.width;H=r.height;dpr=Math.min(devicePixelRatio||1,2);
- canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
- cell=W/5;rows=Math.max(5,Math.floor((H-8)/cell));updateDraggableStyle();draw();
+// New tile values unlock as the run progresses, instead of spawning only 4 and 8.
+function randomTile(){
+ const scoreUnlock=score>=350?128:score>=180?64:score>=90?32:score>=35?16:8;
+ const maxValue=Math.max(8,peakTile,scoreUnlock);
+ const choices=[
+  [4,42],[8,30],[16,15],[32,8],[64,4],[128,1]
+ ].filter(([value])=>value<=maxValue);
+ const total=choices.reduce((sum,item)=>sum+item[1],0);
+ let roll=Math.random()*total;
+ for(const [value,weight] of choices){roll-=weight;if(roll<0)return value;}
+ return 4;
 }
+function resize(){const r=$('boardWrap').getBoundingClientRect();W=r.width;H=r.height;dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);cell=W/5;rows=Math.max(5,Math.floor((H-8)/cell));updateDraggableStyle();draw()}
 new ResizeObserver(resize).observe($('boardWrap'));
-
-function updateDraggableStyle(){
- const lw=$('launcherWrap').clientWidth;
- const laneW=lw/5;
- if(!isDragging){
-  dragX=(aim+0.5)*laneW;
- }
- const el=$('launcherDraggable');
- el.style.left=dragX+'px';
- el.style.background=`linear-gradient(145deg,${color(next).join(',')})`;
- el.textContent=next;
-}
-
-function start(){grid=Array.from({length:5},()=>[]);particles=[];score=0;next=randomTile();aim=2;isDragging=false;playing=true;paused=false;over=false;shooting=false;$('currentScore').textContent='0';$('menu').style.display='none';$('overlay').style.display='none';$('game').style.display='flex';resize();updateDraggableStyle();last=performance.now();cancelAnimationFrame(anim);anim=requestAnimationFrame(loop);toast('Drag anywhere & release to shoot up!')}
+function updateDraggableStyle(){const lw=$('launcherWrap').clientWidth,laneW=lw/5;if(!isDragging)dragX=(aim+.5)*laneW;const el=$('launcherDraggable');el.style.left=dragX+'px';el.style.background=`linear-gradient(145deg,${color(next).join(',')})`;el.textContent=next}
+function start(){grid=Array.from({length:5},()=>[]);particles=[];score=0;peakTile=4;next=randomTile();aim=2;isDragging=false;playing=true;paused=false;over=false;shooting=false;$('currentScore').textContent='0';$('menu').style.display='none';$('overlay').style.display='none';$('game').style.display='flex';resize();updateDraggableStyle();last=performance.now();cancelAnimationFrame(anim);anim=requestAnimationFrame(loop);toast('Drag anywhere & release to shoot up!')}
 function addScore(n){score+=n;$('currentScore').textContent=score;if(score>best){best=score;localStorage.setItem('mergeManiaBest',best);$('bestValue').textContent=best;$('menuBest').textContent=best}}
-
-function shootTile(){
- if(!playing||paused||over||shooting)return;
- const lw=$('launcherWrap').clientWidth;
- const laneW=lw/5;
- aim=Math.max(0,Math.min(4,Math.floor(dragX/laneW)));
- const stack=grid[aim];
- if(stack.length>=rows){endGame();return}
- 
- shooting=true;
- const value=next;next=randomTile();
- 
- const startY=H+cell*0.5;
- const targetY=(stack.length+0.5)*cell;
- const tile={value,x:(aim+0.5)*cell,y:startY,targetY,vy:0};
-
- function fly(now){
-  if(!playing||paused||over){shooting=false;updateDraggableStyle();return}
-  const dt=Math.min(.03,(now-(tile.last||now))/1000||.016);tile.last=now;
-  tile.vy-=3800*dt;
-  tile.y+=tile.vy*dt;
-  
-  if(tile.y<=targetY){
-   tile.y=targetY;
-   stack.push(value);
-   shooting=false;
-   mergeAt(aim,stack.length-1);
-   updateDraggableStyle();
-   draw();
-   if(grid.some(col=>col.length>=rows))endGame();
-  }else{
-   draw(tile);
-   requestAnimationFrame(fly);
-  }
- }
- requestAnimationFrame(fly);
-}
-
-function mergeAt(c,r){
- let val=grid[c][r];if(!val)return;
- let group=[],queue=[[c,r]],seen=new Set([c+','+r]);
- while(queue.length){let [x,y]=queue.pop();group.push([x,y]);for(let [nx,ny] of [[x-1,y],[x+1,y],[x,y-1],[x,y+1]]){let key=nx+','+ny;if(nx>=0&&nx<5&&ny>=0&&ny<grid[nx].length&&!seen.has(key)&&grid[nx][ny]===val){seen.add(key);queue.push([nx,ny])}}}
- if(group.length<2)return;
- let newVal=Math.min(4096,val*2);
- group.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
- for(let [x,y] of group)grid[x][y]=null;
- for(let x=0;x<5;x++)grid[x]=grid[x].filter(v=>v!==null);
- if(grid[c].length<rows)grid[c].push(newVal);
- addScore(newVal*group.length);
- const px=(c+.5)*cell,py=(grid[c].length-.5)*cell;
- for(let i=0;i<18;i++){let a=Math.random()*Math.PI*2,s=60+Math.random()*150;particles.push({x:px,y:py,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.6,max:.6,col:color(newVal)[0]})}
- toast(newVal+' MERGED!');
- if(grid[c].length)mergeAt(c,grid[c].length-1);
-}
-
-function draw(flying=null){
- if(!W||!H)return;ctx.clearRect(0,0,W,H);
- for(let c=0;c<5;c++){ctx.fillStyle=c%2?'#ffffff08':'#00000008';ctx.fillRect(c*cell,0,cell,H);ctx.strokeStyle='#ffffff0b';ctx.strokeRect(c*cell,0,cell,H)}
- const danger=H-cell*.8;ctx.save();ctx.setLineDash([8,9]);ctx.strokeStyle='#ff7ad966';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,danger);ctx.lineTo(W,danger);ctx.stroke();ctx.restore();
- for(let c=0;c<5;c++)for(let r=0;r<grid[c].length;r++){let v=grid[c][r];if(v)drawTile((c+.5)*cell,(r+.5)*cell,v)}
- if(flying)drawTile(flying.x,flying.y,flying.value);
- particles.forEach(p=>{ctx.globalAlpha=Math.max(0,p.life/p.max);ctx.fillStyle=p.col;ctx.beginPath();ctx.arc(p.x,p.y,3.5,0,Math.PI*2);ctx.fill()});ctx.globalAlpha=1;
-}
-
-function drawTile(cx,cy,value){
- let x=cx-cell*.44,y=cy-cell*.44,w=cell*.88,h=cell*.88,c=color(value);
- let g=ctx.createLinearGradient(x,y,x+w,y+h);g.addColorStop(0,c[0]);g.addColorStop(1,c[1]);
- ctx.save();ctx.shadowColor=c[0];ctx.shadowBlur=9;ctx.fillStyle=g;ctx.beginPath();ctx.roundRect(x,y,w,h,11);ctx.fill();
- ctx.shadowBlur=0;ctx.strokeStyle='#ffffff55';ctx.lineWidth=2;ctx.stroke();
- ctx.fillStyle='#ffffff45';ctx.beginPath();ctx.ellipse(x+w*.22,y+h*.2,w*.12,h*.08,-.6,0,Math.PI*2);ctx.fill();
- ctx.fillStyle='#fff';ctx.font=`1000 ${Math.min(42,cell*.43)}px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';
- ctx.shadowColor='#38123f';ctx.shadowBlur=3;ctx.fillText(value,cx,cy+1);ctx.restore();
-}
-
+function shootTile(){if(!playing||paused||over||shooting)return;const laneW=$('launcherWrap').clientWidth/5;aim=Math.max(0,Math.min(4,Math.floor(dragX/laneW)));const stack=grid[aim];if(stack.length>=rows){endGame();return}shooting=true;const value=next;next=randomTile();const startY=H+cell*.5,targetY=(stack.length+.5)*cell,tile={value,x:(aim+.5)*cell,y:startY,targetY,vy:0};function fly(now){if(!playing||paused||over){shooting=false;updateDraggableStyle();return}const dt=Math.min(.03,(now-(tile.last||now))/1000||.016);tile.last=now;tile.vy-=3800*dt;tile.y+=tile.vy*dt;if(tile.y<=targetY){tile.y=targetY;stack.push(value);shooting=false;mergeAt(aim,stack.length-1);updateDraggableStyle();draw();if(grid.some(col=>col.length>=rows))endGame()}else{draw(tile);requestAnimationFrame(fly)}}requestAnimationFrame(fly)}
+function mergeAt(c,r){let val=grid[c][r];if(!val)return;let group=[],queue=[[c,r]],seen=new Set([c+','+r]);while(queue.length){let [x,y]=queue.pop();group.push([x,y]);for(let [nx,ny] of [[x-1,y],[x+1,y],[x,y-1],[x,y+1]]){let key=nx+','+ny;if(nx>=0&&nx<5&&ny>=0&&ny<grid[nx].length&&!seen.has(key)&&grid[nx][ny]===val){seen.add(key);queue.push([nx,ny])}}}if(group.length<2)return;let newVal=Math.min(4096,val*2);peakTile=Math.max(peakTile,newVal);group.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);for(let [x,y] of group)grid[x][y]=null;for(let x=0;x<5;x++)grid[x]=grid[x].filter(v=>v!==null);if(grid[c].length<rows)grid[c].push(newVal);addScore(newVal*group.length);const px=(c+.5)*cell,py=(grid[c].length-.5)*cell;for(let i=0;i<18;i++){let a=Math.random()*Math.PI*2,s=60+Math.random()*150;particles.push({x:px,y:py,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.6,max:.6,col:color(newVal)[0]})}toast(newVal+' MERGED!');if(grid[c].length)mergeAt(c,grid[c].length-1)}
+function draw(flying=null){if(!W||!H)return;ctx.clearRect(0,0,W,H);for(let c=0;c<5;c++){ctx.fillStyle=c%2?'#ffffff08':'#00000008';ctx.fillRect(c*cell,0,cell,H);ctx.strokeStyle='#ffffff0b';ctx.strokeRect(c*cell,0,cell,H)}const danger=H-cell*.8;ctx.save();ctx.setLineDash([8,9]);ctx.strokeStyle='#ff7ad966';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,danger);ctx.lineTo(W,danger);ctx.stroke();ctx.restore();for(let c=0;c<5;c++)for(let r=0;r<grid[c].length;r++){let v=grid[c][r];if(v)drawTile((c+.5)*cell,(r+.5)*cell,v)}if(flying)drawTile(flying.x,flying.y,flying.value);particles.forEach(p=>{ctx.globalAlpha=Math.max(0,p.life/p.max);ctx.fillStyle=p.col;ctx.beginPath();ctx.arc(p.x,p.y,3.5,0,Math.PI*2);ctx.fill()});ctx.globalAlpha=1}
+function drawTile(cx,cy,value){let x=cx-cell*.44,y=cy-cell*.44,w=cell*.88,h=cell*.88,c=color(value),g=ctx.createLinearGradient(x,y,x+w,y+h);g.addColorStop(0,c[0]);g.addColorStop(1,c[1]);ctx.save();ctx.shadowColor=c[0];ctx.shadowBlur=9;ctx.fillStyle=g;ctx.beginPath();ctx.roundRect(x,y,w,h,11);ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle='#ffffff55';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#ffffff45';ctx.beginPath();ctx.ellipse(x+w*.22,y+h*.2,w*.12,h*.08,-.6,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.font=`1000 ${Math.min(42,cell*.43)}px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.shadowColor='#38123f';ctx.shadowBlur=3;ctx.fillText(value,cx,cy+1);ctx.restore()}
 function loop(now){if(!playing)return;let dt=Math.min(.03,(now-last)/1000||.016);last=now;for(let p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=180*dt;p.life-=dt}particles=particles.filter(p=>p.life>0);draw();anim=requestAnimationFrame(loop)}
 function toast(s){$('toast').textContent=s;$('toast').style.opacity=1;clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('toast').style.opacity=0,1300)}
 function endGame(){if(over)return;over=true;playing=false;cancelAnimationFrame(anim);$('modalTitle').textContent='GAME OVER';$('modalText').innerHTML='SCORE: '+score+'<br>BEST: '+best;$('resumeBtn').textContent='PLAY AGAIN';$('restartBtn').style.display='none';$('overlay').style.display='flex'}
 function pause(){if(!playing||over)return;paused=true;$('modalTitle').textContent='PAUSED';$('modalText').textContent='Your space puzzle is waiting.';$('resumeBtn').textContent='RESUME';$('restartBtn').style.display='inline-block';$('overlay').style.display='flex'}
-
+async function enterFullscreen(){try{if(!document.fullscreenElement&&document.documentElement.requestFullscreen)await document.documentElement.requestFullscreen()}catch(e){/* Browser may not allow fullscreen; game still works */}}
 $('resumeBtn').onclick=()=>{if(over){start();return}paused=false;$('overlay').style.display='none';last=performance.now()};
 $('restartBtn').onclick=start;$('pauseBtn').onclick=pause;
-$('playBtn').onclick=()=>{start();$('loader').classList.add('hide')};
+$('playBtn').onclick=async()=>{await enterFullscreen();start();$('loader').classList.add('hide')};
 $('menuSound').onclick=()=>{$('menuSound').textContent=$('menuSound').textContent==='🔊'?'🔇':'🔊';toast($('menuSound').textContent==='🔊'?'Sound on':'Sound off')};
-
-const gameArea=$('game');
-
-function updateDragWithClientX(clientX){
- const rect=$('launcherWrap').getBoundingClientRect();
- dragX=Math.max(20,Math.min(rect.width-20,clientX-rect.left));
- const laneW=rect.width/5;
- aim=Math.max(0,Math.min(4,Math.floor(dragX/laneW)));
- $('launcherDraggable').style.left=dragX+'px';
-}
-
-gameArea.addEventListener('pointerdown',e=>{
- if(!playing||paused||over||shooting)return;
- if(e.target.closest('header')||e.target.closest('#overlay'))return;
- isDragging=true;
- updateDragWithClientX(e.clientX);
-});
-
-window.addEventListener('pointermove',e=>{
- if(!isDragging)return;
- updateDragWithClientX(e.clientX);
-});
-
-window.addEventListener('pointerup',e=>{
- if(!isDragging)return;
- isDragging=false;
- shootTile();
-});
-
-window.addEventListener('keydown',e=>{
- if(e.key==='ArrowLeft'){aim=Math.max(0,aim-1);const lw=$('launcherWrap').clientWidth;dragX=(aim+0.5)*(lw/5);updateDraggableStyle()}
- if(e.key==='ArrowRight'){aim=Math.min(4,aim+1);const lw=$('launcherWrap').clientWidth;dragX=(aim+0.5)*(lw/5);updateDraggableStyle()}
- if(e.key===' '||e.key==='Enter')shootTile();
-});
-
+function updateDragWithClientX(clientX){const rect=$('launcherWrap').getBoundingClientRect();dragX=Math.max(20,Math.min(rect.width-20,clientX-rect.left));const laneW=rect.width/5;aim=Math.max(0,Math.min(4,Math.floor(dragX/laneW)));$('launcherDraggable').style.left=dragX+'px'}
+$('game').addEventListener('pointerdown',e=>{if(!playing||paused||over||shooting)return;if(e.target.closest('header')||e.target.closest('#overlay'))return;isDragging=true;updateDragWithClientX(e.clientX)});
+window.addEventListener('pointermove',e=>{if(isDragging)updateDragWithClientX(e.clientX)});
+window.addEventListener('pointerup',()=>{if(!isDragging)return;isDragging=false;shootTile()});
+window.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.fullscreenElement){document.exitFullscreen?.();return}if(e.key==='ArrowLeft'){aim=Math.max(0,aim-1);dragX=(aim+.5)*($('launcherWrap').clientWidth/5);updateDraggableStyle()}if(e.key==='ArrowRight'){aim=Math.min(4,aim+1);dragX=(aim+.5)*($('launcherWrap').clientWidth/5);updateDraggableStyle()}if(e.key===' '||e.key==='Enter')shootTile()});
 window.addEventListener('load',()=>setTimeout(()=>$('loader').classList.add('hide'),2300));
 setTimeout(()=>$('loader').style.display='none',3000);
-resize();
-updateDraggableStyle();
+resize();updateDraggableStyle();
 })();
 </script>
 </body>
 </html>
-```
