@@ -76,6 +76,14 @@
       border-color: rgba(50, 255, 220, 0.3);
     }
 
+    .code-textarea {
+      width: 100%; min-height: 320px;
+      background: #040e14; color: #32ffdc;
+      border: 1px solid rgba(50, 255, 220, 0.3);
+      border-radius: 14px; padding: 14px;
+      font-size: 12px; line-height: 1.55; outline: none; resize: vertical;
+    }
+
     .neon-action {
       border: 1px solid rgba(50, 255, 220, 0.5);
       border-radius: 12px; padding: 10px 16px;
@@ -85,6 +93,12 @@
       transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
     }
     .neon-action:hover:not(:disabled) { box-shadow: 0 0 24px rgba(50, 255, 220, 0.4); transform: translateY(-1px); }
+
+    .chip-btn {
+      font-size: 11px; font-weight: 700; padding: 6px 10px; border-radius: 10px;
+      border: 1px solid rgba(13, 148, 136, 0.3); background: rgba(50, 255, 220, 0.1); color: #0d9488;
+    }
+    body.dark-theme .chip-btn { color: #32ffdc; background: rgba(50, 255, 220, 0.12); }
 
     /* Bottom Navigation Bar */
     .st-bottom-nav {
@@ -151,7 +165,7 @@
         <div><label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1">Username</label><input id="ghOwner" class="neon-input" value="sat289"></div>
         <div><label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1">Repository</label><input id="ghRepo" class="neon-input" value="game"></div>
         <div><label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1">Branch</label><input id="ghBranch" class="neon-input" value="main"></div>
-        <div><label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1">Personal Token</label><input id="ghToken" type="password" class="neon-input" value="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"></div>
+        <div><label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1">Personal Token</label><input id="ghToken" type="password" class="neon-input" placeholder="ghp_..."></div>
       </div>
       <button type="button" onclick="saveGitHubCreds()" class="neon-action"><i class="fa-solid fa-floppy-disk mr-1"></i> Save Credentials</button>
     </section>
@@ -180,6 +194,34 @@
           <button type="submit" class="neon-action !bg-gradient-to-r !from-emerald-600 !to-teal-600"><i class="fa-solid fa-cloud-arrow-up mr-1"></i> Publish Game to All Phones</button>
         </div>
       </form>
+    </section>
+
+    <!-- SECTION 4: DIRECT GITHUB CODE EDITOR -->
+    <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
+      <div class="flex items-center justify-between mb-3 pb-2 border-b border-teal-500/20">
+        <h2 class="brand-font text-base font-bold text-[#07222d] dark:text-[#32ffdc]"><i class="fa-solid fa-code text-teal-500"></i> 4. Direct GitHub Code Editor</h2>
+        <button type="button" onclick="browseRepoDirectory('')" class="chip-btn"><i class="fa-solid fa-folder-tree mr-1"></i> Browse Files</button>
+      </div>
+
+      <div id="repoBrowserPanel" class="hidden mb-3 p-3 rounded-xl border border-teal-500/30 bg-slate-900/5 dark:bg-slate-950/60">
+        <div class="flex items-center justify-between text-xs font-extrabold text-teal-600 mb-2">
+          <span id="browserCurrentDir" class="code-font">/root</span>
+          <button type="button" onclick="document.getElementById('repoBrowserPanel').classList.add('hidden')" class="text-slate-400">Close ✕</button>
+        </div>
+        <div id="repoFilesList" class="grid grid-cols-2 sm:grid-cols-4 gap-2 max-h-40 overflow-y-auto"></div>
+      </div>
+
+      <div class="grid sm:grid-cols-[1fr_auto] gap-2.5 mb-3">
+        <input id="ghFilePath" class="neon-input code-font" placeholder="File path (e.g., index.html or games.json)" value="index.html">
+        <button type="button" onclick="fetchFileFromGitHub()" class="neon-action"><i class="fa-solid fa-cloud-arrow-down mr-1"></i> Load File</button>
+      </div>
+
+      <textarea id="ghCodeEditor" class="code-textarea code-font mb-3" spellcheck="false" placeholder="Load a file to edit or create new code here..."></textarea>
+
+      <div class="grid sm:grid-cols-[1fr_auto] gap-2.5 items-center">
+        <input id="ghCommitMsg" class="neon-input" placeholder="Commit message (e.g., Update file)">
+        <button type="button" onclick="pushFileToGitHub()" class="neon-action !bg-gradient-to-r !from-teal-600 !to-cyan-600"><i class="fa-solid fa-cloud-arrow-up mr-1"></i> Commit &amp; Push</button>
+      </div>
     </section>
   </main>
 
@@ -223,6 +265,12 @@
       for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
       return btoa(binary);
     }
+    function base64ToUtf8(base64) {
+      const binary = atob(base64.replace(/\s/g, ''));
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      return new TextDecoder('utf-8').decode(bytes);
+    }
 
     let uploadedLogoBase64 = '';
     function handleLogoUpload(e) {
@@ -235,6 +283,7 @@
 
     async function pushFileDirect(path, content, message) {
       const c = getCreds();
+      if (!c.token) throw new Error('GitHub token is missing');
       const apiUrl = `https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/${path}`;
       let sha = null;
       const checkRes = await fetch(`${apiUrl}?ref=${encodeURIComponent(c.branch)}`, {
@@ -249,7 +298,10 @@
         headers: { 'Authorization': `Bearer ${c.token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ message, content: utf8ToBase64(content), branch: c.branch, sha })
       });
-      if (!res.ok) throw new Error('Failed to push to GitHub');
+      if (!res.ok) {
+        const errJson = await res.json();
+        throw new Error(errJson.message || 'Failed to push to GitHub');
+      }
     }
 
     async function publishNotice() {
@@ -271,14 +323,14 @@
       const size = document.getElementById('gameSize').value;
 
       let custom = [];
+      const c = getCreds();
       try {
-        const c = getCreds();
         const res = await fetch(`https://api.github.com/repos/${c.owner}/${c.repo}/contents/games.json?ref=${c.branch}`, {
           headers: { 'Authorization': `Bearer ${c.token}` }
         });
         if (res.ok) {
           const d = await res.json();
-          custom = JSON.parse(atob(d.content.replace(/\s/g, '')));
+          custom = JSON.parse(base64ToUtf8(d.content));
         }
       } catch(_) {}
 
@@ -298,6 +350,56 @@
         alert('Game published to all phones successfully!');
       } catch (err) {
         alert('Sync failed: ' + err.message);
+      }
+    }
+
+    /* DIRECT CODE EDITOR */
+    async function browseRepoDirectory(path = '') {
+      const c = getCreds();
+      const panel = document.getElementById('repoBrowserPanel');
+      panel.classList.remove('hidden');
+      const list = document.getElementById('repoFilesList');
+      list.innerHTML = 'Loading...';
+      const res = await fetch(`https://api.github.com/repos/${c.owner}/${c.repo}/contents/${path}?ref=${c.branch}`, {
+        headers: { 'Authorization': `Bearer ${c.token}`, 'Accept': 'application/vnd.github+json' }
+      });
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        list.innerHTML = data.map(i => `
+          <button type="button" onclick="quickLoad('${i.path}')" class="p-2 rounded-lg text-xs font-bold bg-white dark:bg-slate-900 border border-teal-500/20 truncate">
+            <i class="${i.type==='dir'?'fa-solid fa-folder text-amber-400':'fa-regular fa-file-code text-teal-400'} mr-1"></i>${i.name}
+          </button>
+        `).join('');
+      } else {
+        list.innerHTML = '<span class="text-xs text-rose-500">Failed to load directory. Check token/permissions.</span>';
+      }
+    }
+    function quickLoad(p) { document.getElementById('ghFilePath').value = p; fetchFileFromGitHub(); document.getElementById('repoBrowserPanel').classList.add('hidden'); }
+
+    async function fetchFileFromGitHub() {
+      const c = getCreds();
+      const path = document.getElementById('ghFilePath').value.trim();
+      const res = await fetch(`https://api.github.com/repos/${c.owner}/${c.repo}/contents/${path}?ref=${c.branch}`, {
+        headers: { 'Authorization': `Bearer ${c.token}`, 'Accept': 'application/vnd.github+json' }
+      });
+      const d = await res.json();
+      if (res.ok) {
+        document.getElementById('ghCodeEditor').value = base64ToUtf8(d.content);
+        alert('File loaded successfully!');
+      } else {
+        alert('Error loading file: ' + d.message);
+      }
+    }
+
+    async function pushFileToGitHub() {
+      const path = document.getElementById('ghFilePath').value.trim();
+      const code = document.getElementById('ghCodeEditor').value;
+      const msg = document.getElementById('ghCommitMsg').value.trim() || 'Update file via Admin Studio';
+      try {
+        await pushFileDirect(path, code, msg);
+        alert('Committed and pushed successfully!');
+      } catch (err) {
+        alert('Push failed: ' + err.message);
       }
     }
 
