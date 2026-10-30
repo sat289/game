@@ -1,4 +1,4 @@
-const FIREBASE_DB_URL = "https://friendsgame-872f5-default-rtdb.firebaseio.com";
+ const FIREBASE_DB_URL = "https://friendsgame-872f5-default-rtdb.firebaseio.com";
 const LOCAL_STORAGE_KEY = "st_fruit_merge_data_v1";
 
 window.FruitStorage = {
