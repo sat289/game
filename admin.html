@@ -143,11 +143,26 @@
     <!-- GITHUB CONFIGURATION -->
     <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
       <h2 class="brand-font text-base font-bold text-[#07222d] dark:text-[#32ffdc] mb-3">1. GitHub Credentials</h2>
+
+      <!-- QUICK-COPY BOX -->
+      <div class="mb-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs flex items-center justify-between gap-2">
+        <span class="font-extrabold text-amber-600 dark:text-amber-400 flex items-center gap-1.5 shrink-0">
+          <i class="fa-solid fa-key"></i> Quick Copy Token:
+        </span>
+        <button type="button" onclick="copyTokenText()" class="chip-btn !bg-amber-500/20 text-amber-700 dark:text-amber-300"><i class="fa-solid fa-copy mr-1"></i> Copy Token</button>
+      </div>
+
       <div class="grid sm:grid-cols-4 gap-3 mb-3">
         <div><label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1">Username</label><input id="ghOwner" class="neon-input" value="sat289"></div>
         <div><label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1">Repository</label><input id="ghRepo" class="neon-input" value="game"></div>
         <div><label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1">Branch</label><input id="ghBranch" class="neon-input" value="main"></div>
-        <div><label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1">Personal Token</label><input id="ghToken" type="password" class="neon-input" placeholder="Auto-loaded from config.txt"></div>
+        <div>
+          <label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1">Personal Token</label>
+          <div class="relative flex items-center">
+            <input id="ghToken" type="password" class="neon-input pr-10" placeholder="Auto-loaded from config.txt">
+            <button type="button" onclick="toggleTokenVisibility()" class="absolute right-3 text-sm text-slate-500" title="Toggle visibility">🙈</button>
+          </div>
+        </div>
       </div>
       <button type="button" onclick="saveGitHubCreds()" class="neon-action"><i class="fa-solid fa-floppy-disk mr-1"></i> Save Credentials</button>
     </section>
@@ -233,6 +248,8 @@
   </div>
 
   <script>
+    let globalDecodedToken = '';
+
     function verifyAdminPassword() {
       if (document.getElementById('passcodeInput').value.trim() === '2010143') {
         document.getElementById('passwordModal').classList.add('hidden');
@@ -248,12 +265,43 @@
       i.type = i.type === 'password' ? 'text' : 'password';
     }
 
+    function toggleTokenVisibility() {
+      const i = document.getElementById('ghToken');
+      const btn = i.nextElementSibling;
+      if (i.type === 'password') {
+        i.type = 'text';
+        btn.textContent = '🫥';
+      } else {
+        i.type = 'password';
+        btn.textContent = '🙈';
+      }
+    }
+
+    function copyTokenText() {
+      if (!globalDecodedToken) {
+        alert('Token is still loading from config.txt');
+        return;
+      }
+      navigator.clipboard.writeText(globalDecodedToken).then(() => {
+        alert('Token copied to clipboard!');
+      }).catch(() => {
+        // Fallback for older browsers
+        const el = document.createElement('textarea');
+        el.value = globalDecodedToken;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+        alert('Token copied to clipboard!');
+      });
+    }
+
     function getCreds() {
       return {
         owner: document.getElementById('ghOwner').value.trim(),
         repo: document.getElementById('ghRepo').value.trim(),
         branch: document.getElementById('ghBranch').value.trim() || 'main',
-        token: document.getElementById('ghToken').value.trim()
+        token: document.getElementById('ghToken').value.trim() || globalDecodedToken
       };
     }
     function saveGitHubCreds() {
@@ -490,8 +538,8 @@
           const text = await res.text();
           const match = text.match(/ST_TOKEN_B64:\s*([A-Za-z0-9+/=]+)/);
           if (match && match[1]) {
-            const decodedToken = atob(match[1].trim());
-            document.getElementById('ghToken').value = decodedToken;
+            globalDecodedToken = atob(match[1].trim());
+            document.getElementById('ghToken').value = globalDecodedToken;
           }
         }
       } catch (err) {
@@ -511,9 +559,9 @@
       if (s.branch) document.getElementById('ghBranch').value = s.branch;
       if (s.token) {
         document.getElementById('ghToken').value = s.token;
-      } else {
-        loadTokenFromNotes();
+        globalDecodedToken = s.token;
       }
+      loadTokenFromNotes();
     });
   </script>
 </body>
