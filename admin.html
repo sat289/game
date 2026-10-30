@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ST Games - Admin & Global Publisher</title>
+  <title>ST Games - Advanced Admin Studio</title>
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -16,31 +16,24 @@
 
   <style>
     :root {
-      --neon-cyan: #22d3ee;
-      --neon-violet: #8b5cf6;
-      --neon-pink: #ec4899;
+      --poki-cyan: #32ffdc;
+      --poki-teal: #1db9aa;
+      --poki-bg-dark: #07222d;
     }
 
     body {
       font-family: 'Inter', sans-serif;
-      background-color: #f3f6fb;
-      background-image:
-        radial-gradient(circle at 8% 12%, rgba(56, 189, 248, 0.22), transparent 27%),
-        radial-gradient(circle at 92% 24%, rgba(168, 85, 247, 0.18), transparent 28%),
-        radial-gradient(circle at 52% 92%, rgba(34, 211, 238, 0.16), transparent 30%);
+      background: linear-gradient(135deg, #4ef2e2 0%, #17c3b2 50%, #0d9488 100%);
       background-attachment: fixed;
       overflow-x: hidden;
       transition: background 0.5s ease, color 0.35s ease;
       position: relative;
       padding-bottom: calc(86px + env(safe-area-inset-bottom, 0px));
+      color: #0f172a;
     }
 
     body.dark-theme {
-      background-color: #080d1b;
-      background-image:
-        radial-gradient(circle at 8% 12%, rgba(14, 165, 233, 0.24), transparent 28%),
-        radial-gradient(circle at 92% 24%, rgba(168, 85, 247, 0.24), transparent 30%),
-        radial-gradient(circle at 52% 92%, rgba(236, 72, 153, 0.15), transparent 32%);
+      background: linear-gradient(135deg, #092c35 0%, #061820 50%, #040e14 100%);
       color: #f8fafc;
     }
 
@@ -48,557 +41,381 @@
     .code-font { font-family: 'JetBrains Mono', monospace; }
 
     .feature-hub {
-      border: 1px solid rgba(56, 189, 248, 0.35);
-      background: rgba(255, 255, 255, 0.90);
+      border: 1px solid rgba(50, 255, 220, 0.3);
+      background: rgba(255, 255, 255, 0.92);
       backdrop-filter: blur(16px);
-      box-shadow: 0 10px 28px rgba(14, 116, 144, 0.08), 0 0 24px rgba(56, 189, 248, 0.12);
+      box-shadow: 0 10px 28px rgba(7, 34, 45, 0.15), 0 0 20px rgba(50, 255, 220, 0.1);
     }
 
     body.dark-theme .feature-hub {
-      background: rgba(8, 18, 38, 0.92) !important;
+      background: rgba(8, 22, 30, 0.94) !important;
       color: #eaf7ff;
-      border-color: rgba(56, 189, 248, 0.38);
+      border-color: rgba(50, 255, 220, 0.3);
     }
 
     .neon-input {
       width: 100%;
-      border: 1px solid rgba(56, 189, 248, 0.42);
-      background: rgba(240, 249, 255, 0.92);
+      border: 1px solid rgba(13, 148, 136, 0.35);
+      background: rgba(240, 253, 250, 0.92);
       color: #0f172a;
       border-radius: 12px;
-      padding: 9px 12px;
+      padding: 10px 12px;
       font-size: 12px;
       font-weight: 600;
       outline: none;
     }
 
     .neon-input:focus {
-      border-color: #38bdf8;
-      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+      border-color: #17c3b2;
+      box-shadow: 0 0 0 3px rgba(50, 255, 220, 0.25);
     }
 
     body.dark-theme .neon-input {
-      background: #0f172a;
+      background: #061820;
       color: #f8fafc;
+      border-color: rgba(50, 255, 220, 0.3);
     }
 
     .code-textarea {
-      width: 100%;
-      min-height: 360px;
-      background: #090d16;
-      color: #e2e8f0;
-      border: 1px solid rgba(56, 189, 248, 0.35);
-      border-radius: 14px;
-      padding: 14px;
-      font-size: 12px;
-      line-height: 1.55;
-      outline: none;
-      resize: vertical;
-      tab-size: 2;
-      white-space: pre;
+      width: 100%; min-height: 280px;
+      background: #040e14; color: #32ffdc;
+      border: 1px solid rgba(50, 255, 220, 0.3);
+      border-radius: 14px; padding: 14px;
+      font-size: 12px; line-height: 1.55; outline: none; resize: vertical;
     }
 
     .neon-action {
-      border: 1px solid rgba(56, 189, 248, 0.4);
-      border-radius: 12px;
-      padding: 9px 14px;
-      background: linear-gradient(120deg, #0e7490, #2563eb);
-      color: white;
-      font-size: 12px;
-      font-weight: 800;
-      box-shadow: 0 0 16px rgba(56, 189, 248, 0.2);
-      transition: all 0.2s ease;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
+      border: 1px solid rgba(50, 255, 220, 0.5);
+      border-radius: 12px; padding: 10px 16px;
+      background: linear-gradient(120deg, #0d9488, #0f766e);
+      color: white; font-size: 12px; font-weight: 800;
+      box-shadow: 0 0 16px rgba(50, 255, 220, 0.2);
+      transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
     }
-
-    .neon-action:hover:not(:disabled) {
-      box-shadow: 0 0 24px rgba(56, 189, 248, 0.4);
-      transform: translateY(-1px);
-    }
+    .neon-action:hover:not(:disabled) { box-shadow: 0 0 24px rgba(50, 255, 220, 0.4); transform: translateY(-1px); }
 
     .chip-btn {
-      font-size: 11px;
-      font-weight: 700;
-      padding: 6px 10px;
-      border-radius: 10px;
-      border: 1px solid rgba(56, 189, 248, 0.35);
-      background: rgba(56, 189, 248, 0.1);
-      color: #0284c7;
-      transition: all 0.15s ease;
+      font-size: 11px; font-weight: 700; padding: 6px 10px; border-radius: 10px;
+      border: 1px solid rgba(13, 148, 136, 0.3); background: rgba(50, 255, 220, 0.1); color: #0d9488;
     }
+    body.dark-theme .chip-btn { color: #32ffdc; background: rgba(50, 255, 220, 0.12); }
 
-    body.dark-theme .chip-btn {
-      color: #7dd3fc;
-      background: rgba(56, 189, 248, 0.12);
-    }
-
-    /* 3-Button Bottom Navigation Bar */
+    /* Bottom Navigation Bar */
     .st-bottom-nav {
-      position: fixed;
-      z-index: 9999;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 4px;
+      position: fixed; z-index: 9999; left: 0; right: 0; bottom: 0;
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px;
       padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
-      background: rgba(255, 255, 255, 0.97);
-      border-top: 1px solid #dbeafe;
-      box-shadow: 0 -5px 22px rgba(15, 23, 42, 0.12);
+      background: rgba(7, 34, 45, 0.96); backdrop-filter: blur(12px); border-top: 1px solid rgba(50, 255, 220, 0.3);
+      box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.4);
     }
-
-    body.dark-theme .st-bottom-nav {
-      background: rgba(15, 23, 42, 0.96);
-      border-color: rgba(56, 189, 248, 0.25);
-    }
-
     .st-bottom-nav a {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 3px;
-      min-width: 0;
-      padding: 5px 2px;
-      border-radius: 12px;
-      color: #334155;
-      text-decoration: none;
-      font-size: 11px;
-      font-weight: 700;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 3px; padding: 6px 2px; border-radius: 12px; color: #94a3b8; text-decoration: none; font-size: 11px; font-weight: 700;
     }
-
-    body.dark-theme .st-bottom-nav a { color: #cbd5e1; }
-    .st-bottom-nav .nav-icon { font-size: 20px; line-height: 1.1; color: #087eb7; }
-    body.dark-theme .st-bottom-nav .nav-icon { color: #38bdf8; }
-
+    .st-bottom-nav .nav-icon { font-size: 20px; color: #32ffdc; }
+    .st-bottom-nav a:hover, .st-bottom-nav a.active { color: #fff; background: rgba(50, 255, 220, 0.15); }
     @media (min-width: 768px) {
-      .st-bottom-nav {
-        left: 50%;
-        transform: translateX(-50%);
-        width: min(500px, calc(100% - 32px));
-        border: 1px solid #dbeafe;
-        border-bottom: 0;
-        border-radius: 18px 18px 0 0;
-      }
+      .st-bottom-nav { left: 50%; transform: translateX(-50%); width: min(500px, calc(100% - 32px)); border-radius: 18px 18px 0 0; }
     }
   </style>
 </head>
 
-<body class="min-h-screen flex flex-col justify-between text-slate-900">
+<body class="min-h-screen flex flex-col justify-between">
 
   <!-- PASSWORD GATE OVERLAY -->
-  <div id="passwordModal" class="fixed inset-0 z-[99999] bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="feature-hub max-w-sm w-full p-6 rounded-3xl text-center shadow-2xl border border-cyan-500/40">
-      <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 text-white flex items-center justify-center text-2xl shadow-lg shadow-cyan-500/30">
+  <div id="passwordModal" class="fixed inset-0 z-[99999] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="feature-hub max-w-sm w-full p-6 rounded-3xl text-center shadow-2xl border border-[#32ffdc]/50">
+      <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-gradient-to-tr from-teal-500 to-cyan-400 text-slate-950 flex items-center justify-center text-2xl font-black shadow-lg">
         <i class="fa-solid fa-lock"></i>
       </div>
-      <h2 class="brand-font text-lg font-bold text-[#002b5b] dark:text-cyan-300 mb-1">Admin Access Required</h2>
-      <p class="text-[11px] text-slate-500 mb-4">Enter admin passcode to continue</p>
+      <h2 class="brand-font text-lg font-bold text-[#07222d] dark:text-[#32ffdc] mb-1">Admin Studio Access</h2>
+      <p class="text-[11px] text-slate-500 mb-4">Enter security passcode</p>
       
       <div class="relative flex items-center mb-4">
         <input id="passcodeInput" type="password" class="neon-input pr-12 text-center text-lg tracking-widest font-mono" placeholder="•••••••" autofocus onkeydown="if(event.key==='Enter') verifyAdminPassword()">
-        <button type="button" onclick="togglePasscodeVisibility()" class="absolute right-3 text-lg" id="passcodeMaskBtn" title="Toggle visibility">
-          🙈
-        </button>
+        <button type="button" onclick="togglePasscodeVisibility()" class="absolute right-3 text-lg" id="passcodeMaskBtn" title="Toggle visibility">🙈</button>
       </div>
 
       <button type="button" onclick="verifyAdminPassword()" class="neon-action w-full py-2.5">
-        <i class="fa-solid fa-key mr-1"></i> Unlock Admin Studio
+        <i class="fa-solid fa-key mr-1"></i> Unlock Admin Console
       </button>
     </div>
   </div>
 
-  <main class="max-w-5xl w-full mx-auto px-3.5 sm:px-6 pt-4 pb-12 relative z-10">
+  <main class="max-w-4xl w-full mx-auto px-3.5 sm:px-6 pt-4 pb-12 relative z-10">
 
-    <!-- Header -->
+    <!-- HEADER -->
     <header class="feature-hub rounded-2xl p-4 mb-5 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <a href="index.html" class="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-cyan-400 hover:scale-105 transition shadow">
+        <a href="index.html" class="w-10 h-10 rounded-xl bg-[#07222d] flex items-center justify-center text-[#32ffdc] hover:scale-105 transition shadow">
           <i class="fa-solid fa-arrow-left"></i>
         </a>
         <div>
-          <h1 class="brand-font text-lg sm:text-xl font-bold uppercase text-[#002b5b] dark:text-white flex items-center gap-2">
-            <i class="fa-solid fa-shield-halved text-sky-500"></i> ST Games Admin &amp; Global Publisher
+          <h1 class="brand-font text-base sm:text-lg font-bold uppercase text-[#07222d] dark:text-white flex items-center gap-2">
+            <i class="fa-solid fa-shield-halved text-[#17c3b2]"></i> Advanced Admin Studio
           </h1>
-          <p class="text-[11px] text-slate-500 font-semibold">Auto-connected to GitHub — Publish games to all phones instantly</p>
+          <p class="text-[11px] text-slate-500">Global sync, notice manager &amp; game publisher</p>
         </div>
       </div>
-      <button onclick="toggleTheme()" title="Switch Theme" class="w-9 h-9 rounded-xl border border-sky-400/40 flex items-center justify-center text-lg hover:scale-105 transition">
-        🌓
-      </button>
+      <button onclick="toggleTheme()" title="Theme" class="w-9 h-9 rounded-xl border border-[#17c3b2]/40 flex items-center justify-center text-lg hover:scale-105 transition">🌓</button>
     </header>
 
-    <!-- STATUS BANNER -->
-    <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5 flex items-center justify-between gap-3">
-      <div class="flex items-center gap-3 min-w-0">
-        <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-500 flex items-center justify-center text-lg shrink-0">
-          <i class="fa-solid fa-cloud-arrow-up"></i>
+    <!-- SECTION 1: GITHUB CREDENTIALS & TOKEN MANAGER (MANUAL EDIT) -->
+    <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
+      <h2 class="brand-font text-base font-bold text-[#07222d] dark:text-[#32ffdc] mb-3 flex items-center gap-2">
+        <i class="fa-brands fa-github text-lg"></i> 1. GitHub Repository &amp; Token Configuration
+      </h2>
+      <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-3">View or update your manual GitHub credentials below so all phones can sync automatically.</p>
+
+      <div class="grid sm:grid-cols-4 gap-3 mb-3">
+        <div>
+          <label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1" for="ghOwner">Username</label>
+          <input id="ghOwner" class="neon-input" value="sat289">
         </div>
-        <div class="min-w-0">
-          <div class="font-extrabold text-sm truncate text-[#002b5b] dark:text-white">Auto-Sync Enabled: sat289/game</div>
-          <div class="text-[10px] text-slate-500 truncate">Credentials are permanently saved. Every game added below instantly syncs to all phones!</div>
+        <div>
+          <label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1" for="ghRepo">Repository</label>
+          <input id="ghRepo" class="neon-input" value="game">
+        </div>
+        <div>
+          <label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1" for="ghBranch">Branch</label>
+          <input id="ghBranch" class="neon-input" value="main">
+        </div>
+        <div>
+          <label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1" for="ghToken">Personal Token</label>
+          <div class="relative flex items-center">
+            <input id="ghToken" type="password" class="neon-input pr-9" value="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">
+            <button type="button" onclick="toggleTokenVisibility()" class="absolute right-2.5 text-xs">🙈</button>
+          </div>
         </div>
       </div>
-      <span class="text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 shrink-0">
-        Active
-      </span>
+      <button type="button" onclick="saveGitHubCreds()" class="neon-action">
+        <i class="fa-solid fa-floppy-disk mr-1"></i> Save Credentials
+      </button>
     </section>
 
-    <!-- STEP 1: ADD & PUBLISH GAME CARD TO ALL PHONES -->
-    <section class="feature-hub rounded-2xl p-5 mb-5">
-      <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
-        <div>
-          <h2 class="brand-font text-base font-bold text-[#002b5b] dark:text-cyan-300 flex items-center gap-2">
-            <i class="fa-solid fa-earth-asia text-emerald-500"></i> Add &amp; Publish Game to All Phones
-          </h2>
-          <p class="text-[11px] text-slate-500">Saves to <code>games.json</code> on GitHub so every visitor on any mobile device sees the game card</p>
-        </div>
+    <!-- SECTION 2: LIVE ANNOUNCEMENT NOTICE MANAGER -->
+    <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
+      <h2 class="brand-font text-base font-bold text-[#07222d] dark:text-[#32ffdc] mb-3 flex items-center gap-2">
+        <i class="fa-solid fa-bullhorn text-amber-500"></i> 2. Announcement Notice Manager
+      </h2>
+      <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-3">Edit the scrolling notice that appears at the top of <code>index.html</code> across all phones.</p>
+
+      <div class="space-y-3">
+        <textarea id="noticeInput" class="neon-input font-semibold" rows="2">📢 NOTICE: Welcome to ST GAMES — Enjoy playing and check back for new games and updates!</textarea>
+        <button type="button" onclick="publishNotice()" class="neon-action !bg-gradient-to-r !from-amber-600 !to-orange-600">
+          <i class="fa-solid fa-paper-plane mr-1"></i> Update Notice on All Phones
+        </button>
       </div>
+    </section>
+
+    <!-- SECTION 3: ADVANCED GAME PUBLISHER (WITH LOGO UPLOAD & CATEGORY) -->
+    <section class="feature-hub rounded-2xl p-5 mb-5">
+      <h2 class="brand-font text-base font-bold text-[#07222d] dark:text-[#32ffdc] mb-3 flex items-center gap-2">
+        <i class="fa-solid fa-gamepad text-emerald-500"></i> 3. Add &amp; Publish Game to All Phones
+      </h2>
+      <p class="text-[11px] text-slate-500 mb-4">Upload a logo from your local device or enter an image URL, assign categories, and select Bento box sizes.</p>
 
       <form id="addGameForm" onsubmit="handleAddGame(event)" class="space-y-3">
         <div class="grid sm:grid-cols-2 gap-3">
           <div>
-            <label class="block text-[11px] font-bold text-sky-600 mb-1" for="gameTitle">Game Title *</label>
+            <label class="block text-[11px] font-bold text-teal-600 mb-1" for="gameTitle">Game Title *</label>
             <input id="gameTitle" required class="neon-input" placeholder="e.g., Pixel Dunker" />
           </div>
           <div>
-            <label class="block text-[11px] font-bold text-sky-600 mb-1" for="gamePath">Game File / URL *</label>
+            <label class="block text-[11px] font-bold text-teal-600 mb-1" for="gamePath">Game File / URL Path *</label>
             <input id="gamePath" required class="neon-input" placeholder="e.g., game/dunk/index.html" />
           </div>
         </div>
 
         <div class="grid sm:grid-cols-3 gap-3">
           <div>
-            <label class="block text-[11px] font-bold text-sky-600 mb-1" for="gameLogo">Logo / Image Path</label>
+            <label class="block text-[11px] font-bold text-teal-600 mb-1" for="logoFile">Upload Logo from Device</label>
+            <input id="logoFile" type="file" accept="image/*" onchange="handleLogoUpload(event)" class="neon-input text-[10px] file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:bg-teal-500 file:text-white file:font-bold">
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-teal-600 mb-1" for="gameLogo">Or Logo Image URL</label>
             <input id="gameLogo" class="neon-input" placeholder="logo/dunk.jpg" />
           </div>
           <div>
-            <label class="block text-[11px] font-bold text-sky-600 mb-1" for="gameCategory">Category</label>
+            <label class="block text-[11px] font-bold text-teal-600 mb-1" for="gameCategory">Category Tag</label>
             <select id="gameCategory" class="neon-input">
-              <option value="classic">Classic &amp; Retro</option>
-              <option value="racing">Racing</option>
-              <option value="1v1">1v1 Battle</option>
-              <option value="single">Single Player</option>
-              <option value="sports">Sports</option>
+              <option value="popular">🔥 Popular / Hot</option>
+              <option value="1v1">⚔️ 1v1 Battle</option>
+              <option value="classic">👻 Classic &amp; Retro</option>
+              <option value="racing">🏎️ Racing &amp; Action</option>
+              <option value="sports">🏅 Sports</option>
+              <option value="single">🚀 Single Player</option>
             </select>
-          </div>
-          <div>
-            <label class="block text-[11px] font-bold text-sky-600 mb-1" for="gameBadge">Badge Tag</label>
-            <input id="gameBadge" class="neon-input" placeholder="NEW, HOT, VIP" maxlength="6" />
           </div>
         </div>
 
-        <div class="flex flex-wrap items-center justify-between gap-2 pt-2">
-          <label class="inline-flex items-center gap-2 text-xs font-bold cursor-pointer">
-            <input type="checkbox" id="markPopular" class="w-4 h-4 accent-cyan-500 rounded">
-            Include in Popular Games row
-          </label>
-          <button type="submit" id="btnPublishGame" class="neon-action !bg-gradient-to-r !from-emerald-600 !to-cyan-600">
-            <i class="fa-solid fa-cloud-arrow-up"></i> Publish Game to All Phones
+        <div class="grid sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] font-bold text-teal-600 mb-1" for="gameSize">Bento Card Size</label>
+            <select id="gameSize" class="neon-input">
+              <option value="normal">Normal Square (1:1)</option>
+              <option value="large">Large Featured Hero Box (2x2 Bento)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-teal-600 mb-1" for="gameBadge">Badge Tag</label>
+            <input id="gameBadge" class="neon-input" placeholder="✨ HOT, NEW, HIT, 1v1" maxlength="10" />
+          </div>
+        </div>
+
+        <div class="flex justify-end pt-2">
+          <button type="submit" id="btnPublishGame" class="neon-action !bg-gradient-to-r !from-emerald-600 !to-teal-600">
+            <i class="fa-solid fa-cloud-arrow-up mr-1"></i> Publish Game to All Phones
           </button>
         </div>
       </form>
     </section>
 
-    <!-- Published Global Games List -->
+    <!-- Published Games List -->
     <section class="feature-hub rounded-2xl p-5 mb-5">
-      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-        <h2 class="brand-font text-base font-bold text-[#002b5b] dark:text-cyan-300 flex items-center gap-2">
-          <i class="fa-solid fa-list-check"></i> Published Custom Games (<span id="statCustom">0</span>)
-        </h2>
-        <div class="flex items-center gap-3">
-          <button onclick="syncCatalogToGitHub()" class="chip-btn">
-            <i class="fa-solid fa-cloud-arrow-up mr-1"></i> Force Push List
-          </button>
-          <button onclick="wipeAllCustomGames()" class="text-xs font-bold text-rose-500 hover:underline">
-            Clear All
-          </button>
-        </div>
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="brand-font text-base font-bold text-[#07222d] dark:text-[#32ffdc]">Published Games (<span id="statCustom">0</span>)</h2>
+        <button onclick="wipeAllCustomGames()" class="text-xs font-bold text-rose-500 hover:underline">Clear All</button>
       </div>
       <div id="customGamesContainer" class="space-y-2">
         <div class="text-xs opacity-60 py-4 text-center">No custom games published yet.</div>
       </div>
     </section>
 
-    <!-- STEP 2: DIRECT GITHUB CODE STUDIO -->
+    <!-- SECTION 4: DIRECT GITHUB CODE EDITOR -->
     <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
-      <div class="flex flex-wrap items-center justify-between gap-2 mb-3 pb-2 border-b border-sky-400/20">
-        <div>
-          <h2 class="brand-font text-base font-bold text-[#002b5b] dark:text-cyan-300 flex items-center gap-2">
-            <i class="fa-solid fa-code text-sky-500"></i> Direct GitHub Code Editor
-          </h2>
-          <p class="text-[11px] text-slate-500">Edit <code>index.html</code>, <code>games.json</code>, or create new game files directly in your repository</p>
-        </div>
-        <button type="button" onclick="browseRepoDirectory('')" class="chip-btn">
-          <i class="fa-solid fa-folder-tree mr-1"></i> Browse Repo Files
-        </button>
+      <div class="flex items-center justify-between mb-3 pb-2 border-b border-teal-500/20">
+        <h2 class="brand-font text-base font-bold text-[#07222d] dark:text-[#32ffdc]"><i class="fa-solid fa-code text-teal-500"></i> Direct GitHub Code Editor</h2>
+        <button type="button" onclick="browseRepoDirectory('')" class="chip-btn">Browse Files</button>
       </div>
 
-      <!-- Interactive Repository File Browser Drawer -->
-      <div id="repoBrowserPanel" class="hidden mb-4 p-3 rounded-xl border border-sky-400/30 bg-slate-900/5 dark:bg-slate-950/60">
-        <div class="flex items-center justify-between gap-2 mb-2">
-          <div class="flex items-center gap-1.5 text-xs font-extrabold text-sky-600 dark:text-sky-300 truncate">
-            <i class="fa-regular fa-folder-open"></i>
-            <span>Path:</span>
-            <span id="browserCurrentDir" class="code-font">/root</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <button type="button" onclick="browseParentDir()" class="text-[11px] font-bold text-sky-500 hover:underline">
-              <i class="fa-solid fa-level-up-alt mr-1"></i>Up
-            </button>
-            <button type="button" onclick="document.getElementById('repoBrowserPanel').classList.add('hidden')" class="text-[11px] font-bold text-slate-400 hover:text-rose-400">
-              Close ✕
-            </button>
-          </div>
+      <div id="repoBrowserPanel" class="hidden mb-3 p-3 rounded-xl border border-teal-500/30 bg-slate-900/5 dark:bg-slate-950/60">
+        <div class="flex items-center justify-between text-xs font-extrabold text-teal-600 mb-2">
+          <span id="browserCurrentDir" class="code-font">/root</span>
+          <button type="button" onclick="document.getElementById('repoBrowserPanel').classList.add('hidden')" class="text-slate-400">Close ✕</button>
         </div>
-        <div id="repoFilesList" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-48 overflow-y-auto p-1"></div>
-      </div>
-
-      <!-- Quick File Presets -->
-      <div class="flex flex-wrap items-center gap-1.5 mb-3">
-        <span class="text-[10px] font-extrabold uppercase text-slate-400 mr-1">Quick Load:</span>
-        <button type="button" onclick="quickLoadFile('index.html')" class="chip-btn">index.html</button>
-        <button type="button" onclick="quickLoadFile('games.json')" class="chip-btn">games.json</button>
-        <button type="button" onclick="quickLoadFile('admin.html')" class="chip-btn">admin.html</button>
-        <button type="button" onclick="loadStarterGameTemplate()" class="chip-btn !border-emerald-500/40 !text-emerald-600 dark:!text-emerald-300">
-          <i class="fa-solid fa-wand-magic-sparkles mr-1"></i>+ New Game HTML
-        </button>
+        <div id="repoFilesList" class="grid grid-cols-2 sm:grid-cols-4 gap-2 max-h-40 overflow-y-auto"></div>
       </div>
 
       <div class="grid sm:grid-cols-[1fr_auto] gap-2.5 mb-3">
-        <div class="relative flex items-center">
-          <i class="fa-solid fa-file-code text-sky-500 absolute left-3.5 text-xs"></i>
-          <input id="ghFilePath" class="neon-input pl-9 code-font" placeholder="File path in repo (e.g., index.html)" value="index.html">
-        </div>
-        <div class="flex flex-wrap gap-2">
-          <button type="button" id="btnFetchFile" onclick="fetchFileFromGitHub()" class="neon-action">
-            <i class="fa-solid fa-cloud-arrow-down"></i> Load from GitHub
-          </button>
-          <button type="button" onclick="openLivePreview()" class="chip-btn">
-            <i class="fa-solid fa-eye mr-1"></i> Live Preview
-          </button>
-        </div>
+        <input id="ghFilePath" class="neon-input code-font" placeholder="File path (e.g., index.html or games.json)" value="index.html">
+        <button type="button" onclick="fetchFileFromGitHub()" class="neon-action">Load File</button>
       </div>
 
-      <div class="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 rounded-t-xl bg-slate-900 text-slate-300 text-[11px] code-font border border-b-0 border-sky-500/30">
-        <div class="flex items-center gap-3">
-          <span id="editorFileStatus" class="text-cyan-400 font-semibold">Ready</span>
-          <span id="editorShaBadge" class="text-[10px] text-slate-400 hidden">SHA: —</span>
-        </div>
-        <div class="flex items-center gap-3">
-          <span id="editorMetrics">0 lines · 0 chars</span>
-          <button type="button" onclick="copyEditorCode()" class="hover:text-cyan-300"><i class="fa-regular fa-copy mr-1"></i>Copy</button>
-        </div>
-      </div>
-
-      <textarea id="ghCodeEditor" class="code-textarea code-font rounded-t-none mb-3" spellcheck="false" placeholder="Load a file from GitHub or write code here..."></textarea>
+      <textarea id="ghCodeEditor" class="code-textarea code-font mb-3" spellcheck="false" placeholder="Load a file to edit..."></textarea>
 
       <div class="grid sm:grid-cols-[1fr_auto] gap-2.5 items-center">
         <input id="ghCommitMsg" class="neon-input" placeholder="Commit message">
-        <div class="flex flex-wrap items-center gap-2">
-          <button type="button" id="btnPushFile" onclick="pushFileToGitHub()" class="neon-action !bg-gradient-to-r !from-emerald-600 !to-cyan-600">
-            <i class="fa-solid fa-cloud-arrow-up"></i> Commit &amp; Push Code
-          </button>
-          <button type="button" onclick="deleteFileFromGitHub()" class="px-3 py-2 rounded-xl text-xs font-extrabold bg-rose-500/15 text-rose-500 border border-rose-500/30 hover:bg-rose-500/25 transition">
-            <i class="fa-solid fa-trash-can mr-1"></i> Delete
-          </button>
-        </div>
+        <button type="button" onclick="pushFileToGitHub()" class="neon-action !bg-gradient-to-r !from-teal-600 !to-cyan-600">Commit &amp; Push</button>
       </div>
     </section>
   </main>
 
-  <!-- LIVE CODE PREVIEW MODAL -->
-  <div id="previewModal" class="fixed inset-0 z-[10000] hidden bg-slate-950/80 backdrop-blur-sm p-3 sm:p-6 flex flex-col">
-    <div class="bg-slate-900 text-white rounded-t-2xl px-4 py-3 flex items-center justify-between border border-b-0 border-cyan-500/30">
-      <div class="flex items-center gap-2 text-xs font-extrabold text-cyan-300">
-        <i class="fa-solid fa-display"></i>
-        <span>Live Sandbox Preview</span>
-      </div>
-      <button onclick="closeLivePreview()" class="px-3 py-1 rounded-lg bg-rose-500/20 text-rose-300 text-xs font-bold hover:bg-rose-500/30">
-        Close Preview ✕
-      </button>
-    </div>
-    <iframe id="previewFrame" class="w-full flex-1 bg-white rounded-b-2xl border border-cyan-500/30" sandbox="allow-scripts allow-same-origin"></iframe>
-  </div>
-
-  <!-- 3-BUTTON BOTTOM NAVIGATION BAR -->
+  <!-- BOTTOM NAVIGATION BAR -->
   <nav class="st-bottom-nav" aria-label="ST GAMES navigation">
-    <a href="index.html">
-      <span class="nav-icon">⌂</span>
-      <span>Home</span>
-    </a>
-    <a href="login.html" id="bottomNavLogin" title="Login / Profile">
-      <span id="bottomDefaultIcon" class="nav-icon"><i class="fa-regular fa-circle-user"></i></span>
-      <div id="bottomUserLogo" class="hidden w-6 h-6 rounded-full overflow-hidden border-2 border-cyan-400 bg-gradient-to-tr from-cyan-500 to-indigo-600 text-white font-extrabold text-[11px] flex items-center justify-center shadow-sm">U</div>
-      <span id="bottomLoginLabel" class="truncate max-w-[90px]">Login</span>
-    </a>
-    <a href="achievements.html">
-      <span class="nav-icon">🏆</span>
-      <span>Achievements</span>
-    </a>
+    <a href="index.html"><span class="nav-icon">⌂</span><span>Home</span></a>
+    <a href="login.html"><span class="nav-icon"><i class="fa-regular fa-circle-user"></i></span><span>Login</span></a>
+    <a href="achievements.html"><span class="nav-icon">🏆</span><span>Achievements</span></a>
   </nav>
 
   <script>
-    /* =========================================================
-       HARDCODED GITHUB CREDENTIALS (NO TYPING NEEDED ON ANY PHONE)
-       ========================================================= */
-    const GH_CONFIG = {
-      owner: 'sat289',
-      repo: 'game',
-      branch: 'main',
-      token: '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'
-    };
-
-    /* =========================================================
-       PASSWORD GATE & 🙈 / 🫥 TOGGLE
-       ========================================================= */
+    /* PASSWORD GATE */
     function verifyAdminPassword() {
-      const val = document.getElementById('passcodeInput').value.trim();
-      if (val === '2010143') {
+      if (document.getElementById('passcodeInput').value.trim() === '2010143') {
         document.getElementById('passwordModal').classList.add('hidden');
         localStorage.setItem('st_admin_unlocked', 'true');
-        pullGlobalGamesFromGitHub();
+        loadSavedCreds();
       } else {
-        showToast('Incorrect password', true);
+        alert('Incorrect passcode');
         document.getElementById('passcodeInput').value = '';
       }
     }
-
     function togglePasscodeVisibility() {
-      const input = document.getElementById('passcodeInput');
-      const btn = document.getElementById('passcodeMaskBtn');
-      if (input.type === 'password') {
-        input.type = 'text';
-        btn.textContent = '🫥'; // Mask revealed state
-      } else {
-        input.type = 'password';
-        btn.textContent = '🙈'; // Mask hidden state
-      }
+      const i = document.getElementById('passcodeInput');
+      i.type = i.type === 'password' ? 'text' : 'password';
     }
 
-    /* =========================================================
-       UTILITIES & UTF-8 SAFE BASE64 ENCODING
-       ========================================================= */
-    const safeReadJSON = (key, fallback) => {
-      try {
-        const val = JSON.parse(localStorage.getItem(key) || 'null');
-        return val == null ? fallback : val;
-      } catch (_) { return fallback; }
-    };
+    function getCreds() {
+      return {
+        owner: document.getElementById('ghOwner').value.trim(),
+        repo: document.getElementById('ghRepo').value.trim(),
+        branch: document.getElementById('ghBranch').value.trim() || 'main',
+        token: document.getElementById('ghToken').value.trim()
+      };
+    }
 
-    function escapeHTML(s) {
-      return String(s).replace(/[&<>"']/g, c => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-      }[c]));
+    function saveGitHubCreds() {
+      const c = getCreds();
+      localStorage.setItem('st_github_config', JSON.stringify(c));
+      alert('GitHub credentials saved!');
+    }
+
+    function loadSavedCreds() {
+      const s = JSON.parse(localStorage.getItem('st_github_config') || '{}');
+      if (s.owner) document.getElementById('ghOwner').value = s.owner;
+      if (s.repo) document.getElementById('ghRepo').value = s.repo;
+      if (s.branch) document.getElementById('ghBranch').value = s.branch;
+      if (s.token) document.getElementById('ghToken').value = s.token;
+      renderCustomGames();
+    }
+
+    function toggleTokenVisibility() {
+      const t = document.getElementById('ghToken');
+      t.type = t.type === 'password' ? 'text' : 'password';
     }
 
     function utf8ToBase64(str) {
       const bytes = new TextEncoder().encode(str);
       let binary = '';
-      const chunkSize = 0x8000;
-      for (let i = 0; i < bytes.length; i += chunkSize) {
-        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
-      }
+      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
       return btoa(binary);
     }
-
     function base64ToUtf8(base64) {
-      const cleaned = base64.replace(/\s/g, '');
-      const binary = atob(cleaned);
+      const binary = atob(base64.replace(/\s/g, ''));
       const bytes = new Uint8Array(binary.length);
       for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
       return new TextDecoder('utf-8').decode(bytes);
     }
 
-    function showToast(message, isError = false) {
-      let toast = document.getElementById('adminToast');
-      if (!toast) {
-        toast = document.createElement('div');
-        toast.id = 'adminToast';
-        document.body.appendChild(toast);
-      }
-      toast.className = `fixed left-1/2 bottom-24 -translate-x-1/2 z-[10001] rounded-xl px-4 py-3 text-xs font-extrabold text-white shadow-xl border ${
-        isError ? 'bg-rose-950 border-rose-400' : 'bg-slate-950 border-cyan-400'
-      }`;
-      toast.textContent = message;
-      toast.style.display = 'block';
-      clearTimeout(window.__adminToastTimer);
-      window.__adminToastTimer = setTimeout(() => { toast.style.display = 'none'; }, 2800);
-    }
-
-    function getGitHubHeaders() {
-      return {
-        'Accept': 'application/vnd.github+json',
-        'X-GitHub-Api-Version': '2022-11-28',
-        'Authorization': `Bearer ${GH_CONFIG.token}`
+    // Local Logo File Upload Converter to Base64
+    let uploadedLogoBase64 = '';
+    function handleLogoUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        uploadedLogoBase64 = evt.target.result;
+        document.getElementById('gameLogo').value = uploadedLogoBase64;
       };
+      reader.readAsDataURL(file);
     }
 
-    let currentFileSha = null;
-    let currentBrowsePath = '';
-
-    // Pull games.json from GitHub so admin catalog is up to date
-    async function pullGlobalGamesFromGitHub() {
-      try {
-        const apiUrl = `https://api.github.com/repos/${encodeURIComponent(GH_CONFIG.owner)}/${encodeURIComponent(GH_CONFIG.repo)}/contents/games.json?ref=${encodeURIComponent(GH_CONFIG.branch)}`;
-        const res = await fetch(apiUrl, { headers: getGitHubHeaders(), cache: 'no-store' });
-        if (res.ok) {
-          const data = await res.json();
-          const parsed = JSON.parse(base64ToUtf8(data.content || 'W10='));
-          if (Array.isArray(parsed)) {
-            localStorage.setItem('st_custom_games', JSON.stringify(parsed));
-            renderCustomGames();
-          }
-        }
-      } catch (_) {}
+    async function pushFileDirect(path, content, message) {
+      const c = getCreds();
+      const apiUrl = `https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/${path}`;
+      let sha = null;
+      const checkRes = await fetch(`${apiUrl}?ref=${encodeURIComponent(c.branch)}`, {
+        headers: { 'Authorization': `Bearer ${c.token}`, 'Accept': 'application/vnd.github+json' }
+      });
+      if (checkRes.ok) {
+        const d = await checkRes.json();
+        sha = d.sha;
+      }
+      const res = await fetch(apiUrl, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${c.token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, content: utf8ToBase64(content), branch: c.branch, sha })
+      });
+      if (!res.ok) throw new Error('Failed to push to GitHub');
     }
 
-    // Publish games.json globally so all phones see new games
-    async function syncCatalogToGitHub(commitTitle = 'Update global games.json catalog') {
-      const customGames = safeReadJSON('st_custom_games', []);
-      const btn = document.getElementById('btnPublishGame');
-      if (btn) btn.disabled = true;
-
+    async function publishNotice() {
+      const txt = document.getElementById('noticeInput').value.trim();
       try {
-        const apiUrl = `https://api.github.com/repos/${encodeURIComponent(GH_CONFIG.owner)}/${encodeURIComponent(GH_CONFIG.repo)}/contents/games.json`;
-        let existingSha = null;
-
-        const checkRes = await fetch(`${apiUrl}?ref=${encodeURIComponent(GH_CONFIG.branch)}`, {
-          headers: getGitHubHeaders(),
-          cache: 'no-store'
-        });
-        if (checkRes.ok) {
-          const fileData = await checkRes.json();
-          existingSha = fileData.sha;
-        }
-
-        const payload = {
-          message: commitTitle,
-          content: utf8ToBase64(JSON.stringify(customGames, null, 2)),
-          branch: GH_CONFIG.branch
-        };
-        if (existingSha) payload.sha = existingSha;
-
-        const putRes = await fetch(apiUrl, {
-          method: 'PUT',
-          headers: { ...getGitHubHeaders(), 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        const result = await putRes.json();
-        if (!putRes.ok) throw new Error(result.message || `HTTP ${putRes.status}`);
-
-        showToast('Published to GitHub! All phones will now see this game.');
-        return true;
+        await pushFileDirect('notice.txt', txt, 'Update website notice');
+        alert('Notice updated across all phones!');
       } catch (err) {
-        showToast(`GitHub Sync Failed: ${err.message}`, true);
-        return false;
-      } finally {
-        if (btn) btn.disabled = false;
+        alert('Error updating notice: ' + err.message);
       }
     }
 
@@ -606,305 +423,124 @@
       e.preventDefault();
       const title = document.getElementById('gameTitle').value.trim();
       const url = document.getElementById('gamePath').value.trim();
-      const logo = document.getElementById('gameLogo').value.trim() || 'logo/game.jpg';
+      const logo = document.getElementById('gameLogo').value.trim() || uploadedLogoBase64 || 'logo/game.jpg';
       const category = document.getElementById('gameCategory').value;
+      const size = document.getElementById('gameSize').value;
       const badge = document.getElementById('gameBadge').value.trim().toUpperCase();
-      const isPopular = document.getElementById('markPopular').checked;
 
-      const categories = [category];
-      if (isPopular) categories.push('popular');
-
-      const customGames = safeReadJSON('st_custom_games', []);
+      const custom = JSON.parse(localStorage.getItem('st_custom_games') || '[]');
       const newGame = {
         id: 'custom-' + Date.now().toString(36),
-        title,
-        url,
-        logo,
-        icon: 'fa-solid fa-gamepad',
-        size: 'normal',
-        categories,
-        badge: badge || 'NEW',
-        bg: 'linear-gradient(135deg, #0284c7, #1d4ed8)',
+        title, url, logo, size,
+        categories: [category, 'popular'],
+        badge,
+        bg: 'linear-gradient(135deg, #0d9488, #0284c7)',
         custom: true
       };
 
-      customGames.push(newGame);
-      localStorage.setItem('st_custom_games', JSON.stringify(customGames));
+      custom.push(newGame);
+      localStorage.setItem('st_custom_games', JSON.stringify(custom));
       document.getElementById('addGameForm').reset();
+      uploadedLogoBase64 = '';
       renderCustomGames();
 
-      await syncCatalogToGitHub(`Add game "${title}" to global catalog`);
-    }
-
-    async function removeGame(id) {
-      if (!confirm('Remove this game from all phones?')) return;
-      let list = safeReadJSON('st_custom_games', []);
-      const target = list.find(g => g.id === id);
-      list = list.filter(g => g.id !== id);
-      localStorage.setItem('st_custom_games', JSON.stringify(list));
-      renderCustomGames();
-      await syncCatalogToGitHub(`Remove game "${target ? target.title : id}"`);
-    }
-
-    async function wipeAllCustomGames() {
-      if (!confirm('Clear all custom games from all phones?')) return;
-      localStorage.setItem('st_custom_games', JSON.stringify([]));
-      renderCustomGames();
-      await syncCatalogToGitHub('Clear all custom games');
+      try {
+        await pushFileDirect('games.json', JSON.stringify(custom, null, 2), `Add game "${title}" globally`);
+        alert('Game published to all phones successfully!');
+      } catch (err) {
+        alert('Saved locally, but GitHub sync failed: ' + err.message);
+      }
     }
 
     function renderCustomGames() {
-      const list = safeReadJSON('st_custom_games', []);
+      const list = JSON.parse(localStorage.getItem('st_custom_games') || '[]');
       document.getElementById('statCustom').textContent = list.length;
       const container = document.getElementById('customGamesContainer');
-
       if (!list.length) {
         container.innerHTML = '<div class="text-xs opacity-60 py-4 text-center">No custom games published yet.</div>';
         return;
       }
-
       container.innerHTML = list.map(g => `
-        <div class="flex items-center justify-between p-3 rounded-xl border border-sky-400/20 bg-sky-500/5 gap-3">
+        <div class="flex items-center justify-between p-3 rounded-xl border border-teal-500/20 bg-teal-500/5 gap-3">
           <div class="flex items-center gap-3 min-w-0">
             <div class="w-10 h-10 rounded-lg overflow-hidden bg-slate-800 shrink-0">
-              <img src="${escapeHTML(g.logo)}" onerror="this.src='logo/game.jpg'" class="w-full h-full object-cover">
+              <img src="${g.logo}" class="w-full h-full object-cover" onerror="this.src='logo/game.jpg'">
             </div>
             <div class="min-w-0">
-              <div class="font-extrabold text-sm truncate">${escapeHTML(g.title)}</div>
-              <div class="text-[10px] text-slate-500 truncate">${escapeHTML(g.url)} · ${(g.categories || []).join(', ')}</div>
+              <div class="font-extrabold text-sm truncate">${g.title}</div>
+              <div class="text-[10px] text-slate-500 truncate">${g.url} · Size: ${g.size}</div>
             </div>
           </div>
-          <div class="flex items-center gap-2">
-            <button onclick="quickLoadFile('${escapeHTML(g.url)}')" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-sky-500 hover:bg-sky-500/10">Edit Code</button>
-            <button onclick="removeGame('${escapeHTML(g.id)}')" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-rose-500 hover:bg-rose-500/10">Delete</button>
-          </div>
+          <button onclick="removeGame('${g.id}')" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-rose-500 hover:bg-rose-500/10">Delete</button>
         </div>
       `).join('');
     }
 
-    /* DIRECT CODE EDITOR */
-    async function browseRepoDirectory(dirPath = '') {
+    async function removeGame(id) {
+      if (!confirm('Remove game?')) return;
+      let list = JSON.parse(localStorage.getItem('st_custom_games') || '[]');
+      list = list.filter(g => g.id !== id);
+      localStorage.setItem('st_custom_games', JSON.stringify(list));
+      renderCustomGames();
+      await pushFileDirect('games.json', JSON.stringify(list, null, 2), 'Remove game');
+    }
+
+    async function wipeAllCustomGames() {
+      if (!confirm('Clear all?')) return;
+      localStorage.setItem('st_custom_games', JSON.stringify([]));
+      renderCustomGames();
+      await pushFileDirect('games.json', JSON.stringify([], null, 2), 'Wipe all games');
+    }
+
+    /* CODE EDITOR */
+    async function browseRepoDirectory(path = '') {
+      const c = getCreds();
       const panel = document.getElementById('repoBrowserPanel');
-      const listEl = document.getElementById('repoFilesList');
-      const dirLabel = document.getElementById('browserCurrentDir');
       panel.classList.remove('hidden');
-      currentBrowsePath = dirPath;
-      dirLabel.textContent = '/' + (dirPath || '');
-      listEl.innerHTML = '<div class="col-span-full text-xs text-slate-400 py-2">Loading repository contents...</div>';
-
-      try {
-        const cleanPath = dirPath.replace(/^\/+|\/+$/g, '');
-        const url = `https://api.github.com/repos/${encodeURIComponent(GH_CONFIG.owner)}/${encodeURIComponent(GH_CONFIG.repo)}/contents/${cleanPath}?ref=${encodeURIComponent(GH_CONFIG.branch)}`;
-        const res = await fetch(url, { headers: getGitHubHeaders(), cache: 'no-store' });
-        const data = await res.json();
-
-        if (!res.ok) throw new Error(data.message || `Status ${res.status}`);
-        if (!Array.isArray(data)) return;
-
-        data.sort((a, b) => (a.type === b.type ? a.name.localeCompare(b.name) : a.type === 'dir' ? -1 : 1));
-
-        listEl.innerHTML = data.map(item => {
-          const isDir = item.type === 'dir';
-          return `
-            <button type="button"
-              onclick="${isDir ? `browseRepoDirectory('${escapeHTML(item.path)}')` : `quickLoadFile('${escapeHTML(item.path)}')`}"
-              class="flex items-center gap-2 p-2 rounded-lg text-left text-xs font-bold border border-sky-400/20 bg-white/80 dark:bg-slate-900/90 hover:border-cyan-400 transition truncate">
-              <i class="${isDir ? 'fa-solid fa-folder text-amber-400' : 'fa-regular fa-file-code text-sky-400'} shrink-0"></i>
-              <span class="truncate">${escapeHTML(item.name)}</span>
-            </button>
-          `;
-        }).join('');
-      } catch (err) {
-        listEl.innerHTML = `<div class="col-span-full text-xs text-rose-500 py-2">Error: ${escapeHTML(err.message)}</div>`;
+      const list = document.getElementById('repoFilesList');
+      list.innerHTML = 'Loading...';
+      const res = await fetch(`https://api.github.com/repos/${c.owner}/${c.repo}/contents/${path}?ref=${c.branch}`, {
+        headers: { 'Authorization': `Bearer ${c.token}`, 'Accept': 'application/vnd.github+json' }
+      });
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        list.innerHTML = data.map(i => `
+          <button type="button" onclick="quickLoad('${i.path}')" class="p-2 rounded-lg text-xs font-bold bg-white dark:bg-slate-900 border border-teal-500/20 truncate">
+            <i class="${i.type==='dir'?'fa-solid fa-folder text-amber-400':'fa-regular fa-file-code text-teal-400'} mr-1"></i>${i.name}
+          </button>
+        `).join('');
       }
     }
+    function quickLoad(p) { document.getElementById('ghFilePath').value = p; fetchFileFromGitHub(); document.getElementById('repoBrowserPanel').classList.add('hidden'); }
 
-    function browseParentDir() {
-      if (!currentBrowsePath) return;
-      const parts = currentBrowsePath.split('/').filter(Boolean);
-      parts.pop();
-      browseRepoDirectory(parts.join('/'));
-    }
-
-    function quickLoadFile(path) {
-      document.getElementById('ghFilePath').value = path;
-      fetchFileFromGitHub();
-    }
-
+    let activeFileSha = null;
     async function fetchFileFromGitHub() {
-      const filePath = document.getElementById('ghFilePath').value.trim().replace(/^\/+/, '');
-      const statusEl = document.getElementById('editorFileStatus');
-      const shaBadge = document.getElementById('editorShaBadge');
-      const editor = document.getElementById('ghCodeEditor');
-      const btn = document.getElementById('btnFetchFile');
-
-      statusEl.textContent = `Fetching ${filePath}...`;
-      btn.disabled = true;
-
-      try {
-        const url = `https://api.github.com/repos/${encodeURIComponent(GH_CONFIG.owner)}/${encodeURIComponent(GH_CONFIG.repo)}/contents/${filePath}?ref=${encodeURIComponent(GH_CONFIG.branch)}`;
-        const res = await fetch(url, { headers: getGitHubHeaders(), cache: 'no-store' });
-        const data = await res.json();
-
-        if (res.status === 404) {
-          currentFileSha = null;
-          shaBadge.classList.add('hidden');
-          statusEl.textContent = `New File (${filePath})`;
-          showToast(`File does not exist yet. Write code & push to create it!`);
-          return;
-        }
-
-        if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
-
-        currentFileSha = data.sha;
-        shaBadge.textContent = `SHA: ${data.sha.slice(0, 7)}`;
-        shaBadge.classList.remove('hidden');
-
-        editor.value = base64ToUtf8(data.content || '');
-        statusEl.textContent = `Loaded: ${filePath}`;
-        document.getElementById('ghCommitMsg').value = `Update ${filePath}`;
-        updateEditorMetrics();
-        showToast(`Loaded ${filePath}!`);
-      } catch (err) {
-        statusEl.textContent = 'Load failed';
-        showToast(`Error: ${err.message}`, true);
-      } finally {
-        btn.disabled = false;
+      const c = getCreds();
+      const path = document.getElementById('ghFilePath').value.trim();
+      const res = await fetch(`https://api.github.com/repos/${c.owner}/${c.repo}/contents/${path}?ref=${c.branch}`, {
+        headers: { 'Authorization': `Bearer ${c.token}`, 'Accept': 'application/vnd.github+json' }
+      });
+      const d = await res.json();
+      if (res.ok) {
+        activeFileSha = d.sha;
+        document.getElementById('ghCodeEditor').value = base64ToUtf8(d.content);
+        alert('File loaded successfully!');
+      } else {
+        alert('Error loading file: ' + d.message);
       }
     }
 
     async function pushFileToGitHub() {
-      const filePath = document.getElementById('ghFilePath').value.trim().replace(/^\/+/, '');
+      const c = getCreds();
+      const path = document.getElementById('ghFilePath').value.trim();
       const code = document.getElementById('ghCodeEditor').value;
-      const commitMsgInput = document.getElementById('ghCommitMsg').value.trim();
-
-      if (!filePath) {
-        showToast('Enter a file path', true);
-        return;
-      }
-
-      const btn = document.getElementById('btnPushFile');
-      const statusEl = document.getElementById('editorFileStatus');
-      const shaBadge = document.getElementById('editorShaBadge');
-
-      btn.disabled = true;
-      statusEl.textContent = `Committing ${filePath}...`;
-
+      const msg = document.getElementById('ghCommitMsg').value.trim() || 'Update file via Admin Studio';
       try {
-        const apiUrl = `https://api.github.com/repos/${encodeURIComponent(GH_CONFIG.owner)}/${encodeURIComponent(GH_CONFIG.repo)}/contents/${filePath}`;
-        let latestSha = currentFileSha;
-
-        const checkRes = await fetch(`${apiUrl}?ref=${encodeURIComponent(GH_CONFIG.branch)}`, {
-          headers: getGitHubHeaders(),
-          cache: 'no-store'
-        });
-        if (checkRes.ok) {
-          const existingData = await checkRes.json();
-          if (existingData && existingData.sha) latestSha = existingData.sha;
-        } else if (checkRes.status === 404) {
-          latestSha = null;
-        }
-
-        const payload = {
-          message: commitMsgInput || `Update ${filePath}`,
-          content: utf8ToBase64(code),
-          branch: GH_CONFIG.branch
-        };
-        if (latestSha) payload.sha = latestSha;
-
-        const putRes = await fetch(apiUrl, {
-          method: 'PUT',
-          headers: { ...getGitHubHeaders(), 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        const result = await putRes.json();
-        if (!putRes.ok) throw new Error(result.message || `HTTP ${putRes.status}`);
-
-        currentFileSha = result.content.sha;
-        shaBadge.textContent = `SHA: ${currentFileSha.slice(0, 7)}`;
-        shaBadge.classList.remove('hidden');
-        statusEl.textContent = `Pushed: ${filePath} ✓`;
-        showToast(`Committed ${filePath} successfully!`);
+        await pushFileDirect(path, code, msg);
+        alert('Committed and pushed successfully!');
       } catch (err) {
-        statusEl.textContent = 'Push failed';
-        showToast(`Push Failed: ${err.message}`, true);
-      } finally {
-        btn.disabled = false;
+        alert('Push failed: ' + err.message);
       }
-    }
-
-    async function deleteFileFromGitHub() {
-      const filePath = document.getElementById('ghFilePath').value.trim().replace(/^\/+/, '');
-      if (!filePath) return;
-      if (!confirm(`Permanently delete "${filePath}"?`)) return;
-
-      try {
-        const apiUrl = `https://api.github.com/repos/${encodeURIComponent(GH_CONFIG.owner)}/${encodeURIComponent(GH_CONFIG.repo)}/contents/${filePath}`;
-        let shaToDelete = currentFileSha;
-        if (!shaToDelete) {
-          const checkRes = await fetch(`${apiUrl}?ref=${encodeURIComponent(GH_CONFIG.branch)}`, { headers: getGitHubHeaders(), cache: 'no-store' });
-          if (!checkRes.ok) throw new Error('File not found');
-          const fileInfo = await checkRes.json();
-          shaToDelete = fileInfo.sha;
-        }
-
-        await fetch(apiUrl, {
-          method: 'DELETE',
-          headers: { ...getGitHubHeaders(), 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: `Delete ${filePath}`, sha: shaToDelete, branch: GH_CONFIG.branch })
-        });
-
-        currentFileSha = null;
-        document.getElementById('editorShaBadge').classList.add('hidden');
-        document.getElementById('ghCodeEditor').value = '';
-        document.getElementById('editorFileStatus').textContent = `Deleted ${filePath}`;
-        updateEditorMetrics();
-        showToast(`Deleted ${filePath}`);
-      } catch (err) {
-        showToast(`Error: ${err.message}`, true);
-      }
-    }
-
-    function loadStarterGameTemplate() {
-      const newPath = prompt('Enter new game path:', 'game/new-arcade/index.html');
-      if (!newPath) return;
-      document.getElementById('ghFilePath').value = newPath.trim();
-      currentFileSha = null;
-      document.getElementById('editorShaBadge').classList.add('hidden');
-      document.getElementById('ghCodeEditor').value = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ST Games - New Game</title>
-  <style>body{background:#0f172a;color:#fff;text-align:center;padding-top:100px;font-family:sans-serif;}</style>
-</head>
-<body>
-  <h1>New ST Game Ready!</h1>
-  <a href="../../index.html" style="color:#22d3ee;">← Back to Home</a>
-</body>
-</html>`;
-      updateEditorMetrics();
-    }
-
-    function updateEditorMetrics() {
-      const val = document.getElementById('ghCodeEditor').value;
-      document.getElementById('editorMetrics').textContent = `${val ? val.split('\n').length : 0} lines · ${val.length} chars`;
-    }
-
-    function copyEditorCode() {
-      navigator.clipboard.writeText(document.getElementById('ghCodeEditor').value).then(() => showToast('Copied'));
-    }
-
-    function openLivePreview() {
-      document.getElementById('previewModal').classList.remove('hidden');
-      document.getElementById('previewFrame').srcdoc = document.getElementById('ghCodeEditor').value;
-    }
-
-    function closeLivePreview() {
-      document.getElementById('previewFrame').srcdoc = '';
-      document.getElementById('previewModal').classList.add('hidden');
     }
 
     function toggleTheme() {
@@ -915,16 +551,10 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       if (localStorage.getItem('st_theme') === 'dark') document.body.classList.add('dark-theme');
-
-      // Check if already unlocked in this session
       if (localStorage.getItem('st_admin_unlocked') === 'true') {
         document.getElementById('passwordModal').classList.add('hidden');
-        pullGlobalGamesFromGitHub();
+        loadSavedCreds();
       }
-
-      const editor = document.getElementById('ghCodeEditor');
-      editor.addEventListener('input', updateEditorMetrics);
-      renderCustomGames();
     });
   </script>
 </body>
