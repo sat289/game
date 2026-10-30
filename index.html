@@ -625,27 +625,32 @@
     const playedGames = new Set(safeReadJSON('st_played_games', []));
 
     async function loadSharedGamesCatalog() {
-      GAMES_DATA = [...DEFAULT_GAMES];
-      try {
-        const res = await fetch(`games.json?t=${Date.now()}`, { cache: 'no-store' });
-        if (res.ok) {
-          const sharedGames = await res.json();
-          if (Array.isArray(sharedGames)) {
-            sharedGames.forEach(g => {
-              if (g && g.id && !GAMES_DATA.some(existing => existing.id === g.id)) GAMES_DATA.push(g);
-            });
+  let merged = [];
+  try {
+    const res = await fetch(`games.json?t=${Date.now()}`, { cache: 'no-store' });
+    if (res.ok) {
+      const sharedGames = await res.json();
+      if (Array.isArray(sharedGames)) {
+        sharedGames.forEach(g => {
+          if (g && g.id && !merged.some(existing => existing.id === g.id || existing.url === g.url)) {
+            merged.push(g);
           }
-        }
-      } catch (_) {}
-
-      const localCustom = safeReadJSON('st_custom_games', []);
-      localCustom.forEach(g => {
-        if (g && g.id && !GAMES_DATA.some(existing => existing.id === g.id)) GAMES_DATA.push(g);
-      });
-
-      renderGames();
-      updateHeroStats();
+        });
+      }
     }
+  } catch (_) {}
+
+  DEFAULT_GAMES.forEach(g => {
+    if (!merged.some(existing => existing.id === g.id || existing.url === g.url)) {
+      merged.push(g);
+    }
+  });
+
+  GAMES_DATA = merged;
+  renderGames();
+  updateHeroStats();
+}
+
 
     async function loadNotice() {
       try {
