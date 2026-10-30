@@ -161,7 +161,6 @@
     <!-- GITHUB CONFIGURATION -->
     <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
       <h2 class="brand-font text-base font-bold text-[#07222d] dark:text-[#32ffdc] mb-3">1. GitHub Credentials</h2>
-
       <div class="grid sm:grid-cols-4 gap-3 mb-3">
         <div><label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1">Username</label><input id="ghOwner" class="neon-input" value="sat289"></div>
         <div><label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1">Repository</label><input id="ghRepo" class="neon-input" value="game"></div>
@@ -195,6 +194,17 @@
           <button type="submit" class="neon-action !bg-gradient-to-r !from-emerald-600 !to-teal-600"><i class="fa-solid fa-cloud-arrow-up mr-1"></i> Publish Game to All Phones</button>
         </div>
       </form>
+    </section>
+
+    <!-- PUBLISHED GAMES LIST -->
+    <section class="feature-hub rounded-2xl p-5 mb-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="brand-font text-base font-bold text-[#07222d] dark:text-[#32ffdc]">Published Games (<span id="statCustom">0</span>)</h2>
+        <button onclick="wipeAllCustomGames()" class="text-xs font-bold text-rose-500 hover:underline">Clear All</button>
+      </div>
+      <div id="customGamesContainer" class="space-y-2">
+        <div class="text-xs opacity-60 py-4 text-center">No custom games published yet.</div>
+      </div>
     </section>
 
     <!-- SECTION 4: DIRECT GITHUB CODE EDITOR & LIVE PREVIEW -->
@@ -251,6 +261,7 @@
       if (document.getElementById('passcodeInput').value.trim() === '2010143') {
         document.getElementById('passwordModal').classList.add('hidden');
         localStorage.setItem('st_admin_unlocked', 'true');
+        renderCustomGames();
       } else {
         alert('Incorrect passcode');
         document.getElementById('passcodeInput').value = '';
@@ -337,8 +348,9 @@
       const category = document.getElementById('gameCategory').value;
       const size = document.getElementById('gameSize').value;
 
-      let custom = [];
+      let custom = JSON.parse(localStorage.getItem('st_custom_games') || '[]');
       const c = getCreds();
+      
       try {
         const res = await fetch(`https://api.github.com/repos/${c.owner}/${c.repo}/contents/games.json?ref=${c.branch}`, {
           headers: { 'Authorization': `Bearer ${c.token}` }
@@ -357,15 +369,63 @@
       };
 
       custom.push(newGame);
+      localStorage.setItem('st_custom_games', JSON.stringify(custom));
       document.getElementById('addGameForm').reset();
       uploadedLogoBase64 = '';
+      renderCustomGames();
 
       try {
         await pushFileDirect('games.json', JSON.stringify(custom, null, 2), `Add game "${title}" globally`);
         alert('Game published to all phones successfully!');
       } catch (err) {
-        alert('Sync failed: ' + err.message);
+        alert('Saved locally, but GitHub sync failed: ' + err.message);
       }
+    }
+
+    function renderCustomGames() {
+      const list = JSON.parse(localStorage.getItem('st_custom_games') || '[]');
+      document.getElementById('statCustom').textContent = list.length;
+      const container = document.getElementById('customGamesContainer');
+      if (!list.length) {
+        container.innerHTML = '<div class="text-xs opacity-60 py-4 text-center">No custom games published yet.</div>';
+        return;
+      }
+      container.innerHTML = list.map(g => `
+        <div class="flex items-center justify-between p-3 rounded-xl border border-teal-500/20 bg-teal-500/5 gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-10 h-10 rounded-lg overflow-hidden bg-slate-800 shrink-0">
+              <img src="${g.logo}" class="w-full h-full object-cover" onerror="this.src='logo/game.jpg'">
+            </div>
+            <div class="min-w-0">
+              <div class="font-extrabold text-sm truncate">${g.title}</div>
+              <div class="text-[10px] text-slate-500 truncate">${g.url} · Size: ${g.size}</div>
+            </div>
+          </div>
+          <button onclick="removeGame('${g.id}')" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-rose-500 hover:bg-rose-500/10">Delete</button>
+        </div>
+      `).join('');
+    }
+
+    async function removeGame(id) {
+      if (!confirm('Remove game?')) return;
+      let list = JSON.parse(localStorage.getItem('st_custom_games') || '[]');
+      list = list.filter(g => g.id !== id);
+      localStorage.setItem('st_custom_games', JSON.stringify(list));
+      renderCustomGames();
+      try {
+        await pushFileDirect('games.json', JSON.stringify(list, null, 2), 'Remove game');
+      } catch (err) {
+        alert('Removed locally, GitHub sync failed: ' + err.message);
+      }
+    }
+
+    async function wipeAllCustomGames() {
+      if (!confirm('Clear all custom games?')) return;
+      localStorage.setItem('st_custom_games', JSON.stringify([]));
+      renderCustomGames();
+      try {
+        await pushFileDirect('games.json', JSON.stringify([], null, 2), 'Wipe all games');
+      } catch (err) {}
     }
 
     /* DIRECT CODE EDITOR & LIVE PREVIEW */
@@ -450,6 +510,7 @@
       if (localStorage.getItem('st_theme') === 'dark') document.body.classList.add('dark-theme');
       if (localStorage.getItem('st_admin_unlocked') === 'true') {
         document.getElementById('passwordModal').classList.add('hidden');
+        renderCustomGames();
       }
       const s = JSON.parse(localStorage.getItem('st_github_config') || '{}');
       if (s.owner) document.getElementById('ghOwner').value = s.owner;
