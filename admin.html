@@ -91,12 +91,15 @@
       color: white; font-size: 12px; font-weight: 800;
       box-shadow: 0 0 16px rgba(50, 255, 220, 0.2);
       transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      cursor: pointer;
     }
     .neon-action:hover:not(:disabled) { box-shadow: 0 0 24px rgba(50, 255, 220, 0.4); transform: translateY(-1px); }
+    .neon-action:disabled { opacity: 0.6; cursor: not-allowed; }
 
     .chip-btn {
       font-size: 11px; font-weight: 700; padding: 6px 10px; border-radius: 10px;
       border: 1px solid rgba(13, 148, 136, 0.3); background: rgba(50, 255, 220, 0.1); color: #0d9488;
+      cursor: pointer;
     }
     body.dark-theme .chip-btn { color: #32ffdc; background: rgba(50, 255, 220, 0.12); }
   </style>
@@ -182,16 +185,52 @@
       <h2 class="brand-font text-base font-bold text-[#07222d] dark:text-[#32ffdc] mb-3">3. Add &amp; Publish Game to All Phones</h2>
       <form id="addGameForm" onsubmit="handleAddGame(event)" class="space-y-3">
         <div class="grid sm:grid-cols-2 gap-3">
-          <div><label class="block text-[11px] font-bold text-teal-600 mb-1">Game Title *</label><input id="gameTitle" required class="neon-input" placeholder="e.g., Pixel Dunker" /></div>
-          <div><label class="block text-[11px] font-bold text-teal-600 mb-1">Game URL Path *</label><input id="gamePath" required class="neon-input" placeholder="e.g., game/dunk/index.html" /></div>
+          <div>
+            <label class="block text-[11px] font-bold text-teal-600 mb-1">Game Title *</label>
+            <input id="gameTitle" required class="neon-input" placeholder="e.g., Salazar Alchemy" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-teal-600 mb-1">Game URL Path *</label>
+            <input id="gamePath" required class="neon-input" placeholder="e.g., game/salazar.html" />
+          </div>
         </div>
-        <div class="grid sm:grid-cols-3 gap-3">
-          <div><label class="block text-[11px] font-bold text-teal-600 mb-1">Upload Logo File</label><input id="logoFile" type="file" accept="image/*" onchange="handleLogoUpload(event)" class="neon-input text-[10px]"></div>
-          <div><label class="block text-[11px] font-bold text-teal-600 mb-1">Category</label><select id="gameCategory" class="neon-input"><option value="popular">Popular / Hot</option><option value="1v1">1v1 Battle</option><option value="classic">Classic</option><option value="racing">Racing</option></select></div>
-          <div><label class="block text-[11px] font-bold text-teal-600 mb-1">Bento Box Size</label><select id="gameSize" class="neon-input"><option value="normal">Normal Square</option><option value="large">Large Bento Box (2x2)</option></select></div>
+
+        <div class="grid sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] font-bold text-teal-600 mb-1">Upload Logo Image</label>
+            <input id="logoFile" type="file" accept="image/*" class="neon-input text-[10px]">
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-teal-600 mb-1">Upload Game HTML File (Optional)</label>
+            <input id="gameHtmlFile" type="file" accept=".html,.htm" class="neon-input text-[10px]">
+          </div>
         </div>
-        <div class="flex justify-end pt-2">
-          <button type="submit" class="neon-action !bg-gradient-to-r !from-emerald-600 !to-teal-600"><i class="fa-solid fa-cloud-arrow-up mr-1"></i> Publish Game to All Phones</button>
+
+        <div class="grid sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] font-bold text-teal-600 mb-1">Category</label>
+            <select id="gameCategory" class="neon-input">
+              <option value="popular">Popular / Hot</option>
+              <option value="1v1">1v1 Battle</option>
+              <option value="classic">Classic</option>
+              <option value="racing">Racing</option>
+              <option value="sports">Sports</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-teal-600 mb-1">Bento Box Size</label>
+            <select id="gameSize" class="neon-input">
+              <option value="normal">Normal Square</option>
+              <option value="large">Large Bento Box (2x2)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between pt-2 gap-3">
+          <span id="publishGameStatus" class="text-xs font-bold text-teal-600 dark:text-[#32ffdc]"></span>
+          <button id="publishGameBtn" type="submit" class="neon-action !bg-gradient-to-r !from-emerald-600 !to-teal-600">
+            <i class="fa-solid fa-cloud-arrow-up mr-1"></i> Publish Game to All Phones
+          </button>
         </div>
       </form>
     </section>
@@ -273,6 +312,7 @@
           <option value="1v1">1v1 Battle</option>
           <option value="classic">Classic</option>
           <option value="racing">Racing</option>
+          <option value="sports">Sports</option>
         </select>
 
         <label class="block text-xs font-bold mb-1">Position around Popular Games</label>
@@ -386,9 +426,19 @@
         token: document.getElementById('ghToken').value.trim()
       };
     }
+
     function saveGitHubCreds() {
       localStorage.setItem('st_github_config', JSON.stringify(getCreds()));
       alert('GitHub credentials saved securely on this device!');
+      loadAllGames();
+    }
+
+    function encodeRepoPath(path) {
+      return String(path || '')
+        .replace(/^\/+/, '')
+        .split('/')
+        .map(encodeURIComponent)
+        .join('/');
     }
 
     function utf8ToBase64(str) {
@@ -397,6 +447,7 @@
       for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
       return btoa(binary);
     }
+
     function base64ToUtf8(base64) {
       const binary = atob(base64.replace(/\s/g, ''));
       const bytes = new Uint8Array(binary.length);
@@ -404,36 +455,143 @@
       return new TextDecoder('utf-8').decode(bytes);
     }
 
-    let uploadedLogoBase64 = '';
-    function handleLogoUpload(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (evt) => { uploadedLogoBase64 = evt.target.result; };
-      reader.readAsDataURL(file);
+    function safeSaveLocalGames(list) {
+      try {
+        // Avoid storing huge base64 strings in localStorage so it never throws QuotaExceededError
+        const slimList = list.map(g => ({
+          ...g,
+          logo: (g.logo && g.logo.startsWith('data:')) ? 'logo/game.jpg' : g.logo
+        }));
+        localStorage.setItem('st_custom_games', JSON.stringify(slimList));
+      } catch (_) {}
+    }
+
+    function readFileAsDataURL(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('Could not read file.'));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function readFileAsText(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('Could not read HTML file.'));
+        reader.readAsText(file);
+      });
     }
 
     async function pushFileDirect(path, content, message) {
       const c = getCreds();
-      if (!c.token) throw new Error('GitHub token is missing');
-      const apiUrl = `https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/${path}`;
+      if (!c.token) throw new Error('GitHub Personal Token is missing. Enter it in Section 1.');
+      const cleanPath = encodeRepoPath(path);
+      const apiUrl = `https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/${cleanPath}`;
       let sha = null;
-      const checkRes = await fetch(`${apiUrl}?ref=${encodeURIComponent(c.branch)}`, {
-        headers: { 'Authorization': `Bearer ${c.token}`, 'Accept': 'application/vnd.github+json' }
+
+      const checkRes = await fetch(`${apiUrl}?ref=${encodeURIComponent(c.branch)}&t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: {
+          'Authorization': `Bearer ${c.token}`,
+          'Accept': 'application/vnd.github+json'
+        }
       });
+
       if (checkRes.ok) {
         const d = await checkRes.json();
         sha = d.sha;
       }
+
+      const bodyPayload = {
+        message,
+        content: utf8ToBase64(content),
+        branch: c.branch
+      };
+      if (sha) bodyPayload.sha = sha;
+
       const res = await fetch(apiUrl, {
         method: 'PUT',
-        headers: { 'Authorization': `Bearer ${c.token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, content: utf8ToBase64(content), branch: c.branch, sha })
+        headers: {
+          'Authorization': `Bearer ${c.token}`,
+          'Accept': 'application/vnd.github+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(bodyPayload)
       });
+
       if (!res.ok) {
-        const errJson = await res.json();
+        const errJson = await res.json().catch(() => ({}));
         throw new Error(errJson.message || 'Failed to push to GitHub');
       }
+    }
+
+    async function pushImageDirect(path, dataURL, message) {
+      const c = getCreds();
+      if (!c.token) throw new Error('GitHub Personal Token is missing. Enter it in Section 1.');
+      const comma = dataURL.indexOf(',');
+      const base64 = dataURL.slice(comma + 1);
+      const cleanPath = encodeRepoPath(path);
+      const api = `https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/${cleanPath}`;
+
+      let sha = null;
+      const checkRes = await fetch(`${api}?ref=${encodeURIComponent(c.branch)}&t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: {
+          'Authorization': `Bearer ${c.token}`,
+          'Accept': 'application/vnd.github+json'
+        }
+      });
+      if (checkRes.ok) {
+        const existing = await checkRes.json();
+        sha = existing.sha;
+      }
+
+      const payload = { message, content: base64, branch: c.branch };
+      if (sha) payload.sha = sha;
+
+      const res = await fetch(api, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${c.token}`,
+          'Accept': 'application/vnd.github+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.message || 'Logo upload failed.');
+      }
+    }
+
+    async function fetchGamesListFromGitHub() {
+      const c = getCreds();
+      if (!c.token) return JSON.parse(localStorage.getItem('st_custom_games') || '[]');
+      const api = `https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/games.json?ref=${encodeURIComponent(c.branch)}&t=${Date.now()}`;
+      const res = await fetch(api, {
+        cache: 'no-store',
+        headers: {
+          'Authorization': `Bearer ${c.token}`,
+          'Accept': 'application/vnd.github+json'
+        }
+      });
+      if (res.ok) {
+        const d = await res.json();
+        if (d.content) {
+          const parsed = JSON.parse(base64ToUtf8(d.content));
+          if (Array.isArray(parsed)) return parsed;
+        }
+      }
+      // Fallback to raw fetch if games.json is large
+      const rawRes = await fetch(`games.json?t=${Date.now()}`, { cache: 'no-store' });
+      if (rawRes.ok) {
+        const parsed = await rawRes.json();
+        if (Array.isArray(parsed)) return parsed;
+      }
+      return JSON.parse(localStorage.getItem('st_custom_games') || '[]');
     }
 
     async function publishNotice() {
@@ -448,49 +606,93 @@
 
     async function handleAddGame(e) {
       e.preventDefault();
+      const btn = document.getElementById('publishGameBtn');
+      const statusEl = document.getElementById('publishGameStatus');
       const title = document.getElementById('gameTitle').value.trim();
-      const url = document.getElementById('gamePath').value.trim();
-      const logo = uploadedLogoBase64 || 'logo/game.jpg';
+      const url = document.getElementById('gamePath').value.trim().replace(/^\/+/, '');
       const category = document.getElementById('gameCategory').value;
       const size = document.getElementById('gameSize').value;
+      const logoFile = document.getElementById('logoFile').files[0];
+      const htmlFile = document.getElementById('gameHtmlFile').files[0];
 
-      let custom = JSON.parse(localStorage.getItem('st_custom_games') || '[]');
       const c = getCreds();
-      
+      if (!c.token) {
+        alert('Please enter and save your GitHub Personal Token in Section 1 first!');
+        return;
+      }
+
+      btn.disabled = true;
+      statusEl.textContent = '⏳ Publishing game to GitHub...';
+
       try {
-        const res = await fetch(`https://api.github.com/repos/${c.owner}/${c.repo}/contents/games.json?ref=${c.branch}`, {
-          headers: { 'Authorization': `Bearer ${c.token}` }
-        });
-        if (res.ok) {
-          const d = await res.json();
-          custom = JSON.parse(base64ToUtf8(d.content));
+        // 1. Save credentials automatically
+        localStorage.setItem('st_github_config', JSON.stringify(c));
+
+        // 2. If user selected a Game HTML file, upload it to `url` path on GitHub
+        if (htmlFile) {
+          statusEl.textContent = `⏳ Uploading ${url}...`;
+          const htmlContent = await readFileAsText(htmlFile);
+          await pushFileDirect(url, htmlContent, `Upload game file ${url}`);
         }
-      } catch(_) {}
 
-      const newGame = {
-        id: 'custom-' + Date.now().toString(36),
-        title, url, logo, size,
-        categories: [category, 'popular'],
-        badge: '✨ NEW'
-      };
+        // 3. If user selected a Logo file, upload it to `logo/` folder on GitHub
+        let logoPath = 'logo/game.jpg';
+        if (logoFile) {
+          statusEl.textContent = '⏳ Uploading game logo...';
+          const safeName = logoFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+          logoPath = `logo/game-${Date.now()}-${safeName}`;
+          const logoDataUrl = await readFileAsDataURL(logoFile);
+          await pushImageDirect(logoPath, logoDataUrl, `Upload logo for ${title}`);
+        }
 
-      custom.push(newGame);
-      localStorage.setItem('st_custom_games', JSON.stringify(custom));
-      document.getElementById('addGameForm').reset();
-      uploadedLogoBase64 = '';
-      renderCustomGames();
-      loadAllGames();
+        // 4. Load current games.json from GitHub
+        statusEl.textContent = '⏳ Updating games.json...';
+        let currentGames = [];
+        try {
+          currentGames = await fetchGamesListFromGitHub();
+        } catch (_) {
+          currentGames = [];
+        }
 
-      try {
-        await pushFileDirect('games.json', JSON.stringify(custom, null, 2), `Add game "${title}" globally`);
-        alert('Game published to all phones successfully!');
+        const newGame = {
+          id: 'game-' + Date.now().toString(36),
+          title,
+          url,
+          logo: logoPath,
+          size,
+          position: 'before-popular',
+          categories: [category, 'popular'],
+          badge: '✨ NEW'
+        };
+
+        // Add newest game to the top of games.json
+        currentGames.unshift(newGame);
+
+        // 5. Push updated games.json to GitHub
+        await pushFileDirect('games.json', JSON.stringify(currentGames, null, 2), `Add game "${title}" globally`);
+
+        // 6. Safely update local storage & UI
+        safeSaveLocalGames(currentGames);
+        allGamesData = currentGames;
+        document.getElementById('addGameForm').reset();
+        renderCustomGames();
+        filterAllGames();
+        document.getElementById('allGamesCount').textContent = allGamesData.length;
+
+        statusEl.textContent = '✅ Published to all phones!';
+        alert(`"${title}" has been published to GitHub and your website!`);
       } catch (err) {
-        alert('Saved locally, but GitHub sync failed: ' + err.message);
+        statusEl.textContent = '❌ Publish failed';
+        alert('GitHub publish error: ' + err.message);
+      } finally {
+        btn.disabled = false;
       }
     }
 
     function renderCustomGames() {
-      const list = JSON.parse(localStorage.getItem('st_custom_games') || '[]');
+      const list = allGamesData.length
+        ? allGamesData
+        : JSON.parse(localStorage.getItem('st_custom_games') || '[]');
       document.getElementById('statCustom').textContent = list.length;
       const container = document.getElementById('customGamesContainer');
       if (!list.length) {
@@ -501,40 +703,46 @@
         <div class="flex items-center justify-between p-3 rounded-xl border border-teal-500/20 bg-teal-500/5 gap-3">
           <div class="flex items-center gap-3 min-w-0">
             <div class="w-10 h-10 rounded-lg overflow-hidden bg-slate-800 shrink-0">
-              <img src="${g.logo}" class="w-full h-full object-cover" onerror="this.src='logo/game.jpg'">
+              <img src="${escapeGameText(g.logo || 'logo/game.jpg')}" class="w-full h-full object-cover" onerror="this.src='logo/game.jpg'">
             </div>
             <div class="min-w-0">
-              <div class="font-extrabold text-sm truncate">${g.title}</div>
-              <div class="text-[10px] text-slate-500 truncate">${g.url} · Size: ${g.size}</div>
+              <div class="font-extrabold text-sm truncate">${escapeGameText(g.title || 'Untitled')}</div>
+              <div class="text-[10px] text-slate-500 truncate">${escapeGameText(g.url || '')} · Size: ${escapeGameText(g.size || 'normal')}</div>
             </div>
           </div>
-          <button onclick="removeGame('${g.id}')" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-rose-500 hover:bg-rose-500/10">Delete</button>
+          <button onclick="removeGame('${escapeGameText(g.id)}')" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-rose-500 hover:bg-rose-500/10">Delete</button>
         </div>
       `).join('');
     }
 
     async function removeGame(id) {
-      if (!confirm('Remove game?')) return;
-      let list = JSON.parse(localStorage.getItem('st_custom_games') || '[]');
-      list = list.filter(g => g.id !== id);
-      localStorage.setItem('st_custom_games', JSON.stringify(list));
-      renderCustomGames();
-      loadAllGames();
+      if (!confirm('Remove this game from all phones?')) return;
       try {
+        let list = allGamesData.length ? [...allGamesData] : await fetchGamesListFromGitHub();
+        list = list.filter(g => g.id !== id);
         await pushFileDirect('games.json', JSON.stringify(list, null, 2), 'Remove game');
+        allGamesData = list;
+        safeSaveLocalGames(list);
+        renderCustomGames();
+        filterAllGames();
+        document.getElementById('allGamesCount').textContent = allGamesData.length;
       } catch (err) {
-        alert('Removed locally, GitHub sync failed: ' + err.message);
+        alert('Delete failed: ' + err.message);
       }
     }
 
     async function wipeAllCustomGames() {
-      if (!confirm('Clear all custom games?')) return;
-      localStorage.setItem('st_custom_games', JSON.stringify([]));
-      renderCustomGames();
-      loadAllGames();
+      if (!confirm('Clear all games in games.json?')) return;
       try {
         await pushFileDirect('games.json', JSON.stringify([], null, 2), 'Wipe all games');
-      } catch (err) {}
+        allGamesData = [];
+        safeSaveLocalGames([]);
+        renderCustomGames();
+        filterAllGames();
+        document.getElementById('allGamesCount').textContent = '0';
+      } catch (err) {
+        alert('Failed to clear games: ' + err.message);
+      }
     }
 
     /* ==========================================
@@ -546,42 +754,30 @@
 
     async function loadAllGames() {
       const c = getCreds();
+      const status = document.getElementById("allGamesStatus");
 
       if (!c.token) {
-        const status = document.getElementById("allGamesStatus");
-        if (status) status.textContent = "Enter and save your GitHub token first.";
+        if (status) status.textContent = "Enter and save your GitHub token in Section 1 first.";
         return;
       }
 
-      const status = document.getElementById("allGamesStatus");
       if (status) status.textContent = "Loading all games from GitHub...";
 
       try {
-        const api = `https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/games.json?ref=${encodeURIComponent(c.branch)}`;
-
-        const res = await fetch(api, {
-          headers: {
-            Authorization: `Bearer ${c.token}`,
-            Accept: "application/vnd.github+json"
-          }
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) throw new Error(data.message || "Could not load games.json");
-
-        allGamesData = JSON.parse(base64ToUtf8(data.content));
+        allGamesData = await fetchGamesListFromGitHub();
 
         if (!Array.isArray(allGamesData)) {
-          throw new Error("games.json must contain a JSON array.");
+          allGamesData = [];
         }
 
+        safeSaveLocalGames(allGamesData);
         editedGamesTotal = 0;
 
         document.getElementById("allGamesCount").textContent = allGamesData.length;
         document.getElementById("editedGamesCount").textContent = "0";
         if (status) status.textContent = "Successfully loaded all games.";
 
+        renderCustomGames();
         filterAllGames();
 
       } catch (err) {
@@ -635,7 +831,7 @@
       document.getElementById("editGameUrl").value = game.url || "";
 
       const categories = Array.isArray(game.categories) ? game.categories : [game.category || "popular"];
-      const category = categories.find(x => ["popular", "1v1", "classic", "racing"].includes(x)) || "popular";
+      const category = categories.find(x => ["popular", "1v1", "classic", "racing", "sports"].includes(x)) || "popular";
 
       document.getElementById("editGameCategory").value = category;
       document.getElementById("editGamePosition").value = ["before-popular", "popular", "after-popular"].includes(game.position) ? game.position : "popular";
@@ -660,15 +856,10 @@
 
       const game = { ...allGamesData[index] };
       const title = document.getElementById("editGameTitle").value.trim();
-      const url = document.getElementById("editGameUrl").value.trim();
+      const url = document.getElementById("editGameUrl").value.trim().replace(/^\/+/, '');
 
       if (!title || !url) {
         alert("Game name and URL are required.");
-        return;
-      }
-
-      if (!/^(?!\/)(?!.*(?:^|\/)\.\.(?:\/|$))[a-zA-Z0-9._/-]+$/.test(url)) {
-        alert("Enter a valid relative game path.");
         return;
       }
 
@@ -679,7 +870,7 @@
       game.logoSize = document.getElementById("editLogoSize").value;
 
       const category = document.getElementById("editGameCategory").value;
-      game.categories = [category, ...((game.categories || []).filter(x => !["popular", "1v1", "classic", "racing"].includes(x)))];
+      game.categories = [category, ...((game.categories || []).filter(x => !["popular", "1v1", "classic", "racing", "sports"].includes(x)))];
 
       const logoFile = document.getElementById("editGameLogo").files[0];
 
@@ -688,10 +879,6 @@
           if (!logoFile.type.startsWith("image/")) {
             throw new Error("Select a valid image file.");
           }
-          if (logoFile.size > 2 * 1024 * 1024) {
-            throw new Error("Logo must be smaller than 2 MB.");
-          }
-
           const safeName = logoFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
           const logoPath = `logo/game-${Date.now()}-${safeName}`;
 
@@ -703,48 +890,19 @@
         allGamesData[index] = game;
 
         await pushFileDirect("games.json", JSON.stringify(allGamesData, null, 2), `Edit game: ${title}`);
+        safeSaveLocalGames(allGamesData);
 
         editedGamesTotal++;
         document.getElementById("editedGamesCount").textContent = editedGamesTotal;
         document.getElementById("allGamesStatus").textContent = "Game updated successfully on GitHub!";
 
         closeGameEditor();
+        renderCustomGames();
         filterAllGames();
         alert("Game updated successfully!");
 
       } catch (err) {
         alert("Update failed: " + err.message);
-      }
-    }
-
-    function readFileAsDataURL(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = () => reject(new Error("Could not read image."));
-        reader.readAsDataURL(file);
-      });
-    }
-
-    async function pushImageDirect(path, dataURL, message) {
-      const c = getCreds();
-      const comma = dataURL.indexOf(",");
-      const base64 = dataURL.slice(comma + 1);
-      const api = `https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/${path}`;
-
-      const res = await fetch(api, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${c.token}`,
-          Accept: "application/vnd.github+json",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ message, content: base64, branch: c.branch })
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || "Logo upload failed.");
       }
     }
 
@@ -757,13 +915,15 @@
       list.innerHTML = '<div class="text-xs text-slate-500 p-2">Loading repository files...</div>';
       
       try {
-        const res = await fetch(`https://api.github.com/repos/${c.owner}/${c.repo}/contents/${path}?ref=${c.branch}`, {
+        const cleanPath = encodeRepoPath(path);
+        const res = await fetch(`https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/${cleanPath}?ref=${encodeURIComponent(c.branch)}&t=${Date.now()}`, {
+          cache: 'no-store',
           headers: { 'Authorization': `Bearer ${c.token}`, 'Accept': 'application/vnd.github+json' }
         });
         const data = await res.json();
         if (Array.isArray(data)) {
           list.innerHTML = data.map(i => `
-            <button type="button" onclick="quickLoad('${i.path}')" class="flex items-center gap-2 p-2.5 rounded-lg text-xs font-bold text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900 border border-teal-500/30 hover:border-teal-400 shadow-sm truncate text-left">
+            <button type="button" onclick="${i.type === 'dir' ? `browseRepoDirectory('${i.path}')` : `quickLoad('${i.path}')`}" class="flex items-center gap-2 p-2.5 rounded-lg text-xs font-bold text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900 border border-teal-500/30 hover:border-teal-400 shadow-sm truncate text-left">
               <i class="${i.type==='dir'?'fa-solid fa-folder text-amber-400':'fa-regular fa-file-code text-teal-400'} shrink-0 text-sm"></i>
               <span class="truncate">${i.name}</span>
             </button>
@@ -784,8 +944,9 @@
 
     async function fetchFileFromGitHub() {
       const c = getCreds();
-      const path = document.getElementById('ghFilePath').value.trim();
-      const res = await fetch(`https://api.github.com/repos/${c.owner}/${c.repo}/contents/${path}?ref=${c.branch}`, {
+      const path = encodeRepoPath(document.getElementById('ghFilePath').value.trim());
+      const res = await fetch(`https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/${path}?ref=${encodeURIComponent(c.branch)}&t=${Date.now()}`, {
+        cache: 'no-store',
         headers: { 'Authorization': `Bearer ${c.token}`, 'Accept': 'application/vnd.github+json' }
       });
       const d = await res.json();
@@ -828,16 +989,17 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       if (localStorage.getItem('st_theme') === 'dark') document.body.classList.add('dark-theme');
-      if (localStorage.getItem('st_admin_unlocked') === 'true') {
-        document.getElementById('passwordModal').classList.add('hidden');
-        renderCustomGames();
-        loadAllGames();
-      }
       const s = JSON.parse(localStorage.getItem('st_github_config') || '{}');
       if (s.owner) document.getElementById('ghOwner').value = s.owner;
       if (s.repo) document.getElementById('ghRepo').value = s.repo;
       if (s.branch) document.getElementById('ghBranch').value = s.branch;
       if (s.token) document.getElementById('ghToken').value = s.token;
+
+      if (localStorage.getItem('st_admin_unlocked') === 'true') {
+        document.getElementById('passwordModal').classList.add('hidden');
+        renderCustomGames();
+        loadAllGames();
+      }
     });
   </script>
 </body>
