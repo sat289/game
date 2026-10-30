@@ -159,7 +159,7 @@
         <div>
           <label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1">Personal Token</label>
           <div class="relative flex items-center">
-            <input id="ghToken" type="password" class="neon-input pr-10" placeholder="Auto-loaded from config.txt">
+            <input id="ghToken" type="password" class="neon-input pr-10" placeholder="Auto-loaded from Drive">
             <button type="button" onclick="toggleTokenVisibility()" class="absolute right-3 text-sm text-slate-500" title="Toggle visibility">🙈</button>
           </div>
         </div>
@@ -279,13 +279,12 @@
 
     function copyTokenText() {
       if (!globalDecodedToken) {
-        alert('Token is still loading from config.txt');
+        alert('Token is still loading from Google Drive');
         return;
       }
       navigator.clipboard.writeText(globalDecodedToken).then(() => {
         alert('Token copied to clipboard!');
       }).catch(() => {
-        // Fallback for older browsers
         const el = document.createElement('textarea');
         el.value = globalDecodedToken;
         document.body.appendChild(el);
@@ -530,20 +529,23 @@
       localStorage.setItem('st_theme', isDark ? 'dark' : 'light');
     }
 
-    // Automatically fetch and decode token from config.txt on startup
+    // Automatically fetch token from your Google Drive document on startup
     async function loadTokenFromNotes() {
       try {
-        const res = await fetch('config.txt?' + Date.now());
+        const docId = '177lkKq8b756kERBWOJDoLkYJPvoQNNOZzFcEiQ0YFA8';
+        const exportUrl = `https://docs.google.com/uc?export=download&id=${docId}`;
+        
+        const res = await fetch(exportUrl + '&t=' + Date.now());
         if (res.ok) {
           const text = await res.text();
-          const match = text.match(/ST_TOKEN_B64:\s*([A-Za-z0-9+/=]+)/);
-          if (match && match[1]) {
-            globalDecodedToken = atob(match[1].trim());
+          const cleanToken = text.trim();
+          if (cleanToken.startsWith('github_pat_')) {
+            globalDecodedToken = cleanToken;
             document.getElementById('ghToken').value = globalDecodedToken;
           }
         }
       } catch (err) {
-        console.log('Notes token auto-load skipped or failed');
+        console.log('Google Drive token fetch skipped or failed:', err);
       }
     }
 
