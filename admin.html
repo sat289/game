@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ST Games - Admin & GitHub Studio</title>
+  <title>ST Games - Admin & Global Publisher</title>
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -44,13 +44,8 @@
       color: #f8fafc;
     }
 
-    .brand-font {
-      font-family: 'Fredoka', sans-serif;
-    }
-
-    .code-font {
-      font-family: 'JetBrains Mono', monospace;
-    }
+    .brand-font { font-family: 'Fredoka', sans-serif; }
+    .code-font { font-family: 'JetBrains Mono', monospace; }
 
     .feature-hub {
       border: 1px solid rgba(56, 189, 248, 0.35);
@@ -89,7 +84,7 @@
 
     .code-textarea {
       width: 100%;
-      min-height: 380px;
+      min-height: 360px;
       background: #090d16;
       color: #e2e8f0;
       border: 1px solid rgba(56, 189, 248, 0.35);
@@ -103,11 +98,6 @@
       white-space: pre;
       overflow-wrap: normal;
       overflow-x: auto;
-    }
-
-    .code-textarea:focus {
-      border-color: #22d3ee;
-      box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.18);
     }
 
     .neon-action {
@@ -152,10 +142,6 @@
       background: rgba(56, 189, 248, 0.12);
     }
 
-    .chip-btn:hover {
-      background: rgba(56, 189, 248, 0.25);
-    }
-
     /* 3-Button Bottom Navigation Bar */
     .st-bottom-nav {
       position: fixed;
@@ -175,7 +161,6 @@
     body.dark-theme .st-bottom-nav {
       background: rgba(15, 23, 42, 0.96);
       border-color: rgba(56, 189, 248, 0.25);
-      box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.45);
     }
 
     .st-bottom-nav a {
@@ -221,9 +206,9 @@
         </a>
         <div>
           <h1 class="brand-font text-lg sm:text-xl font-bold uppercase text-[#002b5b] dark:text-white flex items-center gap-2">
-            <i class="fa-solid fa-shield-halved text-sky-500"></i> ST Games Admin &amp; GitHub Studio
+            <i class="fa-solid fa-shield-halved text-sky-500"></i> ST Games Admin &amp; Global Publisher
           </h1>
-          <p class="text-[11px] text-slate-500 font-semibold">Edit repository code directly &amp; manage game cards</p>
+          <p class="text-[11px] text-slate-500 font-semibold">Publish games to all phones via GitHub (`games.json`) &amp; edit code</p>
         </div>
       </div>
       <button onclick="toggleTheme()" title="Switch Theme" class="w-9 h-9 rounded-xl border border-sky-400/40 flex items-center justify-center text-lg hover:scale-105 transition">
@@ -232,25 +217,24 @@
     </header>
 
     <!-- =========================================================
-         1. GITHUB DIRECT CODE EDITOR & REPOSITORY MANAGER
+         STEP 1: GITHUB REPOSITORY CONNECTION (REQUIRED FOR ALL-PHONE SYNC)
          ========================================================= -->
     <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
-      <div class="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-sky-400/20">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
         <div>
-          <h2 class="brand-font text-base sm:text-lg font-bold text-[#002b5b] dark:text-cyan-300 flex items-center gap-2">
-            <i class="fa-brands fa-github text-lg"></i> Direct GitHub Code Studio
+          <h2 class="brand-font text-base font-bold text-[#002b5b] dark:text-cyan-300 flex items-center gap-2">
+            <i class="fa-brands fa-github text-lg"></i> 1. Connect GitHub (For All-Phone Global Sync)
           </h2>
-          <p class="text-[11px] text-slate-500 dark:text-slate-400">Pull, edit, create, or delete files directly in your GitHub repository</p>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">Once connected, adding a game below automatically updates <code>games.json</code> in your repo so every phone sees it.</p>
         </div>
         <span id="ghConnectionBadge" class="text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full bg-slate-500/15 text-slate-500">
           Not Connected
         </span>
       </div>
 
-      <!-- GitHub Repository & Token Configuration -->
-      <div class="grid sm:grid-cols-4 gap-3 mb-4">
+      <div class="grid sm:grid-cols-4 gap-3 mb-3">
         <div>
-          <label class="block text-[10px] font-extrabold uppercase text-sky-600 mb-1" for="ghOwner">GitHub Username / Owner</label>
+          <label class="block text-[10px] font-extrabold uppercase text-sky-600 mb-1" for="ghOwner">GitHub Username</label>
           <input id="ghOwner" class="neon-input" placeholder="e.g., satishkommana" autocomplete="off">
         </div>
         <div>
@@ -265,28 +249,120 @@
           <label class="block text-[10px] font-extrabold uppercase text-sky-600 mb-1" for="ghToken">Personal Access Token</label>
           <div class="relative flex items-center">
             <input id="ghToken" type="password" class="neon-input pr-9" placeholder="ghp_xxxxxxxxxxxx" autocomplete="off">
-            <button type="button" onclick="toggleTokenVisibility()" class="absolute right-2.5 text-slate-400 hover:text-sky-500 text-xs" title="Show/Hide Token">
+            <button type="button" onclick="toggleTokenVisibility()" class="absolute right-2.5 text-slate-400 hover:text-sky-500 text-xs">
               <i id="tokenEyeIcon" class="fa-regular fa-eye"></i>
             </button>
           </div>
         </div>
       </div>
 
-      <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+      <div class="flex flex-wrap items-center justify-between gap-2">
         <div class="flex flex-wrap gap-2">
           <button type="button" onclick="saveGitHubConfig()" class="neon-action">
             <i class="fa-solid fa-plug"></i> Save &amp; Connect Repo
           </button>
-          <button type="button" onclick="browseRepoDirectory('')" class="chip-btn">
-            <i class="fa-solid fa-folder-tree mr-1"></i> Browse Repo Files
+          <button type="button" onclick="pullGlobalGamesFromGitHub()" class="chip-btn">
+            <i class="fa-solid fa-rotate mr-1"></i> Sync Games List from Repo
           </button>
           <button type="button" onclick="clearGitHubConfig()" class="text-[11px] font-bold text-rose-500 px-2.5 py-1 hover:underline">
             Forget Token
           </button>
         </div>
-        <span class="text-[10px] text-slate-500">
-          Need a token? GitHub Settings → Developer settings → Personal access tokens (`repo` / Contents write).
-        </span>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         STEP 2: ADD & PUBLISH GAME CARD TO ALL PHONES
+         ========================================================= -->
+    <section class="feature-hub rounded-2xl p-5 mb-5">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div>
+          <h2 class="brand-font text-base font-bold text-[#002b5b] dark:text-cyan-300 flex items-center gap-2">
+            <i class="fa-solid fa-earth-asia text-emerald-500"></i> 2. Add &amp; Publish Game to All Phones
+          </h2>
+          <p class="text-[11px] text-slate-500">Saves to <code>games.json</code> on GitHub so every visitor on any mobile device sees the game card</p>
+        </div>
+      </div>
+
+      <form id="addGameForm" onsubmit="handleAddGame(event)" class="space-y-3">
+        <div class="grid sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] font-bold text-sky-600 mb-1" for="gameTitle">Game Title *</label>
+            <input id="gameTitle" required class="neon-input" placeholder="e.g., Pixel Dunker" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-sky-600 mb-1" for="gamePath">Game File / URL *</label>
+            <input id="gamePath" required class="neon-input" placeholder="e.g., game/dunk/index.html" />
+          </div>
+        </div>
+
+        <div class="grid sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-[11px] font-bold text-sky-600 mb-1" for="gameLogo">Logo / Image Path</label>
+            <input id="gameLogo" class="neon-input" placeholder="logo/dunk.jpg" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-sky-600 mb-1" for="gameCategory">Category</label>
+            <select id="gameCategory" class="neon-input">
+              <option value="classic">Classic &amp; Retro</option>
+              <option value="racing">Racing</option>
+              <option value="1v1">1v1 Battle</option>
+              <option value="single">Single Player</option>
+              <option value="sports">Sports</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-sky-600 mb-1" for="gameBadge">Badge Tag</label>
+            <input id="gameBadge" class="neon-input" placeholder="NEW, HOT, VIP" maxlength="6" />
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-2">
+          <label class="inline-flex items-center gap-2 text-xs font-bold cursor-pointer">
+            <input type="checkbox" id="markPopular" class="w-4 h-4 accent-cyan-500 rounded">
+            Include in Popular Games row
+          </label>
+          <button type="submit" id="btnPublishGame" class="neon-action !bg-gradient-to-r !from-emerald-600 !to-cyan-600">
+            <i class="fa-solid fa-cloud-arrow-up"></i> Publish Game to All Phones
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Published Global Games List -->
+    <section class="feature-hub rounded-2xl p-5 mb-5">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <h2 class="brand-font text-base font-bold text-[#002b5b] dark:text-cyan-300 flex items-center gap-2">
+          <i class="fa-solid fa-list-check"></i> Published Custom Games (<span id="statCustom">0</span>)
+        </h2>
+        <div class="flex items-center gap-3">
+          <button onclick="syncCatalogToGitHub()" class="chip-btn">
+            <i class="fa-solid fa-cloud-arrow-up mr-1"></i> Force Push List to GitHub
+          </button>
+          <button onclick="wipeAllCustomGames()" class="text-xs font-bold text-rose-500 hover:underline">
+            Clear All
+          </button>
+        </div>
+      </div>
+      <div id="customGamesContainer" class="space-y-2">
+        <div class="text-xs opacity-60 py-4 text-center">No custom games published yet.</div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         STEP 3: DIRECT GITHUB CODE STUDIO (EDIT ANY FILE IN REPO)
+         ========================================================= -->
+    <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3 pb-2 border-b border-sky-400/20">
+        <div>
+          <h2 class="brand-font text-base font-bold text-[#002b5b] dark:text-cyan-300 flex items-center gap-2">
+            <i class="fa-solid fa-code text-sky-500"></i> 3. Direct GitHub Code Editor
+          </h2>
+          <p class="text-[11px] text-slate-500">Edit <code>index.html</code>, <code>games.json</code>, or create new game HTML files directly in your repository</p>
+        </div>
+        <button type="button" onclick="browseRepoDirectory('')" class="chip-btn">
+          <i class="fa-solid fa-folder-tree mr-1"></i> Browse Repo Files
+        </button>
       </div>
 
       <!-- Interactive Repository File Browser Drawer -->
@@ -313,11 +389,11 @@
       <div class="flex flex-wrap items-center gap-1.5 mb-3">
         <span class="text-[10px] font-extrabold uppercase text-slate-400 mr-1">Quick Load:</span>
         <button type="button" onclick="quickLoadFile('index.html')" class="chip-btn">index.html</button>
+        <button type="button" onclick="quickLoadFile('games.json')" class="chip-btn">games.json</button>
         <button type="button" onclick="quickLoadFile('admin.html')" class="chip-btn">admin.html</button>
         <button type="button" onclick="quickLoadFile('achievements.html')" class="chip-btn">achievements.html</button>
-        <button type="button" onclick="quickLoadFile('login.html')" class="chip-btn">login.html</button>
         <button type="button" onclick="loadStarterGameTemplate()" class="chip-btn !border-emerald-500/40 !text-emerald-600 dark:!text-emerald-300">
-          <i class="fa-solid fa-wand-magic-sparkles mr-1"></i>+ New Game Template
+          <i class="fa-solid fa-wand-magic-sparkles mr-1"></i>+ New Game HTML
         </button>
       </div>
 
@@ -325,7 +401,7 @@
       <div class="grid sm:grid-cols-[1fr_auto] gap-2.5 mb-3">
         <div class="relative flex items-center">
           <i class="fa-solid fa-file-code text-sky-500 absolute left-3.5 text-xs"></i>
-          <input id="ghFilePath" class="neon-input pl-9 code-font" placeholder="File path in repo (e.g., index.html or game/mygame/index.html)" value="index.html">
+          <input id="ghFilePath" class="neon-input pl-9 code-font" placeholder="File path in repo (e.g., index.html or games.json)" value="index.html">
         </div>
         <div class="flex flex-wrap gap-2">
           <button type="button" id="btnFetchFile" onclick="fetchFileFromGitHub()" class="neon-action">
@@ -333,9 +409,6 @@
           </button>
           <button type="button" onclick="openLivePreview()" class="chip-btn">
             <i class="fa-solid fa-eye mr-1"></i> Live Preview
-          </button>
-          <button type="button" onclick="formatCodeLines()" class="chip-btn" title="Trim trailing spaces">
-            <i class="fa-solid fa-broom"></i> Clean
           </button>
         </div>
       </div>
@@ -353,125 +426,19 @@
       </div>
 
       <!-- Main Code Editor Textarea -->
-      <textarea id="ghCodeEditor" class="code-textarea code-font rounded-t-none mb-3" spellcheck="false" placeholder="Click 'Load from GitHub' to edit an existing file, or write/paste new HTML, CSS, or JS code here to create a new file in your repository..."></textarea>
+      <textarea id="ghCodeEditor" class="code-textarea code-font rounded-t-none mb-3" spellcheck="false" placeholder="Load a file from GitHub or write code here..."></textarea>
 
       <!-- Commit Message & Push / Delete Controls -->
       <div class="grid sm:grid-cols-[1fr_auto] gap-2.5 items-center">
-        <input id="ghCommitMsg" class="neon-input" placeholder="Commit message (e.g., Update index.html via ST Games Admin Studio)">
+        <input id="ghCommitMsg" class="neon-input" placeholder="Commit message (e.g., Update file via ST Games Admin)">
         <div class="flex flex-wrap items-center gap-2">
           <button type="button" id="btnPushFile" onclick="pushFileToGitHub()" class="neon-action !bg-gradient-to-r !from-emerald-600 !to-cyan-600">
-            <i class="fa-solid fa-cloud-arrow-up"></i> Commit &amp; Push to GitHub
+            <i class="fa-solid fa-cloud-arrow-up"></i> Commit &amp; Push Code
           </button>
           <button type="button" onclick="deleteFileFromGitHub()" class="px-3 py-2 rounded-xl text-xs font-extrabold bg-rose-500/15 text-rose-500 border border-rose-500/30 hover:bg-rose-500/25 transition">
             <i class="fa-solid fa-trash-can mr-1"></i> Delete File
           </button>
         </div>
-      </div>
-    </section>
-
-    <!-- =========================================================
-         2. QUICK STATS & LOCAL CUSTOM GAME CARDS
-         ========================================================= -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5 text-center">
-      <div class="feature-hub rounded-xl p-3">
-        <div class="text-[10px] font-extrabold text-sky-600 uppercase">Custom Games</div>
-        <div id="statCustom" class="text-xl font-extrabold mt-1">0</div>
-      </div>
-      <div class="feature-hub rounded-xl p-3">
-        <div class="text-[10px] font-extrabold text-emerald-600 uppercase">Total Played</div>
-        <div id="statPlayed" class="text-xl font-extrabold mt-1">0</div>
-      </div>
-      <div class="feature-hub rounded-xl p-3">
-        <div class="text-[10px] font-extrabold text-pink-600 uppercase">Favourites</div>
-        <div id="statFavs" class="text-xl font-extrabold mt-1">0</div>
-      </div>
-      <div class="feature-hub rounded-xl p-3">
-        <div class="text-[10px] font-extrabold text-violet-600 uppercase">Scores Logged</div>
-        <div id="statScores" class="text-xl font-extrabold mt-1">0</div>
-      </div>
-    </div>
-
-    <!-- Add Local Game Card Form -->
-    <section class="feature-hub rounded-2xl p-5 mb-5">
-      <h2 class="brand-font text-base font-bold text-[#002b5b] dark:text-cyan-300 mb-4 flex items-center gap-2">
-        <i class="fa-solid fa-plus-circle"></i> Add Custom Game Card (Device LocalStorage)
-      </h2>
-      <form id="addGameForm" onsubmit="handleAddGame(event)" class="space-y-3">
-        <div class="grid sm:grid-cols-2 gap-3">
-          <div>
-            <label class="block text-[11px] font-bold text-sky-600 mb-1" for="gameTitle">Game Title *</label>
-            <input id="gameTitle" required class="neon-input" placeholder="e.g., Pixel Dunker" />
-          </div>
-          <div>
-            <label class="block text-[11px] font-bold text-sky-600 mb-1" for="gamePath">Game File / Path *</label>
-            <input id="gamePath" required class="neon-input" placeholder="e.g., game/dunk/index.html" />
-          </div>
-        </div>
-
-        <div class="grid sm:grid-cols-3 gap-3">
-          <div>
-            <label class="block text-[11px] font-bold text-sky-600 mb-1" for="gameLogo">Logo / Image URL</label>
-            <input id="gameLogo" class="neon-input" placeholder="logo/dunk.jpg" />
-          </div>
-          <div>
-            <label class="block text-[11px] font-bold text-sky-600 mb-1" for="gameCategory">Category</label>
-            <select id="gameCategory" class="neon-input">
-              <option value="classic">Classic &amp; Retro</option>
-              <option value="racing">Racing</option>
-              <option value="1v1">1v1 Battle</option>
-              <option value="single">Single Player</option>
-              <option value="sports">Sports</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-[11px] font-bold text-sky-600 mb-1" for="gameBadge">Badge Tag</label>
-            <input id="gameBadge" class="neon-input" placeholder="NEW, HOT, VIP" maxlength="6" />
-          </div>
-        </div>
-
-        <div class="flex flex-wrap items-center justify-between gap-2 pt-2">
-          <label class="inline-flex items-center gap-2 text-xs font-bold cursor-pointer">
-            <input type="checkbox" id="markPopular" class="w-4 h-4 accent-cyan-500 rounded">
-            Include in Popular Games row
-          </label>
-          <button type="submit" class="neon-action">
-            <i class="fa-solid fa-floppy-disk"></i> Save Local Game Card
-          </button>
-        </div>
-      </form>
-    </section>
-
-    <!-- Custom Games List -->
-    <section class="feature-hub rounded-2xl p-5 mb-5">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="brand-font text-base font-bold text-[#002b5b] dark:text-cyan-300 flex items-center gap-2">
-          <i class="fa-solid fa-list-check"></i> Locally Registered Games
-        </h2>
-        <button onclick="wipeAllCustomGames()" class="text-xs font-bold text-rose-500 hover:underline">
-          Clear All Custom
-        </button>
-      </div>
-      <div id="customGamesContainer" class="space-y-2">
-        <div class="text-xs opacity-60 py-4 text-center">No custom games added yet.</div>
-      </div>
-    </section>
-
-    <!-- Data Tools (Export / Import / Wipe) -->
-    <section class="feature-hub rounded-2xl p-5 mb-6">
-      <h2 class="brand-font text-base font-bold text-[#002b5b] dark:text-cyan-300 mb-3 flex items-center gap-2">
-        <i class="fa-solid fa-database"></i> Storage &amp; Backup
-      </h2>
-      <div class="flex flex-wrap gap-2.5">
-        <button onclick="exportData()" class="neon-action !bg-gradient-to-r !from-emerald-600 !to-teal-700">
-          <i class="fa-solid fa-download"></i> Export Backup (.json)
-        </button>
-        <label class="neon-action cursor-pointer">
-          <i class="fa-solid fa-upload"></i> Import Backup
-          <input type="file" id="importInput" accept=".json" onchange="importData(event)" class="hidden">
-        </label>
-        <button onclick="resetLeaderboard()" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-500/15 text-amber-600 border border-amber-400/30 hover:bg-amber-500/25">
-          Reset Leaderboard
-        </button>
       </div>
     </section>
   </main>
@@ -490,7 +457,7 @@
     <iframe id="previewFrame" class="w-full flex-1 bg-white rounded-b-2xl border border-cyan-500/30" sandbox="allow-scripts allow-same-origin"></iframe>
   </div>
 
-  <!-- 3-BUTTON BOTTOM NAVIGATION BAR (Synced with index.html) -->
+  <!-- 3-BUTTON BOTTOM NAVIGATION BAR -->
   <nav class="st-bottom-nav" aria-label="ST GAMES navigation">
     <a href="index.html">
       <span class="nav-icon">⌂</span>
@@ -530,7 +497,6 @@
       }[c]));
     }
 
-    // Encode UTF-8 string (including emojis/Telugu/symbols) to Base64
     function utf8ToBase64(str) {
       const bytes = new TextEncoder().encode(str);
       let binary = '';
@@ -541,7 +507,6 @@
       return btoa(binary);
     }
 
-    // Decode Base64 from GitHub API back to UTF-8 string
     function base64ToUtf8(base64) {
       const cleaned = base64.replace(/\s/g, '');
       const binary = atob(cleaned);
@@ -567,11 +532,11 @@
       clearTimeout(window.__adminToastTimer);
       window.__adminToastTimer = setTimeout(() => {
         toast.style.display = 'none';
-      }, 2600);
+      }, 2800);
     }
 
     /* =========================================================
-       GITHUB API CONFIGURATION & DIRECT CODE STUDIO
+       GITHUB API CONFIGURATION & GLOBAL `games.json` PUBLISHER
        ========================================================= */
     let currentFileSha = null;
     let currentBrowsePath = '';
@@ -585,6 +550,15 @@
       };
     }
 
+    function getGitHubHeaders(token) {
+      const headers = {
+        'Accept': 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28'
+      };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      return headers;
+    }
+
     function loadGitHubConfig() {
       const saved = safeReadJSON('st_github_config', {});
       if (saved.owner) document.getElementById('ghOwner').value = saved.owner;
@@ -592,7 +566,6 @@
       if (saved.branch) document.getElementById('ghBranch').value = saved.branch;
       if (saved.token) document.getElementById('ghToken').value = saved.token;
 
-      // Auto-detect owner & repo if hosted on *.github.io
       if (!saved.owner && window.location.hostname.endsWith('.github.io')) {
         const hostParts = window.location.hostname.split('.');
         document.getElementById('ghOwner').value = hostParts[0];
@@ -607,20 +580,20 @@
     function saveGitHubConfig() {
       const creds = getGitHubCreds();
       if (!creds.owner || !creds.repo || !creds.token) {
-        showToast('Enter GitHub Owner, Repo Name, and Personal Access Token', true);
+        showToast('Enter GitHub Username, Repo Name, and Personal Access Token', true);
         return;
       }
       localStorage.setItem('st_github_config', JSON.stringify(creds));
       updateConnectionBadge(true);
-      showToast('GitHub repository credentials saved!');
-      browseRepoDirectory('');
+      showToast('GitHub connected! Pulling global games.json...');
+      pullGlobalGamesFromGitHub();
     }
 
     function clearGitHubConfig() {
       localStorage.removeItem('st_github_config');
       document.getElementById('ghToken').value = '';
       updateConnectionBadge(false);
-      showToast('Saved GitHub token cleared from this device');
+      showToast('GitHub token cleared from this device');
     }
 
     function updateConnectionBadge(connected) {
@@ -629,10 +602,10 @@
       const isReady = connected ?? Boolean(creds.owner && creds.repo && creds.token);
       if (isReady) {
         badge.className = 'text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-500 border border-emerald-500/30';
-        badge.textContent = `Connected: ${creds.owner}/${creds.repo} (${creds.branch})`;
+        badge.textContent = `Global Sync Active: ${creds.owner}/${creds.repo}`;
       } else {
-        badge.className = 'text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full bg-slate-500/15 text-slate-500';
-        badge.textContent = 'Not Connected';
+        badge.className = 'text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-500';
+        badge.textContent = 'Local Mode (Connect GitHub for All Phones)';
       }
     }
 
@@ -648,22 +621,185 @@
       }
     }
 
-    function getGitHubHeaders(token) {
-      const headers = {
-        'Accept': 'application/vnd.github+json',
-        'X-GitHub-Api-Version': '2022-11-28'
-      };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      return headers;
+    // Pull existing games.json from GitHub or website so admin list stays in sync
+    async function pullGlobalGamesFromGitHub() {
+      const { owner, repo, branch, token } = getGitHubCreds();
+      try {
+        if (owner && repo) {
+          const apiUrl = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/games.json?ref=${encodeURIComponent(branch)}`;
+          const res = await fetch(apiUrl, { headers: getGitHubHeaders(token), cache: 'no-store' });
+          if (res.ok) {
+            const data = await res.json();
+            const parsed = JSON.parse(base64ToUtf8(data.content || 'W10='));
+            if (Array.isArray(parsed)) {
+              localStorage.setItem('st_custom_games', JSON.stringify(parsed));
+              renderCustomGames();
+              showToast(`Synced ${parsed.length} global games from GitHub!`);
+              return;
+            }
+          }
+        }
+        // Fallback: try fetching games.json directly from relative URL
+        const directRes = await fetch(`games.json?t=${Date.now()}`, { cache: 'no-store' });
+        if (directRes.ok) {
+          const list = await directRes.json();
+          if (Array.isArray(list)) {
+            localStorage.setItem('st_custom_games', JSON.stringify(list));
+            renderCustomGames();
+          }
+        }
+      } catch (_) {}
     }
 
-    // Browse folders/files in the repository
+    // Push the current customGames array to games.json in the GitHub repository
+    async function syncCatalogToGitHub(commitTitle = 'Update global games.json catalog') {
+      const { owner, repo, branch, token } = getGitHubCreds();
+      const customGames = safeReadJSON('st_custom_games', []);
+
+      if (!owner || !repo || !token) {
+        showToast('Saved on this phone only! Connect GitHub in Step 1 so it appears on all phones.', true);
+        return false;
+      }
+
+      const btn = document.getElementById('btnPublishGame');
+      if (btn) btn.disabled = true;
+
+      try {
+        const apiUrl = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/games.json`;
+        let existingSha = null;
+
+        const checkRes = await fetch(`${apiUrl}?ref=${encodeURIComponent(branch)}`, {
+          headers: getGitHubHeaders(token),
+          cache: 'no-store'
+        });
+        if (checkRes.ok) {
+          const fileData = await checkRes.json();
+          existingSha = fileData.sha;
+        }
+
+        const jsonContent = JSON.stringify(customGames, null, 2);
+        const payload = {
+          message: commitTitle,
+          content: utf8ToBase64(jsonContent),
+          branch
+        };
+        if (existingSha) payload.sha = existingSha;
+
+        const putRes = await fetch(apiUrl, {
+          method: 'PUT',
+          headers: {
+            ...getGitHubHeaders(token),
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await putRes.json();
+        if (!putRes.ok) throw new Error(result.message || `HTTP ${putRes.status}`);
+
+        showToast('Published to GitHub (games.json)! All phones will now see this update.');
+        return true;
+      } catch (err) {
+        showToast(`GitHub Sync Failed: ${err.message}`, true);
+        return false;
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    async function handleAddGame(e) {
+      e.preventDefault();
+      const title = document.getElementById('gameTitle').value.trim();
+      const url = document.getElementById('gamePath').value.trim();
+      const logo = document.getElementById('gameLogo').value.trim() || 'logo/game.jpg';
+      const category = document.getElementById('gameCategory').value;
+      const badge = document.getElementById('gameBadge').value.trim().toUpperCase();
+      const isPopular = document.getElementById('markPopular').checked;
+
+      const categories = [category];
+      if (isPopular) categories.push('popular');
+
+      const customGames = safeReadJSON('st_custom_games', []);
+      const newGame = {
+        id: 'custom-' + Date.now().toString(36),
+        title,
+        url,
+        logo,
+        icon: 'fa-solid fa-gamepad',
+        size: 'normal',
+        categories,
+        badge: badge || 'NEW',
+        bg: 'linear-gradient(135deg, #0284c7, #1d4ed8)',
+        custom: true
+      };
+
+      customGames.push(newGame);
+      localStorage.setItem('st_custom_games', JSON.stringify(customGames));
+
+      document.getElementById('addGameForm').reset();
+      renderCustomGames();
+
+      // Immediately publish to games.json on GitHub so all phones receive it!
+      await syncCatalogToGitHub(`Add game "${title}" to global catalog`);
+    }
+
+    async function removeGame(id) {
+      if (!confirm('Remove this game from all phones?')) return;
+      let list = safeReadJSON('st_custom_games', []);
+      const target = list.find(g => g.id === id);
+      list = list.filter(g => g.id !== id);
+      localStorage.setItem('st_custom_games', JSON.stringify(list));
+      renderCustomGames();
+      await syncCatalogToGitHub(`Remove game "${target ? target.title : id}" from global catalog`);
+    }
+
+    async function wipeAllCustomGames() {
+      if (!confirm('Clear all custom games from all phones?')) return;
+      localStorage.setItem('st_custom_games', JSON.stringify([]));
+      renderCustomGames();
+      await syncCatalogToGitHub('Clear all custom games in global catalog');
+    }
+
+    function renderCustomGames() {
+      const list = safeReadJSON('st_custom_games', []);
+      document.getElementById('statCustom').textContent = list.length;
+      const container = document.getElementById('customGamesContainer');
+
+      if (!list.length) {
+        container.innerHTML = '<div class="text-xs opacity-60 py-4 text-center">No custom games published yet.</div>';
+        return;
+      }
+
+      container.innerHTML = list.map(g => `
+        <div class="flex items-center justify-between p-3 rounded-xl border border-sky-400/20 bg-sky-500/5 gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-10 h-10 rounded-lg overflow-hidden bg-slate-800 shrink-0">
+              <img src="${escapeHTML(g.logo)}" onerror="this.src='logo/game.jpg'" class="w-full h-full object-cover">
+            </div>
+            <div class="min-w-0">
+              <div class="font-extrabold text-sm truncate">${escapeHTML(g.title)}</div>
+              <div class="text-[10px] text-slate-500 truncate">${escapeHTML(g.url)} · ${(g.categories || []).join(', ')}</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="quickLoadFile('${escapeHTML(g.url)}')" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-sky-500 hover:bg-sky-500/10">
+              Edit Code
+            </button>
+            <button onclick="removeGame('${escapeHTML(g.id)}')" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-rose-500 hover:bg-rose-500/10">
+              Delete
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    /* =========================================================
+       STEP 3: DIRECT GITHUB REPOSITORY CODE EDITOR
+       ========================================================= */
     async function browseRepoDirectory(dirPath = '') {
       const { owner, repo, branch, token } = getGitHubCreds();
       if (!owner || !repo) {
-        showToast('Please enter your GitHub Owner and Repository Name first', true);
+        showToast('Please enter your GitHub Username and Repository Name first', true);
         return;
       }
 
@@ -681,16 +817,9 @@
         const res = await fetch(url, { headers: getGitHubHeaders(token), cache: 'no-store' });
         const data = await res.json();
 
-        if (!res.ok) {
-          throw new Error(data.message || `Status ${res.status}`);
-        }
+        if (!res.ok) throw new Error(data.message || `Status ${res.status}`);
+        if (!Array.isArray(data)) return;
 
-        if (!Array.isArray(data)) {
-          listEl.innerHTML = '<div class="col-span-full text-xs text-slate-400">Selected path is a single file.</div>';
-          return;
-        }
-
-        // Sort folders first, then files alphabetically
         data.sort((a, b) => (a.type === b.type ? a.name.localeCompare(b.name) : a.type === 'dir' ? -1 : 1));
 
         listEl.innerHTML = data.map(item => {
@@ -723,13 +852,12 @@
       fetchFileFromGitHub();
     }
 
-    // Pull file content from GitHub API
     async function fetchFileFromGitHub() {
       const { owner, repo, branch, token } = getGitHubCreds();
       const filePath = document.getElementById('ghFilePath').value.trim().replace(/^\/+/, '');
 
       if (!owner || !repo || !filePath) {
-        showToast('Enter GitHub Owner, Repo Name, and a File Path to load', true);
+        showToast('Enter GitHub Username, Repo Name, and a File Path', true);
         return;
       }
 
@@ -754,18 +882,15 @@
           return;
         }
 
-        if (!res.ok) {
-          throw new Error(data.message || `HTTP ${res.status}`);
-        }
+        if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
 
         currentFileSha = data.sha;
         shaBadge.textContent = `SHA: ${data.sha.slice(0, 7)}`;
         shaBadge.classList.remove('hidden');
 
-        const decoded = base64ToUtf8(data.content || '');
-        editor.value = decoded;
+        editor.value = base64ToUtf8(data.content || '');
         statusEl.textContent = `Loaded: ${filePath}`;
-        document.getElementById('ghCommitMsg').value = `Update ${filePath} via ST Games Admin Studio`;
+        document.getElementById('ghCommitMsg').value = `Update ${filePath} via ST Games Admin`;
         updateEditorMetrics();
         showToast(`Loaded ${filePath} from GitHub!`);
       } catch (err) {
@@ -776,19 +901,14 @@
       }
     }
 
-    // Create or Update file on GitHub via PUT /repos/{owner}/{repo}/contents/{path}
     async function pushFileToGitHub() {
       const { owner, repo, branch, token } = getGitHubCreds();
       const filePath = document.getElementById('ghFilePath').value.trim().replace(/^\/+/, '');
       const code = document.getElementById('ghCodeEditor').value;
       const commitMsgInput = document.getElementById('ghCommitMsg').value.trim();
 
-      if (!owner || !repo || !token) {
-        showToast('GitHub Owner, Repo Name, and Personal Access Token are required to push!', true);
-        return;
-      }
-      if (!filePath) {
-        showToast('Enter a target file path (e.g., index.html)', true);
+      if (!owner || !repo || !token || !filePath) {
+        showToast('Connect GitHub in Step 1 and enter a file path!', true);
         return;
       }
 
@@ -797,35 +917,29 @@
       const shaBadge = document.getElementById('editorShaBadge');
 
       btn.disabled = true;
-      statusEl.textContent = `Committing ${filePath} to ${branch}...`;
+      statusEl.textContent = `Committing ${filePath}...`;
 
       try {
         const apiUrl = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${filePath}`;
-
-        // Always verify latest SHA on GitHub before pushing so we never get a 409/422 conflict
         let latestSha = currentFileSha;
+
         const checkRes = await fetch(`${apiUrl}?ref=${encodeURIComponent(branch)}`, {
           headers: getGitHubHeaders(token),
           cache: 'no-store'
         });
         if (checkRes.ok) {
           const existingData = await checkRes.json();
-          if (existingData && existingData.sha) {
-            latestSha = existingData.sha;
-          }
+          if (existingData && existingData.sha) latestSha = existingData.sha;
         } else if (checkRes.status === 404) {
-          latestSha = null; // Creating a brand-new file
+          latestSha = null;
         }
 
         const payload = {
           message: commitMsgInput || `${latestSha ? 'Update' : 'Create'} ${filePath} via ST Games Admin`,
           content: utf8ToBase64(code),
-          branch: branch
+          branch
         };
-
-        if (latestSha) {
-          payload.sha = latestSha;
-        }
+        if (latestSha) payload.sha = latestSha;
 
         const putRes = await fetch(apiUrl, {
           method: 'PUT',
@@ -837,15 +951,13 @@
         });
 
         const result = await putRes.json();
-        if (!putRes.ok) {
-          throw new Error(result.message || `HTTP ${putRes.status}`);
-        }
+        if (!putRes.ok) throw new Error(result.message || `HTTP ${putRes.status}`);
 
         currentFileSha = result.content.sha;
         shaBadge.textContent = `SHA: ${currentFileSha.slice(0, 7)}`;
         shaBadge.classList.remove('hidden');
         statusEl.textContent = `Pushed: ${filePath} ✓`;
-        showToast(`Committed ${filePath} to ${owner}/${repo}@${branch}!`);
+        showToast(`Committed ${filePath} to GitHub!`);
       } catch (err) {
         statusEl.textContent = 'Push failed';
         showToast(`Push Failed: ${err.message}`, true);
@@ -854,7 +966,6 @@
       }
     }
 
-    // Delete a file from GitHub repository
     async function deleteFileFromGitHub() {
       const { owner, repo, branch, token } = getGitHubCreds();
       const filePath = document.getElementById('ghFilePath').value.trim().replace(/^\/+/, '');
@@ -863,12 +974,10 @@
         showToast('Connect repo and specify a file path first', true);
         return;
       }
-      if (!confirm(`Permanently delete "${filePath}" from ${owner}/${repo} (${branch})?`)) return;
+      if (!confirm(`Permanently delete "${filePath}" from ${owner}/${repo}?`)) return;
 
       try {
         const apiUrl = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${filePath}`;
-
-        // Fetch SHA if not loaded
         let shaToDelete = currentFileSha;
         if (!shaToDelete) {
           const checkRes = await fetch(`${apiUrl}?ref=${encodeURIComponent(branch)}`, {
@@ -907,9 +1016,6 @@
       }
     }
 
-    /* =========================================================
-       EDITOR HELPERS (STARTER TEMPLATE, PREVIEW, TAB KEY)
-       ========================================================= */
     function loadStarterGameTemplate() {
       const newPath = prompt('Enter new game path in repo:', 'game/new-arcade/index.html');
       if (!newPath) return;
@@ -946,7 +1052,7 @@
   <\/script>
 </body>
 </html>`;
-      document.getElementById('editorFileStatus').textContent = `Drafting new file: ${newPath}`;
+      document.getElementById('editorFileStatus').textContent = `Drafting: ${newPath}`;
       updateEditorMetrics();
     }
 
@@ -956,178 +1062,20 @@
       document.getElementById('editorMetrics').textContent = `${lines} lines · ${val.length} chars`;
     }
 
-    function formatCodeLines() {
-      const editor = document.getElementById('ghCodeEditor');
-      editor.value = editor.value
-        .split('\n')
-        .map(line => line.replace(/\s+$/, ''))
-        .join('\n');
-      updateEditorMetrics();
-      showToast('Trimmed trailing whitespace');
-    }
-
     function copyEditorCode() {
       const editor = document.getElementById('ghCodeEditor');
-      navigator.clipboard.writeText(editor.value).then(() => {
-        showToast('Code copied to clipboard');
-      });
+      navigator.clipboard.writeText(editor.value).then(() => showToast('Code copied'));
     }
 
     function openLivePreview() {
       const code = document.getElementById('ghCodeEditor').value;
-      const modal = document.getElementById('previewModal');
-      const frame = document.getElementById('previewFrame');
-      modal.classList.remove('hidden');
-      frame.srcdoc = code || '<h3 style="font-family:sans-serif;padding:20px;">Editor is empty.</h3>';
+      document.getElementById('previewModal').classList.remove('hidden');
+      document.getElementById('previewFrame').srcdoc = code || '<h3 style="font-family:sans-serif;padding:20px;">Editor is empty.</h3>';
     }
 
     function closeLivePreview() {
-      const modal = document.getElementById('previewModal');
-      const frame = document.getElementById('previewFrame');
-      frame.srcdoc = '';
-      modal.classList.add('hidden');
-    }
-
-    /* =========================================================
-       LOCAL STORAGE CATALOG & BACKUP MANAGEMENT
-       ========================================================= */
-    function refreshStats() {
-      const custom = safeReadJSON('st_custom_games', []);
-      const played = safeReadJSON('st_played_games', []);
-      const favs = safeReadJSON('st_favorite_games', []);
-      const scores = safeReadJSON('st_local_leaderboard', []);
-
-      document.getElementById('statCustom').textContent = custom.length;
-      document.getElementById('statPlayed').textContent = played.length;
-      document.getElementById('statFavs').textContent = favs.length;
-      document.getElementById('statScores').textContent = scores.length;
-    }
-
-    function renderCustomGames() {
-      const list = safeReadJSON('st_custom_games', []);
-      const container = document.getElementById('customGamesContainer');
-      if (!list.length) {
-        container.innerHTML = '<div class="text-xs opacity-60 py-4 text-center">No custom games added yet.</div>';
-        return;
-      }
-
-      container.innerHTML = list.map(g => `
-        <div class="flex items-center justify-between p-3 rounded-xl border border-sky-400/20 bg-sky-500/5 gap-3">
-          <div class="flex items-center gap-3 min-w-0">
-            <div class="w-10 h-10 rounded-lg overflow-hidden bg-slate-800 shrink-0">
-              <img src="${escapeHTML(g.logo)}" onerror="this.src='logo/game.jpg'" class="w-full h-full object-cover">
-            </div>
-            <div class="min-w-0">
-              <div class="font-extrabold text-sm truncate">${escapeHTML(g.title)}</div>
-              <div class="text-[10px] text-slate-500 truncate">${escapeHTML(g.url)} · ${(g.categories || []).join(', ')}</div>
-            </div>
-          </div>
-          <div class="flex items-center gap-2">
-            <button onclick="quickLoadFile('${escapeHTML(g.url)}')" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-sky-500 hover:bg-sky-500/10">
-              Edit Code
-            </button>
-            <button onclick="removeGame('${escapeHTML(g.id)}')" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-rose-500 hover:bg-rose-500/10">
-              Delete
-            </button>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    function handleAddGame(e) {
-      e.preventDefault();
-      const title = document.getElementById('gameTitle').value.trim();
-      const url = document.getElementById('gamePath').value.trim();
-      const logo = document.getElementById('gameLogo').value.trim() || 'logo/game.jpg';
-      const category = document.getElementById('gameCategory').value;
-      const badge = document.getElementById('gameBadge').value.trim().toUpperCase();
-      const isPopular = document.getElementById('markPopular').checked;
-
-      const categories = [category];
-      if (isPopular) categories.push('popular');
-
-      const customGames = safeReadJSON('st_custom_games', []);
-      const newGame = {
-        id: 'custom-' + Date.now().toString(36),
-        title,
-        url,
-        logo,
-        icon: 'fa-solid fa-gamepad',
-        size: 'normal',
-        categories,
-        badge: badge || 'NEW',
-        bg: 'linear-gradient(135deg, #0284c7, #1d4ed8)',
-        custom: true
-      };
-
-      customGames.push(newGame);
-      localStorage.setItem('st_custom_games', JSON.stringify(customGames));
-
-      document.getElementById('addGameForm').reset();
-      renderCustomGames();
-      refreshStats();
-      showToast('Game card saved!');
-    }
-
-    function removeGame(id) {
-      if (!confirm('Remove this game card?')) return;
-      let list = safeReadJSON('st_custom_games', []);
-      list = list.filter(g => g.id !== id);
-      localStorage.setItem('st_custom_games', JSON.stringify(list));
-      renderCustomGames();
-      refreshStats();
-    }
-
-    function wipeAllCustomGames() {
-      if (!confirm('Wipe all local custom game cards?')) return;
-      localStorage.removeItem('st_custom_games');
-      renderCustomGames();
-      refreshStats();
-    }
-
-    function resetLeaderboard() {
-      if (!confirm('Clear all local leaderboard records?')) return;
-      localStorage.removeItem('st_local_leaderboard');
-      refreshStats();
-      showToast('Leaderboard reset.');
-    }
-
-    function exportData() {
-      const backup = {
-        profile: safeReadJSON('st_player_profile', {}),
-        customGames: safeReadJSON('st_custom_games', []),
-        played: safeReadJSON('st_played_games', []),
-        favorites: safeReadJSON('st_favorite_games', []),
-        leaderboard: safeReadJSON('st_local_leaderboard', []),
-        exportedAt: new Date().toISOString()
-      };
-      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `st-games-backup-${Date.now()}.json`;
-      a.click();
-    }
-
-    function importData(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        try {
-          const data = JSON.parse(evt.target.result);
-          if (data.customGames) localStorage.setItem('st_custom_games', JSON.stringify(data.customGames));
-          if (data.played) localStorage.setItem('st_played_games', JSON.stringify(data.played));
-          if (data.favorites) localStorage.setItem('st_favorite_games', JSON.stringify(data.favorites));
-          if (data.leaderboard) localStorage.setItem('st_local_leaderboard', JSON.stringify(data.leaderboard));
-          if (data.profile) localStorage.setItem('st_player_profile', JSON.stringify(data.profile));
-          renderCustomGames();
-          refreshStats();
-          showToast('Backup imported successfully!');
-        } catch (_) {
-          showToast('Invalid JSON backup file.', true);
-        }
-      };
-      reader.readAsText(file);
+      document.getElementById('previewFrame').srcdoc = '';
+      document.getElementById('previewModal').classList.add('hidden');
     }
 
     function toggleTheme() {
@@ -1162,15 +1110,13 @@
 
       defaultIcon.classList.add('hidden');
       userLogo.classList.remove('hidden');
-
       const displayName = savedName || (profileObj && profileObj.name) || 'Profile';
       loginLabel.textContent = displayName;
 
       if (savedPhoto) {
         userLogo.innerHTML = `<img src="${escapeHTML(savedPhoto)}" alt="User Logo" class="w-full h-full rounded-full object-cover">`;
       } else {
-        const initial = (savedLetter || displayName.charAt(0) || 'U').toUpperCase();
-        userLogo.textContent = initial;
+        userLogo.textContent = (savedLetter || displayName.charAt(0) || 'U').toUpperCase();
       }
     }
 
@@ -1179,23 +1125,12 @@
         document.body.classList.add('dark-theme');
       }
 
-      // Support Tab key indentation inside the code editor
       const editor = document.getElementById('ghCodeEditor');
       editor.addEventListener('input', updateEditorMetrics);
-      editor.addEventListener('keydown', (e) => {
-        if (e.key === 'Tab') {
-          e.preventDefault();
-          const start = editor.selectionStart;
-          const end = editor.selectionEnd;
-          editor.value = editor.value.substring(0, start) + '  ' + editor.value.substring(end);
-          editor.selectionStart = editor.selectionEnd = start + 2;
-          updateEditorMetrics();
-        }
-      });
 
       loadGitHubConfig();
-      refreshStats();
       renderCustomGames();
+      pullGlobalGamesFromGitHub();
       updateBottomNavUser();
     });
   </script>
