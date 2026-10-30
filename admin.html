@@ -1,33 +1,812 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ST GAMES Â· Admin</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<style>
-:root{color-scheme:dark;--bg:#061426;--panel:#0b2038;--line:rgba(125,211,252,.24);--cyan:#7dd3fc;--blue:#0284c7}*{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:Inter,system-ui,sans-serif;color:#eaf7ff;background:radial-gradient(ellipse at 10% 0%,rgba(14,165,233,.22),transparent 35%),radial-gradient(ellipse at 90% 25%,rgba(37,99,235,.16),transparent 38%),var(--bg);padding:20px}.wrap{max-width:760px;margin:0 auto}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px}.brand{font-size:22px;font-weight:800;letter-spacing:.04em}.brand span{color:var(--cyan);text-shadow:0 0 18px rgba(56,189,248,.55)}a,.btn{color:inherit;text-decoration:none}.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid rgba(125,211,252,.4);border-radius:12px;padding:10px 13px;background:linear-gradient(110deg,#075985,#1d4ed8);font-weight:800;font-size:12px;cursor:pointer;box-shadow:0 0 18px rgba(56,189,248,.13)}.panel{background:rgba(8,27,49,.92);border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:0 15px 45px rgba(0,0,0,.2),0 0 25px rgba(56,189,248,.06);margin-bottom:16px}.muted{color:#9db7cc;font-size:12px;line-height:1.65}.title{font-size:19px;font-weight:800;margin:0 0 7px}.field{display:block;margin:14px 0}.field span{display:block;font-size:11px;font-weight:800;color:#bceaff;margin-bottom:7px}.input,select{width:100%;border-radius:11px;padding:12px;background:#07182b;color:#f0f9ff;border:1px solid rgba(125,211,252,.25);outline:none;font:inherit;font-size:13px}.input:focus,select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(56,189,248,.12)}.passwrap{display:flex;gap:8px}.passwrap input{flex:1;min-width:0}.eye{width:46px;flex-shrink:0;border-radius:11px;background:#102b47;border:1px solid var(--line);color:var(--cyan);cursor:pointer}.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.status{font-size:12px;margin-top:12px;color:#7dd3fc;min-height:18px}.hidden{display:none!important}.gameitem{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid rgba(125,211,252,.12)}.gameitem:last-child{border-bottom:0}.gameitem strong{display:block;font-size:13px}.gameitem small{display:block;color:#9db7cc;font-size:11px;margin-top:4px;overflow-wrap:anywhere}.remove{background:transparent;border:1px solid rgba(251,113,133,.45);color:#fda4af;border-radius:9px;padding:7px 9px;font-weight:700;cursor:pointer}.warning{border-left:3px solid #fbbf24;padding:10px 12px;background:rgba(251,191,36,.07);border-radius:7px;color:#fcdba0;font-size:11px;line-height:1.6;margin-top:15px}footer{text-align:center;color:#718da5;font-size:10px;padding:14px}@media(max-width:540px){body{padding:13px}.panel{padding:17px}.brand{font-size:19px}.top{align-items:flex-start}}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ST Games - Admin Portal</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <style>
+    :root {
+      --poki-navy: #002b5b;
+      --neon-cyan: #22d3ee;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f3f6fb;
+      background-image:
+        radial-gradient(circle at 8% 12%, rgba(56, 189, 248, 0.22), transparent 27%),
+        radial-gradient(circle at 92% 24%, rgba(168, 85, 247, 0.18), transparent 28%),
+        radial-gradient(circle at 52% 92%, rgba(34, 211, 238, 0.16), transparent 30%);
+      background-attachment: fixed;
+      overflow-x: hidden;
+      user-select: none;
+      transition: background 0.4s ease, color 0.3s ease;
+      padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+    }
+
+    body.dark-theme {
+      background-color: #080d1b;
+      background-image:
+        radial-gradient(circle at 8% 12%, rgba(14, 165, 233, 0.24), transparent 28%),
+        radial-gradient(circle at 92% 24%, rgba(168, 85, 247, 0.24), transparent 30%),
+        radial-gradient(circle at 52% 92%, rgba(236, 72, 153, 0.15), transparent 32%);
+      color: #f8fafc;
+    }
+
+    .brand-font {
+      font-family: 'Fredoka', sans-serif;
+    }
+
+    body.dark-theme .theme-surface {
+      background-color: rgba(30, 41, 59, 0.92) !important;
+      border-color: rgba(255, 255, 255, 0.12) !important;
+      color: #f8fafc !important;
+    }
+
+    body.dark-theme .theme-text-primary {
+      color: #f8fafc !important;
+    }
+
+    body.dark-theme .theme-text-sub {
+      color: #94a3b8 !important;
+    }
+
+    .feature-hub {
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 10px 28px rgba(14, 116, 144, 0.08), 0 0 24px rgba(56, 189, 248, 0.12);
+    }
+
+    body.dark-theme .feature-hub {
+      background: rgba(12, 22, 44, 0.92) !important;
+      color: #eaf7ff;
+      border-color: rgba(56, 189, 248, 0.38);
+    }
+
+    .neon-input {
+      width: 100%;
+      border: 1px solid rgba(56, 189, 248, 0.42);
+      background: rgba(240, 249, 255, 0.95);
+      color: #0f172a;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .neon-input:focus {
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+    }
+
+    body.dark-theme .neon-input {
+      background: #0f172a;
+      color: #f8fafc;
+    }
+
+    .tiny-label {
+      display: block;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #0284c7;
+      margin: 0 0 5px;
+    }
+
+    body.dark-theme .tiny-label {
+      color: #7dd3fc;
+    }
+
+    .neon-action {
+      border: 1px solid rgba(56, 189, 248, 0.45);
+      border-radius: 12px;
+      padding: 10px 14px;
+      background: linear-gradient(120deg, #0e7490, #2563eb);
+      color: white;
+      font-size: 12px;
+      font-weight: 800;
+      box-shadow: 0 4px 16px rgba(56, 189, 248, 0.22);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .neon-action:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 22px rgba(56, 189, 248, 0.36);
+    }
+
+    .game-card-preview {
+      aspect-ratio: 1 / 1;
+      width: 185px;
+      position: relative;
+      border-radius: 24px;
+      overflow: hidden;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      box-shadow: 0 12px 26px rgba(15, 23, 42, 0.18);
+    }
+
+    .game-card-overlay {
+      background: linear-gradient(to top, rgba(2, 6, 23, 0.92), rgba(2, 6, 23, 0.12) 68%, transparent);
+    }
+
+    /* Bottom Navigation Bar */
+    .st-bottom-nav {
+      position: fixed;
+      z-index: 9999;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 4px;
+      padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
+      background: rgba(255, 255, 255, 0.97);
+      border-top: 1px solid #dbeafe;
+      box-shadow: 0 -5px 22px rgba(15, 23, 42, 0.12);
+    }
+
+    body.dark-theme .st-bottom-nav {
+      background: rgba(15, 23, 42, 0.96);
+      border-color: rgba(56, 189, 248, 0.25);
+    }
+
+    .st-bottom-nav a {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      padding: 5px 2px;
+      border-radius: 12px;
+      color: #334155;
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    body.dark-theme .st-bottom-nav a {
+      color: #cbd5e1;
+    }
+
+    .st-bottom-nav .nav-icon {
+      font-size: 20px;
+      line-height: 1.1;
+      color: #087eb7;
+    }
+
+    body.dark-theme .st-bottom-nav .nav-icon {
+      color: #38bdf8;
+    }
+
+    @media (min-width: 768px) {
+      .st-bottom-nav {
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        width: min(560px, calc(100% - 32px));
+        border: 1px solid #dbeafe;
+        border-bottom: 0;
+        border-radius: 18px 18px 0 0;
+      }
+    }
+  </style>
 </head>
-<body><main class="wrap">
-<header class="top"><div class="brand"><i class="fa-solid fa-gamepad" style="color:#7dd3fc"></i> ST <span>GAMES</span> <small style="display:block;font-size:10px;letter-spacing:.16em;color:#8faec6;margin-top:4px">ADMIN CONTROL</small></div><a class="btn" href="index.html"><i class="fa-solid fa-arrow-left"></i> Main page</a></header>
-<section id="loginPanel" class="panel"><h1 class="title"><i class="fa-solid fa-shield-halved" style="color:#7dd3fc"></i> Admin sign in</h1><p class="muted">Enter your admin password to open the local game-card manager.</p>
-<form id="loginForm"><label class="field"><span>ADMIN PASSWORD</span><div class="passwrap"><input class="input" id="password" type="password" autocomplete="current-password" placeholder="Enter password" required><button type="button" class="eye" id="togglePass" aria-label="Show password" title="Show or hide password"><i class="fa-regular fa-eye" id="eyeIcon"></i></button></div></label><button class="btn" type="submit"><i class="fa-solid fa-unlock-keyhole"></i> Unlock admin</button><div id="loginStatus" class="status" role="status"></div></form>
-<div class="warning"><strong>Security note:</strong> GitHub Pages is a static website. A password check in HTML/JavaScript can be discovered by visitors who inspect the source, so this is only a casual access gateâ€”not secure authentication. Use server-side authentication before putting sensitive admin actions online.</div></section>
-<section id="adminPanel" class="panel hidden"><h1 class="title">Game card manager</h1><p class="muted">Add a card for an existing game file. These additions are stored in this browser on this device and do not commit files to GitHub or publish cards for every visitor.</p>
-<form id="gameForm"><label class="field"><span>GAME TITLE</span><input id="gameTitle" class="input" maxlength="50" required placeholder="e.g. Space Runner"></label><label class="field"><span>EXISTING GAME PATH</span><input id="gamePath" class="input" required placeholder="games/space-runner/index.html"></label><label class="field"><span>LOGO IMAGE PATH (OPTIONAL)</span><input id="gameImage" class="input" placeholder="logo/space-runner.jpg"></label><label class="field"><span>CATEGORY</span><select id="gameCategory"><option value="single">Single player</option><option value="sports">Sports</option><option value="racing">Racing</option><option value="arcade">Arcade</option><option value="2-player">2 player</option></select></label><div class="row"><button class="btn" type="submit"><i class="fa-solid fa-plus"></i> Add game card</button><button class="btn" type="button" id="lockBtn" style="background:#102b47"><i class="fa-solid fa-lock"></i> Lock admin</button></div><div id="gameStatus" class="status" role="status"></div></form>
-<hr style="border:0;border-top:1px solid var(--line);margin:22px 0"><h2 class="title" style="font-size:15px">Local additions</h2><div id="gameList" class="muted">Loadingâ€¦</div><div class="row"><button id="clearBtn" class="remove" type="button">Remove all local additions</button></div>
-</section><footer>ST GAMES Â· Light-blue neon admin</footer></main>
-<script>
-// Client-side gate only. It is not secure authentication on a public static website.
-const ADMIN_PASSWORD='2010143';
-const loginPanel=document.getElementById('loginPanel'),adminPanel=document.getElementById('adminPanel'),passwordInput=document.getElementById('password');
-document.getElementById('togglePass').addEventListener('click',()=>{const show=passwordInput.type==='password';passwordInput.type=show?'text':'password';document.getElementById('eyeIcon').className=show?'fa-regular fa-eye-slash':'fa-regular fa-eye';document.getElementById('togglePass').setAttribute('aria-label',show?'Hide password':'Show password');});
-document.getElementById('loginForm').addEventListener('submit',e=>{e.preventDefault();if(passwordInput.value===ADMIN_PASSWORD){loginPanel.classList.add('hidden');adminPanel.classList.remove('hidden');document.getElementById('loginStatus').textContent='';renderGames();}else{document.getElementById('loginStatus').textContent='Incorrect password. Try again.';passwordInput.select();}});
-document.getElementById('lockBtn').addEventListener('click',()=>{adminPanel.classList.add('hidden');loginPanel.classList.remove('hidden');passwordInput.value='';document.getElementById('loginStatus').textContent='Admin locked.';});
-function readGames(){try{const a=JSON.parse(localStorage.getItem('st_custom_games')||'[]');return Array.isArray(a)?a:[]}catch(e){return []}}
-function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function renderGames(){const list=document.getElementById('gameList'),games=readGames();list.innerHTML=games.length?games.map(g=>`<div class="gameitem"><div><strong>${escapeHTML(g.title||'Untitled')}</strong><small>${escapeHTML(g.url||'')}</small></div><button class="remove" type="button" data-remove="${escapeHTML(g.id)}">Remove</button></div>`).join(''):'No local additions yet.';list.querySelectorAll('[data-remove]').forEach(b=>b.addEventListener('click',()=>{const next=readGames().filter(g=>g.id!==b.dataset.remove);localStorage.setItem('st_custom_games',JSON.stringify(next));renderGames();document.getElementById('gameStatus').textContent='Removed local game card.';}));}
-document.getElementById('gameForm').addEventListener('submit',e=>{e.preventDefault();const title=document.getElementById('gameTitle').value.trim(),url=document.getElementById('gamePath').value.trim(),logo=document.getElementById('gameImage').value.trim()||'logo/game.jpg',category=document.getElementById('gameCategory').value;if(!title||!url||/^(javascript:|data:|https?:)/i.test(url)){document.getElementById('gameStatus').textContent='Use a relative path to an existing game file.';return}const games=readGames();if(games.some(g=>g.url===url||(g.title||'').toLowerCase()===title.toLowerCase())){document.getElementById('gameStatus').textContent='That game title or path already exists.';return}games.push({id:'custom-'+Date.now().toString(36),title,url,logo,icon:'fa-solid fa-gamepad',size:'normal',categories:[category],badge:'NEW',bg:'linear-gradient(135deg,#0284c7,#1d4ed8)',custom:true});localStorage.setItem('st_custom_games',JSON.stringify(games));e.target.reset();document.getElementById('gameStatus').textContent='Game card saved in this browser. Refresh the main page to see it.';renderGames();});
-document.getElementById('clearBtn').addEventListener('click',()=>{if(confirm('Remove all locally added game cards from this browser?')){localStorage.removeItem('st_custom_games');renderGames();document.getElementById('gameStatus').textContent='Local additions cleared.';}});
-</script></body></html>
+<body class="min-h-screen flex flex-col justify-between text-slate-900">
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-5xl w-full mx-auto px-3.5 sm:px-6 pt-4 pb-10 relative z-10">
+
+    <!-- TOP HEADER -->
+    <header class="sticky top-2.5 z-30 mb-5">
+      <div class="theme-surface bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-cyan-400/30 px-4 py-3 flex items-center justify-between gap-3">
+        <a href="index.html" class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-xl overflow-hidden border-2 border-cyan-400 shadow-md shrink-0 bg-slate-900 flex items-center justify-center">
+            <img src="logo/logo.jpg" alt="ST Games Logo" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');" class="w-full h-full object-cover">
+            <i class="fa-solid fa-shield-halved text-cyan-400 text-lg hidden"></i>
+          </div>
+          <div>
+            <h1 class="brand-font text-base sm:text-lg font-bold tracking-tight text-[#002b5b] theme-text-primary uppercase">ST GAMES ADMIN</h1>
+            <p class="text-[10px] font-bold text-sky-500 uppercase tracking-wider">Firebase Cloud + Local Sync</p>
+          </div>
+        </a>
+
+        <div class="flex items-center gap-2">
+          <span id="firebaseStatusBadge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-extrabold bg-amber-500/15 text-amber-600 border border-amber-400/30">
+            <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span> Connecting...
+          </span>
+          <button onclick="toggleTheme()" title="Switch Theme" class="p-2 rounded-xl hover:bg-slate-500/10 transition">
+            <span class="text-lg leading-none">🌓</span>
+          </button>
+          <a href="index.html" class="px-3 py-2 rounded-xl bg-[#002b5b] text-white text-xs font-extrabold hover:opacity-90 transition">
+            <i class="fa-solid fa-arrow-left mr-1"></i> Hub
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- PIN LOCK OVERLAY -->
+    <section id="adminLockSection" class="feature-hub rounded-3xl p-6 sm:p-8 max-w-md mx-auto my-8 text-center">
+      <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-700 text-white flex items-center justify-center mx-auto mb-4 text-2xl shadow-lg shadow-sky-500/25">
+        <i class="fa-solid fa-user-shield"></i>
+      </div>
+      <h2 class="brand-font text-2xl font-bold theme-text-primary">Admin Verification</h2>
+      <p class="text-xs theme-text-sub mt-1 mb-5">Enter your admin PIN to manage games, notices, and Firebase cloud sync. (Default PIN: <b>1616</b>)</p>
+      <form onsubmit="verifyAdminPin(event)" class="space-y-3">
+        <input id="adminPinInput" type="password" inputmode="numeric" maxlength="8" placeholder="Enter PIN (1616)" class="neon-input text-center text-base tracking-[0.3em] font-extrabold" required>
+        <button type="submit" class="neon-action w-full py-3">
+          <i class="fa-solid fa-unlock-keyhole mr-1.5"></i> Unlock Dashboard
+        </button>
+      </form>
+    </section>
+
+    <!-- UNLOCKED ADMIN CONTENT -->
+    <div id="adminMainDashboard" class="hidden space-y-5">
+
+      <!-- STATS ROW -->
+      <section class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="feature-hub rounded-2xl p-4">
+          <div class="text-[10px] font-extrabold uppercase text-sky-500">Default Games</div>
+          <div class="text-2xl font-black theme-text-primary mt-1">13</div>
+          <div class="text-[10px] theme-text-sub">Built-in catalog</div>
+        </div>
+        <div class="feature-hub rounded-2xl p-4">
+          <div class="text-[10px] font-extrabold uppercase text-emerald-500">Custom Games</div>
+          <div id="statCustomCount" class="text-2xl font-black theme-text-primary mt-1">0</div>
+          <div class="text-[10px] theme-text-sub">Synced with Firebase</div>
+        </div>
+        <div class="feature-hub rounded-2xl p-4">
+          <div class="text-[10px] font-extrabold uppercase text-amber-500">Leaderboard</div>
+          <div id="statPlayersCount" class="text-2xl font-black theme-text-primary mt-1">0</div>
+          <div class="text-[10px] theme-text-sub">Active player scores</div>
+        </div>
+        <div class="feature-hub rounded-2xl p-4">
+          <div class="text-[10px] font-extrabold uppercase text-purple-500">Firebase Project</div>
+          <div class="text-sm font-black theme-text-primary mt-2 truncate">stgames-289</div>
+          <div class="text-[10px] theme-text-sub">Realtime Cloud</div>
+        </div>
+      </section>
+
+      <!-- ADD / PREVIEW NEW GAME CARD -->
+      <section class="grid lg:grid-cols-[1.45fr_.85fr] gap-4">
+        <div class="feature-hub rounded-3xl p-5 sm:p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="brand-font text-lg sm:text-xl font-bold theme-text-primary">
+              <i class="fa-solid fa-plus-circle text-sky-500 mr-2"></i>Add New Game Card
+            </h2>
+            <span class="text-[10px] font-extrabold text-sky-500 uppercase">Pushes to Firebase + Device</span>
+          </div>
+
+          <form id="addGameForm" onsubmit="handleCreateGame(event)" class="grid sm:grid-cols-2 gap-3.5">
+            <div>
+              <label class="tiny-label" for="gameTitle">Game Title *</label>
+              <input id="gameTitle" type="text" class="neon-input" placeholder="e.g., Cyber Drift 3D" maxlength="32" oninput="updateLivePreview()" required>
+            </div>
+
+            <div>
+              <label class="tiny-label" for="gameUrl">Game File Path / URL *</label>
+              <input id="gameUrl" type="text" class="neon-input" placeholder="e.g., game/drift/index.html" oninput="updateLivePreview()" required>
+            </div>
+
+            <div>
+              <label class="tiny-label" for="gameLogo">Logo Path / Image URL</label>
+              <input id="gameLogo" type="text" class="neon-input" placeholder="e.g., logo/drift.jpg" oninput="updateLivePreview()">
+            </div>
+
+            <div>
+              <label class="tiny-label" for="gameCategory">Primary Category</label>
+              <select id="gameCategory" class="neon-input" onchange="updateLivePreview()">
+                <option value="popular">Popular</option>
+                <option value="single">Single Player</option>
+                <option value="classic">Classic &amp; Snake</option>
+                <option value="racing">Racing</option>
+                <option value="1v1">1v1 Battle</option>
+                <option value="sports">Sports</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="tiny-label" for="gameBadge">Corner Badge</label>
+              <select id="gameBadge" class="neon-input" onchange="updateLivePreview()">
+                <option value="NEW">NEW</option>
+                <option value="HOT">HOT</option>
+                <option value="HIT">HIT</option>
+                <option value="TOP">TOP</option>
+                <option value="1v1">1v1</option>
+                <option value="LIVE">LIVE</option>
+                <option value="CO-OP">CO-OP</option>
+                <option value="">None</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="tiny-label" for="gameSize">Tile Size on Grid</label>
+              <select id="gameSize" class="neon-input" onchange="updateLivePreview()">
+                <option value="normal">Normal (1x1 Square)</option>
+                <option value="large">Large Featured (2x2 Tile)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="tiny-label" for="gameIcon">Fallback Icon</label>
+              <select id="gameIcon" class="neon-input" onchange="updateLivePreview()">
+                <option value="fa-solid fa-gamepad">Gamepad</option>
+                <option value="fa-solid fa-car-burst">Racing Car</option>
+                <option value="fa-solid fa-rocket">Rocket</option>
+                <option value="fa-solid fa-dragon">Dragon</option>
+                <option value="fa-solid fa-trophy">Trophy</option>
+                <option value="fa-solid fa-bolt">Lightning</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="tiny-label" for="gameBg">Card Gradient Theme</label>
+              <select id="gameBg" class="neon-input" onchange="updateLivePreview()">
+                <option value="linear-gradient(135deg, #0284c7, #1d4ed8)">Electric Cyan &amp; Blue</option>
+                <option value="linear-gradient(135deg, #f59e0b, #b45309)">Amber Gold</option>
+                <option value="linear-gradient(135deg, #10b981, #047857)">Emerald Neon</option>
+                <option value="linear-gradient(135deg, #ec4899, #8b5cf6)">Cyber Pink &amp; Violet</option>
+                <option value="linear-gradient(135deg, #ef4444, #7f1d1d)">Crimson Arena</option>
+                <option value="linear-gradient(135deg, #8b5cf6, #4c1d95)">Deep Purple</option>
+              </select>
+            </div>
+
+            <div class="sm:col-span-2 flex items-center gap-2 pt-1">
+              <input id="alsoMarkPopular" type="checkbox" checked class="w-4 h-4 accent-sky-500 rounded">
+              <label for="alsoMarkPopular" class="text-xs font-bold theme-text-primary">Also show in the horizontal "Popular Games" row</label>
+            </div>
+
+            <div class="sm:col-span-2 pt-2">
+              <button type="submit" class="neon-action w-full py-3">
+                <i class="fa-solid fa-cloud-arrow-up mr-1.5"></i> Publish Game to ST Games
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- LIVE CARD PREVIEW & NOTICE BAR EDITOR -->
+        <div class="space-y-4">
+          <div class="feature-hub rounded-3xl p-5 flex flex-col items-center text-center">
+            <span class="tiny-label">Live Card Preview</span>
+            <div id="previewCardBox" class="game-card-preview my-3" style="background: linear-gradient(135deg, #0284c7, #1d4ed8);">
+              <div id="previewBadge" class="absolute top-2.5 left-2.5 z-10 bg-white/95 text-[#002b5b] text-[10px] font-extrabold px-2 py-0.5 rounded-lg shadow">NEW</div>
+              <img id="previewImg" src="logo/game.jpg" alt="Preview" onerror="this.style.display='none'; document.getElementById('previewFallback').classList.remove('hidden');" class="w-full h-full object-cover">
+              <div id="previewFallback" class="hidden w-full h-full flex flex-col items-center justify-center text-white p-3 text-center">
+                <i id="previewIcon" class="fa-solid fa-gamepad text-4xl mb-1 drop-shadow"></i>
+                <span id="previewFallbackTitle" class="text-xs font-extrabold leading-tight drop-shadow">Cyber Drift 3D</span>
+              </div>
+              <div class="game-card-overlay absolute inset-0 flex flex-col justify-end p-3 text-white text-left">
+                <h3 id="previewTitle" class="font-extrabold text-sm truncate">Cyber Drift 3D</h3>
+                <span id="previewCat" class="text-[10px] text-cyan-300 font-semibold truncate">popular</span>
+              </div>
+            </div>
+            <p class="text-[11px] theme-text-sub">Appears immediately in your catalog &amp; Firebase</p>
+          </div>
+
+          <!-- TOP NOTICE EDITOR -->
+          <div class="feature-hub rounded-3xl p-5">
+            <h3 class="brand-font text-base font-bold theme-text-primary mb-2">
+              <i class="fa-solid fa-bullhorn text-amber-500 mr-1.5"></i>Top Notice Banner
+            </h3>
+            <label class="tiny-label" for="noticeBannerInput">Scrolling Announcement Text</label>
+            <input id="noticeBannerInput" type="text" class="neon-input mb-2.5" maxlength="140" placeholder="📢 NOTICE: Welcome to ST GAMES — Enjoy playing!">
+            <button onclick="saveNoticeBanner()" class="neon-action w-full">
+              <i class="fa-solid fa-paper-plane mr-1"></i> Update Notice Banner
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- MANAGE CUSTOM GAMES & LEADERBOARD -->
+      <section class="grid lg:grid-cols-2 gap-4">
+        <div class="feature-hub rounded-3xl p-5">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="brand-font text-lg font-bold theme-text-primary">
+              <i class="fa-solid fa-layer-group text-sky-500 mr-2"></i>Published Custom Games
+            </h3>
+            <button onclick="clearAllCustomGames()" class="text-xs font-extrabold text-rose-500 hover:underline">
+              <i class="fa-solid fa-trash-can mr-1"></i>Reset All
+            </button>
+          </div>
+          <div id="adminCustomGamesList" class="space-y-2.5 max-h-80 overflow-y-auto pr-1"></div>
+        </div>
+
+        <div class="feature-hub rounded-3xl p-5">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="brand-font text-lg font-bold theme-text-primary">
+              <i class="fa-solid fa-trophy text-amber-500 mr-2"></i>Leaderboard Moderation
+            </h3>
+            <button onclick="clearLeaderboardScores()" class="text-xs font-extrabold text-rose-500 hover:underline">
+              <i class="fa-solid fa-broom mr-1"></i>Clear Scores
+            </button>
+          </div>
+          <div id="adminLeaderboardList" class="space-y-2.5 max-h-80 overflow-y-auto pr-1"></div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- BOTTOM NAVIGATION -->
+  <nav class="st-bottom-nav" aria-label="ST GAMES navigation">
+    <a href="index.html">
+      <span class="nav-icon">⌂</span>
+      <span>Home</span>
+    </a>
+    <a href="login.html">
+      <span class="nav-icon">♙</span>
+      <span>Profile</span>
+    </a>
+    <a href="achievements.html">
+      <span class="nav-icon">🏆</span>
+      <span>Achievements</span>
+    </a>
+    <a href="levels.html">
+      <span class="nav-icon">⚡</span>
+      <span>Levels</span>
+    </a>
+  </nav>
+
+  <!-- FIREBASE & ADMIN LOGIC -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-analytics.js";
+    import { getDatabase, ref, set, remove, onValue } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDOFx0_vpPDRDCkUW-deQjMNK5msOsGSnI",
+      authDomain: "stgames-289.firebaseapp.com",
+      databaseURL: "https://stgames-289-default-rtdb.firebaseio.com",
+      projectId: "stgames-289",
+      storageBucket: "stgames-289.firebasestorage.app",
+      messagingSenderId: "916146081741",
+      appId: "1:916146081741:web:eb343c4dc0c6648388fe84",
+      measurementId: "G-P8RQ074PWX"
+    };
+
+    const ADMIN_PIN = "1616";
+    let db = null;
+    let firebaseReady = false;
+
+    const safeReadJSON = (key, fallback) => {
+      try {
+        const val = JSON.parse(localStorage.getItem(key) || "null");
+        return val == null ? fallback : val;
+      } catch (_) {
+        return fallback;
+      }
+    };
+
+    let customGames = safeReadJSON("st_custom_games", []);
+    let leaderboard = safeReadJSON("st_local_leaderboard", []);
+
+    function setStatusBadge(online, text) {
+      const badge = document.getElementById("firebaseStatusBadge");
+      if (!badge) return;
+      if (online) {
+        badge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-extrabold bg-emerald-500/15 text-emerald-500 border border-emerald-400/30";
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span> ${text}`;
+      } else {
+        badge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-extrabold bg-sky-500/15 text-sky-500 border border-sky-400/30";
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-sky-400"></span> ${text}`;
+      }
+    }
+
+    try {
+      const app = initializeApp(firebaseConfig);
+      getAnalytics(app);
+      db = getDatabase(app);
+
+      // Listen for live custom games in Firebase
+      onValue(ref(db, "st_games/custom_games"), (snapshot) => {
+        firebaseReady = true;
+        setStatusBadge(true, "Firebase Live");
+        const data = snapshot.val();
+        if (data && typeof data === "object") {
+          customGames = Object.values(data);
+          localStorage.setItem("st_custom_games", JSON.stringify(customGames));
+        }
+        renderAdminLists();
+      }, () => {
+        setStatusBadge(false, "Local Sync Mode");
+      });
+
+      // Listen for live leaderboard in Firebase
+      onValue(ref(db, "st_games/leaderboard"), (snapshot) => {
+        const data = snapshot.val();
+        if (data && typeof data === "object") {
+          leaderboard = Object.values(data);
+          localStorage.setItem("st_local_leaderboard", JSON.stringify(leaderboard));
+        }
+        renderAdminLists();
+      });
+
+      // Listen for custom notice banner
+      onValue(ref(db, "st_games/site_notice"), (snapshot) => {
+        const text = snapshot.val();
+        if (text) {
+          localStorage.setItem("st_site_notice", text);
+          const input = document.getElementById("noticeBannerInput");
+          if (input && !input.value) input.value = text;
+        }
+      });
+    } catch (err) {
+      setStatusBadge(false, "Local Sync Mode");
+    }
+
+    function escapeHTML(value) {
+      return String(value).replace(/[&<>"']/g, ch => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#39;"
+      }[ch]));
+    }
+
+    function showToast(msg) {
+      let toast = document.getElementById("adminToast");
+      if (!toast) {
+        toast = document.createElement("div");
+        toast.id = "adminToast";
+        toast.className = "fixed left-1/2 bottom-24 -translate-x-1/2 z-[10000] rounded-xl px-4 py-3 text-xs font-extrabold text-white bg-slate-950 border border-sky-400/60 shadow-xl";
+        document.body.appendChild(toast);
+      }
+      toast.textContent = msg;
+      toast.style.display = "block";
+      clearTimeout(window.__adminToastTimer);
+      window.__adminToastTimer = setTimeout(() => {
+        toast.style.display = "none";
+      }, 2000);
+    }
+
+    window.verifyAdminPin = function(e) {
+      e.preventDefault();
+      const pin = document.getElementById("adminPinInput").value.trim();
+      if (pin === ADMIN_PIN) {
+        sessionStorage.setItem("st_admin_unlocked", "true");
+        document.getElementById("adminLockSection").classList.add("hidden");
+        document.getElementById("adminMainDashboard").classList.remove("hidden");
+        renderAdminLists();
+        showToast("Admin portal unlocked");
+      } else {
+        showToast("Incorrect PIN — Default is 1616");
+      }
+    };
+
+    window.updateLivePreview = function() {
+      const title = document.getElementById("gameTitle").value.trim() || "Cyber Drift 3D";
+      const logo = document.getElementById("gameLogo").value.trim() || "logo/game.jpg";
+      const cat = document.getElementById("gameCategory").value;
+      const badge = document.getElementById("gameBadge").value;
+      const icon = document.getElementById("gameIcon").value;
+      const bg = document.getElementById("gameBg").value;
+
+      document.getElementById("previewCardBox").style.background = bg;
+      document.getElementById("previewTitle").textContent = title;
+      document.getElementById("previewFallbackTitle").textContent = title;
+      document.getElementById("previewCat").textContent = cat;
+      document.getElementById("previewIcon").className = `${icon} text-4xl mb-1 drop-shadow`;
+
+      const badgeEl = document.getElementById("previewBadge");
+      if (badge) {
+        badgeEl.textContent = badge;
+        badgeEl.classList.remove("hidden");
+      } else {
+        badgeEl.classList.add("hidden");
+      }
+
+      const imgEl = document.getElementById("previewImg");
+      const fallbackEl = document.getElementById("previewFallback");
+      fallbackEl.classList.add("hidden");
+      imgEl.style.display = "block";
+      imgEl.src = logo;
+    };
+
+    window.handleCreateGame = async function(e) {
+      e.preventDefault();
+      const title = document.getElementById("gameTitle").value.trim();
+      const url = document.getElementById("gameUrl").value.trim();
+      const logo = document.getElementById("gameLogo").value.trim() || "logo/game.jpg";
+      const cat = document.getElementById("gameCategory").value;
+      const badge = document.getElementById("gameBadge").value;
+      const size = document.getElementById("gameSize").value;
+      const icon = document.getElementById("gameIcon").value;
+      const bg = document.getElementById("gameBg").value;
+      const includePopular = document.getElementById("alsoMarkPopular").checked;
+
+      if (!title || !url || /^(javascript:|data:)/i.test(url)) {
+        showToast("Please enter a valid title and game path");
+        return;
+      }
+
+      const categories = [cat];
+      if (includePopular && !categories.includes("popular")) {
+        categories.push("popular");
+      }
+
+      const id = "custom-" + Date.now().toString(36);
+      const newGame = {
+        id,
+        title,
+        url,
+        logo,
+        icon,
+        size,
+        categories,
+        badge,
+        bg,
+        custom: true
+      };
+
+      customGames.push(newGame);
+      localStorage.setItem("st_custom_games", JSON.stringify(customGames));
+
+      if (db) {
+        try {
+          await set(ref(db, `st_games/custom_games/${id}`), newGame);
+        } catch (_) {}
+      }
+
+      document.getElementById("addGameForm").reset();
+      window.updateLivePreview();
+      renderAdminLists();
+      showToast("Game published to ST Games!");
+    };
+
+    window.deleteCustomGame = async function(id) {
+      customGames = customGames.filter(g => g.id !== id);
+      localStorage.setItem("st_custom_games", JSON.stringify(customGames));
+      if (db) {
+        try {
+          await remove(ref(db, `st_games/custom_games/${id}`));
+        } catch (_) {}
+      }
+      renderAdminLists();
+      showToast("Game removed");
+    };
+
+    window.clearAllCustomGames = async function() {
+      if (!customGames.length) {
+        showToast("No custom games to clear");
+        return;
+      }
+      if (!confirm("Delete all custom added games?")) return;
+      customGames = [];
+      localStorage.removeItem("st_custom_games");
+      if (db) {
+        try {
+          await remove(ref(db, "st_games/custom_games"));
+        } catch (_) {}
+      }
+      renderAdminLists();
+      showToast("All custom games cleared");
+    };
+
+    window.saveNoticeBanner = async function() {
+      const text = document.getElementById("noticeBannerInput").value.trim();
+      if (!text) {
+        showToast("Enter notice text first");
+        return;
+      }
+      localStorage.setItem("st_site_notice", text);
+      if (db) {
+        try {
+          await set(ref(db, "st_games/site_notice"), text);
+        } catch (_) {}
+      }
+      showToast("Notice banner updated!");
+    };
+
+    window.deletePlayerScore = async function(name) {
+      leaderboard = leaderboard.filter(row => (row.name || "").toLowerCase() !== name.toLowerCase());
+      localStorage.setItem("st_local_leaderboard", JSON.stringify(leaderboard));
+      if (db) {
+        const safeKey = name.toLowerCase().replace(/[^a-z0-9_-]/g, "_");
+        try {
+          await remove(ref(db, `st_games/leaderboard/${safeKey}`));
+        } catch (_) {}
+      }
+      renderAdminLists();
+      showToast("Player score removed");
+    };
+
+    window.clearLeaderboardScores = async function() {
+      if (!confirm("Clear all leaderboard scores?")) return;
+      leaderboard = [];
+      localStorage.removeItem("st_local_leaderboard");
+      if (db) {
+        try {
+          await remove(ref(db, "st_games/leaderboard"));
+        } catch (_) {}
+      }
+      renderAdminLists();
+      showToast("Leaderboard reset");
+    };
+
+    function renderAdminLists() {
+      document.getElementById("statCustomCount").textContent = customGames.length;
+      document.getElementById("statPlayersCount").textContent = leaderboard.length;
+
+      const gamesEl = document.getElementById("adminCustomGamesList");
+      if (gamesEl) {
+        gamesEl.innerHTML = customGames.length
+          ? customGames.map(g => `
+              <div class="flex items-center justify-between gap-3 p-3 rounded-2xl bg-sky-500/10 border border-sky-400/20">
+                <div class="flex items-center gap-3 min-w-0">
+                  <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0" style="background: ${g.bg};">
+                    <i class="${escapeHTML(g.icon || 'fa-solid fa-gamepad')}"></i>
+                  </div>
+                  <div class="min-w-0">
+                    <div class="font-extrabold text-xs theme-text-primary truncate">${escapeHTML(g.title)}</div>
+                    <div class="text-[10px] theme-text-sub truncate">${escapeHTML(g.url)} • ${(g.categories || []).join(", ")}</div>
+                  </div>
+                </div>
+                <button onclick="deleteCustomGame('${escapeHTML(g.id)}')" class="px-2.5 py-1.5 rounded-xl bg-rose-500/15 text-rose-500 text-xs font-extrabold hover:bg-rose-500 hover:text-white transition">
+                  Remove
+                </button>
+              </div>
+            `).join("")
+          : '<div class="text-xs theme-text-sub py-6 text-center">No custom games added yet. Use the form above to publish one!</div>';
+      }
+
+      const lbEl = document.getElementById("adminLeaderboardList");
+      if (lbEl) {
+        const sorted = [...leaderboard].sort((a, b) => (b.xp || 0) - (a.xp || 0));
+        lbEl.innerHTML = sorted.length
+          ? sorted.map((row, idx) => `
+              <div class="flex items-center justify-between gap-3 p-3 rounded-2xl bg-sky-500/10 border border-sky-400/20">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <span class="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black ${idx === 0 ? 'bg-amber-400 text-slate-900' : 'bg-sky-500/20 text-sky-400'}">${idx + 1}</span>
+                  <div class="min-w-0">
+                    <div class="font-extrabold text-xs theme-text-primary truncate">${escapeHTML(row.name || 'ST Player')}</div>
+                    <div class="text-[10px] theme-text-sub">Level ${Number(row.level) || 1} • ${Number(row.games) || 0} games • ${Number(row.xp) || 0} XP</div>
+                  </div>
+                </div>
+                <button onclick="deletePlayerScore('${escapeHTML(row.name || 'ST Player')}')" class="px-2.5 py-1.5 rounded-xl bg-rose-500/15 text-rose-500 text-xs font-extrabold hover:bg-rose-500 hover:text-white transition">
+                  Delete
+                </button>
+              </div>
+            `).join("")
+          : '<div class="text-xs theme-text-sub py-6 text-center">No player scores recorded yet.</div>';
+      }
+    }
+
+    window.toggleTheme = function() {
+      const isDark = !document.body.classList.contains("dark-theme");
+      document.body.classList.toggle("dark-theme", isDark);
+      localStorage.setItem("st_theme", isDark ? "dark" : "light");
+    };
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const isDark = localStorage.getItem("st_theme") === "dark";
+      document.body.classList.toggle("dark-theme", isDark);
+
+      const savedNotice = localStorage.getItem("st_site_notice");
+      if (savedNotice) {
+        document.getElementById("noticeBannerInput").value = savedNotice;
+      }
+
+      if (sessionStorage.getItem("st_admin_unlocked") === "true") {
+        document.getElementById("adminLockSection").classList.add("hidden");
+        document.getElementById("adminMainDashboard").classList.remove("hidden");
+      }
+
+      window.updateLivePreview();
+      renderAdminLists();
+    });
+  </script>
+</body>
+</html>
