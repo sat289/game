@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ST Games - Admin & Global Publisher</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <style>
+    :root {
+      --neon-cyan: #22d3ee;
+      --neon-violet: #8b5cf6;
+      --neon-pink: #ec4899;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f3f6fb;
+      background-image:
+        radial-gradient(circle at 8% 12%, rgba(56, 189, 248, 0.22), transparent 27%),
+        radial-gradient(circle at 92% 24%, rgba(168, 85, 247, 0.18), transparent 28%),
+        radial-gradient(circle at 52% 92%, rgba(34, 211, 238, 0.16), transparent 30%);
+      background-attachment: fixed;
+      overflow-x: hidden;
+      transition: background 0.5s ease, color 0.35s ease;
+      position: relative;
+      padding-bottom: calc(86px + env(safe-area-inset-bottom, 0px));
+    }
+
+    body.dark-theme {
+      background-color: #080d1b;
+      background-image:
+        radial-gradient(circle at 8% 12%, rgba(14, 165, 233, 0.24), transparent 28%),
+        radial-gradient(circle at 92% 24%, rgba(168, 85, 247, 0.24), transparent 30%),
+        radial-gradient(circle at 52% 92%, rgba(236, 72, 153, 0.15), transparent 32%);
+      color: #f8fafc;
+    }
+
+    .brand-font { font-family: 'Fredoka', sans-serif; }
+    .code-font { font-family: 'JetBrains Mono', monospace; }
+
+    .feature-hub {
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      background: rgba(255, 255, 255, 0.90);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 10px 28px rgba(14, 116, 144, 0.08), 0 0 24px rgba(56, 189, 248, 0.12);
+    }
+
+    body.dark-theme .feature-hub {
+      background: rgba(8, 18, 38, 0.92) !important;
+      color: #eaf7ff;
+      border-color: rgba(56, 189, 248, 0.38);
+    }
+
+    .neon-input {
+      width: 100%;
+      border: 1px solid rgba(56, 189, 248, 0.42);
+      background: rgba(240, 249, 255, 0.92);
+      color: #0f172a;
+      border-radius: 12px;
+      padding: 9px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      outline: none;
+    }
+
+    .neon-input:focus {
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+    }
+
+    body.dark-theme .neon-input {
+      background: #0f172a;
+      color: #f8fafc;
+    }
+
+    .code-textarea {
+      width: 100%;
+      min-height: 360px;
+      background: #090d16;
+      color: #e2e8f0;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: 14px;
+      padding: 14px;
+      font-size: 12px;
+      line-height: 1.55;
+      outline: none;
+      resize: vertical;
+      tab-size: 2;
+      white-space: pre;
+      overflow-wrap: normal;
+      overflow-x: auto;
+    }
+
+    .neon-action {
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      border-radius: 12px;
+      padding: 9px 14px;
+      background: linear-gradient(120deg, #0e7490, #2563eb);
+      color: white;
+      font-size: 12px;
+      font-weight: 800;
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.2);
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .neon-action:hover:not(:disabled) {
+      box-shadow: 0 0 24px rgba(56, 189, 248, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .neon-action:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .chip-btn {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      background: rgba(56, 189, 248, 0.1);
+      color: #0284c7;
+      transition: all 0.15s ease;
+    }
+
+    body.dark-theme .chip-btn {
+      color: #7dd3fc;
+      background: rgba(56, 189, 248, 0.12);
+    }
+
+    /* 3-Button Bottom Navigation Bar */
+    .st-bottom-nav {
+      position: fixed;
+      z-index: 9999;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 4px;
+      padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
+      background: rgba(255, 255, 255, 0.97);
+      border-top: 1px solid #dbeafe;
+      box-shadow: 0 -5px 22px rgba(15, 23, 42, 0.12);
+    }
+
+    body.dark-theme .st-bottom-nav {
+      background: rgba(15, 23, 42, 0.96);
+      border-color: rgba(56, 189, 248, 0.25);
+    }
+
+    .st-bottom-nav a {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      min-width: 0;
+      padding: 5px 2px;
+      border-radius: 12px;
+      color: #334155;
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    body.dark-theme .st-bottom-nav a { color: #cbd5e1; }
+    .st-bottom-nav .nav-icon { font-size: 20px; line-height: 1.1; color: #087eb7; }
+    body.dark-theme .st-bottom-nav .nav-icon { color: #38bdf8; }
+
+    @media (min-width: 768px) {
+      .st-bottom-nav {
+        left: 50%;
+        transform: translateX(-50%);
+        width: min(500px, calc(100% - 32px));
+        border: 1px solid #dbeafe;
+        border-bottom: 0;
+        border-radius: 18px 18px 0 0;
+      }
+    }
+  </style>
+</head>
+
+<body class="min-h-screen flex flex-col justify-between text-slate-900">
+  <main class="max-w-5xl w-full mx-auto px-3.5 sm:px-6 pt-4 pb-12 relative z-10">
+
+    <!-- Header -->
+    <header class="feature-hub rounded-2xl p-4 mb-5 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="index.html" class="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-cyan-400 hover:scale-105 transition shadow">
+          <i class="fa-solid fa-arrow-left"></i>
+        </a>
+        <div>
+          <h1 class="brand-font text-lg sm:text-xl font-bold uppercase text-[#002b5b] dark:text-white flex items-center gap-2">
+            <i class="fa-solid fa-shield-halved text-sky-500"></i> ST Games Admin &amp; Global Publisher
+          </h1>
+          <p class="text-[11px] text-slate-500 font-semibold">Publish games to all phones via GitHub (`games.json`) &amp; edit code</p>
+        </div>
+      </div>
+      <button onclick="toggleTheme()" title="Switch Theme" class="w-9 h-9 rounded-xl border border-sky-400/40 flex items-center justify-center text-lg hover:scale-105 transition">
+        🌓
+      </button>
+    </header>
+
+    <!-- =========================================================
+         STEP 1: GITHUB REPOSITORY CONNECTION (REQUIRED FOR ALL-PHONE SYNC)
+         ========================================================= -->
+    <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div>
+          <h2 class="brand-font text-base font-bold text-[#002b5b] dark:text-cyan-300 flex items-center gap-2">
+            <i class="fa-brands fa-github text-lg"></i> 1. Connect GitHub (For All-Phone Global Sync)
+          </h2>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">Once connected, adding a game below automatically updates <code>games.json</code> in your repo so every phone sees it.</p>
+        </div>
+        <span id="ghConnectionBadge" class="text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full bg-slate-500/15 text-slate-500">
+          Not Connected
+        </span>
+      </div>
+
+      <div class="grid sm:grid-cols-4 gap-3 mb-3">
+        <div>
+          <label class="block text-[10px] font-extrabold uppercase text-sky-600 mb-1" for="ghOwner">GitHub Username</label>
+          <input id="ghOwner" class="neon-input" placeholder="e.g., satishkommana" autocomplete="off">
+        </div>
+        <div>
+          <label class="block text-[10px] font-extrabold uppercase text-sky-600 mb-1" for="ghRepo">Repository Name</label>
+          <input id="ghRepo" class="neon-input" placeholder="e.g., st-games" autocomplete="off">
+        </div>
+        <div>
+          <label class="block text-[10px] font-extrabold uppercase text-sky-600 mb-1" for="ghBranch">Branch</label>
+          <input id="ghBranch" class="neon-input" value="main" placeholder="main">
+        </div>
+        <div>
+          <label class="block text-[10px] font-extrabold uppercase text-sky-600 mb-1" for="ghToken">Personal Access Token</label>
+          <div class="relative flex items-center">
+            <input id="ghToken" type="password" class="neon-input pr-9" placeholder="ghp_xxxxxxxxxxxx" autocomplete="off">
+            <button type="button" onclick="toggleTokenVisibility()" class="absolute right-2.5 text-slate-400 hover:text-sky-500 text-xs">
+              <i id="tokenEyeIcon" class="fa-regular fa-eye"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="flex flex-wrap gap-2">
+          <button type="button" onclick="saveGitHubConfig()" class="neon-action">
+            <i class="fa-solid fa-plug"></i> Save &amp; Connect Repo
+          </button>
+          <button type="button" onclick="pullGlobalGamesFromGitHub()" class="chip-btn">
+            <i class="fa-solid fa-rotate mr-1"></i> Sync Games List from Repo
+          </button>
+          <button type="button" onclick="clearGitHubConfig()" class="text-[11px] font-bold text-rose-500 px-2.5 py-1 hover:underline">
+            Forget Token
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         STEP 2: ADD & PUBLISH GAME CARD TO ALL PHONES
+         ========================================================= -->
+    <section class="feature-hub rounded-2xl p-5 mb-5">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div>
+          <h2 class="brand-font text-base font-bold text-[#002b5b] dark:text-cyan-300 flex items-center gap-2">
+            <i class="fa-solid fa-earth-asia text-emerald-500"></i> 2. Add &amp; Publish Game to All Phones
+          </h2>
+          <p class="text-[11px] text-slate-500">Saves to <code>games.json</code> on GitHub so every visitor on any mobile device sees the game card</p>
+        </div>
+      </div>
+
+      <form id="addGameForm" onsubmit="handleAddGame(event)" class="space-y-3">
+        <div class="grid sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] font-bold text-sky-600 mb-1" for="gameTitle">Game Title *</label>
+            <input id="gameTitle" required class="neon-input" placeholder="e.g., Pixel Dunker" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-sky-600 mb-1" for="gamePath">Game File / URL *</label>
+            <input id="gamePath" required class="neon-input" placeholder="e.g., game/dunk/index.html" />
+          </div>
+        </div>
+
+        <div class="grid sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-[11px] font-bold text-sky-600 mb-1" for="gameLogo">Logo / Image Path</label>
+            <input id="gameLogo" class="neon-input" placeholder="logo/dunk.jpg" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-sky-600 mb-1" for="gameCategory">Category</label>
+            <select id="gameCategory" class="neon-input">
+              <option value="classic">Classic &amp; Retro</option>
+              <option value="racing">Racing</option>
+              <option value="1v1">1v1 Battle</option>
+              <option value="single">Single Player</option>
+              <option value="sports">Sports</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-sky-600 mb-1" for="gameBadge">Badge Tag</label>
+            <input id="gameBadge" class="neon-input" placeholder="NEW, HOT, VIP" maxlength="6" />
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-2">
+          <label class="inline-flex items-center gap-2 text-xs font-bold cursor-pointer">
+            <input type="checkbox" id="markPopular" class="w-4 h-4 accent-cyan-500 rounded">
+            Include in Popular Games row
+          </label>
+          <button type="submit" id="btnPublishGame" class="neon-action !bg-gradient-to-r !from-emerald-600 !to-cyan-600">
+            <i class="fa-solid fa-cloud-arrow-up"></i> Publish Game to All Phones
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Published Global Games List -->
+    <section class="feature-hub rounded-2xl p-5 mb-5">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <h2 class="brand-font text-base font-bold text-[#002b5b] dark:text-cyan-300 flex items-center gap-2">
+          <i class="fa-solid fa-list-check"></i> Published Custom Games (<span id="statCustom">0</span>)
+        </h2>
+        <div class="flex items-center gap-3">
+          <button onclick="syncCatalogToGitHub()" class="chip-btn">
+            <i class="fa-solid fa-cloud-arrow-up mr-1"></i> Force Push List to GitHub
+          </button>
+          <button onclick="wipeAllCustomGames()" class="text-xs font-bold text-rose-500 hover:underline">
+            Clear All
+          </button>
+        </div>
+      </div>
+      <div id="customGamesContainer" class="space-y-2">
+        <div class="text-xs opacity-60 py-4 text-center">No custom games published yet.</div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         STEP 3: DIRECT GITHUB CODE STUDIO (EDIT ANY FILE IN REPO)
+         ========================================================= -->
+    <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3 pb-2 border-b border-sky-400/20">
+        <div>
+          <h2 class="brand-font text-base font-bold text-[#002b5b] dark:text-cyan-300 flex items-center gap-2">
+            <i class="fa-solid fa-code text-sky-500"></i> 3. Direct GitHub Code Editor
+          </h2>
+          <p class="text-[11px] text-slate-500">Edit <code>index.html</code>, <code>games.json</code>, or create new game HTML files directly in your repository</p>
+        </div>
+        <button type="button" onclick="browseRepoDirectory('')" class="chip-btn">
+          <i class="fa-solid fa-folder-tree mr-1"></i> Browse Repo Files
+        </button>
+      </div>
+
+      <!-- Interactive Repository File Browser Drawer -->
+      <div id="repoBrowserPanel" class="hidden mb-4 p-3 rounded-xl border border-sky-400/30 bg-slate-900/5 dark:bg-slate-950/60">
+        <div class="flex items-center justify-between gap-2 mb-2">
+          <div class="flex items-center gap-1.5 text-xs font-extrabold text-sky-600 dark:text-sky-300 truncate">
+            <i class="fa-regular fa-folder-open"></i>
+            <span>Path:</span>
+            <span id="browserCurrentDir" class="code-font">/root</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="browseParentDir()" class="text-[11px] font-bold text-sky-500 hover:underline">
+              <i class="fa-solid fa-level-up-alt mr-1"></i>Up
+            </button>
+            <button type="button" onclick="document.getElementById('repoBrowserPanel').classList.add('hidden')" class="text-[11px] font-bold text-slate-400 hover:text-rose-400">
+              Close ✕
+            </button>
+          </div>
+        </div>
+        <div id="repoFilesList" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-48 overflow-y-auto p-1"></div>
+      </div>
+
+      <!-- Quick File Presets -->
+      <div class="flex flex-wrap items-center gap-1.5 mb-3">
+        <span class="text-[10px] font-extrabold uppercase text-slate-400 mr-1">Quick Load:</span>
+        <button type="button" onclick="quickLoadFile('index.html')" class="chip-btn">index.html</button>
+        <button type="button" onclick="quickLoadFile('games.json')" class="chip-btn">games.json</button>
+        <button type="button" onclick="quickLoadFile('admin.html')" class="chip-btn">admin.html</button>
+        <button type="button" onclick="quickLoadFile('achievements.html')" class="chip-btn">achievements.html</button>
+        <button type="button" onclick="loadStarterGameTemplate()" class="chip-btn !border-emerald-500/40 !text-emerald-600 dark:!text-emerald-300">
+          <i class="fa-solid fa-wand-magic-sparkles mr-1"></i>+ New Game HTML
+        </button>
+      </div>
+
+      <!-- Target File Path + Fetch / Action Bar -->
+      <div class="grid sm:grid-cols-[1fr_auto] gap-2.5 mb-3">
+        <div class="relative flex items-center">
+          <i class="fa-solid fa-file-code text-sky-500 absolute left-3.5 text-xs"></i>
+          <input id="ghFilePath" class="neon-input pl-9 code-font" placeholder="File path in repo (e.g., index.html or games.json)" value="index.html">
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" id="btnFetchFile" onclick="fetchFileFromGitHub()" class="neon-action">
+            <i class="fa-solid fa-cloud-arrow-down"></i> Load from GitHub
+          </button>
+          <button type="button" onclick="openLivePreview()" class="chip-btn">
+            <i class="fa-solid fa-eye mr-1"></i> Live Preview
+          </button>
+        </div>
+      </div>
+
+      <!-- Status Bar Above Editor -->
+      <div class="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 rounded-t-xl bg-slate-900 text-slate-300 text-[11px] code-font border border-b-0 border-sky-500/30">
+        <div class="flex items-center gap-3">
+          <span id="editorFileStatus" class="text-cyan-400 font-semibold">Ready</span>
+          <span id="editorShaBadge" class="text-[10px] text-slate-400 hidden">SHA: —</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="editorMetrics">0 lines · 0 chars</span>
+          <button type="button" onclick="copyEditorCode()" class="hover:text-cyan-300"><i class="fa-regular fa-copy mr-1"></i>Copy</button>
+        </div>
+      </div>
+
+      <!-- Main Code Editor Textarea -->
+      <textarea id="ghCodeEditor" class="code-textarea code-font rounded-t-none mb-3" spellcheck="false" placeholder="Load a file from GitHub or write code here..."></textarea>
+
+      <!-- Commit Message & Push / Delete Controls -->
+      <div class="grid sm:grid-cols-[1fr_auto] gap-2.5 items-center">
+        <input id="ghCommitMsg" class="neon-input" placeholder="Commit message (e.g., Update file via ST Games Admin)">
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="button" id="btnPushFile" onclick="pushFileToGitHub()" class="neon-action !bg-gradient-to-r !from-emerald-600 !to-cyan-600">
+            <i class="fa-solid fa-cloud-arrow-up"></i> Commit &amp; Push Code
+          </button>
+          <button type="button" onclick="deleteFileFromGitHub()" class="px-3 py-2 rounded-xl text-xs font-extrabold bg-rose-500/15 text-rose-500 border border-rose-500/30 hover:bg-rose-500/25 transition">
+            <i class="fa-solid fa-trash-can mr-1"></i> Delete File
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- LIVE CODE PREVIEW MODAL -->
+  <div id="previewModal" class="fixed inset-0 z-[10000] hidden bg-slate-950/80 backdrop-blur-sm p-3 sm:p-6 flex flex-col">
+    <div class="bg-slate-900 text-white rounded-t-2xl px-4 py-3 flex items-center justify-between border border-b-0 border-cyan-500/30">
+      <div class="flex items-center gap-2 text-xs font-extrabold text-cyan-300">
+        <i class="fa-solid fa-display"></i>
+        <span>Live Sandbox Preview</span>
+      </div>
+      <button onclick="closeLivePreview()" class="px-3 py-1 rounded-lg bg-rose-500/20 text-rose-300 text-xs font-bold hover:bg-rose-500/30">
+        Close Preview ✕
+      </button>
+    </div>
+    <iframe id="previewFrame" class="w-full flex-1 bg-white rounded-b-2xl border border-cyan-500/30" sandbox="allow-scripts allow-same-origin"></iframe>
+  </div>
+
+  <!-- 3-BUTTON BOTTOM NAVIGATION BAR -->
+  <nav class="st-bottom-nav" aria-label="ST GAMES navigation">
+    <a href="index.html">
+      <span class="nav-icon">⌂</span>
+      <span>Home</span>
+    </a>
+
+    <a href="login.html" id="bottomNavLogin" title="Login / Profile">
+      <span id="bottomDefaultIcon" class="nav-icon">
+        <i class="fa-regular fa-circle-user"></i>
+      </span>
+      <div id="bottomUserLogo" class="hidden w-6 h-6 rounded-full overflow-hidden border-2 border-cyan-400 bg-gradient-to-tr from-cyan-500 to-indigo-600 text-white font-extrabold text-[11px] flex items-center justify-center shadow-sm">
+        U
+      </div>
+      <span id="bottomLoginLabel" class="truncate max-w-[90px]">Login</span>
+    </a>
+
+    <a href="achievements.html">
+      <span class="nav-icon">🏆</span>
+      <span>Achievements</span>
+    </a>
+  </nav>
+
+  <script>
+    /* =========================================================
+       UTILITIES & UTF-8 SAFE BASE64 ENCODING FOR GITHUB API
+       ========================================================= */
+    const safeReadJSON = (key, fallback) => {
+      try {
+        const val = JSON.parse(localStorage.getItem(key) || 'null');
+        return val == null ? fallback : val;
+      } catch (_) { return fallback; }
+    };
+
+    function escapeHTML(s) {
+      return String(s).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[c]));
+    }
+
+    function utf8ToBase64(str) {
+      const bytes = new TextEncoder().encode(str);
+      let binary = '';
+      const chunkSize = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+      }
+      return btoa(binary);
+    }
+
+    function base64ToUtf8(base64) {
+      const cleaned = base64.replace(/\s/g, '');
+      const binary = atob(cleaned);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return new TextDecoder('utf-8').decode(bytes);
+    }
+
+    function showToast(message, isError = false) {
+      let toast = document.getElementById('adminToast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'adminToast';
+        document.body.appendChild(toast);
+      }
+      toast.className = `fixed left-1/2 bottom-24 -translate-x-1/2 z-[10001] rounded-xl px-4 py-3 text-xs font-extrabold text-white shadow-xl border ${
+        isError ? 'bg-rose-950 border-rose-400' : 'bg-slate-950 border-cyan-400'
+      }`;
+      toast.textContent = message;
+      toast.style.display = 'block';
+      clearTimeout(window.__adminToastTimer);
+      window.__adminToastTimer = setTimeout(() => {
+        toast.style.display = 'none';
+      }, 2800);
+    }
+
+    /* =========================================================
+       GITHUB API CONFIGURATION & GLOBAL `games.json` PUBLISHER
+       ========================================================= */
+    let currentFileSha = null;
+    let currentBrowsePath = '';
+
+    function getGitHubCreds() {
+      return {
+        owner: document.getElementById('ghOwner').value.trim(),
+        repo: document.getElementById('ghRepo').value.trim(),
+        branch: document.getElementById('ghBranch').value.trim() || 'main',
+        token: document.getElementById('ghToken').value.trim()
+      };
+    }
+
+    function getGitHubHeaders(token) {
+      const headers = {
+        'Accept': 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28'
+      };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      return headers;
+    }
+
+    function loadGitHubConfig() {
+      const saved = safeReadJSON('st_github_config', {});
+      if (saved.owner) document.getElementById('ghOwner').value = saved.owner;
+      if (saved.repo) document.getElementById('ghRepo').value = saved.repo;
+      if (saved.branch) document.getElementById('ghBranch').value = saved.branch;
+      if (saved.token) document.getElementById('ghToken').value = saved.token;
+
+      if (!saved.owner && window.location.hostname.endsWith('.github.io')) {
+        const hostParts = window.location.hostname.split('.');
+        document.getElementById('ghOwner').value = hostParts[0];
+        const pathParts = window.location.pathname.split('/').filter(Boolean);
+        if (pathParts.length > 0 && !pathParts[0].endsWith('.html')) {
+          document.getElementById('ghRepo').value = pathParts[0];
+        }
+      }
+      updateConnectionBadge();
+    }
+
+    function saveGitHubConfig() {
+      const creds = getGitHubCreds();
+      if (!creds.owner || !creds.repo || !creds.token) {
+        showToast('Enter GitHub Username, Repo Name, and Personal Access Token', true);
+        return;
+      }
+      localStorage.setItem('st_github_config', JSON.stringify(creds));
+      updateConnectionBadge(true);
+      showToast('GitHub connected! Pulling global games.json...');
+      pullGlobalGamesFromGitHub();
+    }
+
+    function clearGitHubConfig() {
+      localStorage.removeItem('st_github_config');
+      document.getElementById('ghToken').value = '';
+      updateConnectionBadge(false);
+      showToast('GitHub token cleared from this device');
+    }
+
+    function updateConnectionBadge(connected) {
+      const creds = getGitHubCreds();
+      const badge = document.getElementById('ghConnectionBadge');
+      const isReady = connected ?? Boolean(creds.owner && creds.repo && creds.token);
+      if (isReady) {
+        badge.className = 'text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-500 border border-emerald-500/30';
+        badge.textContent = `Global Sync Active: ${creds.owner}/${creds.repo}`;
+      } else {
+        badge.className = 'text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-500';
+        badge.textContent = 'Local Mode (Connect GitHub for All Phones)';
+      }
+    }
+
+    function toggleTokenVisibility() {
+      const input = document.getElementById('ghToken');
+      const icon = document.getElementById('tokenEyeIcon');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'fa-regular fa-eye-slash';
+      } else {
+        input.type = 'password';
+        icon.className = 'fa-regular fa-eye';
+      }
+    }
+
+    // Pull existing games.json from GitHub or website so admin list stays in sync
+    async function pullGlobalGamesFromGitHub() {
+      const { owner, repo, branch, token } = getGitHubCreds();
+      try {
+        if (owner && repo) {
+          const apiUrl = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/games.json?ref=${encodeURIComponent(branch)}`;
+          const res = await fetch(apiUrl, { headers: getGitHubHeaders(token), cache: 'no-store' });
+          if (res.ok) {
+            const data = await res.json();
+            const parsed = JSON.parse(base64ToUtf8(data.content || 'W10='));
+            if (Array.isArray(parsed)) {
+              localStorage.setItem('st_custom_games', JSON.stringify(parsed));
+              renderCustomGames();
+              showToast(`Synced ${parsed.length} global games from GitHub!`);
+              return;
+            }
+          }
+        }
+        // Fallback: try fetching games.json directly from relative URL
+        const directRes = await fetch(`games.json?t=${Date.now()}`, { cache: 'no-store' });
+        if (directRes.ok) {
+          const list = await directRes.json();
+          if (Array.isArray(list)) {
+            localStorage.setItem('st_custom_games', JSON.stringify(list));
+            renderCustomGames();
+          }
+        }
+      } catch (_) {}
+    }
+
+    // Push the current customGames array to games.json in the GitHub repository
+    async function syncCatalogToGitHub(commitTitle = 'Update global games.json catalog') {
+      const { owner, repo, branch, token } = getGitHubCreds();
+      const customGames = safeReadJSON('st_custom_games', []);
+
+      if (!owner || !repo || !token) {
+        showToast('Saved on this phone only! Connect GitHub in Step 1 so it appears on all phones.', true);
+        return false;
+      }
+
+      const btn = document.getElementById('btnPublishGame');
+      if (btn) btn.disabled = true;
+
+      try {
+        const apiUrl = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/games.json`;
+        let existingSha = null;
+
+        const checkRes = await fetch(`${apiUrl}?ref=${encodeURIComponent(branch)}`, {
+          headers: getGitHubHeaders(token),
+          cache: 'no-store'
+        });
+        if (checkRes.ok) {
+          const fileData = await checkRes.json();
+          existingSha = fileData.sha;
+        }
+
+        const jsonContent = JSON.stringify(customGames, null, 2);
+        const payload = {
+          message: commitTitle,
+          content: utf8ToBase64(jsonContent),
+          branch
+        };
+        if (existingSha) payload.sha = existingSha;
+
+        const putRes = await fetch(apiUrl, {
+          method: 'PUT',
+          headers: {
+            ...getGitHubHeaders(token),
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await putRes.json();
+        if (!putRes.ok) throw new Error(result.message || `HTTP ${putRes.status}`);
+
+        showToast('Published to GitHub (games.json)! All phones will now see this update.');
+        return true;
+      } catch (err) {
+        showToast(`GitHub Sync Failed: ${err.message}`, true);
+        return false;
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    async function handleAddGame(e) {
+      e.preventDefault();
+      const title = document.getElementById('gameTitle').value.trim();
+      const url = document.getElementById('gamePath').value.trim();
+      const logo = document.getElementById('gameLogo').value.trim() || 'logo/game.jpg';
+      const category = document.getElementById('gameCategory').value;
+      const badge = document.getElementById('gameBadge').value.trim().toUpperCase();
+      const isPopular = document.getElementById('markPopular').checked;
+
+      const categories = [category];
+      if (isPopular) categories.push('popular');
+
+      const customGames = safeReadJSON('st_custom_games', []);
+      const newGame = {
+        id: 'custom-' + Date.now().toString(36),
+        title,
+        url,
+        logo,
+        icon: 'fa-solid fa-gamepad',
+        size: 'normal',
+        categories,
+        badge: badge || 'NEW',
+        bg: 'linear-gradient(135deg, #0284c7, #1d4ed8)',
+        custom: true
+      };
+
+      customGames.push(newGame);
+      localStorage.setItem('st_custom_games', JSON.stringify(customGames));
+
+      document.getElementById('addGameForm').reset();
+      renderCustomGames();
+
+      // Immediately publish to games.json on GitHub so all phones receive it!
+      await syncCatalogToGitHub(`Add game "${title}" to global catalog`);
+    }
+
+    async function removeGame(id) {
+      if (!confirm('Remove this game from all phones?')) return;
+      let list = safeReadJSON('st_custom_games', []);
+      const target = list.find(g => g.id === id);
+      list = list.filter(g => g.id !== id);
+      localStorage.setItem('st_custom_games', JSON.stringify(list));
+      renderCustomGames();
+      await syncCatalogToGitHub(`Remove game "${target ? target.title : id}" from global catalog`);
+    }
+
+    async function wipeAllCustomGames() {
+      if (!confirm('Clear all custom games from all phones?')) return;
+      localStorage.setItem('st_custom_games', JSON.stringify([]));
+      renderCustomGames();
+      await syncCatalogToGitHub('Clear all custom games in global catalog');
+    }
+
+    function renderCustomGames() {
+      const list = safeReadJSON('st_custom_games', []);
+      document.getElementById('statCustom').textContent = list.length;
+      const container = document.getElementById('customGamesContainer');
+
+      if (!list.length) {
+        container.innerHTML = '<div class="text-xs opacity-60 py-4 text-center">No custom games published yet.</div>';
+        return;
+      }
+
+      container.innerHTML = list.map(g => `
+        <div class="flex items-center justify-between p-3 rounded-xl border border-sky-400/20 bg-sky-500/5 gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-10 h-10 rounded-lg overflow-hidden bg-slate-800 shrink-0">
+              <img src="${escapeHTML(g.logo)}" onerror="this.src='logo/game.jpg'" class="w-full h-full object-cover">
+            </div>
+            <div class="min-w-0">
+              <div class="font-extrabold text-sm truncate">${escapeHTML(g.title)}</div>
+              <div class="text-[10px] text-slate-500 truncate">${escapeHTML(g.url)} · ${(g.categories || []).join(', ')}</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="quickLoadFile('${escapeHTML(g.url)}')" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-sky-500 hover:bg-sky-500/10">
+              Edit Code
+            </button>
+            <button onclick="removeGame('${escapeHTML(g.id)}')" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-rose-500 hover:bg-rose-500/10">
+              Delete
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    /* =========================================================
+       STEP 3: DIRECT GITHUB REPOSITORY CODE EDITOR
+       ========================================================= */
+    async function browseRepoDirectory(dirPath = '') {
+      const { owner, repo, branch, token } = getGitHubCreds();
+      if (!owner || !repo) {
+        showToast('Please enter your GitHub Username and Repository Name first', true);
+        return;
+      }
+
+      const panel = document.getElementById('repoBrowserPanel');
+      const listEl = document.getElementById('repoFilesList');
+      const dirLabel = document.getElementById('browserCurrentDir');
+      panel.classList.remove('hidden');
+      currentBrowsePath = dirPath;
+      dirLabel.textContent = '/' + (dirPath || '');
+      listEl.innerHTML = '<div class="col-span-full text-xs text-slate-400 py-2">Loading repository contents...</div>';
+
+      try {
+        const cleanPath = dirPath.replace(/^\/+|\/+$/g, '');
+        const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${cleanPath}?ref=${encodeURIComponent(branch)}`;
+        const res = await fetch(url, { headers: getGitHubHeaders(token), cache: 'no-store' });
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.message || `Status ${res.status}`);
+        if (!Array.isArray(data)) return;
+
+        data.sort((a, b) => (a.type === b.type ? a.name.localeCompare(b.name) : a.type === 'dir' ? -1 : 1));
+
+        listEl.innerHTML = data.map(item => {
+          const isDir = item.type === 'dir';
+          const safePath = escapeHTML(item.path);
+          const safeName = escapeHTML(item.name);
+          return `
+            <button type="button"
+              onclick="${isDir ? `browseRepoDirectory('${safePath}')` : `quickLoadFile('${safePath}')`}"
+              class="flex items-center gap-2 p-2 rounded-lg text-left text-xs font-bold border border-sky-400/20 bg-white/80 dark:bg-slate-900/90 hover:border-cyan-400 transition truncate">
+              <i class="${isDir ? 'fa-solid fa-folder text-amber-400' : 'fa-regular fa-file-code text-sky-400'} shrink-0"></i>
+              <span class="truncate">${safeName}</span>
+            </button>
+          `;
+        }).join('');
+      } catch (err) {
+        listEl.innerHTML = `<div class="col-span-full text-xs text-rose-500 py-2">Error: ${escapeHTML(err.message)}</div>`;
+      }
+    }
+
+    function browseParentDir() {
+      if (!currentBrowsePath) return;
+      const parts = currentBrowsePath.split('/').filter(Boolean);
+      parts.pop();
+      browseRepoDirectory(parts.join('/'));
+    }
+
+    function quickLoadFile(path) {
+      document.getElementById('ghFilePath').value = path;
+      fetchFileFromGitHub();
+    }
+
+    async function fetchFileFromGitHub() {
+      const { owner, repo, branch, token } = getGitHubCreds();
+      const filePath = document.getElementById('ghFilePath').value.trim().replace(/^\/+/, '');
+
+      if (!owner || !repo || !filePath) {
+        showToast('Enter GitHub Username, Repo Name, and a File Path', true);
+        return;
+      }
+
+      const statusEl = document.getElementById('editorFileStatus');
+      const shaBadge = document.getElementById('editorShaBadge');
+      const editor = document.getElementById('ghCodeEditor');
+      const btn = document.getElementById('btnFetchFile');
+
+      statusEl.textContent = `Fetching ${filePath}...`;
+      btn.disabled = true;
+
+      try {
+        const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${filePath}?ref=${encodeURIComponent(branch)}`;
+        const res = await fetch(url, { headers: getGitHubHeaders(token), cache: 'no-store' });
+        const data = await res.json();
+
+        if (res.status === 404) {
+          currentFileSha = null;
+          shaBadge.classList.add('hidden');
+          statusEl.textContent = `New File (${filePath}) — Ready to create`;
+          showToast(`File "${filePath}" does not exist yet. Write code & push to create it!`);
+          return;
+        }
+
+        if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
+
+        currentFileSha = data.sha;
+        shaBadge.textContent = `SHA: ${data.sha.slice(0, 7)}`;
+        shaBadge.classList.remove('hidden');
+
+        editor.value = base64ToUtf8(data.content || '');
+        statusEl.textContent = `Loaded: ${filePath}`;
+        document.getElementById('ghCommitMsg').value = `Update ${filePath} via ST Games Admin`;
+        updateEditorMetrics();
+        showToast(`Loaded ${filePath} from GitHub!`);
+      } catch (err) {
+        statusEl.textContent = 'Load failed';
+        showToast(`GitHub Error: ${err.message}`, true);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function pushFileToGitHub() {
+      const { owner, repo, branch, token } = getGitHubCreds();
+      const filePath = document.getElementById('ghFilePath').value.trim().replace(/^\/+/, '');
+      const code = document.getElementById('ghCodeEditor').value;
+      const commitMsgInput = document.getElementById('ghCommitMsg').value.trim();
+
+      if (!owner || !repo || !token || !filePath) {
+        showToast('Connect GitHub in Step 1 and enter a file path!', true);
+        return;
+      }
+
+      const btn = document.getElementById('btnPushFile');
+      const statusEl = document.getElementById('editorFileStatus');
+      const shaBadge = document.getElementById('editorShaBadge');
+
+      btn.disabled = true;
+      statusEl.textContent = `Committing ${filePath}...`;
+
+      try {
+        const apiUrl = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${filePath}`;
+        let latestSha = currentFileSha;
+
+        const checkRes = await fetch(`${apiUrl}?ref=${encodeURIComponent(branch)}`, {
+          headers: getGitHubHeaders(token),
+          cache: 'no-store'
+        });
+        if (checkRes.ok) {
+          const existingData = await checkRes.json();
+          if (existingData && existingData.sha) latestSha = existingData.sha;
+        } else if (checkRes.status === 404) {
+          latestSha = null;
+        }
+
+        const payload = {
+          message: commitMsgInput || `${latestSha ? 'Update' : 'Create'} ${filePath} via ST Games Admin`,
+          content: utf8ToBase64(code),
+          branch
+        };
+        if (latestSha) payload.sha = latestSha;
+
+        const putRes = await fetch(apiUrl, {
+          method: 'PUT',
+          headers: {
+            ...getGitHubHeaders(token),
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await putRes.json();
+        if (!putRes.ok) throw new Error(result.message || `HTTP ${putRes.status}`);
+
+        currentFileSha = result.content.sha;
+        shaBadge.textContent = `SHA: ${currentFileSha.slice(0, 7)}`;
+        shaBadge.classList.remove('hidden');
+        statusEl.textContent = `Pushed: ${filePath} ✓`;
+        showToast(`Committed ${filePath} to GitHub!`);
+      } catch (err) {
+        statusEl.textContent = 'Push failed';
+        showToast(`Push Failed: ${err.message}`, true);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function deleteFileFromGitHub() {
+      const { owner, repo, branch, token } = getGitHubCreds();
+      const filePath = document.getElementById('ghFilePath').value.trim().replace(/^\/+/, '');
+
+      if (!owner || !repo || !token || !filePath) {
+        showToast('Connect repo and specify a file path first', true);
+        return;
+      }
+      if (!confirm(`Permanently delete "${filePath}" from ${owner}/${repo}?`)) return;
+
+      try {
+        const apiUrl = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${filePath}`;
+        let shaToDelete = currentFileSha;
+        if (!shaToDelete) {
+          const checkRes = await fetch(`${apiUrl}?ref=${encodeURIComponent(branch)}`, {
+            headers: getGitHubHeaders(token),
+            cache: 'no-store'
+          });
+          if (!checkRes.ok) throw new Error('File not found on repository');
+          const fileInfo = await checkRes.json();
+          shaToDelete = fileInfo.sha;
+        }
+
+        const delRes = await fetch(apiUrl, {
+          method: 'DELETE',
+          headers: {
+            ...getGitHubHeaders(token),
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: `Delete ${filePath} via ST Games Admin`,
+            sha: shaToDelete,
+            branch
+          })
+        });
+
+        const resData = await delRes.json();
+        if (!delRes.ok) throw new Error(resData.message || `HTTP ${delRes.status}`);
+
+        currentFileSha = null;
+        document.getElementById('editorShaBadge').classList.add('hidden');
+        document.getElementById('ghCodeEditor').value = '';
+        document.getElementById('editorFileStatus').textContent = `Deleted ${filePath}`;
+        updateEditorMetrics();
+        showToast(`Deleted ${filePath} from GitHub!`);
+      } catch (err) {
+        showToast(`Delete Error: ${err.message}`, true);
+      }
+    }
+
+    function loadStarterGameTemplate() {
+      const newPath = prompt('Enter new game path in repo:', 'game/new-arcade/index.html');
+      if (!newPath) return;
+      document.getElementById('ghFilePath').value = newPath.trim();
+      currentFileSha = null;
+      document.getElementById('editorShaBadge').classList.add('hidden');
+      document.getElementById('ghCommitMsg').value = `Add new game at ${newPath.trim()}`;
+
+      document.getElementById('ghCodeEditor').value = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ST Games - New Arcade Game</title>
+  <style>
+    body { margin: 0; background: #0f172a; color: #f8fafc; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+    canvas { background: #1e293b; border: 2px solid #22d3ee; border-radius: 16px; box-shadow: 0 0 25px rgba(34,211,238,0.25); }
+    .top-bar { margin-bottom: 12px; display: flex; gap: 16px; align-items: center; }
+    a { color: #22d3ee; text-decoration: none; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <a href="../../index.html">← Back to ST Games</a>
+    <span>Score: <b id="score">0</b></span>
+  </div>
+  <canvas id="gameCanvas" width="360" height="480"></canvas>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#22d3ee';
+    ctx.font = 'bold 20px sans-serif';
+    ctx.fillText('ST GAMES READY!', 95, 240);
+  <\/script>
+</body>
+</html>`;
+      document.getElementById('editorFileStatus').textContent = `Drafting: ${newPath}`;
+      updateEditorMetrics();
+    }
+
+    function updateEditorMetrics() {
+      const val = document.getElementById('ghCodeEditor').value;
+      const lines = val ? val.split('\n').length : 0;
+      document.getElementById('editorMetrics').textContent = `${lines} lines · ${val.length} chars`;
+    }
+
+    function copyEditorCode() {
+      const editor = document.getElementById('ghCodeEditor');
+      navigator.clipboard.writeText(editor.value).then(() => showToast('Code copied'));
+    }
+
+    function openLivePreview() {
+      const code = document.getElementById('ghCodeEditor').value;
+      document.getElementById('previewModal').classList.remove('hidden');
+      document.getElementById('previewFrame').srcdoc = code || '<h3 style="font-family:sans-serif;padding:20px;">Editor is empty.</h3>';
+    }
+
+    function closeLivePreview() {
+      document.getElementById('previewFrame').srcdoc = '';
+      document.getElementById('previewModal').classList.add('hidden');
+    }
+
+    function toggleTheme() {
+      const isDark = !document.body.classList.contains('dark-theme');
+      document.body.classList.toggle('dark-theme', isDark);
+      localStorage.setItem('st_theme', isDark ? 'dark' : 'light');
+    }
+
+    function updateBottomNavUser() {
+      const savedPhoto = localStorage.getItem('gh_user_photo') || localStorage.getItem('st_user_photo');
+      const savedLetter = localStorage.getItem('gh_user_letter');
+      const savedName = localStorage.getItem('gh_user_name');
+      const profileObj = safeReadJSON('st_player_profile', null);
+
+      const defaultIcon = document.getElementById('bottomDefaultIcon');
+      const userLogo = document.getElementById('bottomUserLogo');
+      const loginLabel = document.getElementById('bottomLoginLabel');
+
+      const hasLogin = Boolean(
+        savedPhoto ||
+        savedLetter ||
+        savedName ||
+        (profileObj && profileObj.name && profileObj.name !== 'ST Player')
+      );
+
+      if (!hasLogin) {
+        defaultIcon.classList.remove('hidden');
+        userLogo.classList.add('hidden');
+        loginLabel.textContent = 'Login';
+        return;
+      }
+
+      defaultIcon.classList.add('hidden');
+      userLogo.classList.remove('hidden');
+      const displayName = savedName || (profileObj && profileObj.name) || 'Profile';
+      loginLabel.textContent = displayName;
+
+      if (savedPhoto) {
+        userLogo.innerHTML = `<img src="${escapeHTML(savedPhoto)}" alt="User Logo" class="w-full h-full rounded-full object-cover">`;
+      } else {
+        userLogo.textContent = (savedLetter || displayName.charAt(0) || 'U').toUpperCase();
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if (localStorage.getItem('st_theme') === 'dark') {
+        document.body.classList.add('dark-theme');
+      }
+
+      const editor = document.getElementById('ghCodeEditor');
+      editor.addEventListener('input', updateEditorMetrics);
+
+      loadGitHubConfig();
+      renderCustomGames();
+      pullGlobalGamesFromGitHub();
+      updateBottomNavUser();
+    });
+  </script>
+</body>
+</html>
