@@ -1,0 +1,253 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#210b29">
+<title>Merge Mania</title>
+<style>
+:root{--bg:#210b29;--cyan:#52c9ff;--pink:#d64cc8;--yellow:#ffc928}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#210b29;color:#fff;font-family:Arial,Helvetica,sans-serif;touch-action:none}
+body{display:flex;justify-content:center}
+#app{position:relative;width:min(100vw,520px);height:100dvh;min-height:560px;overflow:hidden;background:radial-gradient(ellipse at 50% 48%,#35123b 0,#210b29 62%,#18071e 100%);isolation:isolate}
+#stars{position:absolute;inset:0;pointer-events:none;z-index:0}
+.star{position:absolute;border-radius:50%;background:#fff;box-shadow:0 0 8px 2px #ffffff55;animation:twinkle 3s ease-in-out infinite alternate}
+@keyframes twinkle{from{opacity:.22;transform:scale(.7)}to{opacity:.95;transform:scale(1.2)}}
+.nebula{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.4;background:radial-gradient(ellipse at 12% 58%,#54234f 0 9%,transparent 27%),radial-gradient(ellipse at 88% 42%,#482044 0 12%,transparent 30%),radial-gradient(ellipse at 50% 100%,#4a1740 0 16%,transparent 40%)}
+#loader{position:absolute;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:25px;background:radial-gradient(ellipse at 50% 42%,#42184b,#210b29 70%);transition:opacity .55s}
+#loader.hide{opacity:0;pointer-events:none}
+.loaderLogo,.logo{font-weight:1000;text-align:center;line-height:.86;letter-spacing:-3px;transform:rotate(-3deg);filter:drop-shadow(0 9px 0 #102e78) drop-shadow(0 0 18px #32aaff88)}
+.loaderLogo .merge,.logo span{display:block;font-size:clamp(54px,15vw,82px);color:#63d9ff;-webkit-text-stroke:2px #2459b4;text-shadow:0 4px 0 #1c448e}
+.loaderLogo .mania,.logo strong{display:block;margin-top:12px;font-size:clamp(58px,16vw,88px);color:#ffce20;-webkit-text-stroke:2px #ec7813;text-shadow:0 4px 0 #b44b18}
+.planet{width:122px;height:122px;border-radius:50%;background:radial-gradient(circle at 32% 28%,#fff27b 0 5%,#ffb81c 6% 40%,#f36c1e 75%);box-shadow:inset -12px -12px 0 #d84928,0 0 35px #ff9c3488;display:grid;place-items:center;font-size:58px}
+.loadTrack{width:65%;height:13px;border-radius:20px;background:#100b20;border:1px solid #54c9ff88;overflow:hidden;box-shadow:0 0 15px #2caaff66}
+#loadFill{height:100%;width:0;background:linear-gradient(90deg,#368cff,#6de8ff);box-shadow:0 0 12px #58dfff;animation:load 2.2s ease forwards}
+@keyframes load{to{width:100%}}
+.loadText{font-size:12px;font-weight:900;letter-spacing:3px;color:#9deaff;text-shadow:0 0 8px #45baff}
+#menu{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;text-align:center;padding:25px;background:#19091e66}
+.logo{filter:drop-shadow(0 8px 0 #122b72) drop-shadow(0 0 16px #3ab9ff88)}
+.logo strong{font-size:clamp(60px,16vw,90px)}
+.menuSub{font-size:13px;letter-spacing:3px;color:#a7eaff;font-weight:900}
+.playBtn,.soundBtn{border:0;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 35% 25%,#ffe94c,#ff9f10 58%,#e74a22 100%);box-shadow:inset -7px -8px 0 #d9471d,0 0 22px #ff9d3488,0 7px 0 #6d261e;cursor:pointer;color:white}
+.playBtn{width:116px;height:116px;font-size:57px;text-shadow:0 3px 3px #9a3c27;padding-left:7px}
+.soundBtn{width:94px;height:94px;font-size:39px}
+.bestMenu{color:#82dfff;font-size:29px;font-weight:1000;letter-spacing:2px;text-shadow:0 0 10px #2d9cff88}
+.bestMenu small{display:block;font-size:12px;letter-spacing:3px;margin-bottom:7px}
+#game{position:absolute;inset:0;z-index:2;display:none;flex-direction:column;padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom)}
+#hud{height:86px;flex:none;display:grid;grid-template-columns:64px 1fr 1fr;align-items:center;gap:8px;padding:7px 2px}
+.hudBtn{width:55px;height:55px;border:2px solid #70dfff;border-radius:50%;background:radial-gradient(circle at 35% 25%,#a8f1ff,#286ac2 68%,#173477);box-shadow:0 0 14px #3bbaff88,inset 0 -5px 8px #17346b;display:grid;place-items:center;font-size:27px;color:white;cursor:pointer}
+#currentScore{text-align:center;font-size:clamp(34px,9vw,47px);font-weight:1000;color:#ffce22;text-shadow:0 3px 0 #a74720,0 0 12px #ff9b2d66;line-height:1}
+#bestScore{text-align:right;color:#8de3ff;font-size:19px;font-weight:1000;line-height:1.1;text-shadow:0 0 8px #4dbbff66}
+#bestScore small{display:block;font-size:10px;letter-spacing:1.5px;margin-bottom:7px}
+#boardWrap{position:relative;flex:1;min-height:0;border:5px solid #36baf8;border-radius:25px;background:#1b0b22bb;box-shadow:0 0 0 2px #7fe5ff66 inset,0 0 16px #20aaffaa,inset 0 0 20px #2e9be655;overflow:hidden}
+#board{position:absolute;inset:0;width:100%;height:100%}
+#launcherWrap{height:115px;flex:none;margin-top:10px;border:5px solid #39bdf9;border-radius:24px;background:#210d2bbb;box-shadow:0 0 14px #26aaff99,inset 0 0 10px #38bfff44;padding:8px 10px;position:relative;touch-action:none}
+#launcher{height:100%;display:grid;grid-template-columns:repeat(5,1fr);gap:4px;position:relative}
+.laneSlot{position:relative;border-radius:12px;background:#542b5244;border:1px solid #ffffff10;display:grid;place-items:center}
+#launcherDraggable{position:absolute;top:50%;left:0;transform:translate(-50%,-50%);width:72px;height:72px;border-radius:14px;display:grid;place-items:center;font-weight:1000;font-size:28px;color:white;text-shadow:0 2px 2px #3a2158;box-shadow:0 0 20px #58dfff,inset 0 0 0 2px #ffffff60,inset 0 -6px 8px #0004;cursor:grab;z-index:10;transition:transform .08s ease}
+#launcherDraggable:active{cursor:grabbing}
+#hint{height:25px;flex:none;text-align:center;color:#9acde9;font-size:10px;letter-spacing:1px;font-weight:800;padding-top:7px}
+#overlay{position:absolute;inset:0;z-index:12;display:none;align-items:center;justify-content:center;background:#100718c9;padding:20px}
+.modal{width:min(92%,340px);border:3px solid #58d5ff;border-radius:23px;background:linear-gradient(145deg,#48204f,#210d2b);padding:27px 20px;text-align:center;box-shadow:0 0 28px #35baff77}
+.modal h2{font-size:32px;color:#ffce2a;margin:0 0 12px;text-shadow:0 3px 0 #8c3d26}
+.modal p{font-weight:900;line-height:2;color:#a9eaff;margin:0 0 15px}
+.modal button{border:0;border-radius:30px;padding:13px 25px;background:linear-gradient(#ffe84b,#ff9816);color:#60231c;font-size:16px;font-weight:1000;box-shadow:0 5px 0 #a8451c;cursor:pointer}
+#toast{position:absolute;z-index:15;top:90px;left:50%;transform:translateX(-50%);background:#54225d;border:1px solid #7ce7ff;border-radius:30px;padding:9px 17px;color:#fff;font-weight:900;font-size:13px;box-shadow:0 0 15px #39baff88;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}
+@media(max-height:680px){#hud{height:70px}#launcherWrap{height:95px}#hint{height:20px}.hudBtn{width:48px;height:48px}.playBtn{width:95px;height:95px}.soundBtn{width:78px;height:78px}#launcherDraggable{width:60px;height:60px;font-size:24px}}
+</style>
+</head>
+<body>
+<div id="app">
+ <div class="nebula"></div><div id="stars"></div>
+ <section id="loader">
+  <div class="loaderLogo"><span class="merge">MERGE</span><span class="mania">MANIA</span></div>
+  <div class="planet">🚀</div><div class="loadTrack"><div id="loadFill"></div></div>
+  <div class="loadText">LOADING GAME...</div>
+ </section>
+ <section id="menu">
+  <div class="logo"><span>MERGE</span><strong>MANIA</strong></div>
+  <div class="menuSub">SPACE NUMBER PUZZLE</div>
+  <div class="bestMenu"><small>BEST SCORE</small><b id="menuBest">0</b></div>
+  <button class="playBtn" id="playBtn" aria-label="Play">▶</button>
+  <button class="soundBtn" id="menuSound" aria-label="Toggle sound">🔊</button>
+ </section>
+ <main id="game">
+  <header id="hud">
+   <button class="hudBtn" id="pauseBtn" aria-label="Pause">Ⅱ</button>
+   <div id="currentScore">0</div>
+   <div id="bestScore"><small>BEST SCORE</small><span id="bestValue">0</span></div>
+  </header>
+  <section id="boardWrap"><canvas id="board"></canvas></section>
+  <section id="launcherWrap">
+   <div id="launcher">
+    <div class="laneSlot"></div><div class="laneSlot"></div><div class="laneSlot"></div><div class="laneSlot"></div><div class="laneSlot"></div>
+   </div>
+   <div id="launcherDraggable">4</div>
+  </section>
+  <div id="hint">HOLD & DRAG TILE, RELEASE TO SHOOT UPWARDS</div>
+ </main>
+ <div id="toast"></div>
+ <section id="overlay"><div class="modal"><h2 id="modalTitle">PAUSED</h2><p id="modalText">Take a break!</p><button id="resumeBtn">RESUME</button> <button id="restartBtn">RESTART</button></div></section>
+</div>
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id),canvas=$('board'),ctx=canvas.getContext('2d');
+const COLORS={4:['#c65bbd','#8f2e9d'],8:['#ef7aaf','#c63f88'],16:['#45d2df','#1497b5'],32:['#4f9eea','#2364bd'],64:['#ffb52b','#ed701c'],128:['#a7d94d','#5b9b29'],256:['#ff7d54','#cf3e36'],512:['#b28aff','#7244c2'],1024:['#70e3c0','#239d85'],2048:['#ffe45e','#e7a91c'],4096:['#ff8de0','#b63caa']};
+let W=0,H=0,dpr=1,cell=0,rows=0,grid=[],score=0,best=+(localStorage.getItem('mergeManiaBest')||0),next=4,aim=2,playing=false,paused=false,over=false,anim=0,last=0,particles=[],shooting=false;
+let isDragging=false,dragX=0;
+
+$('menuBest').textContent=best;$('bestValue').textContent=best;
+function makeStars(){for(let i=0;i<55;i++){let s=document.createElement('i');s.className='star';let z=2+Math.random()*5;s.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;width:${z}px;height:${z}px;animation-delay:${Math.random()*4}s;animation-duration:${2+Math.random()*4}s`;$('stars').appendChild(s)}}
+makeStars();
+function color(v){return COLORS[v]||['#ffdb62','#db861d']}
+function randomTile(){return Math.random()<.78?4:8}
+function resize(){
+ const r=$('boardWrap').getBoundingClientRect();W=r.width;H=r.height;dpr=Math.min(devicePixelRatio||1,2);
+ canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
+ cell=W/5;rows=Math.max(5,Math.floor((H-8)/cell));updateDraggableStyle();draw();
+}
+new ResizeObserver(resize).observe($('boardWrap'));
+
+function updateDraggableStyle(){
+ const lw=$('launcherWrap').clientWidth;
+ const laneW=lw/5;
+ if(!isDragging){
+  dragX=(aim+0.5)*laneW;
+ }
+ const el=$('launcherDraggable');
+ el.style.left=dragX+'px';
+ el.style.background=`linear-gradient(145deg,${color(next).join(',')})`;
+ el.textContent=next;
+}
+
+function start(){grid=Array.from({length:5},()=>[]);particles=[];score=0;next=randomTile();aim=2;isDragging=false;playing=true;paused=false;over=false;shooting=false;$('currentScore').textContent='0';$('menu').style.display='none';$('overlay').style.display='none';$('game').style.display='flex';resize();updateDraggableStyle();last=performance.now();cancelAnimationFrame(anim);anim=requestAnimationFrame(loop);toast('Drag anywhere & release to shoot up!')}
+function addScore(n){score+=n;$('currentScore').textContent=score;if(score>best){best=score;localStorage.setItem('mergeManiaBest',best);$('bestValue').textContent=best;$('menuBest').textContent=best}}
+
+function shootTile(){
+ if(!playing||paused||over||shooting)return;
+ const lw=$('launcherWrap').clientWidth;
+ const laneW=lw/5;
+ aim=Math.max(0,Math.min(4,Math.floor(dragX/laneW)));
+ const stack=grid[aim];
+ if(stack.length>=rows){endGame();return}
+ 
+ shooting=true;
+ const value=next;next=randomTile();
+ 
+ const startY=H+cell*0.5;
+ const targetY=(stack.length+0.5)*cell;
+ const tile={value,x:(aim+0.5)*cell,y:startY,targetY,vy:0};
+
+ function fly(now){
+  if(!playing||paused||over){shooting=false;updateDraggableStyle();return}
+  const dt=Math.min(.03,(now-(tile.last||now))/1000||.016);tile.last=now;
+  tile.vy-=3800*dt;
+  tile.y+=tile.vy*dt;
+  
+  if(tile.y<=targetY){
+   tile.y=targetY;
+   stack.push(value);
+   shooting=false;
+   mergeAt(aim,stack.length-1);
+   updateDraggableStyle();
+   draw();
+   if(grid.some(col=>col.length>=rows))endGame();
+  }else{
+   draw(tile);
+   requestAnimationFrame(fly);
+  }
+ }
+ requestAnimationFrame(fly);
+}
+
+function mergeAt(c,r){
+ let val=grid[c][r];if(!val)return;
+ let group=[],queue=[[c,r]],seen=new Set([c+','+r]);
+ while(queue.length){let [x,y]=queue.pop();group.push([x,y]);for(let [nx,ny] of [[x-1,y],[x+1,y],[x,y-1],[x,y+1]]){let key=nx+','+ny;if(nx>=0&&nx<5&&ny>=0&&ny<grid[nx].length&&!seen.has(key)&&grid[nx][ny]===val){seen.add(key);queue.push([nx,ny])}}}
+ if(group.length<2)return;
+ let newVal=Math.min(4096,val*2);
+ group.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+ for(let [x,y] of group)grid[x][y]=null;
+ for(let x=0;x<5;x++)grid[x]=grid[x].filter(v=>v!==null);
+ if(grid[c].length<rows)grid[c].push(newVal);
+ addScore(newVal*group.length);
+ const px=(c+.5)*cell,py=(grid[c].length-.5)*cell;
+ for(let i=0;i<18;i++){let a=Math.random()*Math.PI*2,s=60+Math.random()*150;particles.push({x:px,y:py,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.6,max:.6,col:color(newVal)[0]})}
+ toast(newVal+' MERGED!');
+ if(grid[c].length)mergeAt(c,grid[c].length-1);
+}
+
+function draw(flying=null){
+ if(!W||!H)return;ctx.clearRect(0,0,W,H);
+ for(let c=0;c<5;c++){ctx.fillStyle=c%2?'#ffffff08':'#00000008';ctx.fillRect(c*cell,0,cell,H);ctx.strokeStyle='#ffffff0b';ctx.strokeRect(c*cell,0,cell,H)}
+ const danger=H-cell*.8;ctx.save();ctx.setLineDash([8,9]);ctx.strokeStyle='#ff7ad966';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,danger);ctx.lineTo(W,danger);ctx.stroke();ctx.restore();
+ for(let c=0;c<5;c++)for(let r=0;r<grid[c].length;r++){let v=grid[c][r];if(v)drawTile((c+.5)*cell,(r+.5)*cell,v)}
+ if(flying)drawTile(flying.x,flying.y,flying.value);
+ particles.forEach(p=>{ctx.globalAlpha=Math.max(0,p.life/p.max);ctx.fillStyle=p.col;ctx.beginPath();ctx.arc(p.x,p.y,3.5,0,Math.PI*2);ctx.fill()});ctx.globalAlpha=1;
+}
+
+function drawTile(cx,cy,value){
+ let x=cx-cell*.44,y=cy-cell*.44,w=cell*.88,h=cell*.88,c=color(value);
+ let g=ctx.createLinearGradient(x,y,x+w,y+h);g.addColorStop(0,c[0]);g.addColorStop(1,c[1]);
+ ctx.save();ctx.shadowColor=c[0];ctx.shadowBlur=9;ctx.fillStyle=g;ctx.beginPath();ctx.roundRect(x,y,w,h,11);ctx.fill();
+ ctx.shadowBlur=0;ctx.strokeStyle='#ffffff55';ctx.lineWidth=2;ctx.stroke();
+ ctx.fillStyle='#ffffff45';ctx.beginPath();ctx.ellipse(x+w*.22,y+h*.2,w*.12,h*.08,-.6,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#fff';ctx.font=`1000 ${Math.min(42,cell*.43)}px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';
+ ctx.shadowColor='#38123f';ctx.shadowBlur=3;ctx.fillText(value,cx,cy+1);ctx.restore();
+}
+
+function loop(now){if(!playing)return;let dt=Math.min(.03,(now-last)/1000||.016);last=now;for(let p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=180*dt;p.life-=dt}particles=particles.filter(p=>p.life>0);draw();anim=requestAnimationFrame(loop)}
+function toast(s){$('toast').textContent=s;$('toast').style.opacity=1;clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('toast').style.opacity=0,1300)}
+function endGame(){if(over)return;over=true;playing=false;cancelAnimationFrame(anim);$('modalTitle').textContent='GAME OVER';$('modalText').innerHTML='SCORE: '+score+'<br>BEST: '+best;$('resumeBtn').textContent='PLAY AGAIN';$('restartBtn').style.display='none';$('overlay').style.display='flex'}
+function pause(){if(!playing||over)return;paused=true;$('modalTitle').textContent='PAUSED';$('modalText').textContent='Your space puzzle is waiting.';$('resumeBtn').textContent='RESUME';$('restartBtn').style.display='inline-block';$('overlay').style.display='flex'}
+
+$('resumeBtn').onclick=()=>{if(over){start();return}paused=false;$('overlay').style.display='none';last=performance.now()};
+$('restartBtn').onclick=start;$('pauseBtn').onclick=pause;
+$('playBtn').onclick=()=>{start();$('loader').classList.add('hide')};
+$('menuSound').onclick=()=>{$('menuSound').textContent=$('menuSound').textContent==='🔊'?'🔇':'🔊';toast($('menuSound').textContent==='🔊'?'Sound on':'Sound off')};
+
+const gameArea=$('game');
+
+function updateDragWithClientX(clientX){
+ const rect=$('launcherWrap').getBoundingClientRect();
+ dragX=Math.max(20,Math.min(rect.width-20,clientX-rect.left));
+ const laneW=rect.width/5;
+ aim=Math.max(0,Math.min(4,Math.floor(dragX/laneW)));
+ $('launcherDraggable').style.left=dragX+'px';
+}
+
+gameArea.addEventListener('pointerdown',e=>{
+ if(!playing||paused||over||shooting)return;
+ if(e.target.closest('header')||e.target.closest('#overlay'))return;
+ isDragging=true;
+ updateDragWithClientX(e.clientX);
+});
+
+window.addEventListener('pointermove',e=>{
+ if(!isDragging)return;
+ updateDragWithClientX(e.clientX);
+});
+
+window.addEventListener('pointerup',e=>{
+ if(!isDragging)return;
+ isDragging=false;
+ shootTile();
+});
+
+window.addEventListener('keydown',e=>{
+ if(e.key==='ArrowLeft'){aim=Math.max(0,aim-1);const lw=$('launcherWrap').clientWidth;dragX=(aim+0.5)*(lw/5);updateDraggableStyle()}
+ if(e.key==='ArrowRight'){aim=Math.min(4,aim+1);const lw=$('launcherWrap').clientWidth;dragX=(aim+0.5)*(lw/5);updateDraggableStyle()}
+ if(e.key===' '||e.key==='Enter')shootTile();
+});
+
+window.addEventListener('load',()=>setTimeout(()=>$('loader').classList.add('hide'),2300));
+setTimeout(()=>$('loader').style.display='none',3000);
+resize();
+updateDraggableStyle();
+})();
+</script>
+</body>
+</html>
+```
