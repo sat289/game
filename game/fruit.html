@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Fruit Merge Reloaded - ST Games</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700;800&family=Inter:wght@500;700;800&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: 'Fredoka', 'Inter', sans-serif;
+      background: repeating-linear-gradient(
+        90deg,
+        #fde68a 0px,
+        #fde68a 38px,
+        #fef3c7 38px,
+        #fef3c7 76px
+      );
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .wood-floor {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 22vh;
+      background: linear-gradient(180deg, #d97706 0%, #b45309 35%, #92400e 100%);
+      border-top: 6px solid #f59e0b;
+      box-shadow: inset 0 12px 25px rgba(0, 0, 0, 0.25);
+      z-index: 0;
+    }
+
+    #loadingScreen {
+      position: fixed;
+      inset: 0;
+      background: #000000;
+      z-index: 99999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      transition: opacity 0.45s ease;
+    }
+
+    .hub-back-btn {
+      background: rgba(15, 35, 66, 0.9);
+      border: 1.5px solid rgba(59, 130, 246, 0.55);
+      color: #93c5fd;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 7px 15px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.35);
+      text-decoration: none;
+    }
+
+    .glass-pill {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(245, 158, 11, 0.45);
+      box-shadow: 0 6px 18px rgba(146, 64, 14, 0.15);
+    }
+
+    .booster-btn {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 54px;
+      height: 54px;
+      border-radius: 18px;
+      background: linear-gradient(145deg, #ffffff, #fef3c7);
+      border: 2.5px solid #f59e0b;
+      box-shadow: 0 5px 0 #d97706, 0 8px 15px rgba(0,0,0,0.15);
+      cursor: pointer;
+    }
+    .booster-btn:active:not(:disabled) {
+      transform: translateY(4px);
+      box-shadow: 0 1px 0 #d97706;
+    }
+    .booster-btn.active-mode {
+      background: linear-gradient(145deg, #fecdd3, #fda4af);
+      border-color: #e11d48;
+      box-shadow: 0 0 18px rgba(225, 29, 72, 0.6);
+    }
+
+    @keyframes shakeJarAnim {
+      0%, 100% { transform: translateX(0) rotate(0deg); }
+      20% { transform: translateX(-9px) rotate(-1.5deg); }
+      40% { transform: translateX(9px) rotate(1.5deg); }
+      60% { transform: translateX(-7px) rotate(-1deg); }
+      80% { transform: translateX(7px) rotate(1deg); }
+    }
+    .jar-shaking {
+      animation: shakeJarAnim 0.42s ease-in-out;
+    }
+
+    canvas {
+      touch-action: none;
+      -webkit-touch-callout: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Loading Screen -->
+  <div id="loadingScreen">
+    <h1 class="text-3xl font-extrabold mb-4">Fruit Merge Reloaded</h1>
+    <div class="w-64 h-2.5 bg-neutral-800 rounded-full overflow-hidden mb-2">
+      <div id="loadingBarFill" class="h-full bg-gradient-to-r from-amber-400 to-rose-500 w-full animate-pulse"></div>
+    </div>
+    <div id="loadingPercentText" class="text-sm font-bold text-neutral-300">Loading...</div>
+  </div>
+
+  <div class="wood-floor"></div>
+
+  <!-- Top HUD -->
+  <header class="w-full max-w-md px-3 pt-3 z-20 flex items-center justify-between">
+    <a href="../index.html" class="hub-back-btn"><i class="fa-solid fa-arrow-left"></i><span>Hub</span></a>
+    <div id="syncBadge" class="glass-pill px-3 py-1 rounded-full text-xs font-bold text-amber-900 truncate max-w-[160px]">Syncing...</div>
+    <div class="flex gap-1.5">
+      <button onclick="openLeaderboard()" class="glass-pill w-9 h-9 rounded-full flex items-center justify-center text-amber-600"><i class="fa-solid fa-trophy"></i></button>
+      <button onclick="toggleMute()" class="glass-pill w-9 h-9 rounded-full flex items-center justify-center text-amber-800"><i id="muteIcon" class="fa-solid fa-volume-high"></i></button>
+    </div>
+  </header>
+
+  <!-- Score Board -->
+  <section class="w-full max-w-md px-3 z-20 flex items-center justify-between my-1">
+    <div class="flex gap-2">
+      <div class="glass-pill rounded-2xl px-3.5 py-1">
+        <div class="text-[10px] font-bold text-amber-700">SCORE</div>
+        <div id="scoreVal" class="text-xl font-black text-amber-950">0</div>
+      </div>
+      <div class="glass-pill rounded-2xl px-3.5 py-1">
+        <div class="text-[10px] font-bold text-rose-600">BEST</div>
+        <div id="bestScoreVal" class="text-xl font-black text-amber-950">0</div>
+      </div>
+    </div>
+    <div class="glass-pill rounded-2xl px-3 py-1 flex items-center gap-2">
+      <div class="text-right text-[10px] font-bold text-amber-700">NEXT</div>
+      <canvas id="nextFruitCanvas" width="38" height="38" class="w-9 h-9"></canvas>
+    </div>
+  </section>
+
+  <div id="hammerNotice" class="hidden fixed top-28 z-30 bg-rose-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg animate-bounce">
+    🔨 Tap any fruit to smash it!
+  </div>
+
+  <main class="relative z-10 flex-1 flex items-center justify-center w-full max-w-md px-2">
+    <canvas id="gameCanvas" width="360" height="470" class="rounded-b-2xl"></canvas>
+  </main>
+
+  <footer class="w-full max-w-md px-3 pb-3 z-20 flex gap-2">
+    <button onclick="activateHammer()" id="btnHammer" class="booster-btn">🔨<span id="hammerCount" class="absolute -top-1 -right-1 bg-rose-600 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">2</span></button>
+    <button onclick="activateShake()" id="btnShake" class="booster-btn">🫨<span id="shakeCount" class="absolute -top-1 -right-1 bg-amber-600 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">2</span></button>
+    <button onclick="activateSwap()" id="btnSwap" class="booster-btn">🔄<span id="swapCount" class="absolute -top-1 -right-1 bg-teal-600 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">3</span></button>
+    <div class="glass-pill flex-1 rounded-2xl px-2 py-1 overflow-hidden">
+      <div class="text-[9px] font-bold text-amber-800 mb-0.5 text-center">Evolution Chain →</div>
+      <canvas id="evoChainCanvas" width="180" height="24" class="w-full h-6"></canvas>
+    </div>
+  </footer>
+
+  <!-- Game Over Modal -->
+  <div id="gameOverModal" class="fixed inset-0 z-50 hidden bg-slate-950/80 flex items-center justify-center p-4">
+    <div class="bg-amber-50 border-4 border-amber-400 rounded-3xl max-w-sm w-full p-6 text-center">
+      <h2 class="text-2xl font-black text-amber-950 mb-2">Jar Overflowed!</h2>
+      <button onclick="restartGame()" class="w-full py-3 rounded-2xl font-bold bg-teal-600 text-white">Play Again</button>
+    </div>
+  </div>
+
+  <!-- Leaderboard Modal -->
+  <div id="leaderboardModal" class="fixed inset-0 z-50 hidden bg-slate-950/80 flex items-center justify-center p-4">
+    <div class="bg-amber-50 border-4 border-amber-400 rounded-3xl max-w-sm w-full p-5 flex flex-col max-h-[80vh]">
+      <div class="flex justify-between pb-2 border-b border-amber-200">
+        <h3 class="font-black text-amber-950">Leaderboard</h3>
+        <button onclick="closeLeaderboard()">✕</button>
+      </div>
+      <div id="leaderboardList" class="flex-1 overflow-y-auto space-y-2 my-3"></div>
+    </div>
+  </div>
+
+  <script>
+    // Firebase & LocalStorage Hybrid Sync Manager
+    const FIREBASE_DB_URL = "https://friendsgame-872f5-default-rtdb.firebaseio.com";
+    const LOCAL_STORAGE_KEY = "st_fruit_merge_data_v1";
+
+    window.FruitStorage = {
+      user: { isLoggedIn: false, key: "guest", name: "Guest Player", photo: "" },
+      stats: { highScore: 0, totalMerges: 0, maxFruitTier: 0, gamesPlayed: 0, updatedAt: 0 },
+      safeReadJSON(k, fb) { try { return JSON.parse(localStorage.getItem(k)) || fb; } catch (_) { return fb; } },
+      detectUser() {
+        const ghName = (localStorage.getItem("gh_user_name") || "").trim();
+        const p = this.safeReadJSON("st_player_profile", {});
+        const validName = ghName || (p.name && p.name !== "ST Player" ? p.name : "");
+        if (validName) {
+          this.user = { isLoggedIn: true, name: validName, key: (p.email || validName).toLowerCase().replace(/[^a-z0-9_-]/g, "_"), photo: localStorage.getItem("gh_user_photo") || "" };
+        }
+        return this.user;
+      },
+      async init(cb) {
+        this.detectUser();
+        const saved = this.safeReadJSON(`${LOCAL_STORAGE_KEY}_${this.user.key}`, null) || this.safeReadJSON(`${LOCAL_STORAGE_KEY}_guest`, null);
+        if (saved) this.stats = { ...this.stats, ...saved };
+        if (cb) cb(this.user.isLoggedIn ? `${this.user.name} • Cloud` : "Local Storage (Guest)", this.user.isLoggedIn);
+        return this.stats;
+      },
+      async recordProgress({ score = 0 }, cb) {
+        if (score > this.stats.highScore) this.stats.highScore = score;
+        try { localStorage.setItem(`${LOCAL_STORAGE_KEY}_${this.user.key}`, JSON.stringify(this.stats)); } catch (_) {}
+        if (this.user.isLoggedIn) {
+          try {
+            await fetch(`${FIREBASE_DB_URL}/fruit_merge/players/${this.user.key}.json`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name: this.user.name, highScore: this.stats.highScore, updatedAt: Date.now() })
+            });
+            if (cb) cb("Cloud Synced", true);
+          } catch (_) {}
+        }
+      },
+      async fetchLeaderboard() {
+        try {
+          const res = await fetch(`${FIREBASE_DB_URL}/fruit_merge/players.json`);
+          const data = await res.json();
+          return data ? Object.values(data).sort((a, b) => (b.highScore || 0) - (a.highScore || 0)).slice(0, 15) : [];
+        } catch (_) { return []; }
+      }
+    };
+
+    // Fruit Catalog
+    const FRUITS = [
+      { tier: 0, name: "Grape",      radius: 15, score: 2,   color1: "#a855f7", color2: "#6b21a8", rim: "#581c87" },
+      { tier: 1, name: "Cherry",     radius: 21, score: 4,   color1: "#fb7185", color2: "#e11d48", rim: "#9f1239" },
+      { tier: 2, name: "Blueberry",  radius: 28, score: 8,   color1: "#60a5fa", color2: "#2563eb", rim: "#1e40af" },
+      { tier: 3, name: "Strawberry", radius: 35, score: 16,  color1: "#f43f5e", color2: "#be123c", rim: "#881337" },
+      { tier: 4, name: "Green Apple",radius: 43, score: 32,  color1: "#a3e635", color2: "#65a30d", rim: "#3f6212" },
+      { tier: 5, name: "Lemon Peach",radius: 52, score: 64,  color1: "#fde047", color2: "#eab308", rim: "#a16207" },
+      { tier: 6, name: "Tangerine",  radius: 61, score: 128, color1: "#fb923c", color2: "#ea580c", rim: "#9a3412" },
+      { tier: 7, name: "Red Apple",  radius: 71, score: 256, color1: "#ef4444", color2: "#b91c1c", rim: "#7f1d1d" },
+      { tier: 8, name: "Pineapple",  radius: 82, score: 512, color1: "#facc15", color2: "#ca8a04", rim: "#854d0e" },
+      { tier: 9, name: "Honey Melon",radius: 94, score: 1024,color1: "#bef264", color2: "#84cc16", rim: "#4d7c0f" },
+      { tier: 10,name: "Watermelon", radius: 108,score: 2048,color1: "#22c55e", color2: "#15803d", rim: "#14532d" }
+    ];
+
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const JAR = { left: 22, right: 338, top: 72, bottom: 448, dangerY: 108 };
+
+    let balls = [], score = 0, bestScore = 0, currentTier = 0, nextTier = 1;
+    let aimX = 180, canDrop = true, isPointerDown = false, isGameOver = false, hammerMode = false;
+    let boosters = { hammer: 2, shake: 2, swap: 3 };
+    let soundMuted = localStorage.getItem("st_fruit_mute") === "true";
+
+    function drawFruit(ctx, x, y, radius, tierIndex, angle = 0) {
+      const f = FRUITS[tierIndex] || FRUITS[0];
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      const grad = ctx.createRadialGradient(-radius * 0.3, -radius * 0.35, radius * 0.1, 0, 0, radius);
+      grad.addColorStop(0, f.color1);
+      grad.addColorStop(0.85, f.color2);
+      grad.addColorStop(1, f.rim);
+      ctx.beginPath();
+      ctx.arc(0, 0, radius, 0, Math.PI * 2);
+      ctx.fillStyle = grad;
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = f.rim;
+      ctx.stroke();
+
+      ctx.fillStyle = "#1e1b4b";
+      ctx.beginPath();
+      ctx.arc(-radius * 0.3, radius * 0.06, Math.max(2.2, radius * 0.115), 0, Math.PI * 2);
+      ctx.arc(radius * 0.3, radius * 0.06, Math.max(2.2, radius * 0.115), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function randomSpawnTier() {
+      const w = [0, 0, 0, 1, 1, 1, 2, 2, 3, 4];
+      return w[Math.floor(Math.random() * w.length)];
+    }
+
+    function updateBoosterUI() {
+      document.getElementById("hammerCount").textContent = boosters.hammer;
+      document.getElementById("shakeCount").textContent = boosters.shake;
+      document.getElementById("swapCount").textContent = boosters.swap;
+      document.getElementById("btnHammer").classList.toggle("active-mode", hammerMode);
+      document.getElementById("hammerNotice").classList.toggle("hidden", !hammerMode);
+    }
+
+    function renderNextFruitPreview() {
+      const nCtx = document.getElementById("nextFruitCanvas").getContext("2d");
+      nCtx.clearRect(0, 0, 38, 38);
+      drawFruit(nCtx, 19, 19, Math.min(15, FRUITS[nextTier].radius * 0.6), nextTier);
+    }
+
+    function renderEvolutionChain() {
+      const eCtx = document.getElementById("evoChainCanvas").getContext("2d");
+      eCtx.clearRect(0, 0, 180, 24);
+      FRUITS.forEach((f, idx) => { drawFruit(eCtx, 10 + idx * 16, 12, 7, idx); });
+    }
+
+    function getCanvasCoords(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return {
+        x: (clientX - rect.left) * (canvas.width / rect.width),
+        y: (clientY - rect.top) * (canvas.height / rect.height)
+      };
+    }
+
+    function clampAim(x) {
+      const r = FRUITS[currentTier].radius;
+      return Math.max(JAR.left + r + 4, Math.min(JAR.right - r - 4, x));
+    }
+
+    canvas.addEventListener("pointerdown", e => {
+      e.preventDefault();
+      if (isGameOver) return;
+      const pos = getCanvasCoords(e);
+      if (hammerMode) {
+        for (let i = balls.length - 1; i >= 0; i--) {
+          if (Math.hypot(pos.x - balls[i].x, pos.y - balls[i].y) <= balls[i].radius + 8) {
+            balls.splice(i, 1); boosters.hammer--; hammerMode = false; updateBoosterUI(); return;
+          }
+        }
+        hammerMode = false; updateBoosterUI(); return;
+      }
+      isPointerDown = true;
+      aimX = clampAim(pos.x);
+    }, { passive: false });
+
+    canvas.addEventListener("pointermove", e => {
+      e.preventDefault();
+      if (!isPointerDown || isGameOver || hammerMode) return;
+      aimX = clampAim(getCanvasCoords(e).x);
+    }, { passive: false });
+
+    window.addEventListener("pointerup", () => {
+      if (!isPointerDown || isGameOver || hammerMode) return;
+      isPointerDown = false;
+      if (!canDrop) return;
+      canDrop = false;
+
+      const f = FRUITS[currentTier];
+      balls.push({ x: clampAim(aimX), y: JAR.top - 10, vx: 0, vy: 1.5, radius: f.radius, tier: currentTier, angle: 0, va: 0, age: 0, merged: false });
+      currentTier = nextTier; nextTier = randomSpawnTier();
+      renderNextFruitPreview();
+      setTimeout(() => { canDrop = true; }, 420);
+    });
+
+    function updatePhysics() {
+      if (isGameOver) return;
+      const SUBSTEPS = 6;
+      const gravity = 0.36 / SUBSTEPS;
+
+      for (let s = 0; s < SUBSTEPS; s++) {
+        for (let i = 0; i < balls.length; i++) {
+          const b = balls[i];
+          b.vy += gravity; b.x += b.vx; b.y += b.vy;
+          if (b.x - b.radius < JAR.left) { b.x = JAR.left + b.radius; b.vx *= -0.35; }
+          if (b.x + b.radius > JAR.right) { b.x = JAR.right - b.radius; b.vx *= -0.35; }
+          if (b.y + b.radius > JAR.bottom) { b.y = JAR.bottom - b.radius; b.vy *= -0.22; }
+        }
+
+        for (let i = 0; i < balls.length; i++) {
+          for (let j = i + 1; j < balls.length; j++) {
+            const a = balls[i], b = balls[j];
+            if (a.merged || b.merged) continue;
+            const dx = b.x - a.x, dy = b.y - a.y, dist = Math.hypot(dx, dy);
+            const minDist = a.radius + b.radius;
+            if (dist < minDist && dist > 0.0001) {
+              if (a.tier === b.tier && a.tier < FRUITS.length - 1) {
+                a.merged = true; b.merged = true;
+                const newTier = a.tier + 1;
+                balls.push({ x: (a.x + b.x) * 0.5, y: (a.y + b.y) * 0.5, vx: 0, vy: -1.5, radius: FRUITS[newTier].radius, tier: newTier, angle: 0, va: 0, age: 10, merged: false });
+                score += FRUITS[newTier].score;
+                document.getElementById("scoreVal").textContent = score;
+                if (score > bestScore) { bestScore = score; document.getElementById("bestScoreVal").textContent = bestScore; }
+                window.FruitStorage.recordProgress({ score });
+                continue;
+              }
+              const overlap = minDist - dist;
+              const nx = dx / dist, ny = dy / dist;
+              a.x -= nx * overlap * 0.5; a.y -= ny * overlap * 0.5;
+              b.x += nx * overlap * 0.5; b.y += ny * overlap * 0.5;
+            }
+          }
+        }
+        balls = balls.filter(b => !b.merged);
+      }
+    }
+
+    function renderScene() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "rgba(255,255,255,0.25)";
+      ctx.fillRect(JAR.left, JAR.top, JAR.right - JAR.left, JAR.bottom - JAR.top);
+
+      if (canDrop && !isGameOver && !hammerMode) {
+        const cx = clampAim(aimX);
+        ctx.setLineDash([4, 4]);
+        ctx.strokeStyle = "rgba(255,255,255,0.8)";
+        ctx.beginPath(); ctx.moveTo(cx, JAR.top); ctx.lineTo(cx, JAR.bottom); ctx.stroke();
+        drawFruit(ctx, cx, JAR.top - 12, FRUITS[currentTier].radius, currentTier);
+      }
+
+      balls.forEach(b => drawFruit(ctx, b.x, b.y, b.radius, b.tier, b.angle));
+
+      ctx.strokeStyle = "#fff"; ctx.lineWidth = 4;
+      ctx.strokeRect(JAR.left, JAR.top, JAR.right - JAR.left, JAR.bottom - JAR.top);
+    }
+
+    function gameLoop() {
+      updatePhysics();
+      renderScene();
+      requestAnimationFrame(gameLoop);
+    }
+
+    function activateHammer() { if (boosters.hammer > 0) { hammerMode = !hammerMode; updateBoosterUI(); } }
+    function activateShake() { if (boosters.shake > 0) { boosters.shake--; updateBoosterUI(); balls.forEach(b => b.vy -= 5); } }
+    function activateSwap() { if (boosters.swap > 0) { boosters.swap--; const t = currentTier; currentTier = nextTier; nextTier = t; renderNextFruitPreview(); updateBoosterUI(); } }
+    function restartGame() { balls = []; score = 0; isGameOver = false; hammerMode = false; document.getElementById("scoreVal").textContent = "0"; document.getElementById("gameOverModal").classList.add("hidden"); }
+    function openLeaderboard() { document.getElementById("leaderboardModal").classList.remove("hidden"); }
+    function closeLeaderboard() { document.getElementById("leaderboardModal").classList.add("hidden"); }
+    function toggleMute() { soundMuted = !soundMuted; localStorage.setItem("st_fruit_mute", String(soundMuted)); }
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      renderEvolutionChain();
+      const stats = await window.FruitStorage.init((txt) => document.getElementById("syncBadge").textContent = txt);
+      bestScore = stats.highScore || 0;
+      document.getElementById("bestScoreVal").textContent = bestScore;
+      currentTier = randomSpawnTier();
+      nextTier = randomSpawnTier();
+      renderNextFruitPreview();
+      updateBoosterUI();
+
+      setTimeout(() => document.getElementById("loadingScreen").classList.add("hidden"), 500);
+      requestAnimationFrame(gameLoop);
+    });
+  </script>
+</body>
+</html>
