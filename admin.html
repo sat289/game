@@ -28,7 +28,7 @@
       overflow-x: hidden;
       transition: background 0.5s ease, color 0.35s ease;
       position: relative;
-      padding-bottom: calc(86px + env(safe-area-inset-bottom, 0px));
+      padding-bottom: 24px;
       color: #0f172a;
     }
 
@@ -99,24 +99,6 @@
       border: 1px solid rgba(13, 148, 136, 0.3); background: rgba(50, 255, 220, 0.1); color: #0d9488;
     }
     body.dark-theme .chip-btn { color: #32ffdc; background: rgba(50, 255, 220, 0.12); }
-
-    /* Bottom Navigation Bar */
-    .st-bottom-nav {
-      position: fixed; z-index: 9999; left: 0; right: 0; bottom: 0;
-      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px;
-      padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
-      background: rgba(7, 34, 45, 0.96); backdrop-filter: blur(12px); border-top: 1px solid rgba(50, 255, 220, 0.3);
-      box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.4);
-    }
-    .st-bottom-nav a {
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 3px; padding: 6px 2px; border-radius: 12px; color: #94a3b8; text-decoration: none; font-size: 11px; font-weight: 700;
-    }
-    .st-bottom-nav .nav-icon { font-size: 20px; color: #32ffdc; }
-    .st-bottom-nav a:hover, .st-bottom-nav a.active { color: #fff; background: rgba(50, 255, 220, 0.15); }
-    @media (min-width: 768px) {
-      .st-bottom-nav { left: 50%; transform: translateX(-50%); width: min(500px, calc(100% - 32px)); border-radius: 18px 18px 0 0; }
-    }
   </style>
 </head>
 
@@ -165,7 +147,7 @@
         <div><label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1">Username</label><input id="ghOwner" class="neon-input" value="sat289"></div>
         <div><label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1">Repository</label><input id="ghRepo" class="neon-input" value="game"></div>
         <div><label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1">Branch</label><input id="ghBranch" class="neon-input" value="main"></div>
-        <div><label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1">Personal Token</label><input id="ghToken" type="password" class="neon-input" placeholder="Paste token here"></div>
+        <div><label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1">Personal Token</label><input id="ghToken" type="password" class="neon-input" placeholder="Auto-loaded from config.txt"></div>
       </div>
       <button type="button" onclick="saveGitHubCreds()" class="neon-action"><i class="fa-solid fa-floppy-disk mr-1"></i> Save Credentials</button>
     </section>
@@ -249,7 +231,6 @@
     </div>
     <iframe id="previewFrame" class="w-full flex-1 bg-white rounded-b-2xl border border-[#32ffdc]/40" sandbox="allow-scripts allow-same-origin"></iframe>
   </div>
-
 
   <script>
     function verifyAdminPassword() {
@@ -501,6 +482,23 @@
       localStorage.setItem('st_theme', isDark ? 'dark' : 'light');
     }
 
+    // Automatically fetch and decode token from config.txt on startup
+    async function loadTokenFromNotes() {
+      try {
+        const res = await fetch('config.txt?' + Date.now());
+        if (res.ok) {
+          const text = await res.text();
+          const match = text.match(/ST_TOKEN_B64:\s*([A-Za-z0-9+/=]+)/);
+          if (match && match[1]) {
+            const decodedToken = atob(match[1].trim());
+            document.getElementById('ghToken').value = decodedToken;
+          }
+        }
+      } catch (err) {
+        console.log('Notes token auto-load skipped or failed');
+      }
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
       if (localStorage.getItem('st_theme') === 'dark') document.body.classList.add('dark-theme');
       if (localStorage.getItem('st_admin_unlocked') === 'true') {
@@ -511,7 +509,11 @@
       if (s.owner) document.getElementById('ghOwner').value = s.owner;
       if (s.repo) document.getElementById('ghRepo').value = s.repo;
       if (s.branch) document.getElementById('ghBranch').value = s.branch;
-      if (s.token) document.getElementById('ghToken').value = s.token;
+      if (s.token) {
+        document.getElementById('ghToken').value = s.token;
+      } else {
+        loadTokenFromNotes();
+      }
     });
   </script>
 </body>
