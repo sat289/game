@@ -207,10 +207,109 @@
       </div>
     </section>
 
-    <!-- SECTION 4: DIRECT GITHUB CODE EDITOR & LIVE PREVIEW -->
+    <!-- SECTION 4: ALL GAMES MANAGEMENT -->
+    <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
+
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <h2 class="brand-font text-base font-bold text-[#07222d] dark:text-[#32ffdc]">
+            <i class="fa-solid fa-gamepad"></i> 4. All Games Management
+          </h2>
+          <p class="text-[10px] text-slate-500 mt-1">
+            Edit, reposition and customize every game.
+          </p>
+        </div>
+
+        <button onclick="loadAllGames()" class="chip-btn">
+          <i class="fa-solid fa-rotate"></i> Refresh
+        </button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 mb-3">
+        <div class="p-3 rounded-xl bg-teal-500/10 text-center">
+          <div class="text-2xl font-black text-teal-600" id="allGamesCount">0</div>
+          <div class="text-[10px] font-bold">TOTAL GAMES</div>
+        </div>
+        <div class="p-3 rounded-xl bg-cyan-500/10 text-center">
+          <div class="text-2xl font-black text-cyan-600" id="editedGamesCount">0</div>
+          <div class="text-[10px] font-bold">EDITED GAMES</div>
+        </div>
+      </div>
+
+      <input id="gameSearch"
+        class="neon-input mb-3"
+        placeholder="🔎 Search all games..."
+        oninput="filterAllGames()">
+
+      <div id="allGamesStatus"
+        class="text-xs text-center text-slate-500 py-2">
+        Press Refresh to load games from GitHub.
+      </div>
+
+      <div id="allGamesList" class="space-y-2"></div>
+
+      <div id="gameEditPanel"
+        class="hidden mt-4 p-4 rounded-2xl border border-teal-500/40 bg-teal-500/5">
+
+        <h3 class="font-black text-sm text-teal-700 dark:text-[#32ffdc] mb-3">
+          <i class="fa-solid fa-pen-to-square"></i> EDIT GAME
+        </h3>
+
+        <input type="hidden" id="editGameIndex">
+
+        <label class="block text-xs font-bold mb-1">Game Name</label>
+        <input id="editGameTitle" class="neon-input mb-3">
+
+        <label class="block text-xs font-bold mb-1">Game URL</label>
+        <input id="editGameUrl" class="neon-input mb-3">
+
+        <label class="block text-xs font-bold mb-1">Change Game Logo</label>
+        <input id="editGameLogo" type="file"
+          accept="image/*" class="neon-input mb-3">
+
+        <label class="block text-xs font-bold mb-1">Category</label>
+        <select id="editGameCategory" class="neon-input mb-3">
+          <option value="popular">Popular / Hot</option>
+          <option value="1v1">1v1 Battle</option>
+          <option value="classic">Classic</option>
+          <option value="racing">Racing</option>
+        </select>
+
+        <label class="block text-xs font-bold mb-1">Position around Popular Games</label>
+        <select id="editGamePosition" class="neon-input mb-3">
+          <option value="before-popular">Before Popular Games</option>
+          <option value="popular">Inside Popular Games</option>
+          <option value="after-popular">After Popular Games</option>
+        </select>
+
+        <label class="block text-xs font-bold mb-1">Game Card Size</label>
+        <select id="editGameSize" class="neon-input mb-3">
+          <option value="normal">Normal</option>
+          <option value="large">Large Bento (2x2)</option>
+        </select>
+
+        <label class="block text-xs font-bold mb-1">Logo Display Size</label>
+        <select id="editLogoSize" class="neon-input mb-4">
+          <option value="small">Small Logo</option>
+          <option value="large">Large Logo</option>
+        </select>
+
+        <div class="flex flex-wrap gap-2">
+          <button onclick="saveGameEdit()" class="neon-action flex-1">
+            <i class="fa-solid fa-cloud-arrow-up"></i> Save to GitHub
+          </button>
+
+          <button onclick="closeGameEditor()"
+            class="chip-btn">Cancel</button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SECTION 5: DIRECT GITHUB CODE EDITOR & LIVE PREVIEW -->
     <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
       <div class="flex flex-wrap items-center justify-between mb-3 pb-2 border-b border-teal-500/25 gap-2">
-        <h2 class="brand-font text-base font-bold text-[#07222d] dark:text-[#32ffdc]"><i class="fa-solid fa-code text-teal-500"></i> 4. Direct GitHub Code Editor</h2>
+        <h2 class="brand-font text-base font-bold text-[#07222d] dark:text-[#32ffdc]"><i class="fa-solid fa-code text-teal-500"></i> 5. Direct GitHub Code Editor</h2>
         <div class="flex items-center flex-wrap gap-2">
           <button type="button" onclick="openLivePreview()" class="chip-btn !bg-teal-500/20"><i class="fa-solid fa-eye mr-1"></i> Live Preview</button>
           <button type="button" onclick="browseRepoDirectory('')" class="chip-btn"><i class="fa-solid fa-folder-tree mr-1"></i> Browse Files</button>
@@ -256,6 +355,7 @@
         document.getElementById('passwordModal').classList.add('hidden');
         localStorage.setItem('st_admin_unlocked', 'true');
         renderCustomGames();
+        loadAllGames();
       } else {
         alert('Incorrect passcode');
         document.getElementById('passcodeInput').value = '';
@@ -379,6 +479,7 @@
       document.getElementById('addGameForm').reset();
       uploadedLogoBase64 = '';
       renderCustomGames();
+      loadAllGames();
 
       try {
         await pushFileDirect('games.json', JSON.stringify(custom, null, 2), `Add game "${title}" globally`);
@@ -418,6 +519,7 @@
       list = list.filter(g => g.id !== id);
       localStorage.setItem('st_custom_games', JSON.stringify(list));
       renderCustomGames();
+      loadAllGames();
       try {
         await pushFileDirect('games.json', JSON.stringify(list, null, 2), 'Remove game');
       } catch (err) {
@@ -429,9 +531,221 @@
       if (!confirm('Clear all custom games?')) return;
       localStorage.setItem('st_custom_games', JSON.stringify([]));
       renderCustomGames();
+      loadAllGames();
       try {
         await pushFileDirect('games.json', JSON.stringify([], null, 2), 'Wipe all games');
       } catch (err) {}
+    }
+
+    /* ==========================================
+       ALL GAMES MANAGEMENT STUDIO
+    ========================================== */
+
+    let allGamesData = [];
+    let editedGamesTotal = 0;
+
+    async function loadAllGames() {
+      const c = getCreds();
+
+      if (!c.token) {
+        const status = document.getElementById("allGamesStatus");
+        if (status) status.textContent = "Enter and save your GitHub token first.";
+        return;
+      }
+
+      const status = document.getElementById("allGamesStatus");
+      if (status) status.textContent = "Loading all games from GitHub...";
+
+      try {
+        const api = `https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/games.json?ref=${encodeURIComponent(c.branch)}`;
+
+        const res = await fetch(api, {
+          headers: {
+            Authorization: `Bearer ${c.token}`,
+            Accept: "application/vnd.github+json"
+          }
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.message || "Could not load games.json");
+
+        allGamesData = JSON.parse(base64ToUtf8(data.content));
+
+        if (!Array.isArray(allGamesData)) {
+          throw new Error("games.json must contain a JSON array.");
+        }
+
+        editedGamesTotal = 0;
+
+        document.getElementById("allGamesCount").textContent = allGamesData.length;
+        document.getElementById("editedGamesCount").textContent = "0";
+        if (status) status.textContent = "Successfully loaded all games.";
+
+        filterAllGames();
+
+      } catch (err) {
+        if (status) status.textContent = "Error: " + err.message;
+      }
+    }
+
+    function filterAllGames() {
+      const search = document.getElementById("gameSearch").value.toLowerCase();
+      const container = document.getElementById("allGamesList");
+
+      const filtered = allGamesData
+        .map((game, index) => ({ game, index }))
+        .filter(item =>
+          String(item.game.title || "").toLowerCase().includes(search) ||
+          String(item.game.url || "").toLowerCase().includes(search)
+        );
+
+      if (!filtered.length) {
+        container.innerHTML = '<div class="text-center text-xs text-slate-500 py-5">No games found.</div>';
+        return;
+      }
+
+      container.innerHTML = filtered.map(({ game, index }) => `
+        <div class="flex items-center gap-3 p-3 rounded-xl border border-teal-500/25 bg-white/50 dark:bg-slate-900/60">
+          <img src="${escapeGameText(game.logo || 'logo/game.jpg')}" onerror="this.src='logo/game.jpg'" class="w-12 h-12 rounded-xl object-cover bg-slate-800 shrink-0">
+          <div class="flex-1 min-w-0">
+            <div class="font-extrabold text-sm truncate">${escapeGameText(game.title || 'Untitled Game')}</div>
+            <div class="text-[10px] text-slate-500 truncate">${escapeGameText(game.url || '')}</div>
+            <div class="text-[10px] font-bold text-teal-600 mt-1">
+              ${escapeGameText(game.position || 'popular')} · ${escapeGameText(game.size || 'normal')}
+            </div>
+          </div>
+          <button onclick="editGame(${index})" class="chip-btn"><i class="fa-solid fa-pen"></i></button>
+        </div>
+      `).join("");
+    }
+
+    function escapeGameText(value) {
+      return String(value).replace(/[&<>"']/g, ch => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      })[ch]);
+    }
+
+    function editGame(index) {
+      const game = allGamesData[index];
+      if (!game) return;
+
+      document.getElementById("editGameIndex").value = index;
+      document.getElementById("editGameTitle").value = game.title || "";
+      document.getElementById("editGameUrl").value = game.url || "";
+
+      const categories = Array.isArray(game.categories) ? game.categories : [game.category || "popular"];
+      const category = categories.find(x => ["popular", "1v1", "classic", "racing"].includes(x)) || "popular";
+
+      document.getElementById("editGameCategory").value = category;
+      document.getElementById("editGamePosition").value = ["before-popular", "popular", "after-popular"].includes(game.position) ? game.position : "popular";
+      document.getElementById("editGameSize").value = game.size === "large" ? "large" : "normal";
+      document.getElementById("editLogoSize").value = game.logoSize === "large" ? "large" : "small";
+      document.getElementById("editGameLogo").value = "";
+
+      document.getElementById("gameEditPanel").classList.remove("hidden");
+      document.getElementById("gameEditPanel").scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    function closeGameEditor() {
+      document.getElementById("gameEditPanel").classList.add("hidden");
+    }
+
+    async function saveGameEdit() {
+      const index = Number(document.getElementById("editGameIndex").value);
+      if (!Number.isInteger(index) || !allGamesData[index]) {
+        alert("Invalid game selected.");
+        return;
+      }
+
+      const game = { ...allGamesData[index] };
+      const title = document.getElementById("editGameTitle").value.trim();
+      const url = document.getElementById("editGameUrl").value.trim();
+
+      if (!title || !url) {
+        alert("Game name and URL are required.");
+        return;
+      }
+
+      if (!/^(?!\/)(?!.*(?:^|\/)\.\.(?:\/|$))[a-zA-Z0-9._/-]+$/.test(url)) {
+        alert("Enter a valid relative game path.");
+        return;
+      }
+
+      game.title = title;
+      game.url = url;
+      game.position = document.getElementById("editGamePosition").value;
+      game.size = document.getElementById("editGameSize").value;
+      game.logoSize = document.getElementById("editLogoSize").value;
+
+      const category = document.getElementById("editGameCategory").value;
+      game.categories = [category, ...((game.categories || []).filter(x => !["popular", "1v1", "classic", "racing"].includes(x)))];
+
+      const logoFile = document.getElementById("editGameLogo").files[0];
+
+      try {
+        if (logoFile) {
+          if (!logoFile.type.startsWith("image/")) {
+            throw new Error("Select a valid image file.");
+          }
+          if (logoFile.size > 2 * 1024 * 1024) {
+            throw new Error("Logo must be smaller than 2 MB.");
+          }
+
+          const safeName = logoFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+          const logoPath = `logo/game-${Date.now()}-${safeName}`;
+
+          const logoData = await readFileAsDataURL(logoFile);
+          await pushImageDirect(logoPath, logoData, "Update game logo");
+          game.logo = logoPath;
+        }
+
+        allGamesData[index] = game;
+
+        await pushFileDirect("games.json", JSON.stringify(allGamesData, null, 2), `Edit game: ${title}`);
+
+        editedGamesTotal++;
+        document.getElementById("editedGamesCount").textContent = editedGamesTotal;
+        document.getElementById("allGamesStatus").textContent = "Game updated successfully on GitHub!";
+
+        closeGameEditor();
+        filterAllGames();
+        alert("Game updated successfully!");
+
+      } catch (err) {
+        alert("Update failed: " + err.message);
+      }
+    }
+
+    function readFileAsDataURL(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error("Could not read image."));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function pushImageDirect(path, dataURL, message) {
+      const c = getCreds();
+      const comma = dataURL.indexOf(",");
+      const base64 = dataURL.slice(comma + 1);
+      const api = `https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/${path}`;
+
+      const res = await fetch(api, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${c.token}`,
+          Accept: "application/vnd.github+json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ message, content: base64, branch: c.branch })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || "Logo upload failed.");
+      }
     }
 
     /* DIRECT CODE EDITOR & LIVE PREVIEW */
@@ -517,6 +831,7 @@
       if (localStorage.getItem('st_admin_unlocked') === 'true') {
         document.getElementById('passwordModal').classList.add('hidden');
         renderCustomGames();
+        loadAllGames();
       }
       const s = JSON.parse(localStorage.getItem('st_github_config') || '{}');
       if (s.owner) document.getElementById('ghOwner').value = s.owner;
