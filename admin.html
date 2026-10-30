@@ -161,13 +161,14 @@
     <!-- GITHUB CONFIGURATION -->
     <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
       <h2 class="brand-font text-base font-bold text-[#07222d] dark:text-[#32ffdc] mb-3">1. GitHub Credentials</h2>
-          <!-- PERSONAL TOKEN QUICK-COPY NOTE -->
-    <div class="mb-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs">
-      <div class="font-extrabold text-amber-600 dark:text-amber-400 mb-1 flex items-center gap-1.5">
-        <i class="fa-solid fa-key"></i> Saved GitHub Token (Click to Copy):
+      
+      <!-- PERSONAL TOKEN QUICK-COPY NOTE -->
+      <div class="mb-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs">
+        <div class="font-extrabold text-amber-600 dark:text-amber-400 mb-1 flex items-center gap-1.5">
+          <i class="fa-solid fa-key"></i> Saved GitHub Token (Click to Copy):
+        </div>
+        <input type="text" readonly value="Github_pat_11CRZXYWQ0tPWdByfqV4Iv_zePhePjLL3ruGI0Z3RNAnfwLxjOPrYuSNGEfTk40jG2WYAFV7NVRR42llap" onclick="this.select(); document.execCommand('copy'); alert('Token copied to clipboard!');" class="neon-input code-font cursor-pointer bg-white/50 dark:bg-slate-900 font-mono text-[11px]" title="Tap to copy">
       </div>
-      <input type="text" readonly value="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" onclick="this.select(); document.execCommand('copy'); alert('Token copied to clipboard!');" class="neon-input code-font cursor-pointer bg-white/50 dark:bg-slate-900 font-mono text-[11px]" title="Tap to copy">
-    </div>
 
       <div class="grid sm:grid-cols-4 gap-3 mb-3">
         <div><label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1">Username</label><input id="ghOwner" class="neon-input" value="sat289"></div>
@@ -204,19 +205,22 @@
       </form>
     </section>
 
-    <!-- SECTION 4: DIRECT GITHUB CODE EDITOR -->
+    <!-- SECTION 4: DIRECT GITHUB CODE EDITOR & LIVE PREVIEW -->
     <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
       <div class="flex items-center justify-between mb-3 pb-2 border-b border-teal-500/20">
         <h2 class="brand-font text-base font-bold text-[#07222d] dark:text-[#32ffdc]"><i class="fa-solid fa-code text-teal-500"></i> 4. Direct GitHub Code Editor</h2>
-        <button type="button" onclick="browseRepoDirectory('')" class="chip-btn"><i class="fa-solid fa-folder-tree mr-1"></i> Browse Files</button>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="openLivePreview()" class="chip-btn !bg-teal-500/20"><i class="fa-solid fa-eye mr-1"></i> Live Preview</button>
+          <button type="button" onclick="browseRepoDirectory('')" class="chip-btn"><i class="fa-solid fa-folder-tree mr-1"></i> Browse Files</button>
+        </div>
       </div>
 
-      <div id="repoBrowserPanel" class="hidden mb-3 p-3 rounded-xl border border-teal-500/30 bg-slate-900/5 dark:bg-slate-950/60">
-        <div class="flex items-center justify-between text-xs font-extrabold text-teal-600 mb-2">
+      <div id="repoBrowserPanel" class="hidden mb-3 p-3 rounded-xl border border-teal-500/30 bg-slate-100 dark:bg-slate-950">
+        <div class="flex items-center justify-between text-xs font-extrabold text-teal-700 dark:text-teal-300 mb-2">
           <span id="browserCurrentDir" class="code-font">/root</span>
-          <button type="button" onclick="document.getElementById('repoBrowserPanel').classList.add('hidden')" class="text-slate-400">Close ✕</button>
+          <button type="button" onclick="document.getElementById('repoBrowserPanel').classList.add('hidden')" class="text-rose-500 font-bold">Close ✕</button>
         </div>
-        <div id="repoFilesList" class="grid grid-cols-2 sm:grid-cols-4 gap-2 max-h-40 overflow-y-auto"></div>
+        <div id="repoFilesList" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto"></div>
       </div>
 
       <div class="grid sm:grid-cols-[1fr_auto] gap-2.5 mb-3">
@@ -232,6 +236,17 @@
       </div>
     </section>
   </main>
+
+  <!-- LIVE CODE PREVIEW MODAL -->
+  <div id="previewModal" class="fixed inset-0 z-[10000] hidden bg-slate-950/85 backdrop-blur-sm p-3 sm:p-6 flex flex-col">
+    <div class="bg-slate-900 text-white rounded-t-2xl px-4 py-3 flex items-center justify-between border border-b-0 border-[#32ffdc]/40">
+      <div class="flex items-center gap-2 text-xs font-extrabold text-[#32ffdc]">
+        <i class="fa-solid fa-display"></i><span>Live Sandbox Preview</span>
+      </div>
+      <button onclick="closeLivePreview()" class="px-3 py-1 rounded-lg bg-rose-500/20 text-rose-300 text-xs font-bold hover:bg-rose-500/30">Close Preview ✕</button>
+    </div>
+    <iframe id="previewFrame" class="w-full flex-1 bg-white rounded-b-2xl border border-[#32ffdc]/40" sandbox="allow-scripts allow-same-origin"></iframe>
+  </div>
 
   <nav class="st-bottom-nav" aria-label="ST GAMES navigation">
     <a href="index.html"><span class="nav-icon">⌂</span><span>Home</span></a>
@@ -361,28 +376,39 @@
       }
     }
 
-    /* DIRECT CODE EDITOR */
+    /* DIRECT CODE EDITOR & LIVE PREVIEW */
     async function browseRepoDirectory(path = '') {
       const c = getCreds();
       const panel = document.getElementById('repoBrowserPanel');
       panel.classList.remove('hidden');
       const list = document.getElementById('repoFilesList');
-      list.innerHTML = 'Loading...';
-      const res = await fetch(`https://api.github.com/repos/${c.owner}/${c.repo}/contents/${path}?ref=${c.branch}`, {
-        headers: { 'Authorization': `Bearer ${c.token}`, 'Accept': 'application/vnd.github+json' }
-      });
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        list.innerHTML = data.map(i => `
-          <button type="button" onclick="quickLoad('${i.path}')" class="p-2 rounded-lg text-xs font-bold bg-white dark:bg-slate-900 border border-teal-500/20 truncate">
-            <i class="${i.type==='dir'?'fa-solid fa-folder text-amber-400':'fa-regular fa-file-code text-teal-400'} mr-1"></i>${i.name}
-          </button>
-        `).join('');
-      } else {
-        list.innerHTML = '<span class="text-xs text-rose-500">Failed to load directory. Check token/permissions.</span>';
+      list.innerHTML = '<div class="text-xs text-slate-500 p-2">Loading repository files...</div>';
+      
+      try {
+        const res = await fetch(`https://api.github.com/repos/${c.owner}/${c.repo}/contents/${path}?ref=${c.branch}`, {
+          headers: { 'Authorization': `Bearer ${c.token}`, 'Accept': 'application/vnd.github+json' }
+        });
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          list.innerHTML = data.map(i => `
+            <button type="button" onclick="quickLoad('${i.path}')" class="flex items-center gap-2 p-2.5 rounded-lg text-xs font-bold text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900 border border-teal-500/30 hover:border-teal-400 shadow-sm truncate text-left">
+              <i class="${i.type==='dir'?'fa-solid fa-folder text-amber-400':'fa-regular fa-file-code text-teal-400'} shrink-0 text-sm"></i>
+              <span class="truncate">${i.name}</span>
+            </button>
+          `).join('');
+        } else {
+          list.innerHTML = '<span class="text-xs text-rose-500 p-2">Failed to load directory. Check token permissions.</span>';
+        }
+      } catch (err) {
+        list.innerHTML = `<span class="text-xs text-rose-500 p-2">Error: ${err.message}</span>`;
       }
     }
-    function quickLoad(p) { document.getElementById('ghFilePath').value = p; fetchFileFromGitHub(); document.getElementById('repoBrowserPanel').classList.add('hidden'); }
+
+    function quickLoad(p) { 
+      document.getElementById('ghFilePath').value = p; 
+      fetchFileFromGitHub(); 
+      document.getElementById('repoBrowserPanel').classList.add('hidden'); 
+    }
 
     async function fetchFileFromGitHub() {
       const c = getCreds();
@@ -409,6 +435,17 @@
       } catch (err) {
         alert('Push failed: ' + err.message);
       }
+    }
+
+    function openLivePreview() {
+      const code = document.getElementById('ghCodeEditor').value;
+      document.getElementById('previewModal').classList.remove('hidden');
+      document.getElementById('previewFrame').srcdoc = code || '<h3 style="font-family:sans-serif;padding:20px;">Editor is empty.</h3>';
+    }
+
+    function closeLivePreview() {
+      document.getElementById('previewFrame').srcdoc = '';
+      document.getElementById('previewModal').classList.add('hidden');
     }
 
     function toggleTheme() {
