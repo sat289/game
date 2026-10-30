@@ -23,7 +23,13 @@
       padding: 0;
       overflow: hidden;
       font-family: 'Fredoka', sans-serif;
-      background: linear-gradient(135deg, #fde68a 0%, #f59e0b 100%);
+      background: repeating-linear-gradient(
+        0deg,
+        #fef08a 0px,
+        #fef08a 40px,
+        #fde047 40px,
+        #fde047 80px
+      );
       height: 100dvh;
       display: flex;
       flex-direction: column;
@@ -31,51 +37,36 @@
       justify-content: space-between;
     }
 
-    #loadingScreen {
+    /* Splash Screen / Menu Overlay matching your screenshot */
+    #splashScreen {
       position: fixed;
       inset: 0;
-      background: #000000;
+      background: repeating-linear-gradient(
+        0deg,
+        #fef08a 0px,
+        #fef08a 40px,
+        #fde047 40px,
+        #fde047 80px
+      );
       z-index: 99999;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      color: #ffffff;
+      padding: 24px;
       transition: opacity 0.4s ease;
     }
 
-    .hub-back-btn {
-      background: rgba(15, 35, 66, 0.9);
-      border: 1.5px solid rgba(59, 130, 246, 0.55);
-      color: #93c5fd;
-      font-weight: 700;
-      font-size: 13px;
-      padding: 7px 15px;
-      border-radius: 999px;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      text-decoration: none;
+    .wood-shelf {
+      background: linear-gradient(180deg, #b45309 0%, #78350f 100%);
+      border-top: 5px solid #f59e0b;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
     }
 
-    .glass-pill {
-      background: rgba(255, 255, 255, 0.9);
-      border: 2px solid rgba(245, 158, 11, 0.5);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-
-    .booster-btn {
-      width: 50px;
-      height: 50px;
-      border-radius: 16px;
-      background: #ffffff;
-      border: 2px solid #f59e0b;
-      font-size: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      cursor: pointer;
+    .glass-hud {
+      background: rgba(180, 83, 9, 0.85);
+      border: 3px solid #fde047;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     }
 
     canvas {
@@ -86,69 +77,63 @@
 </head>
 <body>
 
-  <!-- Loading Screen -->
-  <div id="loadingScreen">
-    <h1 class="text-2xl font-black mb-3">Fruit Merge Reloaded</h1>
-    <div class="w-48 h-2 bg-neutral-800 rounded-full overflow-hidden">
-      <div id="loadingBar" class="h-full bg-amber-400 w-full animate-pulse"></div>
+  <!-- SPLASH SCREEN / MENU (Matches Screenshot 2) -->
+  <div id="splashScreen">
+    <div class="text-center mb-8">
+      <h1 class="brand-font text-4xl sm:text-5xl font-black text-purple-700 drop-shadow-[0_4px_0_#fde047] tracking-wider uppercase">Fruit Merge</h1>
+      <h2 class="text-3xl sm:text-4xl font-black text-green-600 drop-shadow-[0_3px_0_#ffffff] tracking-wider uppercase mt-1">Reloaded</h2>
     </div>
-    <p class="text-xs text-neutral-400 mt-2">Loading game...</p>
+
+    <button onclick="startGame()" class="w-24 h-24 rounded-full bg-gradient-to-tr from-green-500 to-emerald-400 border-4 border-white shadow-[0_8px_25px_rgba(16,185,129,0.5)] flex items-center justify-center text-white text-4xl active:scale-95 transition">
+      <i class="fa-solid fa-play ml-1"></i>
+    </button>
   </div>
 
-  <!-- Top HUD -->
-  <header class="w-full max-w-md px-3 pt-3 z-20 flex items-center justify-between">
-    <a href="../index.html" class="hub-back-btn"><i class="fa-solid fa-arrow-left"></i><span>Hub</span></a>
-    <div id="syncBadge" class="glass-pill px-3 py-1 rounded-full text-xs font-bold text-amber-900">ST Games</div>
-    <div class="flex gap-1.5">
-      <button onclick="openLeaderboard()" class="glass-pill w-9 h-9 rounded-full flex items-center justify-center text-amber-600"><i class="fa-solid fa-trophy"></i></button>
+  <!-- TOP HUD BAR (Matches Screenshot 3) -->
+  <header class="w-full max-w-md px-3 pt-3 z-25 flex items-center justify-between">
+    <!-- Evolution Wheel Box -->
+    <div class="glass-hud w-20 h-20 rounded-full relative flex items-center justify-center shadow-lg">
+      <canvas id="wheelCanvas" width="70" height="70" class="w-full h-full"></canvas>
+    </div>
+
+    <!-- Score & High Score Board -->
+    <div class="flex flex-col gap-1.5 flex-1 mx-3">
+      <div class="glass-hud rounded-full px-4 py-1 flex items-center justify-between text-white text-xs font-black">
+        <span>SCORE :</span>
+        <span id="scoreVal">0</span>
+      </div>
+      <div class="glass-hud rounded-full px-4 py-1 flex items-center justify-between text-white text-xs font-black">
+        <span>HIGH :</span>
+        <span id="bestScoreVal">0</span>
+      </div>
+    </div>
+
+    <!-- Next Fruit Preview & Hub Button -->
+    <div class="flex items-center gap-2">
+      <div class="glass-hud p-1.5 rounded-2xl flex flex-col items-center">
+        <span class="text-[9px] font-black text-yellow-200 uppercase">Next</span>
+        <canvas id="nextFruitCanvas" width="34" height="34" class="w-8 h-8 rounded-full bg-purple-900/40"></canvas>
+      </div>
+      <a href="../index.html" class="glass-hud w-10 h-10 rounded-full flex items-center justify-center text-white text-lg"><i class="fa-solid fa-house"></i></a>
     </div>
   </header>
 
-  <!-- Score Board -->
-  <section class="w-full max-w-md px-3 z-20 flex items-center justify-between my-1">
-    <div class="flex gap-2">
-      <div class="glass-pill rounded-2xl px-3 py-1">
-        <div class="text-[9px] font-bold text-amber-700">SCORE</div>
-        <div id="scoreVal" class="text-lg font-black text-amber-950">0</div>
-      </div>
-      <div class="glass-pill rounded-2xl px-3 py-1">
-        <div class="text-[9px] font-bold text-rose-600">BEST</div>
-        <div id="bestScoreVal" class="text-lg font-black text-amber-950">0</div>
-      </div>
-    </div>
-    <div class="glass-pill rounded-2xl px-3 py-1 flex items-center gap-2">
-      <span class="text-[9px] font-bold text-amber-700">NEXT</span>
-      <canvas id="nextFruitCanvas" width="32" height="32" class="w-8 h-8"></canvas>
-    </div>
-  </section>
-
-  <!-- Main Game Canvas -->
+  <!-- MAIN GAME CANVAS -->
   <main class="relative z-10 flex-1 flex items-center justify-center w-full max-w-md px-2">
-    <canvas id="gameCanvas" width="360" height="450" class="rounded-2xl bg-amber-100/40 border-4 border-amber-400 shadow-xl"></canvas>
+    <canvas id="gameCanvas" width="360" height="460" class="rounded-2xl bg-amber-50/20 border-4 border-amber-600/60 shadow-xl"></canvas>
   </main>
 
-  <!-- Boosters Footer -->
-  <footer class="w-full max-w-md px-3 pb-3 z-20 flex gap-2 justify-center">
-    <button onclick="useHammer()" class="booster-btn">🔨<span id="hCount" class="absolute -top-1 -right-1 bg-rose-600 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">2</span></button>
-    <button onclick="useShake()" class="booster-btn">🫨<span id="sCount" class="absolute -top-1 -right-1 bg-amber-600 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">2</span></button>
+  <!-- WOODEN TABLE FLOOR SHELF -->
+  <footer class="wood-shelf w-full h-24 z-20 flex items-center justify-center">
+    <div class="text-amber-200/80 text-xs font-bold tracking-widest uppercase">ST Games • Fruit Merge Reloaded</div>
   </footer>
 
-  <!-- Game Over Modal -->
+  <!-- GAME OVER MODAL -->
   <div id="gameOverModal" class="fixed inset-0 z-50 hidden bg-slate-950/80 flex items-center justify-center p-4">
-    <div class="bg-amber-50 border-4 border-amber-400 rounded-3xl max-w-sm w-full p-6 text-center">
-      <h2 class="text-2xl font-black text-amber-950 mb-3">Jar Overflowed!</h2>
+    <div class="bg-amber-50 border-4 border-amber-400 rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl">
+      <h2 class="text-2xl font-black text-amber-950 mb-2">Jar Overflowed!</h2>
+      <p class="text-xs text-slate-600 mb-4">Final Score: <span id="finalScore" class="font-bold">0</span></p>
       <button onclick="restartGame()" class="w-full py-3 rounded-2xl font-bold bg-teal-600 text-white shadow">Play Again</button>
-    </div>
-  </div>
-
-  <!-- Leaderboard Modal -->
-  <div id="leaderboardModal" class="fixed inset-0 z-50 hidden bg-slate-950/80 flex items-center justify-center p-4">
-    <div class="bg-amber-50 border-4 border-amber-400 rounded-3xl max-w-sm w-full p-5 flex flex-col max-h-[80vh]">
-      <div class="flex justify-between pb-2 border-b border-amber-200">
-        <h3 class="font-black text-amber-950">Leaderboard</h3>
-        <button onclick="closeLeaderboard()" class="font-bold">✕</button>
-      </div>
-      <div id="leaderboardList" class="flex-1 overflow-y-auto space-y-2 my-3 text-xs text-center text-amber-900">Loading scores...</div>
     </div>
   </div>
 
@@ -176,26 +161,27 @@
       }
     }
 
+    // 11 Kawaii Fruit Tiers matching your screenshots
     const FRUITS = [
-      { radius: 16, score: 2,   color: "#a855f7" },
-      { radius: 22, score: 4,   color: "#fb7185" },
-      { radius: 29, score: 8,   color: "#60a5fa" },
-      { radius: 37, score: 16,  color: "#f43f5e" },
-      { radius: 45, score: 32,  color: "#a3e635" },
-      { radius: 54, score: 64,  color: "#fde047" },
-      { radius: 63, score: 128, color: "#fb923c" },
-      { radius: 73, score: 256, color: "#ef4444" },
-      { radius: 84, score: 512, color: "#facc15" },
-      { radius: 96, score: 1024,color: "#bef264" },
+      { radius: 15, score: 2,   color: "#a855f7" },
+      { radius: 21, score: 4,   color: "#fb7185" },
+      { radius: 28, score: 8,   color: "#60a5fa" },
+      { radius: 35, score: 16,  color: "#f43f5e" },
+      { radius: 43, score: 32,  color: "#a3e635" },
+      { radius: 52, score: 64,  color: "#fde047" },
+      { radius: 61, score: 128, color: "#fb923c" },
+      { radius: 71, score: 256, color: "#ef4444" },
+      { radius: 82, score: 512, color: "#facc15" },
+      { radius: 94, score: 1024,color: "#bef264" },
       { radius: 108,score: 2048,color: "#22c55e" }
     ];
 
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
-    const JAR = { left: 20, right: 340, top: 40, bottom: 420, dangerY: 70 };
+    const JAR = { left: 20, right: 340, top: 40, bottom: 430, dangerY: 75 };
 
-    let balls = [], score = 0, currentTier = 0, nextTier = 1;
-    let aimX = 180, canDrop = true, isGameOver = false, hammerCount = 2, shakeCount = 2;
+    let balls = [], score = 0, currentTier = 0, nextTier = 1, gameStarted = false;
+    let aimX = 180, canDrop = true, isPointerDown = false, isGameOver = false;
 
     function drawFruit(c, x, y, r, tier) {
       const f = FRUITS[tier] || FRUITS[0];
@@ -209,6 +195,7 @@
       c.strokeStyle = "#ffffff";
       c.stroke();
 
+      // Kawaii face
       c.fillStyle = "#1e1b4b";
       c.beginPath();
       c.arc(-r * 0.3, 0, Math.max(2, r * 0.1), 0, Math.PI * 2);
@@ -217,10 +204,21 @@
       c.restore();
     }
 
+    function renderWheel() {
+      const wc = document.getElementById("wheelCanvas").getContext("2d");
+      wc.clearRect(0, 0, 70, 70);
+      FRUITS.forEach((f, idx) => {
+        const angle = (idx / FRUITS.length) * Math.PI * 2;
+        const wx = 35 + Math.cos(angle) * 22;
+        const wy = 35 + Math.sin(angle) * 22;
+        drawFruit(wc, wx, wy, 6, idx);
+      });
+    }
+
     function renderNext() {
       const nc = document.getElementById("nextFruitCanvas").getContext("2d");
-      nc.clearRect(0, 0, 32, 32);
-      drawFruit(nc, 16, 16, Math.min(13, FRUITS[nextTier].radius * 0.4), nextTier);
+      nc.clearRect(0, 0, 34, 34);
+      drawFruit(nc, 17, 17, Math.min(14, FRUITS[nextTier].radius * 0.45), nextTier);
     }
 
     function clampAim(x) {
@@ -228,16 +226,15 @@
       return Math.max(JAR.left + r, Math.min(JAR.right - r, x));
     }
 
-    // Direct Mobile Touch & Mouse Handlers for Instant Movement & Dropping
     function handleMove(clientX) {
-      if (isGameOver) return;
+      if (!gameStarted || isGameOver) return;
       const rect = canvas.getBoundingClientRect();
       const x = (clientX - rect.left) * (canvas.width / rect.width);
       aimX = clampAim(x);
     }
 
     function handleDrop() {
-      if (isGameOver || !canDrop) return;
+      if (!gameStarted || isGameOver || !canDrop) return;
       canDrop = false;
 
       const f = FRUITS[currentTier];
@@ -258,7 +255,7 @@
     canvas.addEventListener("touchend", e => { e.preventDefault(); handleDrop(); }, { passive: false });
 
     function updatePhysics() {
-      if (isGameOver) return;
+      if (!gameStarted || isGameOver) return;
       const SUBSTEPS = 5;
       const gravity = 0.4 / SUBSTEPS;
 
@@ -302,6 +299,7 @@
         balls[i].age++;
         if (balls[i].age > 60 && balls[i].y - balls[i].radius < JAR.dangerY) {
           isGameOver = true;
+          document.getElementById("finalScore").textContent = score;
           document.getElementById("gameOverModal").classList.remove("hidden");
         }
       }
@@ -310,7 +308,7 @@
     function renderScene() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      if (canDrop && !isGameOver) {
+      if (gameStarted && canDrop && !isGameOver) {
         const cx = clampAim(aimX);
         ctx.setLineDash([4, 4]);
         ctx.strokeStyle = "rgba(0,0,0,0.3)";
@@ -320,7 +318,7 @@
 
       balls.forEach(b => drawFruit(ctx, b.x, b.y, b.radius, b.tier));
 
-      ctx.strokeStyle = "#b45309"; ctx.lineWidth = 4;
+      ctx.strokeStyle = "#f59e0b"; ctx.lineWidth = 4;
       ctx.strokeRect(JAR.left, JAR.top, JAR.right - JAR.left, JAR.bottom - JAR.top);
     }
 
@@ -330,19 +328,12 @@
       requestAnimationFrame(loop);
     }
 
-    function useHammer() {
-      if (hammerCount > 0 && balls.length > 0) {
-        balls.shift(); hammerCount--;
-        document.getElementById("hCount").textContent = hammerCount;
-      }
-    }
-
-    function useShake() {
-      if (shakeCount > 0) {
-        shakeCount--;
-        document.getElementById("sCount").textContent = shakeCount;
-        balls.forEach(b => b.vy -= 6);
-      }
+    function startGame() {
+      document.getElementById("splashScreen").style.opacity = "0";
+      setTimeout(() => document.getElementById("splashScreen").classList.add("hidden"), 400);
+      gameStarted = true;
+      renderWheel();
+      renderNext();
     }
 
     function restartGame() {
@@ -351,28 +342,7 @@
       document.getElementById("gameOverModal").classList.add("hidden");
     }
 
-    async function openLeaderboard() {
-      document.getElementById("leaderboardModal").classList.remove("hidden");
-      try {
-        const res = await fetch(`${FIREBASE_DB_URL}/fruit_merge/players.json`);
-        const data = await res.json();
-        const list = data ? Object.values(data).sort((a,b) => b.highScore - a.highScore).slice(0, 10) : [];
-        document.getElementById("leaderboardList").innerHTML = list.length ? list.map((p, i) => `<div class="flex justify-between px-3 py-1.5 bg-amber-100 rounded-xl font-bold"><span>#${i+1} ${p.name}</span><span class="text-rose-600">${p.highScore}</span></div>`).join('') : "No scores yet.";
-      } catch(_) {
-        document.getElementById("leaderboardList").innerHTML = "Offline mode.";
-      }
-    }
-
-    function closeLeaderboard() {
-      document.getElementById("leaderboardModal").classList.add("hidden");
-    }
-
     window.addEventListener("DOMContentLoaded", () => {
-      renderNext();
-      setTimeout(() => {
-        document.getElementById("loadingScreen").style.opacity = "0";
-        setTimeout(() => document.getElementById("loadingScreen").classList.add("hidden"), 400);
-      }, 800);
       requestAnimationFrame(loop);
     });
   </script>
