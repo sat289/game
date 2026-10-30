@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ST Games - Achievements & Milestones</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <style>
+    :root {
+      --neon-cyan: #22d3ee;
+      --neon-violet: #8b5cf6;
+      --neon-pink: #ec4899;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f3f6fb;
+      background-image:
+        radial-gradient(circle at 8% 12%, rgba(56, 189, 248, 0.22), transparent 27%),
+        radial-gradient(circle at 92% 24%, rgba(168, 85, 247, 0.18), transparent 28%),
+        radial-gradient(circle at 52% 92%, rgba(34, 211, 238, 0.16), transparent 30%);
+      background-attachment: fixed;
+      overflow-x: hidden;
+      user-select: none;
+      transition: background 0.5s ease, color 0.35s ease;
+      position: relative;
+      padding-bottom: calc(82px + env(safe-area-inset-bottom, 0px));
+    }
+
+    body.dark-theme {
+      background-color: #080d1b;
+      background-image:
+        radial-gradient(circle at 8% 12%, rgba(14, 165, 233, 0.24), transparent 28%),
+        radial-gradient(circle at 92% 24%, rgba(168, 85, 247, 0.24), transparent 30%),
+        radial-gradient(circle at 52% 92%, rgba(236, 72, 153, 0.15), transparent 32%);
+      color: #f8fafc;
+    }
+
+    .brand-font {
+      font-family: 'Fredoka', sans-serif;
+    }
+
+    .feature-hub {
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 10px 28px rgba(14, 116, 144, 0.08), 0 0 24px rgba(56, 189, 248, 0.12);
+    }
+
+    body.dark-theme .feature-hub {
+      background: rgba(8, 18, 38, 0.91) !important;
+      color: #eaf7ff;
+      border-color: rgba(56, 189, 248, 0.38);
+    }
+
+    .badge-card {
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 16px;
+      padding: 14px;
+      transition: all 0.25s ease;
+      background: rgba(255, 255, 255, 0.65);
+    }
+
+    body.dark-theme .badge-card {
+      background: rgba(15, 23, 42, 0.7);
+    }
+
+    .badge-card.unlocked {
+      border-color: rgba(34, 211, 238, 0.6);
+      box-shadow: 0 0 20px rgba(34, 211, 238, 0.18);
+    }
+
+    .badge-card.locked {
+      opacity: 0.55;
+      filter: grayscale(85%);
+    }
+
+    .progress-track {
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.25);
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #22d3ee, #8b5cf6);
+      transition: width 0.3s ease;
+    }
+
+    .st-bottom-nav {
+      position: fixed;
+      z-index: 9999;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 4px;
+      padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
+      background: rgba(255, 255, 255, 0.97);
+      border-top: 1px solid #dbeafe;
+      box-shadow: 0 -5px 22px rgba(15, 23, 42, 0.12);
+    }
+
+    body.dark-theme .st-bottom-nav {
+      background: rgba(15, 23, 42, 0.96);
+      border-color: rgba(56, 189, 248, 0.25);
+    }
+
+    .st-bottom-nav a {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      padding: 5px 2px;
+      border-radius: 12px;
+      color: #334155;
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    body.dark-theme .st-bottom-nav a { color: #cbd5e1; }
+    .st-bottom-nav .nav-icon { font-size: 20px; color: #087eb7; }
+    body.dark-theme .st-bottom-nav .nav-icon { color: #38bdf8; }
+
+    @media (min-width: 768px) {
+      .st-bottom-nav {
+        left: 50%;
+        transform: translateX(-50%);
+        width: min(560px, calc(100% - 32px));
+        border: 1px solid #dbeafe;
+        border-bottom: 0;
+        border-radius: 18px 18px 0 0;
+      }
+    }
+  </style>
+</head>
+
+<body class="min-h-screen flex flex-col justify-between text-slate-900">
+  <main class="max-w-4xl w-full mx-auto px-4 pt-4 pb-12 relative z-10">
+    <!-- Header -->
+    <header class="feature-hub rounded-2xl p-4 mb-5 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="index.html" class="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-cyan-400 hover:scale-105 transition shadow">
+          <i class="fa-solid fa-arrow-left"></i>
+        </a>
+        <div>
+          <h1 class="brand-font text-lg sm:text-xl font-bold uppercase text-[#002b5b] dark:text-white flex items-center gap-2">
+            <i class="fa-solid fa-trophy text-amber-500"></i> Achievements
+          </h1>
+          <p class="text-[11px] text-slate-500 font-semibold">Trophies, mastery badges, and progression</p>
+        </div>
+      </div>
+      <button onclick="toggleTheme()" class="w-9 h-9 rounded-xl border border-sky-400/40 flex items-center justify-center text-lg hover:scale-105 transition">
+        🌓
+      </button>
+    </header>
+
+    <!-- Overview Banner -->
+    <section class="feature-hub rounded-2xl p-5 mb-5">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+        <div class="flex items-center gap-3">
+          <div id="playerAvatar" class="w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-black bg-gradient-to-tr from-cyan-500 to-indigo-600 text-white shadow-lg">
+            S
+          </div>
+          <div>
+            <h2 id="playerName" class="brand-font text-lg font-bold">ST Player</h2>
+            <div id="playerRank" class="text-xs font-extrabold text-sky-600">Rookie • Level 1</div>
+          </div>
+        </div>
+        <div class="text-left sm:text-right">
+          <div class="text-xs text-slate-500 font-bold uppercase tracking-wider">Unlocks Completed</div>
+          <div id="completionStats" class="text-2xl font-black text-cyan-500">0 / 8 (0%)</div>
+        </div>
+      </div>
+
+      <div class="progress-track mb-2">
+        <div id="overallProgress" class="progress-fill" style="width: 0%"></div>
+      </div>
+      <div class="flex justify-between text-[11px] font-bold text-slate-500">
+        <span id="xpStat">0 Total XP</span>
+        <span id="nextMilestone">Play games to advance</span>
+      </div>
+    </section>
+
+    <!-- Achievements Grid -->
+    <section>
+      <h3 class="brand-font text-base font-bold text-[#002b5b] dark:text-cyan-300 mb-3 flex items-center gap-2">
+        <i class="fa-solid fa-medal text-amber-400"></i> Badges &amp; Milestones
+      </h3>
+      <div id="achievementsGrid" class="grid sm:grid-cols-2 gap-3.5"></div>
+    </section>
+  </main>
+
+  <!-- Bottom Navigation Bar -->
+  <nav class="st-bottom-nav" aria-label="ST GAMES navigation">
+    <a href="index.html">
+      <span class="nav-icon">⌂</span>
+      <span>Home</span>
+    </a>
+    <a href="login.html">
+      <span class="nav-icon">♙</span>
+      <span>Profile</span>
+    </a>
+    <a href="achievements.html" class="!text-cyan-600 dark:!text-cyan-400">
+      <span class="nav-icon !text-cyan-600 dark:!text-cyan-400">🏆</span>
+      <span>Achievements</span>
+    </a>
+    <a href="levels.html">
+      <span class="nav-icon">⚡</span>
+      <span>Levels</span>
+    </a>
+  </nav>
+
+  <script>
+    const safeReadJSON = (key, fallback) => {
+      try {
+        const val = JSON.parse(localStorage.getItem(key) || 'null');
+        return val == null ? fallback : val;
+      } catch (_) { return fallback; }
+    };
+
+    const played = new Set(safeReadJSON('st_played_games', []));
+    const favs = new Set(safeReadJSON('st_favorite_games', []));
+    const profile = safeReadJSON('st_player_profile', { name: 'ST Player' });
+
+    const totalXP = played.size * 25 + favs.size * 5;
+    const playerLevel = Math.floor(totalXP / 100) + 1;
+
+    const ACHIEVEMENTS = [
+      {
+        id: 'first-game',
+        title: 'First Step',
+        desc: 'Launch your very first game on ST Games.',
+        icon: 'fa-solid fa-play',
+        condition: () => played.size >= 1,
+        xpReward: 25
+      },
+      {
+        id: 'collector-3',
+        title: 'Bookmarker',
+        desc: 'Save at least 3 games to your favourites list.',
+        icon: 'fa-solid fa-heart',
+        condition: () => favs.size >= 3,
+        xpReward: 15
+      },
+      {
+        id: 'explorer-5',
+        title: 'Arcade Explorer',
+        desc: 'Play 5 different games in the catalog.',
+        icon: 'fa-solid fa-compass',
+        condition: () => played.size >= 5,
+        xpReward: 50
+      },
+      {
+        id: 'level-2',
+        title: 'Leveling Up',
+        desc: 'Reach Level 2 by earning 100 XP.',
+        icon: 'fa-solid fa-bolt',
+        condition: () => playerLevel >= 2,
+        xpReward: 30
+      },
+      {
+        id: 'gamer-10',
+        title: 'Arcade Legend',
+        desc: 'Test your skills in 10 unique games.',
+        icon: 'fa-solid fa-crown',
+        condition: () => played.size >= 10,
+        xpReward: 100
+      },
+      {
+        id: 'level-5',
+        title: 'Pro Competitor',
+        desc: 'Reach Level 5 by earning over 400 XP.',
+        icon: 'fa-solid fa-fire',
+        condition: () => playerLevel >= 5,
+        xpReward: 150
+      },
+      {
+        id: 'collector-full',
+        title: 'True Fan',
+        desc: 'Add 6 or more games to your favourites.',
+        icon: 'fa-solid fa-star',
+        condition: () => favs.size >= 6,
+        xpReward: 40
+      },
+      {
+        id: 'arcade-master',
+        title: 'Grandmaster',
+        desc: 'Reach Level 10 on this browser.',
+        icon: 'fa-solid fa-trophy',
+        condition: () => playerLevel >= 10,
+        xpReward: 250
+      }
+    ];
+
+    function renderAchievements() {
+      const pName = (profile.name || 'ST Player').trim();
+      document.getElementById('playerName').textContent = pName;
+      document.getElementById('playerAvatar').textContent = pName.charAt(0).toUpperCase() || 'S';
+      document.getElementById('playerRank').textContent =
+        (playerLevel >= 10 ? 'Arcade Master' : playerLevel >= 5 ? 'Pro Gamer' : playerLevel >= 3 ? 'Game Explorer' : 'Rookie') + ' • Level ' + playerLevel;
+
+      let unlockedCount = 0;
+      const grid = document.getElementById('achievementsGrid');
+
+      grid.innerHTML = ACHIEVEMENTS.map(ach => {
+        const isUnlocked = ach.condition();
+        if (isUnlocked) unlockedCount++;
+
+        return `
+          <div class="badge-card ${isUnlocked ? 'unlocked' : 'locked'} flex items-start gap-3.5">
+            <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${isUnlocked ? 'bg-gradient-to-tr from-cyan-500 to-blue-600 text-white shadow-md' : 'bg-slate-300 dark:bg-slate-800 text-slate-500'}">
+              <i class="${ach.icon} text-lg"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-2">
+                <h4 class="font-bold text-sm truncate">${ach.title}</h4>
+                <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${isUnlocked ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-slate-400/20 text-slate-500'}">
+                  ${isUnlocked ? 'Unlocked' : 'Locked'}
+                </span>
+              </div>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">${ach.desc}</p>
+              <div class="text-[10px] font-bold text-cyan-600 dark:text-cyan-400 mt-2">
+                +${ach.xpReward} XP Reward
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      const pct = Math.round((unlockedCount / ACHIEVEMENTS.length) * 100);
+      document.getElementById('completionStats').textContent = `${unlockedCount} / ${ACHIEVEMENTS.length} (${pct}%)`;
+      document.getElementById('overallProgress').style.width = pct + '%';
+      document.getElementById('xpStat').textContent = `${totalXP} Total XP`;
+      document.getElementById('nextMilestone').textContent = `${played.size} Games Played · ${favs.size} Favourites`;
+    }
+
+    function toggleTheme() {
+      const isDark = !document.body.classList.contains('dark-theme');
+      document.body.classList.toggle('dark-theme', isDark);
+      localStorage.setItem('st_theme', isDark ? 'dark' : 'light');
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if (localStorage.getItem('st_theme') === 'dark') {
+        document.body.classList.add('dark-theme');
+      }
+      renderAchievements();
+    });
+  </script>
+</body>
+</html>
