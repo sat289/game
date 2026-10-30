@@ -76,14 +76,6 @@
       border-color: rgba(50, 255, 220, 0.3);
     }
 
-    .code-textarea {
-      width: 100%; min-height: 280px;
-      background: #040e14; color: #32ffdc;
-      border: 1px solid rgba(50, 255, 220, 0.3);
-      border-radius: 14px; padding: 14px;
-      font-size: 12px; line-height: 1.55; outline: none; resize: vertical;
-    }
-
     .neon-action {
       border: 1px solid rgba(50, 255, 220, 0.5);
       border-radius: 12px; padding: 10px 16px;
@@ -93,12 +85,6 @@
       transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
     }
     .neon-action:hover:not(:disabled) { box-shadow: 0 0 24px rgba(50, 255, 220, 0.4); transform: translateY(-1px); }
-
-    .chip-btn {
-      font-size: 11px; font-weight: 700; padding: 6px 10px; border-radius: 10px;
-      border: 1px solid rgba(13, 148, 136, 0.3); background: rgba(50, 255, 220, 0.1); color: #0d9488;
-    }
-    body.dark-theme .chip-btn { color: #32ffdc; background: rgba(50, 255, 220, 0.12); }
 
     /* Bottom Navigation Bar */
     .st-bottom-nav {
@@ -122,7 +108,7 @@
 
 <body class="min-h-screen flex flex-col justify-between">
 
-  <!-- PASSWORD GATE OVERLAY -->
+  <!-- PASSWORD GATE -->
   <div id="passwordModal" class="fixed inset-0 z-[99999] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
     <div class="feature-hub max-w-sm w-full p-6 rounded-3xl text-center shadow-2xl border border-[#32ffdc]/50">
       <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-gradient-to-tr from-teal-500 to-cyan-400 text-slate-950 flex items-center justify-center text-2xl font-black shadow-lg">
@@ -133,7 +119,7 @@
       
       <div class="relative flex items-center mb-4">
         <input id="passcodeInput" type="password" class="neon-input pr-12 text-center text-lg tracking-widest font-mono" placeholder="•••••••" autofocus onkeydown="if(event.key==='Enter') verifyAdminPassword()">
-        <button type="button" onclick="togglePasscodeVisibility()" class="absolute right-3 text-lg" id="passcodeMaskBtn" title="Toggle visibility">🙈</button>
+        <button type="button" onclick="togglePasscodeVisibility()" class="absolute right-3 text-lg" title="Toggle visibility">🙈</button>
       </div>
 
       <button type="button" onclick="verifyAdminPassword()" class="neon-action w-full py-2.5">
@@ -143,8 +129,6 @@
   </div>
 
   <main class="max-w-4xl w-full mx-auto px-3.5 sm:px-6 pt-4 pb-12 relative z-10">
-
-    <!-- HEADER -->
     <header class="feature-hub rounded-2xl p-4 mb-5 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <a href="index.html" class="w-10 h-10 rounded-xl bg-[#07222d] flex items-center justify-center text-[#32ffdc] hover:scale-105 transition shadow">
@@ -157,161 +141,48 @@
           <p class="text-[11px] text-slate-500">Global sync, notice manager &amp; game publisher</p>
         </div>
       </div>
-      <button onclick="toggleTheme()" title="Theme" class="w-9 h-9 rounded-xl border border-[#17c3b2]/40 flex items-center justify-center text-lg hover:scale-105 transition">🌓</button>
+      <button onclick="toggleTheme()" class="w-9 h-9 rounded-xl border border-[#17c3b2]/40 flex items-center justify-center text-lg">🌓</button>
     </header>
 
-    <!-- SECTION 1: GITHUB CREDENTIALS & TOKEN MANAGER (MANUAL EDIT) -->
+    <!-- GITHUB CONFIGURATION -->
     <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
-      <h2 class="brand-font text-base font-bold text-[#07222d] dark:text-[#32ffdc] mb-3 flex items-center gap-2">
-        <i class="fa-brands fa-github text-lg"></i> 1. GitHub Repository &amp; Token Configuration
-      </h2>
-      <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-3">View or update your manual GitHub credentials below so all phones can sync automatically.</p>
-
+      <h2 class="brand-font text-base font-bold text-[#07222d] dark:text-[#32ffdc] mb-3">1. GitHub Credentials</h2>
       <div class="grid sm:grid-cols-4 gap-3 mb-3">
-        <div>
-          <label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1" for="ghOwner">Username</label>
-          <input id="ghOwner" class="neon-input" value="sat289">
-        </div>
-        <div>
-          <label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1" for="ghRepo">Repository</label>
-          <input id="ghRepo" class="neon-input" value="game">
-        </div>
-        <div>
-          <label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1" for="ghBranch">Branch</label>
-          <input id="ghBranch" class="neon-input" value="main">
-        </div>
-        <div>
-          <label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1" for="ghToken">Personal Token</label>
-          <div class="relative flex items-center">
-            <input id="ghToken" type="password" class="neon-input pr-9" value="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">
-            <button type="button" onclick="toggleTokenVisibility()" class="absolute right-2.5 text-xs">🙈</button>
-          </div>
-        </div>
+        <div><label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1">Username</label><input id="ghOwner" class="neon-input" value="sat289"></div>
+        <div><label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1">Repository</label><input id="ghRepo" class="neon-input" value="game"></div>
+        <div><label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1">Branch</label><input id="ghBranch" class="neon-input" value="main"></div>
+        <div><label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1">Personal Token</label><input id="ghToken" type="password" class="neon-input" value="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"></div>
       </div>
-      <button type="button" onclick="saveGitHubCreds()" class="neon-action">
-        <i class="fa-solid fa-floppy-disk mr-1"></i> Save Credentials
-      </button>
+      <button type="button" onclick="saveGitHubCreds()" class="neon-action"><i class="fa-solid fa-floppy-disk mr-1"></i> Save Credentials</button>
     </section>
 
-    <!-- SECTION 2: LIVE ANNOUNCEMENT NOTICE MANAGER -->
+    <!-- NOTICE MANAGER -->
     <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
-      <h2 class="brand-font text-base font-bold text-[#07222d] dark:text-[#32ffdc] mb-3 flex items-center gap-2">
-        <i class="fa-solid fa-bullhorn text-amber-500"></i> 2. Announcement Notice Manager
-      </h2>
-      <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-3">Edit the scrolling notice that appears at the top of <code>index.html</code> across all phones.</p>
-
-      <div class="space-y-3">
-        <textarea id="noticeInput" class="neon-input font-semibold" rows="2">📢 NOTICE: Welcome to ST GAMES — Enjoy playing and check back for new games and updates!</textarea>
-        <button type="button" onclick="publishNotice()" class="neon-action !bg-gradient-to-r !from-amber-600 !to-orange-600">
-          <i class="fa-solid fa-paper-plane mr-1"></i> Update Notice on All Phones
-        </button>
-      </div>
+      <h2 class="brand-font text-base font-bold text-[#07222d] dark:text-[#32ffdc] mb-3">2. Announcement Notice Manager</h2>
+      <textarea id="noticeInput" class="neon-input font-semibold mb-3" rows="2">📢 NOTICE: Welcome to ST GAMES — Enjoy playing and check back for new games and updates!</textarea>
+      <button type="button" onclick="publishNotice()" class="neon-action !bg-gradient-to-r !from-amber-600 !to-orange-600"><i class="fa-solid fa-paper-plane mr-1"></i> Update Notice on All Phones</button>
     </section>
 
-    <!-- SECTION 3: ADVANCED GAME PUBLISHER (WITH LOGO UPLOAD & CATEGORY) -->
+    <!-- ADD GAME PUBLISHER -->
     <section class="feature-hub rounded-2xl p-5 mb-5">
-      <h2 class="brand-font text-base font-bold text-[#07222d] dark:text-[#32ffdc] mb-3 flex items-center gap-2">
-        <i class="fa-solid fa-gamepad text-emerald-500"></i> 3. Add &amp; Publish Game to All Phones
-      </h2>
-      <p class="text-[11px] text-slate-500 mb-4">Upload a logo from your local device or enter an image URL, assign categories, and select Bento box sizes.</p>
-
+      <h2 class="brand-font text-base font-bold text-[#07222d] dark:text-[#32ffdc] mb-3">3. Add &amp; Publish Game to All Phones</h2>
       <form id="addGameForm" onsubmit="handleAddGame(event)" class="space-y-3">
         <div class="grid sm:grid-cols-2 gap-3">
-          <div>
-            <label class="block text-[11px] font-bold text-teal-600 mb-1" for="gameTitle">Game Title *</label>
-            <input id="gameTitle" required class="neon-input" placeholder="e.g., Pixel Dunker" />
-          </div>
-          <div>
-            <label class="block text-[11px] font-bold text-teal-600 mb-1" for="gamePath">Game File / URL Path *</label>
-            <input id="gamePath" required class="neon-input" placeholder="e.g., game/dunk/index.html" />
-          </div>
+          <div><label class="block text-[11px] font-bold text-teal-600 mb-1">Game Title *</label><input id="gameTitle" required class="neon-input" placeholder="e.g., Pixel Dunker" /></div>
+          <div><label class="block text-[11px] font-bold text-teal-600 mb-1">Game URL Path *</label><input id="gamePath" required class="neon-input" placeholder="e.g., game/dunk/index.html" /></div>
         </div>
-
         <div class="grid sm:grid-cols-3 gap-3">
-          <div>
-            <label class="block text-[11px] font-bold text-teal-600 mb-1" for="logoFile">Upload Logo from Device</label>
-            <input id="logoFile" type="file" accept="image/*" onchange="handleLogoUpload(event)" class="neon-input text-[10px] file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:bg-teal-500 file:text-white file:font-bold">
-          </div>
-          <div>
-            <label class="block text-[11px] font-bold text-teal-600 mb-1" for="gameLogo">Or Logo Image URL</label>
-            <input id="gameLogo" class="neon-input" placeholder="logo/dunk.jpg" />
-          </div>
-          <div>
-            <label class="block text-[11px] font-bold text-teal-600 mb-1" for="gameCategory">Category Tag</label>
-            <select id="gameCategory" class="neon-input">
-              <option value="popular">🔥 Popular / Hot</option>
-              <option value="1v1">⚔️ 1v1 Battle</option>
-              <option value="classic">👻 Classic &amp; Retro</option>
-              <option value="racing">🏎️ Racing &amp; Action</option>
-              <option value="sports">🏅 Sports</option>
-              <option value="single">🚀 Single Player</option>
-            </select>
-          </div>
+          <div><label class="block text-[11px] font-bold text-teal-600 mb-1">Upload Logo File</label><input id="logoFile" type="file" accept="image/*" onchange="handleLogoUpload(event)" class="neon-input text-[10px]"></div>
+          <div><label class="block text-[11px] font-bold text-teal-600 mb-1">Category</label><select id="gameCategory" class="neon-input"><option value="popular">Popular / Hot</option><option value="1v1">1v1 Battle</option><option value="classic">Classic</option><option value="racing">Racing</option></select></div>
+          <div><label class="block text-[11px] font-bold text-teal-600 mb-1">Bento Box Size</label><select id="gameSize" class="neon-input"><option value="normal">Normal Square</option><option value="large">Large Bento Box (2x2)</option></select></div>
         </div>
-
-        <div class="grid sm:grid-cols-2 gap-3">
-          <div>
-            <label class="block text-[11px] font-bold text-teal-600 mb-1" for="gameSize">Bento Card Size</label>
-            <select id="gameSize" class="neon-input">
-              <option value="normal">Normal Square (1:1)</option>
-              <option value="large">Large Featured Hero Box (2x2 Bento)</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-[11px] font-bold text-teal-600 mb-1" for="gameBadge">Badge Tag</label>
-            <input id="gameBadge" class="neon-input" placeholder="✨ HOT, NEW, HIT, 1v1" maxlength="10" />
-          </div>
-        </div>
-
         <div class="flex justify-end pt-2">
-          <button type="submit" id="btnPublishGame" class="neon-action !bg-gradient-to-r !from-emerald-600 !to-teal-600">
-            <i class="fa-solid fa-cloud-arrow-up mr-1"></i> Publish Game to All Phones
-          </button>
+          <button type="submit" class="neon-action !bg-gradient-to-r !from-emerald-600 !to-teal-600"><i class="fa-solid fa-cloud-arrow-up mr-1"></i> Publish Game to All Phones</button>
         </div>
       </form>
     </section>
-
-    <!-- Published Games List -->
-    <section class="feature-hub rounded-2xl p-5 mb-5">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="brand-font text-base font-bold text-[#07222d] dark:text-[#32ffdc]">Published Games (<span id="statCustom">0</span>)</h2>
-        <button onclick="wipeAllCustomGames()" class="text-xs font-bold text-rose-500 hover:underline">Clear All</button>
-      </div>
-      <div id="customGamesContainer" class="space-y-2">
-        <div class="text-xs opacity-60 py-4 text-center">No custom games published yet.</div>
-      </div>
-    </section>
-
-    <!-- SECTION 4: DIRECT GITHUB CODE EDITOR -->
-    <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
-      <div class="flex items-center justify-between mb-3 pb-2 border-b border-teal-500/20">
-        <h2 class="brand-font text-base font-bold text-[#07222d] dark:text-[#32ffdc]"><i class="fa-solid fa-code text-teal-500"></i> Direct GitHub Code Editor</h2>
-        <button type="button" onclick="browseRepoDirectory('')" class="chip-btn">Browse Files</button>
-      </div>
-
-      <div id="repoBrowserPanel" class="hidden mb-3 p-3 rounded-xl border border-teal-500/30 bg-slate-900/5 dark:bg-slate-950/60">
-        <div class="flex items-center justify-between text-xs font-extrabold text-teal-600 mb-2">
-          <span id="browserCurrentDir" class="code-font">/root</span>
-          <button type="button" onclick="document.getElementById('repoBrowserPanel').classList.add('hidden')" class="text-slate-400">Close ✕</button>
-        </div>
-        <div id="repoFilesList" class="grid grid-cols-2 sm:grid-cols-4 gap-2 max-h-40 overflow-y-auto"></div>
-      </div>
-
-      <div class="grid sm:grid-cols-[1fr_auto] gap-2.5 mb-3">
-        <input id="ghFilePath" class="neon-input code-font" placeholder="File path (e.g., index.html or games.json)" value="index.html">
-        <button type="button" onclick="fetchFileFromGitHub()" class="neon-action">Load File</button>
-      </div>
-
-      <textarea id="ghCodeEditor" class="code-textarea code-font mb-3" spellcheck="false" placeholder="Load a file to edit..."></textarea>
-
-      <div class="grid sm:grid-cols-[1fr_auto] gap-2.5 items-center">
-        <input id="ghCommitMsg" class="neon-input" placeholder="Commit message">
-        <button type="button" onclick="pushFileToGitHub()" class="neon-action !bg-gradient-to-r !from-teal-600 !to-cyan-600">Commit &amp; Push</button>
-      </div>
-    </section>
   </main>
 
-  <!-- BOTTOM NAVIGATION BAR -->
   <nav class="st-bottom-nav" aria-label="ST GAMES navigation">
     <a href="index.html"><span class="nav-icon">⌂</span><span>Home</span></a>
     <a href="login.html"><span class="nav-icon"><i class="fa-regular fa-circle-user"></i></span><span>Login</span></a>
@@ -319,12 +190,10 @@
   </nav>
 
   <script>
-    /* PASSWORD GATE */
     function verifyAdminPassword() {
       if (document.getElementById('passcodeInput').value.trim() === '2010143') {
         document.getElementById('passwordModal').classList.add('hidden');
         localStorage.setItem('st_admin_unlocked', 'true');
-        loadSavedCreds();
       } else {
         alert('Incorrect passcode');
         document.getElementById('passcodeInput').value = '';
@@ -343,25 +212,9 @@
         token: document.getElementById('ghToken').value.trim()
       };
     }
-
     function saveGitHubCreds() {
-      const c = getCreds();
-      localStorage.setItem('st_github_config', JSON.stringify(c));
+      localStorage.setItem('st_github_config', JSON.stringify(getCreds()));
       alert('GitHub credentials saved!');
-    }
-
-    function loadSavedCreds() {
-      const s = JSON.parse(localStorage.getItem('st_github_config') || '{}');
-      if (s.owner) document.getElementById('ghOwner').value = s.owner;
-      if (s.repo) document.getElementById('ghRepo').value = s.repo;
-      if (s.branch) document.getElementById('ghBranch').value = s.branch;
-      if (s.token) document.getElementById('ghToken').value = s.token;
-      renderCustomGames();
-    }
-
-    function toggleTokenVisibility() {
-      const t = document.getElementById('ghToken');
-      t.type = t.type === 'password' ? 'text' : 'password';
     }
 
     function utf8ToBase64(str) {
@@ -370,23 +223,13 @@
       for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
       return btoa(binary);
     }
-    function base64ToUtf8(base64) {
-      const binary = atob(base64.replace(/\s/g, ''));
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-      return new TextDecoder('utf-8').decode(bytes);
-    }
 
-    // Local Logo File Upload Converter to Base64
     let uploadedLogoBase64 = '';
     function handleLogoUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = (evt) => {
-        uploadedLogoBase64 = evt.target.result;
-        document.getElementById('gameLogo').value = uploadedLogoBase64;
-      };
+      reader.onload = (evt) => { uploadedLogoBase64 = evt.target.result; };
       reader.readAsDataURL(file);
     }
 
@@ -423,123 +266,38 @@
       e.preventDefault();
       const title = document.getElementById('gameTitle').value.trim();
       const url = document.getElementById('gamePath').value.trim();
-      const logo = document.getElementById('gameLogo').value.trim() || uploadedLogoBase64 || 'logo/game.jpg';
+      const logo = uploadedLogoBase64 || 'logo/game.jpg';
       const category = document.getElementById('gameCategory').value;
       const size = document.getElementById('gameSize').value;
-      const badge = document.getElementById('gameBadge').value.trim().toUpperCase();
 
-      const custom = JSON.parse(localStorage.getItem('st_custom_games') || '[]');
+      let custom = [];
+      try {
+        const c = getCreds();
+        const res = await fetch(`https://api.github.com/repos/${c.owner}/${c.repo}/contents/games.json?ref=${c.branch}`, {
+          headers: { 'Authorization': `Bearer ${c.token}` }
+        });
+        if (res.ok) {
+          const d = await res.json();
+          custom = JSON.parse(atob(d.content.replace(/\s/g, '')));
+        }
+      } catch(_) {}
+
       const newGame = {
         id: 'custom-' + Date.now().toString(36),
         title, url, logo, size,
         categories: [category, 'popular'],
-        badge,
-        bg: 'linear-gradient(135deg, #0d9488, #0284c7)',
-        custom: true
+        badge: '✨ NEW'
       };
 
       custom.push(newGame);
-      localStorage.setItem('st_custom_games', JSON.stringify(custom));
       document.getElementById('addGameForm').reset();
       uploadedLogoBase64 = '';
-      renderCustomGames();
 
       try {
         await pushFileDirect('games.json', JSON.stringify(custom, null, 2), `Add game "${title}" globally`);
         alert('Game published to all phones successfully!');
       } catch (err) {
-        alert('Saved locally, but GitHub sync failed: ' + err.message);
-      }
-    }
-
-    function renderCustomGames() {
-      const list = JSON.parse(localStorage.getItem('st_custom_games') || '[]');
-      document.getElementById('statCustom').textContent = list.length;
-      const container = document.getElementById('customGamesContainer');
-      if (!list.length) {
-        container.innerHTML = '<div class="text-xs opacity-60 py-4 text-center">No custom games published yet.</div>';
-        return;
-      }
-      container.innerHTML = list.map(g => `
-        <div class="flex items-center justify-between p-3 rounded-xl border border-teal-500/20 bg-teal-500/5 gap-3">
-          <div class="flex items-center gap-3 min-w-0">
-            <div class="w-10 h-10 rounded-lg overflow-hidden bg-slate-800 shrink-0">
-              <img src="${g.logo}" class="w-full h-full object-cover" onerror="this.src='logo/game.jpg'">
-            </div>
-            <div class="min-w-0">
-              <div class="font-extrabold text-sm truncate">${g.title}</div>
-              <div class="text-[10px] text-slate-500 truncate">${g.url} · Size: ${g.size}</div>
-            </div>
-          </div>
-          <button onclick="removeGame('${g.id}')" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-rose-500 hover:bg-rose-500/10">Delete</button>
-        </div>
-      `).join('');
-    }
-
-    async function removeGame(id) {
-      if (!confirm('Remove game?')) return;
-      let list = JSON.parse(localStorage.getItem('st_custom_games') || '[]');
-      list = list.filter(g => g.id !== id);
-      localStorage.setItem('st_custom_games', JSON.stringify(list));
-      renderCustomGames();
-      await pushFileDirect('games.json', JSON.stringify(list, null, 2), 'Remove game');
-    }
-
-    async function wipeAllCustomGames() {
-      if (!confirm('Clear all?')) return;
-      localStorage.setItem('st_custom_games', JSON.stringify([]));
-      renderCustomGames();
-      await pushFileDirect('games.json', JSON.stringify([], null, 2), 'Wipe all games');
-    }
-
-    /* CODE EDITOR */
-    async function browseRepoDirectory(path = '') {
-      const c = getCreds();
-      const panel = document.getElementById('repoBrowserPanel');
-      panel.classList.remove('hidden');
-      const list = document.getElementById('repoFilesList');
-      list.innerHTML = 'Loading...';
-      const res = await fetch(`https://api.github.com/repos/${c.owner}/${c.repo}/contents/${path}?ref=${c.branch}`, {
-        headers: { 'Authorization': `Bearer ${c.token}`, 'Accept': 'application/vnd.github+json' }
-      });
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        list.innerHTML = data.map(i => `
-          <button type="button" onclick="quickLoad('${i.path}')" class="p-2 rounded-lg text-xs font-bold bg-white dark:bg-slate-900 border border-teal-500/20 truncate">
-            <i class="${i.type==='dir'?'fa-solid fa-folder text-amber-400':'fa-regular fa-file-code text-teal-400'} mr-1"></i>${i.name}
-          </button>
-        `).join('');
-      }
-    }
-    function quickLoad(p) { document.getElementById('ghFilePath').value = p; fetchFileFromGitHub(); document.getElementById('repoBrowserPanel').classList.add('hidden'); }
-
-    let activeFileSha = null;
-    async function fetchFileFromGitHub() {
-      const c = getCreds();
-      const path = document.getElementById('ghFilePath').value.trim();
-      const res = await fetch(`https://api.github.com/repos/${c.owner}/${c.repo}/contents/${path}?ref=${c.branch}`, {
-        headers: { 'Authorization': `Bearer ${c.token}`, 'Accept': 'application/vnd.github+json' }
-      });
-      const d = await res.json();
-      if (res.ok) {
-        activeFileSha = d.sha;
-        document.getElementById('ghCodeEditor').value = base64ToUtf8(d.content);
-        alert('File loaded successfully!');
-      } else {
-        alert('Error loading file: ' + d.message);
-      }
-    }
-
-    async function pushFileToGitHub() {
-      const c = getCreds();
-      const path = document.getElementById('ghFilePath').value.trim();
-      const code = document.getElementById('ghCodeEditor').value;
-      const msg = document.getElementById('ghCommitMsg').value.trim() || 'Update file via Admin Studio';
-      try {
-        await pushFileDirect(path, code, msg);
-        alert('Committed and pushed successfully!');
-      } catch (err) {
-        alert('Push failed: ' + err.message);
+        alert('Sync failed: ' + err.message);
       }
     }
 
@@ -553,8 +311,12 @@
       if (localStorage.getItem('st_theme') === 'dark') document.body.classList.add('dark-theme');
       if (localStorage.getItem('st_admin_unlocked') === 'true') {
         document.getElementById('passwordModal').classList.add('hidden');
-        loadSavedCreds();
       }
+      const s = JSON.parse(localStorage.getItem('st_github_config') || '{}');
+      if (s.owner) document.getElementById('ghOwner').value = s.owner;
+      if (s.repo) document.getElementById('ghRepo').value = s.repo;
+      if (s.branch) document.getElementById('ghBranch').value = s.branch;
+      if (s.token) document.getElementById('ghToken').value = s.token;
     });
   </script>
 </body>
