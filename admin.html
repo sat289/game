@@ -140,17 +140,20 @@
       <button onclick="toggleTheme()" class="w-9 h-9 rounded-xl border border-[#17c3b2]/40 flex items-center justify-center text-lg">🌓</button>
     </header>
 
+    <!-- VISUAL TOKEN REFERENCE CARD (PLACED ABOVE SECTION 1) -->
+    <section class="feature-hub rounded-2xl p-4 mb-5 text-center">
+      <h3 class="brand-font text-xs font-bold uppercase text-teal-600 dark:text-[#32ffdc] mb-2 flex items-center justify-center gap-1.5">
+        <i class="fa-regular fa-image"></i> Reference Token Card
+      </h3>
+      <div class="max-w-md mx-auto rounded-xl overflow-hidden border border-teal-500/30 shadow-md bg-white dark:bg-slate-900 p-2">
+        <img src="4833_2.jpg" alt="Token Reference Card" class="w-full h-auto rounded-lg object-contain">
+      </div>
+      <p class="text-[10px] text-slate-500 mt-2">View your token details above to enter them into Section 1 below.</p>
+    </section>
+
     <!-- GITHUB CONFIGURATION -->
     <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
       <h2 class="brand-font text-base font-bold text-[#07222d] dark:text-[#32ffdc] mb-3">1. GitHub Credentials</h2>
-
-      <!-- QUICK-COPY BOX -->
-      <div class="mb-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs flex items-center justify-between gap-2">
-        <span class="font-extrabold text-amber-600 dark:text-amber-400 flex items-center gap-1.5 shrink-0">
-          <i class="fa-solid fa-key"></i> Quick Copy Token:
-        </span>
-        <button type="button" onclick="copyTokenText()" class="chip-btn !bg-amber-500/20 text-amber-700 dark:text-amber-300"><i class="fa-solid fa-copy mr-1"></i> Copy Token</button>
-      </div>
 
       <div class="grid sm:grid-cols-4 gap-3 mb-3">
         <div><label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1">Username</label><input id="ghOwner" class="neon-input" value="sat289"></div>
@@ -159,7 +162,7 @@
         <div>
           <label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1">Personal Token</label>
           <div class="relative flex items-center">
-            <input id="ghToken" type="password" class="neon-input pr-10" placeholder="Auto-loaded from Drive">
+            <input id="ghToken" type="password" class="neon-input pr-10" placeholder="Paste token here">
             <button type="button" onclick="toggleTokenVisibility()" class="absolute right-3 text-sm text-slate-500" title="Toggle visibility">🙈</button>
           </div>
         </div>
@@ -209,7 +212,6 @@
       <div class="flex flex-wrap items-center justify-between mb-3 pb-2 border-b border-teal-500/25 gap-2">
         <h2 class="brand-font text-base font-bold text-[#07222d] dark:text-[#32ffdc]"><i class="fa-solid fa-code text-teal-500"></i> 4. Direct GitHub Code Editor</h2>
         <div class="flex items-center flex-wrap gap-2">
-          <a href="https://docs.google.com/document/d/177lkKq8b756kERBWOJDoLkYJPvoQNNOZzFcEiQ0YFA8/edit?usp=drivesdk" target="_blank" class="chip-btn !bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/40"><i class="fa-brands fa-google-drive mr-1"></i> Open Google Drive</a>
           <button type="button" onclick="openLivePreview()" class="chip-btn !bg-teal-500/20"><i class="fa-solid fa-eye mr-1"></i> Live Preview</button>
           <button type="button" onclick="browseRepoDirectory('')" class="chip-btn"><i class="fa-solid fa-folder-tree mr-1"></i> Browse Files</button>
         </div>
@@ -249,8 +251,6 @@
   </div>
 
   <script>
-    let globalDecodedToken = '';
-
     function verifyAdminPassword() {
       if (document.getElementById('passcodeInput').value.trim() === '2010143') {
         document.getElementById('passwordModal').classList.add('hidden');
@@ -278,30 +278,12 @@
       }
     }
 
-    function copyTokenText() {
-      if (!globalDecodedToken) {
-        alert('Token is still loading from Google Drive');
-        return;
-      }
-      navigator.clipboard.writeText(globalDecodedToken).then(() => {
-        alert('Token copied to clipboard!');
-      }).catch(() => {
-        const el = document.createElement('textarea');
-        el.value = globalDecodedToken;
-        document.body.appendChild(el);
-        el.select();
-        document.execCommand('copy');
-        document.body.removeChild(el);
-        alert('Token copied to clipboard!');
-      });
-    }
-
     function getCreds() {
       return {
         owner: document.getElementById('ghOwner').value.trim(),
         repo: document.getElementById('ghRepo').value.trim(),
         branch: document.getElementById('ghBranch').value.trim() || 'main',
-        token: document.getElementById('ghToken').value.trim() || globalDecodedToken
+        token: document.getElementById('ghToken').value.trim()
       };
     }
     function saveGitHubCreds() {
@@ -530,26 +512,6 @@
       localStorage.setItem('st_theme', isDark ? 'dark' : 'light');
     }
 
-    // Automatically fetch token from your Google Drive document on startup
-    async function loadTokenFromNotes() {
-      try {
-        const docId = '177lkKq8b756kERBWOJDoLkYJPvoQNNOZzFcEiQ0YFA8';
-        const exportUrl = `https://docs.google.com/uc?export=download&id=${docId}`;
-        
-        const res = await fetch(exportUrl + '&t=' + Date.now());
-        if (res.ok) {
-          const text = await res.text();
-          const cleanToken = text.trim();
-          if (cleanToken.startsWith('github_pat_')) {
-            globalDecodedToken = cleanToken;
-            document.getElementById('ghToken').value = globalDecodedToken;
-          }
-        }
-      } catch (err) {
-        console.log('Google Drive token fetch skipped or failed:', err);
-      }
-    }
-
     window.addEventListener('DOMContentLoaded', () => {
       if (localStorage.getItem('st_theme') === 'dark') document.body.classList.add('dark-theme');
       if (localStorage.getItem('st_admin_unlocked') === 'true') {
@@ -560,11 +522,7 @@
       if (s.owner) document.getElementById('ghOwner').value = s.owner;
       if (s.repo) document.getElementById('ghRepo').value = s.repo;
       if (s.branch) document.getElementById('ghBranch').value = s.branch;
-      if (s.token) {
-        document.getElementById('ghToken').value = s.token;
-        globalDecodedToken = s.token;
-      }
-      loadTokenFromNotes();
+      if (s.token) document.getElementById('ghToken').value = s.token;
     });
   </script>
 </body>
