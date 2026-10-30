@@ -1,4 +1,4 @@
-const FRUITS = [
+ const FRUITS = [
   { tier: 0, name: "Grape",      radius: 15, score: 2,   color1: "#a855f7", color2: "#6b21a8", rim: "#581c87", face: "cute",    crown: "dot" },
   { tier: 1, name: "Cherry",     radius: 21, score: 4,   color1: "#fb7185", color2: "#e11d48", rim: "#9f1239", face: "happy",   crown: "stem" },
   { tier: 2, name: "Blueberry",  radius: 28, score: 8,   color1: "#60a5fa", color2: "#2563eb", rim: "#1e40af", face: "open",    crown: "star" },
