@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nuts & Bolts Puzzle</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background: radial-gradient(circle at 50% 25%, #3b1c54 0%, #241136 70%, #180a26 100%);
+            color: #ffffff;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            position: fixed;
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+            transition: opacity 0.25s ease;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* ================= MAIN MENU ================= */
+        .menu-top-card {
+            width: 100%;
+            max-width: 420px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 24px;
+            padding: 22px 18px;
+            text-align: center;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+            margin-top: 10px;
+        }
+
+        .game-title {
+            font-size: 2.3rem;
+            font-weight: 900;
+            letter-spacing: 1.5px;
+            background: linear-gradient(to bottom, #ffe066, #f59f00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 3px 0px rgba(0,0,0,0.6));
+            margin-bottom: 8px;
+        }
+
+        .menu-subtitle {
+            font-size: 0.9rem;
+            color: #d0bfe0;
+            line-height: 1.4;
+            margin-bottom: 14px;
+        }
+
+        .score-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #6741d9, #4c2889);
+            padding: 8px 20px;
+            border-radius: 999px;
+            font-weight: 800;
+            font-size: 1rem;
+            border: 2px solid rgba(255, 255, 255, 0.25);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+        }
+
+        .mode-selector-card {
+            width: 100%;
+            max-width: 420px;
+            background: #fdf6ec;
+            color: #2b173d;
+            border-radius: 28px;
+            padding: 24px 20px;
+            text-align: center;
+            box-shadow: 0 16px 35px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .mascot-circle {
+            width: 88px;
+            height: 88px;
+            border-radius: 50%;
+            background: #1a1a1a;
+            border: 6px solid #ffffff;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.2rem;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .mode-title {
+            font-size: 2rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            transition: color 0.2s;
+        }
+
+        .mode-tabs {
+            display: flex;
+            width: 100%;
+            background: #e9decb;
+            border-radius: 999px;
+            padding: 5px;
+            gap: 5px;
+        }
+
+        .mode-tab {
+            flex: 1;
+            padding: 10px 0;
+            border: none;
+            border-radius: 999px;
+            font-weight: 800;
+            font-size: 0.9rem;
+            cursor: pointer;
+            background: transparent;
+            color: #6c584c;
+            transition: all 0.2s;
+        }
+
+        .mode-tab.active-easy { background: #40c057; color: #fff; box-shadow: 0 3px 8px rgba(64,192,87,0.4); }
+        .mode-tab.active-medium { background: #fab005; color: #fff; box-shadow: 0 3px 8px rgba(250,176,5,0.4); }
+        .mode-tab.active-hard { background: #fa5252; color: #fff; box-shadow: 0 3px 8px rgba(250,82,82,0.4); }
+
+        .play-main-btn {
+            width: 85%;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 16px;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: 0 6px 0 rgba(0,0,0,0.25);
+            transition: transform 0.1s, background 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1.1;
+        }
+
+        .play-main-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 rgba(0,0,0,0.25);
+        }
+
+        .play-main-btn span {
+            font-size: 0.85rem;
+            font-weight: 700;
+            opacity: 0.92;
+            margin-top: 3px;
+        }
+
+        .menu-bottom-nav {
+            display: flex;
+            width: 100%;
+            max-width: 420px;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .nav-btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 14px;
+            font-size: 1rem;
+            font-weight: 800;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 5px 0 rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .nav-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,0.3); }
+        .btn-leaderboard { background: linear-gradient(135deg, #9c36b5, #70248a); }
+        .btn-portal { background: linear-gradient(135deg, #495057, #343a40); flex: 0.55; }
+
+        /* ================= GAME SCREEN ================= */
+        .game-header {
+            width: 100%;
+            max-width: 460px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 6px;
+        }
+
+        .circle-icon-btn {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            border: none;
+            background: #ffffff;
+            color: #2b173d;
+            font-size: 1.35rem;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .circle-icon-btn:active { transform: scale(0.92); }
+
+        .header-center {
+            text-align: center;
+        }
+
+        .header-diff {
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: #c5b3d6;
+            text-transform: uppercase;
+        }
+
+        .header-lvl {
+            font-size: 1.55rem;
+            font-weight: 900;
+            color: #ffffff;
+        }
+
+        /* ================= BOARD & REAL 3D BOLTS/NUTS ================= */
+        #game-board {
+            flex: 1;
+            width: 100%;
+            max-width: 460px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-content: center;
+            gap: 28px 18px;
+            padding: 10px 4px;
+        }
+
+        .bolt-wrapper {
+            width: 74px;
+            height: 175px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            cursor: pointer;
+        }
+
+        /* Top rounded cap of the bolt */
+        .bolt-stem {
+            position: absolute;
+            bottom: 16px;
+            width: 22px;
+            height: 138px;
+            background:
+                repeating-linear-gradient(
+                    to bottom,
+                    #e9ecef 0px,
+                    #e9ecef 3px,
+                    #adb5bd 3px,
+                    #868e96 6px
+                );
+            border-radius: 8px 8px 0 0;
+            box-shadow: inset 4px 0 6px rgba(255,255,255,0.7), inset -4px 0 6px rgba(0,0,0,0.35);
+            z-index: 1;
+        }
+
+        /* Metallic Flange Base */
+        .bolt-base {
+            width: 68px;
+            height: 18px;
+            background: linear-gradient(to right, #6c757d, #ced4da 30%, #adb5bd 65%, #495057);
+            border-radius: 50%;
+            box-shadow: 0 6px 10px rgba(0,0,0,0.6), inset 0 2px 3px rgba(255,255,255,0.6);
+            z-index: 2;
+            position: relative;
+        }
+
+        /* Locked Short Stub Bolt (Add Bolt Slot) */
+        .bolt-wrapper.stub-bolt .bolt-stem {
+            height: 36px;
+            background: repeating-linear-gradient(
+                to bottom,
+                #5c546a 0px,
+                #5c546a 3px,
+                #3d354b 3px,
+                #3d354b 6px
+            );
+            box-shadow: inset 2px 0 4px rgba(255,255,255,0.2);
+        }
+
+        .bolt-wrapper.stub-bolt .bolt-base {
+            background: linear-gradient(to right, #3d354b, #5c546a 45%, #2b2338);
+            box-shadow: 0 5px 8px rgba(0,0,0,0.45);
+        }
+
+        .stub-plus-icon {
+            position: absolute;
+            bottom: 58px;
+            font-size: 1.4rem;
+            color: rgba(255,255,255,0.45);
+            font-weight: 900;
+            pointer-events: none;
+        }
+
+        /* Container holding nuts stacked bottom-up */
+        .nuts-stack {
+            position: absolute;
+            bottom: 15px;
+            width: 100%;
+            display: flex;
+            flex-direction: column-reverse;
+            align-items: center;
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        /* 3D Glossy Nut matching screenshot */
+        .nut {
+            width: 62px;
+            height: 30px;
+            border-radius: 9px;
+            margin-bottom: -2px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 9px;
+            box-shadow:
+                0 4px 6px rgba(0,0,0,0.45),
+                inset 0 4px 4px rgba(255,255,255,0.45),
+                inset 0 -4px 5px rgba(0,0,0,0.35);
+            transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s;
+        }
+
+        /* Vertical bevel lines on nut face */
+        .nut::before,
+        .nut::after {
+            content: '';
+            width: 2px;
+            height: 68%;
+            background: rgba(0, 0, 0, 0.22);
+            border-right: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 1px;
+        }
+
+        /* Center emblem/indent on nut face */
+        .nut-emblem {
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.22);
+            box-shadow: inset 0 2px 2px rgba(0,0,0,0.45), 0 1px 1px rgba(255,255,255,0.35);
+        }
+
+        /* Selected nut floats up & tilts like screenshot */
+        .nut.selected {
+            transform: translateY(-34px) rotate(-10deg) scale(1.04);
+            box-shadow:
+                0 14px 18px rgba(0,0,0,0.55),
+                inset 0 4px 4px rgba(255,255,255,0.6),
+                inset 0 -4px 5px rgba(0,0,0,0.35);
+            z-index: 15;
+        }
+
+        /* Hint Highlight Pulse */
+        .bolt-wrapper.hint-source .bolt-base,
+        .bolt-wrapper.hint-target .bolt-base {
+            box-shadow: 0 0 18px 6px #ffd43b;
+        }
+
+        /* Completed Bolt Glow Effect */
+        .bolt-wrapper.completed-glow .nut {
+            filter: brightness(1.18);
+        }
+        .bolt-wrapper.completed-glow::after {
+            content: '✨';
+            position: absolute;
+            top: -12px;
+            font-size: 1.4rem;
+            animation: popSparkle 0.6s ease-out forwards;
+            z-index: 20;
+        }
+
+        @keyframes popSparkle {
+            0% { transform: scale(0) translateY(15px); opacity: 1; }
+            100% { transform: scale(1.4) translateY(-10px); opacity: 0; }
+        }
+
+        /* Color Palettes */
+        .color-red    { background: linear-gradient(180deg, #ff6b6b 0%, #f03e3e 55%, #c92a2a 100%); }
+        .color-blue   { background: linear-gradient(180deg, #4dabf7 0%, #1c7ed6 55%, #1864ab 100%); }
+        .color-green  { background: linear-gradient(180deg, #51cf66 0%, #2f9e44 55%, #2b8a3e 100%); }
+        .color-yellow { background: linear-gradient(180deg, #ffd43b 0%, #f59f00 55%, #e67700 100%); }
+        .color-purple { background: linear-gradient(180deg, #cc5de8 0%, #9c36b5 55%, #862e9c 100%); }
+        .color-orange { background: linear-gradient(180deg, #ff922b 0%, #f76707 55%, #d9480f 100%); }
+        .color-cyan   { background: linear-gradient(180deg, #3bc9db 0%, #1098ad 55%, #0b7285 100%); }
+        .color-pink   { background: linear-gradient(180deg, #f783ac 0%, #d6336c 55%, #a61e4d 100%); }
+
+        /* ================= FOOTER CONTROLS ================= */
+        .game-footer {
+            width: 100%;
+            max-width: 460px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding-bottom: 8px;
+        }
+
+        .footer-action {
+            background: transparent;
+            border: none;
+            color: #b197fc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            position: relative;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .footer-icon-circle {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid rgba(255, 255, 255, 0.16);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            color: #ffd43b;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.35);
+            transition: transform 0.1s;
+        }
+
+        .footer-action:active .footer-icon-circle {
+            transform: scale(0.9);
+        }
+
+        .footer-action.disabled {
+            opacity: 0.4;
+        }
+
+        .badge {
+            position: absolute;
+            top: -4px;
+            right: 2px;
+            background: #ffffff;
+            color: #2b173d;
+            font-size: 0.72rem;
+            font-weight: 900;
+            padding: 2px 7px;
+            border-radius: 999px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+        }
+
+        .badge.badge-ad {
+            background: #2ecc71;
+            color: #ffffff;
+        }
+
+        /* ================= CELEBRATION OVERLAY ================= */
+        #win-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(20, 8, 34, 0.78);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 90;
+        }
+
+        .amazing-text {
+            font-size: 3.1rem;
+            font-weight: 900;
+            color: #ffd43b;
+            text-shadow: 0 5px 0 #d9480f, 0 10px 25px rgba(0,0,0,0.8);
+            letter-spacing: 2px;
+            animation: popIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .win-sub {
+            margin-top: 10px;
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #63e6be;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* ================= VIDEO AD MODAL ================= */
+        #ad-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.92);
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .ad-box {
+            width: 100%;
+            max-width: 400px;
+            background: #fdf6ec;
+            color: #2b173d;
+            border-radius: 22px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+        }
+
+        .ad-box h3 {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+        }
+
+        #ad-video {
+            width: 100%;
+            max-height: 55vh;
+            border-radius: 12px;
+            background: #000;
+            margin-bottom: 12px;
+        }
+
+        .ad-btn-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .ad-btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 800;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .ad-btn-reward { background: #2ecc71; color: white; }
+        .ad-btn-cancel { background: #e03131; color: white; }
+
+        /* ================= LEADERBOARD SCREEN ================= */
+        .leaderboard-card {
+            width: 100%;
+            max-width: 440px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 10px 0;
+        }
+
+        .player-Input-row {
+            display: flex;
+            gap: 8px;
+            margin: 12px 0;
+        }
+
+        .player-Input-row input {
+            flex: 1;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 2px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+
+        .player-Input-row button {
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: none;
+            background: #f59f00;
+            color: #241136;
+            font-weight: 900;
+            cursor: pointer;
+        }
+
+        #leaderboard-list {
+            list-style: none;
+            flex: 1;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 18px;
+            padding: 12px;
+            margin-bottom: 14px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        #leaderboard-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 13px 16px;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            font-weight: 700;
+        }
+
+        #leaderboard-list li:nth-child(1) { background: linear-gradient(90deg, rgba(255,212,59,0.35), rgba(255,255,255,0.08)); border: 1px solid #ffd43b; }
+        #leaderboard-list li:nth-child(2) { background: linear-gradient(90deg, rgba(206,212,218,0.3), rgba(255,255,255,0.08)); }
+        #leaderboard-list li:nth-child(3) { background: linear-gradient(90deg, rgba(230,119,0,0.3), rgba(255,255,255,0.08)); }
+    </style>
+</head>
+<body>
+
+    <!-- ==================== MAIN MENU ==================== -->
+    <div id="main-menu" class="screen">
+        <div class="menu-top-card">
+            <div class="game-title">NUTS & BOLTS</div>
+            <p class="menu-subtitle">Move nuts between bolts until each bolt holds only one colour!</p>
+            <div class="score-pill">🏆 Total Score: <span id="menu-total-score">0</span></div>
+        </div>
+
+        <div class="mode-selector-card">
+            <div id="mode-mascot" class="mascot-circle" style="color:#40c057;">👽</div>
+            <div id="mode-title" class="mode-title" style="color:#40c057;">EASY</div>
+
+            <div class="mode-tabs">
+                <button id="tab-easy" class="mode-tab active-easy" onclick="selectMode('easy')">EASY</button>
+                <button id="tab-medium" class="mode-tab" onclick="selectMode('medium')">MEDIUM</button>
+                <button id="tab-hard" class="mode-tab" onclick="selectMode('hard')">HARD</button>
+            </div>
+
+            <button id="play-btn" class="play-main-btn" style="background:#40c057;" onclick="startSelectedMode()">
+                PLAY
+                <span id="play-btn-lvl">Level 1</span>
+            </button>
+        </div>
+
+        <div class="menu-bottom-nav">
+            <button class="nav-btn btn-leaderboard" onclick="showLeaderboard()">🏆 Leaderboard</button>
+            <button class="nav-btn btn-portal" onclick="location.href='../../index.html'">🎮 Game</button>
+        </div>
+    </div>
+
+    <!-- ==================== GAMEPLAY SCREEN ==================== -->
+    <div id="game-screen" class="screen hidden">
+        <div class="game-header">
+            <button class="circle-icon-btn" onclick="backToMenu()">❮</button>
+            <div class="header-center">
+                <div id="difficulty-label" class="header-diff">EASY</div>
+                <div class="header-lvl">Level <span id="level-label">1</span></div>
+            </div>
+            <button class="circle-icon-btn" onclick="restartLevel()">↻</button>
+        </div>
+
+        <div id="game-board"></div>
+
+        <div class="game-footer">
+            <button id="undo-btn" class="footer-action disabled" onclick="undoMove()">
+                <div class="footer-icon-circle">↩</div>
+                <span>Undo</span>
+            </button>
+
+            <button id="hint-btn" class="footer-action" onclick="triggerHint()">
+                <div class="footer-icon-circle">💡</div>
+                <span id="hint-badge" class="badge">2</span>
+                <span>Hint</span>
+            </button>
+
+            <button id="add-bolt-btn" class="footer-action" onclick="triggerAddBolt()">
+                <div class="footer-icon-circle">➕</div>
+                <span class="badge badge-ad">AD</span>
+                <span>Add bolt</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ==================== WIN CELEBRATION OVERLAY ==================== -->
+    <div id="win-overlay" class="hidden">
+        <div class="amazing-text">AMAZING!</div>
+        <div id="win-points-text" class="win-sub">+10 Score</div>
+    </div>
+
+    <!-- ==================== VIDEO AD MODAL ==================== -->
+    <div id="ad-modal" class="hidden">
+        <div class="ad-box">
+            <h3 id="ad-modal-title">Watch Ad for Reward</h3>
+            <video id="ad-video" src="../../4910.mp4" playsinline></video>
+            <div id="ad-timer-msg" style="margin-bottom:12px; font-weight:700; color:#6c584c;">Loading video reward...</div>
+            <div class="ad-btn-row">
+                <button id="claim-ad-btn" class="ad-btn ad-btn-reward hidden" onclick="claimAdReward()">Claim Reward</button>
+                <button class="ad-btn ad-btn-cancel" onclick="cancelAd()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== LEADERBOARD SCREEN ==================== -->
+    <div id="leaderboard-screen" class="screen hidden">
+        <div class="leaderboard-card">
+            <div>
+                <h2 style="text-align:center; font-size:1.8rem; color:#ffd43b;">🏆 Global Leaderboard</h2>
+                <p style="text-align:center; font-size:0.85rem; color:#d0bfe0; margin-top:4px;">Unified Score across Easy, Medium & Hard</p>
+                <div class="player-Input-row">
+                    <input type="text" id="player-name-input" placeholder="Your Name" maxlength="18">
+                    <button onclick="savePlayerName()">Save</button>
+                </div>
+            </div>
+
+            <ul id="leaderboard-list">
+                <li>Loading scores...</li>
+            </ul>
+
+            <button class="nav-btn btn-portal" style="width:100%;" onclick="hideLeaderboard()">❮ Back to Menu</button>
+        </div>
+    </div>
+
+    <!-- ==================== GAME LOGIC ==================== -->
+    <script>
+        const NUT_CAPACITY = 4;
+        const ALL_COLORS = ['red', 'blue', 'green', 'yellow', 'purple', 'orange', 'cyan', 'pink'];
+
+        let selectedDifficulty = 'easy';
+        let progress = JSON.parse(localStorage.getItem('stgames_nuts_progress')) || {
+            easy: 1,
+            medium: 1,
+            hard: 1
+        };
+        let totalScore = parseInt(localStorage.getItem('stgames_score') || '0');
+
+        let bolts = [];
+        let initialBoltsState = [];
+        let moveHistory = [];
+        let selectedBoltIndex = -1;
+        let extraBoltUnlocked = false;
+        let hintsRemaining = 2;
+        let pendingRewardType = null; // 'bolt' or 'hint'
+        let adTimerInterval = null;
+
+        // Sound Synthesizer (Web Audio API)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playTone(freq, type = 'sine', duration = 0.09, gainVal = 0.12) {
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(gainVal, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {}
+        }
+
+        function updateMenuUI() {
+            document.getElementById('menu-total-score').innerText = totalScore;
+            document.getElementById('play-btn-lvl').innerText = `Level ${progress[selectedDifficulty]}`;
+        }
+
+        function selectMode(mode) {
+            selectedDifficulty = mode;
+            playTone(520, 'triangle', 0.07);
+
+            ['easy', 'medium', 'hard'].forEach(m => {
+                document.getElementById(`tab-${m}`).className = 'mode-tab';
+            });
+            document.getElementById(`tab-${mode}`).classList.add(`active-${mode}`);
+
+            const mascot = document.getElementById('mode-mascot');
+            const title = document.getElementById('mode-title');
+            const playBtn = document.getElementById('play-btn');
+
+            if (mode === 'easy') {
+                mascot.innerText = '👽';
+                title.innerText = 'EASY';
+                title.style.color = '#40c057';
+                playBtn.style.background = '#40c057';
+            } else if (mode === 'medium') {
+                mascot.innerText = '😎';
+                title.innerText = 'MEDIUM';
+                title.style.color = '#fab005';
+                playBtn.style.background = '#fab005';
+            } else {
+                mascot.innerText = '😈';
+                title.innerText = 'HARD';
+                title.style.color = '#fa5252';
+                playBtn.style.background = '#fa5252';
+            }
+            updateMenuUI();
+        }
+
+        function startSelectedMode() {
+            playTone(660, 'sine', 0.12);
+            document.getElementById('main-menu').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            document.getElementById('difficulty-label').innerText = selectedDifficulty.toUpperCase();
+            loadLevel();
+        }
+
+        function backToMenu() {
+            playTone(400, 'sine', 0.08);
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('main-menu').classList.remove('hidden');
+            updateMenuUI();
+            window.dispatchEvent(new CustomEvent('updateScore', { detail: totalScore }));
+        }
+
+        // Generates 100% Solvable Level
+        function generateSolvableBolts() {
+            let numColors = selectedDifficulty === 'easy' ? 3 : selectedDifficulty === 'medium' ? 4 : 6;
+            let numEmpty = 2;
+            let state = [];
+
+            for (let c = 0; c < numColors; c++) {
+                state.push(Array(NUT_CAPACITY).fill(ALL_COLORS[c]));
+            }
+            for (let e = 0; e < numEmpty; e++) {
+                state.push([]);
+            }
+
+            // Reverse-shuffle moves to guarantee solvability
+            let shuffleSteps = numColors * 18;
+            for (let s = 0; s < shuffleSteps; s++) {
+                let nonEmpty = state.map((b, i) => b.length > 0 ? i : -1).filter(i => i !== -1);
+                let nonFull = state.map((b, i) => b.length < NUT_CAPACITY ? i : -1).filter(i => i !== -1);
+                let from = nonEmpty[Math.floor(Math.random() * nonEmpty.length)];
+                let toCandidates = nonFull.filter(i => i !== from);
+                if (toCandidates.length > 0) {
+                    let to = toCandidates[Math.floor(Math.random() * toCandidates.length)];
+                    state[to].push(state[from].pop());
+                }
+            }
+
+            // Ensure puzzle isn't already solved on start
+            let alreadySolved = state.every(b => b.length === 0 || (b.length === NUT_CAPACITY && b.every(n => n === b[0])));
+            if (alreadySolved && state[0].length > 0) {
+                state[numColors].push(state[0].pop());
+            }
+
+            return state;
+        }
+
+        function loadLevel() {
+            let lvl = progress[selectedDifficulty];
+            document.getElementById('level-label').innerText = lvl;
+            selectedBoltIndex = -1;
+            extraBoltUnlocked = false;
+            moveHistory = [];
+            bolts = generateSolvableBolts();
+            initialBoltsState = JSON.parse(JSON.stringify(bolts));
+            updateFooterButtons();
+            renderBoard();
+        }
+
+        function restartLevel() {
+            playTone(440, 'triangle', 0.1);
+            selectedBoltIndex = -1;
+            moveHistory = [];
+            bolts = JSON.parse(JSON.stringify(initialBoltsState));
+            if (extraBoltUnlocked) bolts.push([]);
+            updateFooterButtons();
+            renderBoard();
+        }
+
+        function renderBoard(completedBoltIdx = -1) {
+            const board = document.getElementById('game-board');
+            board.innerHTML = '';
+
+            bolts.forEach((boltNuts, index) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'bolt-wrapper';
+                if (index === completedBoltIdx) wrapper.classList.add('completed-glow');
+                wrapper.onclick = () => handleBoltClick(index);
+
+                const stem = document.createElement('div');
+                stem.className = 'bolt-stem';
+
+                const stack = document.createElement('div');
+                stack.className = 'nuts-stack';
+
+                // Determine how many top matching nuts lift together when selected
+                let topRunCount = 0;
+                if (index === selectedBoltIndex && boltNuts.length > 0) {
+                    let topColor = boltNuts[boltNuts.length - 1];
+                    for (let k = boltNuts.length - 1; k >= 0; k--) {
+                        if (boltNuts[k] === topColor) topRunCount++;
+                        else break;
+                    }
+                }
+
+                boltNuts.forEach((color, nutIdx) => {
+                    const nut = document.createElement('div');
+                    nut.className = `nut color-${color}`;
+                    if (index === selectedBoltIndex && nutIdx >= boltNuts.length - topRunCount) {
+                        nut.classList.add('selected');
+                    }
+                    const emblem = document.createElement('div');
+                    emblem.className = 'nut-emblem';
+                    nut.appendChild(emblem);
+                    stack.appendChild(nut);
+                });
+
+                const base = document.createElement('div');
+                base.className = 'bolt-base';
+
+                wrapper.appendChild(stem);
+                wrapper.appendChild(stack);
+                wrapper.appendChild(base);
+                board.appendChild(wrapper);
+            });
+
+            // Render dark short stub bolt on the right if extra bolt isn't unlocked yet
+            if (!extraBoltUnlocked) {
+                const stub = document.createElement('div');
+                stub.className = 'bolt-wrapper stub-bolt';
+                stub.onclick = () => triggerAddBolt();
+
+                const plus = document.createElement('div');
+                plus.className = 'stub-plus-icon';
+                plus.innerText = '+';
+
+                const stem = document.createElement('div');
+                stem.className = 'bolt-stem';
+
+                const base = document.createElement('div');
+                base.className = 'bolt-base';
+
+                stub.appendChild(plus);
+                stub.appendChild(stem);
+                stub.appendChild(base);
+                board.appendChild(stub);
+            }
+        }
+
+        function handleBoltClick(index) {
+            clearHintHighlights();
+
+            if (selectedBoltIndex === -1) {
+                if (bolts[index].length > 0) {
+                    // Don't select an already completed monochromatic full bolt
+                    if (isBoltCompleted(bolts[index])) return;
+                    selectedBoltIndex = index;
+                    playTone(580, 'sine', 0.06);
+                    renderBoard();
+                }
+            } else {
+                if (selectedBoltIndex === index) {
+                    selectedBoltIndex = -1;
+                    playTone(420, 'sine', 0.06);
+                    renderBoard();
+                } else {
+                    attemptMove(selectedBoltIndex, index);
+                }
+            }
+        }
+
+        function attemptMove(fromIdx, toIdx) {
+            let source = bolts[fromIdx];
+            let target = bolts[toIdx];
+            if (source.length === 0) return;
+
+            let movingColor = source[source.length - 1];
+            let canMove = target.length < NUT_CAPACITY && (target.length === 0 || target[target.length - 1] === movingColor);
+
+            if (canMove) {
+                // Count how many matching nuts sit on top of source
+                let movedCount = 0;
+                while (
+                    source.length > 0 &&
+                    source[source.length - 1] === movingColor &&
+                    target.length < NUT_CAPACITY
+                ) {
+                    target.push(source.pop());
+                    movedCount++;
+                }
+
+                moveHistory.push({ from: fromIdx, to: toIdx, count: movedCount });
+                selectedBoltIndex = -1;
+                playTone(740, 'triangle', 0.09);
+
+                let newlyCompletedIdx = isBoltCompleted(target) ? toIdx : -1;
+                if (newlyCompletedIdx !== -1) {
+                    playTone(980, 'sine', 0.22, 0.18);
+                }
+
+                updateFooterButtons();
+                renderBoard(newlyCompletedIdx);
+                checkWinCondition();
+            } else {
+                // If clicked another valid non-empty bolt, switch selection to it
+                if (target.length > 0 && !isBoltCompleted(target)) {
+                    selectedBoltIndex = toIdx;
+                    playTone(580, 'sine', 0.06);
+                } else {
+                    selectedBoltIndex = -1;
+                    playTone(240, 'sawtooth', 0.08);
+                }
+                renderBoard();
+            }
+        }
+
+        function isBoltCompleted(bolt) {
+            return bolt.length === NUT_CAPACITY && bolt.every(n => n === bolt[0]);
+        }
+
+        function checkWinCondition() {
+            let won = bolts.every(b => b.length === 0 || isBoltCompleted(b));
+            if (won) {
+                let pts = selectedDifficulty === 'hard' ? 30 : selectedDifficulty === 'medium' ? 20 : 10;
+                totalScore += pts;
+                progress[selectedDifficulty]++;
+
+                localStorage.setItem('stgames_score', totalScore);
+                localStorage.setItem('stgames_nuts_progress', JSON.stringify(progress));
+                window.dispatchEvent(new CustomEvent('updateScore', { detail: totalScore }));
+
+                document.getElementById('win-points-text').innerText = `+${pts} Total Score!`;
+                document.getElementById('win-overlay').classList.remove('hidden');
+
+                playTone(523, 'sine', 0.12);
+                setTimeout(() => playTone(659, 'sine', 0.12), 120);
+                setTimeout(() => playTone(784, 'sine', 0.12), 240);
+                setTimeout(() => playTone(1046, 'sine', 0.3), 360);
+
+                setTimeout(() => {
+                    document.getElementById('win-overlay').classList.add('hidden');
+                    loadLevel();
+                }, 1700);
+            }
+        }
+
+        function undoMove() {
+            if (moveHistory.length === 0) return;
+            let last = moveHistory.pop();
+            for (let i = 0; i < last.count; i++) {
+                bolts[last.from].push(bolts[last.to].pop());
+            }
+            selectedBoltIndex = -1;
+            playTone(460, 'sine', 0.08);
+            updateFooterButtons();
+            renderBoard();
+        }
+
+        function updateFooterButtons() {
+            const undoBtn = document.getElementById('undo-btn');
+            if (moveHistory.length > 0) undoBtn.classList.remove('disabled');
+            else undoBtn.classList.add('disabled');
+
+            const hintBadge = document.getElementById('hint-badge');
+            if (hintsRemaining > 0) {
+                hintBadge.innerText = hintsRemaining;
+                hintBadge.className = 'badge';
+            } else {
+                hintBadge.innerText = 'Free';
+                hintBadge.className = 'badge badge-ad';
+            }
+
+            const addBoltBtn = document.getElementById('add-bolt-btn');
+            if (extraBoltUnlocked) addBoltBtn.classList.add('disabled');
+            else addBoltBtn.classList.remove('disabled');
+        }
+
+        function clearHintHighlights() {
+            document.querySelectorAll('.bolt-wrapper').forEach(el => {
+                el.classList.remove('hint-source', 'hint-target');
+            });
+        }
+
+        function triggerHint() {
+            if (hintsRemaining > 0) {
+                hintsRemaining--;
+                updateFooterButtons();
+                executeSmartHint();
+            } else {
+                openAdModal('hint');
+            }
+        }
+
+        function executeSmartHint() {
+            let bestMove = null;
+
+            for (let i = 0; i < bolts.length; i++) {
+                let src = bolts[i];
+                if (src.length === 0 || isBoltCompleted(src)) continue;
+                let topColor = src[src.length - 1];
+
+                for (let j = 0; j < bolts.length; j++) {
+                    if (i === j) continue;
+                    let tgt = bolts[j];
+                    if (tgt.length >= NUT_CAPACITY) continue;
+
+                    // Prefer moving onto a bolt that already has matching color
+                    if (tgt.length > 0 && tgt[tgt.length - 1] === topColor) {
+                        bestMove = { from: i, to: j };
+                        break;
+                    }
+                    // Avoid pointless moving of a pure mono-color stack into an empty bolt
+                    let srcIsMono = src.every(n => n === topColor);
+                    if (tgt.length === 0 && !srcIsMono && !bestMove) {
+                        bestMove = { from: i, to: j };
+                    }
+                }
+                if (bestMove && bolts[bestMove.to].length > 0) break;
+            }
+
+            if (bestMove) {
+                attemptMove(bestMove.from, bestMove.to);
+            } else {
+                alert("No direct moves left! Try Undo or Add Bolt.");
+            }
+        }
+
+        function triggerAddBolt() {
+            if (extraBoltUnlocked) return;
+            openAdModal('bolt');
+        }
+
+        function openAdModal(rewardType) {
+            pendingRewardType = rewardType;
+            const modal = document.getElementById('ad-modal');
+            const video = document.getElementById('ad-video');
+            const claimBtn = document.getElementById('claim-ad-btn');
+            const timerMsg = document.getElementById('ad-timer-msg');
+
+            modal.classList.remove('hidden');
+            claimBtn.classList.add('hidden');
+            document.getElementById('ad-modal-title').innerText =
+                rewardType === 'bolt' ? 'Watch Ad to Add Extra Bolt' : 'Watch Ad for 2 Free Hints';
+
+            let timeLeft = 5;
+            timerMsg.innerText = `Reward available in ${timeLeft}s...`;
+
+            clearInterval(adTimerInterval);
+            adTimerInterval = setInterval(() => {
+                timeLeft--;
+                if (timeLeft > 0) {
+                    timerMsg.innerText = `Reward available in ${timeLeft}s...`;
+                } else {
+                    clearInterval(adTimerInterval);
+                    timerMsg.innerText = 'Reward Ready!';
+                    claimBtn.classList.remove('hidden');
+                }
+            }, 1000);
+
+            video.currentTime = 0;
+            video.play().catch(() => {});
+            video.onended = () => {
+                clearInterval(adTimerInterval);
+                timerMsg.innerText = 'Reward Ready!';
+                claimBtn.classList.remove('hidden');
+            };
+        }
+
+        function claimAdReward() {
+            const video = document.getElementById('ad-video');
+            video.pause();
+            clearInterval(adTimerInterval);
+            document.getElementById('ad-modal').classList.add('hidden');
+
+            if (pendingRewardType === 'bolt' && !extraBoltUnlocked) {
+                extraBoltUnlocked = true;
+                bolts.push([]);
+                updateFooterButtons();
+                renderBoard();
+            } else if (pendingRewardType === 'hint') {
+                hintsRemaining += 2;
+                updateFooterButtons();
+            }
+        }
+
+        function cancelAd() {
+            const video = document.getElementById('ad-video');
+            video.pause();
+            clearInterval(adTimerInterval);
+            document.getElementById('ad-modal').classList.add('hidden');
+        }
+
+        function showLeaderboard() {
+            document.getElementById('main-menu').classList.add('hidden');
+            document.getElementById('leaderboard-screen').classList.remove('hidden');
+            document.getElementById('player-name-input').value =
+                localStorage.getItem('game_user_name') || 'Satish Kommana';
+            window.dispatchEvent(new Event('fetchLeaderboard'));
+        }
+
+        function hideLeaderboard() {
+            document.getElementById('leaderboard-screen').classList.add('hidden');
+            document.getElementById('main-menu').classList.remove('hidden');
+        }
+
+        function savePlayerName() {
+            const val = document.getElementById('player-name-input').value.trim();
+            if (val) {
+                localStorage.setItem('game_user_name', val);
+                window.dispatchEvent(new CustomEvent('updateScore', { detail: totalScore }));
+                setTimeout(() => window.dispatchEvent(new Event('fetchLeaderboard')), 400);
+            }
+        }
+
+        updateMenuUI();
+    </script>
+
+    <!-- ==================== FIREBASE LEADERBOARD MODULE ==================== -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDOFx0_vpPDRDCkUW-deQjMNK5msOsGSnI",
+            authDomain: "stgames-289.firebaseapp.com",
+            databaseURL: "https://stgames-289-default-rtdb.firebaseio.com",
+            projectId: "stgames-289",
+            storageBucket: "stgames-289.firebasestorage.app",
+            messagingSenderId: "916146081741",
+            appId: "1:916146081741:web:eb343c4dc0c6648388fe84",
+            measurementId: "G-P8RQ074PWX"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let userId = localStorage.getItem('game_user_id');
+        if (!userId) {
+            userId = 'user_' + Math.random().toString(36).substring(2, 11);
+            localStorage.setItem('game_user_id', userId);
+        }
+
+        function syncScoreToFirebase(scoreVal) {
+            const userName = localStorage.getItem('game_user_name') || "Satish Kommana";
+            set(ref(db, 'leaderboard/' + userId), {
+                username: userName,
+                score: scoreVal,
+                timestamp: Date.now()
+            }).catch(err => console.error("Firebase Sync Error:", err));
+        }
+
+        window.addEventListener('updateScore', (e) => {
+            syncScoreToFirebase(e.detail);
+        });
+
+        window.addEventListener('fetchLeaderboard', () => {
+            const listEl = document.getElementById('leaderboard-list');
+            listEl.innerHTML = '<li>Loading leaderboard...</li>';
+
+            get(child(ref(db), 'leaderboard')).then((snapshot) => {
+                if (snapshot.exists()) {
+                    listEl.innerHTML = '';
+                    const data = snapshot.val();
+                    const sorted = Object.values(data).sort((a, b) => (b.score || 0) - (a.score || 0));
+
+                    sorted.forEach((entry, idx) => {
+                        const li = document.createElement('li');
+                        const medal = idx === 0 ? '🥇 ' : idx === 1 ? '🥈 ' : idx === 2 ? '🥉 ' : `#${idx + 1} `;
+                        li.innerHTML = `<span>${medal}${entry.username || 'Player'}</span><span>${entry.score || 0} pts</span>`;
+                        listEl.appendChild(li);
+                    });
+                } else {
+                    listEl.innerHTML = '<li>No scores recorded yet. Win a level to claim #1!</li>';
+                }
+            }).catch((error) => {
+                console.error(error);
+                listEl.innerHTML = '<li>Unable to load leaderboard. Check Firebase rules.</li>';
+            });
+        });
+    </script>
+</body>
+</html>
