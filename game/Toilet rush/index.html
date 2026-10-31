@@ -4,41 +4,111 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Toilet Rush - 50 Levels</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-
-<div id="game-wrap">
-  <!-- Top Header UI -->
-  <div class="top-bar">
-    <div class="home-btn" onclick="window.location.href='levels.html'" title="Select Level">🏠</div>
-    <div class="more-badge" onclick="window.location.href='levels.html'">🎮<br>MORE</div>
-  </div>
-
-  <!-- Status Bar (Timer & Level) -->
-  <div class="status-bar">
-    <div class="timer-wrap">⏰ <span id="time-val">30s</span></div>
-    <div class="level-wrap">Level: <span id="lvl-val">1</span></div>
-  </div>
-
-  <!-- Main Game Canvas -->
-  <canvas id="canvas" width="390" height="780"></canvas>
-
-  <!-- Hint Button -->
-  <button class="hint-btn" onclick="toggleHint()">HINT 📺</button>
-
-  <!-- Win / Fail Overlay Modal -->
-  <div class="modal" id="modal">
-    <div class="modal-home" onclick="window.location.href='levels.html'">🏠</div>
-    <div class="trophy-box">
-      <div class="trophy-emoji" id="m-icon">🏆</div>
-      <div class="banner win" id="m-banner">YOU WIN</div>
-    </div>
-    <button class="green-btn" id="m-btn" onclick="handleModalBtn()">» NEXT</button>
-  </div>
-</div>
-
-<script src="levels.js"></script>
-<script src="script.js"></script>
-</body>
-</html>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      margin: 0;
+      padding: 0;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #121212;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Arial Rounded MT Bold', 'Segoe UI', Roboto, sans-serif;
+      overflow: hidden;
+      touch-action: none;
+    }
+    #game-wrap {
+      position: relative;
+      width: 100%;
+      max-width: 400px;
+      height: 100%;
+      max-height: 800px;
+      background-color: #ffffff;
+      background-image: 
+        linear-gradient(to right, #efefef 1px, transparent 1px),
+        linear-gradient(to bottom, #efefef 1px, transparent 1px);
+      background-size: 22px 22px;
+      overflow: hidden;
+      box-shadow: 0 10px 35px rgba(0,0,0,0.6);
+    }
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      z-index: 1;
+    }
+    /* Top Header Controls */
+    .top-bar {
+      position: absolute;
+      top: 18px;
+      left: 0;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-left: 16px;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .home-btn {
+      width: 46px;
+      height: 46px;
+      background: #f5d7a1;
+      border: 2.5px solid #6e4427;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 22px;
+      cursor: pointer;
+      pointer-events: auto;
+      box-shadow: 0 3px 0 #6e4427;
+    }
+    .home-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #6e4427; }
+    .more-badge {
+      background: linear-gradient(90deg, #d834eb, #b5179e);
+      color: #fff;
+      padding: 6px 14px 6px 16px;
+      border-radius: 25px 0 0 25px;
+      font-size: 13px;
+      font-weight: 900;
+      text-align: center;
+      cursor: pointer;
+      pointer-events: auto;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+    }
+    /* Status Bar (Timer & Level) */
+    .status-bar {
+      position: absolute;
+      top: 78px;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 35px;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .timer-wrap, .level-wrap {
+      font-size: 23px;
+      color: #222;
+      font-weight: 900;
+    }
+    /* Bottom Hint Button */
+    .hint-btn {
+      position: absolute;
+      bottom: 45px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 190px;
+      height: 5
