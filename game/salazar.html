@@ -42,6 +42,8 @@
     overflow: hidden;
     background: #1b2430;
     box-shadow: 0 0 50px rgba(0,0,0,0.9);
+    transform: translateZ(0);
+    will-change: transform;
   }
 
   canvas {
@@ -59,7 +61,7 @@
     background: #000;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.35s ease;
+    transition: opacity 0.3s ease;
     z-index: 100;
   }
   #fadeOverlay.active {
@@ -116,16 +118,22 @@
   'use strict';
 
   const canvas = document.getElementById('gameCanvas');
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { alpha: false });
   const fadeOverlay = document.getElementById('fadeOverlay');
   const boosterPrompt = document.getElementById('boosterPrompt');
   const cancelBoosterBtn = document.getElementById('cancelBoosterBtn');
 
   let W = 0, H = 0, dpr = 1;
 
+  // Offscreen Caches for 60FPS Mobile Performance
+  let bgCacheMenu = null;
+  let bgCacheGame = null;
+  let boardStaticCache = null;
+  const elementSpriteCache = {};
+  let selectedHaloCache = null;
+
   // Game States: 'MENU' | 'BOOSTERS' | 'GAME' | 'PAUSE'
   let state = 'MENU';
-  let previousState = 'MENU';
   let soundEnabled = true;
 
   // Player Economy & Inventory
@@ -137,7 +145,7 @@
     sorter: 0,
     undo: 1
   };
-  let activeBoosterMode = null; // 'remove'
+  let activeBoosterMode = null;
 
   const BOOSTER_META = [
     { key: 'remove', title: '-1 Element', desc: 'Removes any item', cost: 200 },
@@ -167,32 +175,37 @@
   // Grid Configuration (4 columns x 5 rows)
   const COLS = 4;
   const ROWS = 5;
-  let grid = []; // grid[c][r] = { level, yOffset, vy, scale, pulse, starburst }
+  let grid = [];
   let undoStack = [];
-  let discovered = new Set([1, 2]); // Clover and Mushroom known at start
+  let discovered = new Set([1, 2]);
 
   // Active Drag Chain
-  let chain = []; // [{c, r}]
+  let chain = [];
+  let chainSet = new Set(); // Fast O(1) lookup during drag and render
   let isDragging = false;
-  let pointerPos = { x: 0, y: 0 };
   let isAnimatingBoard = false;
 
   // Visual Effects
+  const MAX_PARTICLES = 55;
   let particles = [];
   let floatingTexts = [];
   let cauldronBubbles = [];
   let dustMotes = [];
-  let activeTooltip = null; // { c, r, name, level, timer }
-  let starbursts = []; // { x, y, radius, alpha, angle, timer }
+  let activeTooltip = null;
+  let starbursts = [];
 
   // Layout metrics
   let boardRect = { x: 0, y: 0, w: 0, h: 0, cell: 0 };
   let uiButtons = [];
 
-  // Web Audio Synthesizer
+  // Web Audio Synthesizer (Throttled for smooth mobile performance)
   let audioCtx = null;
-  function playTone(freq, type = 'sine', duration = 0.12, vol = 0.12, slideTo = null) {
+  let lastSoundTime = 0;
+  function playTone(freq, type = 'sine', duration = 0.1, vol = 0.12, slideTo = null) {
     if (!soundEnabled) return;
+    const nowMs = performance.now();
+    if (nowMs - lastSoundTime < 28) return;
+    lastSoundTime = nowMs;
     try {
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -207,54 +220,110 @@
       osc.connect(gain);
       gain.connect(audioCtx.destination);
       osc.start(now);
-      osc.stop(now + duration + 0.02);
+      osc.stop(now + duration + 0.015);
     } catch (_) {}
   }
 
   function sfxSelect(chainLen) {
     const base = 320 + Math.min(chainLen, 14) * 45;
-    playTone(base, 'triangle', 0.11, 0.14, base * 1.15);
+    playTone(base, 'triangle', 0.09, 0.13, base * 1.12);
   }
   function sfxMerge(level) {
-    playTone(400 + level * 60, 'sine', 0.22, 0.18, 880 + level * 80);
-    setTimeout(() => playTone(660 + level * 70, 'triangle', 0.25, 0.15, 1100), 70);
+    lastSoundTime = 0;
+    playTone(400 + level * 55, 'sine', 0.2, 0.16, 860 + level * 70);
   }
   function sfxDiscovery() {
     [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
-      setTimeout(() => playTone(f, 'triangle', 0.22, 0.16), i * 80);
+      setTimeout(() => { lastSoundTime = 0; playTone(f, 'triangle', 0.18, 0.14); }, i * 75);
     });
   }
   function sfxClick() {
-    playTone(520, 'sine', 0.08, 0.12, 380);
+    lastSoundTime = 0;
+    playTone(520, 'sine', 0.07, 0.11, 380);
   }
   function sfxCoin() {
-    playTone(987.77, 'sine', 0.09, 0.1, 1318.5);
+    playTone(987.77, 'sine', 0.08, 0.09, 1318.5);
   }
 
-  // Initialize ambient particles
   function initAmbient() {
     cauldronBubbles = [];
-    for (let i = 0; i < 18; i++) {
+    for (let i = 0; i < 16; i++) {
       cauldronBubbles.push({
         x: (Math.random() - 0.5) * 90,
         y: Math.random() * -120,
         r: 3 + Math.random() * 6,
         vy: 25 + Math.random() * 40,
-        vx: (Math.random() - 0.5) * 14,
         alpha: 0.3 + Math.random() * 0.7
       });
     }
     dustMotes = [];
-    for (let i = 0; i < 32; i++) {
+    for (let i = 0; i < 22; i++) {
       dustMotes.push({
         x: Math.random(),
         y: Math.random(),
-        r: 1 + Math.random() * 2.2,
+        r: 1 + Math.random() * 2,
         vx: 0.008 + Math.random() * 0.015,
         vy: 0.01 + Math.random() * 0.02,
         phase: Math.random() * Math.PI * 2
       });
     }
+  }
+
+  // Pre-build static caches so the 60fps loop does zero heavy vector/gradient work
+  function buildCaches() {
+    if (!W || !H) return;
+
+    // 1. Background Caches
+    bgCacheMenu = document.createElement('canvas');
+    bgCacheMenu.width = Math.round(W * dpr);
+    bgCacheMenu.height = Math.round(H * dpr);
+    const mCtx = bgCacheMenu.getContext('2d');
+    mCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    renderStaticDungeonToContext(mCtx, false, true);
+
+    bgCacheGame = document.createElement('canvas');
+    bgCacheGame.width = Math.round(W * dpr);
+    bgCacheGame.height = Math.round(H * dpr);
+    const gCtx = bgCacheGame.getContext('2d');
+    gCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    renderStaticDungeonToContext(gCtx, true, false);
+
+    // 2. Board Frame + Grid + Diamond Studs Cache
+    boardStaticCache = document.createElement('canvas');
+    const pad = 28;
+    boardStaticCache.width = Math.round((boardRect.w + pad * 2) * dpr);
+    boardStaticCache.height = Math.round((boardRect.h + pad * 2) * dpr);
+    const bCtx = boardStaticCache.getContext('2d');
+    bCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    renderStaticBoardToContext(bCtx, pad, pad, boardRect.w, boardRect.h, boardRect.cell);
+
+    // 3. Pre-render all 13 Alchemy Element Sprites
+    const spriteSize = Math.max(64, Math.ceil(boardRect.cell * 1.15));
+    for (let lvl = 1; lvl <= 13; lvl++) {
+      const sc = document.createElement('canvas');
+      sc.width = Math.round(spriteSize * dpr);
+      sc.height = Math.round(spriteSize * dpr);
+      const sCtx = sc.getContext('2d');
+      sCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      renderElementVectorToContext(sCtx, spriteSize / 2, spriteSize / 2, boardRect.cell, lvl);
+      elementSpriteCache[lvl] = { canvas: sc, size: spriteSize };
+    }
+
+    // 4. Pre-render Selection Glow Halo
+    selectedHaloCache = document.createElement('canvas');
+    selectedHaloCache.width = Math.round(spriteSize * dpr);
+    selectedHaloCache.height = Math.round(spriteSize * dpr);
+    const hCtx = selectedHaloCache.getContext('2d');
+    hCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const rad = spriteSize * 0.45;
+    const hGrad = hCtx.createRadialGradient(spriteSize / 2, spriteSize / 2, rad * 0.2, spriteSize / 2, spriteSize / 2, rad);
+    hGrad.addColorStop(0, 'rgba(255, 248, 150, 0.85)');
+    hGrad.addColorStop(0.55, 'rgba(255, 220, 70, 0.35)');
+    hGrad.addColorStop(1, 'rgba(255, 200, 0, 0)');
+    hCtx.fillStyle = hGrad;
+    hCtx.beginPath();
+    hCtx.arc(spriteSize / 2, spriteSize / 2, rad, 0, Math.PI * 2);
+    hCtx.fill();
   }
 
   function resize() {
@@ -266,7 +335,6 @@
     canvas.height = Math.round(H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    // Calculate 4x5 board dimensions
     const maxBoardW = W * 0.88;
     const maxBoardH = H * 0.68;
     const cell = Math.floor(Math.min(maxBoardW / COLS, maxBoardH / ROWS));
@@ -279,40 +347,45 @@
       x: Math.round((W - bw) / 2),
       y: Math.round(H - bh - Math.max(36, H * 0.06))
     };
+
+    buildCaches();
   }
 
   window.addEventListener('resize', resize);
 
-  // Switch screens with smooth black fade exactly like 00:01 & 00:03 in video
   function transitionTo(nextState, callback) {
     sfxClick();
     fadeOverlay.classList.add('active');
     setTimeout(() => {
-      previousState = state;
       state = nextState;
       if (callback) callback();
       fadeOverlay.classList.remove('active');
-    }, 320);
+    }, 280);
   }
 
-  // Initialize Board with cascading drop-in animation
+  function syncChainSet() {
+    chainSet.clear();
+    for (let i = 0; i < chain.length; i++) {
+      chainSet.add((chain[i].c << 4) | chain[i].r);
+    }
+  }
+
   function initBoard() {
     grid = Array.from({ length: COLS }, () => Array(ROWS).fill(null));
     undoStack = [];
     chain = [];
+    syncChainSet();
     activeTooltip = null;
     isAnimatingBoard = true;
 
-    // Match the initial layout vibe from the video (mix of Clovers and Mushrooms)
     for (let c = 0; c < COLS; c++) {
       for (let r = 0; r < ROWS; r++) {
         const lvl = Math.random() < 0.58 ? 1 : 2;
         grid[c][r] = {
           level: lvl,
-          yOffset: -boardRect.h - (ROWS - r) * boardRect.cell * 0.8 - c * 25,
+          yOffset: -boardRect.h - (ROWS - r) * boardRect.cell * 0.7 - c * 20,
           vy: 0,
-          scale: 1,
-          pulse: 0
+          scale: 1
         };
       }
     }
@@ -341,23 +414,17 @@
       for (let r = 0; r < ROWS; r++) {
         grid[c][r] = {
           level: prev.grid[c][r].level,
-          yOffset: -40,
+          yOffset: -35,
           vy: 0,
-          scale: 0.85,
-          pulse: 0
+          scale: 0.9
         };
       }
     }
     isAnimatingBoard = true;
   }
 
-  // Boosters Logic
   function activateBooster(key) {
-    if (key === 'undo') {
-      // Extra undo is passive or can be bought
-      return;
-    }
-    if (boosters[key] <= 0) return;
+    if (key === 'undo' || boosters[key] <= 0) return;
 
     if (key === 'remove') {
       boosters.remove--;
@@ -368,7 +435,6 @@
       boosters.magnet--;
       const upgradeAction = () => {
         saveUndoState();
-        // Find lowest level currently on board and upgrade all of them by +1
         let minLvl = 99;
         for (let c = 0; c < COLS; c++) {
           for (let r = 0; r < ROWS; r++) {
@@ -379,10 +445,10 @@
           for (let r = 0; r < ROWS; r++) {
             if (grid[c][r] && grid[c][r].level === minLvl) {
               grid[c][r].level = Math.min(13, minLvl + 1);
-              grid[c][r].scale = 1.35;
+              grid[c][r].scale = 1.3;
               const pos = getCellCenter(c, r);
               spawnStarburst(pos.x, pos.y);
-              spawnParticles(pos.x, pos.y, '#ffe875', 10);
+              spawnParticles(pos.x, pos.y, '#ffe875', 5);
             }
           }
         }
@@ -391,7 +457,7 @@
       if (state === 'BOOSTERS') {
         transitionTo('GAME', () => {
           if (!grid.length) initBoard();
-          setTimeout(upgradeAction, 350);
+          setTimeout(upgradeAction, 300);
         });
       } else {
         upgradeAction();
@@ -411,9 +477,9 @@
         for (let r = 0; r < ROWS; r++) {
           for (let c = 0; c < COLS; c++) {
             grid[c][r].level = allLevels[idx++];
-            grid[c][r].scale = 1.25;
+            grid[c][r].scale = 1.22;
             const pos = getCellCenter(c, r);
-            spawnParticles(pos.x, pos.y, '#70e3ff', 5);
+            spawnParticles(pos.x, pos.y, '#70e3ff', 3);
           }
         }
         sfxDiscovery();
@@ -421,7 +487,7 @@
       if (state === 'BOOSTERS') {
         transitionTo('GAME', () => {
           if (!grid.length) initBoard();
-          setTimeout(sortAction, 350);
+          setTimeout(sortAction, 300);
         });
       } else {
         sortAction();
@@ -454,7 +520,6 @@
     const c = Math.floor((x - boardRect.x) / boardRect.cell);
     const r = Math.floor((y - boardRect.y) / boardRect.cell);
     if (c < 0 || c >= COLS || r < 0 || r >= ROWS) return null;
-    // Check distance to center so diagonal passes don't accidentally clip corners
     const center = getCellCenter(c, r);
     const dist = Math.hypot(x - center.x, y - center.y);
     if (dist > boardRect.cell * 0.48) return null;
@@ -467,18 +532,19 @@
     return (dc <= 1 && dr <= 1) && !(dc === 0 && dr === 0);
   }
 
-  function spawnParticles(x, y, color, count = 16) {
+  function spawnParticles(x, y, color, count = 8) {
     for (let i = 0; i < count; i++) {
+      if (particles.length >= MAX_PARTICLES) particles.shift();
       const ang = Math.random() * Math.PI * 2;
-      const spd = 40 + Math.random() * 140;
+      const spd = 45 + Math.random() * 125;
       particles.push({
         x, y,
         vx: Math.cos(ang) * spd,
         vy: Math.sin(ang) * spd,
-        r: 2.5 + Math.random() * 4,
+        r: 2.5 + Math.random() * 3.5,
         color,
-        life: 0.45 + Math.random() * 0.35,
-        maxLife: 0.8
+        life: 0.4 + Math.random() * 0.25,
+        maxLife: 0.65
       });
     }
   }
@@ -488,29 +554,27 @@
       x, y,
       radius: boardRect.cell * 0.68,
       angle: 0,
-      life: 0.55,
-      maxLife: 0.55
+      life: 0.5,
+      maxLife: 0.5
     });
   }
 
   function spawnFloatingScore(x, y, amount) {
     floatingTexts.push({
-      x, y,
       startX: x,
       startY: y,
       targetX: 95,
       targetY: 38,
       text: `+${amount}`,
       amount,
-      progress: 0,
-      phase: 'RISE' // 'RISE' then 'FLY'
+      progress: 0
     });
   }
 
-  // Handle completing a chain of 2+ matching items
   function resolveChain() {
     if (chain.length < 2) {
       chain = [];
+      syncChainSet();
       return;
     }
 
@@ -521,26 +585,25 @@
     const nextLevel = Math.min(13, baseLevel + 1);
     const pointsGained = chain.length * baseLevel;
 
-    // Remove all linked items except the last one
+    // Scale particle count per tile based on chain length so huge chains stay silky smooth
+    const perTileParticles = chain.length > 6 ? 3 : 6;
     for (let i = 0; i < chain.length - 1; i++) {
       const { c, r } = chain[i];
       const pos = getCellCenter(c, r);
-      spawnParticles(pos.x, pos.y, ELEMENTS[baseLevel].glow, 12);
+      spawnParticles(pos.x, pos.y, ELEMENTS[baseLevel].glow, perTileParticles);
       grid[c][r] = null;
     }
 
-    // Upgrade the last tile
     const lastPos = getCellCenter(last.c, last.r);
     grid[last.c][last.r] = {
       level: nextLevel,
       yOffset: 0,
       vy: 0,
-      scale: 1.42,
-      pulse: 1
+      scale: 1.38
     };
 
     spawnStarburst(lastPos.x, lastPos.y);
-    spawnParticles(lastPos.x, lastPos.y, '#fff5b8', 22);
+    spawnParticles(lastPos.x, lastPos.y, '#fff5b8', 12);
     spawnFloatingScore(lastPos.x, lastPos.y - boardRect.cell * 0.3, pointsGained);
     sfxMerge(nextLevel);
 
@@ -551,12 +614,12 @@
     }
 
     chain = [];
+    syncChainSet();
     isAnimatingBoard = true;
 
-    // Brief pause so player sees the glowing merged item before gravity drops tiles
     setTimeout(() => {
       applyGravityAndRefill(isNewDiscovery ? nextLevel : null);
-    }, 210);
+    }, 170);
   }
 
   function applyGravityAndRefill(newlyDiscoveredLevel) {
@@ -580,16 +643,14 @@
         }
       }
 
-      // Fill empty top slots with new Clovers (Lv 1) and Mushrooms (Lv 2)
       const emptyCount = writeRow + 1;
       for (let r = writeRow; r >= 0; r--) {
         const spawnLvl = Math.random() < 0.65 ? 1 : 2;
         grid[c][r] = {
           level: spawnLvl,
-          yOffset: -(emptyCount + (writeRow - r) + 0.6) * boardRect.cell,
+          yOffset: -(emptyCount + (writeRow - r) + 0.5) * boardRect.cell,
           vy: 0,
-          scale: 1,
-          pulse: 0
+          scale: 1
         };
       }
     }
@@ -607,8 +668,439 @@
   }
 
   // ==========================================
-  // DRAWING HELPERS & CUSTOM VECTOR ARTWORK
+  // STATIC OFFSCREEN RENDERERS
   // ==========================================
+
+  function renderStaticDungeonToContext(targetCtx, withSunbeams, withTopCobweb) {
+    const bgGrad = targetCtx.createLinearGradient(0, 0, 0, H);
+    bgGrad.addColorStop(0, '#161e29');
+    bgGrad.addColorStop(0.5, '#202b38');
+    bgGrad.addColorStop(1, '#141b24');
+    targetCtx.fillStyle = bgGrad;
+    targetCtx.fillRect(0, 0, W, H);
+
+    const brickH = 34;
+    const brickW = 76;
+    for (let row = 0; row * brickH < H; row++) {
+      const y = row * brickH;
+      const offset = (row % 2) * (brickW / 2);
+      for (let col = -1; col * brickW < W + brickW; col++) {
+        const x = col * brickW + offset;
+        const shade = ((row * 7 + col * 13) % 5) * 2;
+        targetCtx.fillStyle = `rgb(${31 + shade}, ${42 + shade}, ${54 + shade})`;
+        targetCtx.fillRect(x + 2, y + 2, brickW - 4, brickH - 4);
+        targetCtx.fillStyle = 'rgba(255,255,255,0.04)';
+        targetCtx.fillRect(x + 2, y + 2, brickW - 4, 3);
+      }
+    }
+
+    if (withSunbeams) {
+      targetCtx.save();
+      const rayGrad = targetCtx.createLinearGradient(0, 0, W * 0.85, H * 0.65);
+      rayGrad.addColorStop(0, 'rgba(255, 240, 175, 0.16)');
+      rayGrad.addColorStop(0.5, 'rgba(255, 230, 140, 0.06)');
+      rayGrad.addColorStop(1, 'rgba(255, 230, 140, 0)');
+      targetCtx.fillStyle = rayGrad;
+
+      const beams = [
+        [0, 0, W * 0.25, 0, W * 0.95, H * 0.55, W * 0.55, H * 0.65],
+        [0, H * 0.05, W * 0.12, 0, W * 0.65, H * 0.72, W * 0.25, H * 0.78]
+      ];
+      for (const b of beams) {
+        targetCtx.beginPath();
+        targetCtx.moveTo(b[0], b[1]);
+        targetCtx.lineTo(b[2], b[3]);
+        targetCtx.lineTo(b[4], b[5]);
+        targetCtx.lineTo(b[6], b[7]);
+        targetCtx.closePath();
+        targetCtx.fill();
+      }
+      targetCtx.restore();
+    }
+
+    drawCobwebToCtx(targetCtx, 0, H, 95, -Math.PI / 2, 0);
+    drawCobwebToCtx(targetCtx, W, H, 95, -Math.PI, -Math.PI / 2);
+    if (withTopCobweb) {
+      drawCobwebToCtx(targetCtx, 0, 0, 120, 0, Math.PI / 2);
+    }
+  }
+
+  function drawCobwebToCtx(targetCtx, ox, oy, radius, startAng, endAng) {
+    targetCtx.save();
+    targetCtx.strokeStyle = 'rgba(200, 220, 240, 0.14)';
+    targetCtx.lineWidth = 1.2;
+    const strands = 6;
+    for (let i = 0; i <= strands; i++) {
+      const a = startAng + (i / strands) * (endAng - startAng);
+      targetCtx.beginPath();
+      targetCtx.moveTo(ox, oy);
+      targetCtx.lineTo(ox + Math.cos(a) * radius, oy + Math.sin(a) * radius);
+      targetCtx.stroke();
+    }
+    for (let ring = 1; ring <= 4; ring++) {
+      const r = (ring / 4) * radius;
+      targetCtx.beginPath();
+      for (let i = 0; i <= strands; i++) {
+        const a = startAng + (i / strands) * (endAng - startAng);
+        const px = ox + Math.cos(a) * r;
+        const py = oy + Math.sin(a) * r;
+        if (i === 0) targetCtx.moveTo(px, py);
+        else targetCtx.quadraticCurveTo(ox + Math.cos(a - 0.12) * (r * 0.9), oy + Math.sin(a - 0.12) * (r * 0.9), px, py);
+      }
+      targetCtx.stroke();
+    }
+    targetCtx.restore();
+  }
+
+  function renderStaticBoardToContext(targetCtx, bx, by, bw, bh, cell) {
+    drawOrnateGoldFrameToCtx(targetCtx, bx, by, bw, bh, true);
+    for (let c = 0; c < COLS; c++) {
+      for (let r = 0; r < ROWS; r++) {
+        const cx = bx + c * cell;
+        const cy = by + r * cell;
+        targetCtx.fillStyle = (c + r) % 2 === 0 ? '#2c3b4d' : '#263445';
+        targetCtx.fillRect(cx + 3, cy + 3, cell - 6, cell - 6);
+      }
+    }
+    for (let c = 1; c < COLS; c++) {
+      for (let r = 1; r < ROWS; r++) {
+        const ix = bx + c * cell;
+        const iy = by + r * cell;
+        targetCtx.save();
+        targetCtx.translate(ix, iy);
+        targetCtx.rotate(Math.PI / 4);
+        targetCtx.fillStyle = '#243140';
+        targetCtx.strokeStyle = '#e0a526';
+        targetCtx.lineWidth = 2;
+        targetCtx.fillRect(-5, -5, 10, 10);
+        targetCtx.strokeRect(-5, -5, 10, 10);
+        targetCtx.restore();
+      }
+    }
+  }
+
+  // Pre-renders each of the 13 alchemy items once into its own offscreen sprite canvas
+  function renderElementVectorToContext(tCtx, cx, cy, size, level) {
+    tCtx.save();
+    tCtx.translate(cx, cy);
+    const r = size * 0.4;
+
+    // Subtle baked drop shadow (runs only once during cache creation!)
+    tCtx.shadowColor = 'rgba(0,0,0,0.45)';
+    tCtx.shadowBlur = 5;
+    tCtx.shadowOffsetY = 3;
+
+    switch (level) {
+      case 1: {
+        tCtx.strokeStyle = '#3a8c1e';
+        tCtx.lineWidth = r * 0.16;
+        tCtx.lineCap = 'round';
+        tCtx.beginPath();
+        tCtx.moveTo(0, 0);
+        tCtx.quadraticCurveTo(r * 0.25, r * 0.65, r * 0.45, r * 0.85);
+        tCtx.stroke();
+
+        for (let i = 0; i < 4; i++) {
+          tCtx.save();
+          tCtx.rotate((i * Math.PI) / 2 + Math.PI / 4);
+          const leafGrad = tCtx.createRadialGradient(0, -r * 0.45, r * 0.05, 0, -r * 0.45, r * 0.55);
+          leafGrad.addColorStop(0, '#99e64b');
+          leafGrad.addColorStop(0.7, '#52b528');
+          leafGrad.addColorStop(1, '#2b7311');
+          tCtx.fillStyle = leafGrad;
+
+          tCtx.beginPath();
+          tCtx.moveTo(0, 0);
+          tCtx.bezierCurveTo(-r * 0.55, -r * 0.25, -r * 0.65, -r * 0.95, 0, -r * 0.72);
+          tCtx.bezierCurveTo(r * 0.65, -r * 0.95, r * 0.55, -r * 0.25, 0, 0);
+          tCtx.fill();
+
+          tCtx.shadowBlur = 0;
+          tCtx.shadowOffsetY = 0;
+          tCtx.strokeStyle = '#235e0d';
+          tCtx.lineWidth = 1.5;
+          tCtx.stroke();
+
+          tCtx.strokeStyle = '#82d93b';
+          tCtx.lineWidth = 1.2;
+          tCtx.beginPath();
+          tCtx.moveTo(0, -r * 0.08);
+          tCtx.lineTo(0, -r * 0.55);
+          tCtx.stroke();
+          tCtx.restore();
+        }
+        break;
+      }
+
+      case 2: {
+        const stemGrad = tCtx.createLinearGradient(-r * 0.35, 0, r * 0.35, 0);
+        stemGrad.addColorStop(0, '#e3ceb0');
+        stemGrad.addColorStop(0.5, '#fff3e0');
+        stemGrad.addColorStop(1, '#b89f7d');
+        tCtx.fillStyle = stemGrad;
+        tCtx.beginPath();
+        tCtx.moveTo(-r * 0.26, -r * 0.05);
+        tCtx.quadraticCurveTo(-r * 0.38, r * 0.75, -r * 0.15, r * 0.85);
+        tCtx.lineTo(r * 0.18, r * 0.85);
+        tCtx.quadraticCurveTo(r * 0.4, r * 0.75, r * 0.26, -r * 0.05);
+        tCtx.closePath();
+        tCtx.fill();
+        tCtx.shadowBlur = 0;
+        tCtx.shadowOffsetY = 0;
+        tCtx.strokeStyle = '#6e5638';
+        tCtx.lineWidth = 1.5;
+        tCtx.stroke();
+
+        const capGrad = tCtx.createRadialGradient(-r * 0.2, -r * 0.45, r * 0.1, 0, -r * 0.2, r * 0.95);
+        capGrad.addColorStop(0, '#ff6388');
+        capGrad.addColorStop(0.55, '#db1d4b');
+        capGrad.addColorStop(1, '#8a0a28');
+        tCtx.fillStyle = capGrad;
+        tCtx.beginPath();
+        tCtx.moveTo(-r * 0.88, -r * 0.02);
+        tCtx.bezierCurveTo(-r * 0.95, -r * 0.95, r * 0.95, -r * 0.95, r * 0.88, -r * 0.02);
+        tCtx.quadraticCurveTo(0, r * 0.18, -r * 0.88, -r * 0.02);
+        tCtx.closePath();
+        tCtx.fill();
+        tCtx.strokeStyle = '#61061b';
+        tCtx.lineWidth = 1.5;
+        tCtx.stroke();
+
+        tCtx.fillStyle = 'rgba(255, 225, 232, 0.85)';
+        const spots = [[-0.42, -0.32, 0.13], [0.05, -0.55, 0.15], [0.45, -0.28, 0.12], [-0.12, -0.2, 0.1]];
+        for (const [sx, sy, sr] of spots) {
+          tCtx.beginPath();
+          tCtx.arc(r * sx, r * sy, r * sr, 0, Math.PI * 2);
+          tCtx.fill();
+        }
+        break;
+      }
+
+      case 3: {
+        const skullGrad = tCtx.createRadialGradient(-r * 0.2, -r * 0.3, r * 0.1, 0, 0, r * 0.9);
+        skullGrad.addColorStop(0, '#fff5dc');
+        skullGrad.addColorStop(0.65, '#d6be96');
+        skullGrad.addColorStop(1, '#947a53');
+        tCtx.fillStyle = skullGrad;
+
+        tCtx.beginPath();
+        tCtx.arc(0, -r * 0.14, r * 0.72, Math.PI * 0.85, Math.PI * 0.15, false);
+        tCtx.lineTo(r * 0.46, r * 0.45);
+        tCtx.quadraticCurveTo(r * 0.45, r * 0.76, 0, r * 0.76);
+        tCtx.quadraticCurveTo(-r * 0.45, r * 0.76, -r * 0.46, r * 0.45);
+        tCtx.closePath();
+        tCtx.fill();
+        tCtx.shadowBlur = 0;
+        tCtx.shadowOffsetY = 0;
+        tCtx.strokeStyle = '#4a3922';
+        tCtx.lineWidth = 1.8;
+        tCtx.stroke();
+
+        tCtx.fillStyle = '#261c10';
+        tCtx.beginPath();
+        tCtx.ellipse(-r * 0.27, -r * 0.05, r * 0.2, r * 0.23, -0.15, 0, Math.PI * 2);
+        tCtx.ellipse(r * 0.27, -r * 0.05, r * 0.2, r * 0.23, 0.15, 0, Math.PI * 2);
+        tCtx.fill();
+
+        tCtx.beginPath();
+        tCtx.moveTo(0, r * 0.15);
+        tCtx.lineTo(-r * 0.11, r * 0.36);
+        tCtx.lineTo(r * 0.11, r * 0.36);
+        tCtx.closePath();
+        tCtx.fill();
+
+        tCtx.strokeStyle = '#4a3922';
+        tCtx.lineWidth = 1.5;
+        for (let t = -1; t <= 1; t++) {
+          tCtx.beginPath();
+          tCtx.moveTo(t * r * 0.18, r * 0.52);
+          tCtx.lineTo(t * r * 0.18, r * 0.74);
+          tCtx.stroke();
+        }
+        break;
+      }
+
+      case 4: {
+        const stoneGrad = tCtx.createRadialGradient(-r * 0.2, -r * 0.2, r * 0.1, 0, 0, r * 0.85);
+        stoneGrad.addColorStop(0, '#9d6be0');
+        stoneGrad.addColorStop(0.6, '#6237a0');
+        stoneGrad.addColorStop(1, '#3c1e6b');
+        tCtx.fillStyle = stoneGrad;
+
+        tCtx.beginPath();
+        tCtx.moveTo(-r * 0.75, r * 0.25);
+        tCtx.quadraticCurveTo(-r * 0.85, -r * 0.45, -r * 0.2, -r * 0.62);
+        tCtx.quadraticCurveTo(r * 0.45, -r * 0.68, r * 0.78, -r * 0.15);
+        tCtx.quadraticCurveTo(r * 0.9, r * 0.52, r * 0.2, r * 0.62);
+        tCtx.quadraticCurveTo(-r * 0.65, r * 0.68, -r * 0.75, r * 0.25);
+        tCtx.closePath();
+        tCtx.fill();
+        tCtx.shadowBlur = 0;
+        tCtx.shadowOffsetY = 0;
+        tCtx.strokeStyle = '#241042';
+        tCtx.lineWidth = 2;
+        tCtx.stroke();
+
+        tCtx.strokeStyle = '#c9a6ff';
+        tCtx.lineWidth = 2.2;
+        tCtx.lineCap = 'round';
+        tCtx.beginPath();
+        for (let a = 0; a < Math.PI * 3.6; a += 0.2) {
+          const sr = (a / (Math.PI * 3.6)) * r * 0.42;
+          const px = Math.cos(a) * sr;
+          const py = Math.sin(a) * sr;
+          if (a === 0) tCtx.moveTo(px, py);
+          else tCtx.lineTo(px, py);
+        }
+        tCtx.stroke();
+        break;
+      }
+
+      case 5: {
+        const potGrad = tCtx.createRadialGradient(-r * 0.25, 0, r * 0.1, 0, r * 0.1, r * 0.85);
+        potGrad.addColorStop(0, '#6c7a89');
+        potGrad.addColorStop(0.6, '#38424d');
+        potGrad.addColorStop(1, '#1c2229');
+        tCtx.fillStyle = potGrad;
+
+        tCtx.beginPath();
+        tCtx.arc(0, r * 0.12, r * 0.72, -0.2, Math.PI + 0.2, false);
+        tCtx.closePath();
+        tCtx.fill();
+        tCtx.shadowBlur = 0;
+        tCtx.shadowOffsetY = 0;
+        tCtx.strokeStyle = '#12161a';
+        tCtx.lineWidth = 2;
+        tCtx.stroke();
+
+        tCtx.fillStyle = '#495663';
+        tCtx.beginPath();
+        tCtx.roundRect(-r * 0.76, -r * 0.42, r * 1.52, r * 0.24, 6);
+        tCtx.fill();
+        tCtx.stroke();
+
+        tCtx.fillStyle = '#68f73e';
+        tCtx.beginPath();
+        tCtx.ellipse(0, -r * 0.32, r * 0.62, r * 0.14, 0, 0, Math.PI * 2);
+        tCtx.fill();
+
+        tCtx.beginPath();
+        tCtx.arc(-r * 0.35, -r * 0.2, r * 0.1, 0, Math.PI * 2);
+        tCtx.arc(r * 0.25, -r * 0.18, r * 0.12, 0, Math.PI * 2);
+        tCtx.arc(0, -r * 0.44, r * 0.14, 0, Math.PI * 2);
+        tCtx.fill();
+        break;
+      }
+
+      default: {
+        const elem = ELEMENTS[level] || ELEMENTS[13];
+        const grad = tCtx.createRadialGradient(-r * 0.2, -r * 0.25, r * 0.1, 0, 0, r * 0.85);
+        grad.addColorStop(0, elem.glow);
+        grad.addColorStop(0.6, elem.color);
+        grad.addColorStop(1, '#1f1033');
+        tCtx.fillStyle = grad;
+
+        if (level === 6) {
+          tCtx.beginPath();
+          tCtx.arc(0, r * 0.22, r * 0.58, 0, Math.PI * 2);
+          tCtx.fill();
+          tCtx.shadowBlur = 0;
+          tCtx.shadowOffsetY = 0;
+          tCtx.strokeStyle = '#fff';
+          tCtx.lineWidth = 2;
+          tCtx.stroke();
+          tCtx.fillStyle = '#d4a359';
+          tCtx.fillRect(-r * 0.18, -r * 0.65, r * 0.36, r * 0.35);
+        } else {
+          tCtx.beginPath();
+          const sides = 6;
+          for (let i = 0; i < sides; i++) {
+            const a = (i * Math.PI * 2) / sides - Math.PI / 2;
+            const px = Math.cos(a) * r * 0.78;
+            const py = Math.sin(a) * r * 0.78;
+            if (i === 0) tCtx.moveTo(px, py);
+            else tCtx.lineTo(px, py);
+          }
+          tCtx.closePath();
+          tCtx.fill();
+          tCtx.shadowBlur = 0;
+          tCtx.shadowOffsetY = 0;
+          tCtx.strokeStyle = '#ffe875';
+          tCtx.lineWidth = 2.2;
+          tCtx.stroke();
+
+          tCtx.fillStyle = '#fff';
+          tCtx.font = `800 ${Math.round(r * 0.65)}px Fredoka`;
+          tCtx.textAlign = 'center';
+          tCtx.textBaseline = 'middle';
+          tCtx.fillText(String(level), 0, 2);
+        }
+        break;
+      }
+    }
+    tCtx.restore();
+  }
+
+  // Fast O(1) Sprite Blit for 60FPS loop
+  function drawElementItem(cx, cy, size, level, isSelected = false, now = 0) {
+    const cached = elementSpriteCache[level] || elementSpriteCache[1];
+    if (!cached) return;
+
+    let scale = size / boardRect.cell;
+    if (isSelected) {
+      scale *= 1 + 0.06 * Math.sin(now * 0.015);
+      const haloSize = cached.size * scale * 1.08;
+      ctx.drawImage(selectedHaloCache, cx - haloSize / 2, cy - haloSize / 2, haloSize, haloSize);
+    }
+
+    const drawSize = cached.size * scale;
+    ctx.drawImage(cached.canvas, cx - drawSize / 2, cy - drawSize / 2, drawSize, drawSize);
+  }
+
+  // Batched, ShadowBlur-Free Lightning Chain Renderer (50x faster on mobile GPUs)
+  function drawAllLightningLinks(chainArr, now) {
+    if (chainArr.length < 2) return;
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    ctx.beginPath();
+    for (let idx = 0; idx < chainArr.length - 1; idx++) {
+      const p1 = getCellCenter(chainArr[idx].c, chainArr[idx].r);
+      const p2 = getCellCenter(chainArr[idx + 1].c, chainArr[idx + 1].r);
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+      const dist = Math.hypot(dx, dy);
+      const steps = 4;
+      const nx = -dy / dist;
+      const ny = dx / dist;
+
+      ctx.moveTo(p1.x, p1.y);
+      for (let i = 1; i < steps; i++) {
+        const t = i / steps;
+        const jitter = Math.sin(now * 0.04 + i * 7.3 + idx * 3.1) * 4.2;
+        ctx.lineTo(p1.x + dx * t + nx * jitter, p1.y + dy * t + ny * jitter);
+      }
+      ctx.lineTo(p2.x, p2.y);
+    }
+
+    // Pass 1: Wide soft glow (replaces expensive shadowBlur)
+    ctx.strokeStyle = 'rgba(255, 195, 20, 0.38)';
+    ctx.lineWidth = 12;
+    ctx.stroke();
+
+    // Pass 2: Bright gold bolt
+    ctx.strokeStyle = '#ffdf4d';
+    ctx.lineWidth = 5;
+    ctx.stroke();
+
+    // Pass 3: White-hot core
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.restore();
+  }
 
   function drawOctagonButton(cx, cy, radius, renderIconFn, badgeCount = null) {
     ctx.save();
@@ -625,10 +1117,18 @@
       ctx.closePath();
     };
 
-    // Drop shadow
-    ctx.shadowColor = 'rgba(0,0,0,0.65)';
-    ctx.shadowBlur = 8;
-    ctx.shadowOffsetY = 4;
+    // Fast drop shadow octagon
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    ctx.beginPath();
+    for (let i = 0; i < sides; i++) {
+      const a = (i * 2 * Math.PI) / sides + Math.PI / 8;
+      const px = cx + Math.cos(a) * radius;
+      const py = cy + 4 + Math.sin(a) * radius;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fill();
 
     // Outer Gold Rim
     const gradGold = ctx.createLinearGradient(cx, cy - radius, cx, cy + radius);
@@ -639,8 +1139,6 @@
     ctx.fillStyle = gradGold;
     ctx.fill();
 
-    ctx.shadowBlur = 0;
-    ctx.shadowOffsetY = 0;
     ctx.lineWidth = 1.5;
     ctx.strokeStyle = '#3b2202';
     ctx.stroke();
@@ -657,10 +1155,8 @@
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
-    // Inner Icon
     if (renderIconFn) renderIconFn(cx, cy, radius * 0.42);
 
-    // Red Notification Badge (like Undo count '1' in video)
     if (badgeCount !== null && badgeCount > 0) {
       const bx = cx + radius * 0.45;
       const by = cy + radius * 0.58;
@@ -681,59 +1177,13 @@
     ctx.restore();
   }
 
-  // Draw Dungeon Brick Wall + Sunbeams + Cobwebs
   function drawDungeonBackground(now, withSunbeams = true) {
-    // Base dark blue-grey gradient
-    const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
-    bgGrad.addColorStop(0, '#161e29');
-    bgGrad.addColorStop(0.5, '#202b38');
-    bgGrad.addColorStop(1, '#141b24');
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, W, H);
-
-    // Brick pattern
-    const brickH = 34;
-    const brickW = 76;
-    ctx.lineWidth = 2.5;
-    for (let row = 0; row * brickH < H; row++) {
-      const y = row * brickH;
-      const offset = (row % 2) * (brickW / 2);
-      for (let col = -1; col * brickW < W + brickW; col++) {
-        const x = col * brickW + offset;
-        // Subtle shade variation per brick
-        const shade = ((row * 7 + col * 13) % 5) * 2;
-        ctx.fillStyle = `rgb(${31 + shade}, ${42 + shade}, ${54 + shade})`;
-        ctx.fillRect(x + 2, y + 2, brickW - 4, brickH - 4);
-        // Top highlight on brick
-        ctx.fillStyle = 'rgba(255,255,255,0.04)';
-        ctx.fillRect(x + 2, y + 2, brickW - 4, 3);
-      }
+    const cache = withSunbeams ? bgCacheGame : bgCacheMenu;
+    if (cache) {
+      ctx.drawImage(cache, 0, 0, W, H);
     }
-
-    // Diagonal Warm Sunbeams from top-left (like 00:04 in video)
     if (withSunbeams) {
       ctx.save();
-      const rayGrad = ctx.createLinearGradient(0, 0, W * 0.85, H * 0.65);
-      rayGrad.addColorStop(0, 'rgba(255, 240, 175, 0.16)');
-      rayGrad.addColorStop(0.5, 'rgba(255, 230, 140, 0.06)');
-      rayGrad.addColorStop(1, 'rgba(255, 230, 140, 0)');
-      ctx.fillStyle = rayGrad;
-
-      const beams = [
-        [0, 0, W * 0.25, 0, W * 0.95, H * 0.55, W * 0.55, H * 0.65],
-        [0, H * 0.05, W * 0.12, 0, W * 0.65, H * 0.72, W * 0.25, H * 0.78]
-      ];
-      for (const b of beams) {
-        ctx.beginPath();
-        ctx.moveTo(b[0], b[1]);
-        ctx.lineTo(b[2], b[3]);
-        ctx.lineTo(b[4], b[5]);
-        ctx.lineTo(b[6], b[7]);
-        ctx.closePath();
-        ctx.fill();
-      }
-
-      // Floating golden dust motes in the sunbeams
       for (const m of dustMotes) {
         m.x = (m.x + m.vx * 0.004) % 1;
         m.y = (m.y + m.vy * 0.004) % 0.7;
@@ -745,374 +1195,77 @@
       }
       ctx.restore();
     }
-
-    // Corner Cobwebs
-    drawCobweb(0, H, 95, -Math.PI / 2, 0);
-    drawCobweb(W, H, 95, -Math.PI, -Math.PI / 2);
-    if (state === 'MENU') {
-      drawCobweb(0, 0, 120, 0, Math.PI / 2);
-    }
   }
 
-  function drawCobweb(ox, oy, radius, startAng, endAng) {
-    ctx.save();
-    ctx.strokeStyle = 'rgba(200, 220, 240, 0.14)';
-    ctx.lineWidth = 1.2;
-    const strands = 6;
-    for (let i = 0; i <= strands; i++) {
-      const a = startAng + (i / strands) * (endAng - startAng);
-      ctx.beginPath();
-      ctx.moveTo(ox, oy);
-      ctx.lineTo(ox + Math.cos(a) * radius, oy + Math.sin(a) * radius);
-      ctx.stroke();
+  function drawOrnateGoldFrameToCtx(tCtx, x, y, w, h, withTopSkull = true) {
+    tCtx.save();
+    tCtx.fillStyle = 'rgba(0,0,0,0.45)';
+    tCtx.beginPath();
+    tCtx.roundRect(x - 2, y + 5, w + 4, h + 4, 10);
+    tCtx.fill();
+
+    tCtx.fillStyle = '#243140';
+    tCtx.beginPath();
+    tCtx.roundRect(x, y, w, h, 8);
+    tCtx.fill();
+
+    const borderGrad = tCtx.createLinearGradient(x, y, x + w, y + h);
+    borderGrad.addColorStop(0, '#ffe875');
+    borderGrad.addColorStop(0.35, '#d4941c');
+    borderGrad.addColorStop(0.7, '#ffe066');
+    borderGrad.addColorStop(1, '#8c5606');
+    tCtx.strokeStyle = borderGrad;
+    tCtx.lineWidth = 6;
+    tCtx.beginPath();
+    tCtx.roundRect(x, y, w, h, 8);
+    tCtx.stroke();
+
+    tCtx.strokeStyle = '#472b02';
+    tCtx.lineWidth = 1.5;
+    tCtx.strokeRect(x + 3, y + 3, w - 6, h - 6);
+
+    const corners = [[x, y], [x + w, y], [x, y + h], [x + w, y + h]];
+    tCtx.fillStyle = '#ffd54f';
+    tCtx.strokeStyle = '#5c3702';
+    for (const [cx, cy] of corners) {
+      tCtx.beginPath();
+      tCtx.arc(cx, cy, 6, 0, Math.PI * 2);
+      tCtx.fill();
+      tCtx.stroke();
     }
-    for (let ring = 1; ring <= 4; ring++) {
-      const r = (ring / 4) * radius;
-      ctx.beginPath();
-      for (let i = 0; i <= strands; i++) {
-        const a = startAng + (i / strands) * (endAng - startAng);
-        const px = ox + Math.cos(a) * r;
-        const py = oy + Math.sin(a) * r;
-        if (i === 0) ctx.moveTo(px, py);
-        else ctx.quadraticCurveTo(ox + Math.cos(a - 0.12) * (r * 0.9), oy + Math.sin(a - 0.12) * (r * 0.9), px, py);
-      }
-      ctx.stroke();
+
+    if (withTopSkull) {
+      const sx = x + w / 2;
+      const sy = y;
+      tCtx.fillStyle = '#f5be36';
+      tCtx.strokeStyle = '#472b02';
+      tCtx.lineWidth = 1.8;
+      tCtx.beginPath();
+      tCtx.arc(sx, sy - 2, 10, 0, Math.PI * 2);
+      tCtx.fill();
+      tCtx.stroke();
+      tCtx.fillRect(sx - 5, sy + 4, 10, 6);
+
+      tCtx.fillStyle = '#261802';
+      tCtx.beginPath();
+      tCtx.arc(sx - 3.5, sy - 2, 2.2, 0, Math.PI * 2);
+      tCtx.arc(sx + 3.5, sy - 2, 2.2, 0, Math.PI * 2);
+      tCtx.fill();
     }
-    ctx.restore();
+    tCtx.restore();
   }
 
-  // Draw the 13 Alchemy Items (Clover, Mushroom, Skull, Stone, Caldron, etc.)
-  function drawElementItem(cx, cy, size, level, isSelected = false, now = 0) {
-    ctx.save();
-    ctx.translate(cx, cy);
-
-    const r = size * 0.4;
-
-    // Selection glow aura (like 00:07, 00:10, 00:25 in video)
-    if (isSelected) {
-      const pulse = 1 + 0.06 * Math.sin(now * 0.015);
-      ctx.scale(pulse, pulse);
-      ctx.shadowColor = '#fff799';
-      ctx.shadowBlur = 18;
-    } else {
-      ctx.shadowColor = 'rgba(0,0,0,0.45)';
-      ctx.shadowBlur = 6;
-      ctx.shadowOffsetY = 3;
-    }
-
-    switch (level) {
-      case 1: {
-        // LEVEL 1: 4-LEAF CLOVER (exact match to video)
-        // Small stem
-        ctx.strokeStyle = '#3a8c1e';
-        ctx.lineWidth = r * 0.16;
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.quadraticCurveTo(r * 0.25, r * 0.65, r * 0.45, r * 0.85);
-        ctx.stroke();
-
-        // 4 Heart-shaped leaves rotated at 45, 135, 225, 315 deg
-        for (let i = 0; i < 4; i++) {
-          ctx.save();
-          ctx.rotate((i * Math.PI) / 2 + Math.PI / 4);
-          const leafGrad = ctx.createRadialGradient(0, -r * 0.45, r * 0.05, 0, -r * 0.45, r * 0.55);
-          leafGrad.addColorStop(0, '#99e64b');
-          leafGrad.addColorStop(0.7, '#52b528');
-          leafGrad.addColorStop(1, '#2b7311');
-          ctx.fillStyle = leafGrad;
-
-          ctx.beginPath();
-          ctx.moveTo(0, 0);
-          ctx.bezierCurveTo(-r * 0.55, -r * 0.25, -r * 0.65, -r * 0.95, 0, -r * 0.72);
-          ctx.bezierCurveTo(r * 0.65, -r * 0.95, r * 0.55, -r * 0.25, 0, 0);
-          ctx.fill();
-
-          ctx.strokeStyle = '#235e0d';
-          ctx.lineWidth = 1.5;
-          ctx.stroke();
-
-          // Center leaf vein
-          ctx.strokeStyle = '#82d93b';
-          ctx.lineWidth = 1.2;
-          ctx.beginPath();
-          ctx.moveTo(0, -r * 0.08);
-          ctx.lineTo(0, -r * 0.55);
-          ctx.stroke();
-          ctx.restore();
-        }
-        break;
-      }
-
-      case 2: {
-        // LEVEL 2: RED SPOTTED MUSHROOM (exact match to video)
-        // Beige Stem
-        const stemGrad = ctx.createLinearGradient(-r * 0.35, 0, r * 0.35, 0);
-        stemGrad.addColorStop(0, '#e3ceb0');
-        stemGrad.addColorStop(0.5, '#fff3e0');
-        stemGrad.addColorStop(1, '#b89f7d');
-        ctx.fillStyle = stemGrad;
-        ctx.beginPath();
-        ctx.moveTo(-r * 0.26, -r * 0.05);
-        ctx.quadraticCurveTo(-r * 0.38, r * 0.75, -r * 0.15, r * 0.85);
-        ctx.lineTo(r * 0.18, r * 0.85);
-        ctx.quadraticCurveTo(r * 0.4, r * 0.75, r * 0.26, -r * 0.05);
-        ctx.closePath();
-        ctx.fill();
-        ctx.strokeStyle = '#6e5638';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-
-        // Red Cap
-        const capGrad = ctx.createRadialGradient(-r * 0.2, -r * 0.45, r * 0.1, 0, -r * 0.2, r * 0.95);
-        capGrad.addColorStop(0, '#ff6388');
-        capGrad.addColorStop(0.55, '#db1d4b');
-        capGrad.addColorStop(1, '#8a0a28');
-        ctx.fillStyle = capGrad;
-        ctx.beginPath();
-        ctx.moveTo(-r * 0.88, -r * 0.02);
-        ctx.bezierCurveTo(-r * 0.95, -r * 0.95, r * 0.95, -r * 0.95, r * 0.88, -r * 0.02);
-        ctx.quadraticCurveTo(0, r * 0.18, -r * 0.88, -r * 0.02);
-        ctx.closePath();
-        ctx.fill();
-        ctx.strokeStyle = '#61061b';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-
-        // Pinkish-white spots on cap
-        ctx.fillStyle = 'rgba(255, 225, 232, 0.85)';
-        const spots = [
-          [-0.42, -0.32, 0.13],
-          [0.05, -0.55, 0.15],
-          [0.45, -0.28, 0.12],
-          [-0.12, -0.2, 0.1]
-        ];
-        for (const [sx, sy, sr] of spots) {
-          ctx.beginPath();
-          ctx.arc(r * sx, r * sy, r * sr, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        break;
-      }
-
-      case 3: {
-        // LEVEL 3: SKULL ("Skull 3 from 13" at 00:12 in video)
-        const skullGrad = ctx.createRadialGradient(-r * 0.2, -r * 0.3, r * 0.1, 0, 0, r * 0.9);
-        skullGrad.addColorStop(0, '#fff5dc');
-        skullGrad.addColorStop(0.65, '#d6be96');
-        skullGrad.addColorStop(1, '#947a53');
-        ctx.fillStyle = skullGrad;
-
-        ctx.beginPath();
-        ctx.arc(0, -r * 0.14, r * 0.72, Math.PI * 0.85, Math.PI * 0.15, false);
-        ctx.lineTo(r * 0.46, r * 0.45);
-        ctx.quadraticCurveTo(r * 0.45, r * 0.76, 0, r * 0.76);
-        ctx.quadraticCurveTo(-r * 0.45, r * 0.76, -r * 0.46, r * 0.45);
-        ctx.closePath();
-        ctx.fill();
-        ctx.strokeStyle = '#4a3922';
-        ctx.lineWidth = 1.8;
-        ctx.stroke();
-
-        // Eye sockets
-        ctx.fillStyle = '#261c10';
-        ctx.beginPath();
-        ctx.ellipse(-r * 0.27, -r * 0.05, r * 0.2, r * 0.23, -0.15, 0, Math.PI * 2);
-        ctx.ellipse(r * 0.27, -r * 0.05, r * 0.2, r * 0.23, 0.15, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Nose cavity
-        ctx.beginPath();
-        ctx.moveTo(0, r * 0.15);
-        ctx.lineTo(-r * 0.11, r * 0.36);
-        ctx.lineTo(r * 0.11, r * 0.36);
-        ctx.closePath();
-        ctx.fill();
-
-        // Teeth notches
-        ctx.strokeStyle = '#4a3922';
-        ctx.lineWidth = 1.5;
-        for (let t = -1; t <= 1; t++) {
-          ctx.beginPath();
-          ctx.moveTo(t * r * 0.18, r * 0.52);
-          ctx.lineTo(t * r * 0.18, r * 0.74);
-          ctx.stroke();
-        }
-        break;
-      }
-
-      case 4: {
-        // LEVEL 4: STONE ("Stone 4 from 13" at 00:52 in video - purple rune stone with spiral)
-        const stoneGrad = ctx.createRadialGradient(-r * 0.2, -r * 0.2, r * 0.1, 0, 0, r * 0.85);
-        stoneGrad.addColorStop(0, '#9d6be0');
-        stoneGrad.addColorStop(0.6, '#6237a0');
-        stoneGrad.addColorStop(1, '#3c1e6b');
-        ctx.fillStyle = stoneGrad;
-
-        ctx.beginPath();
-        ctx.moveTo(-r * 0.75, r * 0.25);
-        ctx.quadraticCurveTo(-r * 0.85, -r * 0.45, -r * 0.2, -r * 0.62);
-        ctx.quadraticCurveTo(r * 0.45, -r * 0.68, r * 0.78, -r * 0.15);
-        ctx.quadraticCurveTo(r * 0.9, r * 0.52, r * 0.2, r * 0.62);
-        ctx.quadraticCurveTo(-r * 0.65, r * 0.68, -r * 0.75, r * 0.25);
-        ctx.closePath();
-        ctx.fill();
-        ctx.strokeStyle = '#241042';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        // Glowing Spiral Rune
-        ctx.strokeStyle = '#c9a6ff';
-        ctx.lineWidth = 2.2;
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        for (let a = 0; a < Math.PI * 3.6; a += 0.2) {
-          const sr = (a / (Math.PI * 3.6)) * r * 0.42;
-          const px = Math.cos(a) * sr;
-          const py = Math.sin(a) * sr;
-          if (a === 0) ctx.moveTo(px, py);
-          else ctx.lineTo(px, py);
-        }
-        ctx.stroke();
-        break;
-      }
-
-      case 5: {
-        // LEVEL 5: CALDRON ("Caldron 5 from 13" at 01:25 in video - dark pot with bubbling green slime)
-        const potGrad = ctx.createRadialGradient(-r * 0.25, 0, r * 0.1, 0, r * 0.1, r * 0.85);
-        potGrad.addColorStop(0, '#6c7a89');
-        potGrad.addColorStop(0.6, '#38424d');
-        potGrad.addColorStop(1, '#1c2229');
-        ctx.fillStyle = potGrad;
-
-        // Pot belly
-        ctx.beginPath();
-        ctx.arc(0, r * 0.12, r * 0.72, -0.2, Math.PI + 0.2, false);
-        ctx.closePath();
-        ctx.fill();
-        ctx.strokeStyle = '#12161a';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        // Pot rim
-        ctx.fillStyle = '#495663';
-        ctx.beginPath();
-        ctx.roundRect(-r * 0.76, -r * 0.42, r * 1.52, r * 0.24, 6);
-        ctx.fill();
-        ctx.stroke();
-
-        // Bubbling neon green potion inside & dripping over rim
-        ctx.fillStyle = '#68f73e';
-        ctx.beginPath();
-        ctx.ellipse(0, -r * 0.32, r * 0.62, r * 0.14, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Green drips
-        ctx.beginPath();
-        ctx.arc(-r * 0.35, -r * 0.2, r * 0.1, 0, Math.PI * 2);
-        ctx.arc(r * 0.25, -r * 0.18, r * 0.12, 0, Math.PI * 2);
-        ctx.arc(0, -r * 0.44, r * 0.14, 0, Math.PI * 2);
-        ctx.fill();
-        break;
-      }
-
-      default: {
-        // LEVELS 6 - 13: Radiant Alchemy Artifacts (Potion, Crystal, Scroll, Grimoire, etc.)
-        const elem = ELEMENTS[level] || ELEMENTS[13];
-        const grad = ctx.createRadialGradient(-r * 0.2, -r * 0.25, r * 0.1, 0, 0, r * 0.85);
-        grad.addColorStop(0, elem.glow);
-        grad.addColorStop(0.6, elem.color);
-        grad.addColorStop(1, '#1f1033');
-        ctx.fillStyle = grad;
-
-        if (level === 6) {
-          // Magic Potion Flask
-          ctx.beginPath();
-          ctx.arc(0, r * 0.22, r * 0.58, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.strokeStyle = '#fff';
-          ctx.lineWidth = 2;
-          ctx.stroke();
-          ctx.fillStyle = '#d4a359';
-          ctx.fillRect(-r * 0.18, -r * 0.65, r * 0.36, r * 0.35);
-        } else {
-          // Faceted Arcane Gem / Artifact with level emblem
-          ctx.beginPath();
-          const sides = 6;
-          for (let i = 0; i < sides; i++) {
-            const a = (i * Math.PI * 2) / sides - Math.PI / 2;
-            const px = Math.cos(a) * r * 0.78;
-            const py = Math.sin(a) * r * 0.78;
-            if (i === 0) ctx.moveTo(px, py);
-            else ctx.lineTo(px, py);
-          }
-          ctx.closePath();
-          ctx.fill();
-          ctx.strokeStyle = '#ffe875';
-          ctx.lineWidth = 2.2;
-          ctx.stroke();
-
-          ctx.fillStyle = '#fff';
-          ctx.font = `800 ${Math.round(r * 0.65)}px Fredoka`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(String(level), 0, 2);
-        }
-        break;
-      }
-    }
-
-    ctx.restore();
-  }
-
-  // Draw Crackling Golden Lightning Line between linked tiles (exact match to 00:10, 00:25)
-  function drawLightningLink(p1, p2, now) {
-    ctx.save();
-    const dx = p2.x - p1.x;
-    const dy = p2.y - p1.y;
-    const dist = Math.hypot(dx, dy);
-    const steps = Math.max(4, Math.floor(dist / 12));
-    const nx = -dy / dist;
-    const ny = dx / dist;
-
-    // Outer yellow glow
-    ctx.strokeStyle = '#ffdf4d';
-    ctx.shadowColor = '#ffae00';
-    ctx.shadowBlur = 14;
-    ctx.lineWidth = 5;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-
-    const pts = [{ x: p1.x, y: p1.y }];
-    for (let i = 1; i < steps; i++) {
-      const t = i / steps;
-      const jitter = Math.sin(now * 0.04 + i * 7.3) * 4.5;
-      pts.push({
-        x: p1.x + dx * t + nx * jitter,
-        y: p1.y + dy * t + ny * jitter
-      });
-    }
-    pts.push({ x: p2.x, y: p2.y });
-
-    ctx.beginPath();
-    pts.forEach((p, idx) => (idx === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
-    ctx.stroke();
-
-    // Inner white-hot core
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 2.2;
-    ctx.stroke();
-    ctx.restore();
+  function drawOrnateGoldFrame(x, y, w, h, withTopSkull = true) {
+    drawOrnateGoldFrameToCtx(ctx, x, y, w, h, withTopSkull);
   }
 
   // ==========================================
-  // SCREEN 1: MAIN MENU (00:00 in video)
+  // SCREEN 1: MAIN MENU
   // ==========================================
   function drawMenuScreen(now) {
     drawDungeonBackground(now, false);
     uiButtons = [];
 
-    // Wooden dungeon floor + potion books on shelves at bottom
     const floorY = H - 105;
     const floorGrad = ctx.createLinearGradient(0, floorY, 0, H);
     floorGrad.addColorStop(0, '#3a2312');
@@ -1126,7 +1279,6 @@
     ctx.lineTo(W, floorY);
     ctx.stroke();
 
-    // Colored spellbooks on left & right shelves
     const books = [
       { x: 10, y: floorY - 32, w: 48, h: 14, c: '#d93829' },
       { x: 14, y: floorY - 46, w: 42, h: 14, c: '#2980b9' },
@@ -1146,7 +1298,6 @@
       ctx.fillRect(b.x + 5, b.y + 3, b.w - 10, b.h - 6);
     }
 
-    // Top-Right Sound Toggle Button
     const soundBtnX = W - 44;
     const soundBtnY = 42;
     drawOctagonButton(soundBtnX, soundBtnY, 26, (cx, cy, s) => {
@@ -1174,14 +1325,12 @@
       onClick: () => { soundEnabled = !soundEnabled; sfxClick(); }
     });
 
-    // Golden 3D "Salazar" Title Logo
     ctx.save();
     const titleY = H * 0.16;
     ctx.font = '900 56px "Cinzel Decorative", serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    // 3D Extrusion Shadow
     ctx.fillStyle = '#5c3400';
     for (let d = 5; d >= 1; d--) {
       ctx.fillText('Salazar', W / 2, titleY + d);
@@ -1193,14 +1342,11 @@
     titleGrad.addColorStop(0.85, '#d48806');
     titleGrad.addColorStop(1, '#874d00');
     ctx.fillStyle = titleGrad;
-    ctx.shadowColor = 'rgba(255, 200, 40, 0.55)';
-    ctx.shadowBlur = 18;
     ctx.fillText('Salazar', W / 2, titleY);
     ctx.lineWidth = 2;
     ctx.strokeStyle = '#fff3a1';
     ctx.strokeText('Salazar', W / 2, titleY);
 
-    // Twinkling 4-point sparkles on logo
     const sparkOffsets = [[-115, -14], [18, -22], [118, 12], [-50, 18]];
     sparkOffsets.forEach(([ox, oy], idx) => {
       const s = (Math.sin(now * 0.005 + idx * 1.7) + 1) * 0.5;
@@ -1210,7 +1356,6 @@
     });
     ctx.restore();
 
-    // Center Octagonal Play Button
     const playX = W / 2;
     const playY = H * 0.43;
     const pulseR = 44 + Math.sin(now * 0.005) * 2.5;
@@ -1231,7 +1376,6 @@
       onClick: () => transitionTo('BOOSTERS')
     });
 
-    // Cartoon Wizard & Bubbling Green Cauldron at Bottom (00:00 in video)
     drawWizardAndCauldron(now);
   }
 
@@ -1239,8 +1383,6 @@
     ctx.save();
     ctx.translate(x, y);
     ctx.fillStyle = '#ffffff';
-    ctx.shadowColor = '#ffe875';
-    ctx.shadowBlur = 8;
     ctx.beginPath();
     for (let i = 0; i < 8; i++) {
       const r = i % 2 === 0 ? radius : radius * 0.22;
@@ -1259,12 +1401,10 @@
     const wizY = H - 115;
     const bob = Math.sin(now * 0.004) * 3;
 
-    // Wizard Purple Robe & Raised Arms
     ctx.fillStyle = '#722ed1';
     ctx.strokeStyle = '#22075e';
     ctx.lineWidth = 2.5;
 
-    // Left & Right raised sleeves
     ctx.beginPath();
     ctx.moveTo(wizX - 15, wizY - 35 + bob);
     ctx.quadraticCurveTo(wizX - 68, wizY - 45 + bob, wizX - 75, wizY - 82 + bob);
@@ -1281,7 +1421,6 @@
     ctx.fill();
     ctx.stroke();
 
-    // Wizard Hands
     ctx.fillStyle = '#ffccc7';
     ctx.beginPath();
     ctx.arc(wizX - 65, wizY - 92 + bob, 11, 0, Math.PI * 2);
@@ -1289,7 +1428,6 @@
     ctx.fill();
     ctx.stroke();
 
-    // Robe Torso with gold trim
     ctx.fillStyle = '#722ed1';
     ctx.beginPath();
     ctx.moveTo(wizX - 42, wizY + 85);
@@ -1300,7 +1438,6 @@
     ctx.fill();
     ctx.stroke();
 
-    // Gold robe collar & stripe
     ctx.strokeStyle = '#fadb14';
     ctx.lineWidth = 5;
     ctx.beginPath();
@@ -1308,13 +1445,11 @@
     ctx.lineTo(wizX, wizY + 85);
     ctx.stroke();
 
-    // Face
     ctx.fillStyle = '#ffccc7';
     ctx.beginPath();
     ctx.arc(wizX, wizY - 75 + bob, 22, 0, Math.PI * 2);
     ctx.fill();
 
-    // Big Googly Eyes
     ctx.fillStyle = '#fff';
     ctx.beginPath();
     ctx.ellipse(wizX - 7, wizY - 80 + bob, 7, 9, 0, 0, Math.PI * 2);
@@ -1326,7 +1461,6 @@
     ctx.arc(wizX + 8, wizY - 80 + bob, 3, 0, Math.PI * 2);
     ctx.fill();
 
-    // Long White Beard & Mustache
     ctx.fillStyle = '#f0f5ff';
     ctx.strokeStyle = '#adc6ff';
     ctx.lineWidth = 1.5;
@@ -1338,7 +1472,6 @@
     ctx.fill();
     ctx.stroke();
 
-    // Pointed Purple Wizard Hat
     ctx.fillStyle = '#722ed1';
     ctx.strokeStyle = '#22075e';
     ctx.lineWidth = 2.5;
@@ -1355,11 +1488,9 @@
     ctx.fill();
     ctx.stroke();
 
-    // Bubbling Cauldron in front right (wizX + 65)
     const caulX = W * 0.54;
     const caulY = H - 52;
 
-    // Green magic glow behind cauldron
     const glowGrad = ctx.createRadialGradient(caulX, caulY - 35, 10, caulX, caulY - 45, 115);
     glowGrad.addColorStop(0, 'rgba(115, 255, 50, 0.55)');
     glowGrad.addColorStop(1, 'rgba(115, 255, 50, 0)');
@@ -1368,7 +1499,6 @@
     ctx.arc(caulX, caulY - 45, 115, 0, Math.PI * 2);
     ctx.fill();
 
-    // Rising green magic bubbles
     for (const b of cauldronBubbles) {
       b.y -= b.vy * 0.016;
       b.x += Math.sin(now * 0.003 + b.y * 0.05) * 0.3;
@@ -1382,7 +1512,6 @@
       ctx.fill();
     }
 
-    // Iron Cauldron Body
     const potGrad = ctx.createRadialGradient(caulX - 20, caulY - 10, 10, caulX, caulY, 80);
     potGrad.addColorStop(0, '#596573');
     potGrad.addColorStop(0.6, '#2b323b');
@@ -1395,14 +1524,12 @@
     ctx.lineWidth = 3;
     ctx.stroke();
 
-    // Cauldron Rim
     ctx.fillStyle = '#3b444f';
     ctx.beginPath();
     ctx.ellipse(caulX, caulY - 32, 68, 16, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
 
-    // Bright Green Glowing Liquid
     const liqGrad = ctx.createRadialGradient(caulX, caulY - 32, 5, caulX, caulY - 32, 58);
     liqGrad.addColorStop(0, '#d4ff66');
     liqGrad.addColorStop(0.6, '#66e322');
@@ -1416,13 +1543,12 @@
   }
 
   // ==========================================
-  // SCREEN 2: BOOSTERS SCREEN (00:02 - 00:03)
+  // SCREEN 2: BOOSTERS SCREEN
   // ==========================================
   function drawBoostersScreen(now) {
     drawDungeonBackground(now, false);
     uiButtons = [];
 
-    // Top-Left Home Button
     drawOctagonButton(44, 42, 26, (cx, cy, s) => {
       ctx.fillStyle = '#ffce3b';
       ctx.beginPath();
@@ -1441,7 +1567,6 @@
       onClick: () => transitionTo('MENU')
     });
 
-    // Top-Right Sound Button
     drawOctagonButton(W - 44, 42, 26, (cx, cy, s) => {
       ctx.fillStyle = '#ffce3b';
       ctx.beginPath();
@@ -1467,7 +1592,6 @@
       onClick: () => { soundEnabled = !soundEnabled; sfxClick(); }
     });
 
-    // "Boosters" Header
     ctx.save();
     ctx.font = '800 38px Fredoka';
     ctx.textAlign = 'center';
@@ -1480,7 +1604,6 @@
     ctx.fillText('Boosters', W / 2, 105);
     ctx.restore();
 
-    // Ornate Gold-Framed Boosters Panel
     const px = W * 0.07;
     const pw = W * 0.86;
     const py = H * 0.33;
@@ -1491,11 +1614,9 @@
 
     BOOSTER_META.forEach((b, i) => {
       const ry = py + 8 + i * rowH;
-      // Alternating slate row background
       ctx.fillStyle = i % 2 === 0 ? '#2b394a' : '#243140';
       ctx.fillRect(px + 6, ry, pw - 12, rowH);
 
-      // Row divider
       if (i > 0) {
         ctx.strokeStyle = 'rgba(255, 215, 90, 0.25)';
         ctx.lineWidth = 1;
@@ -1505,19 +1626,16 @@
         ctx.stroke();
       }
 
-      // Left Booster Icon
       const icX = px + 40;
       const icY = ry + rowH / 2;
       drawBoosterIcon(icX, icY, b.key);
 
-      // Title + Owned Badge
       ctx.textAlign = 'left';
       ctx.font = '800 16px Fredoka';
       ctx.fillStyle = '#ffd644';
       const titleW = ctx.measureText(b.title).width;
       ctx.fillText(b.title, px + 76, ry + 23);
 
-      // Count pill "x 1"
       const badgeX = px + 76 + titleW + 8;
       ctx.fillStyle = '#151d26';
       ctx.beginPath();
@@ -1531,7 +1649,6 @@
       ctx.textAlign = 'center';
       ctx.fillText(`x ${boosters[b.key]}`, badgeX + 17, ry + 22);
 
-      // Description lines
       ctx.textAlign = 'left';
       ctx.fillStyle = '#8fa6bf';
       ctx.font = '600 12px Fredoka';
@@ -1540,7 +1657,6 @@
         ctx.fillText(line, px + 76, ry + 41 + li * 13);
       });
 
-      // Click left side of row to ACTIVATE booster if owned
       if (boosters[b.key] > 0 && b.key !== 'undo') {
         uiButtons.push({
           x: px + 8, y: ry, w: pw - 105, h: rowH,
@@ -1548,7 +1664,6 @@
         });
       }
 
-      // Right Side: Coin Cost + Green [+1] Buy Button
       const rightX = px + pw - 54;
       drawSkullCoin(rightX - 24, ry + 18, 9);
       ctx.fillStyle = '#ffd644';
@@ -1556,7 +1671,6 @@
       ctx.textAlign = 'left';
       ctx.fillText(String(b.cost), rightX - 11, ry + 23);
 
-      // Green "+1" Button
       const btnX = rightX - 34;
       const btnY = ry + 31;
       const btnW = 68;
@@ -1588,10 +1702,7 @@
       });
     });
 
-    // Bottom Coin Counter Pill & Play Button (exact match to 00:02 in video)
     const botY = H - 86;
-
-    // Coin Pill
     const coinW = 136;
     const coinH = 44;
     drawOrnateGoldFrame(px, botY, coinW, coinH, false);
@@ -1602,7 +1713,6 @@
     ctx.textBaseline = 'middle';
     ctx.fillText(String(Math.round(displayCoins)), px + 44, botY + coinH / 2 + 1);
 
-    // Bottom-Right Play Button
     const playW = 110;
     const playH = 48;
     const playBx = px + pw - playW;
@@ -1634,7 +1744,6 @@
     ctx.lineWidth = 4;
     ctx.lineCap = 'round';
     if (key === 'remove') {
-      // Crossed diagonal X
       ctx.beginPath();
       ctx.moveTo(cx - 12, cy - 12);
       ctx.lineTo(cx + 12, cy + 12);
@@ -1642,7 +1751,6 @@
       ctx.lineTo(cx - 12, cy + 12);
       ctx.stroke();
     } else if (key === 'magnet') {
-      // 8-ray burst
       for (let i = 0; i < 8; i++) {
         const a = (i * Math.PI) / 4;
         ctx.beginPath();
@@ -1651,7 +1759,6 @@
         ctx.stroke();
       }
     } else if (key === 'sorter') {
-      // 3 stacked triangles
       const tris = [[0, -8], [-9, 8], [9, 8]];
       for (const [ox, oy] of tris) {
         ctx.beginPath();
@@ -1662,7 +1769,6 @@
         ctx.fill();
       }
     } else if (key === 'undo') {
-      // Circular undo arrow
       ctx.beginPath();
       ctx.arc(cx, cy, 11, 0.3, Math.PI * 1.65);
       ctx.stroke();
@@ -1690,7 +1796,6 @@
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
-    // Tiny skull eyes inside coin
     ctx.fillStyle = '#573400';
     ctx.beginPath();
     ctx.arc(cx - r * 0.3, cy - r * 0.1, r * 0.18, 0, Math.PI * 2);
@@ -1699,89 +1804,19 @@
     ctx.restore();
   }
 
-  function drawOrnateGoldFrame(x, y, w, h, withTopSkull = true) {
-    ctx.save();
-    // Outer shadow
-    ctx.shadowColor = 'rgba(0,0,0,0.75)';
-    ctx.shadowBlur = 16;
-    ctx.shadowOffsetY = 6;
-
-    // Dark slate base
-    ctx.fillStyle = '#243140';
-    ctx.beginPath();
-    ctx.roundRect(x, y, w, h, 8);
-    ctx.fill();
-
-    ctx.shadowBlur = 0;
-    ctx.shadowOffsetY = 0;
-
-    // Metallic Gold Border
-    const borderGrad = ctx.createLinearGradient(x, y, x + w, y + h);
-    borderGrad.addColorStop(0, '#ffe875');
-    borderGrad.addColorStop(0.35, '#d4941c');
-    borderGrad.addColorStop(0.7, '#ffe066');
-    borderGrad.addColorStop(1, '#8c5606');
-    ctx.strokeStyle = borderGrad;
-    ctx.lineWidth = 6;
-    ctx.beginPath();
-    ctx.roundRect(x, y, w, h, 8);
-    ctx.stroke();
-
-    ctx.strokeStyle = '#472b02';
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(x + 3, y + 3, w - 6, h - 6);
-
-    // Golden corner clasps
-    const corners = [
-      [x, y], [x + w, y], [x, y + h], [x + w, y + h]
-    ];
-    ctx.fillStyle = '#ffd54f';
-    ctx.strokeStyle = '#5c3702';
-    for (const [cx, cy] of corners) {
-      ctx.beginPath();
-      ctx.arc(cx, cy, 6, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-    }
-
-    // Top-center Golden Skull Emblem (exact match to board top in video)
-    if (withTopSkull) {
-      const sx = x + w / 2;
-      const sy = y;
-      ctx.fillStyle = '#f5be36';
-      ctx.strokeStyle = '#472b02';
-      ctx.lineWidth = 1.8;
-      ctx.beginPath();
-      ctx.arc(sx, sy - 2, 10, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillRect(sx - 5, sy + 4, 10, 6);
-
-      ctx.fillStyle = '#261802';
-      ctx.beginPath();
-      ctx.arc(sx - 3.5, sy - 2, 2.2, 0, Math.PI * 2);
-      ctx.arc(sx + 3.5, sy - 2, 2.2, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    ctx.restore();
-  }
-
   // ==========================================
-  // SCREEN 3: IN-GAME BOARD & HUD (00:04 - 01:26)
+  // SCREEN 3: IN-GAME BOARD & HUD
   // ==========================================
   function drawGameScreen(now, dt) {
     drawDungeonBackground(now, true);
     uiButtons = [];
 
-    // Smooth coin counter roll-up
     if (displayCoins < coins) {
       displayCoins = Math.min(coins, displayCoins + Math.max(1, (coins - displayCoins) * 10 * dt));
     } else if (displayCoins > coins) {
       displayCoins = coins;
     }
 
-    // Top-Left Score / Coin Box
     const scoreBoxX = 16;
     const scoreBoxY = 18;
     const scoreBoxW = 148;
@@ -1795,13 +1830,11 @@
     ctx.textBaseline = 'middle';
     ctx.fillText(String(Math.round(displayCoins)), scoreBoxX + scoreBoxW - 14, scoreBoxY + scoreBoxH / 2 + 1);
 
-    // Top-Right 3 Octagonal Buttons: Star (Boosters), Undo (with badge), Pause
     const btnY = 39;
     const starX = W - 166;
     const undoX = W - 104;
     const pauseX = W - 42;
 
-    // 1. Star Booster Button
     drawOctagonButton(starX, btnY, 25, (cx, cy, s) => {
       ctx.fillStyle = '#141c24';
       ctx.beginPath();
@@ -1819,7 +1852,6 @@
       onClick: () => transitionTo('BOOSTERS')
     });
 
-    // 2. Undo Button with Red Badge
     drawOctagonButton(undoX, btnY, 25, (cx, cy, s) => {
       ctx.strokeStyle = '#ffce3b';
       ctx.lineWidth = 3.2;
@@ -1840,7 +1872,6 @@
       onClick: () => performUndo()
     });
 
-    // 3. Pause Button
     drawOctagonButton(pauseX, btnY, 25, (cx, cy, s) => {
       ctx.fillStyle = '#ffce3b';
       ctx.fillRect(cx - s * 0.55, cy - s * 0.65, s * 0.38, s * 1.3);
@@ -1851,50 +1882,23 @@
       onClick: () => { sfxClick(); state = 'PAUSE'; }
     });
 
-    // Draw 4x5 Game Board Frame
-    drawOrnateGoldFrame(boardRect.x, boardRect.y, boardRect.w, boardRect.h, true);
-
-    // Draw Grid Cells & Gold Diamond Intersection Studs
+    // Blit Pre-Rendered Board Frame + Grid + Diamond Studs in 1 drawImage call
     const { x: bx, y: by, cell } = boardRect;
-    for (let c = 0; c < COLS; c++) {
-      for (let r = 0; r < ROWS; r++) {
-        const cx = bx + c * cell;
-        const cy = by + r * cell;
-        ctx.fillStyle = (c + r) % 2 === 0 ? '#2c3b4d' : '#263445';
-        ctx.fillRect(cx + 3, cy + 3, cell - 6, cell - 6);
+    if (boardStaticCache) {
+      ctx.drawImage(boardStaticCache, bx - 28, by - 28, boardRect.w + 56, boardRect.h + 56);
+    }
 
-        // Highlight selected tiles in current drag chain
-        if (chain.some(item => item.c === c && item.r === r)) {
-          ctx.fillStyle = 'rgba(255, 238, 120, 0.18)';
-          ctx.fillRect(cx + 3, cy + 3, cell - 6, cell - 6);
-        }
+    // Highlight selected tiles in current drag chain
+    if (chain.length > 0) {
+      ctx.fillStyle = 'rgba(255, 238, 120, 0.18)';
+      for (let i = 0; i < chain.length; i++) {
+        ctx.fillRect(bx + chain[i].c * cell + 3, by + chain[i].r * cell + 3, cell - 6, cell - 6);
       }
     }
 
-    // Gold Diamond Studs at internal cell intersections (exact match to video)
-    for (let c = 1; c < COLS; c++) {
-      for (let r = 1; r < ROWS; r++) {
-        const ix = bx + c * cell;
-        const iy = by + r * cell;
-        ctx.save();
-        ctx.translate(ix, iy);
-        ctx.rotate(Math.PI / 4);
-        ctx.fillStyle = '#243140';
-        ctx.strokeStyle = '#e0a526';
-        ctx.lineWidth = 2;
-        ctx.fillRect(-5, -5, 10, 10);
-        ctx.strokeRect(-5, -5, 10, 10);
-        ctx.restore();
-      }
-    }
-
-    // Draw Lightning Links between chained cells
+    // Draw Batched Lightning Links between chained cells
     if (chain.length >= 2) {
-      for (let i = 0; i < chain.length - 1; i++) {
-        const p1 = getCellCenter(chain[i].c, chain[i].r);
-        const p2 = getCellCenter(chain[i + 1].c, chain[i + 1].r);
-        drawLightningLink(p1, p2, now);
-      }
+      drawAllLightningLinks(chain, now);
     }
 
     // Draw Spinning Golden Starbursts behind newly merged items
@@ -1911,11 +1915,7 @@
       ctx.translate(sb.x, sb.y);
       ctx.rotate(sb.angle);
       ctx.globalAlpha = alpha;
-      const g = ctx.createRadialGradient(0, 0, 4, 0, 0, sb.radius);
-      g.addColorStop(0, '#ffffff');
-      g.addColorStop(0.5, '#ffe875');
-      g.addColorStop(1, 'rgba(255, 200, 40, 0)');
-      ctx.fillStyle = g;
+      ctx.fillStyle = '#ffe875';
       ctx.beginPath();
       const rays = 12;
       for (let k = 0; k < rays * 2; k++) {
@@ -1929,7 +1929,7 @@
       ctx.restore();
     }
 
-    // Update & Draw Board Items (Clipped inside board frame during drop-in)
+    // Update & Draw Board Items
     ctx.save();
     ctx.beginPath();
     ctx.rect(boardRect.x + 3, boardRect.y + 3, boardRect.w - 6, boardRect.h - 6);
@@ -1942,32 +1942,32 @@
         if (!tile) continue;
 
         if (tile.yOffset < 0) {
-          tile.vy += 2600 * dt;
+          tile.vy += 2800 * dt;
           tile.yOffset += tile.vy * dt;
           if (tile.yOffset >= 0) {
             tile.yOffset = 0;
             tile.vy = 0;
-            tile.scale = 1.12; // subtle landing squash/bounce
+            tile.scale = 1.1;
           } else {
             anyFalling = true;
           }
         }
 
         if (tile.scale > 1) {
-          tile.scale = Math.max(1, tile.scale - dt * 2.2);
+          tile.scale = Math.max(1, tile.scale - dt * 2.5);
         } else if (tile.scale < 1) {
-          tile.scale = Math.min(1, tile.scale + dt * 2.2);
+          tile.scale = Math.min(1, tile.scale + dt * 2.5);
         }
 
         const pos = getCellCenter(c, r);
-        const isSelected = chain.some(item => item.c === c && item.r === r);
+        const isSelected = chainSet.has((c << 4) | r);
         drawElementItem(pos.x, pos.y + tile.yOffset, cell * tile.scale, tile.level, isSelected, now);
       }
     }
     isAnimatingBoard = anyFalling;
     ctx.restore();
 
-    // Draw Floating Next-Level Preview Icon next to the last tile in the chain (like 00:07, 00:10, 00:25)
+    // Draw Floating Next-Level Preview Icon next to the last tile in the chain
     if (chain.length >= 2) {
       const last = chain[chain.length - 1];
       const baseLvl = grid[last.c][last.r].level;
@@ -1977,7 +1977,7 @@
       const py = pos.y - cell * 0.36;
 
       ctx.save();
-      ctx.fillStyle = 'rgba(20, 28, 38, 0.85)';
+      ctx.fillStyle = 'rgba(20, 28, 38, 0.9)';
       ctx.strokeStyle = '#ffe875';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
@@ -2009,7 +2009,6 @@
         ctx.fill();
         ctx.stroke();
 
-        // Pointer triangle
         ctx.beginPath();
         ctx.moveTo(pos.x - 8, ty + th);
         ctx.lineTo(pos.x + 8, ty + th);
@@ -2029,31 +2028,31 @@
       }
     }
 
-    // Update & Draw Sparkle Particles
-    for (let i = particles.length - 1; i >= 0; i--) {
-      const p = particles[i];
-      p.life -= dt;
-      if (p.life <= 0) {
-        particles.splice(i, 1);
-        continue;
-      }
-      p.x += p.vx * dt;
-      p.y += p.vy * dt;
+    // Fast Sparkle Particles (Zero shadowBlur)
+    if (particles.length > 0) {
       ctx.save();
-      ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
-      ctx.fillStyle = p.color;
-      ctx.shadowColor = p.color;
-      ctx.shadowBlur = 8;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fill();
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.life -= dt;
+        if (p.life <= 0) {
+          particles.splice(i, 1);
+          continue;
+        }
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
       ctx.restore();
     }
 
-    // Update & Draw Floating "+N" Score Popups flying to Top-Left Score Bar
+    // Floating "+N" Score Popups
     for (let i = floatingTexts.length - 1; i >= 0; i--) {
       const ft = floatingTexts[i];
-      ft.progress += dt * 1.45;
+      ft.progress += dt * 1.5;
       if (ft.progress >= 1) {
         coins += ft.amount;
         sfxCoin();
@@ -2062,12 +2061,10 @@
       }
       let curX, curY;
       if (ft.progress < 0.35) {
-        // Rise slightly above merged tile
         const t = ft.progress / 0.35;
         curX = ft.startX;
         curY = ft.startY - t * 22;
       } else {
-        // Fly to top-left coin bar
         const t = (ft.progress - 0.35) / 0.65;
         const ease = t * t * (3 - 2 * t);
         curX = ft.startX + (ft.targetX - ft.startX) * ease;
@@ -2127,7 +2124,7 @@
   }
 
   // ==========================================
-  // INPUT HANDLING (POINTER DOWN / MOVE / UP)
+  // INPUT HANDLING
   // ==========================================
   function getCanvasCoords(e) {
     const rect = canvas.getBoundingClientRect();
@@ -2140,9 +2137,7 @@
   canvas.addEventListener('pointerdown', (e) => {
     e.preventDefault();
     const pt = getCanvasCoords(e);
-    pointerPos = pt;
 
-    // Check UI Buttons first
     for (const b of uiButtons) {
       if (pt.x >= b.x && pt.x <= b.x + b.w && pt.y >= b.y && pt.y <= b.y + b.h) {
         b.onClick();
@@ -2156,11 +2151,10 @@
     const cellHit = getCellFromPoint(pt.x, pt.y);
     if (!cellHit) return;
 
-    // Check if "-1 Element" Booster is active
     if (activeBoosterMode === 'remove') {
       saveUndoState();
       const pos = getCellCenter(cellHit.c, cellHit.r);
-      spawnParticles(pos.x, pos.y, '#ff6b6b', 20);
+      spawnParticles(pos.x, pos.y, '#ff6b6b', 12);
       grid[cellHit.c][cellHit.r] = null;
       activeBoosterMode = null;
       boosterPrompt.style.display = 'none';
@@ -2169,16 +2163,15 @@
       return;
     }
 
-    // Start new drag chain
     isDragging = true;
     chain = [cellHit];
+    syncChainSet();
     sfxSelect(1);
   });
 
   canvas.addEventListener('pointermove', (e) => {
     if (!isDragging || state !== 'GAME') return;
     const pt = getCanvasCoords(e);
-    pointerPos = pt;
 
     const cellHit = getCellFromPoint(pt.x, pt.y);
     if (!cellHit) return;
@@ -2186,24 +2179,23 @@
     const last = chain[chain.length - 1];
     if (cellHit.c === last.c && cellHit.r === last.r) return;
 
-    // Check if backtracking onto the previous tile in the chain (like 00:26 - 00:31 in video)
     if (chain.length >= 2) {
       const prev = chain[chain.length - 2];
       if (cellHit.c === prev.c && cellHit.r === prev.r) {
         chain.pop();
+        syncChainSet();
         sfxSelect(chain.length);
         return;
       }
     }
 
-    // Check if tile is already in chain
-    if (chain.some(item => item.c === cellHit.c && item.r === cellHit.r)) return;
+    if (chainSet.has((cellHit.c << 4) | cellHit.r)) return;
 
-    // Must be adjacent (8 directions) and have the same element level
     const firstLevel = grid[chain[0].c][chain[0].r].level;
     const targetTile = grid[cellHit.c][cellHit.r];
     if (targetTile && targetTile.level === firstLevel && areAdjacent(last, cellHit)) {
       chain.push(cellHit);
+      syncChainSet();
       sfxSelect(chain.length);
     }
   });
@@ -2214,15 +2206,10 @@
     resolveChain();
   });
 
-  // ==========================================
-  // MAIN GAME LOOP
-  // ==========================================
   let lastTime = performance.now();
   function loop(now) {
     const dt = Math.min(0.033, (now - lastTime) / 1000 || 0.016);
     lastTime = now;
-
-    ctx.clearRect(0, 0, W, H);
 
     if (state === 'MENU') {
       drawMenuScreen(now);
