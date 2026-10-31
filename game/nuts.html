@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="color-scheme" content="dark">
     <title>Nuts & Bolts Puzzle</title>
     <style>
         * {
@@ -15,27 +16,30 @@
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
 
-        body {
-            background: radial-gradient(circle at 50% 25%, #3b1c54 0%, #241136 70%, #180a26 100%);
-            color: #ffffff;
+        html, body {
+            background-color: #1f0e33 !important;
+            background-image: radial-gradient(circle at 50% 25%, #3b1c54 0%, #241136 70%, #180a26 100%) !important;
+            color: #ffffff !important;
             height: 100vh;
+            height: 100dvh;
             width: 100vw;
             overflow: hidden;
             position: fixed;
+            inset: 0;
         }
 
         .screen {
             position: absolute;
-            top: 0;
-            left: 0;
+            inset: 0;
             width: 100%;
             height: 100%;
+            background: radial-gradient(circle at 50% 25%, #3b1c54 0%, #241136 70%, #180a26 100%);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: space-between;
-            padding: 20px;
-            transition: opacity 0.25s ease;
+            padding: 14px 16px calc(16px + env(safe-area-inset-bottom, 8px)) 16px;
+            overflow-y: auto;
         }
 
         .hidden {
@@ -45,32 +49,30 @@
         /* ================= MAIN MENU ================= */
         .menu-top-card {
             width: 100%;
-            max-width: 420px;
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 24px;
-            padding: 22px 18px;
+            max-width: 400px;
+            background: #2d1646;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            border-radius: 22px;
+            padding: 16px 14px;
             text-align: center;
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
-            margin-top: 10px;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+            flex-shrink: 0;
         }
 
         .game-title {
-            font-size: 2.3rem;
+            font-size: 2rem;
             font-weight: 900;
             letter-spacing: 1.5px;
-            background: linear-gradient(to bottom, #ffe066, #f59f00);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 3px 0px rgba(0,0,0,0.6));
-            margin-bottom: 8px;
+            color: #fcc419;
+            text-shadow: 0 3px 0 #000000;
+            margin-bottom: 6px;
         }
 
         .menu-subtitle {
-            font-size: 0.9rem;
-            color: #d0bfe0;
-            line-height: 1.4;
-            margin-bottom: 14px;
+            font-size: 0.85rem;
+            color: #e5dbff;
+            line-height: 1.35;
+            margin-bottom: 12px;
         }
 
         .score-pill {
@@ -78,48 +80,48 @@
             align-items: center;
             gap: 8px;
             background: linear-gradient(135deg, #6741d9, #4c2889);
-            padding: 8px 20px;
+            padding: 7px 18px;
             border-radius: 999px;
             font-weight: 800;
-            font-size: 1rem;
-            border: 2px solid rgba(255, 255, 255, 0.25);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+            font-size: 0.95rem;
+            color: #ffffff;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.35);
         }
 
         .mode-selector-card {
             width: 100%;
-            max-width: 420px;
+            max-width: 400px;
             background: #fdf6ec;
             color: #2b173d;
-            border-radius: 28px;
-            padding: 24px 20px;
+            border-radius: 24px;
+            padding: 18px 16px;
             text-align: center;
-            box-shadow: 0 16px 35px rgba(0,0,0,0.5);
+            box-shadow: 0 12px 28px rgba(0,0,0,0.5);
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 14px;
+            gap: 10px;
+            flex-shrink: 0;
         }
 
         .mascot-circle {
-            width: 88px;
-            height: 88px;
+            width: 72px;
+            height: 72px;
             border-radius: 50%;
             background: #1a1a1a;
-            border: 6px solid #ffffff;
-            box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+            border: 5px solid #ffffff;
+            box-shadow: 0 5px 14px rgba(0,0,0,0.25);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 3.2rem;
-            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            font-size: 2.6rem;
         }
 
         .mode-title {
-            font-size: 2rem;
+            font-size: 1.65rem;
             font-weight: 900;
             letter-spacing: 2px;
-            transition: color 0.2s;
         }
 
         .mode-tabs {
@@ -127,20 +129,20 @@
             width: 100%;
             background: #e9decb;
             border-radius: 999px;
-            padding: 5px;
-            gap: 5px;
+            padding: 4px;
+            gap: 4px;
         }
 
         .mode-tab {
             flex: 1;
-            padding: 10px 0;
+            padding: 9px 0;
             border: none;
             border-radius: 999px;
             font-weight: 800;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             cursor: pointer;
             background: transparent;
-            color: #6c584c;
+            color: #5c4b3c;
             transition: all 0.2s;
         }
 
@@ -149,16 +151,15 @@
         .mode-tab.active-hard { background: #fa5252; color: #fff; box-shadow: 0 3px 8px rgba(250,82,82,0.4); }
 
         .play-main-btn {
-            width: 85%;
-            padding: 14px 20px;
+            width: 88%;
+            padding: 12px 18px;
             border: none;
             border-radius: 16px;
             color: white;
-            font-size: 1.5rem;
+            font-size: 1.35rem;
             font-weight: 900;
             cursor: pointer;
-            box-shadow: 0 6px 0 rgba(0,0,0,0.25);
-            transition: transform 0.1s, background 0.2s;
+            box-shadow: 0 5px 0 rgba(0,0,0,0.25);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -166,44 +167,45 @@
         }
 
         .play-main-btn:active {
-            transform: translateY(4px);
+            transform: translateY(3px);
             box-shadow: 0 2px 0 rgba(0,0,0,0.25);
         }
 
         .play-main-btn span {
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             font-weight: 700;
-            opacity: 0.92;
+            opacity: 0.95;
             margin-top: 3px;
         }
 
         .menu-bottom-nav {
             display: flex;
             width: 100%;
-            max-width: 420px;
+            max-width: 400px;
             gap: 12px;
-            margin-bottom: 10px;
+            flex-shrink: 0;
         }
 
         .nav-btn {
-            flex: 1;
-            padding: 14px;
+            height: 52px;
+            padding: 0 16px;
             border: none;
             border-radius: 14px;
             font-size: 1rem;
             font-weight: 800;
-            color: white;
+            color: #ffffff !important;
             cursor: pointer;
-            box-shadow: 0 5px 0 rgba(0,0,0,0.3);
+            box-shadow: 0 4px 0 rgba(0,0,0,0.35);
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 6px;
+            flex-shrink: 0;
         }
 
-        .nav-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,0.3); }
-        .btn-leaderboard { background: linear-gradient(135deg, #9c36b5, #70248a); }
-        .btn-portal { background: linear-gradient(135deg, #495057, #343a40); flex: 0.55; }
+        .nav-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,0.35); }
+        .btn-leaderboard { background: linear-gradient(135deg, #9c36b5, #70248a); flex: 1.4; }
+        .btn-portal { background: linear-gradient(135deg, #495057, #343a40); flex: 1; }
 
         /* ================= GAME SCREEN ================= */
         .game-header {
@@ -212,17 +214,17 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding-top: 6px;
+            flex-shrink: 0;
         }
 
         .circle-icon-btn {
-            width: 46px;
-            height: 46px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             border: none;
             background: #ffffff;
             color: #2b173d;
-            font-size: 1.35rem;
+            font-size: 1.3rem;
             font-weight: 900;
             cursor: pointer;
             box-shadow: 0 4px 10px rgba(0,0,0,0.35);
@@ -233,20 +235,18 @@
 
         .circle-icon-btn:active { transform: scale(0.92); }
 
-        .header-center {
-            text-align: center;
-        }
+        .header-center { text-align: center; }
 
         .header-diff {
-            font-size: 0.78rem;
+            font-size: 0.75rem;
             font-weight: 800;
             letter-spacing: 2px;
-            color: #c5b3d6;
+            color: #fcc419;
             text-transform: uppercase;
         }
 
         .header-lvl {
-            font-size: 1.55rem;
+            font-size: 1.45rem;
             font-weight: 900;
             color: #ffffff;
         }
@@ -260,13 +260,13 @@
             flex-wrap: wrap;
             justify-content: center;
             align-content: center;
-            gap: 28px 18px;
-            padding: 10px 4px;
+            gap: 24px 16px;
+            padding: 6px 4px;
         }
 
         .bolt-wrapper {
-            width: 74px;
-            height: 175px;
+            width: 72px;
+            height: 168px;
             position: relative;
             display: flex;
             flex-direction: column;
@@ -275,12 +275,11 @@
             cursor: pointer;
         }
 
-        /* Top rounded cap of the bolt */
         .bolt-stem {
             position: absolute;
             bottom: 16px;
             width: 22px;
-            height: 138px;
+            height: 132px;
             background:
                 repeating-linear-gradient(
                     to bottom,
@@ -294,10 +293,9 @@
             z-index: 1;
         }
 
-        /* Metallic Flange Base */
         .bolt-base {
-            width: 68px;
-            height: 18px;
+            width: 66px;
+            height: 17px;
             background: linear-gradient(to right, #6c757d, #ced4da 30%, #adb5bd 65%, #495057);
             border-radius: 50%;
             box-shadow: 0 6px 10px rgba(0,0,0,0.6), inset 0 2px 3px rgba(255,255,255,0.6);
@@ -305,34 +303,30 @@
             position: relative;
         }
 
-        /* Locked Short Stub Bolt (Add Bolt Slot) */
         .bolt-wrapper.stub-bolt .bolt-stem {
-            height: 36px;
+            height: 34px;
             background: repeating-linear-gradient(
                 to bottom,
-                #5c546a 0px,
-                #5c546a 3px,
-                #3d354b 3px,
-                #3d354b 6px
+                #6c637a 0px,
+                #6c637a 3px,
+                #4b4358 3px,
+                #4b4358 6px
             );
-            box-shadow: inset 2px 0 4px rgba(255,255,255,0.2);
         }
 
         .bolt-wrapper.stub-bolt .bolt-base {
-            background: linear-gradient(to right, #3d354b, #5c546a 45%, #2b2338);
-            box-shadow: 0 5px 8px rgba(0,0,0,0.45);
+            background: linear-gradient(to right, #4b4358, #6c637a 45%, #373042);
         }
 
         .stub-plus-icon {
             position: absolute;
-            bottom: 58px;
+            bottom: 54px;
             font-size: 1.4rem;
-            color: rgba(255,255,255,0.45);
+            color: #fcc419;
             font-weight: 900;
             pointer-events: none;
         }
 
-        /* Container holding nuts stacked bottom-up */
         .nuts-stack {
             position: absolute;
             bottom: 15px;
@@ -344,10 +338,9 @@
             pointer-events: none;
         }
 
-        /* 3D Glossy Nut matching screenshot */
         .nut {
-            width: 62px;
-            height: 30px;
+            width: 60px;
+            height: 29px;
             border-radius: 9px;
             margin-bottom: -2px;
             position: relative;
@@ -362,7 +355,6 @@
             transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s;
         }
 
-        /* Vertical bevel lines on nut face */
         .nut::before,
         .nut::after {
             content: '';
@@ -373,18 +365,16 @@
             border-radius: 1px;
         }
 
-        /* Center emblem/indent on nut face */
         .nut-emblem {
-            width: 11px;
-            height: 11px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            background: rgba(0, 0, 0, 0.22);
+            background: rgba(0, 0, 0, 0.24);
             box-shadow: inset 0 2px 2px rgba(0,0,0,0.45), 0 1px 1px rgba(255,255,255,0.35);
         }
 
-        /* Selected nut floats up & tilts like screenshot */
         .nut.selected {
-            transform: translateY(-34px) rotate(-10deg) scale(1.04);
+            transform: translateY(-32px) rotate(-10deg) scale(1.04);
             box-shadow:
                 0 14px 18px rgba(0,0,0,0.55),
                 inset 0 4px 4px rgba(255,255,255,0.6),
@@ -392,13 +382,6 @@
             z-index: 15;
         }
 
-        /* Hint Highlight Pulse */
-        .bolt-wrapper.hint-source .bolt-base,
-        .bolt-wrapper.hint-target .bolt-base {
-            box-shadow: 0 0 18px 6px #ffd43b;
-        }
-
-        /* Completed Bolt Glow Effect */
         .bolt-wrapper.completed-glow .nut {
             filter: brightness(1.18);
         }
@@ -416,7 +399,6 @@
             100% { transform: scale(1.4) translateY(-10px); opacity: 0; }
         }
 
-        /* Color Palettes */
         .color-red    { background: linear-gradient(180deg, #ff6b6b 0%, #f03e3e 55%, #c92a2a 100%); }
         .color-blue   { background: linear-gradient(180deg, #4dabf7 0%, #1c7ed6 55%, #1864ab 100%); }
         .color-green  { background: linear-gradient(180deg, #51cf66 0%, #2f9e44 55%, #2b8a3e 100%); }
@@ -433,55 +415,49 @@
             display: flex;
             justify-content: space-around;
             align-items: center;
-            padding-bottom: 8px;
+            flex-shrink: 0;
         }
 
         .footer-action {
             background: transparent;
             border: none;
-            color: #b197fc;
+            color: #e5dbff;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 6px;
+            gap: 4px;
             cursor: pointer;
             position: relative;
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             font-weight: 700;
         }
 
         .footer-icon-circle {
-            width: 54px;
-            height: 54px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.08);
-            border: 2px solid rgba(255, 255, 255, 0.16);
+            background: #361952;
+            border: 2px solid rgba(255, 255, 255, 0.25);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.6rem;
+            font-size: 1.45rem;
             color: #ffd43b;
-            box-shadow: 0 6px 14px rgba(0,0,0,0.35);
-            transition: transform 0.1s;
+            box-shadow: 0 5px 12px rgba(0,0,0,0.4);
         }
 
-        .footer-action:active .footer-icon-circle {
-            transform: scale(0.9);
-        }
-
-        .footer-action.disabled {
-            opacity: 0.4;
-        }
+        .footer-action:active .footer-icon-circle { transform: scale(0.9); }
+        .footer-action.disabled { opacity: 0.45; }
 
         .badge {
             position: absolute;
-            top: -4px;
-            right: 2px;
+            top: -3px;
+            right: 0px;
             background: #ffffff;
             color: #2b173d;
-            font-size: 0.72rem;
+            font-size: 0.7rem;
             font-weight: 900;
-            padding: 2px 7px;
+            padding: 2px 6px;
             border-radius: 999px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.4);
         }
@@ -494,11 +470,8 @@
         /* ================= CELEBRATION OVERLAY ================= */
         #win-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(20, 8, 34, 0.78);
+            inset: 0;
+            background: rgba(20, 8, 34, 0.82);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -507,12 +480,11 @@
         }
 
         .amazing-text {
-            font-size: 3.1rem;
+            font-size: 3rem;
             font-weight: 900;
             color: #ffd43b;
             text-shadow: 0 5px 0 #d9480f, 0 10px 25px rgba(0,0,0,0.8);
             letter-spacing: 2px;
-            animation: popIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
         .win-sub {
@@ -522,18 +494,10 @@
             color: #63e6be;
         }
 
-        @keyframes popIn {
-            0% { transform: scale(0.3); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-
         /* ================= VIDEO AD MODAL ================= */
         #ad-modal {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            inset: 0;
             background: rgba(0,0,0,0.92);
             z-index: 200;
             display: flex;
@@ -549,22 +513,17 @@
             background: #fdf6ec;
             color: #2b173d;
             border-radius: 22px;
-            padding: 20px;
+            padding: 18px;
             text-align: center;
             box-shadow: 0 12px 30px rgba(0,0,0,0.6);
         }
 
-        .ad-box h3 {
-            font-size: 1.3rem;
-            margin-bottom: 10px;
-        }
-
         #ad-video {
             width: 100%;
-            max-height: 55vh;
+            max-height: 50vh;
             border-radius: 12px;
             background: #000;
-            margin-bottom: 12px;
+            margin: 10px 0;
         }
 
         .ad-btn-row {
@@ -574,11 +533,11 @@
         }
 
         .ad-btn {
-            padding: 12px 20px;
+            padding: 11px 18px;
             border: none;
             border-radius: 12px;
             font-weight: 800;
-            font-size: 1rem;
+            font-size: 0.95rem;
             cursor: pointer;
         }
 
@@ -588,66 +547,83 @@
         /* ================= LEADERBOARD SCREEN ================= */
         .leaderboard-card {
             width: 100%;
-            max-width: 440px;
+            max-width: 420px;
             height: 100%;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 10px 0;
+            gap: 10px;
         }
 
-        .player-Input-row {
+        .player-input-row {
             display: flex;
             gap: 8px;
-            margin: 12px 0;
+            margin-top: 10px;
         }
 
-        .player-Input-row input {
+        .player-input-row input {
             flex: 1;
-            padding: 12px 14px;
+            padding: 11px 14px;
             border-radius: 12px;
-            border: 2px solid rgba(255,255,255,0.2);
-            background: rgba(255,255,255,0.1);
-            color: white;
+            border: 2px solid #845ef7;
+            background: #2b173d !important;
+            color: #ffffff !important;
             font-weight: 700;
             font-size: 0.95rem;
+            outline: none;
         }
 
-        .player-Input-row button {
-            padding: 12px 16px;
+        .player-input-row button {
+            padding: 11px 18px;
             border-radius: 12px;
             border: none;
             background: #f59f00;
-            color: #241136;
+            color: #1f0e33;
             font-weight: 900;
             cursor: pointer;
+            box-shadow: 0 3px 0 #b47100;
         }
 
         #leaderboard-list {
             list-style: none;
             flex: 1;
             overflow-y: auto;
-            background: rgba(0, 0, 0, 0.25);
-            border-radius: 18px;
+            background: #26123b;
+            border-radius: 16px;
             padding: 12px;
-            margin-bottom: 14px;
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.12);
         }
 
         #leaderboard-list li {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 13px 16px;
+            padding: 12px 14px;
             margin-bottom: 8px;
-            background: rgba(255, 255, 255, 0.08);
+            background: #361b52;
+            color: #ffffff;
             border-radius: 12px;
             font-weight: 700;
         }
 
-        #leaderboard-list li:nth-child(1) { background: linear-gradient(90deg, rgba(255,212,59,0.35), rgba(255,255,255,0.08)); border: 1px solid #ffd43b; }
-        #leaderboard-list li:nth-child(2) { background: linear-gradient(90deg, rgba(206,212,218,0.3), rgba(255,255,255,0.08)); }
-        #leaderboard-list li:nth-child(3) { background: linear-gradient(90deg, rgba(230,119,0,0.3), rgba(255,255,255,0.08)); }
+        #leaderboard-list li:nth-child(1) {
+            background: linear-gradient(90deg, #5c3c10, #361b52);
+            border: 1px solid #ffd43b;
+        }
+
+        .back-menu-btn {
+            width: 100%;
+            height: 52px;
+            background: linear-gradient(135deg, #495057, #343a40);
+            color: #ffffff;
+            border: none;
+            border-radius: 14px;
+            font-size: 1rem;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.4);
+            flex-shrink: 0;
+        }
     </style>
 </head>
 <body>
@@ -726,7 +702,7 @@
         <div class="ad-box">
             <h3 id="ad-modal-title">Watch Ad for Reward</h3>
             <video id="ad-video" src="../../4910.mp4" playsinline></video>
-            <div id="ad-timer-msg" style="margin-bottom:12px; font-weight:700; color:#6c584c;">Loading video reward...</div>
+            <div id="ad-timer-msg" style="margin-bottom:10px; font-weight:700; color:#5c4b3c;">Loading video reward...</div>
             <div class="ad-btn-row">
                 <button id="claim-ad-btn" class="ad-btn ad-btn-reward hidden" onclick="claimAdReward()">Claim Reward</button>
                 <button class="ad-btn ad-btn-cancel" onclick="cancelAd()">Cancel</button>
@@ -738,10 +714,10 @@
     <div id="leaderboard-screen" class="screen hidden">
         <div class="leaderboard-card">
             <div>
-                <h2 style="text-align:center; font-size:1.8rem; color:#ffd43b;">🏆 Global Leaderboard</h2>
-                <p style="text-align:center; font-size:0.85rem; color:#d0bfe0; margin-top:4px;">Unified Score across Easy, Medium & Hard</p>
-                <div class="player-Input-row">
-                    <input type="text" id="player-name-input" placeholder="Your Name" maxlength="18">
+                <h2 style="text-align:center; font-size:1.65rem; color:#ffd43b;">🏆 Global Leaderboard</h2>
+                <p style="text-align:center; font-size:0.82rem; color:#e5dbff; margin-top:3px;">Unified Score across Easy, Medium & Hard</p>
+                <div class="player-input-row">
+                    <input type="text" id="player-name-input" placeholder="Enter your name" maxlength="18">
                     <button onclick="savePlayerName()">Save</button>
                 </div>
             </div>
@@ -750,7 +726,7 @@
                 <li>Loading scores...</li>
             </ul>
 
-            <button class="nav-btn btn-portal" style="width:100%;" onclick="hideLeaderboard()">❮ Back to Menu</button>
+            <button class="back-menu-btn" onclick="hideLeaderboard()">❮ Back to Menu</button>
         </div>
     </div>
 
@@ -773,10 +749,9 @@
         let selectedBoltIndex = -1;
         let extraBoltUnlocked = false;
         let hintsRemaining = 2;
-        let pendingRewardType = null; // 'bolt' or 'hint'
+        let pendingRewardType = null;
         let adTimerInterval = null;
 
-        // Sound Synthesizer (Web Audio API)
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playTone(freq, type = 'sine', duration = 0.09, gainVal = 0.12) {
             try {
@@ -847,7 +822,6 @@
             window.dispatchEvent(new CustomEvent('updateScore', { detail: totalScore }));
         }
 
-        // Generates 100% Solvable Level
         function generateSolvableBolts() {
             let numColors = selectedDifficulty === 'easy' ? 3 : selectedDifficulty === 'medium' ? 4 : 6;
             let numEmpty = 2;
@@ -860,7 +834,6 @@
                 state.push([]);
             }
 
-            // Reverse-shuffle moves to guarantee solvability
             let shuffleSteps = numColors * 18;
             for (let s = 0; s < shuffleSteps; s++) {
                 let nonEmpty = state.map((b, i) => b.length > 0 ? i : -1).filter(i => i !== -1);
@@ -873,7 +846,6 @@
                 }
             }
 
-            // Ensure puzzle isn't already solved on start
             let alreadySolved = state.every(b => b.length === 0 || (b.length === NUT_CAPACITY && b.every(n => n === b[0])));
             if (alreadySolved && state[0].length > 0) {
                 state[numColors].push(state[0].pop());
@@ -920,7 +892,6 @@
                 const stack = document.createElement('div');
                 stack.className = 'nuts-stack';
 
-                // Determine how many top matching nuts lift together when selected
                 let topRunCount = 0;
                 if (index === selectedBoltIndex && boltNuts.length > 0) {
                     let topColor = boltNuts[boltNuts.length - 1];
@@ -951,7 +922,6 @@
                 board.appendChild(wrapper);
             });
 
-            // Render dark short stub bolt on the right if extra bolt isn't unlocked yet
             if (!extraBoltUnlocked) {
                 const stub = document.createElement('div');
                 stub.className = 'bolt-wrapper stub-bolt';
@@ -975,11 +945,8 @@
         }
 
         function handleBoltClick(index) {
-            clearHintHighlights();
-
             if (selectedBoltIndex === -1) {
                 if (bolts[index].length > 0) {
-                    // Don't select an already completed monochromatic full bolt
                     if (isBoltCompleted(bolts[index])) return;
                     selectedBoltIndex = index;
                     playTone(580, 'sine', 0.06);
@@ -1005,7 +972,6 @@
             let canMove = target.length < NUT_CAPACITY && (target.length === 0 || target[target.length - 1] === movingColor);
 
             if (canMove) {
-                // Count how many matching nuts sit on top of source
                 let movedCount = 0;
                 while (
                     source.length > 0 &&
@@ -1029,7 +995,6 @@
                 renderBoard(newlyCompletedIdx);
                 checkWinCondition();
             } else {
-                // If clicked another valid non-empty bolt, switch selection to it
                 if (target.length > 0 && !isBoltCompleted(target)) {
                     selectedBoltIndex = toIdx;
                     playTone(580, 'sine', 0.06);
@@ -1067,7 +1032,7 @@
                 setTimeout(() => {
                     document.getElementById('win-overlay').classList.add('hidden');
                     loadLevel();
-                }, 1700);
+                }, 1600);
             }
         }
 
@@ -1102,12 +1067,6 @@
             else addBoltBtn.classList.remove('disabled');
         }
 
-        function clearHintHighlights() {
-            document.querySelectorAll('.bolt-wrapper').forEach(el => {
-                el.classList.remove('hint-source', 'hint-target');
-            });
-        }
-
         function triggerHint() {
             if (hintsRemaining > 0) {
                 hintsRemaining--;
@@ -1131,12 +1090,10 @@
                     let tgt = bolts[j];
                     if (tgt.length >= NUT_CAPACITY) continue;
 
-                    // Prefer moving onto a bolt that already has matching color
                     if (tgt.length > 0 && tgt[tgt.length - 1] === topColor) {
                         bestMove = { from: i, to: j };
                         break;
                     }
-                    // Avoid pointless moving of a pure mono-color stack into an empty bolt
                     let srcIsMono = src.every(n => n === topColor);
                     if (tgt.length === 0 && !srcIsMono && !bestMove) {
                         bestMove = { from: i, to: j };
@@ -1235,7 +1192,7 @@
             if (val) {
                 localStorage.setItem('game_user_name', val);
                 window.dispatchEvent(new CustomEvent('updateScore', { detail: totalScore }));
-                setTimeout(() => window.dispatchEvent(new Event('fetchLeaderboard')), 400);
+                setTimeout(() => window.dispatchEvent(new Event('fetchLeaderboard')), 300);
             }
         }
 
@@ -1273,7 +1230,7 @@
                 username: userName,
                 score: scoreVal,
                 timestamp: Date.now()
-            }).catch(err => console.error("Firebase Sync Error:", err));
+            }).catch(err => console.warn("Firebase write blocked by rules:", err));
         }
 
         window.addEventListener('updateScore', (e) => {
@@ -1282,26 +1239,39 @@
 
         window.addEventListener('fetchLeaderboard', () => {
             const listEl = document.getElementById('leaderboard-list');
+            const localName = localStorage.getItem('game_user_name') || "Satish Kommana";
+            const localScore = parseInt(localStorage.getItem('stgames_score') || '0');
+
             listEl.innerHTML = '<li>Loading leaderboard...</li>';
 
-            get(child(ref(db), 'leaderboard')).then((snapshot) => {
-                if (snapshot.exists()) {
-                    listEl.innerHTML = '';
-                    const data = snapshot.val();
-                    const sorted = Object.values(data).sort((a, b) => (b.score || 0) - (a.score || 0));
+            // Sync current score before reading
+            syncScoreToFirebase(localScore);
 
-                    sorted.forEach((entry, idx) => {
-                        const li = document.createElement('li');
-                        const medal = idx === 0 ? '🥇 ' : idx === 1 ? '🥈 ' : idx === 2 ? '🥉 ' : `#${idx + 1} `;
-                        li.innerHTML = `<span>${medal}${entry.username || 'Player'}</span><span>${entry.score || 0} pts</span>`;
-                        listEl.appendChild(li);
-                    });
+            get(child(ref(db), 'leaderboard')).then((snapshot) => {
+                listEl.innerHTML = '';
+                let entries = [];
+                if (snapshot.exists()) {
+                    entries = Object.values(snapshot.val());
                 } else {
-                    listEl.innerHTML = '<li>No scores recorded yet. Win a level to claim #1!</li>';
+                    entries = [{ username: localName, score: localScore }];
                 }
+
+                entries.sort((a, b) => (b.score || 0) - (a.score || 0));
+
+                entries.forEach((entry, idx) => {
+                    const li = document.createElement('li');
+                    const medal = idx === 0 ? '🥇 ' : idx === 1 ? '🥈 ' : idx === 2 ? '🥉 ' : `#${idx + 1} `;
+                    li.innerHTML = `<span>${medal}${entry.username || 'Player'}</span><span>${entry.score || 0} pts</span>`;
+                    listEl.appendChild(li);
+                });
             }).catch((error) => {
-                console.error(error);
-                listEl.innerHTML = '<li>Unable to load leaderboard. Check Firebase rules.</li>';
+                // Fallback if Firebase rules are still locked so your leaderboard still works
+                listEl.innerHTML = `
+                    <li><span>🥇 ${localName} (You)</span><span>${localScore} pts</span></li>
+                    <li style="font-size:0.8rem; color:#fcc419; justify-content:center;">
+                        ⚠️ Enable ".read: true" & ".write: true" in Firebase Console -> Realtime Database -> Rules to see other players.
+                    </li>
+                `;
             });
         });
     </script>
