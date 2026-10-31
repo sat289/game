@@ -1,1 +1,12 @@
-const grid=document.getElementById("levelGrid");let active="easy";function renderLevels(){let s=progress(),unlocked=s.unlocked[active]||1,done=s.completed[active]||[];grid.innerHTML="";for(let i=1;i<=60;i++){let b=document.createElement("button");b.className="level-card"+(done.includes(i)?" done":"")+(i>unlocked?" locked":"");b.innerHTML=(i>unlocked?"🔒":done.includes(i)?"★":i)+`<small>${done.includes(i)?"DONE":i>unlocked?"LOCKED":"LEVEL"}</small>`;b.disabled=i>unlocked;b.onclick=()=>location.href=`game.html?difficulty=${active}&level=${i}`;grid.appendChild(b)}}document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{active=b.dataset.d;document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x===b));renderLevels()});renderLevels();
+document.addEventListener("DOMContentLoaded",()=>{
+ const d=getDiff(),p=getProgress(d),grid=document.getElementById("levelGrid");
+ document.getElementById("levelDiff").textContent=DIFFS[d];document.getElementById("progress").textContent=p.done.length+" / 60";
+ let tab=0;
+ function render(){grid.innerHTML="";for(let i=tab*20+1;i<=tab*20+20;i++){
+  const b=document.createElement("button"),done=p.done.includes(i),unlocked=i<=p.unlocked;
+  b.className="level-tile "+(done?"done":unlocked?"unlocked":"locked");b.innerHTML=(done?"✓":unlocked?i:"🔒")+(done?"<small>DONE</small>":"");
+  b.disabled=!unlocked;b.onclick=()=>startLevel(i);grid.appendChild(b);
+ }}
+ document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{tab=+b.dataset.tab;document.querySelectorAll("[data-tab]").forEach(x=>x.classList.toggle("active",x===b));render()});
+ render();
+});
