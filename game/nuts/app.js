@@ -1,1 +1,20 @@
-const DIFFICULTIES=["easy","medium","hard"];const DIFF_LABELS=["EASY","MEDIUM","HARD"];const COLORS=["#ed3348","#2878e8","#ffbd25","#35b85a","#a84bd0","#ff7a27"];function readSave(){try{return JSON.parse(localStorage.getItem("nutsBoltsSave")||"{}")}catch(e){return {}}}function writeSave(s){localStorage.setItem("nutsBoltsSave",JSON.stringify(s))}function progress(){let s=readSave();if(!s.completed)s.completed={easy:[],medium:[],hard:[]};if(!s.unlocked)s.unlocked={easy:1,medium:1,hard:1};return s}function currentLevel(){let s=progress();let d=new URLSearchParams(location.search).get("difficulty")||"easy";let l=Number(new URLSearchParams(location.search).get("level")||s.unlocked[d]||1);return {d,l}}function toast(msg){let el=document.getElementById("toast");if(!el)return;el.textContent=msg;el.classList.add("show");setTimeout(()=>el.classList.remove("show"),1500)}if(document.getElementById("difficulty")){let slider=document.getElementById("difficulty"),name=document.getElementById("difficultyName"),face=document.getElementById("face"),play=document.getElementById("play");function update(){let i=+slider.value;name.textContent=DIFF_LABELS[i];name.style.color=["#29b34a","#ffae24","#ff5d55"][i];face.textContent=["😎","😏","😈"][i];play.className="play "+["green","",""][i];let s=progress();play.innerHTML=`PLAY<small>Level ${s.unlocked[DIFFICULTIES[i]]||1}</small>`}slider.addEventListener("input",update);play.onclick=()=>{let d=DIFFICULTIES[+slider.value],s=progress();location.href=`game.html?difficulty=${d}&level=${s.unlocked[d]||1}`};document.getElementById("help").onclick=()=>alert("Sort every bolt so it contains nuts of one colour. Tap a bolt, then tap another bolt to move its top nut. Empty bolts are useful!");update()}
+const DIFFS=["EASY","MEDIUM","HARD"];
+const COLORS=["blue","red","yellow","green","pink","orange"];
+function getDiff(){return Number(localStorage.getItem("nb-difficulty")||0)}
+function setDiff(v){localStorage.setItem("nb-difficulty",String(v))}
+function keyFor(d){return "nb-progress-"+d}
+function getProgress(d=getDiff()){try{return JSON.parse(localStorage.getItem(keyFor(d)))||{unlocked:1,done:[]}}catch(e){return {unlocked:1,done:[]}}}
+function saveProgress(p,d=getDiff()){localStorage.setItem(keyFor(d),JSON.stringify(p))}
+function startLevel(level){location.href="game.html?d="+getDiff()+"&l="+level}
+function qs(name,def){return new URLSearchParams(location.search).get(name)??def}
+document.addEventListener("DOMContentLoaded",()=>{
+ const range=document.getElementById("difficulty");
+ if(range){range.value=getDiff();const names=["EASY","MEDIUM","HARD"],icons=["●","◉","✹"],colors=["#159b43","#ffb51b","#f04b54"];
+ const update=()=>{let v=+range.value;setDiff(v);document.getElementById("diffName").textContent=names[v];document.getElementById("diffName").style.color=colors[v];document.getElementById("diffIcon").textContent=icons[v];document.getElementById("diffIcon").style.background=colors[v]};
+ range.addEventListener("input",update);update();
+ document.getElementById("play").onclick=()=>location.href="levels.html";
+ document.getElementById("help").onclick=()=>{document.getElementById("infoTitle").textContent="HOW TO PLAY";document.getElementById("infoModal").classList.remove("hidden")};
+ document.getElementById("settings").onclick=()=>{document.getElementById("infoTitle").textContent="SETTINGS";document.getElementById("infoText").textContent="Your level progress is stored only in this browser on this phone. Clearing browser data will reset it.";document.getElementById("infoModal").classList.remove("hidden")};
+ document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>document.getElementById("infoModal").classList.add("hidden"));
+ }
+});
