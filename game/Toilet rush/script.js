@@ -1,19 +1,25 @@
 const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
+const ctx = canvas.getContext('2d', { alpha: true });
 
 const urlParams = new URLSearchParams(window.location.search);
 let currentLevel = parseInt(urlParams.get('level') || localStorage.getItem('toiletRushLevel') || '1', 10);
-if (currentLevel < 1 || currentLevel > TOTAL_LEVELS) currentLevel = 1;
+if (isNaN(currentLevel) || currentLevel < 1 || currentLevel > TOTAL_LEVELS) currentLevel = 1;
 
 let timeLeft = 30;
 let timerId = null;
-let state = 'DRAW';
+let state = 'DRAW'; // DRAW, WALK, WIN, FAIL
 let hintActive = false;
 
 let doors = [];
 let chars = [];
 let walls = [];
 let drawingChar = null;
+let canvasRect = null;
+
+function updateCanvasRect() {
+  canvasRect = canvas.getBoundingClientRect();
+}
+window.addEventListener('resize', updateCanvasRect);
 
 function initLevel(lvl) {
   currentLevel = lvl;
@@ -33,6 +39,8 @@ function initLevel(lvl) {
   chars = config.chars;
   walls = config.walls;
 
+  updateCanvasRect();
+
   timerId = setInterval(() => {
     if (state === 'DRAW' || state === 'WALK') {
       timeLeft--;
@@ -47,49 +55,53 @@ function toggleHint() {
 }
 
 function getCanvasCoords(e) {
-  const r = canvas.getBoundingClientRect();
-  const cx = e.touches ? e.touches[0].clientX : e.clientX;
-  const cy = e.touches ? e.touches[0].clientY : e.clientY;
+  if (!canvasRect) updateCanvasRect();
+  const touch = e.touches && e.touches[0] ? e.touches[0] : e;
   return {
-    x: (cx - r.left) * (canvas.width / r.width),
-    y: (cy - r.top) * (canvas.height / r.height)
+    x: (touch.clientX - canvasRect.left) * (canvas.width / canvasRect.width),
+    y: (touch.clientY - canvasRect.top) * (canvas.height / canvasRect.height)
   };
 }
 
-canvas.addEventListener('pointerdown', (e) => {
+function onStart(e) {
   if (state !== 'DRAW') return;
   const p = getCanvasCoords(e);
-  for (let c of chars) {
-    if (!c.ready && Math.hypot(p.x - c.x, p.y - c.y) < 42) {
+  for (let i = 0; i < chars.length; i++) {
+    const c = chars[i];
+    if (!c.ready && Math.hypot(p.x - c.x, p.y - c.y) < 48) {
       drawingChar = c;
       c.path = [{ x: c.x, y: c.y }];
       break;
     }
   }
-});
+}
 
-canvas.addEventListener('pointermove', (e) => {
+function onMove(e) {
   if (!drawingChar || state !== 'DRAW') return;
+  e.preventDefault();
   const p = getCanvasCoords(e);
   const prev = drawingChar.path[drawingChar.path.length - 1];
 
-  for (let w of walls) {
+  // Prevent drawing through walls
+  for (let i = 0; i < walls.length; i++) {
+    const w = walls[i];
     if (p.x > w.x - 6 && p.x < w.x + w.w + 6 && p.y > w.y - 6 && p.y < w.y + w.h + 6) {
       return;
     }
   }
 
-  if (Math.hypot(p.x - prev.x, p.y - prev.y) > 5) {
+  // Distance filter to avoid lag from too many points
+  if (Math.hypot(p.x - prev.x, p.y - prev.y) > 8) {
     drawingChar.path.push({ x: p.x, y: p.y });
   }
-});
+}
 
-window.addEventListener('pointerup', () => {
+function onEnd() {
   if (!drawingChar) return;
   const last = drawingChar.path[drawingChar.path.length - 1];
   const door = doors.find(d => d.id === drawingChar.id);
 
-  if (Math.hypot(last.x - door.x, last.y - door.y) < 55) {
+  if (Math.hypot(last.x - door.x, last.y - door.y) < 60) {
     drawingChar.path.push({ x: door.x, y: door.y });
     drawingChar.ready = true;
   } else {
@@ -100,9 +112,13 @@ window.addEventListener('pointerup', () => {
   if (chars.every(c => c.ready)) {
     beginWalk();
   }
-});
+}
 
-function buildSteps(path, speed = 2.7) {
+canvas.addEventListener('pointerdown', onStart, { passive: true });
+canvas.addEventListener('pointermove', onMove, { passive: false });
+window.addEventListener('pointerup', onEnd, { passive: true });
+
+function buildSteps(path, speed = 3.2) {
   const pts = [];
   for (let i = 0; i < path.length - 1; i++) {
     const a = path[i], b = path[i + 1];
@@ -122,7 +138,7 @@ function buildSteps(path, speed = 2.7) {
 function beginWalk() {
   state = 'WALK';
   chars.forEach(c => {
-    c.steps = buildSteps(c.path, 2.7);
+    c.steps = buildSteps(c.path, 3.2);
     c.idx = 0;
   });
 }
@@ -131,10 +147,6 @@ function finishLevel(isWin) {
   if (state === 'WIN' || state === 'FAIL') return;
   state = isWin ? 'WIN' : 'FAIL';
   clearInterval(timerId);
-
-  if (!isWin) {
-    chars.forEach(c => c.fallen = true);
-  }
 
   setTimeout(() => {
     const modal = document.getElementById('modal');
@@ -154,7 +166,7 @@ function finishLevel(isWin) {
       banner.className = 'banner fail';
       btn.innerText = '↻ Replay';
     }
-  }, 650);
+  }, 500);
 }
 
 function handleModalBtn() {
@@ -167,16 +179,11 @@ function handleModalBtn() {
 }
 
 function renderDoor(d, charInside) {
-  ctx.save();
   ctx.fillStyle = '#bde5ff';
   ctx.strokeStyle = '#111';
   ctx.lineWidth = 3.5;
   ctx.fillRect(d.x - d.w/2, d.y - d.h/2, d.w, d.h);
   ctx.strokeRect(d.x - d.w/2, d.y - d.h/2, d.w, d.h);
-
-  ctx.strokeStyle = '#68a8d4';
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(d.x - d.w/2 + 5, d.y - d.h/2 + 5, d.w - 10, d.h - 10);
 
   ctx.fillStyle = '#666';
   ctx.beginPath();
@@ -202,7 +209,32 @@ function renderDoor(d, charInside) {
     ctx.fillRect(d.x - 4.5, d.y + 2, 3.5, 13);
     ctx.fillRect(d.x + 1, d.y + 2, 3.5, 13);
   }
-  ctx.restore();
+}
+
+// Fast Vector Face Bubble (Zero Emoji Lag on Mobile)
+function drawStatusBubble(isHappy) {
+  ctx.fillStyle = '#fff';
+  ctx.strokeStyle = '#444';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(-22, -28, 10, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = '#ffcc33';
+  ctx.beginPath();
+  ctx.arc(-22, -28, 7.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = '#222';
+  ctx.lineWidth = 1.3;
+  ctx.beginPath();
+  if (isHappy) {
+    ctx.arc(-22, -27, 4, 0, Math.PI);
+  } else {
+    ctx.arc(-22, -24, 3.5, Math.PI, 0);
+  }
+  ctx.stroke();
 }
 
 function renderChar(c) {
@@ -214,11 +246,6 @@ function renderChar(c) {
     ctx.beginPath();
     ctx.ellipse(0, 26, 28, 10, 0, 0, Math.PI * 2);
     ctx.fill();
-  }
-
-  if (state === 'WALK' && !c.done) {
-    const wiggle = Math.sin(Date.now() * 0.025) * 0.14;
-    ctx.rotate(wiggle);
   }
 
   ctx.fillStyle = '#ffe1c4';
@@ -266,15 +293,7 @@ function renderChar(c) {
   ctx.fill();
 
   if (state === 'DRAW' || c.done) {
-    ctx.fillStyle = '#fff';
-    ctx.strokeStyle = '#444';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.arc(-22, -28, 11, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-    ctx.font = '13px sans-serif';
-    ctx.fillText(c.done ? '😌' : '😣', -29, -23);
+    drawStatusBubble(c.done);
   }
 
   ctx.restore();
@@ -307,21 +326,22 @@ function gameLoop() {
     ctx.restore();
   }
 
-  doors.forEach(d => {
+  for (let i = 0; i < doors.length; i++) {
+    const d = doors[i];
     const c = chars.find(ch => ch.id === d.id);
     renderDoor(d, c && c.done);
-  });
+  }
 
-  walls.forEach(w => {
+  for (let i = 0; i < walls.length; i++) {
+    const w = walls[i];
     if (w.vx) {
       w.x += w.vx;
       if (w.x < w.minX || w.x > w.maxX) w.vx *= -1;
     }
-    ctx.save();
     if (w.monster) {
       ctx.fillStyle = '#eeeeee';
       ctx.strokeStyle = '#222';
-      ctx.lineWidth = 4;
+      ctx.lineWidth = 3.5;
       ctx.fillRect(w.x, w.y, w.w, w.h);
       ctx.strokeRect(w.x, w.y, w.w, w.h);
       ctx.fillStyle = '#d60000';
@@ -334,28 +354,27 @@ function gameLoop() {
       ctx.fillRect(w.x, w.y, w.w, w.h);
       ctx.strokeRect(w.x, w.y, w.w, w.h);
     }
-    ctx.restore();
-  });
+  }
 
-  chars.forEach(c => {
+  for (let i = 0; i < chars.length; i++) {
+    const c = chars[i];
     if (c.path.length > 1) {
-      ctx.save();
       ctx.strokeStyle = c.color;
       ctx.lineWidth = 7;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       ctx.beginPath();
       ctx.moveTo(c.path[0].x, c.path[0].y);
-      for (let i = 1; i < c.path.length; i++) {
-        ctx.lineTo(c.path[i].x, c.path[i].y);
+      for (let j = 1; j < c.path.length; j++) {
+        ctx.lineTo(c.path[j].x, c.path[j].y);
       }
       ctx.stroke();
-      ctx.restore();
     }
-  });
+  }
 
   if (state === 'WALK') {
-    chars.forEach(c => {
+    for (let i = 0; i < chars.length; i++) {
+      const c = chars[i];
       if (c.idx < c.steps.length - 1) {
         c.idx++;
         c.x = c.steps[c.idx].x;
@@ -364,14 +383,15 @@ function gameLoop() {
         c.done = true;
       }
 
-      for (let w of walls) {
+      for (let j = 0; j < walls.length; j++) {
+        const w = walls[j];
         if (c.x > w.x - 12 && c.x < w.x + w.w + 12 && c.y > w.y - 12 && c.y < w.y + w.h + 12) {
           finishLevel(false);
         }
       }
-    });
+    }
 
-    const [c1, c2] = chars;
+    const c1 = chars[0], c2 = chars[1];
     if (Math.hypot(c1.x - c2.x, c1.y - c2.y) < 30) {
       finishLevel(false);
     }
@@ -381,7 +401,10 @@ function gameLoop() {
     }
   }
 
-  chars.forEach(renderChar);
+  for (let i = 0; i < chars.length; i++) {
+    renderChar(chars[i]);
+  }
+
   requestAnimationFrame(gameLoop);
 }
 
