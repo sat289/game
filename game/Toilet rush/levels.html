@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Select Level - Toilet Rush</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="game-wrap" class="menu-page">
+  <div class="menu-header">
+    <div class="home-btn" onclick="window.location.href='index.html'">⬅️</div>
+    <h2>50 Levels</h2>
+    <div style="width:46px;"></div>
+  </div>
+  <div class="lvl-grid" id="lvl-grid"></div>
+</div>
+
+<script>
+  const grid = document.getElementById('lvl-grid');
+  const savedLevel = parseInt(localStorage.getItem('toiletRushLevel') || '1', 10);
+
+  for (let i = 1; i <= 50; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'lvl-cell' + (i === savedLevel ? ' active' : '');
+    btn.innerText = i;
+    btn.onclick = () => {
+      localStorage.setItem('toiletRushLevel', i);
+      window.location.href = 'index.html?level=' + i;
+    };
+    grid.appendChild(btn);
+  }
+</script>
+</body>
+</html>
