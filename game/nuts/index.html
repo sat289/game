@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuts & Bolts</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="main-menu" class="screen">
+        <h1>NUTS & BOLTS</h1>
+        <div class="total-score">Total Score: <span id="menu-total-score">0</span></div>
+        <button class="btn btn-easy" onclick="startGame('easy')">EASY</button>
+        <button class="btn btn-medium" onclick="startGame('medium')">MEDIUM</button>
+        <button class="btn btn-hard" onclick="startGame('hard')">HARD</button>
+        
+        <div class="bottom-buttons">
+            <button class="btn btn-leaderboard" onclick="showLeaderboard()">Leaderboard</button>
+            <button class="btn btn-game" onclick="location.href='../../index.html'">Game</button>
+        </div>
+    </div>
+
+    <div id="game-screen" class="screen hidden">
+        <div class="header">
+            <button class="back-btn" onclick="backToMenu()">❮</button>
+            <div class="level-info">
+                <span id="difficulty-label">EASY</span>
+                <h2>Level <span id="level-label">1</span></h2>
+            </div>
+            <button class="restart-btn" onclick="restartLevel()">↻</button>
+        </div>
+        
+        <div id="game-board"></div>
+        
+        <div class="footer">
+            <button class="action-btn" onclick="undo()">Undo</button>
+            <button class="action-btn" onclick="hint()">Hint</button>
+            <button class="action-btn" id="add-bolt-btn">Add bolt</button>
+        </div>
+
+        <div id="ad-container" class="hidden">
+            <video id="ad-video" src="../../4910.mp4" playsinline></video>
+            <button id="close-ad" class="hidden" onclick="closeAd()">Close & Get Reward</button>
+        </div>
+    </div>
+
+    <div id="leaderboard-screen" class="screen hidden">
+        <h2>Global Leaderboard</h2>
+        <ul id="leaderboard-list"></ul>
+        <button class="btn btn-game" onclick="hideLeaderboard()">Back</button>
+    </div>
+
+    <!-- Firebase must be type module -->
+    <script type="module" src="firebase.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
