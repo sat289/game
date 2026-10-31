@@ -633,7 +633,7 @@
         <div class="menu-top-card">
             <div class="game-title">NUTS & BOLTS</div>
             <p class="menu-subtitle">Move nuts between bolts until each bolt holds only one colour!</p>
-            <div class="score-pill">🏆 Total Score: <span id="menu-total-score">0</span></div>
+            <div class="score-pill">🏆 Total XP / Score: <span id="menu-total-score">0</span></div>
         </div>
 
         <div class="mode-selector-card">
@@ -654,7 +654,8 @@
 
         <div class="menu-bottom-nav">
             <button class="nav-btn btn-leaderboard" onclick="showLeaderboard()">🏆 Leaderboard</button>
-            <button class="nav-btn btn-portal" onclick="location.href='../../index.html'">🎮 Game</button>
+            <!-- Since this file is in game/nuts.html, ../index.html goes to your main portal -->
+            <button class="nav-btn btn-portal" onclick="location.href='../index.html'">🎮 Game</button>
         </div>
     </div>
 
@@ -694,14 +695,14 @@
     <!-- ==================== WIN CELEBRATION OVERLAY ==================== -->
     <div id="win-overlay" class="hidden">
         <div class="amazing-text">AMAZING!</div>
-        <div id="win-points-text" class="win-sub">+10 Score</div>
+        <div id="win-points-text" class="win-sub">+10 XP</div>
     </div>
 
     <!-- ==================== VIDEO AD MODAL ==================== -->
     <div id="ad-modal" class="hidden">
         <div class="ad-box">
             <h3 id="ad-modal-title">Watch Ad for Reward</h3>
-            <video id="ad-video" src="../../4910.mp4" playsinline></video>
+            <video id="ad-video" src="../4910.mp4" playsinline></video>
             <div id="ad-timer-msg" style="margin-bottom:10px; font-weight:700; color:#5c4b3c;">Loading video reward...</div>
             <div class="ad-btn-row">
                 <button id="claim-ad-btn" class="ad-btn ad-btn-reward hidden" onclick="claimAdReward()">Claim Reward</button>
@@ -1021,7 +1022,7 @@
                 localStorage.setItem('stgames_nuts_progress', JSON.stringify(progress));
                 window.dispatchEvent(new CustomEvent('updateScore', { detail: totalScore }));
 
-                document.getElementById('win-points-text').innerText = `+${pts} Total Score!`;
+                document.getElementById('win-points-text').innerText = `+${pts} Total XP!`;
                 document.getElementById('win-overlay').classList.remove('hidden');
 
                 playTone(523, 'sine', 0.12);
@@ -1192,17 +1193,18 @@
             if (val) {
                 localStorage.setItem('game_user_name', val);
                 window.dispatchEvent(new CustomEvent('updateScore', { detail: totalScore }));
-                setTimeout(() => window.dispatchEvent(new Event('fetchLeaderboard')), 300);
+                setTimeout(() => window.dispatchEvent(new Event('fetchLeaderboard')), 350);
             }
         }
 
         updateMenuUI();
     </script>
 
-    <!-- ==================== FIREBASE LEADERBOARD MODULE ==================== -->
+    <!-- ==================== FIREBASE AUTH + LEADERBOARD MODULE ==================== -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getDatabase, ref, update, get, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDOFx0_vpPDRDCkUW-deQjMNK5msOsGSnI",
@@ -1216,63 +1218,112 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
         const db = getDatabase(app);
 
-        let userId = localStorage.getItem('game_user_id');
-        if (!userId) {
-            userId = 'user_' + Math.random().toString(36).substring(2, 11);
-            localStorage.setItem('game_user_id', userId);
-        }
+        let currentUid = null;
 
-        function syncScoreToFirebase(scoreVal) {
+        // Authenticate user so "auth != null && auth.uid === $uid" rules pass
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUid = user.uid;
+                if (user.displayName && !localStorage.getItem('game_user_name')) {
+                    localStorage.setItem('game_user_name', user.displayName);
+                }
+                const savedScore = parseInt(localStorage.getItem('stgames_score') || '0');
+                syncScoreToFirebase(savedScore);
+            } else {
+                signInAnonymously(auth).catch((err) => {
+                    console.warn("Anonymous Auth not enabled or blocked:", err);
+                });
+            }
+        });
+
+        async function syncScoreToFirebase(scoreVal) {
+            if (!currentUid) return;
             const userName = localStorage.getItem('game_user_name') || "Satish Kommana";
-            set(ref(db, 'leaderboard/' + userId), {
-                username: userName,
-                score: scoreVal,
-                timestamp: Date.now()
-            }).catch(err => console.warn("Firebase write blocked by rules:", err));
+
+            try {
+                // Keep highest score between local & cloud
+                const snap = await get(ref(db, `leaderboard/${currentUid}`));
+                let existingXp = 0;
+                if (snap.exists()) {
+                    const val = snap.val();
+                    existingXp = val.xp || val.score || 0;
+                }
+                const bestScore = Math.max(scoreVal, existingXp);
+                if (bestScore > scoreVal) {
+                    localStorage.setItem('stgames_score', bestScore);
+                    const scoreEl = document.getElementById('menu-total-score');
+                    if (scoreEl) scoreEl.innerText = bestScore;
+                }
+
+                const payload = {
+                    name: userName,
+                    username: userName,
+                    xp: bestScore,
+                    score: bestScore,
+                    updatedAt: Date.now()
+                };
+
+                // Matches both /leaderboard/$uid and /players/$uid in your rules
+                await update(ref(db, `leaderboard/${currentUid}`), payload);
+                await update(ref(db, `players/${currentUid}`), payload);
+            } catch (err) {
+                console.warn("Firebase Sync Error:", err);
+            }
         }
 
         window.addEventListener('updateScore', (e) => {
             syncScoreToFirebase(e.detail);
         });
 
-        window.addEventListener('fetchLeaderboard', () => {
+        window.addEventListener('fetchLeaderboard', async () => {
             const listEl = document.getElementById('leaderboard-list');
             const localName = localStorage.getItem('game_user_name') || "Satish Kommana";
             const localScore = parseInt(localStorage.getItem('stgames_score') || '0');
 
             listEl.innerHTML = '<li>Loading leaderboard...</li>';
 
-            // Sync current score before reading
-            syncScoreToFirebase(localScore);
+            try {
+                if (!auth.currentUser) {
+                    await signInAnonymously(auth);
+                }
+                currentUid = auth.currentUser ? auth.currentUser.uid : null;
+                await syncScoreToFirebase(localScore);
 
-            get(child(ref(db), 'leaderboard')).then((snapshot) => {
+                // Uses your ".indexOn": ["xp"] rule
+                const lbQuery = query(ref(db, 'leaderboard'), orderByChild('xp'), limitToLast(50));
+                const snapshot = await get(lbQuery);
+
                 listEl.innerHTML = '';
                 let entries = [];
                 if (snapshot.exists()) {
                     entries = Object.values(snapshot.val());
                 } else {
-                    entries = [{ username: localName, score: localScore }];
+                    entries = [{ username: localName, xp: localScore }];
                 }
 
-                entries.sort((a, b) => (b.score || 0) - (a.score || 0));
+                // Sort descending by xp or score
+                entries.sort((a, b) => ((b.xp ?? b.score ?? 0) - (a.xp ?? a.score ?? 0)));
 
                 entries.forEach((entry, idx) => {
                     const li = document.createElement('li');
                     const medal = idx === 0 ? '🥇 ' : idx === 1 ? '🥈 ' : idx === 2 ? '🥉 ' : `#${idx + 1} `;
-                    li.innerHTML = `<span>${medal}${entry.username || 'Player'}</span><span>${entry.score || 0} pts</span>`;
+                    const displayName = entry.name || entry.username || entry.displayName || 'Player';
+                    const displayPoints = entry.xp ?? entry.score ?? 0;
+                    li.innerHTML = `<span>${medal}${displayName}</span><span>${displayPoints} XP</span>`;
                     listEl.appendChild(li);
                 });
-            }).catch((error) => {
-                // Fallback if Firebase rules are still locked so your leaderboard still works
+            } catch (error) {
+                console.error("Leaderboard error:", error);
                 listEl.innerHTML = `
-                    <li><span>🥇 ${localName} (You)</span><span>${localScore} pts</span></li>
-                    <li style="font-size:0.8rem; color:#fcc419; justify-content:center;">
-                        ⚠️ Enable ".read: true" & ".write: true" in Firebase Console -> Realtime Database -> Rules to see other players.
+                    <li><span>🥇 ${localName} (You)</span><span>${localScore} XP</span></li>
+                    <li style="font-size:0.8rem; color:#fcc419; line-height:1.4;">
+                        ⚠️ Your rules require Firebase Auth ("auth != null"). Either log in on your main portal first, or enable "Anonymous" sign-in inside Firebase Console → Authentication → Sign-in method.
                     </li>
                 `;
-            });
+            }
         });
     </script>
 </body>
