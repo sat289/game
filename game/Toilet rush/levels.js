@@ -1,6 +1,6 @@
-const TOTAL_LEVELS = 50;
+window.TOTAL_LEVELS = 50;
 
-function getLevelConfig(lvl) {
+window.getLevelConfig = function(lvl) {
   let doors = [];
   let chars = [];
   let walls = [];
@@ -55,4 +55,4 @@ function getLevelConfig(lvl) {
   }
 
   return { doors, chars, walls };
-}
+};
