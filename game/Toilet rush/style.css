@@ -1,264 +1,739 @@
-* {
-  box-sizing: border-box;
-  user-select: none;
-  -webkit-user-select: none;
-  margin: 0;
-  padding: 0;
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+const MAX_LVL = window.TOTAL_LEVELS || 50;
+const urlParams = new URLSearchParams(window.location.search);
+let currentLevel = parseInt(urlParams.get('level') || localStorage.getItem('toiletRushLevel') || '1', 10);
+if (isNaN(currentLevel) || currentLevel < 1 || currentLevel > MAX_LVL) currentLevel = 1;
+
+let timeLeft = 30;
+let timerId = null;
+let state = 'DRAW'; // DRAW, WALK, WIN, FAIL
+let hintActive = false;
+
+let doors = [];
+let chars = [];
+let walls = [];
+let confetti = [];
+let drawingChar = null;
+let canvasRect = null;
+
+// Universal rounded rectangle helper (Works on 100% of browsers without crashing)
+function drawRRect(g, x, y, w, h, r) {
+  if (w < 2 * r) r = w / 2;
+  if (h < 2 * r) r = h / 2;
+  g.beginPath();
+  g.moveTo(x + r, y);
+  g.arcTo(x + w, y, x + w, y + h, r);
+  g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r);
+  g.arcTo(x, y, x + w, y, r);
+  g.closePath();
 }
 
-body {
-  background: #121212;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  font-family: 'Arial Rounded MT Bold', 'Segoe UI', Tahoma, sans-serif;
-  overflow: hidden;
+// ==========================================
+// PRE-RENDERED CARTOON AVATARS (ZERO LAG)
+// ==========================================
+const sprites = {};
+
+function createSprite(w, h, drawFn) {
+  const c = document.createElement('canvas');
+  c.width = w;
+  c.height = h;
+  const sctx = c.getContext('2d');
+  sctx.translate(w / 2, h / 2);
+  drawFn(sctx);
+  return c;
 }
 
-#game-wrap {
-  position: relative;
-  width: 390px;
-  height: 780px;
-  background-color: #ffffff;
-  background-image: 
-    linear-gradient(to right, #efefef 1px, transparent 1px),
-    linear-gradient(to bottom, #efefef 1px, transparent 1px);
-  background-size: 22px 22px;
-  border-radius: 20px;
-  box-shadow: 0 15px 40px rgba(0,0,0,0.7);
-  overflow: hidden;
+function drawSpeechBubble(g, type) {
+  g.save();
+  g.translate(-26, -34);
+  g.fillStyle = '#ffffff';
+  g.strokeStyle = '#222222';
+  g.lineWidth = 1.8;
+  g.beginPath();
+  g.arc(0, 0, 12, 0, Math.PI * 2);
+  g.fill();
+  g.stroke();
+
+  g.beginPath();
+  g.moveTo(6, 9);
+  g.lineTo(12, 14);
+  g.lineTo(10, 6);
+  g.closePath();
+  g.fill();
+  g.stroke();
+
+  g.fillStyle = '#ffcc22';
+  g.beginPath();
+  g.arc(0, 0, 8.5, 0, Math.PI * 2);
+  g.fill();
+  g.strokeStyle = '#d48800';
+  g.lineWidth = 1;
+  g.stroke();
+
+  g.strokeStyle = '#222';
+  g.lineWidth = 1.4;
+  g.lineCap = 'round';
+  if (type === 'urgent') {
+    g.beginPath();
+    g.moveTo(-4.5, -3); g.lineTo(-2, -1.5); g.lineTo(-4.5, 0);
+    g.moveTo(4.5, -3);  g.lineTo(2, -1.5);  g.lineTo(4.5, 0);
+    g.stroke();
+    g.beginPath();
+    g.arc(0, 4.5, 3, Math.PI, 0);
+    g.stroke();
+    g.fillStyle = '#29b6f6';
+    g.beginPath();
+    g.arc(6.5, -4, 2, 0, Math.PI * 2);
+    g.fill();
+  } else {
+    g.beginPath();
+    g.arc(-3, -1.5, 1.8, Math.PI, 0);
+    g.stroke();
+    g.beginPath();
+    g.arc(3, -1.5, 1.8, Math.PI, 0);
+    g.stroke();
+    g.beginPath();
+    g.arc(0, 1.5, 3.5, 0, Math.PI);
+    g.stroke();
+  }
+  g.restore();
 }
 
-canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  touch-action: none;
-  z-index: 1;
+function drawBoyGraphic(g, pose) {
+  g.lineJoin = 'round';
+  g.lineCap = 'round';
+
+  // Ground shadow
+  g.fillStyle = 'rgba(0,0,0,0.14)';
+  g.beginPath();
+  g.ellipse(0, 31, 16, 5, 0, 0, Math.PI * 2);
+  g.fill();
+
+  if (pose === 'idle') {
+    g.strokeStyle = '#666';
+    g.lineWidth = 1.4;
+    g.beginPath(); g.arc(-20, 4, 5, -0.6, 0.6); g.stroke();
+    g.beginPath(); g.arc(20, 4, 5, Math.PI - 0.6, Math.PI + 0.6); g.stroke();
+  }
+
+  g.strokeStyle = '#222';
+  g.lineWidth = 2;
+  g.fillStyle = '#ffe0bd';
+  drawRRect(g, -7, 16, 6, 11, 3);
+  g.fill(); g.stroke();
+  drawRRect(g, 0, 16, 6, 11, 3);
+  g.fill(); g.stroke();
+
+  // Blue Sneakers
+  g.fillStyle = '#1e5be0';
+  g.beginPath(); g.ellipse(-5, 28, 6, 3.5, 0, 0, Math.PI * 2); g.fill(); g.stroke();
+  g.beginPath(); g.ellipse(4, 28, 6, 3.5, 0, 0, Math.PI * 2); g.fill(); g.stroke();
+
+  // Yellow Shirt
+  g.fillStyle = '#ffde22';
+  drawRRect(g, -11, -3, 22, 16, 5);
+  g.fill(); g.stroke();
+
+  // Blue Overalls
+  g.fillStyle = '#1e5be0';
+  drawRRect(g, -10, 9, 20, 10, 4);
+  g.fill(); g.stroke();
+  g.fillRect(-7, -2, 3.5, 12);
+  g.fillRect(3.5, -2, 3.5, 12);
+
+  // Arms holding tummy
+  g.fillStyle = '#ffe0bd';
+  g.beginPath();
+  g.moveTo(-11, 1);
+  g.quadraticCurveTo(-16, 10, -4, 14);
+  g.quadraticCurveTo(-2, 10, -9, 3);
+  g.fill(); g.stroke();
+
+  g.beginPath();
+  g.moveTo(11, 1);
+  g.quadraticCurveTo(16, 10, 4, 14);
+  g.quadraticCurveTo(2, 10, 9, 3);
+  g.fill(); g.stroke();
+
+  // Head
+  g.save();
+  g.rotate(-0.08);
+
+  g.fillStyle = '#ffe0bd';
+  g.beginPath();
+  g.arc(-15, -15, 4, 0, Math.PI * 2);
+  g.arc(15, -15, 4, 0, Math.PI * 2);
+  g.fill(); g.stroke();
+
+  g.beginPath();
+  g.arc(0, -16, 15, 0, Math.PI * 2);
+  g.fill(); g.stroke();
+
+  // Rosy Cheeks
+  g.fillStyle = 'rgba(255, 105, 97, 0.55)';
+  g.beginPath();
+  g.arc(-8, -12, 3.2, 0, Math.PI * 2);
+  g.arc(8, -12, 3.2, 0, Math.PI * 2);
+  g.fill();
+
+  // Hair & Cap
+  g.fillStyle = '#6b3e26';
+  g.beginPath();
+  g.arc(0, -19, 15, Math.PI * 0.95, Math.PI * 0.05);
+  g.fill(); g.stroke();
+
+  g.fillStyle = '#1e5be0';
+  g.beginPath();
+  g.arc(0, -21, 14.5, Math.PI * 1.05, Math.PI * 1.95);
+  g.fill(); g.stroke();
+  drawRRect(g, 6, -25, 15, 5.5, 2.5);
+  g.fill(); g.stroke();
+
+  g.strokeStyle = '#222';
+  g.lineWidth = 1.8;
+  if (pose === 'done') {
+    g.beginPath(); g.arc(-5, -15, 3, Math.PI, 0); g.stroke();
+    g.beginPath(); g.arc(5, -15, 3, Math.PI, 0); g.stroke();
+    g.beginPath(); g.arc(0, -11, 4, 0, Math.PI); g.stroke();
+  } else {
+    g.beginPath();
+    g.moveTo(-8, -18); g.lineTo(-4, -15); g.lineTo(-8, -12);
+    g.moveTo(8, -18);  g.lineTo(4, -15);  g.lineTo(8, -12);
+    g.stroke();
+
+    g.fillStyle = '#fff';
+    drawRRect(g, -5, -10, 10, 4.5, 2);
+    g.fill(); g.stroke();
+
+    g.fillStyle = '#40c4ff';
+    g.beginPath();
+    g.moveTo(-11, -22);
+    g.quadraticCurveTo(-14, -17, -11, -16);
+    g.quadraticCurveTo(-8, -17, -11, -22);
+    g.fill();
+  }
+  g.restore();
+
+  if (pose === 'idle') drawSpeechBubble(g, 'urgent');
+  if (pose === 'done') drawSpeechBubble(g, 'happy');
 }
 
-.top-bar {
-  position: absolute;
-  top: 24px;
-  left: 0;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 0 0 16px;
-  z-index: 10;
-  pointer-events: none;
+function drawGirlGraphic(g, pose) {
+  g.lineJoin = 'round';
+  g.lineCap = 'round';
+
+  g.fillStyle = 'rgba(0,0,0,0.14)';
+  g.beginPath();
+  g.ellipse(0, 31, 16, 5, 0, 0, Math.PI * 2);
+  g.fill();
+
+  // Long Blonde Hair
+  g.fillStyle = '#ffdf38';
+  g.strokeStyle = '#222';
+  g.lineWidth = 2;
+  g.beginPath();
+  g.moveTo(-14, -18);
+  g.quadraticCurveTo(-22, 0, -14, 12);
+  g.lineTo(14, 12);
+  g.quadraticCurveTo(22, 0, 14, -18);
+  g.closePath();
+  g.fill(); g.stroke();
+
+  if (pose === 'idle') {
+    g.strokeStyle = '#666';
+    g.lineWidth = 1.4;
+    g.beginPath(); g.arc(-21, 5, 5, -0.6, 0.6); g.stroke();
+    g.beginPath(); g.arc(21, 5, 5, Math.PI - 0.6, Math.PI + 0.6); g.stroke();
+  }
+
+  g.fillStyle = '#ffe0bd';
+  drawRRect(g, -6, 16, 5.5, 11, 2.5);
+  g.fill(); g.stroke();
+  drawRRect(g, 0.5, 16, 5.5, 11, 2.5);
+  g.fill(); g.stroke();
+
+  g.fillStyle = '#d60000';
+  g.beginPath(); g.ellipse(-4, 28, 5.5, 3.2, 0, 0, Math.PI * 2); g.fill(); g.stroke();
+  g.beginPath(); g.ellipse(4, 28, 5.5, 3.2, 0, 0, Math.PI * 2); g.fill(); g.stroke();
+
+  // Red Dress
+  g.fillStyle = '#e01b24';
+  g.beginPath();
+  g.moveTo(-8, -2);
+  g.lineTo(8, -2);
+  g.lineTo(14, 18);
+  g.lineTo(-14, 18);
+  g.closePath();
+  g.fill(); g.stroke();
+
+  g.fillStyle = '#ffffff';
+  g.beginPath();
+  g.ellipse(-4, -1, 4, 2.2, 0.3, 0, Math.PI * 2);
+  g.ellipse(4, -1, 4, 2.2, -0.3, 0, Math.PI * 2);
+  g.fill(); g.stroke();
+
+  g.fillStyle = '#ffe0bd';
+  g.beginPath();
+  g.moveTo(-9, 0);
+  g.quadraticCurveTo(-15, 9, -3, 14);
+  g.quadraticCurveTo(-1, 10, -7, 2);
+  g.fill(); g.stroke();
+
+  g.beginPath();
+  g.moveTo(9, 0);
+  g.quadraticCurveTo(15, 9, 3, 14);
+  g.quadraticCurveTo(1, 10, 7, 2);
+  g.fill(); g.stroke();
+
+  g.save();
+  g.rotate(0.06);
+
+  g.fillStyle = '#ffe0bd';
+  g.beginPath();
+  g.arc(0, -16, 14.5, 0, Math.PI * 2);
+  g.fill(); g.stroke();
+
+  g.fillStyle = 'rgba(255, 105, 97, 0.55)';
+  g.beginPath();
+  g.arc(-8, -12, 3.2, 0, Math.PI * 2);
+  g.arc(8, -12, 3.2, 0, Math.PI * 2);
+  g.fill();
+
+  g.fillStyle = '#ffdf38';
+  g.beginPath();
+  g.arc(0, -18, 15, Math.PI * 0.9, Math.PI * 0.1);
+  g.quadraticCurveTo(5, -15, 0, -21);
+  g.quadraticCurveTo(-6, -15, -14, -17);
+  g.fill(); g.stroke();
+
+  g.fillStyle = '#e01b24';
+  g.beginPath();
+  g.ellipse(-4, -32, 4.5, 2.5, -0.3, 0, Math.PI * 2);
+  g.ellipse(4, -32, 4.5, 2.5, 0.3, 0, Math.PI * 2);
+  g.fill(); g.stroke();
+
+  g.strokeStyle = '#222';
+  g.lineWidth = 1.8;
+  if (pose === 'done') {
+    g.beginPath(); g.arc(-5, -15, 3, Math.PI, 0); g.stroke();
+    g.beginPath(); g.arc(5, -15, 3, Math.PI, 0); g.stroke();
+    g.beginPath(); g.arc(0, -11, 4, 0, Math.PI); g.stroke();
+  } else {
+    g.beginPath();
+    g.moveTo(-8, -18); g.lineTo(-4, -15); g.lineTo(-8, -12);
+    g.moveTo(8, -18);  g.lineTo(4, -15);  g.lineTo(8, -12);
+    g.stroke();
+
+    g.beginPath();
+    g.arc(0, -8, 3.2, Math.PI, 0);
+    g.stroke();
+
+    g.fillStyle = '#40c4ff';
+    g.beginPath();
+    g.moveTo(11, -22);
+    g.quadraticCurveTo(14, -17, 11, -16);
+    g.quadraticCurveTo(8, -17, 11, -22);
+    g.fill();
+  }
+  g.restore();
+
+  if (pose === 'idle') drawSpeechBubble(g, 'urgent');
+  if (pose === 'done') drawSpeechBubble(g, 'happy');
 }
 
-.home-btn {
-  width: 46px;
-  height: 46px;
-  background: #f5d7a1;
-  border: 2.5px solid #6e4427;
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 24px;
-  cursor: pointer;
-  pointer-events: auto;
-  box-shadow: 0 3px 0 #6e4427;
+function buildAllSprites() {
+  sprites.boy_idle  = createSprite(96, 100, (g) => drawBoyGraphic(g, 'idle'));
+  sprites.boy_walk  = createSprite(96, 100, (g) => drawBoyGraphic(g, 'walk'));
+  sprites.boy_done  = createSprite(96, 100, (g) => drawBoyGraphic(g, 'done'));
+
+  sprites.girl_idle = createSprite(96, 100, (g) => drawGirlGraphic(g, 'idle'));
+  sprites.girl_walk = createSprite(96, 100, (g) => drawGirlGraphic(g, 'walk'));
+  sprites.girl_done = createSprite(96, 100, (g) => drawGirlGraphic(g, 'done'));
 }
 
-.home-btn:active {
-  transform: translateY(2px);
-  box-shadow: 0 1px 0 #6e4427;
+buildAllSprites();
+
+// Fallback level loader in case levels.js is missing
+function safeGetLevel(lvl) {
+  if (typeof window.getLevelConfig === 'function') {
+    return window.getLevelConfig(lvl);
+  }
+  return {
+    doors: [
+      { id: 'girl', color: '#d60000', x: 105, y: 265, w: 62, h: 95 },
+      { id: 'boy',  color: '#0032d6', x: 285, y: 265, w: 62, h: 95 }
+    ],
+    chars: [
+      { id: 'boy',  color: '#0032d6', x: 105, y: 525, sx: 105, sy: 525, path: [], ready: false, done: false },
+      { id: 'girl', color: '#d60000', x: 285, y: 525, sx: 285, sy: 525, path: [], ready: false, done: false }
+    ],
+    walls: []
+  };
 }
 
-.more-badge {
-  background: linear-gradient(90deg, #d834eb, #b5179e);
-  color: #fff;
-  padding: 6px 14px 6px 16px;
-  border-radius: 25px 0 0 25px;
-  font-size: 13px;
-  font-weight: 900;
-  text-align: center;
-  cursor: pointer;
-  pointer-events: auto;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+function updateCanvasRect() {
+  canvasRect = canvas.getBoundingClientRect();
+}
+window.addEventListener('resize', updateCanvasRect);
+
+function initLevel(lvl) {
+  currentLevel = lvl;
+  localStorage.setItem('toiletRushLevel', lvl);
+  clearInterval(timerId);
+  timeLeft = 30;
+  state = 'DRAW';
+  hintActive = false;
+  drawingChar = null;
+  confetti = [];
+
+  document.getElementById('lvl-val').innerText = lvl;
+  document.getElementById('time-val').innerText = timeLeft + 's';
+  document.getElementById('modal').style.display = 'none';
+
+  const config = safeGetLevel(lvl);
+  doors = config.doors;
+  chars = config.chars;
+  walls = config.walls;
+
+  updateCanvasRect();
+
+  timerId = setInterval(() => {
+    if (state === 'DRAW' || state === 'WALK') {
+      timeLeft--;
+      document.getElementById('time-val').innerText = timeLeft + 's';
+      if (timeLeft <= 0) finishLevel(false);
+    }
+  }, 1000);
 }
 
-.status-bar {
-  position: absolute;
-  top: 92px;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 35px;
-  z-index: 10;
-  pointer-events: none;
+function toggleHint() {
+  hintActive = !hintActive;
 }
 
-.timer-wrap {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 23px;
-  color: #222;
-  font-weight: bold;
+function getCanvasCoords(e) {
+  if (!canvasRect) updateCanvasRect();
+  const touch = e.touches && e.touches[0] ? e.touches[0] : e;
+  return {
+    x: (touch.clientX - canvasRect.left) * (canvas.width / canvasRect.width),
+    y: (touch.clientY - canvasRect.top) * (canvas.height / canvasRect.height)
+  };
 }
 
-.level-wrap {
-  font-size: 24px;
-  color: #222;
-  font-weight: bold;
+function onStart(e) {
+  if (state !== 'DRAW') return;
+  const p = getCanvasCoords(e);
+  for (let i = 0; i < chars.length; i++) {
+    const c = chars[i];
+    if (!c.ready && Math.hypot(p.x - c.x, p.y - c.y) < 48) {
+      drawingChar = c;
+      c.path = [{ x: c.x, y: c.y }];
+      break;
+    }
+  }
 }
 
-.hint-btn {
-  position: absolute;
-  bottom: 70px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 195px;
-  height: 60px;
-  background: linear-gradient(180deg, #63c7ff 0%, #359be8 100%);
-  border: 3.5px solid #ffffff;
-  border-radius: 35px;
-  box-shadow: 0 5px 0 #2172b5, 0 8px 15px rgba(0,0,0,0.22);
-  color: #fff;
-  font-size: 23px;
-  font-weight: 900;
-  letter-spacing: 1.5px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  z-index: 10;
+function onMove(e) {
+  if (!drawingChar || state !== 'DRAW') return;
+  e.preventDefault();
+  const p = getCanvasCoords(e);
+  const prev = drawingChar.path[drawingChar.path.length - 1];
+
+  for (let i = 0; i < walls.length; i++) {
+    const w = walls[i];
+    if (p.x > w.x - 6 && p.x < w.x + w.w + 6 && p.y > w.y - 6 && p.y < w.y + w.h + 6) {
+      return;
+    }
+  }
+
+  if (Math.hypot(p.x - prev.x, p.y - prev.y) > 8) {
+    drawingChar.path.push({ x: p.x, y: p.y });
+  }
 }
 
-.hint-btn:active {
-  transform: translateX(-50%) translateY(3px);
-  box-shadow: 0 2px 0 #2172b5;
+function onEnd() {
+  if (!drawingChar) return;
+  const last = drawingChar.path[drawingChar.path.length - 1];
+  const door = doors.find(d => d.id === drawingChar.id);
+
+  if (Math.hypot(last.x - door.x, last.y - door.y) < 60) {
+    drawingChar.path.push({ x: door.x, y: door.y });
+    drawingChar.ready = true;
+  } else {
+    drawingChar.path = [];
+  }
+  drawingChar = null;
+
+  if (chars.every(c => c.ready)) {
+    beginWalk();
+  }
 }
 
-.modal {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  display: none;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  z-index: 30;
+canvas.addEventListener('pointerdown', onStart, { passive: true });
+canvas.addEventListener('pointermove', onMove, { passive: false });
+window.addEventListener('pointerup', onEnd, { passive: true });
+
+function buildSteps(path, speed = 3.2) {
+  const pts = [];
+  for (let i = 0; i < path.length - 1; i++) {
+    const a = path[i], b = path[i + 1];
+    const d = Math.hypot(b.x - a.x, b.y - a.y);
+    const n = Math.max(1, Math.ceil(d / speed));
+    for (let s = 0; s < n; s++) {
+      pts.push({
+        x: a.x + (b.x - a.x) * (s / n),
+        y: a.y + (b.y - a.y) * (s / n)
+      });
+    }
+  }
+  pts.push(path[path.length - 1]);
+  return pts;
 }
 
-.modal-home {
-  position: absolute;
-  top: 155px;
-  right: 28px;
-  width: 44px;
-  height: 44px;
-  background: #ffeb3b;
-  border: 3px solid #222;
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 22px;
-  cursor: pointer;
+function beginWalk() {
+  state = 'WALK';
+  chars.forEach(c => {
+    c.steps = buildSteps(c.path, 3.2);
+    c.idx = 0;
+  });
 }
 
-.trophy-box {
-  text-align: center;
-  margin-bottom: 35px;
+function spawnConfetti() {
+  const colors = ['#ff477e', '#ffde22', '#2ab807', '#359be8', '#d834eb'];
+  for (let i = 0; i < 40; i++) {
+    confetti.push({
+      x: canvas.width / 2,
+      y: canvas.height / 2 - 40,
+      vx: (Math.random() - 0.5) * 10,
+      vy: (Math.random() - 0.8) * 10,
+      color: colors[i % colors.length],
+      size: 6 + Math.random() * 5
+    });
+  }
 }
 
-.trophy-emoji {
-  font-size: 95px;
-  filter: drop-shadow(0 6px 12px rgba(0,0,0,0.5));
+function finishLevel(isWin) {
+  if (state === 'WIN' || state === 'FAIL') return;
+  state = isWin ? 'WIN' : 'FAIL';
+  clearInterval(timerId);
+
+  if (isWin) spawnConfetti();
+
+  setTimeout(() => {
+    const modal = document.getElementById('modal');
+    const icon = document.getElementById('m-icon');
+    const banner = document.getElementById('m-banner');
+    const btn = document.getElementById('m-btn');
+
+    modal.style.display = 'flex';
+    if (isWin) {
+      icon.innerText = '🏆';
+      banner.innerText = 'YOU WIN';
+      banner.className = 'banner win';
+      btn.innerText = '» NEXT';
+    } else {
+      icon.innerText = '🥈';
+      banner.innerText = 'FAILED';
+      banner.className = 'banner fail';
+      btn.innerText = '↻ Replay';
+    }
+  }, 550);
 }
 
-.banner {
-  margin-top: -12px;
-  padding: 10px 44px;
-  font-size: 32px;
-  font-weight: 900;
-  color: #fff;
-  border-radius: 30px;
-  text-shadow: 0 3px 0 rgba(0,0,0,0.35);
-  letter-spacing: 2px;
-  border: 3px solid rgba(255,255,255,0.4);
+function handleModalBtn() {
+  if (state === 'WIN') {
+    const next = currentLevel < MAX_LVL ? currentLevel + 1 : 1;
+    initLevel(next);
+  } else {
+    initLevel(currentLevel);
+  }
 }
 
-.banner.win {
-  background: linear-gradient(90deg, #d81b7a, #ff4da6, #d81b7a);
+function renderDoor(d, charInside) {
+  ctx.fillStyle = '#bde5ff';
+  ctx.strokeStyle = '#111';
+  ctx.lineWidth = 3.5;
+  ctx.fillRect(d.x - d.w/2, d.y - d.h/2, d.w, d.h);
+  ctx.strokeRect(d.x - d.w/2, d.y - d.h/2, d.w, d.h);
+
+  ctx.strokeStyle = '#7bbce8';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(d.x - d.w/2 + 5, d.y - d.h/2 + 5, d.w - 10, d.h - 10);
+
+  ctx.fillStyle = '#555';
+  ctx.beginPath();
+  ctx.arc(d.x - d.w/2 + 10, d.y + 5, 3.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  if (!charInside) {
+    ctx.fillStyle = d.color;
+    ctx.beginPath();
+    ctx.arc(d.x, d.y - 24, 6.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (d.id === 'girl') {
+      ctx.beginPath();
+      ctx.moveTo(d.x, d.y - 16);
+      ctx.lineTo(d.x - 10, d.y + 4);
+      ctx.lineTo(d.x + 10, d.y + 4);
+      ctx.closePath();
+      ctx.fill();
+    } else {
+      ctx.fillRect(d.x - 6.5, d.y - 15, 13, 17);
+    }
+    ctx.fillRect(d.x - 4.5, d.y + 2, 3.5, 13);
+    ctx.fillRect(d.x + 1, d.y + 2, 3.5, 13);
+  }
 }
 
-.banner.fail {
-  background: linear-gradient(90deg, #4b3296, #7554d4, #4b3296);
+function renderChar(c, now) {
+  ctx.save();
+  ctx.translate(c.x, c.y);
+
+  if (state === 'FAIL') {
+    ctx.fillStyle = '#38e4ff';
+    ctx.beginPath();
+    ctx.ellipse(0, 22, 32, 11, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.rotate(c.id === 'boy' ? -0.45 : 0.45);
+  } else if (state === 'DRAW') {
+    const bounce = Math.sin(now * 0.015 + (c.id === 'boy' ? 0 : 2)) * 1.5;
+    ctx.translate(0, bounce);
+  } else if (state === 'WALK' && !c.done) {
+    const waddle = Math.sin(now * 0.028) * 0.16;
+    ctx.rotate(waddle);
+  }
+
+  let key = c.id + '_idle';
+  if (c.done) key = c.id + '_done';
+  else if (state === 'WALK' || state === 'FAIL') key = c.id + '_walk';
+
+  const img = sprites[key];
+  ctx.drawImage(img, -48, -50);
+
+  ctx.restore();
 }
 
-.green-btn {
-  width: 190px;
-  height: 64px;
-  background: linear-gradient(180deg, #5ef527 0%, #2ab807 100%);
-  border: 3.5px solid #a6ff78;
-  border-radius: 18px;
-  box-shadow: 0 6px 0 #1b7a03, 0 10px 20px rgba(0,0,0,0.35);
-  color: #fff;
-  font-size: 25px;
-  font-weight: 900;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  text-shadow: 0 2px 2px rgba(0,0,0,0.35);
+function gameLoop(now = 0) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (hintActive && state === 'DRAW') {
+    ctx.save();
+    ctx.setLineDash([8, 8]);
+    ctx.lineWidth = 4.5;
+
+    const girl = chars.find(c => c.id === 'girl');
+    const gDoor = doors.find(d => d.id === 'girl');
+    ctx.strokeStyle = 'rgba(214, 0, 0, 0.45)';
+    ctx.beginPath();
+    ctx.moveTo(girl.sx, girl.sy);
+    ctx.lineTo(gDoor.x, gDoor.y);
+    ctx.stroke();
+
+    const boy = chars.find(c => c.id === 'boy');
+    const bDoor = doors.find(d => d.id === 'boy');
+    ctx.strokeStyle = 'rgba(0, 50, 214, 0.45)';
+    ctx.beginPath();
+    ctx.moveTo(boy.sx, boy.sy);
+    ctx.bezierCurveTo(boy.sx + 95, boy.sy + 85, boy.sx - 65, boy.sy + 95, boy.sx + 40, boy.sy);
+    ctx.lineTo(bDoor.x, bDoor.y);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  for (let i = 0; i < doors.length; i++) {
+    const d = doors[i];
+    const c = chars.find(ch => ch.id === d.id);
+    renderDoor(d, c && c.done);
+  }
+
+  for (let i = 0; i < walls.length; i++) {
+    const w = walls[i];
+    if (w.vx) {
+      w.x += w.vx;
+      if (w.x < w.minX || w.x > w.maxX) w.vx *= -1;
+    }
+    if (w.monster) {
+      ctx.fillStyle = '#eeeeee';
+      ctx.strokeStyle = '#222';
+      ctx.lineWidth = 3.5;
+      ctx.fillRect(w.x, w.y, w.w, w.h);
+      ctx.strokeRect(w.x, w.y, w.w, w.h);
+      ctx.fillStyle = '#d60000';
+      ctx.fillRect(w.x + 12, w.y + 25, 20, 14);
+      ctx.fillRect(w.x + w.w - 32, w.y + 25, 20, 14);
+    } else {
+      ctx.fillStyle = '#444';
+      ctx.strokeStyle = '#111';
+      ctx.lineWidth = 2.5;
+      ctx.fillRect(w.x, w.y, w.w, w.h);
+      ctx.strokeRect(w.x, w.y, w.w, w.h);
+    }
+  }
+
+  for (let i = 0; i < chars.length; i++) {
+    const c = chars[i];
+    if (c.path.length > 1) {
+      ctx.strokeStyle = c.color;
+      ctx.lineWidth = 7;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(c.path[0].x, c.path[0].y);
+      for (let j = 1; j < c.path.length; j++) {
+        ctx.lineTo(c.path[j].x, c.path[j].y);
+      }
+      ctx.stroke();
+    }
+  }
+
+  if (state === 'WALK') {
+    for (let i = 0; i < chars.length; i++) {
+      const c = chars[i];
+      if (c.idx < c.steps.length - 1) {
+        c.idx++;
+        c.x = c.steps[c.idx].x;
+        c.y = c.steps[c.idx].y;
+      } else {
+        c.done = true;
+      }
+
+      for (let j = 0; j < walls.length; j++) {
+        const w = walls[j];
+        if (c.x > w.x - 12 && c.x < w.x + w.w + 12 && c.y > w.y - 12 && c.y < w.y + w.h + 12) {
+          finishLevel(false);
+        }
+      }
+    }
+
+    const c1 = chars[0], c2 = chars[1];
+    if (Math.hypot(c1.x - c2.x, c1.y - c2.y) < 30) {
+      finishLevel(false);
+    }
+
+    if (chars.every(c => c.done)) {
+      finishLevel(true);
+    }
+  }
+
+  for (let i = 0; i < chars.length; i++) {
+    renderChar(chars[i], now);
+  }
+
+  // Confetti celebration particles
+  for (let i = 0; i < confetti.length; i++) {
+    const p = confetti[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.25;
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x, p.y, p.size, p.size);
+  }
+
+  requestAnimationFrame(gameLoop);
 }
 
-.green-btn:active {
-  transform: translateY(4px);
-  box-shadow: 0 2px 0 #1b7a03;
-}
-
-.menu-page {
-  display: flex;
-  flex-direction: column;
-  padding: 24px 16px;
-}
-
-.menu-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.menu-header h2 {
-  font-size: 26px;
-  color: #222;
-}
-
-.lvl-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 10px;
-  width: 100%;
-  overflow-y: auto;
-  padding: 6px;
-}
-
-.lvl-cell {
-  background: #359be8;
-  color: #fff;
-  border: none;
-  border-radius: 12px;
-  height: 54px;
-  font-size: 18px;
-  font-weight: bold;
-  cursor: pointer;
-  box-shadow: 0 4px 0 #1f6ca6;
-}
-
-.lvl-cell.active {
-  background: #2ab807;
-  box-shadow: 0 4px 0 #197004;
-}
+initLevel(currentLevel);
+requestAnimationFrame(gameLoop);
