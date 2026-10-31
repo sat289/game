@@ -16,7 +16,7 @@
     html, body {
       width: 100%;
       height: 100%;
-      background: #121212;
+      background: #1a1a1a;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -26,9 +26,9 @@
     }
     #game-wrap {
       position: relative;
-      width: 100%;
+      width: 100vw;
       max-width: 400px;
-      height: 100%;
+      height: 100vh;
       max-height: 800px;
       background-color: #ffffff;
       background-image: 
@@ -47,7 +47,6 @@
       touch-action: none;
       z-index: 1;
     }
-    /* Top Header Controls */
     .top-bar {
       position: absolute;
       top: 18px;
@@ -87,7 +86,6 @@
       pointer-events: auto;
       box-shadow: 0 3px 8px rgba(0,0,0,0.2);
     }
-    /* Status Bar (Timer & Level) */
     .status-bar {
       position: absolute;
       top: 78px;
@@ -104,11 +102,115 @@
       color: #222;
       font-weight: 900;
     }
-    /* Bottom Hint Button */
     .hint-btn {
       position: absolute;
       bottom: 45px;
       left: 50%;
       transform: translateX(-50%);
       width: 190px;
-      height: 5
+      height: 56px;
+      background: linear-gradient(180deg, #63c7ff 0%, #359be8 100%);
+      border: 3px solid #ffffff;
+      border-radius: 35px;
+      box-shadow: 0 5px 0 #2172b5, 0 8px 15px rgba(0,0,0,0.22);
+      color: #fff;
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      z-index: 10;
+    }
+    .hint-btn:active { transform: translateX(-50%) translateY(3px); box-shadow: 0 2px 0 #2172b5; }
+    .modal {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.78);
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 30;
+    }
+    .modal-home {
+      position: absolute;
+      top: 130px;
+      right: 25px;
+      width: 44px;
+      height: 44px;
+      background: #ffeb3b;
+      border: 3px solid #222;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 22px;
+      cursor: pointer;
+    }
+    .trophy-box { text-align: center; margin-bottom: 30px; }
+    .trophy-emoji { font-size: 85px; }
+    .banner {
+      margin-top: -10px;
+      padding: 10px 40px;
+      font-size: 30px;
+      font-weight: 900;
+      color: #fff;
+      border-radius: 30px;
+      text-shadow: 0 3px 0 rgba(0,0,0,0.35);
+      letter-spacing: 2px;
+      border: 3px solid rgba(255,255,255,0.4);
+    }
+    .banner.win { background: linear-gradient(90deg, #d81b7a, #ff4da6, #d81b7a); }
+    .banner.fail { background: linear-gradient(90deg, #4b3296, #7554d4, #4b3296); }
+    .green-btn {
+      width: 185px;
+      height: 60px;
+      background: linear-gradient(180deg, #5ef527 0%, #2ab807 100%);
+      border: 3px solid #a6ff78;
+      border-radius: 18px;
+      box-shadow: 0 6px 0 #1b7a03;
+      color: #fff;
+      font-size: 24px;
+      font-weight: 900;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .green-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #1b7a03; }
+  </style>
+</head>
+<body>
+
+<div id="game-wrap">
+  <div class="top-bar">
+    <div class="home-btn" onclick="window.location.href='levels.html'">🏠</div>
+    <div class="more-badge" onclick="window.location.href='levels.html'">🎮<br>MORE</div>
+  </div>
+
+  <div class="status-bar">
+    <div class="timer-wrap">⏰ <span id="time-val">30s</span></div>
+    <div class="level-wrap">Level: <span id="lvl-val">1</span></div>
+  </div>
+
+  <canvas id="canvas" width="390" height="780"></canvas>
+
+  <button class="hint-btn" onclick="toggleHint()">HINT 📺</button>
+
+  <div class="modal" id="modal">
+    <div class="modal-home" onclick="window.location.href='levels.html'">🏠</div>
+    <div class="trophy-box">
+      <div class="trophy-emoji" id="m-icon">🏆</div>
+      <div class="banner win" id="m-banner">YOU WIN</div>
+    </div>
+    <button class="green-btn" id="m-btn" onclick="handleModalBtn()">» NEXT</button>
+  </div>
+</div>
+
+<script src="levels.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
