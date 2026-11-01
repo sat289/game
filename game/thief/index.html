@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Thief Puzzle - Home, Editor & Leaderboard</title>
+  <title>Thief Puzzle - Home, Editor & Publisher</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     body {
@@ -11,7 +11,7 @@
       color: #222;
       display: flex;
       justify-content: center;
-      padding: 16px;
+      padding: 14px;
       min-height: 100vh;
     }
     .app-container {
@@ -20,13 +20,14 @@
       background: #fffdf9;
       border: 3px solid #222;
       border-radius: 22px;
-      padding: 20px;
+      padding: 18px;
       box-shadow: 0 12px 28px rgba(0,0,0,0.15);
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 14px;
+      position: relative;
     }
-    h1 { text-align: center; font-size: 26px; font-weight: 900; }
+    h1 { text-align: center; font-size: 25px; font-weight: 900; }
     .nav-tabs {
       display: flex;
       gap: 8px;
@@ -77,9 +78,10 @@
       transition: transform 0.1s;
     }
     button:active { transform: scale(0.97); }
-    .btn-play { background: linear-gradient(180deg, #54f000, #2db300); color: #fff; font-size: 18px; width: 100%; padding: 14px; box-shadow: 0 4px 0 #1b6e00; }
+    .btn-play { background: linear-gradient(180deg, #54f000, #2db300); color: #fff; font-size: 17px; width: 100%; padding: 13px; box-shadow: 0 4px 0 #1b6e00; }
     .btn-google { background: #4285F4; color: #fff; width: 100%; margin-top: 8px; }
     .btn-orange { background: #ff9800; color: #fff; }
+    .btn-blue { background: #29b6f6; color: #fff; }
     .btn-teal { background: #0d8a72; color: #fff; width: 100%; padding: 12px; margin-top: 8px; }
     .btn-danger { background: #e53935; color: #fff; font-size: 12px; padding: 6px 10px; }
     .levels-grid {
@@ -101,7 +103,7 @@
       font-size: 13px;
     }
     .lvl-btn.locked { background: #d5d5d5; color: #888; cursor: not-allowed; box-shadow: none; }
-    .leaderboard-list { list-style: none; max-height: 200px; overflow-y: auto; }
+    .leaderboard-list { list-style: none; max-height: 190px; overflow-y: auto; }
     .leaderboard-item {
       display: flex;
       justify-content: space-between;
@@ -110,22 +112,50 @@
       font-size: 14px;
     }
     .leaderboard-item:first-child { font-weight: 900; color: #d35400; }
-    /* Editor Styles */
+
+    /* Editor & Preview Canvas */
+    .mode-switch {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+    }
+    .mode-btn {
+      flex: 1;
+      padding: 9px;
+      font-size: 13px;
+      background: #fff;
+      color: #222;
+    }
+    .mode-btn.active-mode {
+      background: #2db300;
+      color: #fff;
+    }
     #editorCanvas {
       width: 100%;
       height: 360px;
-      background: #fff3db;
+      background: #ffefd5;
       border: 2px solid #222;
       border-radius: 12px;
       touch-action: none;
-      cursor: move;
+      cursor: grab;
       margin-top: 8px;
+    }
+    .preview-banner {
+      margin-top: 6px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 800;
+      text-align: center;
+      background: #e3f2fd;
+      border: 2px solid #2196f3;
+      color: #0d47a1;
     }
     .palette-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 6px;
-      margin-top: 8px;
+      margin-top: 6px;
     }
     .tool-chip {
       font-size: 12px;
@@ -138,18 +168,70 @@
       font-weight: 700;
     }
     .tool-chip:hover { background: #ffe0b2; }
-    .token-card {
-      background: #fdfbf4;
+
+    /* Reference Token Image Card */
+    .token-image-card {
+      background: #fff;
       border: 3px solid #162238;
-      border-radius: 14px;
-      padding: 14px;
-      font-family: monospace;
-      font-size: 12px;
-      word-break: break-all;
-      color: #444;
-      margin-bottom: 10px;
+      border-radius: 16px;
+      padding: 12px;
+      text-align: center;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .token-image-card img {
+      width: 100%;
+      max-height: 220px;
+      object-fit: contain;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      background: #faf7f0;
     }
     .field-label { font-size: 11px; font-weight: 800; color: #0d8a72; margin-top: 8px; display: block; text-transform: uppercase; }
+    .code-box {
+      font-family: monospace;
+      font-size: 11px;
+      background: #1e1e1e;
+      color: #80cbc4;
+      padding: 10px;
+      border-radius: 10px;
+      margin-top: 8px;
+      width: 100%;
+    }
+    /* Password Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+      padding: 20px;
+    }
+    .pass-modal {
+      width: 100%;
+      max-width: 340px;
+      background: #fffdf9;
+      border: 3px solid #222;
+      border-radius: 18px;
+      padding: 20px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .queue-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fff;
+      border: 1.5px solid #222;
+      border-radius: 8px;
+      padding: 6px 10px;
+      margin-top: 6px;
+      font-size: 13px;
+    }
     .hidden { display: none !important; }
   </style>
 </head>
@@ -159,7 +241,7 @@
 
     <div class="nav-tabs">
       <button class="tab-btn active" id="tabHomeBtn">🏠 Play & Rank</button>
-      <button class="tab-btn" id="tabEditorBtn">🛠️ Create & Publish</button>
+      <button class="tab-btn" id="tabEditorBtn">🔒 Edit & Publish</button>
     </div>
 
     <!-- ================= PLAY & LEADERBOARD VIEW ================= -->
@@ -198,38 +280,44 @@
       </div>
     </div>
 
-    <!-- ================= LEVEL EDITOR & GITHUB PUBLISHER VIEW ================= -->
+    <!-- ================= PASSWORD-PROTECTED LEVEL EDITOR VIEW ================= -->
     <div id="editorView" class="hidden" style="display:flex; flex-direction:column; gap:14px;">
-      <!-- Prompt / Screenshot to Level Generator -->
+      <!-- 1. Text & Image Prompt to Level Code Converter -->
       <div class="card">
-        <h3>✨ Prompt or Image to Level Converter</h3>
-        <p style="font-size:12px; color:#555; margin-bottom:6px;">Describe your level or select a screenshot to auto-build objects on the canvas:</p>
-        <textarea id="aiPromptInput" rows="2" placeholder="Example: Help him get the fire extinguisher with 3 fires, a hammer, and a flower pot"></textarea>
+        <h3>✨ Text / Image Prompt to Level Code</h3>
+        <p style="font-size:12px; color:#555; margin-bottom:6px;">
+          Type a scene prompt or upload an image to convert it into level code and preview it immediately:
+        </p>
+        <textarea id="aiPromptInput" rows="2" placeholder="e.g. Help him get the fire extinguisher with 4 fires, 1 hammer, and 1 flower pot"></textarea>
         <div class="input-row" style="align-items:center;">
           <input type="file" id="imagePromptInput" accept="image/*" style="font-size:12px;" />
-          <button id="generateFromPromptBtn" class="btn-orange" style="white-space:nowrap;">⚡ Auto-Build</button>
+          <button id="generateFromPromptBtn" class="btn-orange" style="white-space:nowrap;">⚡ Convert & Preview</button>
         </div>
+        <img id="uploadedPromptThumb" class="hidden" style="width:100%; max-height:130px; object-fit:contain; margin-top:8px; border-radius:8px; border:1px solid #ccc;" />
+        <label class="field-label">Generated Level Code (Editable JSON)</label>
+        <textarea id="generatedCodeBox" class="code-box" rows="4"></textarea>
+        <button id="applyCodeBtn" class="btn-blue" style="width:100%; margin-top:6px;">🔄 Apply Code to Preview Canvas</button>
       </div>
 
-      <!-- Visual Canvas Editor -->
+      <!-- 2. Visual Editor + Live Playable Preview System -->
       <div class="card">
-        <h3>🎨 Visual Scene Editor (Drag items to move)</h3>
-        <label class="field-label">Level Mission Text</label>
+        <h3>🎨 Level Designer & Playable Preview</h3>
+        <label class="field-label">Level Mission Prompt</label>
         <input type="text" id="editPromptTitle" value="Help him get the fire extinguisher." />
 
         <div class="input-row">
           <div style="flex:1;">
-            <label class="field-label">Thief Avatar Style</label>
+            <label class="field-label">Thief Avatar</label>
             <select id="editThiefStyle">
-              <option value="bandana">Blue Headband Thief</option>
-              <option value="cap">Blue Cap Thief</option>
+              <option value="normal">Classic Stickman</option>
+              <option value="bandana">Blue Headband</option>
+              <option value="cap">Blue Cap</option>
               <option value="mask">Masked Burglar</option>
               <option value="angel">Flying Angel</option>
-              <option value="normal">Classic Stickman</option>
             </select>
           </div>
           <div style="flex:1;">
-            <label class="field-label">Target Goal Object</label>
+            <label class="field-label">Target Object</label>
             <select id="editTargetType">
               <option value="extinguisher">🧯 Extinguisher</option>
               <option value="chicken">🍗 Roast Chicken</option>
@@ -241,44 +329,73 @@
           </div>
         </div>
 
+        <!-- Mode Toggle: Edit vs Live Play Preview -->
+        <div class="mode-switch">
+          <button id="modeEditBtn" class="mode-btn active-mode">🛠️ Edit Objects (Drag)</button>
+          <button id="modePreviewBtn" class="mode-btn">▶️ Live Play Preview</button>
+          <button id="resetPreviewBtn" class="btn-orange" style="padding:8px 10px;">↻</button>
+        </div>
+
+        <div id="previewStatusBanner" class="preview-banner">
+          🛠️ EDIT MODE: Tap any object below to add it, or drag items on the canvas.
+        </div>
+
         <canvas id="editorCanvas" width="420" height="460"></canvas>
-        <div style="font-size:11px; color:#666; text-align:center; margin-top:4px;">
-          🟢 Green circle = Safe Pivot (arm wraps around) | 🔴 Red circle = Hazard (touching fails)
-        </div>
 
-        <label class="field-label">Add Safe Pivots (Wrap Points)</label>
-        <div class="palette-grid">
-          <div class="tool-chip" data-add="pivot" data-kind="rock">+ 🪨 Rock</div>
-          <div class="tool-chip" data-add="pivot" data-kind="bin">+ 🗑️ Bin</div>
-          <div class="tool-chip" data-add="pivot" data-kind="flower">+ 🌸 Flower</div>
-          <div class="tool-chip" data-add="pivot" data-kind="lamp">+ 💡 Lamp</div>
-        </div>
+        <div id="paletteContainer">
+          <label class="field-label">Add Safe Pivots (Arm Wraps Around)</label>
+          <div class="palette-grid">
+            <div class="tool-chip" data-add="pivot" data-kind="rock">+ 🪨 Rock</div>
+            <div class="tool-chip" data-add="pivot" data-kind="bin">+ 🗑️ Bin</div>
+            <div class="tool-chip" data-add="pivot" data-kind="flower">+ 🪴 Flower</div>
+            <div class="tool-chip" data-add="pivot" data-kind="lamp">+ 💡 Lamp</div>
+          </div>
 
-        <label class="field-label">Add Hazards & Avatars (Obstacles)</label>
-        <div class="palette-grid">
-          <div class="tool-chip" data-add="hazard" data-kind="fire">+ 🔥 Fire</div>
-          <div class="tool-chip" data-add="hazard" data-kind="hammer">+ 🔨 Hammer</div>
-          <div class="tool-chip" data-add="hazard" data-kind="girl">+ 👩 Girl</div>
-          <div class="tool-chip" data-add="hazard" data-kind="boy">+ 🧑 Boy</div>
-          <div class="tool-chip" data-add="hazard" data-kind="guard">+ 🥷 Guard</div>
-          <div class="tool-chip" data-add="hazard" data-kind="couple">+ 💑 Bench</div>
-          <div class="tool-chip" data-add="hazard" data-kind="door">+ 🚪 Door</div>
-          <div class="tool-chip" data-add="hazard" data-kind="villain">+ 🦹 Villain</div>
+          <label class="field-label">Add Hazards & Avatars (Obstacles)</label>
+          <div class="palette-grid">
+            <div class="tool-chip" data-add="hazard" data-kind="fire">+ 🔥 Fire</div>
+            <div class="tool-chip" data-add="hazard" data-kind="hammer">+ 🔨 Hammer</div>
+            <div class="tool-chip" data-add="hazard" data-kind="girl">+ 👩 Girl</div>
+            <div class="tool-chip" data-add="hazard" data-kind="boy">+ 🧑 Boy</div>
+            <div class="tool-chip" data-add="hazard" data-kind="guard">+ 🥷 Guard</div>
+            <div class="tool-chip" data-add="hazard" data-kind="couple">+ 💑 Couple</div>
+            <div class="tool-chip" data-add="hazard" data-kind="door">+ 🚪 Door</div>
+            <div class="tool-chip" data-add="hazard" data-kind="villain">+ 🦹 Villain</div>
+          </div>
         </div>
 
         <div class="input-row" style="margin-top:10px;">
-          <button id="deleteSelectedBtn" class="btn-danger" style="flex:1;">🗑️ Delete Selected</button>
-          <button id="saveLocalLevelBtn" class="btn-orange" style="flex:1;">💾 Add to Game</button>
+          <button id="deleteSelectedBtn" class="btn-danger" style="flex:1;">🗑️ Delete Object</button>
+          <button id="fullScreenPreviewBtn" class="btn-blue" style="flex:1;">👁️ Full-Screen Test</button>
+        </div>
+        <button id="saveLocalLevelBtn" class="btn-play" style="margin-top:8px; font-size:15px;">
+          ➕ Add Level to Publish Queue
+        </button>
+
+        <!-- Queued Custom Levels Preview List -->
+        <div style="margin-top:12px;">
+          <label class="field-label">Levels Queued for Publishing (<span id="queueCount">0</span>)</label>
+          <div id="queuedLevelsList"></div>
         </div>
       </div>
 
-      <!-- GitHub Credentials & Direct Repository Publisher -->
+      <!-- 3. GitHub Token Image Card & Direct Publisher -->
       <div class="card" style="background:#e6f7f3; border-color:#0d8a72;">
-        <h3 style="color:#0d8a72;">1. GitHub Credentials & Publish</h3>
-        <div class="token-card">
-          <div style="font-weight:bold; color:#0d8a72; margin-bottom:4px;">REFERENCE TOKEN CARD</div>
-          Enter your GitHub Personal Access Token below to publish custom levels directly to <b>thief/levels.json</b> in your repo.
+        <div class="token-image-card">
+          <div style="font-size:12px; font-weight:900; color:#0d8a72; margin-bottom:8px; letter-spacing:0.5px;">
+            🖼️ REFERENCE TOKEN CARD
+          </div>
+          <img
+            src="logo/4833_2.jpg"
+            alt="Reference Token Card (logo/4833_2.jpg)"
+            onerror="if(!this.dataset.f1){this.dataset.f1=1;this.src='../logo/4833_2.jpg';}else if(!this.dataset.f2){this.dataset.f2=1;this.src='/game/logo/4833_2.jpg';}"
+          />
+          <div style="font-size:11px; color:#555; margin-top:6px;">
+            View your token details above to enter them into Section 1 below.
+          </div>
         </div>
+
+        <h3 style="color:#0d8a72;">1. GitHub Credentials</h3>
 
         <label class="field-label">USERNAME</label>
         <input type="text" id="ghUsername" value="sat289" />
@@ -293,15 +410,31 @@
         <input type="password" id="ghToken" placeholder="github_pat_..." />
 
         <button id="saveGhCredsBtn" class="btn-teal">💾 Save Credentials</button>
-        <button id="publishGithubBtn" class="btn-play" style="margin-top:10px; font-size:15px;">🚀 Publish Levels to GitHub</button>
+        <button id="publishGithubBtn" class="btn-play" style="margin-top:10px; font-size:15px;">
+          🚀 Publish Levels to GitHub
+        </button>
         <div id="publishStatus" style="font-size:12px; margin-top:8px; font-weight:bold; text-align:center;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Password Protection Modal (Pass: 2010143) -->
+  <div id="passwordModal" class="modal-backdrop hidden">
+    <div class="pass-modal">
+      <h3>🔒 Editor Password Required</h3>
+      <p style="font-size:13px; color:#555;">Enter the admin password to access Level Editor & GitHub Publishing:</p>
+      <input type="password" id="editorPassInput" placeholder="Enter password..." style="text-align:center; font-size:16px;" />
+      <div id="passErrorMsg" style="color:#e53935; font-size:12px; font-weight:bold;" class="hidden">❌ Incorrect password!</div>
+      <div class="input-row">
+        <button id="cancelPassBtn" class="btn-danger" style="flex:1; font-size:14px;">Cancel</button>
+        <button id="unlockPassBtn" class="btn-orange" style="flex:1;">Unlock</button>
       </div>
     </div>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
     const firebaseConfig = {
@@ -321,13 +454,15 @@
 
     const STORAGE_KEY = "thief_puzzle_player_v1";
     const CUSTOM_LEVELS_KEY = "thief_custom_levels_v1";
+    const PREVIEW_DRAFT_KEY = "thief_preview_draft_v1";
     const GH_CREDS_KEY = "thief_gh_creds_v1";
+    const EDITOR_PASS = "2010143";
     const BUILTIN_LEVEL_COUNT = 6;
 
     let currentPlayer = JSON.parse(localStorage.getItem(STORAGE_KEY)) || null;
     let customLevels = JSON.parse(localStorage.getItem(CUSTOM_LEVELS_KEY)) || [];
+    let isEditorUnlocked = false;
 
-    // Load any remote levels.json published to the repo
     async function loadRemotePublishedLevels() {
       try {
         const res = await fetch("levels.json?t=" + Date.now());
@@ -337,17 +472,31 @@
             customLevels = data;
             localStorage.setItem(CUSTOM_LEVELS_KEY, JSON.stringify(customLevels));
             renderUI();
+            renderQueueList();
           }
         }
       } catch (e) {}
     }
     loadRemotePublishedLevels();
 
-    // Tab switching
+    // Password-Protected Tab Navigation
     const tabHomeBtn = document.getElementById("tabHomeBtn");
     const tabEditorBtn = document.getElementById("tabEditorBtn");
     const homeView = document.getElementById("homeView");
     const editorView = document.getElementById("editorView");
+    const passwordModal = document.getElementById("passwordModal");
+    const editorPassInput = document.getElementById("editorPassInput");
+    const passErrorMsg = document.getElementById("passErrorMsg");
+
+    function openEditorTab() {
+      tabEditorBtn.classList.add("active");
+      tabEditorBtn.textContent = "🛠️ Edit & Publish";
+      tabHomeBtn.classList.remove("active");
+      editorView.classList.remove("hidden");
+      homeView.classList.add("hidden");
+      syncCodeBoxFromScene();
+      renderQueueList();
+    }
 
     tabHomeBtn.onclick = () => {
       tabHomeBtn.classList.add("active");
@@ -356,14 +505,38 @@
       editorView.classList.add("hidden");
       renderUI();
     };
+
     tabEditorBtn.onclick = () => {
-      tabEditorBtn.classList.add("active");
-      tabHomeBtn.classList.remove("active");
-      editorView.classList.remove("hidden");
-      homeView.classList.add("hidden");
-      drawEditor();
+      if (isEditorUnlocked) {
+        openEditorTab();
+      } else {
+        editorPassInput.value = "";
+        passErrorMsg.classList.add("hidden");
+        passwordModal.classList.remove("hidden");
+        editorPassInput.focus();
+      }
     };
 
+    document.getElementById("cancelPassBtn").onclick = () => {
+      passwordModal.classList.add("hidden");
+    };
+
+    function verifyPassword() {
+      if (editorPassInput.value.trim() === EDITOR_PASS) {
+        isEditorUnlocked = true;
+        passwordModal.classList.add("hidden");
+        openEditorTab();
+      } else {
+        passErrorMsg.classList.remove("hidden");
+      }
+    }
+
+    document.getElementById("unlockPassBtn").onclick = verifyPassword;
+    editorPassInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") verifyPassword();
+    });
+
+    // Firebase Sync & Home UI
     async function syncPlayerWithFirebase(player) {
       if (!player || !player.uid) return;
       try {
@@ -380,9 +553,7 @@
         });
         localStorage.setItem(STORAGE_KEY, JSON.stringify(player));
         renderUI();
-      } catch (e) {
-        console.warn("Firebase sync notice:", e);
-      }
+      } catch (e) {}
     }
 
     function renderUI() {
@@ -409,10 +580,9 @@
       for (let i = 1; i <= totalLevels; i++) {
         const btn = document.createElement("div");
         const isCustom = i > BUILTIN_LEVEL_COUNT;
-        btn.className = "lvl-btn" + (i > unlocked ? " locked" : "");
+        btn.className = "lvl-btn" + (i > unlocked && !isCustom ? " locked" : "");
         btn.innerHTML = isCustom ? `⭐ ${i}` : `Lvl ${i}`;
         if (i <= unlocked || isCustom) {
-          btn.classList.remove("locked");
           btn.onclick = () => {
             if (!currentPlayer) {
               currentPlayer = { uid: "guest_" + Date.now(), username: "Player", level: 1 };
@@ -490,30 +660,41 @@
       });
     });
 
-    // ================= VISUAL LEVEL EDITOR LOGIC =================
+    // ================= VISUAL EDITOR + PLAYABLE PREVIEW ENGINE =================
     const edCanvas = document.getElementById("editorCanvas");
     const edCtx = edCanvas.getContext("2d");
+    const previewBanner = document.getElementById("previewStatusBanner");
+    const generatedCodeBox = document.getElementById("generatedCodeBox");
 
     let editorScene = {
       prompt: "Help him get the fire extinguisher.",
       thiefStyle: "normal",
-      thief: { x: 80, y: 155, shoulderX: 92, shoulderY: 150 },
-      handStart: { x: 145, y: 205 },
-      target: { x: 350, y: 365, r: 26, kind: "extinguisher" },
+      thief: { x: 75, y: 155, shoulderX: 90, shoulderY: 148 },
+      handStart: { x: 145, y: 200 },
+      target: { x: 352, y: 365, r: 25, kind: "extinguisher" },
       pivots: [
-        { x: 190, y: 295, r: 26, kind: "flower" }
+        { x: 190, y: 292, r: 25, kind: "flower" }
       ],
       hazards: [
-        { x: 300, y: 135, r: 42, kind: "fire" },
+        { x: 298, y: 135, r: 42, kind: "fire" },
         { x: 110, y: 270, r: 36, kind: "fire" },
-        { x: 100, y: 380, r: 36, kind: "fire" },
+        { x: 100, y: 382, r: 36, kind: "fire" },
         { x: 295, y: 315, r: 38, kind: "fire" },
-        { x: 245, y: 235, r: 26, kind: "hammer" }
+        { x: 246, y: 235, r: 24, kind: "hammer" }
       ]
     };
 
+    let editorMode = "EDIT"; // "EDIT" | "PREVIEW"
     let selectedItem = null;
     let draggingItem = null;
+
+    // Live Preview State
+    let simHand = { x: 145, y: 200, r: 14 };
+    let simTargetPos = { x: 352, y: 365 };
+    let simAnchors = [];
+    let simDraggingHand = false;
+    let simStatus = "PLAYING"; // PLAYING | RETRACTING | WIN | FAIL
+    let animTick = 0;
 
     const ICONS = {
       rock: "🪨", bin: "🗑️", flower: "🪴", lamp: "💡",
@@ -521,70 +702,234 @@
       extinguisher: "🧯", chicken: "🍗", balloons: "🎈", treasure: "🧰", purse: "👛", plug: "🔌"
     };
 
-    function drawEditor() {
+    function syncCodeBoxFromScene() {
+      editorScene.prompt = document.getElementById("editPromptTitle").value.trim();
+      generatedCodeBox.value = JSON.stringify(editorScene, null, 2);
+    }
+
+    function resetSimulation() {
+      simHand.x = editorScene.handStart.x;
+      simHand.y = editorScene.handStart.y;
+      simTargetPos.x = editorScene.target.x;
+      simTargetPos.y = editorScene.target.y;
+      simAnchors = [{ x: editorScene.thief.shoulderX, y: editorScene.thief.shoulderY }];
+      simDraggingHand = false;
+      simStatus = "PLAYING";
+      if (editorMode === "PREVIEW") {
+        previewBanner.style.background = "#fff8e1";
+        previewBanner.style.borderColor = "#ff9800";
+        previewBanner.style.color = "#e65100";
+        previewBanner.textContent = "▶️ LIVE PREVIEW: Drag the hand 🤚 around safe pivots to grab the target!";
+      }
+    }
+
+    document.getElementById("modeEditBtn").onclick = () => {
+      editorMode = "EDIT";
+      document.getElementById("modeEditBtn").classList.add("active-mode");
+      document.getElementById("modePreviewBtn").classList.remove("active-mode");
+      document.getElementById("paletteContainer").classList.remove("hidden");
+      previewBanner.style.background = "#e3f2fd";
+      previewBanner.style.borderColor = "#2196f3";
+      previewBanner.style.color = "#0d47a1";
+      previewBanner.textContent = "🛠️ EDIT MODE: Drag objects on the canvas or tap buttons below to add more.";
+      resetSimulation();
+    };
+
+    document.getElementById("modePreviewBtn").onclick = () => {
+      editorMode = "PREVIEW";
+      document.getElementById("modePreviewBtn").classList.add("active-mode");
+      document.getElementById("modeEditBtn").classList.remove("active-mode");
+      document.getElementById("paletteContainer").classList.add("hidden");
+      resetSimulation();
+    };
+
+    document.getElementById("resetPreviewBtn").onclick = () => {
+      resetSimulation();
+    };
+
+    function distToSegment(p, a, b) {
+      const l2 = (b.x - a.x) ** 2 + (b.y - a.y) ** 2;
+      if (l2 === 0) return Math.hypot(p.x - a.x, p.y - a.y);
+      let t = ((p.x - a.x) * (b.x - a.x) + (p.y - a.y) * (b.y - a.y)) / l2;
+      t = Math.max(0, Math.min(1, t));
+      return Math.hypot(p.x - (a.x + t * (b.x - a.x)), p.y - (a.y + t * (b.y - a.y)));
+    }
+
+    function updatePreviewPhysics() {
+      if (simStatus !== "PLAYING") return;
+      const lastAnchor = simAnchors[simAnchors.length - 1];
+
+      for (const piv of editorScene.pivots) {
+        if (distToSegment(piv, lastAnchor, simHand) < piv.r + 6) {
+          if (!simAnchors.some(a => a.pivRef === piv)) {
+            const angle = Math.atan2(piv.y - lastAnchor.y, piv.x - lastAnchor.x) - Math.PI / 2;
+            simAnchors.push({
+              x: piv.x + Math.cos(angle) * (piv.r + 7),
+              y: piv.y + Math.sin(angle) * (piv.r + 7),
+              pivRef: piv
+            });
+          }
+        }
+      }
+
+      const chain = [...simAnchors, simHand];
+      for (let i = 0; i < chain.length - 1; i++) {
+        for (const haz of editorScene.hazards) {
+          if (distToSegment(haz, chain[i], chain[i + 1]) < haz.r - 5) {
+            simStatus = "FAIL";
+            simDraggingHand = false;
+            previewBanner.style.background = "#ffebee";
+            previewBanner.style.borderColor = "#e53935";
+            previewBanner.style.color = "#b71c1c";
+            previewBanner.textContent = "❌ PREVIEW FAILED: Arm touched a hazard! Click ↻ to retry or move obstacles.";
+            return;
+          }
+        }
+      }
+
+      if (Math.hypot(simHand.x - editorScene.target.x, simHand.y - editorScene.target.y) < editorScene.target.r + simHand.r) {
+        simStatus = "RETRACTING";
+        simDraggingHand = false;
+      }
+    }
+
+    function renderEditorAndPreview() {
+      animTick++;
       edCtx.clearRect(0, 0, edCanvas.width, edCanvas.height);
 
-      // Thief
+      // Handle retraction in preview mode
+      if (editorMode === "PREVIEW" && simStatus === "RETRACTING") {
+        const targetPt = simAnchors[simAnchors.length - 1];
+        const dx = targetPt.x - simHand.x;
+        const dy = targetPt.y - simHand.y;
+        const dist = Math.hypot(dx, dy);
+        const speed = 12;
+        if (dist <= speed) {
+          simHand.x = targetPt.x;
+          simHand.y = targetPt.y;
+          if (simAnchors.length > 1) {
+            simAnchors.pop();
+          } else {
+            simStatus = "WIN";
+            previewBanner.style.background = "#e8f5e9";
+            previewBanner.style.borderColor = "#2db300";
+            previewBanner.style.color = "#1b5e20";
+            previewBanner.textContent = "🏆 PREVIEW PASSED! Level is solvable and ready to Add & Publish!";
+          }
+        } else {
+          simHand.x += (dx / dist) * speed;
+          simHand.y += (dy / dist) * speed;
+        }
+        simTargetPos.x = simHand.x;
+        simTargetPos.y = simHand.y;
+      }
+
+      // Draw Thief Stickman
+      const tx = editorScene.thief.x;
+      const ty = editorScene.thief.y;
       edCtx.save();
-      edCtx.fillStyle = "#2196f3";
-      edCtx.beginPath();
-      edCtx.arc(editorScene.thief.x, editorScene.thief.y, 24, 0, Math.PI * 2);
-      edCtx.fill();
+      edCtx.strokeStyle = "#111";
+      edCtx.lineWidth = 3.5;
+      edCtx.fillStyle = "#1976d2";
+      edCtx.fillRect(tx - 9, ty - 18, 18, 34);
+      edCtx.strokeRect(tx - 9, ty - 18, 18, 34);
       edCtx.fillStyle = "#fff";
-      edCtx.font = "bold 11px sans-serif";
-      edCtx.textAlign = "center";
-      edCtx.fillText("THIEF", editorScene.thief.x, editorScene.thief.y + 4);
+      edCtx.beginPath();
+      edCtx.arc(tx, ty - 36, 17, 0, Math.PI * 2);
+      edCtx.fill(); edCtx.stroke();
+      edCtx.beginPath();
+      edCtx.moveTo(tx - 5, ty + 16); edCtx.lineTo(tx - 12, ty + 48);
+      edCtx.moveTo(tx + 5, ty + 16); edCtx.lineTo(tx + 12, ty + 48);
+      edCtx.stroke();
       edCtx.restore();
 
-      // Pivots (Green)
+      // Draw Pivots
       editorScene.pivots.forEach(p => {
         edCtx.save();
-        edCtx.fillStyle = "rgba(46, 204, 113, 0.28)";
-        edCtx.strokeStyle = selectedItem === p ? "#000" : "#27ae60";
-        edCtx.lineWidth = selectedItem === p ? 3 : 2;
-        edCtx.beginPath();
-        edCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        edCtx.fill();
-        edCtx.stroke();
-        edCtx.font = "26px sans-serif";
+        if (editorMode === "EDIT") {
+          edCtx.fillStyle = "rgba(46, 204, 113, 0.25)";
+          edCtx.strokeStyle = selectedItem === p ? "#000" : "#27ae60";
+          edCtx.lineWidth = selectedItem === p ? 3 : 1.5;
+          edCtx.beginPath();
+          edCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          edCtx.fill(); edCtx.stroke();
+        }
+        edCtx.font = "28px sans-serif";
         edCtx.textAlign = "center";
         edCtx.textBaseline = "middle";
         edCtx.fillText(ICONS[p.kind] || "🪨", p.x, p.y);
         edCtx.restore();
       });
 
-      // Hazards (Red)
+      // Draw Hazards
       editorScene.hazards.forEach(h => {
         edCtx.save();
-        edCtx.fillStyle = "rgba(231, 76, 60, 0.25)";
-        edCtx.strokeStyle = selectedItem === h ? "#000" : "#c0392b";
-        edCtx.lineWidth = selectedItem === h ? 3 : 2;
-        edCtx.beginPath();
-        edCtx.arc(h.x, h.y, h.r, 0, Math.PI * 2);
-        edCtx.fill();
-        edCtx.stroke();
-        edCtx.font = "28px sans-serif";
+        if (editorMode === "EDIT") {
+          edCtx.fillStyle = "rgba(231, 76, 60, 0.22)";
+          edCtx.strokeStyle = selectedItem === h ? "#000" : "#c0392b";
+          edCtx.lineWidth = selectedItem === h ? 3 : 1.5;
+          edCtx.beginPath();
+          edCtx.arc(h.x, h.y, h.r, 0, Math.PI * 2);
+          edCtx.fill(); edCtx.stroke();
+        }
+        const bounce = h.kind === "fire" ? 1 + Math.sin(animTick * 0.2 + h.x) * 0.07 : 1;
+        edCtx.translate(h.x, h.y);
+        edCtx.scale(bounce, bounce);
+        edCtx.font = "32px sans-serif";
         edCtx.textAlign = "center";
         edCtx.textBaseline = "middle";
-        edCtx.fillText(ICONS[h.kind] || "🔥", h.x, h.y);
+        edCtx.fillText(ICONS[h.kind] || "🔥", 0, 0);
         edCtx.restore();
       });
 
-      // Target (Gold)
-      const t = editorScene.target;
+      // Draw Target
+      const targX = editorMode === "PREVIEW" ? simTargetPos.x : editorScene.target.x;
+      const targY = editorMode === "PREVIEW" ? simTargetPos.y : editorScene.target.y;
       edCtx.save();
-      edCtx.fillStyle = "rgba(241, 196, 15, 0.35)";
-      edCtx.strokeStyle = "#f39c12";
-      edCtx.lineWidth = 3;
-      edCtx.beginPath();
-      edCtx.arc(t.x, t.y, t.r, 0, Math.PI * 2);
-      edCtx.fill();
-      edCtx.stroke();
-      edCtx.font = "28px sans-serif";
+      if (editorMode === "EDIT") {
+        edCtx.fillStyle = "rgba(241, 196, 15, 0.3)";
+        edCtx.strokeStyle = "#f39c12";
+        edCtx.lineWidth = 2.5;
+        edCtx.beginPath();
+        edCtx.arc(targX, targY, editorScene.target.r, 0, Math.PI * 2);
+        edCtx.fill(); edCtx.stroke();
+      }
+      edCtx.font = "30px sans-serif";
       edCtx.textAlign = "center";
       edCtx.textBaseline = "middle";
-      edCtx.fillText(ICONS[t.kind] || "🧯", t.x, t.y);
+      edCtx.fillText(ICONS[editorScene.target.kind] || "🧯", targX, targY);
       edCtx.restore();
+
+      // Draw Arm & Hand
+      const activeAnchors = editorMode === "PREVIEW" ? simAnchors : [{ x: editorScene.thief.shoulderX, y: editorScene.thief.shoulderY }];
+      const activeHand = editorMode === "PREVIEW" ? simHand : editorScene.handStart;
+
+      edCtx.save();
+      edCtx.lineWidth = 5;
+      edCtx.lineCap = "round";
+      edCtx.lineJoin = "round";
+      edCtx.strokeStyle = simStatus === "WIN" ? "#29b6f6" : (simStatus === "FAIL" ? "#e53935" : "#111");
+      edCtx.beginPath();
+      edCtx.moveTo(activeAnchors[0].x, activeAnchors[0].y);
+      for (let i = 1; i < activeAnchors.length; i++) {
+        edCtx.lineTo(activeAnchors[i].x, activeAnchors[i].y);
+      }
+      edCtx.lineTo(activeHand.x, activeHand.y);
+      edCtx.stroke();
+
+      edCtx.fillStyle = "#fff";
+      edCtx.strokeStyle = "#111";
+      edCtx.lineWidth = 2.5;
+      edCtx.beginPath();
+      edCtx.arc(activeHand.x, activeHand.y, 13, 0, Math.PI * 2);
+      edCtx.fill(); edCtx.stroke();
+      edCtx.font = "16px sans-serif";
+      edCtx.textAlign = "center";
+      edCtx.textBaseline = "middle";
+      edCtx.fillText("🤚", activeHand.x, activeHand.y);
+      edCtx.restore();
+
+      requestAnimationFrame(renderEditorAndPreview);
     }
 
     function getEdPos(e) {
@@ -599,106 +944,254 @@
 
     edCanvas.addEventListener("pointerdown", (e) => {
       const pos = getEdPos(e);
+      if (editorMode === "PREVIEW") {
+        if (simStatus === "PLAYING" && Math.hypot(pos.x - simHand.x, pos.y - simHand.y) < 38) {
+          simDraggingHand = true;
+        }
+        return;
+      }
       const all = [editorScene.thief, editorScene.target, ...editorScene.pivots, ...editorScene.hazards];
       for (const item of all) {
-        const rad = item.r || 26;
+        const rad = item.r || 28;
         if (Math.hypot(pos.x - item.x, pos.y - item.y) <= rad + 8) {
           selectedItem = item;
           draggingItem = item;
-          drawEditor();
           return;
         }
       }
       selectedItem = null;
-      drawEditor();
     });
 
-    edCanvas.addEventListener("pointermove", (e) => {
+    window.addEventListener("pointermove", (e) => {
+      if (editorMode === "PREVIEW") {
+        if (!simDraggingHand || simStatus !== "PLAYING") return;
+        const pos = getEdPos(e);
+        simHand.x = Math.max(16, Math.min(edCanvas.width - 16, pos.x));
+        simHand.y = Math.max(16, Math.min(edCanvas.height - 16, pos.y));
+        updatePreviewPhysics();
+        return;
+      }
       if (!draggingItem) return;
       const pos = getEdPos(e);
-      draggingItem.x = Math.max(25, Math.min(edCanvas.width - 25, pos.x));
-      draggingItem.y = Math.max(25, Math.min(edCanvas.height - 25, pos.y));
+      draggingItem.x = Math.max(24, Math.min(edCanvas.width - 24, pos.x));
+      draggingItem.y = Math.max(24, Math.min(edCanvas.height - 24, pos.y));
       if (draggingItem === editorScene.thief) {
-        editorScene.thief.shoulderX = draggingItem.x + 12;
-        editorScene.thief.shoulderY = draggingItem.y - 5;
-        editorScene.handStart.x = draggingItem.x + 55;
-        editorScene.handStart.y = draggingItem.y + 40;
+        editorScene.thief.shoulderX = draggingItem.x + 15;
+        editorScene.thief.shoulderY = draggingItem.y - 7;
+        editorScene.handStart.x = draggingItem.x + 65;
+        editorScene.handStart.y = draggingItem.y + 45;
       }
-      drawEditor();
+      resetSimulation();
+      syncCodeBoxFromScene();
     });
 
-    window.addEventListener("pointerup", () => { draggingItem = null; });
+    window.addEventListener("pointerup", () => {
+      draggingItem = null;
+      simDraggingHand = false;
+    });
 
     document.querySelectorAll(".tool-chip").forEach(chip => {
       chip.onclick = () => {
         const type = chip.dataset.add;
         const kind = chip.dataset.kind;
         const newItem = {
-          x: 210 + Math.floor(Math.random() * 40 - 20),
-          y: 230 + Math.floor(Math.random() * 40 - 20),
+          x: 210 + Math.floor(Math.random() * 60 - 30),
+          y: 230 + Math.floor(Math.random() * 60 - 30),
           r: type === "pivot" ? 26 : 36,
           kind
         };
         if (type === "pivot") editorScene.pivots.push(newItem);
         else editorScene.hazards.push(newItem);
         selectedItem = newItem;
-        drawEditor();
+        syncCodeBoxFromScene();
       };
     });
 
     document.getElementById("editTargetType").onchange = (e) => {
       editorScene.target.kind = e.target.value;
-      drawEditor();
+      syncCodeBoxFromScene();
     };
     document.getElementById("editThiefStyle").onchange = (e) => {
       editorScene.thiefStyle = e.target.value;
+      syncCodeBoxFromScene();
     };
+    document.getElementById("editPromptTitle").oninput = () => syncCodeBoxFromScene();
 
     document.getElementById("deleteSelectedBtn").onclick = () => {
       if (!selectedItem) return;
       editorScene.pivots = editorScene.pivots.filter(p => p !== selectedItem);
       editorScene.hazards = editorScene.hazards.filter(h => h !== selectedItem);
       selectedItem = null;
-      drawEditor();
+      syncCodeBoxFromScene();
     };
 
-    // Prompt / Image to Level Converter
+    // Smart Text & Image Prompt-to-Level Generator + Immediate Preview
+    document.getElementById("imagePromptInput").onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const thumb = document.getElementById("uploadedPromptThumb");
+      thumb.src = URL.createObjectURL(file);
+      thumb.classList.remove("hidden");
+      if (!document.getElementById("aiPromptInput").value.trim()) {
+        document.getElementById("aiPromptInput").value = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+      }
+    };
+
     document.getElementById("generateFromPromptBtn").onclick = () => {
-      const text = (document.getElementById("aiPromptInput").value || "").toLowerCase();
+      const rawPrompt = document.getElementById("aiPromptInput").value.trim() || "Steal the target without getting caught!";
+      const text = rawPrompt.toLowerCase();
+
+      document.getElementById("editPromptTitle").value = rawPrompt;
+      editorScene.prompt = rawPrompt;
       editorScene.pivots = [];
       editorScene.hazards = [];
 
-      if (text.includes("fire") || text.includes("extinguisher")) {
-        document.getElementById("editPromptTitle").value = "Help him get the fire extinguisher.";
-        editorScene.target.kind = "extinguisher";
-        editorScene.pivots.push({ x: 190, y: 295, r: 26, kind: "flower" });
-        editorScene.hazards.push(
-          { x: 300, y: 135, r: 40, kind: "fire" },
-          { x: 110, y: 270, r: 36, kind: "fire" },
-          { x: 100, y: 380, r: 36, kind: "fire" },
-          { x: 295, y: 315, r: 38, kind: "fire" },
-          { x: 245, y: 235, r: 26, kind: "hammer" }
-        );
-      } else if (text.includes("purse") || text.includes("bench") || text.includes("lamp")) {
-        document.getElementById("editPromptTitle").value = "Take the lady's purse.";
-        editorScene.target.kind = "purse";
-        editorScene.pivots.push({ x: 95, y: 95, r: 24, kind: "lamp" }, { x: 335, y: 95, r: 24, kind: "lamp" });
-        editorScene.hazards.push({ x: 250, y: 265, r: 42, kind: "couple" }, { x: 145, y: 290, r: 34, kind: "bin" });
-      } else {
-        document.getElementById("editPromptTitle").value = document.getElementById("aiPromptInput").value || "Steal the target item!";
-        editorScene.pivots.push({ x: 160, y: 350, r: 26, kind: "rock" }, { x: 310, y: 110, r: 26, kind: "lamp" });
-        editorScene.hazards.push({ x: 220, y: 230, r: 38, kind: "guard" }, { x: 300, y: 260, r: 36, kind: "fire" });
+      // Detect Thief Style
+      if (text.includes("angel") || text.includes("save")) editorScene.thiefStyle = "angel";
+      else if (text.includes("mask") || text.includes("burglar")) editorScene.thiefStyle = "mask";
+      else if (text.includes("cap")) editorScene.thiefStyle = "cap";
+      else if (text.includes("bandana") || text.includes("chicken")) editorScene.thiefStyle = "bandana";
+      else editorScene.thiefStyle = "normal";
+      document.getElementById("editThiefStyle").value = editorScene.thiefStyle;
+
+      // Detect Target
+      const targetKinds = ["extinguisher", "chicken", "balloons", "treasure", "purse", "plug"];
+      let foundTarget = "extinguisher";
+      for (const tk of targetKinds) {
+        if (text.includes(tk)) { foundTarget = tk; break; }
       }
-      drawEditor();
+      editorScene.target = { x: 350, y: 350, r: 26, kind: foundTarget };
+      document.getElementById("editTargetType").value = foundTarget;
+
+      // Parse quantities & objects from prompt text
+      const pivotTypes = ["rock", "bin", "flower", "lamp"];
+      const hazardTypes = ["fire", "hammer", "girl", "boy", "guard", "couple", "door", "villain"];
+
+      pivotTypes.forEach((pk) => {
+        const regex = new RegExp(`(\\d+)?\\s*${pk}`, "i");
+        const m = text.match(regex);
+        if (m) {
+          const count = Math.min(4, parseInt(m[1]) || 1);
+          for (let i = 0; i < count; i++) {
+            editorScene.pivots.push({
+              x: 150 + i * 95,
+              y: i % 2 === 0 ? 310 : 120,
+              r: 26,
+              kind: pk
+            });
+          }
+        }
+      });
+
+      hazardTypes.forEach((hk) => {
+        const regex = new RegExp(`(\\d+)?\\s*${hk}`, "i");
+        const m = text.match(regex);
+        if (m) {
+          const count = Math.min(5, parseInt(m[1]) || 1);
+          const presetCoords = [
+            { x: 295, y: 135 },
+            { x: 115, y: 270 },
+            { x: 105, y: 380 },
+            { x: 290, y: 310 },
+            { x: 240, y: 225 }
+          ];
+          for (let i = 0; i < count; i++) {
+            const pt = presetCoords[i % presetCoords.length];
+            editorScene.hazards.push({
+              x: pt.x + (i * 12),
+              y: pt.y,
+              r: 36,
+              kind: hk
+            });
+          }
+        }
+      });
+
+      // Default balanced layout if no specific objects were named
+      if (editorScene.pivots.length === 0) {
+        editorScene.pivots.push({ x: 185, y: 310, r: 26, kind: "flower" });
+      }
+      if (editorScene.hazards.length === 0) {
+        editorScene.hazards.push(
+          { x: 260, y: 220, r: 38, kind: "fire" },
+          { x: 130, y: 280, r: 36, kind: "guard" }
+        );
+      }
+
+      syncCodeBoxFromScene();
+      // Automatically switch to Live Play Preview so user can test immediately
+      document.getElementById("modePreviewBtn").click();
     };
 
+    // Apply edited JSON code back to the scene and preview
+    document.getElementById("applyCodeBtn").onclick = () => {
+      try {
+        const parsed = JSON.parse(generatedCodeBox.value);
+        editorScene = parsed;
+        document.getElementById("editPromptTitle").value = editorScene.prompt || "";
+        resetSimulation();
+        document.getElementById("modePreviewBtn").click();
+      } catch (e) {
+        alert("Invalid JSON code: " + e.message);
+      }
+    };
+
+    // Full-screen preview in level.html?preview=1
+    document.getElementById("fullScreenPreviewBtn").onclick = () => {
+      syncCodeBoxFromScene();
+      localStorage.setItem(PREVIEW_DRAFT_KEY, JSON.stringify(editorScene));
+      window.location.href = "level.html?preview=1";
+    };
+
+    function renderQueueList() {
+      const container = document.getElementById("queuedLevelsList");
+      document.getElementById("queueCount").textContent = customLevels.length;
+      container.innerHTML = "";
+      if (customLevels.length === 0) {
+        container.innerHTML = `<div style="font-size:12px; color:#777; margin-top:4px;">No custom levels queued yet.</div>`;
+        return;
+      }
+      customLevels.forEach((lvl, idx) => {
+        const row = document.createElement("div");
+        row.className = "queue-item";
+        const lvlNumber = BUILTIN_LEVEL_COUNT + idx + 1;
+        row.innerHTML = `
+          <span><b>Level ${lvlNumber}:</b> ${lvl.prompt.slice(0, 26)}</span>
+          <div style="display:flex; gap:4px;">
+            <button class="btn-blue" style="padding:4px 8px; font-size:11px;" data-load="${idx}">Preview</button>
+            <button class="btn-danger" style="padding:4px 8px; font-size:11px;" data-del="${idx}">✕</button>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+
+      container.querySelectorAll("[data-load]").forEach(btn => {
+        btn.onclick = () => {
+          const i = parseInt(btn.dataset.load);
+          editorScene = JSON.parse(JSON.stringify(customLevels[i]));
+          document.getElementById("editPromptTitle").value = editorScene.prompt;
+          syncCodeBoxFromScene();
+          document.getElementById("modePreviewBtn").click();
+        };
+      });
+      container.querySelectorAll("[data-del]").forEach(btn => {
+        btn.onclick = () => {
+          const i = parseInt(btn.dataset.del);
+          customLevels.splice(i, 1);
+          localStorage.setItem(CUSTOM_LEVELS_KEY, JSON.stringify(customLevels));
+          renderQueueList();
+          renderUI();
+        };
+      });
+    }
+
     document.getElementById("saveLocalLevelBtn").onclick = () => {
-      editorScene.prompt = document.getElementById("editPromptTitle").value.trim() || "Steal it!";
-      const copy = JSON.parse(JSON.stringify(editorScene));
-      customLevels.push(copy);
+      syncCodeBoxFromScene();
+      customLevels.push(JSON.parse(JSON.stringify(editorScene)));
       localStorage.setItem(CUSTOM_LEVELS_KEY, JSON.stringify(customLevels));
-      alert(`Added as Level ${BUILTIN_LEVEL_COUNT + customLevels.length}! You can test it now or publish to GitHub.`);
+      renderQueueList();
       renderUI();
+      alert(`Level ${BUILTIN_LEVEL_COUNT + customLevels.length} added to queue! You can now publish to GitHub.`);
     };
 
     // GitHub Credentials & Direct Commit Publisher
@@ -728,15 +1221,15 @@
 
       if (!token) return alert("Please enter your GitHub Personal Access Token!");
 
-      // Save current editor scene if not added yet
-      editorScene.prompt = document.getElementById("editPromptTitle").value.trim();
       if (customLevels.length === 0) {
+        syncCodeBoxFromScene();
         customLevels.push(JSON.parse(JSON.stringify(editorScene)));
         localStorage.setItem(CUSTOM_LEVELS_KEY, JSON.stringify(customLevels));
+        renderQueueList();
       }
 
       statusEl.style.color = "#0d8a72";
-      statusEl.textContent = "Publishing thief/levels.json to GitHub...";
+      statusEl.textContent = "⏳ Publishing thief/levels.json to GitHub...";
 
       const path = "thief/levels.json";
       const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
@@ -760,7 +1253,7 @@
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            message: `Update Thief Puzzle levels (${customLevels.length} custom levels)`,
+            message: `Publish ${customLevels.length} Thief Puzzle levels`,
             content: contentBase64,
             branch,
             ...(sha ? { sha } : {})
@@ -772,11 +1265,14 @@
         statusEl.textContent = "✅ Published successfully to GitHub (thief/levels.json)!";
       } catch (err) {
         statusEl.style.color = "#e53935";
-        statusEl.textContent = "❌ GitHub Publish Error: " + err.message;
+        statusEl.textContent = "❌ Publish Error: " + err.message;
       }
     };
 
+    resetSimulation();
+    syncCodeBoxFromScene();
     renderUI();
+    requestAnimationFrame(renderEditorAndPreview);
   </script>
 </body>
 </html>
