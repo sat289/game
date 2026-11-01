@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-Y5383R4YL1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-Y5383R4YL1');
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ST Games - Leaderboard by Levels</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <style>
+    :root {
+      --poki-cyan: #32ffdc;
+      --poki-teal: #1db9aa;
+      --poki-bg-light: #5ffbf1;
+      --poki-bg-dark: #07222d;
+      --neon-cyan: #22d3ee;
+      --neon-violet: #8b5cf6;
+      --neon-pink: #ec4899;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #17c3b2;
+      overflow-x: hidden;
+      user-select: none;
+      transition: color 0.35s ease;
+      position: relative;
+      padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+      color: #0f172a;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: none;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      transform: translate3d(0, 0, 0);
+      will-change: transform;
+      background: 
+        radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.45), transparent 35%),
+        radial-gradient(circle at 85% 75%, rgba(13, 148, 136, 0.35), transparent 40%),
+        linear-gradient(45deg, transparent 40%, rgba(255, 255, 255, 0.15) 50%, transparent 60%),
+        linear-gradient(135deg, #4ef2e2 0%, #17c3b2 50%, #0d9488 100%);
+    }
+
+    body > * { position: relative; z-index: 1; }
+
+    /* DARK THEME OVERRIDES */
+    body.dark-theme {
+      background-color: #061820;
+      color: #f8fafc;
+    }
+
+    body.dark-theme::before {
+      background: 
+        radial-gradient(circle at 15% 20%, rgba(34, 211, 238, 0.15), transparent 35%),
+        radial-gradient(circle at 85% 75%, rgba(15, 118, 110, 0.25), transparent 40%),
+        linear-gradient(135deg, #092c35 0%, #061820 50%, #040e14 100%);
+    }
+
+    body.dark-theme .theme-surface {
+      background-color: rgba(15, 23, 42, 0.95) !important;
+      border-color: rgba(255, 255, 255, 0.1) !important;
+      color: #f8fafc !important;
+    }
+
+    body.dark-theme .theme-text-primary { color: #f8fafc !important; }
+    body.dark-theme .theme-text-sub { color: #94a3b8 !important; }
+
+    .brand-font { font-family: 'Fredoka', sans-serif; }
+
+    header .theme-surface {
+      border-color: rgba(50, 255, 220, 0.3) !important;
+      box-shadow: 0 8px 24px rgba(7, 34, 45, 0.15);
+    }
+
+    /* Category / Tier Filter Pills */
+    .cat-filter-row {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .cat-filter-row::-webkit-scrollbar { display: none; }
+
+    .cat-btn {
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(50, 255, 220, 0.4);
+      color: #07222d;
+      padding: 8px 15px;
+      border-radius: 14px;
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(7, 34, 45, 0.08);
+      transition: all 0.15s ease;
+    }
+    body.dark-theme .cat-btn {
+      background: rgba(15, 23, 42, 0.92);
+      color: #32ffdc;
+      border-color: rgba(50, 255, 220, 0.3);
+    }
+    .cat-btn.active, .cat-btn:hover {
+      background: #07222d;
+      color: #32ffdc;
+      border-color: #32ffdc;
+    }
+    body.dark-theme .cat-btn.active {
+      background: #32ffdc;
+      color: #07222d;
+    }
+
+    /* Podium Cards */
+    .podium-card {
+      background: linear-gradient(160deg, rgba(7, 34, 45, 0.96) 0%, rgba(15, 23, 42, 0.96) 100%);
+      border-radius: 24px;
+      position: relative;
+      transition: transform 0.22s ease, box-shadow 0.22s ease;
+      color: #fff;
+    }
+    .podium-card:hover {
+      transform: translateY(-4px);
+    }
+    .podium-1 {
+      border: 2px solid #facc15;
+      box-shadow: 0 10px 28px rgba(250, 204, 21, 0.28);
+    }
+    .podium-2 {
+      border: 2px solid #cbd5e1;
+      box-shadow: 0 8px 22px rgba(203, 213, 225, 0.2);
+    }
+    .podium-3 {
+      border: 2px solid #fb923c;
+      box-shadow: 0 8px 22px rgba(251, 146, 60, 0.22);
+    }
+
+    /* Player Row Card */
+    .lb-row {
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .lb-row:hover {
+      transform: translateX(3px);
+      border-color: #32ffdc !important;
+    }
+
+    /* Live Status Pulse */
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 9999px;
+      display: inline-block;
+    }
+    .live-dot.connected {
+      background-color: #32ffdc;
+      box-shadow: 0 0 8px #32ffdc;
+      animation: pulseGlow 1.8s infinite;
+    }
+    .live-dot.offline {
+      background-color: #f59e0b;
+    }
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(1.2); }
+    }
+
+    /* Bottom Navigation Bar (4 Columns) */
+    .st-bottom-nav {
+      position: fixed; z-index: 9999; left: 0; right: 0; bottom: 0;
+      display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px;
+      padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
+      background: rgba(7, 34, 45, 0.97); border-top: 1px solid rgba(50, 255, 220, 0.3);
+      box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.35);
+      transform: translate3d(0, 0, 0);
+    }
+
+    .st-bottom-nav a {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 3px; padding: 6px 2px; border-radius: 12px; color: #94a3b8; text-decoration: none; font-size: 11px; font-weight: 700;
+    }
+    .st-bottom-nav .nav-icon { font-size: 20px; color: #32ffdc; }
+    .st-bottom-nav a:hover, .st-bottom-nav a.active { color: #fff; background: rgba(50, 255, 220, 0.15); }
+
+    @media (min-width: 768px) {
+      .st-bottom-nav { left: 50%; transform: translate3d(-50%, 0, 0); width: min(500px, calc(100% - 32px)); border-radius: 18px 18px 0 0; }
+    }
+  </style>
+</head>
+
+<body class="min-h-screen flex flex-col justify-between">
+
+  <!-- MAIN CONTENT -->
+  <main class="max-w-4xl w-full mx-auto px-3.5 sm:px-6 pt-3.5 pb-10 relative z-10">
+
+    <!-- TOP HEADER -->
+    <header class="sticky top-2.5 z-30 mb-5">
+      <div class="theme-surface bg-white/95 rounded-2xl shadow-xl border border-white/80 px-3 sm:px-5 py-2.5 flex items-center justify-between">
+        <div class="flex items-center gap-3 pr-3 sm:pr-5 border-r border-slate-200/60 min-w-0">
+          <a href="index.html" class="flex items-center gap-2.5">
+            <div class="w-10 h-10 rounded-xl overflow-hidden border-2 border-[#32ffdc] shadow-md bg-slate-900 flex items-center justify-center">
+              <img src="logo/logo.jpg" alt="ST Games Logo" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');" class="w-full h-full object-cover">
+              <i class="fa-solid fa-gamepad text-[#32ffdc] text-lg hidden"></i>
+            </div>
+            <div class="min-w-0">
+              <h1 class="brand-font text-base sm:text-lg font-bold tracking-tight text-[#07222d] theme-text-primary uppercase truncate">ST GAMES</h1>
+              <div class="flex items-center gap-1.5">
+                <span id="firebaseStatusDot" class="live-dot offline"></span>
+                <p id="firebaseStatusText" class="text-[9px] font-bold text-teal-600 uppercase tracking-tighter truncate">Connecting 2 Databases...</p>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 flex-1 ml-2 text-[#07222d] theme-text-primary">
+          <button onclick="syncMyScoreToFirebase(true)" title="Sync My Level to Both Firebase Databases" class="px-3 py-1.5 rounded-xl bg-[#07222d] text-[#32ffdc] text-xs font-extrabold flex items-center gap-1.5 shadow hover:opacity-90 transition active:scale-95">
+            <i id="syncIcon" class="fa-solid fa-cloud-arrow-up text-[11px]"></i>
+            <span class="hidden sm:inline">Sync Rank</span>
+          </button>
+          <button onclick="toggleSFX()" id="sfxToggleBtn" title="Toggle SFX" class="p-2 rounded-xl hover:bg-slate-500/10 transition">
+            <i id="sfxIcon" class="fa-solid fa-wand-magic-sparkles text-amber-500 text-base"></i>
+          </button>
+          <button onclick="toggleTheme()" title="Switch Theme" class="p-2 rounded-xl hover:bg-slate-500/10 transition text-lg">🌓</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- YOUR PLAYER LEVEL & XP BANNER -->
+    <section class="mb-6">
+      <div class="bg-gradient-to-r from-[#07222d] via-[#0b3140] to-[#0f172a] border-2 border-[#32ffdc] rounded-3xl p-4 sm:p-5 text-white shadow-xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="flex items-center gap-3.5 min-w-0">
+            <div id="myAvatarBox" class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-tr from-[#32ffdc] to-teal-500 text-[#07222d] font-extrabold text-xl flex items-center justify-center border-2 border-white shadow-lg shrink-0 overflow-hidden">
+              P
+            </div>
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[#32ffdc]/20 text-[#32ffdc] border border-[#32ffdc]/40">Your Standing</span>
+                <span id="myTierBadge" class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-amber-400 text-slate-950">🌱 Rookie</span>
+              </div>
+              <h2 id="myPlayerName" class="brand-font text-lg sm:text-xl font-bold text-white truncate mt-1">ST Player</h2>
+              <p id="myStatsSummary" class="text-xs text-slate-300 font-medium">0 Games Played • 0 Favourites</p>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 border-white/10 pt-3 sm:pt-0">
+            <div class="text-left sm:text-right">
+              <span class="text-[10px] uppercase tracking-wider text-slate-400 font-extrabold block">Current Level</span>
+              <span id="myLevelDisplay" class="brand-font text-2xl sm:text-3xl font-bold text-[#32ffdc]">LVL 1</span>
+            </div>
+            <div class="h-9 w-[1px] bg-white/15"></div>
+            <div class="text-right">
+              <span class="text-[10px] uppercase tracking-wider text-slate-400 font-extrabold block">Global Rank</span>
+              <span id="myRankDisplay" class="brand-font text-2xl sm:text-3xl font-bold text-amber-400">#--</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- XP Progress Bar -->
+        <div class="mt-4 pt-3 border-t border-white/10">
+          <div class="flex items-center justify-between text-xs font-bold mb-1.5">
+            <span id="myXpTotal" class="text-[#32ffdc]">200 XP Total</span>
+            <span id="myNextLevelText" class="text-slate-300">200 XP to Level 2</span>
+          </div>
+          <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-white/10">
+            <div id="myXpProgressBar" class="h-full rounded-full bg-gradient-to-r from-[#32ffdc] via-cyan-400 to-teal-300 transition-all duration-500" style="width: 15%;"></div>
+          </div>
+          <div class="mt-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-300">
+            <span>💡 <strong>How to Level Up:</strong> Play any game (+150 XP) or heart a favourite (+50 XP)!</span>
+            <button onclick="claimDailyXpBonus()" id="dailyBonusBtn" class="bg-[#32ffdc] hover:bg-cyan-300 text-[#07222d] font-extrabold px-3 py-1 rounded-xl text-xs shadow transition active:scale-95">
+              🎁 Claim +100 Daily XP
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TOP 3 PODIUM -->
+    <section class="mb-6">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-crown text-amber-300 text-lg"></i>
+          <h2 class="brand-font text-lg sm:text-xl font-bold text-[#07222d] theme-text-primary">Top 3 Level Champions</h2>
+        </div>
+        <span id="totalPlayersBadge" class="text-xs font-extrabold text-[#07222d] theme-text-sub">Loading Players...</span>
+      </div>
+
+      <div id="podiumContainer" class="grid grid-cols-3 gap-2.5 sm:gap-4 items-end pt-3">
+        <div class="podium-card podium-2 p-4 h-44 animate-pulse flex flex-col items-center justify-center text-slate-400 text-xs">Loading #2...</div>
+        <div class="podium-card podium-1 p-5 h-52 animate-pulse flex flex-col items-center justify-center text-slate-400 text-xs">Loading #1...</div>
+        <div class="podium-card podium-3 p-4 h-44 animate-pulse flex flex-col items-center justify-center text-slate-400 text-xs">Loading #3...</div>
+      </div>
+    </section>
+
+    <!-- FILTER PILLS & SEARCH BAR -->
+    <section class="mb-4 space-y-3">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        <div class="cat-filter-row" role="tablist" aria-label="Level Tiers">
+          <button class="cat-btn active" onclick="filterTier('all', this)">🏆 All Players</button>
+          <button class="cat-btn" onclick="filterTier('grandmaster', this)">🔥 Grandmaster (Lv.50+)</button>
+          <button class="cat-btn" onclick="filterTier('master', this)">⚡ Master (Lv.25–49)</button>
+          <button class="cat-btn" onclick="filterTier('pro', this)">⚔️ Pro (Lv.10–24)</button>
+          <button class="cat-btn" onclick="filterTier('rising', this)">🌱 Rising (Lv.1–9)</button>
+        </div>
+
+        <div class="relative w-full sm:w-60 shrink-0">
+          <i class="fa-solid fa-magnifying-glass text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 text-xs"></i>
+          <input id="playerSearchInput" type="text" placeholder="Search player..." oninput="handlePlayerSearch(this.value)" class="theme-surface w-full pl-9 pr-8 py-2 bg-white/95 rounded-xl text-xs font-bold text-slate-900 placeholder-slate-400 border border-white/60 shadow focus:outline-none focus:ring-2 focus:ring-[#32ffdc]">
+        </div>
+      </div>
+    </section>
+
+    <!-- LEADERBOARD RANKINGS LIST -->
+    <section>
+      <div id="leaderboardList" class="space-y-2.5">
+        <div class="theme-surface bg-white/90 rounded-2xl p-6 text-center text-xs font-bold text-slate-500 animate-pulse">
+          <i class="fa-solid fa-spinner fa-spin mr-1.5 text-teal-600"></i> Syncing live players from ST Games & FriendsGame Firebase...
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="theme-surface max-w-4xl w-full mx-auto px-4 py-5 mb-20 sm:mb-6 rounded-2xl border border-slate-200 text-center text-[10px] text-slate-500">
+    <div class="brand-font text-sm font-bold tracking-wide theme-text-primary">ST GAMES <span class="text-[#32ffdc]">•</span> DUAL FIREBASE REALTIME LEADERBOARD</div>
+    <p class="mt-1">Connected to stgames-289 & friendsgame-872f5 Realtime Databases.</p>
+  </footer>
+
+  <!-- BOTTOM NAVIGATION BAR -->
+  <nav class="st-bottom-nav" aria-label="ST GAMES navigation">
+    <a href="index.html"><span class="nav-icon">⌂</span><span>Home</span></a>
+    <a href="login.html" id="bottomNavLogin" title="Login / Profile">
+      <span id="bottomDefaultIcon" class="nav-icon"><i class="fa-regular fa-circle-user"></i></span>
+      <div id="bottomUserLogo" class="hidden w-6 h-6 rounded-full overflow-hidden border-2 border-[#32ffdc] bg-gradient-to-tr from-teal-400 to-indigo-600 text-white font-extrabold text-[11px] flex items-center justify-center shadow-sm">U</div>
+      <span id="bottomLoginLabel" class="truncate max-w-[90px]">Login</span>
+    </a>
+    <a href="leaderboard.html" class="active" title="Leaderboard by Levels"><span class="nav-icon"><i class="fa-solid fa-ranking-star"></i></span><span>Leaderboard</span></a>
+    <a href="achievements.html"><span class="nav-icon">🏆</span><span>Achievements</span></a>
+  </nav>
+
+  <!-- DUAL FIREBASE REALTIME DATABASE + LEADERBOARD SCRIPT -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
+    import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+    /* =========================================================================
+       1. DUAL FIREBASE CONFIGURATION (stgames-289 + friendsgame-872f5)
+       ========================================================================= */
+    const firebaseConfigPrimary = {
+      apiKey: "AIzaSyDOFx0_vpPDRDCkUW-deQjMNK5msOsGSnI",
+      authDomain: "stgames-289.firebaseapp.com",
+      databaseURL: "https://stgames-289-default-rtdb.firebaseio.com",
+      projectId: "stgames-289",
+      storageBucket: "stgames-289.firebasestorage.app",
+      messagingSenderId: "916146081741",
+      appId: "1:916146081741:web:eb343c4dc0c6648388fe84",
+      measurementId: "G-P8RQ074PWX"
+    };
+
+    const firebaseConfigSecondary = {
+      apiKey: "AIzaSyBzLchy5M2fLne4c7Ghw1KNN8wVrlZdd8M",
+      authDomain: "friendsgame-872f5.firebaseapp.com",
+      databaseURL: "https://friendsgame-872f5-default-rtdb.firebaseio.com",
+      projectId: "friendsgame-872f5",
+      storageBucket: "friendsgame-872f5.firebasestorage.app",
+      messagingSenderId: "522534013233",
+      appId: "1:522534013233:web:f5faa6e6795023d0420810",
+      measurementId: "G-PW5H3G97QR"
+    };
+
+    // Initialize Both Firebase Apps Safely (Primary = default, Secondary = named "friendsGameApp")
+    const appPrimary = initializeApp(firebaseConfigPrimary);
+    const appSecondary = initializeApp(firebaseConfigSecondary, "friendsGameApp");
+
+    try { getAnalytics(appPrimary); } catch (_) {}
+    try { getAnalytics(appSecondary); } catch (_) {}
+
+    const dbPrimary = getDatabase(appPrimary);
+    const dbSecondary = getDatabase(appSecondary);
+
+    const CANDIDATE_PATHS = ['leaderboard', 'users', 'players', 'scores'];
+
+    /* =========================================================================
+       2. SOUND EFFECTS & THEME HELPERS
+       ========================================================================= */
+    let audioCtx = null;
+    let sfxEnabled = localStorage.getItem('st_sfx') !== 'off';
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) audioCtx = new AudioContextClass();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    }
+
+    const ArcadeSFX = {
+      click() {
+        if (!sfxEnabled) return;
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(587.33, now);
+        osc.frequency.setValueAtTime(880, now + 0.045);
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(now); osc.stop(now + 0.135);
+      },
+      levelUp() {
+        if (!sfxEnabled) return;
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          const start = now + idx * 0.055;
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, start);
+          gain.gain.setValueAtTime(0.14, start);
+          gain.gain.exponentialRampToValueAtTime(0.001, start + 0.14);
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.start(start); osc.stop(start + 0.145);
+        });
+      }
+    };
+
+    function updateSFXIcon() {
+      const icon = document.getElementById('sfxIcon');
+      if (!icon) return;
+      icon.className = sfxEnabled
+        ? 'fa-solid fa-wand-magic-sparkles text-amber-500 text-base'
+        : 'fa-solid fa-volume-xmark text-slate-400 text-base';
+    }
+
+    window.toggleSFX = function () {
+      sfxEnabled = !sfxEnabled;
+      localStorage.setItem('st_sfx', sfxEnabled ? 'on' : 'off');
+      updateSFXIcon();
+      if (sfxEnabled) ArcadeSFX.click();
+    };
+
+    window.toggleTheme = function () {
+      const isDark = !document.body.classList.contains('dark-theme');
+      document.body.classList.toggle('dark-theme', isDark);
+      localStorage.setItem('st_theme', isDark ? 'dark' : 'light');
+      ArcadeSFX.click();
+    };
+
+    const safeReadJSON = (key, fallback) => {
+      try {
+        const val = JSON.parse(localStorage.getItem(key) || 'null');
+        return val == null ? fallback : val;
+      } catch (_) { return fallback; }
+    };
+
+    function escapeHTML(value) {
+      return String(value ?? '').replace(/[&<>"']/g, ch => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[ch]));
+    }
+
+    /* =========================================================================
+       3. PLAYER STATS, LEVEL CALCULATION & NORMALIZATION
+       ========================================================================= */
+    const AVATAR_GRADIENTS = [
+      'from-pink-500 to-rose-600',
+      'from-cyan-400 to-blue-600',
+      'from-purple-500 to-indigo-600',
+      'from-emerald-400 to-teal-600',
+      'from-amber-400 to-orange-600',
+      'from-fuchsia-500 to-purple-600',
+      'from-red-500 to-orange-500'
+    ];
+
+    function pickGradient(seedStr) {
+      let hash = 0;
+      const str = String(seedStr || 'player');
+      for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      return AVATAR_GRADIENTS[Math.abs(hash) % AVATAR_GRADIENTS.length];
+    }
+
+    function getTierInfo(level) {
+      if (level >= 50) return { key: 'grandmaster', label: '🔥 Grandmaster' };
+      if (level >= 25) return { key: 'master', label: '⚡ Master' };
+      if (level >= 10) return { key: 'pro', label: '⚔️ Pro' };
+      return { key: 'rising', label: '🌱 Rising' };
+    }
+
+    function getOrCreatePlayerId() {
+      const profile = safeReadJSON('st_player_profile', {});
+      let uid = localStorage.getItem('gh_user_uid') || localStorage.getItem('st_user_uid') || profile.uid || profile.id;
+      if (!uid) {
+        uid = 'player_' + Math.random().toString(36).substring(2, 10);
+        localStorage.setItem('st_user_uid', uid);
+      }
+      return String(uid).replace(/[.#$[\]/]/g, '_');
+    }
+
+    function getMyLocalPlayerStats() {
+      const uid = getOrCreatePlayerId();
+      const favoriteGames = safeReadJSON('st_favorite_games', []);
+      const playedGames = safeReadJSON('st_played_games', []);
+      const profile = safeReadJSON('st_player_profile', {});
+      const savedName = localStorage.getItem('gh_user_name') || profile.name || 'ST Player';
+      const savedPhoto = localStorage.getItem('gh_user_photo') || localStorage.getItem('st_user_photo') || profile.photoURL || '';
+      const bonusXp = parseInt(localStorage.getItem('st_bonus_xp') || '0', 10) || 0;
+
+      // 200 Base XP + 150 XP per game played + 50 XP per favourite + daily bonuses
+      const localXp = 200 + (playedGames.length * 150) + (favoriteGames.length * 50) + bonusXp;
+      const savedXp = parseInt(localStorage.getItem('st_player_xp') || '0', 10) || 0;
+      const xp = Math.max(localXp, savedXp, Number(profile.xp || 0));
+      const level = Math.max(1, Math.floor(xp / 200) + 1);
+      const tier = getTierInfo(level);
+
+      return {
+        uid,
+        name: savedName,
+        photo: savedPhoto,
+        xp,
+        level,
+        gamesPlayed: Math.max(playedGames.length, Number(profile.gamesPlayed || 0)),
+        favCount: Math.max(favoriteGames.length, Number(profile.favCount || 0)),
+        title: profile.title || tier.label,
+        tierKey: tier.key,
+        gradient: 'from-[#32ffdc] to-teal-500',
+        sourceDb: 'Both DBs',
+        updatedAt: Date.now()
+      };
+    }
+
+    /* Normalizes player records from either Firebase database */
+    function normalizeFirebaseRecord(id, raw, myUid, myName, sourceLabel) {
+      if (!raw || typeof raw !== 'object') return null;
+
+      const name = String(raw.name || raw.username || raw.displayName || raw.player || raw.email?.split('@')[0] || id).trim();
+      if (!name || name === 'undefined') return null;
+
+      const photo = raw.photo || raw.photoURL || raw.avatar || raw.profilePic || '';
+      const gamesPlayed = Number(raw.gamesPlayed ?? raw.played ?? (Array.isArray(raw.playedGames) ? raw.playedGames.length : 0)) || 0;
+      const favCount = Number(raw.favCount ?? raw.favorites ?? (Array.isArray(raw.favoriteGames) ? raw.favoriteGames.length : 0)) || 0;
+
+      let xp = Number(raw.xp ?? raw.totalXp ?? raw.score ?? raw.points ?? raw.coins ?? 0);
+      let level = Number(raw.level ?? raw.lvl ?? raw.rankLevel ?? 0);
+
+      if (!xp && level > 0) {
+        xp = level * 200;
+      } else if (!xp && (gamesPlayed > 0 || favCount > 0)) {
+        xp = 200 + (gamesPlayed * 150) + (favCount * 50);
+      } else if (!xp) {
+        xp = 200;
+      }
+
+      if (!level || level < 1) {
+        level = Math.max(1, Math.floor(xp / 200) + 1);
+      } else {
+        level = Math.max(level, Math.floor(xp / 200) + 1);
+      }
+
+      const tier = getTierInfo(level);
+      const isCurrentUser = (id === myUid) || (myName !== 'ST Player' && name.toLowerCase() === myName.toLowerCase());
+
+      return {
+        uid: id,
+        name,
+        photo,
+        xp,
+        level,
+        gamesPlayed,
+        favCount,
+        tierKey: tier.key,
+        title: raw.title || raw.badge || tier.label,
+        gradient: raw.gradient || pickGradient(name),
+        sourceDb: sourceLabel,
+        isCurrentUser
+      };
+    }
+
+    /* =========================================================================
+       4. DUAL FIREBASE LISTENERS & SYNC
+       ========================================================================= */
+    let playersFromPrimary = [];
+    let playersFromSecondary = [];
+    let primaryConnected = false;
+    let secondaryConnected = false;
+    let currentTierFilter = 'all';
+    let currentSearchQuery = '';
+
+    function updateDualStatusUI() {
+      const dot = document.getElementById('firebaseStatusDot');
+      const txt = document.getElementById('firebaseStatusText');
+      if (!dot || !txt) return;
+
+      if (primaryConnected && secondaryConnected) {
+        dot.className = 'live-dot connected';
+        txt.textContent = '2 Firebase DBs Live ✓';
+      } else if (primaryConnected || secondaryConnected) {
+        dot.className = 'live-dot connected';
+        txt.textContent = primaryConnected ? 'STGames DB Live ✓' : 'FriendsGame DB Live ✓';
+      } else {
+        dot.className = 'live-dot offline';
+        txt.textContent = 'Offline / Local Mode';
+      }
+    }
+
+    function extractPlayersFromSnapshotObj(obj, sourceLabel) {
+      if (!obj || typeof obj !== 'object') return [];
+      const me = getMyLocalPlayerStats();
+      const results = [];
+
+      Object.entries(obj).forEach(([key, val]) => {
+        if (val && typeof val === 'object') {
+          const hasPlayerFields = ('name' in val) || ('username' in val) || ('displayName' in val) || ('xp' in val) || ('level' in val) || ('score' in val) || ('points' in val);
+          if (hasPlayerFields) {
+            const norm = normalizeFirebaseRecord(key, val, me.uid, me.name, sourceLabel);
+            if (norm) results.push(norm);
+          } else {
+            // Check 1 level deeper if grouped under sub-nodes
+            Object.entries(val).forEach(([subKey, subVal]) => {
+              if (subVal && typeof subVal === 'object') {
+                const subNorm = normalizeFirebaseRecord(subKey, subVal, me.uid, me.name, sourceLabel);
+                if (subNorm) results.push(subNorm);
+              }
+            });
+          }
+        }
+      });
+      return results;
+    }
+
+    async function watchDatabase(databaseInstance, sourceLabel, onUpdateCallback) {
+      const lbRef = ref(databaseInstance, 'leaderboard');
+
+      onValue(lbRef, async (snapshot) => {
+        let players = [];
+        if (snapshot.exists()) {
+          players = extractPlayersFromSnapshotObj(snapshot.val(), sourceLabel);
+        }
+
+        // Also scan other common paths ('users', 'players', 'scores') so existing accounts appear automatically
+        for (const pathName of CANDIDATE_PATHS) {
+          if (pathName === 'leaderboard') continue;
+          try {
+            const extraSnap = await get(ref(databaseInstance, pathName));
+            if (extraSnap.exists()) {
+              const extraPlayers = extractPlayersFromSnapshotObj(extraSnap.val(), sourceLabel);
+              extraPlayers.forEach(ep => {
+                if (!players.some(existing => existing.uid === ep.uid || existing.name.toLowerCase() === ep.name.toLowerCase())) {
+                  players.push(ep);
+                }
+              });
+            }
+          } catch (_) {}
+        }
+
+        onUpdateCallback(players, true);
+      }, (err) => {
+        console.warn(`${sourceLabel} read error:`, err.message);
+        onUpdateCallback([], false);
+      });
+    }
+
+    window.syncMyScoreToFirebase = async function (playSound = false) {
+      if (playSound) ArcadeSFX.click();
+      const icon = document.getElementById('syncIcon');
+      if (icon) icon.classList.add('fa-spin');
+
+      const me = getMyLocalPlayerStats();
+      const payload = {
+        name: me.name,
+        photo: me.photo || '',
+        xp: me.xp,
+        level: me.level,
+        gamesPlayed: me.gamesPlayed,
+        favCount: me.favCount,
+        title: me.title,
+        updatedAt: Date.now()
+      };
+
+      // Write player's level & XP to BOTH Firebase Realtime Databases simultaneously
+      await Promise.allSettled([
+        set(ref(dbPrimary, `leaderboard/${me.uid}`), payload),
+        set(ref(dbSecondary, `leaderboard/${me.uid}`), payload)
+      ]);
+
+      setTimeout(() => {
+        if (icon) icon.classList.remove('fa-spin');
+      }, 500);
+      renderLeaderboardPage();
+    };
+
+    /* =========================================================================
+       5. MERGE PLAYERS FROM BOTH DATABASES & RENDER UI
+       ========================================================================= */
+    function buildMergedLeaderboard() {
+      const me = getMyLocalPlayerStats();
+      const mergedMap = new Map();
+
+      const upsertPlayer = (p) => {
+        const key = (p.name && p.name !== 'ST Player') ? p.name.toLowerCase() : p.uid;
+        if (!mergedMap.has(key)) {
+          mergedMap.set(key, { ...p });
+        } else {
+          const existing = mergedMap.get(key);
+          existing.xp = Math.max(existing.xp, p.xp);
+          existing.level = Math.max(existing.level, p.level, Math.floor(existing.xp / 200) + 1);
+          existing.gamesPlayed = Math.max(existing.gamesPlayed || 0, p.gamesPlayed || 0);
+          existing.favCount = Math.max(existing.favCount || 0, p.favCount || 0);
+          existing.photo = existing.photo || p.photo;
+          existing.isCurrentUser = existing.isCurrentUser || p.isCurrentUser;
+          if (existing.sourceDb !== p.sourceDb) {
+            existing.sourceDb = 'STGames + FriendsGame';
+          }
+          const tier = getTierInfo(existing.level);
+          existing.tierKey = tier.key;
+          existing.title = tier.label;
+        }
+      };
+
+      playersFromPrimary.forEach(upsertPlayer);
+      playersFromSecondary.forEach(upsertPlayer);
+      upsertPlayer({ ...me, isCurrentUser: true });
+
+      const combined = Array.from(mergedMap.values());
+      combined.sort((a, b) => (b.level - a.level) || (b.xp - a.xp));
+
+      return combined.map((p, idx) => ({
+        ...p,
+        rank: idx + 1
+      }));
+    }
+
+    function renderPodium(players) {
+      const podiumEl = document.getElementById('podiumContainer');
+      if (!podiumEl) return;
+
+      const first = players[0] || null;
+      const second = players[1] || null;
+      const third = players[2] || null;
+
+      const slots = [
+        { player: second, rank: 2, card: 'podium-2 p-3 sm:p-4', crown: '🥈', badgeBg: 'bg-slate-200 text-slate-900', avatarSize: 'w-12 h-12 sm:w-14 sm:h-14' },
+        { player: first,  rank: 1, card: 'podium-1 p-3.5 sm:p-5 -mt-3', crown: '👑', badgeBg: 'bg-amber-400 text-slate-950', avatarSize: 'w-14 h-14 sm:w-16 sm:h-16' },
+        { player: third,  rank: 3, card: 'podium-3 p-3 sm:p-4', crown: '🥉', badgeBg: 'bg-orange-400 text-slate-950', avatarSize: 'w-12 h-12 sm:w-14 sm:h-14' }
+      ];
+
+      podiumEl.innerHTML = slots.map(slot => {
+        const p = slot.player;
+        if (!p) {
+          return `
+            <div class="podium-card ${slot.card} opacity-50 flex flex-col items-center justify-center text-center min-h-[150px]">
+              <div class="text-lg mb-1">${slot.crown}</div>
+              <p class="text-[11px] font-bold text-slate-400">Waiting #${slot.rank}</p>
+            </div>
+          `;
+        }
+
+        const avatarContent = p.photo
+          ? `<img src="${escapeHTML(p.photo)}" class="w-full h-full object-cover rounded-full">`
+          : escapeHTML(p.name.charAt(0).toUpperCase());
+
+        return `
+          <div class="podium-card ${slot.card} flex flex-col items-center text-center">
+            <div class="text-lg sm:text-xl mb-1">${slot.crown}</div>
+            <div class="relative mb-2">
+              <div class="${slot.avatarSize} rounded-full bg-gradient-to-tr ${p.gradient} text-white font-extrabold text-base sm:text-lg flex items-center justify-center border-2 border-white shadow-md overflow-hidden">
+                ${avatarContent}
+              </div>
+              <span class="absolute -bottom-1.5 left-1/2 -translate-x-1/2 ${slot.badgeBg} text-[9px] font-extrabold px-2 py-0.5 rounded-full shadow">
+                #${p.rank}
+              </span>
+            </div>
+            <h3 class="brand-font text-xs sm:text-sm font-bold text-white truncate max-w-full mt-1">${escapeHTML(p.name)}</h3>
+            <span class="text-[9px] text-slate-300 truncate max-w-full">${escapeHTML(p.title)}</span>
+            <div class="mt-2 inline-flex items-center gap-1 bg-[#32ffdc]/15 border border-[#32ffdc]/40 text-[#32ffdc] text-[10px] sm:text-xs font-extrabold px-2.5 py-0.5 rounded-xl">
+              <i class="fa-solid fa-bolt text-[9px]"></i> LVL ${p.level}
+            </div>
+            <span class="text-[10px] text-slate-400 font-bold mt-1">${p.xp.toLocaleString()} XP</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderLeaderboardPage() {
+      const allPlayers = buildMergedLeaderboard();
+      const me = allPlayers.find(p => p.isCurrentUser) || getMyLocalPlayerStats();
+
+      const totalBadge = document.getElementById('totalPlayersBadge');
+      if (totalBadge) totalBadge.textContent = `${allPlayers.length} Players Ranked`;
+
+      // Update Personal Standing Banner
+      const xpIntoLevel = me.xp % 200;
+      const xpNeeded = 200 - xpIntoLevel;
+      const progressPct = Math.min(100, Math.round((xpIntoLevel / 200) * 100));
+
+      document.getElementById('myPlayerName').textContent = me.name;
+      document.getElementById('myTierBadge').textContent = me.title;
+      document.getElementById('myStatsSummary').textContent = `${me.gamesPlayed} Games Played • ${me.favCount} Favourites`;
+      document.getElementById('myLevelDisplay').textContent = `LVL ${me.level}`;
+      document.getElementById('myRankDisplay').textContent = `#${me.rank || 1}`;
+      document.getElementById('myXpTotal').textContent = `${me.xp.toLocaleString()} XP Total`;
+      document.getElementById('myNextLevelText').textContent = `${xpNeeded} XP to Level ${me.level + 1}`;
+      document.getElementById('myXpProgressBar').style.width = `${progressPct}%`;
+
+      const myAvatarBox = document.getElementById('myAvatarBox');
+      if (me.photo) {
+        myAvatarBox.innerHTML = `<img src="${escapeHTML(me.photo)}" class="w-full h-full object-cover">`;
+      } else {
+        myAvatarBox.textContent = me.name.charAt(0).toUpperCase();
+      }
+
+      // Render Top 3 Podium
+      renderPodium(allPlayers.slice(0, 3));
+
+      // Filter list by Tier & Search
+      const filtered = allPlayers.filter(p => {
+        const matchesTier = currentTierFilter === 'all' || p.tierKey === currentTierFilter;
+        const matchesSearch = p.name.toLowerCase().includes(currentSearchQuery.toLowerCase()) ||
+                              p.title.toLowerCase().includes(currentSearchQuery.toLowerCase());
+        return matchesTier && matchesSearch;
+      });
+
+      const listEl = document.getElementById('leaderboardList');
+      if (filtered.length === 0) {
+        listEl.innerHTML = `
+          <div class="theme-surface bg-white/90 rounded-3xl p-8 text-center shadow">
+            <i class="fa-solid fa-ranking-star text-3xl text-slate-400 mb-2"></i>
+            <h3 class="font-extrabold text-base text-[#07222d] theme-text-primary">No players in this tier yet</h3>
+            <p class="text-xs text-slate-500 mt-1">Play more games or switch the tier tab above.</p>
+          </div>
+        `;
+        return;
+      }
+
+      listEl.innerHTML = filtered.map(player => {
+        const rankBadge = player.rank === 1 ? '🥇' : player.rank === 2 ? '🥈' : player.rank === 3 ? '🥉' : `#${player.rank}`;
+        const highlightClass = player.isCurrentUser
+          ? 'bg-[#07222d] text-white border-2 border-[#32ffdc] shadow-lg'
+          : 'theme-surface bg-white/95 text-[#07222d] border border-white/80 shadow';
+
+        const avatarInner = player.photo
+          ? `<img src="${escapeHTML(player.photo)}" class="w-full h-full object-cover rounded-full">`
+          : escapeHTML(player.name.charAt(0).toUpperCase());
+
+        return `
+          <div class="lb-row ${highlightClass} rounded-2xl px-3.5 sm:px-5 py-3 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-8 text-center font-extrabold ${player.rank <= 3 ? 'text-lg' : 'text-xs opacity-75'} shrink-0">
+                ${rankBadge}
+              </div>
+              <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-tr ${player.gradient} text-white font-extrabold text-sm flex items-center justify-center shrink-0 border-2 border-[#32ffdc]/50 shadow-sm overflow-hidden">
+                ${avatarInner}
+              </div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-2">
+                  <h3 class="font-extrabold text-xs sm:text-sm truncate ${player.isCurrentUser ? 'text-white' : 'theme-text-primary'}">${escapeHTML(player.name)}</h3>
+                  ${player.isCurrentUser ? '<span class="bg-[#32ffdc] text-[#07222d] text-[9px] font-extrabold px-2 py-0.5 rounded-full">YOU</span>' : ''}
+                </div>
+                <div class="flex items-center gap-2 text-[10px] ${player.isCurrentUser ? 'text-slate-300' : 'text-slate-500 theme-text-sub'} font-semibold mt-0.5">
+                  <span>${escapeHTML(player.title)}</span>
+                  <span>•</span>
+                  <span>${player.gamesPlayed || 0} Games</span>
+                  ${player.sourceDb ? `<span class="hidden sm:inline text-[9px] opacity-75">• ${escapeHTML(player.sourceDb)}</span>` : ''}
+                </div>
+              </div>
+            </div>
+
+            <div class="text-right shrink-0">
+              <div class="inline-flex items-center gap-1 bg-[#07222d] text-[#32ffdc] border border-[#32ffdc]/40 text-xs font-extrabold px-3 py-1 rounded-xl shadow-sm">
+                <i class="fa-solid fa-bolt text-[10px]"></i> LVL ${player.level}
+              </div>
+              <div class="text-[10px] ${player.isCurrentUser ? 'text-cyan-300' : 'text-slate-500 theme-text-sub'} font-bold mt-1">
+                ${player.xp.toLocaleString()} XP
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.filterTier = function (tier, btn) {
+      currentTierFilter = tier;
+      document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      ArcadeSFX.click();
+      renderLeaderboardPage();
+    };
+
+    window.handlePlayerSearch = function (val) {
+      currentSearchQuery = val.trim();
+      renderLeaderboardPage();
+    };
+
+    function checkDailyBonusState() {
+      const today = new Date().toISOString().slice(0, 10);
+      const lastClaim = localStorage.getItem('st_daily_xp_date');
+      const btn = document.getElementById('dailyBonusBtn');
+      if (lastClaim === today && btn) {
+        btn.disabled = true;
+        btn.textContent = '✅ Daily XP Claimed';
+        btn.className = 'bg-slate-700 text-slate-300 font-extrabold px-3 py-1 rounded-xl text-xs cursor-not-allowed';
+      }
+    }
+
+    window.claimDailyXpBonus = async function () {
+      const today = new Date().toISOString().slice(0, 10);
+      if (localStorage.getItem('st_daily_xp_date') === today) return;
+
+      const currentBonus = parseInt(localStorage.getItem('st_bonus_xp') || '0', 10) || 0;
+      localStorage.setItem('st_bonus_xp', String(currentBonus + 100));
+      localStorage.setItem('st_daily_xp_date', today);
+
+      ArcadeSFX.levelUp();
+      checkDailyBonusState();
+      await window.syncMyScoreToFirebase(false);
+    };
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      if (localStorage.getItem('st_theme') === 'dark') document.body.classList.add('dark-theme');
+      updateSFXIcon();
+      checkDailyBonusState();
+
+      // Update Bottom Nav User Profile
+      const savedPhoto = localStorage.getItem('gh_user_photo') || localStorage.getItem('st_user_photo');
+      const savedName = localStorage.getItem('gh_user_name') || safeReadJSON('st_player_profile', {}).name;
+      if (savedName && savedName !== 'ST Player') {
+        document.getElementById('bottomDefaultIcon').classList.add('hidden');
+        const userLogo = document.getElementById('bottomUserLogo');
+        userLogo.classList.remove('hidden');
+        document.getElementById('bottomLoginLabel').textContent = savedName;
+        if (savedPhoto) userLogo.innerHTML = `<img src="${escapeHTML(savedPhoto)}" class="w-full h-full rounded-full object-cover" decoding="async">`;
+        else userLogo.textContent = savedName.charAt(0).toUpperCase();
+      }
+
+      // Render local immediately, then sync & stream live from both Firebase databases
+      renderLeaderboardPage();
+      await window.syncMyScoreToFirebase(false);
+
+      watchDatabase(dbPrimary, 'STGames DB', (players, connected) => {
+        playersFromPrimary = players;
+        primaryConnected = connected;
+        updateDualStatusUI();
+        renderLeaderboardPage();
+      });
+
+      watchDatabase(dbSecondary, 'FriendsGame DB', (players, connected) => {
+        playersFromSecondary = players;
+        secondaryConnected = connected;
+        updateDualStatusUI();
+        renderLeaderboardPage();
+      });
+    });
+  </script>
+</body>
+</html>
