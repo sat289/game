@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Thief Puzzle - Play Level</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; font-family: 'Segoe UI', sans-serif; }
+    body {
+      background: #f6f4f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    .game-wrapper {
+      width: 100%;
+      max-width: 420px;
+      height: 100vh;
+      max-height: 820px;
+      background: #fbf9f5;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border: 2px solid #ddd;
+    }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+    }
+    .icon-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #f58220;
+      color: #fff;
+      border: 3px solid #fff;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 20px;
+      cursor: pointer;
+    }
+    .level-title { font-size: 20px; font-weight: 600; color: #333; }
+    .prompt-text {
+      text-align: center;
+      font-size: 18px;
+      padding: 0 24px 10px;
+      min-height: 48px;
+      color: #222;
+    }
+    canvas {
+      width: 100%;
+      height: 460px;
+      background: #fff3db;
+      touch-action: none;
+      cursor: grab;
+      border-top: 2px solid #ecd9b5;
+      border-bottom: 2px solid #ecd9b5;
+    }
+    .bottom-bar {
+      display: flex;
+      justify-content: center;
+      padding: 24px;
+    }
+    .hint-btn {
+      background: linear-gradient(180deg, #8fd6ff, #5bc0ff);
+      color: #fff;
+      border: 3px solid #fff;
+      box-shadow: 0 5px 0 #3aa0e0, 0 8px 15px rgba(0,0,0,0.15);
+      border-radius: 40px;
+      padding: 12px 48px;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+    }
+    /* Win / Fail Overlay Modal */
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.82);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 22px;
+      z-index: 20;
+    }
+    .hidden { display: none !important; }
+    .badge-box {
+      text-align: center;
+      color: #fff;
+    }
+    .trophy-icon { font-size: 84px; }
+    .ribbon {
+      font-size: 32px;
+      font-weight: 900;
+      padding: 8px 34px;
+      border-radius: 30px;
+      margin-top: -10px;
+      letter-spacing: 2px;
+    }
+    .ribbon.win { background: #e91e63; color: #fff; box-shadow: 0 4px 0 #ad1457; }
+    .ribbon.fail { background: #5e35b1; color: #fff; box-shadow: 0 4px 0 #311b92; }
+    .modal-btn {
+      background: linear-gradient(180deg, #54f000, #2db300);
+      color: #fff;
+      border: 3px solid #111;
+      border-radius: 16px;
+      padding: 14px 48px;
+      font-size: 24px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 5px 0 #1b6e00;
+    }
+  </style>
+</head>
+<body>
+  <div class="game-wrapper">
+    <div class="top-bar">
+      <div class="icon-btn" id="homeBtn" title="Home">🏠</div>
+      <div class="level-title" id="levelHeader">Level : 1</div>
+      <div class="icon-btn" id="restartBtn" title="Restart">🔄</div>
+    </div>
+
+    <div class="prompt-text" id="promptText">I also want to eat roast chicken</div>
+
+    <canvas id="gameCanvas" width="420" height="460"></canvas>
+
+    <div class="bottom-bar">
+      <button class="hint-btn" id="hintBtn">HINT 💡</button>
+    </div>
+
+    <!-- Win/Fail Popup -->
+    <div id="resultOverlay" class="overlay hidden">
+      <div class="badge-box">
+        <div id="trophyIcon" class="trophy-icon">🏆</div>
+        <div id="resultRibbon" class="ribbon win">YOU WIN</div>
+      </div>
+      <button id="modalActionBtn" class="modal-btn">» NEXT</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getDatabase, ref, set, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBzLchy5M2fLne4c7Ghw1KNN8wVrlZdd8M",
+      authDomain: "friendsgame-872f5.firebaseapp.com",
+      databaseURL: "https://friendsgame-872f5-default-rtdb.firebaseio.com",
+      projectId: "friendsgame-872f5",
+      storageBucket: "friendsgame-872f5.firebasestorage.app",
+      messagingSenderId: "522534013233",
+      appId: "1:522534013233:web:f5faa6e6795023d0420810",
+      measurementId: "G-PW5H3G97QR"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const STORAGE_KEY = "thief_puzzle_player_v1";
+
+    /**
+     * ==========================================================
+     * ADD NEW LEVELS HERE!
+     * Each level defines:
+     * - prompt: Text shown at top
+     * - thief: { x, y, shoulderX, shoulderY }
+     * - target: { x, y, r, emoji, label }
+     * - pivots: Safe objects the arm can bend around [{ x, y, r, emoji, color }]
+     * - hazards: Obstacles/Guards that cause FAILED if touched [{ x, y, r, emoji, label }]
+     * ==========================================================
+     */
+    const LEVELS = [
+      {
+        // Video 1 - Roast Chicken Level
+        prompt: "I also want to eat roast chicken",
+        thief: { x: 65, y: 150, shoulderX: 80, shoulderY: 145 },
+        handStart: { x: 115, y: 270 },
+        target: { x: 295, y: 245, r: 24, emoji: "🍗" },
+        pivots: [
+          { x: 175, y: 360, r: 26, emoji: "🪨", label: "Rock" }
+        ],
+        hazards: [
+          { x: 210, y: 240, r: 38, emoji: "👩", label: "Girl" },
+          { x: 375, y: 240, r: 35, emoji: "🧑", label: "Boy" }
+        ]
+      },
+      {
+        // Video 1 - Love Balloons Level
+        prompt: "I also want love balloons",
+        thief: { x: 75, y: 330, shoulderX: 90, shoulderY: 320 },
+        handStart: { x: 140, y: 300 },
+        target: { x: 315, y: 120, r: 28, emoji: "🎈" },
+        pivots: [
+          { x: 110, y: 130, r: 34, emoji: "🗑️", label: "Bin" }
+        ],
+        hazards: [
+          { x: 250, y: 205, r: 42, emoji: "👩", label: "Girl" },
+          { x: 365, y: 205, r: 38, emoji: "🧑", label: "Boy" }
+        ]
+      },
+      {
+        // Video 2 - Treasure behind Door Level
+        prompt: "How to take away the treasure!",
+        thief: { x: 65, y: 230, shoulderX: 80, shoulderY: 225 },
+        handStart: { x: 135, y: 235 },
+        target: { x: 360, y: 255, r: 26, emoji: "🧰" },
+        pivots: [
+          { x: 205, y: 365, r: 16, emoji: "⚙️", label: "Bottom Gap" },
+          { x: 360, y: 355, r: 16, emoji: "🪨", label: "Corner" }
+        ],
+        hazards: [
+          { x: 205, y: 160, r: 35, emoji: "🚪", label: "Door Top" },
+          { x: 205, y: 235, r: 35, emoji: "🚪", label: "Door Mid" },
+          { x: 280, y: 220, r: 40, emoji: "🥷", label: "Guard" }
+        ]
+      },
+      {
+        // Video 3 - Take the lady's purse
+        prompt: "Take the lady's purse.",
+        thief: { x: 55, y: 290, shoulderX: 70, shoulderY: 280 },
+        handStart: { x: 95, y: 220 },
+        target: { x: 370, y: 270, r: 24, emoji: "👛" },
+        pivots: [
+          { x: 95, y: 95, r: 24, emoji: "💡", label: "Left Lamp" },
+          { x: 335, y: 95, r: 24, emoji: "💡", label: "Right Lamp" }
+        ],
+        hazards: [
+          { x: 250, y: 260, r: 42, emoji: "💑", label: "Couple" },
+          { x: 145, y: 290, r: 34, emoji: "🗑️", label: "Bin" }
+        ]
+      },
+      {
+        // Video 3 - Save him! (Rocket fuse)
+        prompt: "Save him!",
+        thief: { x: 100, y: 110, shoulderX: 115, shoulderY: 110 },
+        handStart: { x: 165, y: 160 },
+        target: { x: 240, y: 270, r: 20, emoji: "🔌" },
+        pivots: [
+          { x: 220, y: 375, r: 16, emoji: "🪨", label: "Stone" }
+        ],
+        hazards: [
+          { x: 195, y: 270, r: 22, emoji: "🚀", label: "Warhead" },
+          { x: 350, y: 270, r: 40, emoji: "🦹", label: "Villain" }
+        ]
+      }
+    ];
+
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    // Determine initial level
+    const params = new URLSearchParams(window.location.search);
+    let player = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
+      uid: "guest_" + Math.random().toString(36).substring(2, 9),
+      username: "Guest Thief",
+      level: 1
+    };
+    let currentLevelNum = parseInt(params.get("level")) || player.level || 1;
+
+    let levelData = null;
+    let hand = { x: 0, y: 0, r: 14 };
+    let anchorPoints = []; // Starts with thief's shoulder, adds pivots as rope wraps
+    let isDragging = false;
+    let gameState = "PLAYING"; // PLAYING | WIN | FAIL
+    let showHint = false;
+
+    function loadLevel(lvlNum) {
+      currentLevelNum = lvlNum;
+      const index = (lvlNum - 1) % LEVELS.length;
+      levelData = LEVELS[index];
+
+      document.getElementById("levelHeader").textContent = `Level : ${currentLevelNum}`;
+      document.getElementById("promptText").textContent = levelData.prompt;
+      document.getElementById("resultOverlay").classList.add("hidden");
+
+      hand.x = levelData.handStart.x;
+      hand.y = levelData.handStart.y;
+      anchorPoints = [{ x: levelData.thief.shoulderX, y: levelData.thief.shoulderY }];
+      gameState = "PLAYING";
+      showHint = false;
+      draw();
+    }
+
+    // Distance from point P to segment AB
+    function distToSegment(p, a, b) {
+      const l2 = (b.x - a.x) ** 2 + (b.y - a.y) ** 2;
+      if (l2 === 0) return Math.hypot(p.x - a.x, p.y - a.y);
+      let t = ((p.x - a.x) * (b.x - a.x) + (p.y - a.y) * (b.y - a.y)) / l2;
+      t = Math.max(0, Math.min(1, t));
+      return Math.hypot(p.x - (a.x + t * (b.x - a.x)), p.y - (a.y + t * (b.y - a.y)));
+    }
+
+    function updatePhysics() {
+      if (gameState !== "PLAYING") return;
+
+      const lastAnchor = anchorPoints[anchorPoints.length - 1];
+
+      // Check if arm wraps around any safe pivot
+      for (const piv of levelData.pivots) {
+        const d = distToSegment(piv, lastAnchor, hand);
+        if (d < piv.r + 6) {
+          const alreadyUsed = anchorPoints.some(a => a.pivRef === piv);
+          if (!alreadyUsed) {
+            // Calculate offset point outside the pivot radius
+            const angle = Math.atan2(piv.y - lastAnchor.y, piv.x - lastAnchor.x) - Math.PI / 2;
+            anchorPoints.push({
+              x: piv.x + Math.cos(angle) * (piv.r + 6),
+              y: piv.y + Math.sin(angle) * (piv.r + 6),
+              pivRef: piv
+            });
+          }
+        }
+      }
+
+      // Check if any segment hits a hazard
+      const allPoints = [...anchorPoints, hand];
+      for (let i = 0; i < allPoints.length - 1; i++) {
+        const a = allPoints[i];
+        const b = allPoints[i + 1];
+        for (const haz of levelData.hazards) {
+          if (distToSegment(haz, a, b) < haz.r - 4) {
+            triggerEnd("FAIL");
+            return;
+          }
+        }
+      }
+
+      // Check if hand reached the target
+      const distTarget = Math.hypot(hand.x - levelData.target.x, hand.y - levelData.target.y);
+      if (distTarget < levelData.target.r + hand.r) {
+        triggerEnd("WIN");
+      }
+    }
+
+    async function saveProgress(completedLevel) {
+      const nextLevel = completedLevel + 1;
+      if (nextLevel > (player.level || 1)) {
+        player.level = nextLevel;
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(player));
+
+      try {
+        await set(ref(db, `leaderboard/${player.uid}`), {
+          username: player.username,
+          level: player.level,
+          updatedAt: Date.now()
+        });
+        await push(ref(db, `history/${player.uid}`), {
+          levelCompleted: completedLevel,
+          timestamp: Date.now()
+        });
+      } catch (e) {
+        console.warn("Saved locally; Firebase sync skipped:", e);
+      }
+    }
+
+    function triggerEnd(status) {
+      gameState = status;
+      isDragging = false;
+      draw();
+
+      if (status === "WIN") {
+        saveProgress(currentLevelNum);
+      }
+
+      setTimeout(() => {
+        const overlay = document.getElementById("resultOverlay");
+        const trophy = document.getElementById("trophyIcon");
+        const ribbon = document.getElementById("resultRibbon");
+        const btn = document.getElementById("modalActionBtn");
+
+        overlay.classList.remove("hidden");
+        if (status === "WIN") {
+          trophy.textContent = "🏆";
+          ribbon.textContent = "YOU WIN";
+          ribbon.className = "ribbon win";
+          btn.textContent = "» NEXT";
+          btn.onclick = () => loadLevel(currentLevelNum + 1);
+        } else {
+          trophy.textContent = "😢";
+          ribbon.textContent = "FAILED";
+          ribbon.className = "ribbon fail";
+          btn.textContent = "🔄 Replay";
+          btn.onclick = () => loadLevel(currentLevelNum);
+        }
+      }, 650);
+    }
+
+    function drawStickman(x, y, labelEmoji) {
+      ctx.save();
+      ctx.strokeStyle = "#111";
+      ctx.lineWidth = 4;
+      // Head
+      ctx.fillStyle = "#fff";
+      ctx.beginPath();
+      ctx.arc(x, y - 35, 18, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      // Body
+      ctx.beginPath();
+      ctx.moveTo(x, y - 17);
+      ctx.lineTo(x, y + 25);
+      // Legs
+      ctx.moveTo(x, y + 25);
+      ctx.lineTo(x - 16, y + 55);
+      ctx.moveTo(x, y + 25);
+      ctx.lineTo(x + 16, y + 55);
+      ctx.stroke();
+      // Thought bubble
+      ctx.font = "20px sans-serif";
+      ctx.fillText(labelEmoji, x + 22, y - 40);
+      ctx.restore();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw Hint Path if clicked
+      if (showHint) {
+        ctx.save();
+        ctx.setLineDash([8, 6]);
+        ctx.strokeStyle = "#29b6f6";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(levelData.thief.shoulderX, levelData.thief.shoulderY);
+        levelData.pivots.forEach(p => ctx.lineTo(p.x, p.y));
+        ctx.lineTo(levelData.target.x, levelData.target.y);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // Draw Thief Stickman
+      drawStickman(levelData.thief.x, levelData.thief.y, levelData.target.emoji);
+
+      // Draw Safe Pivots
+      levelData.pivots.forEach(p => {
+        ctx.save();
+        ctx.fillStyle = "rgba(120, 180, 120, 0.25)";
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.font = `${p.r * 1.3}px sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(p.emoji, p.x, p.y);
+        ctx.restore();
+      });
+
+      // Draw Hazards
+      levelData.hazards.forEach(h => {
+        ctx.save();
+        ctx.fillStyle = gameState === "FAIL" ? "rgba(255, 0, 0, 0.25)" : "rgba(255, 100, 100, 0.12)";
+        ctx.beginPath();
+        ctx.arc(h.x, h.y, h.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.font = `${h.r * 1.3}px sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(h.emoji, h.x, h.y);
+        ctx.restore();
+      });
+
+      // Draw Target
+      ctx.save();
+      ctx.font = `${levelData.target.r * 1.5}px sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(levelData.target.emoji, levelData.target.x, levelData.target.y);
+      ctx.restore();
+
+      // Draw Elastic Thief Arm
+      ctx.save();
+      ctx.lineWidth = 5;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.strokeStyle = gameState === "WIN" ? "#1e88e5" : (gameState === "FAIL" ? "#e53935" : "#111");
+      ctx.beginPath();
+      ctx.moveTo(anchorPoints[0].x, anchorPoints[0].y);
+      for (let i = 1; i < anchorPoints.length; i++) {
+        ctx.lineTo(anchorPoints[i].x, anchorPoints[i].y);
+      }
+      ctx.lineTo(hand.x, hand.y);
+      ctx.stroke();
+
+      // Draw Hand Glove
+      ctx.fillStyle = "#fff";
+      ctx.strokeStyle = "#111";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(hand.x, hand.y, hand.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.font = "18px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("🤚", hand.x, hand.y);
+      ctx.restore();
+    }
+
+    // Pointer Events for Mouse & Touch
+    function getPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return {
+        x: (clientX - rect.left) * (canvas.width / rect.width),
+        y: (clientY - rect.top) * (canvas.height / rect.height)
+      };
+    }
+
+    function onStart(e) {
+      if (gameState !== "PLAYING") return;
+      const pos = getPos(e);
+      if (Math.hypot(pos.x - hand.x, pos.y - hand.y) < hand.r + 28) {
+        isDragging = true;
+      }
+    }
+
+    function onMove(e) {
+      if (!isDragging || gameState !== "PLAYING") return;
+      e.preventDefault();
+      const pos = getPos(e);
+      hand.x = Math.max(15, Math.min(canvas.width - 15, pos.x));
+      hand.y = Math.max(15, Math.min(canvas.height - 15, pos.y));
+      updatePhysics();
+      draw();
+    }
+
+    function onEnd() {
+      isDragging = false;
+    }
+
+    canvas.addEventListener("mousedown", onStart);
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onEnd);
+
+    canvas.addEventListener("touchstart", onStart, { passive: false });
+    window.addEventListener("touchmove", onMove, { passive: false });
+    window.addEventListener("touchend", onEnd);
+
+    // Top & Bottom Buttons
+    document.getElementById("homeBtn").onclick = () => window.location.href = "index.html";
+    document.getElementById("restartBtn").onclick = () => loadLevel(currentLevelNum);
+    document.getElementById("hintBtn").onclick = () => {
+      showHint = true;
+      draw();
+    };
+
+    loadLevel(currentLevelNum);
+  </script>
+</body>
+</html>
