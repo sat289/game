@@ -11,7 +11,7 @@
   </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ST Games - Achievements & Missions</title>
+  <title>ST Games - Achievements & Daily Missions</title>
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -92,7 +92,7 @@
       box-shadow: 0 8px 24px rgba(7, 34, 45, 0.15);
     }
 
-    /* Mission / Achievement Card */
+    /* Mission Card */
     .mission-card {
       background: linear-gradient(135deg, rgba(7, 34, 45, 0.96) 0%, rgba(15, 23, 42, 0.96) 100%);
       border: 2px solid rgba(50, 255, 220, 0.3);
@@ -167,7 +167,7 @@
               <h1 class="brand-font text-base sm:text-lg font-bold tracking-tight text-[#07222d] theme-text-primary uppercase truncate">ST GAMES</h1>
               <div class="flex items-center gap-1.5">
                 <span class="live-dot"></span>
-                <p class="text-[9px] font-bold text-teal-600 uppercase tracking-tighter truncate">Missions & Badges</p>
+                <p id="resetTimerLabel" class="text-[9px] font-bold text-teal-600 uppercase tracking-tighter truncate">Resets daily at 1:00 AM</p>
               </div>
             </div>
           </a>
@@ -196,7 +196,7 @@
             <div class="min-w-0">
               <span class="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[#32ffdc]/20 text-[#32ffdc] border border-[#32ffdc]/40">Player Achievements</span>
               <h2 id="myPlayerName" class="brand-font text-lg sm:text-xl font-bold text-white truncate mt-1">ST Player</h2>
-              <p id="myMissionStats" class="text-xs text-slate-300 font-medium">0 / 6 Missions Completed</p>
+              <p id="myMissionStats" class="text-xs text-slate-300 font-medium">0 / 4 Missions Completed</p>
             </div>
           </div>
 
@@ -220,7 +220,7 @@
       <div class="flex items-center justify-between mb-2">
         <div class="flex items-center gap-2">
           <i class="fa-solid fa-trophy text-amber-300 text-lg"></i>
-          <h2 class="brand-font text-lg sm:text-xl font-bold text-[#07222d] theme-text-primary">Daily & Career Missions</h2>
+          <h2 class="brand-font text-lg sm:text-xl font-bold text-[#07222d] theme-text-primary">Daily Missions (Resets at 1:00 AM)</h2>
         </div>
         <span class="text-xs font-extrabold text-[#07222d] theme-text-sub">Claim XP rewards!</span>
       </div>
@@ -235,7 +235,7 @@
   <!-- FOOTER -->
   <footer class="theme-surface max-w-4xl w-full mx-auto px-4 py-5 mb-20 sm:mb-6 rounded-2xl border border-slate-200 text-center text-[10px] text-slate-500">
     <div class="brand-font text-sm font-bold tracking-wide theme-text-primary">ST GAMES <span class="text-[#32ffdc]">•</span> MISSIONS & ACHIEVEMENTS</div>
-    <p class="mt-1">Completed missions automatically sync with your level and global leaderboard rank.</p>
+    <p class="mt-1">Missions automatically refresh every day at 1:00 AM.</p>
   </footer>
 
   <!-- BOTTOM NAVIGATION BAR -->
@@ -351,7 +351,7 @@
 
     const safeReadJSON = (key, fallback) => {
       try {
-        const val = JSON.parse(localStorage.getItem(key) || 'null');
+        const val = JSON.parse(localStorage.getItem('st_ach_' + key) || localStorage.getItem(key) || 'null');
         return val == null ? fallback : val;
       } catch (_) { return fallback; }
     };
@@ -393,53 +393,77 @@
       ]);
     }
 
+    /* =========================================================================
+       1:00 AM DAILY RESET MISSION LOGIC
+       ========================================================================= */
+    function checkAndResetDailyMissions() {
+      const now = new Date();
+      // Calculate active mission cycle day (daily reset at 1:00 AM)
+      const resetHour = 1;
+      let cycleDate = new Date(now);
+      if (now.getHours() < resetHour) {
+        cycleDate.setDate(cycleDate.getDate() - 1);
+      }
+      const cycleKey = cycleDate.toISOString().slice(0, 10);
+
+      const lastResetKey = localStorage.getItem('st_mission_reset_date');
+      if (lastResetKey !== cycleKey) {
+        // Reset claimed status for daily missions
+        localStorage.setItem('st_mission_reset_date', cycleKey);
+        localStorage.setItem('st_claimed_missions', JSON.stringify({}));
+      }
+    }
+
     /* MISSIONS DEFINITION */
     const MISSIONS = [
       {
-        id: 'first_play',
-        title: '🎮 Arcade Initiate',
-        desc: 'Play at least 1 game on ST Games.',
-        rewardXp: 150,
-        check: (played, favs) => played >= 1
+        id: 'play_10_games',
+        title: '🎯 Play 10 Games (Low Points)',
+        desc: 'Launch & play 10 games to earn steady points.',
+        rewardXp: 50,
+        progress: (playedList) => Math.min(10, playedList.length),
+        target: 10,
+        check: (playedList) => playedList.length >= 10
       },
       {
-        id: 'gamer_5',
-        title: '🔥 Gaming Enthusiast',
-        desc: 'Play 5 different games.',
-        rewardXp: 300,
-        check: (played, favs) => played >= 5
+        id: 'play_2_mins',
+        title: '⏱️ Play Games for 2 Minutes',
+        desc: 'Spend at least 2 minutes active in games.',
+        rewardXp: 80,
+        progress: () => {
+          const seconds = parseInt(localStorage.getItem('st_active_play_seconds') || '0', 10);
+          return Math.min(120, seconds);
+        },
+        target: 120,
+        unit: 's',
+        check: () => {
+          const seconds = parseInt(localStorage.getItem('st_active_play_seconds') || '0', 10);
+          return seconds >= 120;
+        }
       },
       {
-        id: 'gamer_10',
-        title: '⚡ Arcade Veteran',
-        desc: 'Play 10 or more games.',
-        rewardXp: 500,
-        check: (played, favs) => played >= 10
-      },
-      {
-        id: 'first_fav',
-        title: '❤️ Heart Collector',
-        desc: 'Heart / favourite at least 1 game.',
+        id: 'fav_3_games',
+        title: '❤️ Favourite 3 Games',
+        desc: 'Heart and save at least 3 games to your favourites.',
         rewardXp: 100,
-        check: (played, favs) => favs >= 1
+        progress: (_, favList) => Math.min(3, favList.length),
+        target: 3,
+        check: (_, favList) => favList.length >= 3
       },
       {
-        id: 'fav_5',
-        title: '⭐ Super Fan',
-        desc: 'Save 5 games to your favourites.',
-        rewardXp: 250,
-        check: (played, favs) => favs >= 5
-      },
-      {
-        id: 'daily_login',
-        title: '🎁 Daily Returner',
-        desc: 'Claim your daily visitor bonus.',
+        id: 'daily_visitor',
+        title: '🎁 Daily 1:00 AM Bonus',
+        desc: 'Claim your refreshed daily login bonus.',
         rewardXp: 100,
-        check: () => true // Always claimable
+        progress: (_, __, claimed) => claimed ? 1 : 0,
+        target: 1,
+        check: () => true
       }
     ];
 
     function renderAchievementsPage() {
+      checkAndResetDailyMissions();
+
       const playedGames = safeReadJSON('st_played_games', []);
       const favoriteGames = safeReadJSON('st_favorite_games', []);
       const claimedMissions = safeReadJSON('st_claimed_missions', {});
@@ -467,8 +491,9 @@
       const gridEl = document.getElementById('missionsGrid');
 
       gridEl.innerHTML = MISSIONS.map(m => {
-        const isEligible = m.check(playedGames.length, favoriteGames.length);
         const isClaimed = !!claimedMissions[m.id];
+        const isEligible = m.check(playedGames, favoriteGames, isClaimed);
+        const currentProg = m.progress(playedGames, favoriteGames, isClaimed);
         if (isClaimed) completedCount++;
 
         let btnHtml = '';
@@ -477,7 +502,7 @@
         } else if (isEligible) {
           btnHtml = `<button onclick="claimMission('${m.id}', ${m.rewardXp})" class="bg-[#32ffdc] hover:bg-cyan-300 text-[#07222d] font-extrabold text-xs px-4 py-1.5 rounded-xl shadow transition active:scale-95">Claim +${m.rewardXp} XP</button>`;
         } else {
-          btnHtml = `<span class="bg-slate-800 text-slate-400 text-xs font-bold px-3 py-1.5 rounded-xl">In Progress</span>`;
+          btnHtml = `<span class="bg-slate-800 text-slate-400 text-xs font-bold px-3 py-1.5 rounded-xl">Progress (${currentProg}/${m.target}${m.unit || ''})</span>`;
         }
 
         const cardClass = isClaimed ? 'mission-card completed' : 'mission-card';
@@ -492,14 +517,14 @@
               <p class="text-xs text-slate-300">${escapeHTML(m.desc)}</p>
             </div>
             <div class="flex items-center justify-between pt-2 border-t border-white/10">
-              <span class="text-[10px] text-slate-400 font-bold">${isClaimed ? 'Completed' : (isEligible ? 'Ready to Claim!' : 'Locked')}</span>
+              <span class="text-[10px] text-slate-400 font-bold">${isClaimed ? 'Completed Today' : `${currentProg}/${m.target}${m.unit || ''}`}</span>
               ${btnHtml}
             </div>
           </div>
         `;
       }).join('');
 
-      document.getElementById('myMissionStats').textContent = `${completedCount} / ${MISSIONS.length} Missions Completed`;
+      document.getElementById('myMissionStats').textContent = `${completedCount} / ${MISSIONS.length} Daily Missions Completed`;
     }
 
     window.claimMission = async function (missionId, rewardXp) {
@@ -511,7 +536,6 @@
       const currentBonus = parseInt(localStorage.getItem('st_bonus_xp') || '0', 10) || 0;
       localStorage.setItem('st_bonus_xp', String(currentBonus + rewardXp));
 
-      // Re-calculate & Sync with Firebase
       const playedGames = safeReadJSON('st_played_games', []);
       const favoriteGames = safeReadJSON('st_favorite_games', []);
       const newBonus = currentBonus + rewardXp;
