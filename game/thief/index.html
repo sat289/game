@@ -3,136 +3,304 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Thief Puzzle - Home & Leaderboard</title>
+  <title>Thief Puzzle - Home, Editor & Leaderboard</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     body {
-      background: #f4f1ea;
+      background: #ece8df;
       color: #222;
       display: flex;
       justify-content: center;
+      padding: 16px;
       min-height: 100vh;
-      padding: 20px;
     }
     .app-container {
       width: 100%;
-      max-width: 440px;
+      max-width: 480px;
       background: #fffdf9;
       border: 3px solid #222;
-      border-radius: 20px;
-      padding: 24px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+      border-radius: 22px;
+      padding: 20px;
+      box-shadow: 0 12px 28px rgba(0,0,0,0.15);
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 16px;
     }
-    h1 { text-align: center; font-size: 28px; letter-spacing: 0.5px; }
-    .subtitle { text-align: center; color: #666; font-size: 14px; margin-top: -12px; }
-    .card {
-      background: #fef4e2;
-      border: 2px solid #222;
+    h1 { text-align: center; font-size: 26px; font-weight: 900; }
+    .nav-tabs {
+      display: flex;
+      gap: 8px;
+      background: #eee5d3;
+      padding: 6px;
       border-radius: 14px;
-      padding: 16px;
+      border: 2px solid #222;
     }
-    .input-group { display: flex; gap: 8px; margin-top: 10px; }
-    input[type="text"] {
+    .tab-btn {
       flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 10px;
+      font-weight: 800;
+      cursor: pointer;
+      background: transparent;
+      color: #444;
+    }
+    .tab-btn.active {
+      background: #ff9800;
+      color: #fff;
+      border: 2px solid #222;
+      box-shadow: 0 2px 0 #222;
+    }
+    .card {
+      background: #fef6e6;
+      border: 2px solid #222;
+      border-radius: 16px;
+      padding: 14px;
+    }
+    .card h3 { font-size: 16px; margin-bottom: 8px; }
+    .input-row { display: flex; gap: 8px; margin-top: 8px; }
+    input[type="text"], input[type="password"], select, textarea {
+      width: 100%;
       padding: 10px 12px;
       border: 2px solid #222;
       border-radius: 10px;
-      font-size: 15px;
+      font-size: 14px;
+      background: #fff;
     }
     button {
       cursor: pointer;
       border: 2px solid #222;
       border-radius: 10px;
-      padding: 10px 16px;
-      font-weight: 700;
-      font-size: 15px;
+      padding: 10px 14px;
+      font-weight: 800;
+      font-size: 14px;
       transition: transform 0.1s;
     }
     button:active { transform: scale(0.97); }
-    .btn-primary { background: #38d800; color: #fff; text-shadow: 0 1px 2px #000; width: 100%; font-size: 18px; padding: 14px; }
-    .btn-google { background: #4285F4; color: #fff; width: 100%; margin-top: 10px; }
-    .btn-save { background: #ff9800; color: #fff; }
-    .btn-logout { background: #e53935; color: #fff; font-size: 12px; padding: 6px 10px; }
-    .user-bar { display: flex; justify-content: space-between; align-items: center; }
+    .btn-play { background: linear-gradient(180deg, #54f000, #2db300); color: #fff; font-size: 18px; width: 100%; padding: 14px; box-shadow: 0 4px 0 #1b6e00; }
+    .btn-google { background: #4285F4; color: #fff; width: 100%; margin-top: 8px; }
+    .btn-orange { background: #ff9800; color: #fff; }
+    .btn-teal { background: #0d8a72; color: #fff; width: 100%; padding: 12px; margin-top: 8px; }
+    .btn-danger { background: #e53935; color: #fff; font-size: 12px; padding: 6px 10px; }
     .levels-grid {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 8px;
-      margin-top: 10px;
+      margin-top: 8px;
     }
     .lvl-btn {
-      padding: 10px 0;
+      padding: 12px 4px;
       text-align: center;
-      background: #67c2ff;
+      background: #5bc0ff;
       color: #fff;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
-      border-radius: 10px;
+      border-radius: 12px;
       border: 2px solid #222;
-      font-weight: bold;
+      font-weight: 900;
       cursor: pointer;
+      box-shadow: 0 3px 0 #222;
+      font-size: 13px;
     }
-    .lvl-btn.locked { background: #ccc; color: #777; text-shadow: none; cursor: not-allowed; }
-    .leaderboard-list { list-style: none; margin-top: 10px; max-height: 220px; overflow-y: auto; }
+    .lvl-btn.locked { background: #d5d5d5; color: #888; cursor: not-allowed; box-shadow: none; }
+    .leaderboard-list { list-style: none; max-height: 200px; overflow-y: auto; }
     .leaderboard-item {
       display: flex;
       justify-content: space-between;
-      padding: 8px 10px;
-      border-bottom: 1px dashed #bbb;
+      padding: 8px 6px;
+      border-bottom: 1px dashed #ccc;
       font-size: 14px;
     }
-    .leaderboard-item:first-child { font-weight: bold; color: #d35400; }
+    .leaderboard-item:first-child { font-weight: 900; color: #d35400; }
+    /* Editor Styles */
+    #editorCanvas {
+      width: 100%;
+      height: 360px;
+      background: #fff3db;
+      border: 2px solid #222;
+      border-radius: 12px;
+      touch-action: none;
+      cursor: move;
+      margin-top: 8px;
+    }
+    .palette-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .tool-chip {
+      font-size: 12px;
+      padding: 7px 4px;
+      background: #fff;
+      text-align: center;
+      border: 2px solid #222;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .tool-chip:hover { background: #ffe0b2; }
+    .token-card {
+      background: #fdfbf4;
+      border: 3px solid #162238;
+      border-radius: 14px;
+      padding: 14px;
+      font-family: monospace;
+      font-size: 12px;
+      word-break: break-all;
+      color: #444;
+      margin-bottom: 10px;
+    }
+    .field-label { font-size: 11px; font-weight: 800; color: #0d8a72; margin-top: 8px; display: block; text-transform: uppercase; }
     .hidden { display: none !important; }
   </style>
 </head>
 <body>
   <div class="app-container">
     <h1>🕵️‍♂️ THIEF PUZZLE</h1>
-    <p class="subtitle">Stretch, wrap, and steal without getting caught!</p>
 
-    <!-- Login / Guest Setup Section -->
-    <div id="authSection" class="card">
-      <h3>Enter Player Name</h3>
-      <div class="input-group">
-        <input type="text" id="guestNameInput" placeholder="Your nickname..." maxlength="18" />
-        <button id="saveGuestBtn" class="btn-save">Save</button>
-      </div>
-      <button id="googleLoginBtn" class="btn-google">Sign in with Google</button>
+    <div class="nav-tabs">
+      <button class="tab-btn active" id="tabHomeBtn">🏠 Play & Rank</button>
+      <button class="tab-btn" id="tabEditorBtn">🛠️ Create & Publish</button>
     </div>
 
-    <!-- Active Player Profile Section -->
-    <div id="profileSection" class="card hidden">
-      <div class="user-bar">
-        <div>
-          <strong id="displayPlayerName">Player</strong>
-          <div style="font-size:12px; color:#555;">Max Level Reached: <span id="displayMaxLevel">1</span></div>
+    <!-- ================= PLAY & LEADERBOARD VIEW ================= -->
+    <div id="homeView" style="display:flex; flex-direction:column; gap:14px;">
+      <div id="authSection" class="card">
+        <h3>Player Login / Nickname</h3>
+        <div class="input-row">
+          <input type="text" id="guestNameInput" placeholder="Enter your username..." maxlength="18" />
+          <button id="saveGuestBtn" class="btn-orange">Save</button>
         </div>
-        <button id="switchUserBtn" class="btn-logout">Change User</button>
+        <button id="googleLoginBtn" class="btn-google">Sign in with Google</button>
+      </div>
+
+      <div id="profileSection" class="card hidden">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <strong id="displayPlayerName" style="font-size:16px;">Player</strong>
+            <div style="font-size:12px; color:#555;">Unlocked Level: <span id="displayMaxLevel">1</span></div>
+          </div>
+          <button id="switchUserBtn" class="btn-danger">Switch</button>
+        </div>
+      </div>
+
+      <button id="continueBtn" class="btn-play">▶ PLAY LEVEL 1</button>
+
+      <div class="card">
+        <h3>Select Level</h3>
+        <div id="levelsGrid" class="levels-grid"></div>
+      </div>
+
+      <div class="card">
+        <h3>🏆 Live Leaderboard</h3>
+        <ul id="leaderboardList" class="leaderboard-list">
+          <li class="leaderboard-item">Loading leaderboard...</li>
+        </ul>
       </div>
     </div>
 
-    <!-- Continue & Level Selection -->
-    <button id="continueBtn" class="btn-primary">▶ CONTINUE (LEVEL 1)</button>
+    <!-- ================= LEVEL EDITOR & GITHUB PUBLISHER VIEW ================= -->
+    <div id="editorView" class="hidden" style="display:flex; flex-direction:column; gap:14px;">
+      <!-- Prompt / Screenshot to Level Generator -->
+      <div class="card">
+        <h3>✨ Prompt or Image to Level Converter</h3>
+        <p style="font-size:12px; color:#555; margin-bottom:6px;">Describe your level or select a screenshot to auto-build objects on the canvas:</p>
+        <textarea id="aiPromptInput" rows="2" placeholder="Example: Help him get the fire extinguisher with 3 fires, a hammer, and a flower pot"></textarea>
+        <div class="input-row" style="align-items:center;">
+          <input type="file" id="imagePromptInput" accept="image/*" style="font-size:12px;" />
+          <button id="generateFromPromptBtn" class="btn-orange" style="white-space:nowrap;">⚡ Auto-Build</button>
+        </div>
+      </div>
 
-    <div class="card">
-      <h3>Select Level</h3>
-      <div id="levelsGrid" class="levels-grid"></div>
-    </div>
+      <!-- Visual Canvas Editor -->
+      <div class="card">
+        <h3>🎨 Visual Scene Editor (Drag items to move)</h3>
+        <label class="field-label">Level Mission Text</label>
+        <input type="text" id="editPromptTitle" value="Help him get the fire extinguisher." />
 
-    <!-- Firebase Live Leaderboard -->
-    <div class="card">
-      <h3>🏆 Leaderboard (Top Players)</h3>
-      <ul id="leaderboardList" class="leaderboard-list">
-        <li class="leaderboard-item">Loading scores...</li>
-      </ul>
+        <div class="input-row">
+          <div style="flex:1;">
+            <label class="field-label">Thief Avatar Style</label>
+            <select id="editThiefStyle">
+              <option value="bandana">Blue Headband Thief</option>
+              <option value="cap">Blue Cap Thief</option>
+              <option value="mask">Masked Burglar</option>
+              <option value="angel">Flying Angel</option>
+              <option value="normal">Classic Stickman</option>
+            </select>
+          </div>
+          <div style="flex:1;">
+            <label class="field-label">Target Goal Object</label>
+            <select id="editTargetType">
+              <option value="extinguisher">🧯 Extinguisher</option>
+              <option value="chicken">🍗 Roast Chicken</option>
+              <option value="balloons">🎈 Love Balloons</option>
+              <option value="treasure">🧰 Treasure Chest</option>
+              <option value="purse">👛 Lady's Purse</option>
+              <option value="plug">🔌 Rocket Fuse</option>
+            </select>
+          </div>
+        </div>
+
+        <canvas id="editorCanvas" width="420" height="460"></canvas>
+        <div style="font-size:11px; color:#666; text-align:center; margin-top:4px;">
+          🟢 Green circle = Safe Pivot (arm wraps around) | 🔴 Red circle = Hazard (touching fails)
+        </div>
+
+        <label class="field-label">Add Safe Pivots (Wrap Points)</label>
+        <div class="palette-grid">
+          <div class="tool-chip" data-add="pivot" data-kind="rock">+ 🪨 Rock</div>
+          <div class="tool-chip" data-add="pivot" data-kind="bin">+ 🗑️ Bin</div>
+          <div class="tool-chip" data-add="pivot" data-kind="flower">+ 🌸 Flower</div>
+          <div class="tool-chip" data-add="pivot" data-kind="lamp">+ 💡 Lamp</div>
+        </div>
+
+        <label class="field-label">Add Hazards & Avatars (Obstacles)</label>
+        <div class="palette-grid">
+          <div class="tool-chip" data-add="hazard" data-kind="fire">+ 🔥 Fire</div>
+          <div class="tool-chip" data-add="hazard" data-kind="hammer">+ 🔨 Hammer</div>
+          <div class="tool-chip" data-add="hazard" data-kind="girl">+ 👩 Girl</div>
+          <div class="tool-chip" data-add="hazard" data-kind="boy">+ 🧑 Boy</div>
+          <div class="tool-chip" data-add="hazard" data-kind="guard">+ 🥷 Guard</div>
+          <div class="tool-chip" data-add="hazard" data-kind="couple">+ 💑 Bench</div>
+          <div class="tool-chip" data-add="hazard" data-kind="door">+ 🚪 Door</div>
+          <div class="tool-chip" data-add="hazard" data-kind="villain">+ 🦹 Villain</div>
+        </div>
+
+        <div class="input-row" style="margin-top:10px;">
+          <button id="deleteSelectedBtn" class="btn-danger" style="flex:1;">🗑️ Delete Selected</button>
+          <button id="saveLocalLevelBtn" class="btn-orange" style="flex:1;">💾 Add to Game</button>
+        </div>
+      </div>
+
+      <!-- GitHub Credentials & Direct Repository Publisher -->
+      <div class="card" style="background:#e6f7f3; border-color:#0d8a72;">
+        <h3 style="color:#0d8a72;">1. GitHub Credentials & Publish</h3>
+        <div class="token-card">
+          <div style="font-weight:bold; color:#0d8a72; margin-bottom:4px;">REFERENCE TOKEN CARD</div>
+          Enter your GitHub Personal Access Token below to publish custom levels directly to <b>thief/levels.json</b> in your repo.
+        </div>
+
+        <label class="field-label">USERNAME</label>
+        <input type="text" id="ghUsername" value="sat289" />
+
+        <label class="field-label">REPOSITORY</label>
+        <input type="text" id="ghRepo" value="game" />
+
+        <label class="field-label">BRANCH</label>
+        <input type="text" id="ghBranch" value="main" />
+
+        <label class="field-label">PERSONAL TOKEN</label>
+        <input type="password" id="ghToken" placeholder="github_pat_..." />
+
+        <button id="saveGhCredsBtn" class="btn-teal">💾 Save Credentials</button>
+        <button id="publishGithubBtn" class="btn-play" style="margin-top:10px; font-size:15px;">🚀 Publish Levels to GitHub</button>
+        <div id="publishStatus" style="font-size:12px; margin-top:8px; font-weight:bold; text-align:center;"></div>
+      </div>
     </div>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
@@ -148,22 +316,53 @@
     };
 
     const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
     const auth = getAuth(app);
     const db = getDatabase(app);
 
-    const TOTAL_LEVELS = 5; // Match levels count in level.html
     const STORAGE_KEY = "thief_puzzle_player_v1";
-
-    const authSection = document.getElementById("authSection");
-    const profileSection = document.getElementById("profileSection");
-    const displayPlayerName = document.getElementById("displayPlayerName");
-    const displayMaxLevel = document.getElementById("displayMaxLevel");
-    const continueBtn = document.getElementById("continueBtn");
-    const levelsGrid = document.getElementById("levelsGrid");
-    const leaderboardList = document.getElementById("leaderboardList");
+    const CUSTOM_LEVELS_KEY = "thief_custom_levels_v1";
+    const GH_CREDS_KEY = "thief_gh_creds_v1";
+    const BUILTIN_LEVEL_COUNT = 6;
 
     let currentPlayer = JSON.parse(localStorage.getItem(STORAGE_KEY)) || null;
+    let customLevels = JSON.parse(localStorage.getItem(CUSTOM_LEVELS_KEY)) || [];
+
+    // Load any remote levels.json published to the repo
+    async function loadRemotePublishedLevels() {
+      try {
+        const res = await fetch("levels.json?t=" + Date.now());
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > customLevels.length) {
+            customLevels = data;
+            localStorage.setItem(CUSTOM_LEVELS_KEY, JSON.stringify(customLevels));
+            renderUI();
+          }
+        }
+      } catch (e) {}
+    }
+    loadRemotePublishedLevels();
+
+    // Tab switching
+    const tabHomeBtn = document.getElementById("tabHomeBtn");
+    const tabEditorBtn = document.getElementById("tabEditorBtn");
+    const homeView = document.getElementById("homeView");
+    const editorView = document.getElementById("editorView");
+
+    tabHomeBtn.onclick = () => {
+      tabHomeBtn.classList.add("active");
+      tabEditorBtn.classList.remove("active");
+      homeView.classList.remove("hidden");
+      editorView.classList.add("hidden");
+      renderUI();
+    };
+    tabEditorBtn.onclick = () => {
+      tabEditorBtn.classList.add("active");
+      tabHomeBtn.classList.remove("active");
+      editorView.classList.remove("hidden");
+      homeView.classList.add("hidden");
+      drawEditor();
+    };
 
     async function syncPlayerWithFirebase(player) {
       if (!player || !player.uid) return;
@@ -171,10 +370,8 @@
         const userRef = ref(db, `leaderboard/${player.uid}`);
         const snap = await get(userRef);
         if (snap.exists()) {
-          const remoteData = snap.val();
-          if (remoteData.level > player.level) {
-            player.level = remoteData.level;
-          }
+          const remote = snap.val();
+          if (remote.level > player.level) player.level = remote.level;
         }
         await set(userRef, {
           username: player.username,
@@ -184,16 +381,21 @@
         localStorage.setItem(STORAGE_KEY, JSON.stringify(player));
         renderUI();
       } catch (e) {
-        console.warn("Offline or Firebase rules restricted:", e);
+        console.warn("Firebase sync notice:", e);
       }
     }
 
     function renderUI() {
+      const authSection = document.getElementById("authSection");
+      const profileSection = document.getElementById("profileSection");
+      const continueBtn = document.getElementById("continueBtn");
+      const levelsGrid = document.getElementById("levelsGrid");
+
       if (currentPlayer && currentPlayer.username) {
         authSection.classList.add("hidden");
         profileSection.classList.remove("hidden");
-        displayPlayerName.textContent = currentPlayer.username;
-        displayMaxLevel.textContent = currentPlayer.level;
+        document.getElementById("displayPlayerName").textContent = currentPlayer.username;
+        document.getElementById("displayMaxLevel").textContent = currentPlayer.level;
         continueBtn.textContent = `▶ CONTINUE (LEVEL ${currentPlayer.level})`;
       } else {
         authSection.classList.remove("hidden");
@@ -201,17 +403,20 @@
         continueBtn.textContent = `▶ START GAME`;
       }
 
+      const totalLevels = BUILTIN_LEVEL_COUNT + customLevels.length;
       const unlocked = currentPlayer ? currentPlayer.level : 1;
       levelsGrid.innerHTML = "";
-      for (let i = 1; i <= TOTAL_LEVELS; i++) {
+      for (let i = 1; i <= totalLevels; i++) {
         const btn = document.createElement("div");
+        const isCustom = i > BUILTIN_LEVEL_COUNT;
         btn.className = "lvl-btn" + (i > unlocked ? " locked" : "");
-        btn.textContent = i;
-        if (i <= unlocked) {
+        btn.innerHTML = isCustom ? `⭐ ${i}` : `Lvl ${i}`;
+        if (i <= unlocked || isCustom) {
+          btn.classList.remove("locked");
           btn.onclick = () => {
             if (!currentPlayer) {
-              alert("Please enter a nickname or sign in with Google first!");
-              return;
+              currentPlayer = { uid: "guest_" + Date.now(), username: "Player", level: 1 };
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(currentPlayer));
             }
             window.location.href = `level.html?level=${i}`;
           };
@@ -220,13 +425,11 @@
       }
     }
 
-    // Save Guest Name in Phone/Browser LocalStorage
-    document.getElementById("saveGuestBtn").addEventListener("click", () => {
+    document.getElementById("saveGuestBtn").onclick = () => {
       const name = document.getElementById("guestNameInput").value.trim();
-      if (!name) return alert("Please enter a username!");
-      const existingUid = currentPlayer?.uid || "guest_" + Math.random().toString(36).substring(2, 10);
+      if (!name) return alert("Enter a nickname first!");
       currentPlayer = {
-        uid: existingUid,
+        uid: currentPlayer?.uid || "guest_" + Math.random().toString(36).substring(2, 10),
         username: name,
         level: currentPlayer?.level || 1,
         isGoogle: false
@@ -234,81 +437,344 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(currentPlayer));
       syncPlayerWithFirebase(currentPlayer);
       renderUI();
-    });
+    };
 
-    // Google Login
-    document.getElementById("googleLoginBtn").addEventListener("click", async () => {
+    document.getElementById("googleLoginBtn").onclick = async () => {
       try {
-        const provider = new GoogleAuthProvider();
-        const result = await signInWithPopup(auth, provider);
-        const user = result.user;
+        const res = await signInWithPopup(auth, new GoogleAuthProvider());
         currentPlayer = {
-          uid: user.uid,
-          username: user.displayName || user.email.split("@")[0],
+          uid: res.user.uid,
+          username: res.user.displayName || "Thief Master",
           level: currentPlayer?.level || 1,
           isGoogle: true
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(currentPlayer));
         await syncPlayerWithFirebase(currentPlayer);
-      } catch (err) {
-        alert("Google Sign-In error: " + err.message);
+      } catch (e) {
+        alert("Google Sign-in error: " + e.message);
       }
-    });
+    };
 
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        currentPlayer = {
-          uid: user.uid,
-          username: user.displayName || "Thief Player",
-          level: currentPlayer?.level || 1,
-          isGoogle: true
-        };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(currentPlayer));
-        syncPlayerWithFirebase(currentPlayer);
-      } else if (currentPlayer) {
-        syncPlayerWithFirebase(currentPlayer);
-      }
-      renderUI();
-    });
-
-    document.getElementById("switchUserBtn").addEventListener("click", async () => {
+    document.getElementById("switchUserBtn").onclick = async () => {
       if (currentPlayer?.isGoogle) await signOut(auth);
       localStorage.removeItem(STORAGE_KEY);
       currentPlayer = null;
       renderUI();
-    });
+    };
 
-    continueBtn.addEventListener("click", () => {
+    document.getElementById("continueBtn").onclick = () => {
       if (!currentPlayer) {
-        const nameInput = document.getElementById("guestNameInput").value.trim();
-        if (nameInput) {
-          document.getElementById("saveGuestBtn").click();
-        } else {
-          return alert("Please enter your username or login with Google first!");
-        }
+        const typed = document.getElementById("guestNameInput").value.trim() || "Thief_" + Math.floor(Math.random()*900+100);
+        currentPlayer = { uid: "guest_" + Date.now(), username: typed, level: 1 };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(currentPlayer));
+        syncPlayerWithFirebase(currentPlayer);
       }
       window.location.href = `level.html?level=${currentPlayer.level}`;
-    });
+    };
 
-    // Live Leaderboard Listener
-    const lbRef = ref(db, "leaderboard");
-    onValue(lbRef, (snapshot) => {
-      leaderboardList.innerHTML = "";
-      if (!snapshot.exists()) {
-        leaderboardList.innerHTML = `<li class="leaderboard-item">No players yet. Be the first!</li>`;
+    onValue(ref(db, "leaderboard"), (snap) => {
+      const list = document.getElementById("leaderboardList");
+      list.innerHTML = "";
+      if (!snap.exists()) {
+        list.innerHTML = `<li class="leaderboard-item">No scores yet!</li>`;
         return;
       }
-      const players = [];
-      snapshot.forEach((child) => players.push(child.val()));
-      players.sort((a, b) => b.level - a.level || (a.updatedAt || 0) - (b.updatedAt || 0));
-
-      players.slice(0, 15).forEach((p, idx) => {
+      const arr = [];
+      snap.forEach(c => arr.push(c.val()));
+      arr.sort((a, b) => b.level - a.level);
+      arr.slice(0, 15).forEach((p, idx) => {
         const li = document.createElement("li");
         li.className = "leaderboard-item";
         li.innerHTML = `<span>#${idx + 1} ${p.username}</span><span>Level ${p.level}</span>`;
-        leaderboardList.appendChild(li);
+        list.appendChild(li);
       });
     });
+
+    // ================= VISUAL LEVEL EDITOR LOGIC =================
+    const edCanvas = document.getElementById("editorCanvas");
+    const edCtx = edCanvas.getContext("2d");
+
+    let editorScene = {
+      prompt: "Help him get the fire extinguisher.",
+      thiefStyle: "normal",
+      thief: { x: 80, y: 155, shoulderX: 92, shoulderY: 150 },
+      handStart: { x: 145, y: 205 },
+      target: { x: 350, y: 365, r: 26, kind: "extinguisher" },
+      pivots: [
+        { x: 190, y: 295, r: 26, kind: "flower" }
+      ],
+      hazards: [
+        { x: 300, y: 135, r: 42, kind: "fire" },
+        { x: 110, y: 270, r: 36, kind: "fire" },
+        { x: 100, y: 380, r: 36, kind: "fire" },
+        { x: 295, y: 315, r: 38, kind: "fire" },
+        { x: 245, y: 235, r: 26, kind: "hammer" }
+      ]
+    };
+
+    let selectedItem = null;
+    let draggingItem = null;
+
+    const ICONS = {
+      rock: "🪨", bin: "🗑️", flower: "🪴", lamp: "💡",
+      fire: "🔥", hammer: "🔨", girl: "👩", boy: "🧑", guard: "🥷", couple: "💑", door: "🚪", villain: "🦹",
+      extinguisher: "🧯", chicken: "🍗", balloons: "🎈", treasure: "🧰", purse: "👛", plug: "🔌"
+    };
+
+    function drawEditor() {
+      edCtx.clearRect(0, 0, edCanvas.width, edCanvas.height);
+
+      // Thief
+      edCtx.save();
+      edCtx.fillStyle = "#2196f3";
+      edCtx.beginPath();
+      edCtx.arc(editorScene.thief.x, editorScene.thief.y, 24, 0, Math.PI * 2);
+      edCtx.fill();
+      edCtx.fillStyle = "#fff";
+      edCtx.font = "bold 11px sans-serif";
+      edCtx.textAlign = "center";
+      edCtx.fillText("THIEF", editorScene.thief.x, editorScene.thief.y + 4);
+      edCtx.restore();
+
+      // Pivots (Green)
+      editorScene.pivots.forEach(p => {
+        edCtx.save();
+        edCtx.fillStyle = "rgba(46, 204, 113, 0.28)";
+        edCtx.strokeStyle = selectedItem === p ? "#000" : "#27ae60";
+        edCtx.lineWidth = selectedItem === p ? 3 : 2;
+        edCtx.beginPath();
+        edCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        edCtx.fill();
+        edCtx.stroke();
+        edCtx.font = "26px sans-serif";
+        edCtx.textAlign = "center";
+        edCtx.textBaseline = "middle";
+        edCtx.fillText(ICONS[p.kind] || "🪨", p.x, p.y);
+        edCtx.restore();
+      });
+
+      // Hazards (Red)
+      editorScene.hazards.forEach(h => {
+        edCtx.save();
+        edCtx.fillStyle = "rgba(231, 76, 60, 0.25)";
+        edCtx.strokeStyle = selectedItem === h ? "#000" : "#c0392b";
+        edCtx.lineWidth = selectedItem === h ? 3 : 2;
+        edCtx.beginPath();
+        edCtx.arc(h.x, h.y, h.r, 0, Math.PI * 2);
+        edCtx.fill();
+        edCtx.stroke();
+        edCtx.font = "28px sans-serif";
+        edCtx.textAlign = "center";
+        edCtx.textBaseline = "middle";
+        edCtx.fillText(ICONS[h.kind] || "🔥", h.x, h.y);
+        edCtx.restore();
+      });
+
+      // Target (Gold)
+      const t = editorScene.target;
+      edCtx.save();
+      edCtx.fillStyle = "rgba(241, 196, 15, 0.35)";
+      edCtx.strokeStyle = "#f39c12";
+      edCtx.lineWidth = 3;
+      edCtx.beginPath();
+      edCtx.arc(t.x, t.y, t.r, 0, Math.PI * 2);
+      edCtx.fill();
+      edCtx.stroke();
+      edCtx.font = "28px sans-serif";
+      edCtx.textAlign = "center";
+      edCtx.textBaseline = "middle";
+      edCtx.fillText(ICONS[t.kind] || "🧯", t.x, t.y);
+      edCtx.restore();
+    }
+
+    function getEdPos(e) {
+      const r = edCanvas.getBoundingClientRect();
+      const cx = e.touches ? e.touches[0].clientX : e.clientX;
+      const cy = e.touches ? e.touches[0].clientY : e.clientY;
+      return {
+        x: Math.round((cx - r.left) * (edCanvas.width / r.width)),
+        y: Math.round((cy - r.top) * (edCanvas.height / r.height))
+      };
+    }
+
+    edCanvas.addEventListener("pointerdown", (e) => {
+      const pos = getEdPos(e);
+      const all = [editorScene.thief, editorScene.target, ...editorScene.pivots, ...editorScene.hazards];
+      for (const item of all) {
+        const rad = item.r || 26;
+        if (Math.hypot(pos.x - item.x, pos.y - item.y) <= rad + 8) {
+          selectedItem = item;
+          draggingItem = item;
+          drawEditor();
+          return;
+        }
+      }
+      selectedItem = null;
+      drawEditor();
+    });
+
+    edCanvas.addEventListener("pointermove", (e) => {
+      if (!draggingItem) return;
+      const pos = getEdPos(e);
+      draggingItem.x = Math.max(25, Math.min(edCanvas.width - 25, pos.x));
+      draggingItem.y = Math.max(25, Math.min(edCanvas.height - 25, pos.y));
+      if (draggingItem === editorScene.thief) {
+        editorScene.thief.shoulderX = draggingItem.x + 12;
+        editorScene.thief.shoulderY = draggingItem.y - 5;
+        editorScene.handStart.x = draggingItem.x + 55;
+        editorScene.handStart.y = draggingItem.y + 40;
+      }
+      drawEditor();
+    });
+
+    window.addEventListener("pointerup", () => { draggingItem = null; });
+
+    document.querySelectorAll(".tool-chip").forEach(chip => {
+      chip.onclick = () => {
+        const type = chip.dataset.add;
+        const kind = chip.dataset.kind;
+        const newItem = {
+          x: 210 + Math.floor(Math.random() * 40 - 20),
+          y: 230 + Math.floor(Math.random() * 40 - 20),
+          r: type === "pivot" ? 26 : 36,
+          kind
+        };
+        if (type === "pivot") editorScene.pivots.push(newItem);
+        else editorScene.hazards.push(newItem);
+        selectedItem = newItem;
+        drawEditor();
+      };
+    });
+
+    document.getElementById("editTargetType").onchange = (e) => {
+      editorScene.target.kind = e.target.value;
+      drawEditor();
+    };
+    document.getElementById("editThiefStyle").onchange = (e) => {
+      editorScene.thiefStyle = e.target.value;
+    };
+
+    document.getElementById("deleteSelectedBtn").onclick = () => {
+      if (!selectedItem) return;
+      editorScene.pivots = editorScene.pivots.filter(p => p !== selectedItem);
+      editorScene.hazards = editorScene.hazards.filter(h => h !== selectedItem);
+      selectedItem = null;
+      drawEditor();
+    };
+
+    // Prompt / Image to Level Converter
+    document.getElementById("generateFromPromptBtn").onclick = () => {
+      const text = (document.getElementById("aiPromptInput").value || "").toLowerCase();
+      editorScene.pivots = [];
+      editorScene.hazards = [];
+
+      if (text.includes("fire") || text.includes("extinguisher")) {
+        document.getElementById("editPromptTitle").value = "Help him get the fire extinguisher.";
+        editorScene.target.kind = "extinguisher";
+        editorScene.pivots.push({ x: 190, y: 295, r: 26, kind: "flower" });
+        editorScene.hazards.push(
+          { x: 300, y: 135, r: 40, kind: "fire" },
+          { x: 110, y: 270, r: 36, kind: "fire" },
+          { x: 100, y: 380, r: 36, kind: "fire" },
+          { x: 295, y: 315, r: 38, kind: "fire" },
+          { x: 245, y: 235, r: 26, kind: "hammer" }
+        );
+      } else if (text.includes("purse") || text.includes("bench") || text.includes("lamp")) {
+        document.getElementById("editPromptTitle").value = "Take the lady's purse.";
+        editorScene.target.kind = "purse";
+        editorScene.pivots.push({ x: 95, y: 95, r: 24, kind: "lamp" }, { x: 335, y: 95, r: 24, kind: "lamp" });
+        editorScene.hazards.push({ x: 250, y: 265, r: 42, kind: "couple" }, { x: 145, y: 290, r: 34, kind: "bin" });
+      } else {
+        document.getElementById("editPromptTitle").value = document.getElementById("aiPromptInput").value || "Steal the target item!";
+        editorScene.pivots.push({ x: 160, y: 350, r: 26, kind: "rock" }, { x: 310, y: 110, r: 26, kind: "lamp" });
+        editorScene.hazards.push({ x: 220, y: 230, r: 38, kind: "guard" }, { x: 300, y: 260, r: 36, kind: "fire" });
+      }
+      drawEditor();
+    };
+
+    document.getElementById("saveLocalLevelBtn").onclick = () => {
+      editorScene.prompt = document.getElementById("editPromptTitle").value.trim() || "Steal it!";
+      const copy = JSON.parse(JSON.stringify(editorScene));
+      customLevels.push(copy);
+      localStorage.setItem(CUSTOM_LEVELS_KEY, JSON.stringify(customLevels));
+      alert(`Added as Level ${BUILTIN_LEVEL_COUNT + customLevels.length}! You can test it now or publish to GitHub.`);
+      renderUI();
+    };
+
+    // GitHub Credentials & Direct Commit Publisher
+    const savedCreds = JSON.parse(localStorage.getItem(GH_CREDS_KEY)) || {};
+    if (savedCreds.username) document.getElementById("ghUsername").value = savedCreds.username;
+    if (savedCreds.repo) document.getElementById("ghRepo").value = savedCreds.repo;
+    if (savedCreds.branch) document.getElementById("ghBranch").value = savedCreds.branch;
+    if (savedCreds.token) document.getElementById("ghToken").value = savedCreds.token;
+
+    document.getElementById("saveGhCredsBtn").onclick = () => {
+      const creds = {
+        username: document.getElementById("ghUsername").value.trim(),
+        repo: document.getElementById("ghRepo").value.trim(),
+        branch: document.getElementById("ghBranch").value.trim(),
+        token: document.getElementById("ghToken").value.trim()
+      };
+      localStorage.setItem(GH_CREDS_KEY, JSON.stringify(creds));
+      alert("GitHub Credentials saved!");
+    };
+
+    document.getElementById("publishGithubBtn").onclick = async () => {
+      const owner = document.getElementById("ghUsername").value.trim();
+      const repo = document.getElementById("ghRepo").value.trim();
+      const branch = document.getElementById("ghBranch").value.trim() || "main";
+      const token = document.getElementById("ghToken").value.trim();
+      const statusEl = document.getElementById("publishStatus");
+
+      if (!token) return alert("Please enter your GitHub Personal Access Token!");
+
+      // Save current editor scene if not added yet
+      editorScene.prompt = document.getElementById("editPromptTitle").value.trim();
+      if (customLevels.length === 0) {
+        customLevels.push(JSON.parse(JSON.stringify(editorScene)));
+        localStorage.setItem(CUSTOM_LEVELS_KEY, JSON.stringify(customLevels));
+      }
+
+      statusEl.style.color = "#0d8a72";
+      statusEl.textContent = "Publishing thief/levels.json to GitHub...";
+
+      const path = "thief/levels.json";
+      const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+
+      try {
+        let sha = undefined;
+        const getRes = await fetch(`${apiUrl}?ref=${branch}`, {
+          headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" }
+        });
+        if (getRes.ok) {
+          const fileData = await getRes.json();
+          sha = fileData.sha;
+        }
+
+        const contentBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(customLevels, null, 2))));
+        const putRes = await fetch(apiUrl, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/vnd.github+json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            message: `Update Thief Puzzle levels (${customLevels.length} custom levels)`,
+            content: contentBase64,
+            branch,
+            ...(sha ? { sha } : {})
+          })
+        });
+
+        if (!putRes.ok) throw new Error(await putRes.text());
+        statusEl.style.color = "#2db300";
+        statusEl.textContent = "✅ Published successfully to GitHub (thief/levels.json)!";
+      } catch (err) {
+        statusEl.style.color = "#e53935";
+        statusEl.textContent = "❌ GitHub Publish Error: " + err.message;
+      }
+    };
 
     renderUI();
   </script>
