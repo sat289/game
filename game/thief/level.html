@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>Thief Puzzle - Play</title>
+  <title>Thief Puzzle - Play Level</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; font-family: 'Segoe UI', Tahoma, sans-serif; }
     body {
@@ -74,9 +74,10 @@
     .prompt-text {
       text-align: center;
       font-size: 17px;
-      padding: 0 28px 10px;
+      padding: 0 24px 10px;
       min-height: 48px;
       color: #222;
+      font-weight: 600;
       line-height: 1.3;
     }
     canvas {
@@ -85,11 +86,12 @@
       background: #ffefd5;
       touch-action: none;
       cursor: grab;
+      border-top: 2px solid rgba(0,0,0,0.08);
+      border-bottom: 2px solid rgba(0,0,0,0.08);
     }
     .bottom-bar {
       display: flex;
       justify-content: center;
-      gap: 12px;
       padding: 22px;
     }
     .hint-btn {
@@ -98,9 +100,9 @@
       border: 3px solid #fff;
       box-shadow: 0 4px 0 #222, 0 8px 15px rgba(0,0,0,0.18);
       border-radius: 40px;
-      padding: 10px 40px;
+      padding: 10px 44px;
       font-size: 20px;
-      font-weight: 700;
+      font-weight: 800;
       display: flex;
       align-items: center;
       gap: 10px;
@@ -160,7 +162,7 @@
     <canvas id="gameCanvas" width="420" height="460"></canvas>
 
     <div class="bottom-bar">
-      <button class="hint-btn" id="hintBtn">HINT <span>▶️</span></button>
+      <button class="hint-btn" id="hintBtn">HINT <span>💡</span></button>
     </div>
 
     <div id="resultOverlay" class="overlay hidden">
@@ -190,9 +192,8 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const STORAGE_KEY = "thief_puzzle_player_v1";
-    const CUSTOM_LEVELS_KEY = "thief_custom_levels_v1";
-    const PREVIEW_DRAFT_KEY = "thief_preview_draft_v1";
 
+    // Web Audio Sound Synthesizer
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     let audioCtx = null;
     function playSound(type) {
@@ -206,11 +207,11 @@
 
         if (type === "pop") {
           osc.frequency.setValueAtTime(520, now);
-          osc.frequency.exponentialRampToValueAtTime(880, now + 0.08);
-          gain.gain.setValueAtTime(0.15, now);
-          gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+          osc.frequency.exponentialRampToValueAtTime(880, now + 0.07);
+          gain.gain.setValueAtTime(0.14, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.07);
           osc.start(now);
-          osc.stop(now + 0.08);
+          osc.stop(now + 0.07);
         } else if (type === "win") {
           [523, 659, 784, 1046].forEach((freq, idx) => {
             const o = audioCtx.createOscillator();
@@ -224,8 +225,8 @@
           });
         } else if (type === "fail") {
           osc.type = "sawtooth";
-          osc.frequency.setValueAtTime(220, now);
-          osc.frequency.linearRampToValueAtTime(110, now + 0.35);
+          osc.frequency.setValueAtTime(210, now);
+          osc.frequency.linearRampToValueAtTime(105, now + 0.35);
           gain.gain.setValueAtTime(0.2, now);
           gain.gain.linearRampToValueAtTime(0.01, now + 0.35);
           osc.start(now);
@@ -234,9 +235,11 @@
       } catch (e) {}
     }
 
-    const BUILTIN_LEVELS = [
+    // First 6 Exact Video Recreation Levels
+    const VIDEO_LEVELS = [
       {
         prompt: "I also want to eat roast chicken",
+        bgColor: "#ffefd5",
         thiefStyle: "bandana",
         ledge: { x1: 0, y1: 215, x2: 95, y2: 215 },
         table: { x: 255, y: 245, w: 95, h: 70 },
@@ -245,40 +248,42 @@
         target: { x: 300, y: 232, r: 24, kind: "chicken" },
         pivots: [{ x: 175, y: 360, r: 24, kind: "rock" }],
         hazards: [
-          { x: 215, y: 235, r: 36, kind: "girl" },
-          { x: 380, y: 235, r: 34, kind: "boy" }
+          { x: 215, y: 235, r: 34, kind: "girl" },
+          { x: 380, y: 235, r: 32, kind: "boy" }
         ]
       },
       {
         prompt: "I also want love balloons",
+        bgColor: "#ffefd5",
         thiefStyle: "cap",
         thief: { x: 68, y: 335, shoulderX: 82, shoulderY: 325 },
         handStart: { x: 135, y: 300 },
         target: { x: 315, y: 120, r: 28, kind: "balloons" },
-        pivots: [{ x: 105, y: 130, r: 34, kind: "bin" }],
+        pivots: [{ x: 105, y: 130, r: 30, kind: "bin" }],
         hazards: [
-          { x: 250, y: 205, r: 40, kind: "girl" },
-          { x: 365, y: 205, r: 36, kind: "boy" }
+          { x: 250, y: 205, r: 38, kind: "girl" },
+          { x: 365, y: 205, r: 35, kind: "boy" }
         ]
       },
       {
         prompt: "How to take away the treasure!",
+        bgColor: "#ffefd5",
         thiefStyle: "normal",
         thief: { x: 62, y: 235, shoulderX: 78, shoulderY: 225 },
         handStart: { x: 138, y: 242 },
         target: { x: 360, y: 265, r: 25, kind: "treasure" },
         pivots: [
-          { x: 200, y: 365, r: 14, kind: "gap" },
-          { x: 360, y: 355, r: 14, kind: "gap" }
+          { x: 200, y: 368, r: 16, kind: "rock" }
         ],
         hazards: [
-          { x: 200, y: 155, r: 34, kind: "door" },
-          { x: 200, y: 235, r: 34, kind: "door" },
-          { x: 285, y: 225, r: 38, kind: "guard" }
+          { x: 200, y: 150, r: 32, kind: "door" },
+          { x: 200, y: 235, r: 32, kind: "door" },
+          { x: 285, y: 220, r: 35, kind: "guard" }
         ]
       },
       {
         prompt: "Take the lady's purse.",
+        bgColor: "#ffefd5",
         thiefStyle: "mask",
         streetFloor: true,
         bench: { x: 200, y: 285, w: 200 },
@@ -286,90 +291,55 @@
         handStart: { x: 92, y: 205 },
         target: { x: 368, y: 268, r: 22, kind: "purse" },
         pivots: [
-          { x: 95, y: 100, r: 24, kind: "lamp" },
-          { x: 335, y: 100, r: 24, kind: "lamp" }
+          { x: 95, y: 100, r: 22, kind: "lamp" },
+          { x: 335, y: 100, r: 22, kind: "lamp" }
         ],
         hazards: [
-          { x: 145, y: 280, r: 34, kind: "bin" },
-          { x: 268, y: 255, r: 44, kind: "couple" }
+          { x: 145, y: 280, r: 32, kind: "bin" },
+          { x: 268, y: 255, r: 40, kind: "couple" }
         ]
       },
       {
         prompt: "Save him!",
+        bgColor: "#ffefd5",
         thiefStyle: "angel",
-        floorLine: 390,
+        floorLine: 395,
         thief: { x: 95, y: 100, shoulderX: 112, shoulderY: 105 },
         handStart: { x: 175, y: 165 },
-        target: { x: 242, y: 268, r: 18, kind: "plug" },
-        pivots: [{ x: 225, y: 378, r: 14, kind: "rock" }],
+        target: { x: 242, y: 268, r: 20, kind: "plug" },
+        pivots: [{ x: 222, y: 372, r: 16, kind: "rock" }],
         hazards: [
-          { x: 60, y: 300, r: 35, kind: "boy" },
-          { x: 198, y: 268, r: 20, kind: "warhead" },
-          { x: 350, y: 285, r: 42, kind: "villain" }
+          { x: 60, y: 300, r: 32, kind: "boy" },
+          { x: 192, y: 268, r: 18, kind: "warhead" },
+          { x: 350, y: 285, r: 38, kind: "villain" }
         ]
       },
       {
         prompt: "Help him get the fire extinguisher.",
+        bgColor: "#ffefd5",
         thiefStyle: "normal",
         thief: { x: 75, y: 155, shoulderX: 90, shoulderY: 148 },
         handStart: { x: 145, y: 200 },
         target: { x: 352, y: 365, r: 25, kind: "extinguisher" },
-        pivots: [{ x: 190, y: 292, r: 25, kind: "flower" }],
+        pivots: [{ x: 190, y: 292, r: 22, kind: "flower" }],
         hazards: [
-          { x: 298, y: 135, r: 42, kind: "fire" },
-          { x: 110, y: 270, r: 36, kind: "fire" },
-          { x: 100, y: 382, r: 36, kind: "fire" },
-          { x: 295, y: 315, r: 38, kind: "fire" },
-          { x: 246, y: 235, r: 24, kind: "hammer" }
+          { x: 298, y: 135, r: 38, kind: "fire" },
+          { x: 110, y: 270, r: 32, kind: "fire" },
+          { x: 100, y: 382, r: 32, kind: "fire" },
+          { x: 295, y: 315, r: 34, kind: "fire" },
+          { x: 246, y: 235, r: 22, kind: "hammer" }
         ]
       }
     ];
 
-    let allLevels = [...BUILTIN_LEVELS];
-    const localCustom = JSON.parse(localStorage.getItem(CUSTOM_LEVELS_KEY)) || [];
-    if (localCustom.length) allLevels.push(...localCustom);
-
-    const canvas = document.getElementById("gameCanvas");
-    const ctx = canvas.getContext("2d");
-
-    const params = new URLSearchParams(window.location.search);
-    const isPreviewMode = params.get("preview") === "1";
-
-    let player = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
-      uid: "guest_" + Math.random().toString(36).substring(2, 9),
-      username: "Player",
-      level: 1
-    };
-    let currentLevelNum = parseInt(params.get("level")) || player.level || 1;
-
-    let levelData = null;
-    let hand = { x: 0, y: 0, r: 14 };
-    let anchorPoints = [];
-    let isDragging = false;
-    let gameState = "PLAYING";
-    let showHint = false;
-    let animTick = 0;
-
-    function loadLevel(lvlNum) {
-      if (isPreviewMode) {
-        const draft = JSON.parse(localStorage.getItem(PREVIEW_DRAFT_KEY));
-        levelData = draft || JSON.parse(JSON.stringify(BUILTIN_LEVELS[5]));
-        document.getElementById("levelHeader").textContent = "🛠️ PREVIEW TEST";
-      } else {
-        currentLevelNum = lvlNum;
-        const idx = (lvlNum - 1) % allLevels.length;
-        levelData = JSON.parse(JSON.stringify(allLevels[idx]));
-        document.getElementById("levelHeader").textContent = `Level : ${currentLevelNum}`;
-      }
-
-      document.getElementById("promptText").textContent = levelData.prompt;
-      document.getElementById("resultOverlay").classList.add("hidden");
-
-      hand.x = levelData.handStart.x;
-      hand.y = levelData.handStart.y;
-      anchorPoints = [{ x: levelData.thief.shoulderX, y: levelData.thief.shoulderY }];
-      gameState = "PLAYING";
-      showHint = false;
+    // Seeded Generator for 1,050 Unique Solvable Levels
+    function createSeededRandom(seed) {
+      let s = seed * 2654435761 % 2147483647;
+      if (s <= 0) s += 2147483646;
+      return function () {
+        s = (s * 16807) % 2147483647;
+        return (s - 1) / 2147483646;
+      };
     }
 
     function distToSegment(p, a, b) {
@@ -380,47 +350,277 @@
       return Math.hypot(p.x - (a.x + t * (b.x - a.x)), p.y - (a.y + t * (b.y - a.y)));
     }
 
+    function generateProceduralLevel(levelNum) {
+      if (levelNum <= VIDEO_LEVELS.length) {
+        return JSON.parse(JSON.stringify(VIDEO_LEVELS[levelNum - 1]));
+      }
+
+      const rand = createSeededRandom(levelNum * 97 + 13);
+      const BG_THEMES = ["#ffefd5", "#fff8e1", "#e8f5e9", "#e3f2fd", "#f3e5f5", "#fbe9e7"];
+      const THIEF_STYLES = ["bandana", "cap", "mask", "angel", "normal"];
+      const TARGET_TYPES = [
+        { kind: "chicken", title: "Steal the roast chicken quietly!" },
+        { kind: "treasure", title: "Grab the hidden gold treasure chest!" },
+        { kind: "purse", title: "Snatch the luxury purse without being seen!" },
+        { kind: "extinguisher", title: "Help him get the emergency extinguisher!" },
+        { kind: "balloons", title: "Take the party balloons from the park!" },
+        { kind: "diamond", title: "Steal the royal blue diamond!" },
+        { kind: "key", title: "Grab the secret prison master key!" },
+        { kind: "pizza", title: "Snatch the hot pizza slice!" },
+        { kind: "crown", title: "Steal the king's golden crown!" },
+        { kind: "gift", title: "Take the mystery birthday gift box!" }
+      ];
+      const PIVOT_KINDS = ["rock", "bin", "flower", "lamp"];
+      const HAZARD_KINDS = ["fire", "hammer", "girl", "boy", "guard", "villain", "dog", "cactus"];
+
+      const targetChoice = TARGET_TYPES[(levelNum + Math.floor(rand() * 10)) % TARGET_TYPES.length];
+      const thiefStyle = THIEF_STYLES[levelNum % THIEF_STYLES.length];
+      const bgColor = BG_THEMES[levelNum % BG_THEMES.length];
+
+      // Position Thief on Left or Right
+      const thiefOnLeft = levelNum % 4 !== 0;
+      const thiefX = thiefOnLeft ? Math.floor(52 + rand() * 35) : Math.floor(335 + rand() * 30);
+      const thiefY = Math.floor(110 + rand() * 230);
+      const shoulderX = thiefOnLeft ? thiefX + 14 : thiefX - 14;
+      const shoulderY = thiefY - 8;
+
+      const targetX = thiefOnLeft ? Math.floor(315 + rand() * 55) : Math.floor(55 + rand() * 55);
+      const targetY = Math.floor(95 + rand() * 270);
+
+      // Build 1 to 3 Safe Pivots forming a guaranteed clear path
+      const numPivots = 1 + (levelNum % 3);
+      const pivots = [];
+      for (let i = 0; i < numPivots; i++) {
+        const progress = (i + 1) / (numPivots + 1);
+        const px = Math.floor(105 + progress * 210 + (rand() * 50 - 25));
+        // Alternate top and bottom corridors so user wraps under or over
+        const goBottom = (levelNum + i) % 2 === 0;
+        const py = goBottom ? Math.floor(330 + rand() * 65) : Math.floor(75 + rand() * 65);
+        pivots.push({
+          x: px,
+          y: py,
+          r: 22,
+          kind: PIVOT_KINDS[(levelNum + i) % PIVOT_KINDS.length]
+        });
+      }
+
+      // Build Solution Path Segments so hazards never block the solution
+      const pathPoints = [{ x: shoulderX, y: shoulderY }, ...pivots, { x: targetX, y: targetY }];
+
+      // Place 2 to 5 Hazards away from the solution path (often blocking the direct straight line)
+      const hazards = [];
+      const desiredHazards = Math.min(5, 2 + Math.floor((levelNum % 15) / 4));
+
+      // Place primary blocker along the direct line between shoulder and target
+      const midDirectX = Math.floor((shoulderX + targetX) / 2 + (rand() * 30 - 15));
+      const midDirectY = Math.floor((shoulderY + targetY) / 2 + (rand() * 30 - 15));
+      let safeFromSolution = true;
+      for (let s = 0; s < pathPoints.length - 1; s++) {
+        if (distToSegment({ x: midDirectX, y: midDirectY }, pathPoints[s], pathPoints[s + 1]) < 62) {
+          safeFromSolution = false;
+        }
+      }
+      if (safeFromSolution) {
+        hazards.push({
+          x: midDirectX,
+          y: midDirectY,
+          r: 32,
+          kind: HAZARD_KINDS[levelNum % HAZARD_KINDS.length]
+        });
+      }
+
+      let attempts = 0;
+      while (hazards.length < desiredHazards && attempts < 45) {
+        attempts++;
+        const hx = Math.floor(100 + rand() * 230);
+        const hy = Math.floor(85 + rand() * 295);
+        let clear = true;
+
+        // Keep away from solution path segments
+        for (let s = 0; s < pathPoints.length - 1; s++) {
+          if (distToSegment({ x: hx, y: hy }, pathPoints[s], pathPoints[s + 1]) < 64) {
+            clear = false;
+            break;
+          }
+        }
+        // Keep away from thief, target, pivots, and other hazards
+        if (Math.hypot(hx - thiefX, hy - thiefY) < 85) clear = false;
+        if (Math.hypot(hx - targetX, hy - targetY) < 75) clear = false;
+        for (const p of pivots) {
+          if (Math.hypot(hx - p.x, hy - p.y) < 75) clear = false;
+        }
+        for (const h of hazards) {
+          if (Math.hypot(hx - h.x, hy - h.y) < 70) clear = false;
+        }
+
+        if (clear) {
+          hazards.push({
+            x: hx,
+            y: hy,
+            r: 30,
+            kind: HAZARD_KINDS[(levelNum + hazards.length * 3) % HAZARD_KINDS.length]
+          });
+        }
+      }
+
+      return {
+        prompt: `Level ${levelNum}: ${targetChoice.title}`,
+        bgColor,
+        thiefStyle,
+        streetFloor: levelNum % 5 === 0,
+        floorLine: levelNum % 7 === 0 ? 405 : null,
+        thief: { x: thiefX, y: thiefY, shoulderX, shoulderY },
+        handStart: {
+          x: thiefOnLeft ? shoulderX + 48 : shoulderX - 48,
+          y: Math.min(390, Math.max(70, shoulderY + 42))
+        },
+        target: { x: targetX, y: targetY, r: 24, kind: targetChoice.kind },
+        pivots,
+        hazards
+      };
+    }
+
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const params = new URLSearchParams(window.location.search);
+    let player = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
+      uid: "guest_" + Math.random().toString(36).substring(2, 9),
+      username: "Player",
+      level: 1
+    };
+    let currentLevelNum = Math.max(1, parseInt(params.get("level")) || player.level || 1);
+
+    let levelData = null;
+    let hand = { x: 0, y: 0, r: 14 };
+    let prevHand = { x: 0, y: 0 };
+    let anchorPoints = [];
+    let isDragging = false;
+    let gameState = "PLAYING";
+    let showHint = false;
+    let animTick = 0;
+
+    function loadLevel(lvlNum) {
+      currentLevelNum = Math.max(1, Math.min(1050, lvlNum));
+      levelData = generateProceduralLevel(currentLevelNum);
+
+      document.getElementById("levelHeader").textContent = `Level : ${currentLevelNum}`;
+      document.getElementById("promptText").textContent = levelData.prompt;
+      document.getElementById("resultOverlay").classList.add("hidden");
+      canvas.style.background = levelData.bgColor || "#ffefd5";
+
+      hand.x = levelData.handStart.x;
+      hand.y = levelData.handStart.y;
+      prevHand.x = hand.x;
+      prevHand.y = hand.y;
+      anchorPoints = [{ x: levelData.thief.shoulderX, y: levelData.thief.shoulderY }];
+      gameState = "PLAYING";
+      showHint = false;
+    }
+
+    /**
+     * ====================================================================
+     * UPGRADED ROPE WRAPPING & UNWRAPPING PHYSICS
+     * - Allows wrapping from underneath (bottom) OR above (top) smoothly
+     * - Automatically unwraps if the player drags back the other way
+     * - Prevents the hand from getting stuck inside any pivot
+     * ====================================================================
+     */
     function updatePhysics() {
       if (gameState !== "PLAYING") return;
-      const lastAnchor = anchorPoints[anchorPoints.length - 1];
 
+      // 1. Push hand outside of any safe pivot's solid core so it slides smoothly around it
       for (const piv of levelData.pivots) {
-        if (distToSegment(piv, lastAnchor, hand) < piv.r + 6) {
-          if (!anchorPoints.some(a => a.pivRef === piv)) {
-            const angle = Math.atan2(piv.y - lastAnchor.y, piv.x - lastAnchor.x) - Math.PI / 2;
-            anchorPoints.push({
-              x: piv.x + Math.cos(angle) * (piv.r + 7),
-              y: piv.y + Math.sin(angle) * (piv.r + 7),
-              pivRef: piv
-            });
-            playSound("pop");
+        const dx = hand.x - piv.x;
+        const dy = hand.y - piv.y;
+        const d = Math.hypot(dx, dy);
+        const minDist = piv.r + 10;
+        if (d < minDist && d > 0.001) {
+          hand.x = piv.x + (dx / d) * minDist;
+          hand.y = piv.y + (dy / d) * minDist;
+        }
+      }
+
+      // 2. Check if the latest wrapped pivot should UNWRAP (when dragging back)
+      if (anchorPoints.length > 1) {
+        const topAnchor = anchorPoints[anchorPoints.length - 1];
+        const prevAnchor = anchorPoints[anchorPoints.length - 2];
+        const piv = topAnchor.pivRef;
+        if (piv) {
+          const v1x = topAnchor.x - prevAnchor.x;
+          const v1y = topAnchor.y - prevAnchor.y;
+          const v2x = hand.x - topAnchor.x;
+          const v2y = hand.y - topAnchor.y;
+          const cross = v1x * v2y - v1y * v2x;
+          // If the hand crossed back over the tangent line, unwrap the anchor
+          if (cross * topAnchor.side > 280 || Math.hypot(hand.x - prevAnchor.x, hand.y - prevAnchor.y) < Math.hypot(topAnchor.x - prevAnchor.x, topAnchor.y - prevAnchor.y) - 10) {
+            anchorPoints.pop();
           }
         }
       }
 
+      // 3. Check if the active rope segment wraps around any safe pivot (top OR bottom)
+      const lastAnchor = anchorPoints[anchorPoints.length - 1];
+      for (const piv of levelData.pivots) {
+        if (lastAnchor.pivRef === piv) continue;
+
+        const segDist = distToSegment(piv, lastAnchor, hand);
+        const wrapRadius = piv.r + 7;
+
+        // Only wrap when the rope touches the pivot AND the hand is past the pivot center
+        const distAnchorToPiv = Math.hypot(piv.x - lastAnchor.x, piv.y - lastAnchor.y);
+        const distAnchorToHand = Math.hypot(hand.x - lastAnchor.x, hand.y - lastAnchor.y);
+
+        if (segDist < wrapRadius && distAnchorToHand > distAnchorToPiv) {
+          // Determine which side (underneath vs above) the rope is passing on
+          const apx = piv.x - lastAnchor.x;
+          const apy = piv.y - lastAnchor.y;
+          const ahx = hand.x - lastAnchor.x;
+          const ahy = hand.y - lastAnchor.y;
+          const cross = apx * ahy - apy * ahx;
+          const side = cross >= 0 ? 1 : -1;
+
+          const baseAngle = Math.atan2(apy, apx);
+          const offsetAngle = baseAngle + side * (Math.PI / 2);
+
+          anchorPoints.push({
+            x: piv.x + Math.cos(offsetAngle) * (piv.r + 9),
+            y: piv.y + Math.sin(offsetAngle) * (piv.r + 9),
+            pivRef: piv,
+            side
+          });
+          playSound("pop");
+          break;
+        }
+      }
+
+      // 4. Check hazard collision along all segments of the arm
       const chain = [...anchorPoints, hand];
       for (let i = 0; i < chain.length - 1; i++) {
         for (const haz of levelData.hazards) {
-          if (distToSegment(haz, chain[i], chain[i + 1]) < haz.r - 5) {
+          if (distToSegment(haz, chain[i], chain[i + 1]) < haz.r - 4) {
             gameState = "FAIL";
             isDragging = false;
             playSound("fail");
-            setTimeout(() => showModal("FAIL"), 850);
+            setTimeout(() => showModal("FAIL"), 800);
             return;
           }
         }
       }
 
-      if (Math.hypot(hand.x - levelData.target.x, hand.y - levelData.target.y) < levelData.target.r + hand.r - 2) {
+      // 5. Check if the hand reached the target
+      if (Math.hypot(hand.x - levelData.target.x, hand.y - levelData.target.y) < levelData.target.r + hand.r) {
         gameState = "RETRACTING";
         isDragging = false;
         playSound("pop");
       }
+
+      prevHand.x = hand.x;
+      prevHand.y = hand.y;
     }
 
     async function saveProgress(completedLevel) {
-      if (isPreviewMode) return;
-      const next = completedLevel + 1;
+      const next = Math.min(1050, completedLevel + 1);
       if (next > (player.level || 1)) player.level = next;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(player));
       try {
@@ -445,13 +645,10 @@
       overlay.classList.remove("hidden");
       if (status === "WIN") {
         wrap.innerHTML = `<div style="font-size:85px;">🏆</div>`;
-        ribbon.textContent = isPreviewMode ? "PREVIEW PASSED" : "YOU WIN";
+        ribbon.textContent = "YOU WIN";
         ribbon.className = "RibbonText win";
-        btn.textContent = isPreviewMode ? "⬅ Back to Editor" : "» NEXT";
-        btn.onclick = () => {
-          if (isPreviewMode) window.location.href = "index.html";
-          else loadLevel(currentLevelNum + 1);
-        };
+        btn.textContent = "» NEXT";
+        btn.onclick = () => loadLevel(currentLevelNum + 1);
       } else {
         wrap.innerHTML = `<div style="font-size:85px;">🏆😢</div>`;
         ribbon.textContent = "FAILED";
@@ -506,7 +703,7 @@
       }
 
       ctx.beginPath();
-      const runOffset = state === "WIN" && (role === "bandana" || role === "cap" || role === "normal") ? Math.sin(animTick * 0.4) * 10 : 0;
+      const runOffset = state === "WIN" && ["bandana", "cap", "normal", "mask"].includes(role) ? Math.sin(animTick * 0.4) * 10 : 0;
       ctx.moveTo(-5, 26); ctx.lineTo(-12 + runOffset, 56);
       ctx.moveTo(5, 26); ctx.lineTo(12 - runOffset, 56);
       ctx.stroke();
@@ -563,90 +760,92 @@
       if (kind === "rock") {
         ctx.fillStyle = "#90a4ae";
         ctx.beginPath();
-        ctx.moveTo(-24, 14); ctx.lineTo(-18, -10); ctx.lineTo(4, -16); ctx.lineTo(24, -4); ctx.lineTo(26, 14);
+        ctx.moveTo(-22, 12); ctx.lineTo(-16, -10); ctx.lineTo(4, -15); ctx.lineTo(22, -4); ctx.lineTo(24, 12);
         ctx.closePath(); ctx.fill(); ctx.stroke();
       } else if (kind === "bin") {
         ctx.fillStyle = "#81c784";
-        ctx.fillRect(-24, -30, 48, 60); ctx.strokeRect(-24, -30, 48, 60);
+        ctx.fillRect(-22, -26, 44, 52); ctx.strokeRect(-22, -26, 44, 52);
         ctx.fillStyle = "#4caf50";
-        ctx.fillRect(-28, -36, 56, 8); ctx.strokeRect(-28, -36, 56, 8);
-        ctx.font = "18px sans-serif"; ctx.textAlign = "center"; ctx.fillText("♻️", 0, 6);
+        ctx.fillRect(-26, -32, 52, 7); ctx.strokeRect(-26, -32, 52, 7);
+        ctx.font = "16px sans-serif"; ctx.textAlign = "center"; ctx.fillText("♻️", 0, 5);
       } else if (kind === "flower") {
         ctx.fillStyle = "#a1887f";
         ctx.beginPath();
-        ctx.moveTo(-14, 4); ctx.lineTo(14, 4); ctx.lineTo(10, 24); ctx.lineTo(-10, 24);
+        ctx.moveTo(-14, 4); ctx.lineTo(14, 4); ctx.lineTo(10, 22); ctx.lineTo(-10, 22);
         ctx.closePath(); ctx.fill(); ctx.stroke();
         ctx.strokeStyle = "#2e7d32";
-        ctx.beginPath(); ctx.moveTo(0, 4); ctx.lineTo(0, -14); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, 4); ctx.lineTo(0, -12); ctx.stroke();
         ctx.fillStyle = "#ff4081";
         for (let a = 0; a < 5; a++) {
           const ang = (a * Math.PI * 2) / 5;
           ctx.beginPath();
-          ctx.arc(Math.cos(ang) * 7, -16 + Math.sin(ang) * 7, 5, 0, Math.PI * 2);
+          ctx.arc(Math.cos(ang) * 6, -14 + Math.sin(ang) * 6, 4.5, 0, Math.PI * 2);
           ctx.fill();
         }
         ctx.fillStyle = "#ffeb3b";
-        ctx.beginPath(); ctx.arc(0, -16, 4, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(0, -14, 3.5, 0, Math.PI * 2); ctx.fill();
       } else if (kind === "fire") {
         const scale = 1 + Math.sin(animTick * 0.25 + x) * 0.08;
         ctx.scale(scale, scale);
-        ctx.font = "44px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.font = "40px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
         ctx.fillText("🔥", 0, 0);
       } else if (kind === "hammer") {
         ctx.rotate(-0.5);
         ctx.fillStyle = "#8d6e63";
-        ctx.fillRect(-4, -5, 8, 34); ctx.strokeRect(-4, -5, 8, 34);
+        ctx.fillRect(-4, -5, 8, 32); ctx.strokeRect(-4, -5, 8, 32);
         ctx.fillStyle = "#90a4ae";
-        ctx.fillRect(-18, -18, 36, 14); ctx.strokeRect(-18, -18, 36, 14);
+        ctx.fillRect(-16, -16, 32, 12); ctx.strokeRect(-16, -16, 32, 12);
       } else if (kind === "extinguisher") {
         ctx.fillStyle = "#e53935";
-        ctx.beginPath(); ctx.roundRect(-12, -14, 24, 36, 6); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.roundRect(-12, -14, 24, 34, 6); ctx.fill(); ctx.stroke();
         ctx.fillStyle = "#fff"; ctx.fillRect(-8, -2, 16, 10);
-        ctx.fillStyle = "#222"; ctx.fillRect(-5, -22, 10, 8);
+        ctx.fillStyle = "#222"; ctx.fillRect(-5, -20, 10, 7);
       } else if (kind === "chicken") {
         ctx.fillStyle = "#e67e22";
         ctx.beginPath(); ctx.ellipse(0, 2, 22, 14, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
       } else if (kind === "balloons") {
         ["#29b6f6", "#ff4081", "#ffeb3b"].forEach((c, i) => {
           ctx.fillStyle = c;
-          ctx.beginPath(); ctx.arc((i - 1) * 16, -8, 14, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-          ctx.beginPath(); ctx.moveTo((i - 1) * 16, 6); ctx.lineTo(0, 35); ctx.stroke();
+          ctx.beginPath(); ctx.arc((i - 1) * 15, -8, 13, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo((i - 1) * 15, 5); ctx.lineTo(0, 32); ctx.stroke();
         });
       } else if (kind === "treasure") {
         ctx.fillStyle = "#ffb300";
-        ctx.fillRect(-22, -14, 44, 28); ctx.strokeRect(-22, -14, 44, 28);
-        ctx.fillStyle = "#fff"; ctx.fillRect(-6, -4, 12, 10);
+        ctx.fillRect(-20, -14, 40, 28); ctx.strokeRect(-20, -14, 40, 28);
+        ctx.fillStyle = "#fff"; ctx.fillRect(-5, -4, 10, 10);
       } else if (kind === "purse") {
         ctx.fillStyle = "#f48fb1";
         ctx.beginPath(); ctx.roundRect(-18, -10, 36, 24, 6); ctx.fill(); ctx.stroke();
         ctx.beginPath(); ctx.arc(0, -10, 10, Math.PI, 0); ctx.stroke();
       } else if (kind === "lamp") {
-        ctx.strokeStyle = "#cfd8dc"; ctx.lineWidth = 6;
-        ctx.beginPath();
-        ctx.moveTo(x < 200 ? -65 : 65, 220);
-        ctx.lineTo(x < 200 ? -65 : 65, -25);
-        ctx.lineTo(0, -25);
-        ctx.stroke();
         ctx.fillStyle = "#ffee58";
-        ctx.beginPath(); ctx.arc(0, 0, 14, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(0, 0, 14, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
         ctx.fillStyle = "#37474f";
-        ctx.beginPath(); ctx.arc(0, -4, 20, Math.PI, 0); ctx.fill();
+        ctx.beginPath(); ctx.arc(0, -4, 19, Math.PI, 0); ctx.fill();
       } else if (kind === "door") {
         if (y < 200) {
           ctx.fillStyle = "#b0bec5";
-          ctx.fillRect(-8, -60, 16, 210); ctx.strokeRect(-8, -60, 16, 210);
+          ctx.fillRect(-8, -55, 16, 200); ctx.strokeRect(-8, -55, 16, 200);
           ctx.fillStyle = "#fbc02d";
-          ctx.beginPath(); ctx.arc(14, 70, 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+          ctx.beginPath(); ctx.arc(14, 65, 6, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
         }
       } else if (kind === "warhead" || kind === "plug") {
         if (kind === "warhead") {
           ctx.fillStyle = "#616161";
-          ctx.beginPath(); ctx.arc(0, 0, 16, Math.PI / 2, -Math.PI / 2);
-          ctx.lineTo(28, -16); ctx.lineTo(28, 16); ctx.closePath(); ctx.fill(); ctx.stroke();
+          ctx.beginPath(); ctx.arc(0, 0, 15, Math.PI / 2, -Math.PI / 2);
+          ctx.lineTo(26, -15); ctx.lineTo(26, 15); ctx.closePath(); ctx.fill(); ctx.stroke();
         } else {
           ctx.fillStyle = "#d32f2f";
           ctx.fillRect(-8, -8, 16, 16); ctx.strokeRect(-8, -8, 16, 16);
         }
+      } else {
+        const EMOJI_MAP = {
+          diamond: "💎", key: "🔑", pizza: "🍕", crown: "👑", gift: "🎁", dog: "🐕", cactus: "🌵"
+        };
+        ctx.font = "36px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(EMOJI_MAP[kind] || "⭐", 0, 0);
       }
       ctx.restore();
     }
@@ -660,7 +859,7 @@
         const dx = targetPt.x - hand.x;
         const dy = targetPt.y - hand.y;
         const dist = Math.hypot(dx, dy);
-        const speed = 13;
+        const speed = 14;
         if (dist <= speed) {
           hand.x = targetPt.x;
           hand.y = targetPt.y;
@@ -670,7 +869,7 @@
             gameState = "WIN";
             playSound("win");
             saveProgress(currentLevelNum);
-            setTimeout(() => showModal("WIN"), 900);
+            setTimeout(() => showModal("WIN"), 800);
           }
         } else {
           hand.x += (dx / dist) * speed;
@@ -680,6 +879,39 @@
         levelData.target.y = hand.y;
       }
 
+      // Draw Scenery Props
+      ctx.save();
+      ctx.strokeStyle = "#222";
+      ctx.lineWidth = 3;
+      if (levelData.ledge) {
+        ctx.beginPath();
+        ctx.moveTo(levelData.ledge.x1, levelData.ledge.y1);
+        ctx.lineTo(levelData.ledge.x2, levelData.ledge.y2);
+        ctx.stroke();
+      }
+      if (levelData.table) {
+        const t = levelData.table;
+        ctx.fillStyle = "#cfd8dc";
+        ctx.fillRect(t.x, t.y, t.w, 6); ctx.strokeRect(t.x, t.y, t.w, 6);
+        ctx.strokeRect(t.x + 6, t.y + 6, 6, t.h);
+        ctx.strokeRect(t.x + t.w - 12, t.y + 6, 6, t.h);
+      }
+      if (levelData.streetFloor) {
+        ctx.fillStyle = "rgba(207, 216, 220, 0.45)";
+        ctx.fillRect(0, 325, canvas.width, 135);
+      }
+      if (levelData.bench) {
+        ctx.fillStyle = "#d7ccc8";
+        ctx.fillRect(levelData.bench.x, levelData.bench.y, levelData.bench.w, 10);
+        ctx.strokeRect(levelData.bench.x, levelData.bench.y, levelData.bench.w, 10);
+      }
+      if (levelData.floorLine) {
+        ctx.fillStyle = "#8d6e63";
+        ctx.fillRect(0, levelData.floorLine, canvas.width, 8);
+      }
+      ctx.restore();
+
+      // Hint Line
       if (showHint) {
         ctx.save();
         ctx.setLineDash([8, 6]);
@@ -693,12 +925,15 @@
         ctx.restore();
       }
 
+      // Thief Stickman
       drawStickCharacter(levelData.thief.x, levelData.thief.y, levelData.thiefStyle || "normal", gameState);
 
+      // Safe Pivots
       levelData.pivots.forEach(p => {
-        if (p.kind !== "gap") drawObjectProp(p.x, p.y, p.r, p.kind);
+        drawObjectProp(p.x, p.y, p.r, p.kind);
       });
 
+      // Hazards
       levelData.hazards.forEach(h => {
         if (["girl", "boy", "guard", "villain"].includes(h.kind)) {
           drawStickCharacter(h.x, h.y, h.kind, gameState);
@@ -710,13 +945,15 @@
         }
       });
 
+      // Target Object
       drawObjectProp(levelData.target.x, levelData.target.y, levelData.target.r, levelData.target.kind);
 
+      // Elastic Arm Rope
       ctx.save();
       ctx.lineWidth = 5;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
-      ctx.strokeStyle = (gameState === "RETRACTING" || gameState === "WIN") ? "#29b6f6" : "#111";
+      ctx.strokeStyle = (gameState === "RETRACTING" || gameState === "WIN") ? "#29b6f6" : (gameState === "FAIL" ? "#e53935" : "#111");
       ctx.beginPath();
       ctx.moveTo(anchorPoints[0].x, anchorPoints[0].y);
       for (let i = 1; i < anchorPoints.length; i++) {
@@ -725,6 +962,7 @@
       ctx.lineTo(hand.x, hand.y);
       ctx.stroke();
 
+      // Thief Glove Hand
       const prevPt = anchorPoints[anchorPoints.length - 1];
       const handAngle = Math.atan2(hand.y - prevPt.y, hand.x - prevPt.x);
       ctx.translate(hand.x, hand.y);
@@ -758,7 +996,7 @@
     canvas.addEventListener("pointerdown", (e) => {
       if (gameState !== "PLAYING") return;
       const pos = getPos(e);
-      if (Math.hypot(pos.x - hand.x, pos.y - hand.y) < 42) {
+      if (Math.hypot(pos.x - hand.x, pos.y - hand.y) < 48) {
         isDragging = true;
       }
     });
@@ -766,9 +1004,19 @@
     window.addEventListener("pointermove", (e) => {
       if (!isDragging || gameState !== "PLAYING") return;
       const pos = getPos(e);
-      hand.x = Math.max(16, Math.min(canvas.width - 16, pos.x));
-      hand.y = Math.max(16, Math.min(canvas.height - 16, pos.y));
-      updatePhysics();
+      // Sub-step movement so fast drags never clip through pivots
+      const steps = 4;
+      const startX = hand.x;
+      const startY = hand.y;
+      const targetX = Math.max(16, Math.min(canvas.width - 16, pos.x));
+      const targetY = Math.max(16, Math.min(canvas.height - 16, pos.y));
+
+      for (let s = 1; s <= steps; s++) {
+        if (gameState !== "PLAYING") break;
+        hand.x = startX + ((targetX - startX) * s) / steps;
+        hand.y = startY + ((targetY - startY) * s) / steps;
+        updatePhysics();
+      }
     });
 
     window.addEventListener("pointerup", () => { isDragging = false; });
@@ -776,16 +1024,6 @@
     document.getElementById("homeBtn").onclick = () => window.location.href = "index.html";
     document.getElementById("restartBtn").onclick = () => loadLevel(currentLevelNum);
     document.getElementById("hintBtn").onclick = () => { showHint = true; };
-
-    fetch("levels.json?t=" + Date.now())
-      .then(r => r.ok ? r.json() : null)
-      .then(remote => {
-        if (Array.isArray(remote) && remote.length) {
-          allLevels = [...BUILTIN_LEVELS, ...remote];
-          loadLevel(currentLevelNum);
-        }
-      })
-      .catch(() => {});
 
     loadLevel(currentLevelNum);
     requestAnimationFrame(renderLoop);
