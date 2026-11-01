@@ -1,15 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-Y5383R4YL1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-Y5383R4YL1');
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ST Games - Victory & Achievements</title>
+  <title>ST Games - Achievements & Missions</title>
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
 
   <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -18,19 +26,24 @@
     :root {
       --poki-cyan: #32ffdc;
       --poki-teal: #1db9aa;
+      --poki-bg-light: #5ffbf1;
       --poki-bg-dark: #07222d;
+      --neon-cyan: #22d3ee;
+      --neon-violet: #8b5cf6;
+      --neon-pink: #ec4899;
     }
 
     body {
       font-family: 'Inter', sans-serif;
-      background: linear-gradient(135deg, #4ef2e2 0%, #17c3b2 50%, #0d9488 100%);
-      background-attachment: fixed;
+      background-color: #17c3b2;
       overflow-x: hidden;
       user-select: none;
-      transition: background 0.5s ease, color 0.35s ease;
+      transition: color 0.35s ease;
       position: relative;
-      padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+      padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));
       color: #0f172a;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: none;
     }
 
     body::before {
@@ -39,30 +52,33 @@
       inset: 0;
       pointer-events: none;
       z-index: 0;
+      transform: translate3d(0, 0, 0);
+      will-change: transform;
       background: 
         radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.45), transparent 35%),
         radial-gradient(circle at 85% 75%, rgba(13, 148, 136, 0.35), transparent 40%),
-        linear-gradient(45deg, transparent 40%, rgba(255, 255, 255, 0.15) 50%, transparent 60%);
-      background-attachment: fixed;
+        linear-gradient(45deg, transparent 40%, rgba(255, 255, 255, 0.15) 50%, transparent 60%),
+        linear-gradient(135deg, #4ef2e2 0%, #17c3b2 50%, #0d9488 100%);
     }
 
     body > * { position: relative; z-index: 1; }
 
     /* DARK THEME OVERRIDES */
     body.dark-theme {
-      background: linear-gradient(135deg, #092c35 0%, #061820 50%, #040e14 100%);
+      background-color: #061820;
       color: #f8fafc;
     }
 
     body.dark-theme::before {
       background: 
         radial-gradient(circle at 15% 20%, rgba(34, 211, 238, 0.15), transparent 35%),
-        radial-gradient(circle at 85% 75%, rgba(15, 118, 110, 0.25), transparent 40%);
+        radial-gradient(circle at 85% 75%, rgba(15, 118, 110, 0.25), transparent 40%),
+        linear-gradient(135deg, #092c35 0%, #061820 50%, #040e14 100%);
     }
 
     body.dark-theme .theme-surface {
-      background-color: rgba(15, 23, 42, 0.92) !important;
-      border-color: rgba(50, 255, 220, 0.22) !important;
+      background-color: rgba(15, 23, 42, 0.95) !important;
+      border-color: rgba(255, 255, 255, 0.1) !important;
       color: #f8fafc !important;
     }
 
@@ -70,91 +86,54 @@
     body.dark-theme .theme-text-sub { color: #94a3b8 !important; }
 
     .brand-font { font-family: 'Fredoka', sans-serif; }
-    .mono-font { font-family: 'JetBrains Mono', monospace; }
 
-    /* Top Scrolling Announcement Bar */
-    .top-notice-bar {
-      width: 100%; overflow: hidden; position: relative; z-index: 40; padding: 11px 0; color: #fff;
-      background: rgba(7, 34, 45, 0.85); backdrop-filter: blur(8px); border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-      box-shadow: 0 0 14px rgba(50, 255, 220, 0.3);
+    header .theme-surface {
+      border-color: rgba(50, 255, 220, 0.3) !important;
+      box-shadow: 0 8px 24px rgba(7, 34, 45, 0.15);
     }
 
-    .single-notice-track {
-      display: flex; width: max-content; flex-wrap: nowrap; justify-content: flex-start; gap: 64px; white-space: nowrap; animation: singleNoticeScroll 24s linear infinite;
+    /* Mission / Achievement Card */
+    .mission-card {
+      background: linear-gradient(135deg, rgba(7, 34, 45, 0.96) 0%, rgba(15, 23, 42, 0.96) 100%);
+      border: 2px solid rgba(50, 255, 220, 0.3);
+      border-radius: 22px;
+      padding: 16px;
+      color: #fff;
+      box-shadow: 0 8px 20px rgba(7, 34, 45, 0.25);
+      transition: transform 0.2s ease, border-color 0.2s ease;
     }
-
-    .single-notice-message {
-      font-size: 13px; font-weight: 700; color: #32ffdc; text-shadow: 0 0 8px rgba(50, 255, 220, 0.6);
-    }
-
-    @keyframes singleNoticeScroll {
-      from { transform: translateX(0); }
-      to { transform: translateX(-50%); }
-    }
-
-    /* Hero Panel (PLAY. COMPETE. VICTORY.) */
-    .hero-panel {
-      position: relative; overflow: hidden; border: 1px solid rgba(50, 255, 220, 0.35);
-      background: linear-gradient(120deg, #07222d 0%, #0d475c 55%, #115e59 100%);
-      box-shadow: 0 18px 45px rgba(7, 34, 45, 0.25), 0 0 30px rgba(50, 255, 220, 0.15);
-    }
-
-    .hero-panel::before {
-      content: ""; position: absolute; width: 260px; height: 260px; right: -65px; top: -100px;
-      border-radius: 50%; background: rgba(50, 255, 220, 0.25); filter: blur(50px); pointer-events: none;
-    }
-
-    .stat-pill {
-      border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 10px 12px;
-    }
-
-    .glow-button {
-      background: linear-gradient(100deg, #0d9488, #0284c7);
-      box-shadow: 0 6px 18px rgba(50, 255, 220, 0.3);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .glow-button:hover {
+    .mission-card:hover {
       transform: translateY(-2px);
-      box-shadow: 0 10px 24px rgba(50, 255, 220, 0.5);
+      border-color: #32ffdc;
+    }
+    .mission-card.completed {
+      border-color: #10b981;
+      background: linear-gradient(135deg, rgba(6, 40, 32, 0.96) 0%, rgba(15, 23, 42, 0.96) 100%);
     }
 
-    /* Difficulty Badges */
-    .diff-easy { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4); }
-    .diff-medium { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.4); }
-    .diff-hard { background: rgba(244, 63, 94, 0.15); color: #f43f5e; border: 1px solid rgba(244, 63, 94, 0.4); }
-    .diff-extreme { background: rgba(168, 85, 247, 0.18); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.5); }
-
-    /* Filter Chips */
-    .filter-chip {
-      padding: 7px 14px;
-      border-radius: 12px;
-      font-size: 11px;
-      font-weight: 800;
-      transition: all 0.2s ease;
-      cursor: pointer;
-      border: 1px solid rgba(13, 148, 136, 0.3);
-      background: rgba(255, 255, 255, 0.75);
-      color: #07222d;
+    /* Live Status Pulse */
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 9999px;
+      display: inline-block;
+      background-color: #32ffdc;
+      box-shadow: 0 0 8px #32ffdc;
+      animation: pulseGlow 1.8s infinite;
     }
-    body.dark-theme .filter-chip {
-      background: rgba(15, 23, 42, 0.8);
-      color: #cbd5e1;
-      border-color: rgba(50, 255, 220, 0.2);
-    }
-    .filter-chip.active {
-      background: #07222d !important;
-      color: #32ffdc !important;
-      border-color: #32ffdc !important;
-      box-shadow: 0 0 14px rgba(50, 255, 220, 0.35);
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(1.2); }
     }
 
-    /* Bottom Navigation Bar */
+    /* Bottom Navigation Bar (4 Columns) */
     .st-bottom-nav {
       position: fixed; z-index: 9999; left: 0; right: 0; bottom: 0;
-      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px;
+      display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px;
       padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
-      background: rgba(7, 34, 45, 0.96); backdrop-filter: blur(12px); border-top: 1px solid rgba(50, 255, 220, 0.3);
-      box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.4);
+      background: rgba(7, 34, 45, 0.97); border-top: 1px solid rgba(50, 255, 220, 0.3);
+      box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.35);
+      transform: translate3d(0, 0, 0);
     }
 
     .st-bottom-nav a {
@@ -165,41 +144,19 @@
     .st-bottom-nav a:hover, .st-bottom-nav a.active { color: #fff; background: rgba(50, 255, 220, 0.15); }
 
     @media (min-width: 768px) {
-      .st-bottom-nav { left: 50%; transform: translateX(-50%); width: min(500px, calc(100% - 32px)); border-radius: 18px 18px 0 0; }
+      .st-bottom-nav { left: 50%; transform: translate3d(-50%, 0, 0); width: min(500px, calc(100% - 32px)); border-radius: 18px 18px 0 0; }
     }
   </style>
 </head>
 
 <body class="min-h-screen flex flex-col justify-between">
 
-  <!-- AUTH REDIRECT OVERLAY (SHOWN IF NOT LOGGED IN) -->
-  <div id="authGateOverlay" class="fixed inset-0 z-[99999] bg-slate-950/95 backdrop-blur-lg flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-[#32ffdc]/40 rounded-3xl max-w-sm w-full p-6 text-center text-white shadow-2xl">
-      <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-[#32ffdc]/20 border border-[#32ffdc] flex items-center justify-center text-2xl text-[#32ffdc]">
-        <i class="fa-solid fa-user-lock"></i>
-      </div>
-      <h2 class="brand-font text-xl font-bold text-[#32ffdc]">Checking Player Login...</h2>
-      <p id="authGateText" class="text-xs text-slate-300 mt-2 mb-4">Syncing your ST Games profile &amp; Firebase cloud achievements.</p>
-      <a href="login.html" class="glow-button inline-flex items-center justify-center w-full py-2.5 rounded-xl text-xs font-extrabold text-white">
-        <i class="fa-solid fa-right-to-bracket mr-2"></i> Go to Login Page
-      </a>
-    </div>
-  </div>
-
-  <!-- TOP NOTICE BAR -->
-  <div class="top-notice-bar" role="status">
-    <div class="marquee-track single-notice-track">
-      <span id="noticeText" class="single-notice-message">🏆 Complete Daily Missions before 4:00 AM to level up &amp; sync your trophies! 🏆</span>
-      <span id="noticeTextDuplicate" class="single-notice-message" aria-hidden="true">🏆 Complete Daily Missions before 4:00 AM to level up &amp; sync your trophies! 🏆</span>
-    </div>
-  </div>
-
   <!-- MAIN CONTENT -->
-  <main class="max-w-5xl w-full mx-auto px-3.5 sm:px-6 pt-3 pb-8 relative z-10">
+  <main class="max-w-4xl w-full mx-auto px-3.5 sm:px-6 pt-3.5 pb-10 relative z-10">
 
     <!-- TOP HEADER -->
-    <header class="sticky top-2.5 z-30 mb-4">
-      <div class="theme-surface bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/80 px-3 sm:px-5 py-2.5 flex items-center justify-between">
+    <header class="sticky top-2.5 z-30 mb-5">
+      <div class="theme-surface bg-white/95 rounded-2xl shadow-xl border border-white/80 px-3 sm:px-5 py-2.5 flex items-center justify-between">
         <div class="flex items-center gap-3 pr-3 sm:pr-5 border-r border-slate-200/60 min-w-0">
           <a href="index.html" class="flex items-center gap-2.5">
             <div class="w-10 h-10 rounded-xl overflow-hidden border-2 border-[#32ffdc] shadow-md bg-slate-900 flex items-center justify-center">
@@ -208,132 +165,78 @@
             </div>
             <div class="min-w-0">
               <h1 class="brand-font text-base sm:text-lg font-bold tracking-tight text-[#07222d] theme-text-primary uppercase truncate">ST GAMES</h1>
-              <p class="text-[9px] font-bold text-teal-600 uppercase tracking-tighter truncate">Victory &amp; Cloud Achievements</p>
+              <div class="flex items-center gap-1.5">
+                <span class="live-dot"></span>
+                <p class="text-[9px] font-bold text-teal-600 uppercase tracking-tighter truncate">Missions & Badges</p>
+              </div>
             </div>
           </a>
         </div>
 
-        <div class="flex items-center gap-2 sm:gap-3">
-          <!-- Firebase Sync Status Pill -->
-          <button onclick="syncWithFirebase(true)" id="syncStatusBtn" class="px-3 py-1.5 rounded-xl bg-teal-500/15 border border-teal-500/40 text-[11px] font-extrabold text-teal-700 dark:text-[#32ffdc] flex items-center gap-1.5 hover:scale-105 transition">
-            <i id="syncIcon" class="fa-solid fa-cloud-arrow-up text-xs"></i>
-            <span id="syncText">Firebase Synced</span>
+        <div class="flex items-center justify-end gap-2 flex-1 ml-2 text-[#07222d] theme-text-primary">
+          <a href="leaderboard.html" class="px-3 py-1.5 rounded-xl bg-[#07222d] text-[#32ffdc] text-xs font-extrabold flex items-center gap-1.5 shadow hover:opacity-90 transition">
+            <i class="fa-solid fa-ranking-star text-[11px]"></i> Leaderboard
+          </a>
+          <button onclick="toggleSFX()" id="sfxToggleBtn" title="Toggle SFX" class="p-2 rounded-xl hover:bg-slate-500/10 transition">
+            <i id="sfxIcon" class="fa-solid fa-wand-magic-sparkles text-amber-500 text-base"></i>
           </button>
           <button onclick="toggleTheme()" title="Switch Theme" class="p-2 rounded-xl hover:bg-slate-500/10 transition text-lg">🌓</button>
         </div>
       </div>
     </header>
 
-    <!-- PLAY. COMPETE. VICTORY. HERO BANNER (MOVED FROM HOME SCREEN) -->
-    <section class="hero-panel rounded-3xl p-5 sm:p-7 mb-5 text-white">
-      <div class="hero-content grid sm:grid-cols-[1.4fr_.8fr] gap-5 items-center">
-        <div>
-          <div class="inline-flex items-center gap-2 rounded-full bg-[#32ffdc]/10 border border-[#32ffdc]/30 px-3 py-1 text-[10px] font-extrabold tracking-[.18em] uppercase text-[#32ffdc] mb-3">
-            <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Poki &amp; Arcade Zone
-          </div>
-          <h2 class="brand-font text-3xl sm:text-4xl font-bold leading-tight">PLAY. <span class="text-[#32ffdc]">COMPETE.</span><br>VICTORY.</h2>
-          <p class="text-slate-200 text-xs sm:text-sm mt-3 max-w-md">Discover your next challenge. Complete daily missions from Easy to Hard, level up your profile, and sync your trophies to Firebase.</p>
-          <div class="flex flex-wrap gap-2 mt-5">
-            <button onclick="playRandomGameFromAchievements()" class="glow-button rounded-xl px-4 py-2.5 text-xs font-extrabold text-white"><i class="fa-solid fa-play mr-2"></i>Play a Random Game</button>
-            <a href="index.html#gamesGrid" class="rounded-xl px-4 py-2.5 text-xs font-extrabold text-white bg-white/10 border border-white/20 hover:bg-white/20">Explore Games <i class="fa-solid fa-arrow-right ml-1"></i></a>
-          </div>
-        </div>
-        <div class="grid grid-cols-3 sm:grid-cols-1 gap-2 text-white">
-          <div class="stat-pill flex items-center justify-between">
-            <div><div id="heroTotalGames" class="text-xl sm:text-2xl font-extrabold">13</div><div class="text-[10px] text-slate-200">Games online</div></div>
-            <i class="fa-solid fa-gamepad text-[#32ffdc] text-lg"></i>
-          </div>
-          <div class="stat-pill flex items-center justify-between">
-            <div><div id="favoriteCount" class="text-xl sm:text-2xl font-extrabold">0</div><div class="text-[10px] text-slate-200">Favourites</div></div>
-            <i class="fa-solid fa-heart text-pink-300 text-lg"></i>
-          </div>
-          <div class="stat-pill flex items-center justify-between">
-            <div><div id="playedCount" class="text-xl sm:text-2xl font-extrabold">0</div><div class="text-[10px] text-slate-200">Played</div></div>
-            <i class="fa-solid fa-fire text-amber-300 text-lg"></i>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- PLAYER LEVEL & 4:00 AM COUNTDOWN BAR -->
-    <section class="theme-surface bg-white/95 backdrop-blur-md rounded-3xl p-5 mb-5 shadow-xl border border-white/80">
-      <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200/70 dark:border-slate-700/60">
-        <div class="flex items-center gap-3.5">
-          <div id="playerAvatarBox" class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-teal-500 to-cyan-400 text-slate-950 font-black text-2xl flex items-center justify-center border-2 border-[#32ffdc] shadow-lg overflow-hidden">
-            S
-          </div>
-          <div>
-            <div class="flex items-center gap-2">
-              <h3 id="playerNameDisplay" class="brand-font text-lg sm:text-xl font-bold text-[#07222d] theme-text-primary">Player</h3>
-              <span id="playerLevelBadge" class="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-[#07222d] text-[#32ffdc] border border-[#32ffdc]/50">LVL 1</span>
+    <!-- PLAYER XP & MISSION SUMMARY BANNER -->
+    <section class="mb-6">
+      <div class="bg-gradient-to-r from-[#07222d] via-[#0b3140] to-[#0f172a] border-2 border-[#32ffdc] rounded-3xl p-4 sm:p-5 text-white shadow-xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="flex items-center gap-3.5 min-w-0">
+            <div id="myAvatarBox" class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-tr from-[#32ffdc] to-teal-500 text-[#07222d] font-extrabold text-xl flex items-center justify-center border-2 border-white shadow-lg shrink-0 overflow-hidden">
+              P
             </div>
-            <p class="text-xs text-slate-500 theme-text-sub font-semibold mt-0.5">
-              Total XP: <span id="playerTotalXP" class="font-extrabold text-teal-600 dark:text-[#32ffdc]">0</span> • Missions Done: <span id="playerMissionsDone" class="font-extrabold">0</span> • Streak: <span id="playerStreak" class="font-extrabold text-orange-500">1🔥</span>
-            </p>
+            <div class="min-w-0">
+              <span class="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[#32ffdc]/20 text-[#32ffdc] border border-[#32ffdc]/40">Player Achievements</span>
+              <h2 id="myPlayerName" class="brand-font text-lg sm:text-xl font-bold text-white truncate mt-1">ST Player</h2>
+              <p id="myMissionStats" class="text-xs text-slate-300 font-medium">0 / 6 Missions Completed</p>
+            </div>
           </div>
-        </div>
 
-        <!-- 4:00 AM Daily Reset Timer -->
-        <div class="bg-[#07222d] text-white px-4 py-2.5 rounded-2xl border border-[#32ffdc]/40 flex items-center gap-3 shadow-md">
-          <i class="fa-solid fa-clock-rotate-left text-[#32ffdc] text-lg"></i>
-          <div>
-            <div class="text-[10px] uppercase tracking-wider text-slate-300 font-bold">Daily Reload (4:00 AM)</div>
-            <div id="resetCountdown" class="mono-font text-sm sm:text-base font-extrabold text-[#32ffdc]">00:00:00</div>
+          <div class="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 border-white/10 pt-3 sm:pt-0">
+            <div class="text-left sm:text-right">
+              <span class="text-[10px] uppercase tracking-wider text-slate-400 font-extrabold block">Current Level</span>
+              <span id="myLevelDisplay" class="brand-font text-2xl sm:text-3xl font-bold text-[#32ffdc]">LVL 1</span>
+            </div>
+            <div class="h-9 w-[1px] bg-white/15"></div>
+            <div class="text-right">
+              <span class="text-[10px] uppercase tracking-wider text-slate-400 font-extrabold block">Total XP</span>
+              <span id="myXpDisplay" class="brand-font text-2xl sm:text-3xl font-bold text-amber-400">200</span>
+            </div>
           </div>
-        </div>
-      </div>
-
-      <!-- XP Progress Bar -->
-      <div class="mt-4">
-        <div class="flex justify-between text-xs font-extrabold mb-1.5">
-          <span class="text-teal-700 dark:text-[#32ffdc]">Level <span id="currLvlNum">1</span> Progress</span>
-          <span id="xpProgressText" class="mono-font text-slate-600 dark:text-slate-300">0 / 200 XP</span>
-        </div>
-        <div class="w-full h-3.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden p-0.5 border border-teal-500/30">
-          <div id="xpProgressBar" class="h-full bg-gradient-to-r from-teal-500 via-cyan-400 to-[#32ffdc] rounded-full transition-all duration-500" style="width: 0%"></div>
         </div>
       </div>
     </section>
 
-    <!-- DAILY MISSIONS SECTION (EASY TO HARD, RELOADS AT 4 AM) -->
-    <section class="theme-surface bg-white/95 backdrop-blur-md rounded-3xl p-5 mb-5 shadow-xl border border-white/80">
-      <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
-        <div>
-          <h3 class="brand-font text-lg sm:text-xl font-bold text-[#07222d] theme-text-primary flex items-center gap-2">
-            <i class="fa-solid fa-list-check text-teal-500"></i> Daily Missions (Easy → Hard)
-          </h3>
-          <p class="text-xs text-slate-500 theme-text-sub">Tasks scale with your level and automatically refresh every day at 4:00 AM</p>
+    <!-- MISSIONS & ACHIEVEMENTS GRID -->
+    <section class="space-y-4">
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-trophy text-amber-300 text-lg"></i>
+          <h2 class="brand-font text-lg sm:text-xl font-bold text-[#07222d] theme-text-primary">Daily & Career Missions</h2>
         </div>
-
-        <!-- Difficulty Filter Tabs -->
-        <div class="flex flex-wrap gap-1.5">
-          <button onclick="filterMissions('all')" id="filter-all" class="filter-chip active">All</button>
-          <button onclick="filterMissions('easy')" id="filter-easy" class="filter-chip">Easy</button>
-          <button onclick="filterMissions('medium')" id="filter-medium" class="filter-chip">Medium</button>
-          <button onclick="filterMissions('hard')" id="filter-hard" class="filter-chip">Hard</button>
-          <button onclick="filterMissions('extreme')" id="filter-extreme" class="filter-chip">Extreme</button>
-        </div>
+        <span class="text-xs font-extrabold text-[#07222d] theme-text-sub">Claim XP rewards!</span>
       </div>
 
-      <div id="dailyMissionsContainer" class="grid sm:grid-cols-2 gap-3.5"></div>
-    </section>
-
-    <!-- PROGRESSIVE LEVEL ACHIEVEMENTS (TASKS INCREASE AS LEVEL INCREASES) -->
-    <section class="theme-surface bg-white/95 backdrop-blur-md rounded-3xl p-5 mb-6 shadow-xl border border-white/80">
-      <div class="flex items-center justify-between mb-4">
-        <div>
-          <h3 class="brand-font text-lg sm:text-xl font-bold text-[#07222d] theme-text-primary flex items-center gap-2">
-            <i class="fa-solid fa-trophy text-amber-500"></i> Progressive Level Achievements
-          </h3>
-          <p class="text-xs text-slate-500 theme-text-sub">Complete a tier to automatically unlock the next higher level requirement!</p>
-        </div>
-        <span id="unlockedBadgesCount" class="px-3 py-1 rounded-full text-xs font-extrabold bg-amber-500/20 text-amber-600 dark:text-amber-300 border border-amber-500/40">0 Unlocked</span>
+      <div id="missionsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- Missions rendered dynamically via JS -->
       </div>
-
-      <div id="levelAchievementsContainer" class="space-y-3"></div>
     </section>
 
   </main>
+
+  <!-- FOOTER -->
+  <footer class="theme-surface max-w-4xl w-full mx-auto px-4 py-5 mb-20 sm:mb-6 rounded-2xl border border-slate-200 text-center text-[10px] text-slate-500">
+    <div class="brand-font text-sm font-bold tracking-wide theme-text-primary">ST GAMES <span class="text-[#32ffdc]">•</span> MISSIONS & ACHIEVEMENTS</div>
+    <p class="mt-1">Completed missions automatically sync with your level and global leaderboard rank.</p>
+  </footer>
 
   <!-- BOTTOM NAVIGATION BAR -->
   <nav class="st-bottom-nav" aria-label="ST GAMES navigation">
@@ -343,18 +246,108 @@
       <div id="bottomUserLogo" class="hidden w-6 h-6 rounded-full overflow-hidden border-2 border-[#32ffdc] bg-gradient-to-tr from-teal-400 to-indigo-600 text-white font-extrabold text-[11px] flex items-center justify-center shadow-sm">U</div>
       <span id="bottomLoginLabel" class="truncate max-w-[90px]">Login</span>
     </a>
+    <a href="leaderboard.html" title="Leaderboard by Levels"><span class="nav-icon"><i class="fa-solid fa-ranking-star"></i></span><span>Leaderboard</span></a>
     <a href="achievements.html" class="active"><span class="nav-icon">🏆</span><span>Achievements</span></a>
   </nav>
 
-  <script>
-    // =========================================================================
-    // 1. FIREBASE REST ENDPOINT & LOCAL STORAGE HELPERS
-    // =========================================================================
-    const FIREBASE_DB_URL = "https://friendsgame-872f5-default-rtdb.firebaseio.com";
-    let currentFilter = 'all';
-    let currentUserKey = null;
-    let currentUserName = '';
-    let currentUserPhoto = '';
+  <!-- DUAL FIREBASE + MISSIONS SCRIPT -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+    const firebaseConfigPrimary = {
+      apiKey: "AIzaSyDOFx0_vpPDRDCkUW-deQjMNK5msOsGSnI",
+      authDomain: "stgames-289.firebaseapp.com",
+      databaseURL: "https://stgames-289-default-rtdb.firebaseio.com",
+      projectId: "stgames-289",
+      storageBucket: "stgames-289.firebasestorage.app",
+      messagingSenderId: "916146081741",
+      appId: "1:916146081741:web:eb343c4dc0c6648388fe84"
+    };
+
+    const firebaseConfigSecondary = {
+      apiKey: "AIzaSyBzLchy5M2fLne4c7Ghw1KNN8wVrlZdd8M",
+      authDomain: "friendsgame-872f5.firebaseapp.com",
+      databaseURL: "https://friendsgame-872f5-default-rtdb.firebaseio.com",
+      projectId: "friendsgame-872f5",
+      storageBucket: "friendsgame-872f5.firebasestorage.app",
+      messagingSenderId: "522534013233",
+      appId: "1:522534013233:web:f5faa6e6795023d0420810"
+    };
+
+    const appPrimary = initializeApp(firebaseConfigPrimary);
+    const appSecondary = initializeApp(firebaseConfigSecondary, "friendsGameApp");
+    const dbPrimary = getDatabase(appPrimary);
+    const dbSecondary = getDatabase(appSecondary);
+
+    let audioCtx = null;
+    let sfxEnabled = localStorage.getItem('st_sfx') !== 'off';
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) audioCtx = new AudioContextClass();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    }
+
+    const ArcadeSFX = {
+      click() {
+        if (!sfxEnabled) return;
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(587.33, now);
+        osc.frequency.setValueAtTime(880, now + 0.045);
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(now); osc.stop(now + 0.135);
+      },
+      levelUp() {
+        if (!sfxEnabled) return;
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          const start = now + idx * 0.055;
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, start);
+          gain.gain.setValueAtTime(0.14, start);
+          gain.gain.exponentialRampToValueAtTime(0.001, start + 0.14);
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.start(start); osc.stop(start + 0.145);
+        });
+      }
+    };
+
+    function updateSFXIcon() {
+      const icon = document.getElementById('sfxIcon');
+      if (!icon) return;
+      icon.className = sfxEnabled
+        ? 'fa-solid fa-wand-magic-sparkles text-amber-500 text-base'
+        : 'fa-solid fa-volume-xmark text-slate-400 text-base';
+    }
+
+    window.toggleSFX = function () {
+      sfxEnabled = !sfxEnabled;
+      localStorage.setItem('st_sfx', sfxEnabled ? 'on' : 'off');
+      updateSFXIcon();
+      if (sfxEnabled) ArcadeSFX.click();
+    };
+
+    window.toggleTheme = function () {
+      const isDark = !document.body.classList.contains('dark-theme');
+      document.body.classList.toggle('dark-theme', isDark);
+      localStorage.setItem('st_theme', isDark ? 'dark' : 'light');
+      ArcadeSFX.click();
+    };
 
     const safeReadJSON = (key, fallback) => {
       try {
@@ -363,556 +356,187 @@
       } catch (_) { return fallback; }
     };
 
-    // =========================================================================
-    // 2. STRICT LOGIN CHECK (REDIRECTS TO login.html IF NOT LOGGED IN)
-    // =========================================================================
-    function verifyUserLogin() {
-      const ghName = (localStorage.getItem('gh_user_name') || '').trim();
-      const profileObj = safeReadJSON('st_player_profile', {});
-      const profileName = (profileObj.name || '').trim();
-      const savedEmail = (localStorage.getItem('gh_user_email') || profileObj.email || '').trim();
+    function escapeHTML(value) {
+      return String(value ?? '').replace(/[&<>"']/g, ch => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[ch]));
+    }
 
-      const validName = ghName || (profileName && profileName !== 'ST Player' ? profileName : '');
-
-      if (!validName) {
-        // User is not logged in -> send directly to login.html
-        const gateText = document.getElementById('authGateText');
-        if (gateText) gateText.textContent = "Login required to view & sync Achievements. Redirecting to Login...";
-        setTimeout(() => {
-          window.location.replace('login.html');
-        }, 600);
-        return false;
+    function getOrCreatePlayerId() {
+      const profile = safeReadJSON('st_player_profile', {});
+      let uid = localStorage.getItem('gh_user_uid') || localStorage.getItem('st_user_uid') || profile.uid || profile.id;
+      if (!uid) {
+        uid = 'player_' + Math.random().toString(36).substring(2, 10);
+        localStorage.setItem('st_user_uid', uid);
       }
-
-      currentUserName = validName;
-      currentUserPhoto = localStorage.getItem('gh_user_photo') || localStorage.getItem('st_user_photo') || profileObj.photo || '';
-      // Sanitize user key for Firebase Realtime Database path
-      const rawIdentifier = savedEmail || validName;
-      currentUserKey = rawIdentifier.toLowerCase().replace(/[^a-z0-9_-]/g, '_');
-
-      // Hide Auth Gate Overlay
-      document.getElementById('authGateOverlay').classList.add('hidden');
-      updateUserHeaderAndNav();
-      return true;
+      return String(uid).replace(/[.#$[\]/]/g, '_');
     }
 
-    function updateUserHeaderAndNav() {
-      document.getElementById('playerNameDisplay').textContent = currentUserName;
-      const avatarBox = document.getElementById('playerAvatarBox');
-      const letter = currentUserName.charAt(0).toUpperCase();
+    async function syncToFirebase(xp, level, gamesPlayed, favCount) {
+      const uid = getOrCreatePlayerId();
+      const savedName = localStorage.getItem('gh_user_name') || safeReadJSON('st_player_profile', {}).name || 'ST Player';
+      const savedPhoto = localStorage.getItem('gh_user_photo') || localStorage.getItem('st_user_photo') || '';
 
-      if (currentUserPhoto) {
-        avatarBox.innerHTML = `<img src="${currentUserPhoto}" class="w-full h-full object-cover" onerror="this.parentElement.textContent='${letter}'">`;
-      } else {
-        avatarBox.textContent = letter;
-      }
+      const payload = {
+        name: savedName,
+        photo: savedPhoto,
+        xp,
+        level,
+        gamesPlayed,
+        favCount,
+        updatedAt: Date.now()
+      };
 
-      // Bottom Nav Profile
-      document.getElementById('bottomDefaultIcon').classList.add('hidden');
-      const userLogo = document.getElementById('bottomUserLogo');
-      userLogo.classList.remove('hidden');
-      document.getElementById('bottomLoginLabel').textContent = currentUserName;
-      if (currentUserPhoto) {
-        userLogo.innerHTML = `<img src="${currentUserPhoto}" class="w-full h-full rounded-full object-cover">`;
-      } else {
-        userLogo.textContent = letter;
-      }
+      await Promise.allSettled([
+        set(ref(dbPrimary, `leaderboard/${uid}`), payload),
+        set(ref(dbSecondary, `leaderboard/${uid}`), payload)
+      ]);
     }
 
-    // =========================================================================
-    // 3. 4:00 AM DAILY CYCLE CALCULATOR & COUNTDOWN TIMER
-    // =========================================================================
-    function get4AMCycleKey() {
-      // Subtract 4 hours so any time before 4:00 AM belongs to the previous day's cycle
-      const shifted = new Date(Date.now() - 4 * 60 * 60 * 1000);
-      const y = shifted.getFullYear();
-      const m = String(shifted.getMonth() + 1).padStart(2, '0');
-      const d = String(shifted.getDate()).padStart(2, '0');
-      return `${y}-${m}-${d}`;
-    }
-
-    function getNext4AMTimestamp() {
-      const now = new Date();
-      const next4AM = new Date(now);
-      next4AM.setHours(4, 0, 0, 0);
-      if (now >= next4AM) {
-        next4AM.setDate(next4AM.getDate() + 1);
-      }
-      return next4AM.getTime();
-    }
-
-    function start4AMCountdown() {
-      const timerEl = document.getElementById('resetCountdown');
-      setInterval(() => {
-        const diff = getNext4AMTimestamp() - Date.now();
-        if (diff <= 0) {
-          checkDaily4AMReset();
-          return;
-        }
-        const hrs = String(Math.floor(diff / (1000 * 60 * 60))).padStart(2, '0');
-        const mins = String(Math.floor((diff / (1000 * 60)) % 60)).padStart(2, '0');
-        const secs = String(Math.floor((diff / 1000) % 60)).padStart(2, '0');
-        timerEl.textContent = `${hrs}:${mins}:${secs}`;
-      }, 1000);
-    }
-
-    // =========================================================================
-    // 4. PLAYER ACHIEVEMENT STATE, SCALING MISSIONS & LEVEL TIERS
-    // =========================================================================
-    let playerState = {
-      xp: 0,
-      level: 1,
-      missionsCompleted: 0,
-      streak: 1,
-      lastCycleKey: '',
-      dailyBonusPlays: 0,
-      claimedDailyIds: [],
-      levelTiers: {
-        play_tier: 1,
-        fav_tier: 1,
-        mission_tier: 1,
-        xp_tier: 1
+    /* MISSIONS DEFINITION */
+    const MISSIONS = [
+      {
+        id: 'first_play',
+        title: '🎮 Arcade Initiate',
+        desc: 'Play at least 1 game on ST Games.',
+        rewardXp: 150,
+        check: (played, favs) => played >= 1
       },
-      updatedAt: 0
-    };
-
-    function calculateLevelFromXP(xp) {
-      // Every level requires slightly more XP: Level 1 = 0..199, Level 2 = 200..499, etc.
-      let lvl = 1;
-      let req = 200;
-      let remaining = xp;
-      while (remaining >= req) {
-        remaining -= req;
-        lvl++;
-        req = Math.floor(200 + (lvl - 1) * 100);
+      {
+        id: 'gamer_5',
+        title: '🔥 Gaming Enthusiast',
+        desc: 'Play 5 different games.',
+        rewardXp: 300,
+        check: (played, favs) => played >= 5
+      },
+      {
+        id: 'gamer_10',
+        title: '⚡ Arcade Veteran',
+        desc: 'Play 10 or more games.',
+        rewardXp: 500,
+        check: (played, favs) => played >= 10
+      },
+      {
+        id: 'first_fav',
+        title: '❤️ Heart Collector',
+        desc: 'Heart / favourite at least 1 game.',
+        rewardXp: 100,
+        check: (played, favs) => favs >= 1
+      },
+      {
+        id: 'fav_5',
+        title: '⭐ Super Fan',
+        desc: 'Save 5 games to your favourites.',
+        rewardXp: 250,
+        check: (played, favs) => favs >= 5
+      },
+      {
+        id: 'daily_login',
+        title: '🎁 Daily Returner',
+        desc: 'Claim your daily visitor bonus.',
+        rewardXp: 100,
+        check: () => true // Always claimable
       }
-      return { level: lvl, currentLevelXP: remaining, requiredXP: req };
-    }
+    ];
 
-    // Build Daily Missions scaled by Player Level (Easy -> Medium -> Hard -> Extreme)
-    function getDailyMissionsList() {
-      const lvl = playerState.level || 1;
-      const playedSet = new Set(safeReadJSON('st_played_games', []));
-      const favSet = new Set(safeReadJSON('st_favorite_games', []));
-      const totalPlayed = playedSet.size + (playerState.dailyBonusPlays || 0);
-      const totalFavs = favSet.size;
+    function renderAchievementsPage() {
+      const playedGames = safeReadJSON('st_played_games', []);
+      const favoriteGames = safeReadJSON('st_favorite_games', []);
+      const claimedMissions = safeReadJSON('st_claimed_missions', {});
+      const bonusXp = parseInt(localStorage.getItem('st_bonus_xp') || '0', 10) || 0;
 
-      // Targets scale up as player level increases
-      const easyPlayTarget = Math.min(13, 1 + Math.floor((lvl - 1) / 3));
-      const easyFavTarget = Math.min(10, 1 + Math.floor((lvl - 1) / 4));
-      const medPlayTarget = Math.min(13, 3 + Math.floor((lvl - 1) / 2));
-      const medFavTarget = Math.min(12, 2 + Math.floor((lvl - 1) / 3));
-      const hardPlayTarget = Math.min(15, 5 + (lvl - 1));
-      const hardClaimTarget = 3;
-      const extremePlayTarget = Math.min(20, 8 + (lvl - 1) * 2);
+      const totalXp = 200 + (playedGames.length * 150) + (favoriteGames.length * 50) + bonusXp;
+      const level = Math.max(1, Math.floor(totalXp / 200) + 1);
 
-      return [
-        {
-          id: 'daily_easy_warmup',
-          title: 'Arcade Warm-Up',
-          desc: `Play ${easyPlayTarget} game${easyPlayTarget > 1 ? 's' : ''} today`,
-          difficulty: 'easy',
-          xpReward: 50 + lvl * 10,
-          current: totalPlayed,
-          target: easyPlayTarget,
-          icon: 'fa-solid fa-play'
-        },
-        {
-          id: 'daily_easy_heart',
-          title: 'Game Collector',
-          desc: `Have at least ${easyFavTarget} game${easyFavTarget > 1 ? 's' : ''} in your Favourites`,
-          difficulty: 'easy',
-          xpReward: 60 + lvl * 10,
-          current: totalFavs,
-          target: easyFavTarget,
-          icon: 'fa-solid fa-heart'
-        },
-        {
-          id: 'daily_med_explorer',
-          title: 'Genre Explorer',
-          desc: `Play ${medPlayTarget} different games in ST Games`,
-          difficulty: 'medium',
-          xpReward: 120 + lvl * 20,
-          current: totalPlayed,
-          target: medPlayTarget,
-          icon: 'fa-solid fa-compass'
-        },
-        {
-          id: 'daily_med_curator',
-          title: 'All-Star Favourites',
-          desc: `Save ${medFavTarget} favourite games to your hub`,
-          difficulty: 'medium',
-          xpReward: 140 + lvl * 20,
-          current: totalFavs,
-          target: medFavTarget,
-          icon: 'fa-solid fa-star'
-        },
-        {
-          id: 'daily_hard_marathon',
-          title: 'High-Score Marathon',
-          desc: `Complete ${hardPlayTarget} game sessions today`,
-          difficulty: 'hard',
-          xpReward: 250 + lvl * 35,
-          current: totalPlayed,
-          target: hardPlayTarget,
-          icon: 'fa-solid fa-fire-flame-curved'
-        },
-        {
-          id: 'daily_hard_taskmaster',
-          title: 'Daily Taskmaster',
-          desc: `Claim ${hardClaimTarget} daily missions today`,
-          difficulty: 'hard',
-          xpReward: 280 + lvl * 40,
-          current: (playerState.claimedDailyIds || []).length,
-          target: hardClaimTarget,
-          icon: 'fa-solid fa-bolt'
-        },
-        {
-          id: 'daily_extreme_champion',
-          title: 'Undisputed ST Champion',
-          desc: `Reach ${extremePlayTarget} game sessions & sync to cloud`,
-          difficulty: 'extreme',
-          xpReward: 500 + lvl * 60,
-          current: totalPlayed,
-          target: extremePlayTarget,
-          icon: 'fa-solid fa-crown'
-        }
-      ];
-    }
+      // Update Header Banner
+      document.getElementById('myXpDisplay').textContent = totalXp.toLocaleString();
+      document.getElementById('myLevelDisplay').textContent = `LVL ${level}`;
 
-    // Progressive Level Achievements (Tasks automatically increase when claimed!)
-    function getProgressiveAchievements() {
-      const tiers = playerState.levelTiers || { play_tier: 1, fav_tier: 1, mission_tier: 1, xp_tier: 1 };
-      const playedCount = new Set(safeReadJSON('st_played_games', [])).size + (playerState.dailyBonusPlays || 0);
-      const favCount = new Set(safeReadJSON('st_favorite_games', [])).size;
+      const savedPhoto = localStorage.getItem('gh_user_photo') || localStorage.getItem('st_user_photo');
+      const savedName = localStorage.getItem('gh_user_name') || safeReadJSON('st_player_profile', {}).name || 'ST Player';
+      document.getElementById('myPlayerName').textContent = savedName;
 
-      return [
-        {
-          key: 'play_tier',
-          tier: tiers.play_tier,
-          title: `Arcade Veteran • Tier ${tiers.play_tier}`,
-          desc: `Play ${tiers.play_tier * 3} games across ST Games (increases next level)`,
-          current: playedCount,
-          target: tiers.play_tier * 3,
-          xpReward: tiers.play_tier * 150,
-          icon: 'fa-solid fa-gamepad'
-        },
-        {
-          key: 'fav_tier',
-          tier: tiers.fav_tier,
-          title: `Curator of Fun • Tier ${tiers.fav_tier}`,
-          desc: `Add ${tiers.fav_tier * 2} games to your Favourites list`,
-          current: favCount,
-          target: tiers.fav_tier * 2,
-          xpReward: tiers.fav_tier * 120,
-          icon: 'fa-solid fa-heart'
-        },
-        {
-          key: 'mission_tier',
-          tier: tiers.mission_tier,
-          title: `Mission Specialist • Tier ${tiers.mission_tier}`,
-          desc: `Complete ${tiers.mission_tier * 4} total Daily Missions`,
-          current: playerState.missionsCompleted || 0,
-          target: tiers.mission_tier * 4,
-          xpReward: tiers.mission_tier * 200,
-          icon: 'fa-solid fa-medal'
-        },
-        {
-          key: 'xp_tier',
-          tier: tiers.xp_tier,
-          title: `Legend of Victory • Tier ${tiers.xp_tier}`,
-          desc: `Reach ${tiers.xp_tier * 500} Total XP on your profile`,
-          current: playerState.xp || 0,
-          target: tiers.xp_tier * 500,
-          xpReward: tiers.xp_tier * 250,
-          icon: 'fa-solid fa-trophy'
-        }
-      ];
-    }
-
-    // Check if 4:00 AM passed and reload daily missions
-    function checkDaily4AMReset() {
-      const currentCycle = get4AMCycleKey();
-      if (playerState.lastCycleKey !== currentCycle) {
-        if (playerState.lastCycleKey) {
-          playerState.streak = (playerState.streak || 1) + 1;
-        }
-        playerState.lastCycleKey = currentCycle;
-        playerState.claimedDailyIds = [];
-        playerState.dailyBonusPlays = 0;
-        saveAndSyncState();
-      }
-    }
-
-    // =========================================================================
-    // 5. FIREBASE REALTIME DATABASE SYNC
-    // =========================================================================
-    function setSyncBadge(statusText, iconClass) {
-      const txt = document.getElementById('syncText');
-      const ico = document.getElementById('syncIcon');
-      if (txt) txt.textContent = statusText;
-      if (ico) ico.className = iconClass;
-    }
-
-    async function loadFromFirebase() {
-      const localSaved = safeReadJSON(`st_ach_state_${currentUserKey}`, null);
-      if (localSaved) {
-        playerState = { ...playerState, ...localSaved };
+      const avatarBox = document.getElementById('myAvatarBox');
+      if (savedPhoto) {
+        avatarBox.innerHTML = `<img src="${escapeHTML(savedPhoto)}" class="w-full h-full object-cover">`;
+      } else {
+        avatarBox.textContent = savedName.charAt(0).toUpperCase();
       }
 
-      setSyncBadge('Syncing...', 'fa-solid fa-arrows-rotate fa-spin text-xs');
-      try {
-        const res = await fetch(`${FIREBASE_DB_URL}/st_achievements/${currentUserKey}.json`);
-        if (res.ok) {
-          const remoteData = await res.json();
-          if (remoteData && (remoteData.updatedAt || 0) >= (playerState.updatedAt || 0)) {
-            playerState = { ...playerState, ...remoteData };
-          }
-        }
-        checkDaily4AMReset();
-        renderAll();
-        await syncWithFirebase(false);
-      } catch (err) {
-        checkDaily4AMReset();
-        renderAll();
-        setSyncBadge('Saved Locally', 'fa-solid fa-cloud text-xs');
-      }
-    }
+      let completedCount = 0;
+      const gridEl = document.getElementById('missionsGrid');
 
-    async function syncWithFirebase(showAlert = false) {
-      if (!currentUserKey) return;
-      playerState.updatedAt = Date.now();
-      localStorage.setItem(`st_ach_state_${currentUserKey}`, JSON.stringify(playerState));
+      gridEl.innerHTML = MISSIONS.map(m => {
+        const isEligible = m.check(playedGames.length, favoriteGames.length);
+        const isClaimed = !!claimedMissions[m.id];
+        if (isClaimed) completedCount++;
 
-      setSyncBadge('Syncing...', 'fa-solid fa-arrows-rotate fa-spin text-xs');
-      try {
-        const payload = {
-          ...playerState,
-          playerName: currentUserName,
-          favoritesCount: new Set(safeReadJSON('st_favorite_games', [])).size,
-          playedCount: new Set(safeReadJSON('st_played_games', [])).size
-        };
-        const res = await fetch(`${FIREBASE_DB_URL}/st_achievements/${currentUserKey}.json`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        if (res.ok) {
-          setSyncBadge('Firebase Synced ✓', 'fa-solid fa-cloud-check text-xs');
-          if (showAlert) alert('Achievements & Level progress synced to Firebase!');
+        let btnHtml = '';
+        if (isClaimed) {
+          btnHtml = `<span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-extrabold px-3 py-1.5 rounded-xl flex items-center gap-1.5"><i class="fa-solid fa-check"></i> Claimed (+${m.rewardXp} XP)</span>`;
+        } else if (isEligible) {
+          btnHtml = `<button onclick="claimMission('${m.id}', ${m.rewardXp})" class="bg-[#32ffdc] hover:bg-cyan-300 text-[#07222d] font-extrabold text-xs px-4 py-1.5 rounded-xl shadow transition active:scale-95">Claim +${m.rewardXp} XP</button>`;
         } else {
-          setSyncBadge('Local Saved', 'fa-solid fa-cloud text-xs');
+          btnHtml = `<span class="bg-slate-800 text-slate-400 text-xs font-bold px-3 py-1.5 rounded-xl">In Progress</span>`;
         }
-      } catch (_) {
-        setSyncBadge('Offline Saved', 'fa-solid fa-cloud text-xs');
-      }
-    }
 
-    function saveAndSyncState() {
-      const lvlInfo = calculateLevelFromXP(playerState.xp || 0);
-      playerState.level = lvlInfo.level;
-      renderAll();
-      syncWithFirebase(false);
-    }
-
-    // =========================================================================
-    // 6. CLAIM REWARDS & RENDER UI
-    // =========================================================================
-    function claimDailyMission(missionId, xpReward) {
-      if (!playerState.claimedDailyIds) playerState.claimedDailyIds = [];
-      if (playerState.claimedDailyIds.includes(missionId)) return;
-
-      playerState.claimedDailyIds.push(missionId);
-      playerState.xp = (playerState.xp || 0) + xpReward;
-      playerState.missionsCompleted = (playerState.missionsCompleted || 0) + 1;
-      saveAndSyncState();
-    }
-
-    function claimLevelTier(tierKey, xpReward) {
-      if (!playerState.levelTiers) {
-        playerState.levelTiers = { play_tier: 1, fav_tier: 1, mission_tier: 1, xp_tier: 1 };
-      }
-      playerState.levelTiers[tierKey] = (playerState.levelTiers[tierKey] || 1) + 1;
-      playerState.xp = (playerState.xp || 0) + xpReward;
-      saveAndSyncState();
-    }
-
-    function filterMissions(diff) {
-      currentFilter = diff;
-      document.querySelectorAll('.filter-chip').forEach(btn => btn.classList.remove('active'));
-      const activeBtn = document.getElementById('filter-' + diff);
-      if (activeBtn) activeBtn.classList.add('active');
-      renderDailyMissions();
-    }
-
-    function renderHeroAndLevel() {
-      const favSet = new Set(safeReadJSON('st_favorite_games', []));
-      const playedSet = new Set(safeReadJSON('st_played_games', []));
-
-      document.getElementById('favoriteCount').textContent = favSet.size;
-      document.getElementById('playedCount').textContent = playedSet.size + (playerState.dailyBonusPlays || 0);
-
-      const lvlInfo = calculateLevelFromXP(playerState.xp || 0);
-      playerState.level = lvlInfo.level;
-
-      document.getElementById('playerLevelBadge').textContent = `LVL ${lvlInfo.level}`;
-      document.getElementById('currLvlNum').textContent = lvlInfo.level;
-      document.getElementById('playerTotalXP').textContent = playerState.xp || 0;
-      document.getElementById('playerMissionsDone').textContent = playerState.missionsCompleted || 0;
-      document.getElementById('playerStreak').textContent = `${playerState.streak || 1}🔥`;
-
-      const pct = Math.min(100, Math.round((lvlInfo.currentLevelXP / lvlInfo.requiredXP) * 100));
-      document.getElementById('xpProgressText').textContent = `${lvlInfo.currentLevelXP} / ${lvlInfo.requiredXP} XP (${pct}%)`;
-      document.getElementById('xpProgressBar').style.width = `${pct}%`;
-    }
-
-    function renderDailyMissions() {
-      const container = document.getElementById('dailyMissionsContainer');
-      const missions = getDailyMissionsList().filter(m => currentFilter === 'all' || m.difficulty === currentFilter);
-      const claimed = playerState.claimedDailyIds || [];
-
-      container.innerHTML = missions.map(m => {
-        const isClaimed = claimed.includes(m.id);
-        const progress = Math.min(m.target, m.current);
-        const pct = Math.min(100, Math.round((progress / m.target) * 100));
-        const canClaim = !isClaimed && progress >= m.target;
-
-        const diffClass = {
-          easy: 'diff-easy',
-          medium: 'diff-medium',
-          hard: 'diff-hard',
-          extreme: 'diff-extreme'
-        }[m.difficulty] || 'diff-easy';
+        const cardClass = isClaimed ? 'mission-card completed' : 'mission-card';
 
         return `
-          <div class="p-4 rounded-2xl border border-teal-500/25 bg-slate-50/90 dark:bg-slate-900/90 flex flex-col justify-between gap-3 shadow-sm">
+          <div class="${cardClass} flex flex-col justify-between gap-3">
             <div>
-              <div class="flex items-center justify-between gap-2 mb-2">
-                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase ${diffClass}">${m.difficulty}</span>
-                <span class="mono-font text-xs font-extrabold text-teal-600 dark:text-[#32ffdc]">+${m.xpReward} XP</span>
+              <div class="flex items-center justify-between gap-2 mb-1">
+                <h3 class="brand-font text-sm sm:text-base font-bold text-white">${escapeHTML(m.title)}</h3>
+                <span class="text-[10px] font-extrabold px-2 py-0.5 rounded bg-[#32ffdc]/20 text-[#32ffdc] border border-[#32ffdc]/30">+${m.rewardXp} XP</span>
               </div>
-              <div class="flex items-center gap-2.5">
-                <div class="w-9 h-9 rounded-xl bg-teal-500/15 text-teal-600 dark:text-[#32ffdc] flex items-center justify-center text-sm shrink-0">
-                  <i class="${m.icon}"></i>
-                </div>
-                <div>
-                  <h4 class="font-extrabold text-sm text-[#07222d] dark:text-white">${m.title}</h4>
-                  <p class="text-[11px] text-slate-500 dark:text-slate-400">${m.desc}</p>
-                </div>
-              </div>
+              <p class="text-xs text-slate-300">${escapeHTML(m.desc)}</p>
             </div>
-
-            <div>
-              <div class="flex justify-between text-[11px] font-bold mb-1">
-                <span class="text-slate-500">Progress</span>
-                <span class="mono-font">${progress} / ${m.target}</span>
-              </div>
-              <div class="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden mb-3">
-                <div class="h-full bg-gradient-to-r from-teal-500 to-[#32ffdc]" style="width: ${pct}%"></div>
-              </div>
-
-              ${isClaimed ? `
-                <button disabled class="w-full py-2 rounded-xl text-xs font-extrabold bg-emerald-500/20 text-emerald-500 border border-emerald-500/30">
-                  <i class="fa-solid fa-check mr-1"></i> Completed Today
-                </button>
-              ` : canClaim ? `
-                <button onclick="claimDailyMission('${m.id}', ${m.xpReward})" class="glow-button w-full py-2 rounded-xl text-xs font-extrabold text-white">
-                  <i class="fa-solid fa-gift mr-1"></i> Claim +${m.xpReward} XP
-                </button>
-              ` : `
-                <a href="index.html#gamesGrid" class="block text-center w-full py-2 rounded-xl text-xs font-extrabold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-teal-400 border border-transparent transition">
-                  Go Play Games →
-                </a>
-              `}
+            <div class="flex items-center justify-between pt-2 border-t border-white/10">
+              <span class="text-[10px] text-slate-400 font-bold">${isClaimed ? 'Completed' : (isEligible ? 'Ready to Claim!' : 'Locked')}</span>
+              ${btnHtml}
             </div>
           </div>
         `;
       }).join('');
+
+      document.getElementById('myMissionStats').textContent = `${completedCount} / ${MISSIONS.length} Missions Completed`;
     }
 
-    function renderProgressiveAchievements() {
-      const container = document.getElementById('levelAchievementsContainer');
-      const list = getProgressiveAchievements();
-      const tiers = playerState.levelTiers || { play_tier: 1, fav_tier: 1, mission_tier: 1, xp_tier: 1 };
-      const totalUnlocked = (tiers.play_tier - 1) + (tiers.fav_tier - 1) + (tiers.mission_tier - 1) + (tiers.xp_tier - 1);
-      document.getElementById('unlockedBadgesCount').textContent = `${totalUnlocked} Tiers Unlocked`;
+    window.claimMission = async function (missionId, rewardXp) {
+      ArcadeSFX.levelUp();
+      const claimedMissions = safeReadJSON('st_claimed_missions', {});
+      claimedMissions[missionId] = true;
+      localStorage.setItem('st_claimed_missions', JSON.stringify(claimedMissions));
 
-      container.innerHTML = list.map(a => {
-        const progress = Math.min(a.target, a.current);
-        const pct = Math.min(100, Math.round((progress / a.target) * 100));
-        const ready = progress >= a.target;
+      const currentBonus = parseInt(localStorage.getItem('st_bonus_xp') || '0', 10) || 0;
+      localStorage.setItem('st_bonus_xp', String(currentBonus + rewardXp));
 
-        return `
-          <div class="p-4 rounded-2xl border border-teal-500/25 bg-slate-50/90 dark:bg-slate-900/90 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div class="flex items-center gap-3.5 min-w-0 flex-1">
-              <div class="w-11 h-11 rounded-2xl bg-amber-500/15 border border-amber-500/40 text-amber-500 flex items-center justify-center text-lg shrink-0">
-                <i class="${a.icon}"></i>
-              </div>
-              <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-2 flex-wrap">
-                  <h4 class="font-extrabold text-sm text-[#07222d] dark:text-white">${a.title}</h4>
-                  <span class="px-2 py-0.5 rounded text-[10px] font-black bg-teal-500/15 text-teal-600 dark:text-[#32ffdc]">+${a.xpReward} XP</span>
-                </div>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">${a.desc}</p>
-                <div class="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden mt-2">
-                  <div class="h-full bg-gradient-to-r from-amber-400 to-orange-500" style="width: ${pct}%"></div>
-                </div>
-              </div>
-            </div>
+      // Re-calculate & Sync with Firebase
+      const playedGames = safeReadJSON('st_played_games', []);
+      const favoriteGames = safeReadJSON('st_favorite_games', []);
+      const newBonus = currentBonus + rewardXp;
+      const totalXp = 200 + (playedGames.length * 150) + (favoriteGames.length * 50) + newBonus;
+      const level = Math.max(1, Math.floor(totalXp / 200) + 1);
 
-            <div class="flex sm:flex-col items-center sm:items-end justify-between gap-2 shrink-0">
-              <span class="mono-font text-xs font-extrabold text-slate-600 dark:text-slate-300">${progress} / ${a.target}</span>
-              ${ready ? `
-                <button onclick="claimLevelTier('${a.key}', ${a.xpReward})" class="glow-button px-4 py-2 rounded-xl text-xs font-extrabold text-white">
-                  Level Up Tier (+${a.xpReward} XP)
-                </button>
-              ` : `
-                <span class="px-3 py-1.5 rounded-xl text-[11px] font-bold bg-slate-200 dark:bg-slate-800 text-slate-500">In Progress</span>
-              `}
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function renderAll() {
-      renderHeroAndLevel();
-      renderDailyMissions();
-      renderProgressiveAchievements();
-    }
-
-    function playRandomGameFromAchievements() {
-      playerState.dailyBonusPlays = (playerState.dailyBonusPlays || 0) + 1;
-      saveAndSyncState();
-      window.location.href = 'index.html#gamesGrid';
-    }
-
-    async function loadNotice() {
-      try {
-        const res = await fetch(`notice.txt?t=${Date.now()}`, { cache: 'no-store' });
-        if (res.ok) {
-          const txt = await res.text();
-          if (txt.trim()) {
-            document.getElementById('noticeText').textContent = txt.trim();
-            document.getElementById('noticeTextDuplicate').textContent = txt.trim();
-          }
-        }
-      } catch (_) {}
-    }
-
-    function toggleTheme() {
-      const isDark = !document.body.classList.contains('dark-theme');
-      document.body.classList.toggle('dark-theme', isDark);
-      localStorage.setItem('st_theme', isDark ? 'dark' : 'light');
-    }
+      await syncToFirebase(totalXp, level, playedGames.length, favoriteGames.length);
+      renderAchievementsPage();
+    };
 
     window.addEventListener('DOMContentLoaded', () => {
       if (localStorage.getItem('st_theme') === 'dark') document.body.classList.add('dark-theme');
-      loadNotice();
-      start4AMCountdown();
+      updateSFXIcon();
+      renderAchievementsPage();
 
-      if (verifyUserLogin()) {
-        loadFromFirebase();
+      // Bottom nav user profile
+      const savedPhoto = localStorage.getItem('gh_user_photo') || localStorage.getItem('st_user_photo');
+      const savedName = localStorage.getItem('gh_user_name') || safeReadJSON('st_player_profile', {}).name;
+      if (savedName && savedName !== 'ST Player') {
+        document.getElementById('bottomDefaultIcon').classList.add('hidden');
+        const userLogo = document.getElementById('bottomUserLogo');
+        userLogo.classList.remove('hidden');
+        document.getElementById('bottomLoginLabel').textContent = savedName;
+        if (savedPhoto) userLogo.innerHTML = `<img src="${escapeHTML(savedPhoto)}" class="w-full h-full rounded-full object-cover" decoding="async">`;
+        else userLogo.textContent = savedName.charAt(0).toUpperCase();
       }
     });
   </script>
