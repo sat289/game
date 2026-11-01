@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thief Puzzle - Home & Leaderboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body {
+      background: #f4f1ea;
+      color: #222;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .app-container {
+      width: 100%;
+      max-width: 440px;
+      background: #fffdf9;
+      border: 3px solid #222;
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    h1 { text-align: center; font-size: 28px; letter-spacing: 0.5px; }
+    .subtitle { text-align: center; color: #666; font-size: 14px; margin-top: -12px; }
+    .card {
+      background: #fef4e2;
+      border: 2px solid #222;
+      border-radius: 14px;
+      padding: 16px;
+    }
+    .input-group { display: flex; gap: 8px; margin-top: 10px; }
+    input[type="text"] {
+      flex: 1;
+      padding: 10px 12px;
+      border: 2px solid #222;
+      border-radius: 10px;
+      font-size: 15px;
+    }
+    button {
+      cursor: pointer;
+      border: 2px solid #222;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-weight: 700;
+      font-size: 15px;
+      transition: transform 0.1s;
+    }
+    button:active { transform: scale(0.97); }
+    .btn-primary { background: #38d800; color: #fff; text-shadow: 0 1px 2px #000; width: 100%; font-size: 18px; padding: 14px; }
+    .btn-google { background: #4285F4; color: #fff; width: 100%; margin-top: 10px; }
+    .btn-save { background: #ff9800; color: #fff; }
+    .btn-logout { background: #e53935; color: #fff; font-size: 12px; padding: 6px 10px; }
+    .user-bar { display: flex; justify-content: space-between; align-items: center; }
+    .levels-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .lvl-btn {
+      padding: 10px 0;
+      text-align: center;
+      background: #67c2ff;
+      color: #fff;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+      border-radius: 10px;
+      border: 2px solid #222;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .lvl-btn.locked { background: #ccc; color: #777; text-shadow: none; cursor: not-allowed; }
+    .leaderboard-list { list-style: none; margin-top: 10px; max-height: 220px; overflow-y: auto; }
+    .leaderboard-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 10px;
+      border-bottom: 1px dashed #bbb;
+      font-size: 14px;
+    }
+    .leaderboard-item:first-child { font-weight: bold; color: #d35400; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <h1>🕵️‍♂️ THIEF PUZZLE</h1>
+    <p class="subtitle">Stretch, wrap, and steal without getting caught!</p>
+
+    <!-- Login / Guest Setup Section -->
+    <div id="authSection" class="card">
+      <h3>Enter Player Name</h3>
+      <div class="input-group">
+        <input type="text" id="guestNameInput" placeholder="Your nickname..." maxlength="18" />
+        <button id="saveGuestBtn" class="btn-save">Save</button>
+      </div>
+      <button id="googleLoginBtn" class="btn-google">Sign in with Google</button>
+    </div>
+
+    <!-- Active Player Profile Section -->
+    <div id="profileSection" class="card hidden">
+      <div class="user-bar">
+        <div>
+          <strong id="displayPlayerName">Player</strong>
+          <div style="font-size:12px; color:#555;">Max Level Reached: <span id="displayMaxLevel">1</span></div>
+        </div>
+        <button id="switchUserBtn" class="btn-logout">Change User</button>
+      </div>
+    </div>
+
+    <!-- Continue & Level Selection -->
+    <button id="continueBtn" class="btn-primary">▶ CONTINUE (LEVEL 1)</button>
+
+    <div class="card">
+      <h3>Select Level</h3>
+      <div id="levelsGrid" class="levels-grid"></div>
+    </div>
+
+    <!-- Firebase Live Leaderboard -->
+    <div class="card">
+      <h3>🏆 Leaderboard (Top Players)</h3>
+      <ul id="leaderboardList" class="leaderboard-list">
+        <li class="leaderboard-item">Loading scores...</li>
+      </ul>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBzLchy5M2fLne4c7Ghw1KNN8wVrlZdd8M",
+      authDomain: "friendsgame-872f5.firebaseapp.com",
+      databaseURL: "https://friendsgame-872f5-default-rtdb.firebaseio.com",
+      projectId: "friendsgame-872f5",
+      storageBucket: "friendsgame-872f5.firebasestorage.app",
+      messagingSenderId: "522534013233",
+      appId: "1:522534013233:web:f5faa6e6795023d0420810",
+      measurementId: "G-PW5H3G97QR"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    const TOTAL_LEVELS = 5; // Match levels count in level.html
+    const STORAGE_KEY = "thief_puzzle_player_v1";
+
+    const authSection = document.getElementById("authSection");
+    const profileSection = document.getElementById("profileSection");
+    const displayPlayerName = document.getElementById("displayPlayerName");
+    const displayMaxLevel = document.getElementById("displayMaxLevel");
+    const continueBtn = document.getElementById("continueBtn");
+    const levelsGrid = document.getElementById("levelsGrid");
+    const leaderboardList = document.getElementById("leaderboardList");
+
+    let currentPlayer = JSON.parse(localStorage.getItem(STORAGE_KEY)) || null;
+
+    async function syncPlayerWithFirebase(player) {
+      if (!player || !player.uid) return;
+      try {
+        const userRef = ref(db, `leaderboard/${player.uid}`);
+        const snap = await get(userRef);
+        if (snap.exists()) {
+          const remoteData = snap.val();
+          if (remoteData.level > player.level) {
+            player.level = remoteData.level;
+          }
+        }
+        await set(userRef, {
+          username: player.username,
+          level: player.level || 1,
+          updatedAt: Date.now()
+        });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(player));
+        renderUI();
+      } catch (e) {
+        console.warn("Offline or Firebase rules restricted:", e);
+      }
+    }
+
+    function renderUI() {
+      if (currentPlayer && currentPlayer.username) {
+        authSection.classList.add("hidden");
+        profileSection.classList.remove("hidden");
+        displayPlayerName.textContent = currentPlayer.username;
+        displayMaxLevel.textContent = currentPlayer.level;
+        continueBtn.textContent = `▶ CONTINUE (LEVEL ${currentPlayer.level})`;
+      } else {
+        authSection.classList.remove("hidden");
+        profileSection.classList.add("hidden");
+        continueBtn.textContent = `▶ START GAME`;
+      }
+
+      const unlocked = currentPlayer ? currentPlayer.level : 1;
+      levelsGrid.innerHTML = "";
+      for (let i = 1; i <= TOTAL_LEVELS; i++) {
+        const btn = document.createElement("div");
+        btn.className = "lvl-btn" + (i > unlocked ? " locked" : "");
+        btn.textContent = i;
+        if (i <= unlocked) {
+          btn.onclick = () => {
+            if (!currentPlayer) {
+              alert("Please enter a nickname or sign in with Google first!");
+              return;
+            }
+            window.location.href = `level.html?level=${i}`;
+          };
+        }
+        levelsGrid.appendChild(btn);
+      }
+    }
+
+    // Save Guest Name in Phone/Browser LocalStorage
+    document.getElementById("saveGuestBtn").addEventListener("click", () => {
+      const name = document.getElementById("guestNameInput").value.trim();
+      if (!name) return alert("Please enter a username!");
+      const existingUid = currentPlayer?.uid || "guest_" + Math.random().toString(36).substring(2, 10);
+      currentPlayer = {
+        uid: existingUid,
+        username: name,
+        level: currentPlayer?.level || 1,
+        isGoogle: false
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(currentPlayer));
+      syncPlayerWithFirebase(currentPlayer);
+      renderUI();
+    });
+
+    // Google Login
+    document.getElementById("googleLoginBtn").addEventListener("click", async () => {
+      try {
+        const provider = new GoogleAuthProvider();
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+        currentPlayer = {
+          uid: user.uid,
+          username: user.displayName || user.email.split("@")[0],
+          level: currentPlayer?.level || 1,
+          isGoogle: true
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(currentPlayer));
+        await syncPlayerWithFirebase(currentPlayer);
+      } catch (err) {
+        alert("Google Sign-In error: " + err.message);
+      }
+    });
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        currentPlayer = {
+          uid: user.uid,
+          username: user.displayName || "Thief Player",
+          level: currentPlayer?.level || 1,
+          isGoogle: true
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(currentPlayer));
+        syncPlayerWithFirebase(currentPlayer);
+      } else if (currentPlayer) {
+        syncPlayerWithFirebase(currentPlayer);
+      }
+      renderUI();
+    });
+
+    document.getElementById("switchUserBtn").addEventListener("click", async () => {
+      if (currentPlayer?.isGoogle) await signOut(auth);
+      localStorage.removeItem(STORAGE_KEY);
+      currentPlayer = null;
+      renderUI();
+    });
+
+    continueBtn.addEventListener("click", () => {
+      if (!currentPlayer) {
+        const nameInput = document.getElementById("guestNameInput").value.trim();
+        if (nameInput) {
+          document.getElementById("saveGuestBtn").click();
+        } else {
+          return alert("Please enter your username or login with Google first!");
+        }
+      }
+      window.location.href = `level.html?level=${currentPlayer.level}`;
+    });
+
+    // Live Leaderboard Listener
+    const lbRef = ref(db, "leaderboard");
+    onValue(lbRef, (snapshot) => {
+      leaderboardList.innerHTML = "";
+      if (!snapshot.exists()) {
+        leaderboardList.innerHTML = `<li class="leaderboard-item">No players yet. Be the first!</li>`;
+        return;
+      }
+      const players = [];
+      snapshot.forEach((child) => players.push(child.val()));
+      players.sort((a, b) => b.level - a.level || (a.updatedAt || 0) - (b.updatedAt || 0));
+
+      players.slice(0, 15).forEach((p, idx) => {
+        const li = document.createElement("li");
+        li.className = "leaderboard-item";
+        li.innerHTML = `<span>#${idx + 1} ${p.username}</span><span>Level ${p.level}</span>`;
+        leaderboardList.appendChild(li);
+      });
+    });
+
+    renderUI();
+  </script>
+</body>
+</html>
