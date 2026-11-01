@@ -2,53 +2,53 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Thief Puzzle - Play Level</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; font-family: 'Segoe UI', Tahoma, sans-serif; }
-    body {
+    html, body {
+      width: 100%;
+      height: 100%;
       background: #18181f;
       display: flex;
       justify-content: center;
       align-items: center;
-      min-height: 100vh;
       overflow: hidden;
       color: #fff;
     }
     .game-wrapper {
       width: 100%;
       max-width: 420px;
-      height: 100vh;
-      max-height: 840px;
+      height: 100%;
+      max-height: 100vh;
       background: #23232c;
       position: relative;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      border: 3px solid #444;
-      box-shadow: 0 12px 35px rgba(0,0,0,0.5);
+      border: 2px solid #444;
     }
     .top-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 10px 16px;
+      padding: 8px 14px;
       background: #2b2b36;
       border-bottom: 2px solid #3b3b4a;
       flex-shrink: 0;
     }
     .home-circle {
-      width: 40px;
-      height: 40px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       background: linear-gradient(180deg, #ff9d2f, #e86f00);
       color: #fff;
       border: 2px solid #fff;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 18px;
+      font-size: 16px;
       cursor: pointer;
     }
     .restart-box {
@@ -58,11 +58,11 @@
       cursor: pointer;
       color: #ff9800;
       font-weight: 800;
-      font-size: 11px;
+      font-size: 10px;
     }
     .restart-icon {
-      width: 34px;
-      height: 34px;
+      width: 30px;
+      height: 30px;
       border-radius: 50%;
       border: 2px solid #fff;
       background: #ff9800;
@@ -70,14 +70,13 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 16px;
+      font-size: 14px;
     }
-    .level-title { font-size: 17px; font-weight: 800; color: #ffeb3b; }
+    .level-title { font-size: 16px; font-weight: 800; color: #ffeb3b; }
     .prompt-text {
       text-align: center;
-      font-size: 15px;
-      padding: 8px 16px;
-      min-height: 40px;
+      font-size: 14px;
+      padding: 6px 12px;
       color: #f5f5f5;
       font-weight: 700;
       background: #2c2c38;
@@ -86,16 +85,16 @@
     }
     canvas {
       width: 100%;
-      height: 420px;
       background: #fff8e8;
       touch-action: none;
       cursor: grab;
       flex-grow: 1;
+      display: block;
     }
     .bottom-bar {
       display: flex;
       justify-content: center;
-      padding: 12px 18px;
+      padding: 10px 16px;
       background: #2b2b36;
       border-top: 2px solid #3b3b4a;
       flex-shrink: 0;
@@ -103,15 +102,15 @@
     .hint-btn {
       background: linear-gradient(180deg, #29b6f6, #0288d1);
       color: #fff;
-      border: 3px solid #fff;
-      box-shadow: 0 4px 0 #01579b, 0 8px 15px rgba(0,0,0,0.3);
-      border-radius: 40px;
-      padding: 10px 38px;
-      font-size: 18px;
+      border: 2px solid #fff;
+      box-shadow: 0 3px 0 #01579b, 0 6px 12px rgba(0,0,0,0.3);
+      border-radius: 30px;
+      padding: 8px 32px;
+      font-size: 17px;
       font-weight: 800;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       cursor: pointer;
     }
     .ad-modal {
@@ -135,33 +134,33 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      gap: 26px;
+      gap: 20px;
       z-index: 30;
     }
     .hidden { display: none !important; }
     .trophy-card { text-align: center; }
     .RibbonText {
-      font-size: 30px;
+      font-size: 28px;
       font-weight: 900;
-      padding: 8px 36px;
-      border-radius: 30px;
+      padding: 6px 30px;
+      border-radius: 24px;
       letter-spacing: 2px;
       color: #fff;
-      margin-top: -12px;
-      border: 3px solid #fff;
+      margin-top: -10px;
+      border: 2px solid #fff;
     }
     .RibbonText.win { background: linear-gradient(180deg, #ff2a85, #b8004f); }
     .RibbonText.fail { background: linear-gradient(180deg, #7e57c2, #4527a0); }
     .modal-btn {
       background: linear-gradient(180deg, #54f000, #2db300);
       color: #fff;
-      border: 3px solid #111;
-      border-radius: 16px;
-      padding: 12px 48px;
-      font-size: 24px;
+      border: 2px solid #111;
+      border-radius: 14px;
+      padding: 10px 40px;
+      font-size: 20px;
       font-weight: 800;
       cursor: pointer;
-      box-shadow: 0 5px 0 #1b6e00;
+      box-shadow: 0 4px 0 #1b6e00;
     }
   </style>
 </head>
@@ -259,86 +258,86 @@
       {
         prompt: "I also want to eat roast chicken",
         thiefStyle: "bandana",
-        ledge: { x1: 0, y1: 200, x2: 95, y2: 200 },
-        table: { x: 255, y: 230, w: 95, h: 60 },
-        thief: { x: 48, y: 130, shoulderX: 62, shoulderY: 122 },
-        handStart: { x: 130, y: 250 },
-        target: { x: 300, y: 218, r: 24, kind: "chicken" },
-        pivots: [{ x: 175, y: 330, r: 24, kind: "rock" }],
+        ledge: { x1: 0, y1: 190, x2: 95, y2: 190 },
+        table: { x: 255, y: 220, w: 95, h: 60 },
+        thief: { x: 48, y: 125, shoulderX: 62, shoulderY: 117 },
+        handStart: { x: 130, y: 240 },
+        target: { x: 300, y: 208, r: 24, kind: "chicken" },
+        pivots: [{ x: 175, y: 310, r: 24, kind: "rock" }],
         hazards: [
-          { x: 215, y: 220, r: 34, kind: "girl" },
-          { x: 380, y: 220, r: 32, kind: "boy" }
+          { x: 215, y: 210, r: 34, kind: "girl" },
+          { x: 380, y: 210, r: 32, kind: "boy" }
         ]
       },
       {
         prompt: "I also want love balloons",
         thiefStyle: "cap",
-        thief: { x: 68, y: 305, shoulderX: 82, shoulderY: 295 },
-        handStart: { x: 135, y: 270 },
-        target: { x: 315, y: 100, r: 28, kind: "balloons" },
-        pivots: [{ x: 105, y: 110, r: 30, kind: "bin" }],
+        thief: { x: 68, y: 285, shoulderX: 82, shoulderY: 275 },
+        handStart: { x: 135, y: 250 },
+        target: { x: 315, y: 95, r: 28, kind: "balloons" },
+        pivots: [{ x: 105, y: 100, r: 30, kind: "bin" }],
         hazards: [
-          { x: 250, y: 180, r: 38, kind: "cat" },
-          { x: 365, y: 180, r: 35, kind: "dog" }
+          { x: 250, y: 170, r: 38, kind: "cat" },
+          { x: 365, y: 170, r: 35, kind: "dog" }
         ]
       },
       {
         prompt: "How to take away the treasure!",
         thiefStyle: "normal",
-        thief: { x: 62, y: 210, shoulderX: 78, shoulderY: 200 },
-        handStart: { x: 138, y: 215 },
-        target: { x: 360, y: 240, r: 25, kind: "treasure" },
-        pivots: [{ x: 200, y: 340, r: 16, kind: "rock" }],
+        thief: { x: 62, y: 195, shoulderX: 78, shoulderY: 185 },
+        handStart: { x: 138, y: 200 },
+        target: { x: 360, y: 225, r: 25, kind: "treasure" },
+        pivots: [{ x: 200, y: 320, r: 16, kind: "rock" }],
         hazards: [
-          { x: 200, y: 130, r: 32, kind: "door" },
-          { x: 200, y: 210, r: 32, kind: "door" },
-          { x: 285, y: 200, r: 35, kind: "guard" }
+          { x: 200, y: 120, r: 32, kind: "door" },
+          { x: 200, y: 195, r: 32, kind: "door" },
+          { x: 285, y: 185, r: 35, kind: "guard" }
         ]
       },
       {
         prompt: "Take the lady's purse.",
         thiefStyle: "mask",
         streetFloor: true,
-        bench: { x: 200, y: 260, w: 200 },
-        thief: { x: 55, y: 250, shoulderX: 68, shoulderY: 240 },
-        handStart: { x: 92, y: 180 },
-        target: { x: 368, y: 242, r: 22, kind: "purse" },
+        bench: { x: 200, y: 240, w: 200 },
+        thief: { x: 55, y: 230, shoulderX: 68, shoulderY: 220 },
+        handStart: { x: 92, y: 160 },
+        target: { x: 368, y: 222, r: 22, kind: "purse" },
         pivots: [
-          { x: 95, y: 80, r: 22, kind: "lamp" },
-          { x: 335, y: 80, r: 22, kind: "lamp" }
+          { x: 95, y: 75, r: 22, kind: "lamp" },
+          { x: 335, y: 75, r: 22, kind: "lamp" }
         ],
         hazards: [
-          { x: 145, y: 250, r: 32, kind: "bin" },
-          { x: 268, y: 230, r: 40, kind: "couple" }
+          { x: 145, y: 230, r: 32, kind: "bin" },
+          { x: 268, y: 210, r: 40, kind: "couple" }
         ]
       },
       {
         prompt: "Save him!",
         thiefStyle: "angel",
-        floorLine: 365,
-        thief: { x: 95, y: 80, shoulderX: 112, shoulderY: 85 },
-        handStart: { x: 175, y: 145 },
-        target: { x: 242, y: 242, r: 20, kind: "plug" },
-        pivots: [{ x: 222, y: 345, r: 16, kind: "rock" }],
+        floorLine: 345,
+        thief: { x: 95, y: 75, shoulderX: 112, shoulderY: 80 },
+        handStart: { x: 175, y: 135 },
+        target: { x: 242, y: 222, r: 20, kind: "plug" },
+        pivots: [{ x: 222, y: 325, r: 16, kind: "rock" }],
         hazards: [
-          { x: 60, y: 270, r: 32, kind: "cat" },
-          { x: 192, y: 242, r: 18, kind: "warhead" },
-          { x: 350, y: 255, r: 38, kind: "villain" }
+          { x: 60, y: 250, r: 32, kind: "cat" },
+          { x: 192, y: 222, r: 18, kind: "warhead" },
+          { x: 350, y: 235, r: 38, kind: "villain" }
         ]
       },
       {
         prompt: "Help him get the fire extinguisher.",
         thiefStyle: "normal",
-        thief: { x: 75, y: 135, shoulderX: 90, shoulderY: 128 },
-        handStart: { x: 145, y: 175 },
-        target: { x: 352, y: 335, r: 25, kind: "extinguisher" },
-        pivots: [{ x: 190, y: 265, r: 22, kind: "flower" }],
+        thief: { x: 75, y: 125, shoulderX: 90, shoulderY: 118 },
+        handStart: { x: 145, y: 160 },
+        target: { x: 352, y: 315, r: 25, kind: "extinguisher" },
+        pivots: [{ x: 190, y: 245, r: 22, kind: "flower" }],
         hazards: [
-          { x: 298, y: 115, r: 38, kind: "fire" },
-          { x: 110, y: 245, r: 32, kind: "fire" },
-          { x: 100, y: 352, r: 32, kind: "fire" },
-          { x: 295, y: 290, r: 34, kind: "fire" },
-          { x: 246, y: 210, r: 22, kind: "hammer" }
+          { x: 298, y: 105, r: 38, kind: "fire" },
+          { x: 110, y: 230, r: 32, kind: "fire" },
+          { x: 100, y: 330, r: 32, kind: "fire" },
+          { x: 295, y: 270, r: 34, kind: "fire" },
+          { x: 246, y: 195, r: 22, kind: "hammer" }
         ]
       }
     ];
@@ -385,18 +384,18 @@
       const thiefOnLeft = levelNum % 4 !== 0;
 
       const thiefX = thiefOnLeft ? Math.floor(52 + rand() * 35) : Math.floor(335 + rand() * 30);
-      const thiefY = Math.floor(100 + rand() * 190);
+      const thiefY = Math.floor(95 + rand() * 170);
       const shoulderX = thiefOnLeft ? thiefX + 14 : thiefX - 14;
       const shoulderY = thiefY - 8;
       const targetX = thiefOnLeft ? Math.floor(315 + rand() * 55) : Math.floor(55 + rand() * 55);
-      const targetY = Math.floor(85 + rand() * 230);
+      const targetY = Math.floor(80 + rand() * 210);
 
       const numPivots = 1 + (levelNum % 3);
       const pivots = [];
       for (let i = 0; i < numPivots; i++) {
         const progress = (i + 1) / (numPivots + 1);
         const px = Math.floor(105 + progress * 210 + (rand() * 50 - 25));
-        const py = (levelNum + i) % 2 === 0 ? Math.floor(290 + rand() * 45) : Math.floor(70 + rand() * 50);
+        const py = (levelNum + i) % 2 === 0 ? Math.floor(270 + rand() * 40) : Math.floor(65 + rand() * 45);
         pivots.push({ x: px, y: py, r: 22, kind: PIVOT_KINDS[(levelNum + i) % PIVOT_KINDS.length] });
       }
 
@@ -408,15 +407,15 @@
       while (hazards.length < desiredHazards && attempts < 40) {
         attempts++;
         const hx = Math.floor(100 + rand() * 220);
-        const hy = Math.floor(80 + rand() * 250);
+        const hy = Math.floor(75 + rand() * 220);
         let clear = true;
         for (let s = 0; s < pathPoints.length - 1; s++) {
-          if (distToSegment({ x: hx, y: hy }, pathPoints[s], pathPoints[s + 1]) < 58) clear = false;
+          if (distToSegment({ x: hx, y: hy }, pathPoints[s], pathPoints[s + 1]) < 55) clear = false;
         }
-        if (Math.hypot(hx - thiefX, hy - thiefY) < 70) clear = false;
-        if (Math.hypot(hx - targetX, hy - targetY) < 65) clear = false;
+        if (Math.hypot(hx - thiefX, hy - thiefY) < 65) clear = false;
+        if (Math.hypot(hx - targetX, hy - targetY) < 60) clear = false;
         if (clear) {
-          hazards.push({ x: hx, y: hy, r: 28, kind: HAZARD_KINDS[(levelNum + hazards.length * 3) % HAZARD_KINDS.length] });
+          hazards.push({ x: hx, y: hy, r: 26, kind: HAZARD_KINDS[(levelNum + hazards.length * 3) % HAZARD_KINDS.length] });
         }
       }
 
@@ -424,7 +423,7 @@
         prompt: `Level ${levelNum}: ${targetChoice.title}`,
         thiefStyle,
         thief: { x: thiefX, y: thiefY, shoulderX, shoulderY },
-        handStart: { x: thiefOnLeft ? shoulderX + 45 : shoulderX - 45, y: Math.min(340, Math.max(60, shoulderY + 40)) },
+        handStart: { x: thiefOnLeft ? shoulderX + 45 : shoulderX - 45, y: Math.min(310, Math.max(55, shoulderY + 38)) },
         target: { x: targetX, y: targetY, r: 24, kind: targetChoice.kind },
         pivots,
         hazards
@@ -573,13 +572,13 @@
 
       overlay.classList.remove("hidden");
       if (status === "WIN") {
-        wrap.innerHTML = `<div style="font-size:85px;">🏆</div>`;
+        wrap.innerHTML = `<div style="font-size:75px;">🏆</div>`;
         ribbon.textContent = "YOU WIN";
         ribbon.className = "RibbonText win";
         btn.textContent = "» NEXT";
         btn.onclick = () => loadLevel(currentLevelNum + 1);
       } else {
-        wrap.innerHTML = `<div style="font-size:85px;">🏆😢</div>`;
+        wrap.innerHTML = `<div style="font-size:75px;">🏆😢</div>`;
         ribbon.textContent = "FAILED";
         ribbon.className = "RibbonText fail";
         btn.textContent = "↻ Replay";
@@ -599,81 +598,81 @@
 
       if (role === "cat") {
         ctx.fillStyle = "#ffb74d";
-        ctx.beginPath(); ctx.arc(0, 0 + breathe, 20, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.arc(0, 0 + breathe, 18, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
         ctx.beginPath();
-        ctx.moveTo(-16, -14); ctx.lineTo(-24, -28); ctx.lineTo(-8, -18);
-        ctx.moveTo(16, -14); ctx.lineTo(24, -28); ctx.lineTo(8, -18);
+        ctx.moveTo(-14, -12); ctx.lineTo(-22, -24); ctx.lineTo(-7, -16);
+        ctx.moveTo(14, -12); ctx.lineTo(22, -24); ctx.lineTo(7, -16);
         ctx.fill(); ctx.stroke();
-        const tailWag = Math.sin(animTick * 0.3) * 12;
-        ctx.beginPath(); ctx.moveTo(16, 12); ctx.quadraticCurveTo(32 + tailWag, 0, 26, -12); ctx.stroke();
+        const tailWag = Math.sin(animTick * 0.3) * 10;
+        ctx.beginPath(); ctx.moveTo(14, 10); ctx.quadraticCurveTo(28 + tailWag, 0, 22, -10); ctx.stroke();
         ctx.fillStyle = "#111";
-        ctx.beginPath(); ctx.arc(-7, -4, 2.5, 0, Math.PI * 2); ctx.arc(7, -4, 2.5, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(-6, -4, 2, 0, Math.PI * 2); ctx.arc(6, -4, 2, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
         return;
       }
 
       if (role === "dog") {
         ctx.fillStyle = "#d7ccc8";
-        ctx.beginPath(); ctx.ellipse(0, 0 + breathe, 22, 18, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(0, 0 + breathe, 20, 16, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
         ctx.fillStyle = "#8d6e63";
-        ctx.beginPath(); ctx.ellipse(-18, -4, 8, 12, 0.3, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-        ctx.beginPath(); ctx.ellipse(18, -4, 8, 12, -0.3, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(-16, -4, 7, 10, 0.3, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(16, -4, 7, 10, -0.3, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
         ctx.fillStyle = "#f06292";
-        ctx.beginPath(); ctx.arc(0, 8, 5, 0, Math.PI); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.arc(0, 6, 4, 0, Math.PI); ctx.fill(); ctx.stroke();
         ctx.restore();
         return;
       }
 
       if (role === "angel") {
         ctx.fillStyle = "#e0f7fa";
-        ctx.beginPath(); ctx.ellipse(-22, -5, 16, 8, -0.4, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(-20, -5, 14, 7, -0.4, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
         ctx.strokeStyle = "#fbc02d";
-        ctx.beginPath(); ctx.ellipse(0, -62, 14, 4, 0, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(0, -55, 12, 3, 0, 0, Math.PI * 2); ctx.stroke();
         ctx.strokeStyle = "#111";
       }
 
       if (role === "girl") {
         ctx.fillStyle = "#111";
-        ctx.beginPath(); ctx.arc(-22, -45, 10, 0, Math.PI * 2); ctx.ellipse(-34, -38, 12, 7, -0.5, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(-20, -40, 9, 0, Math.PI * 2); ctx.ellipse(-30, -34, 10, 6, -0.5, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = "#ff80ab";
-        ctx.beginPath(); ctx.moveTo(0, -18); ctx.lineTo(-16, 26); ctx.lineTo(16, 26); ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, -16); ctx.lineTo(-14, 22); ctx.lineTo(14, 22); ctx.closePath(); ctx.fill(); ctx.stroke();
       } else {
         ctx.fillStyle = role === "villain" ? "#d32f2f" : (role === "boy" ? "#ff9800" : "#1976d2");
-        ctx.fillRect(-9, -18 + breathe, 18, 34); ctx.strokeRect(-9, -18 + breathe, 18, 34);
-        ctx.fillStyle = "#fff"; ctx.fillRect(-10, 14 + breathe, 20, 12); ctx.strokeRect(-10, 14 + breathe, 20, 12);
+        ctx.fillRect(-8, -16 + breathe, 16, 30); ctx.strokeRect(-8, -16 + breathe, 16, 30);
+        ctx.fillStyle = "#fff"; ctx.fillRect(-9, 12 + breathe, 18, 10); ctx.strokeRect(-9, 12 + breathe, 18, 10);
       }
 
       ctx.beginPath();
-      const runOffset = state === "WIN" && ["bandana", "cap", "normal", "mask"].includes(role) ? Math.sin(animTick * 0.4) * 10 : 0;
-      ctx.moveTo(-5, 26); ctx.lineTo(-12 + runOffset, 56);
-      ctx.moveTo(5, 26); ctx.lineTo(12 - runOffset, 56);
+      const runOffset = state === "WIN" && ["bandana", "cap", "normal", "mask"].includes(role) ? Math.sin(animTick * 0.4) * 8 : 0;
+      ctx.moveTo(-4, 22); ctx.lineTo(-10 + runOffset, 48);
+      ctx.moveTo(4, 22); ctx.lineTo(10 - runOffset, 48);
       ctx.stroke();
 
       ctx.fillStyle = "#fff";
-      ctx.beginPath(); ctx.arc(0, -36, 18, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(0, -32, 16, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
 
       if (role === "bandana") {
-        ctx.fillStyle = "#29b6f6"; ctx.fillRect(-17, -48, 34, 7); ctx.strokeRect(-17, -48, 34, 7);
+        ctx.fillStyle = "#29b6f6"; ctx.fillRect(-15, -42, 30, 6); ctx.strokeRect(-15, -42, 30, 6);
       } else if (role === "cap") {
-        ctx.fillStyle = "#1e88e5"; ctx.beginPath(); ctx.arc(0, -40, 17, Math.PI, 0); ctx.lineTo(25, -40); ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = "#1e88e5"; ctx.beginPath(); ctx.arc(0, -35, 15, Math.PI, 0); ctx.lineTo(22, -35); ctx.closePath(); ctx.fill(); ctx.stroke();
       } else if (role === "mask" || role === "guard") {
-        ctx.fillStyle = "#222"; ctx.fillRect(-17, -43, 34, 10);
+        ctx.fillStyle = "#222"; ctx.fillRect(-15, -38, 30, 9);
       }
 
       ctx.fillStyle = "#111";
       if (role === "girl" || role === "boy") {
-        ctx.fillStyle = "#e91e63"; ctx.beginPath(); ctx.arc(-6, -38, 3.5, 0, Math.PI * 2); ctx.arc(6, -38, 3.5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#e91e63"; ctx.beginPath(); ctx.arc(-5, -34, 3, 0, Math.PI * 2); ctx.arc(5, -34, 3, 0, Math.PI * 2); ctx.fill();
       } else {
         const isBlinking = Math.floor(animTick / 35) % 8 === 0;
         if (!isBlinking) {
-          ctx.beginPath(); ctx.arc(-6, -38, 2.5, 0, Math.PI * 2); ctx.arc(6, -38, 2.5, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.arc(-5, -34, 2, 0, Math.PI * 2); ctx.arc(5, -34, 2, 0, Math.PI * 2); ctx.fill();
         } else {
-          ctx.beginPath(); ctx.moveTo(-9, -38); ctx.lineTo(-3, -38); ctx.moveTo(3, -38); ctx.lineTo(9, -38); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(-7, -34); ctx.lineTo(-3, -34); ctx.moveTo(3, -34); ctx.lineTo(7, -34); ctx.stroke();
         }
       }
 
       if (role === "villain") {
-        ctx.fillStyle = "#43a047"; ctx.fillRect(-65, -26, 75, 16); ctx.strokeRect(-65, -26, 75, 16);
+        ctx.fillStyle = "#43a047"; ctx.fillRect(-55, -22, 65, 14); ctx.strokeRect(-55, -22, 65, 14);
       }
       ctx.restore();
     }
@@ -686,70 +685,69 @@
 
       if (kind === "rock") {
         ctx.fillStyle = "#78909c";
-        ctx.beginPath(); ctx.moveTo(-24, 14); ctx.lineTo(-18, -12); ctx.lineTo(6, -18); ctx.lineTo(24, -6); ctx.lineTo(26, 14);
+        ctx.beginPath(); ctx.moveTo(-20, 12); ctx.lineTo(-15, -10); ctx.lineTo(5, -15); ctx.lineTo(20, -5); ctx.lineTo(22, 12);
         ctx.closePath(); ctx.fill(); ctx.stroke();
-        ctx.strokeStyle = "#455a64"; ctx.beginPath(); ctx.moveTo(-4, -8); ctx.lineTo(2, 6); ctx.stroke();
       } else if (kind === "bin") {
-        ctx.fillStyle = "#81c784"; ctx.fillRect(-22, -26, 44, 52); ctx.strokeRect(-22, -26, 44, 52);
-        ctx.fillStyle = "#4caf50"; ctx.fillRect(-26, -32, 52, 7); ctx.strokeRect(-26, -32, 52, 7);
-        ctx.font = "16px sans-serif"; ctx.textAlign = "center"; ctx.fillText("♻️", 0, 5);
+        ctx.fillStyle = "#81c784"; ctx.fillRect(-18, -22, 36, 44); ctx.strokeRect(-18, -22, 36, 44);
+        ctx.fillStyle = "#4caf50"; ctx.fillRect(-22, -28, 44, 6); ctx.strokeRect(-22, -28, 44, 6);
+        ctx.font = "14px sans-serif"; ctx.textAlign = "center"; ctx.fillText("♻️", 0, 4);
       } else if (kind === "flower") {
-        ctx.fillStyle = "#a1887f"; ctx.beginPath(); ctx.moveTo(-14, 4); ctx.lineTo(14, 4); ctx.lineTo(10, 22); ctx.lineTo(-10, 22);
+        ctx.fillStyle = "#a1887f"; ctx.beginPath(); ctx.moveTo(-12, 4); ctx.lineTo(12, 4); ctx.lineTo(9, 18); ctx.lineTo(-9, 18);
         ctx.closePath(); ctx.fill(); ctx.stroke();
-        ctx.strokeStyle = "#2e7d32"; ctx.beginPath(); ctx.moveTo(0, 4); ctx.lineTo(0, -12); ctx.stroke();
+        ctx.strokeStyle = "#2e7d32"; ctx.beginPath(); ctx.moveTo(0, 4); ctx.lineTo(0, -10); ctx.stroke();
         ctx.fillStyle = "#ff4081";
         for (let a = 0; a < 5; a++) {
           const ang = (a * Math.PI * 2) / 5;
-          ctx.beginPath(); ctx.arc(Math.cos(ang) * 6, -14 + Math.sin(ang) * 6, 4.5, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.arc(Math.cos(ang) * 5, -12 + Math.sin(ang) * 5, 4, 0, Math.PI * 2); ctx.fill();
         }
-        ctx.fillStyle = "#ffeb3b"; ctx.beginPath(); ctx.arc(0, -14, 3.5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#ffeb3b"; ctx.beginPath(); ctx.arc(0, -12, 3, 0, Math.PI * 2); ctx.fill();
       } else if (kind === "fire") {
         const scale = 1 + Math.sin(animTick * 0.25 + x) * 0.08;
         ctx.scale(scale, scale);
-        ctx.font = "40px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.font = "36px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
         ctx.fillText("🔥", 0, 0);
       } else if (kind === "hammer") {
         ctx.rotate(-0.5);
-        ctx.fillStyle = "#8d6e63"; ctx.fillRect(-4, -5, 8, 32); ctx.strokeRect(-4, -5, 8, 32);
-        ctx.fillStyle = "#90a4ae"; ctx.fillRect(-16, -16, 32, 12); ctx.strokeRect(-16, -16, 32, 12);
+        ctx.fillStyle = "#8d6e63"; ctx.fillRect(-3, -4, 6, 26); ctx.strokeRect(-3, -4, 6, 26);
+        ctx.fillStyle = "#90a4ae"; ctx.fillRect(-14, -14, 28, 10); ctx.strokeRect(-14, -14, 28, 10);
       } else if (kind === "extinguisher") {
-        ctx.fillStyle = "#e53935"; ctx.beginPath(); ctx.roundRect(-12, -14, 24, 34, 6); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = "#fff"; ctx.fillRect(-8, -2, 16, 10);
-        ctx.fillStyle = "#222"; ctx.fillRect(-5, -20, 10, 7);
+        ctx.fillStyle = "#e53935"; ctx.beginPath(); ctx.roundRect(-10, -12, 20, 28, 5); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = "#fff"; ctx.fillRect(-6, -2, 12, 8);
+        ctx.fillStyle = "#222"; ctx.fillRect(-4, -16, 8, 6);
       } else if (kind === "chicken") {
-        ctx.fillStyle = "#e67e22"; ctx.beginPath(); ctx.ellipse(0, 2, 22, 14, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = "#e67e22"; ctx.beginPath(); ctx.ellipse(0, 2, 18, 12, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
       } else if (kind === "balloons") {
         ["#29b6f6", "#ff4081", "#ffeb3b"].forEach((c, i) => {
           ctx.fillStyle = c;
-          ctx.beginPath(); ctx.arc((i - 1) * 15, -8, 13, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-          ctx.beginPath(); ctx.moveTo((i - 1) * 15, 5); ctx.lineTo(0, 32); ctx.stroke();
+          ctx.beginPath(); ctx.arc((i - 1) * 13, -6, 11, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo((i - 1) * 13, 5); ctx.lineTo(0, 26); ctx.stroke();
         });
       } else if (kind === "treasure") {
-        ctx.fillStyle = "#ffb300"; ctx.fillRect(-20, -14, 40, 28); ctx.strokeRect(-20, -14, 40, 28);
-        ctx.fillStyle = "#fff"; ctx.fillRect(-5, -4, 10, 10);
+        ctx.fillStyle = "#ffb300"; ctx.fillRect(-18, -12, 36, 24); ctx.strokeRect(-18, -12, 36, 24);
+        ctx.fillStyle = "#fff"; ctx.fillRect(-4, -3, 8, 8);
       } else if (kind === "purse") {
-        ctx.fillStyle = "#f48fb1"; ctx.beginPath(); ctx.roundRect(-18, -10, 36, 24, 6); ctx.fill(); ctx.stroke();
-        ctx.beginPath(); ctx.arc(0, -10, 10, Math.PI, 0); ctx.stroke();
+        ctx.fillStyle = "#f48fb1"; ctx.beginPath(); ctx.roundRect(-15, -8, 30, 20, 5); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.arc(0, -8, 8, Math.PI, 0); ctx.stroke();
       } else if (kind === "lamp") {
-        ctx.fillStyle = "#ffee58"; ctx.beginPath(); ctx.arc(0, 0, 14, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = "#37474f"; ctx.beginPath(); ctx.arc(0, -4, 19, Math.PI, 0); ctx.fill();
+        ctx.fillStyle = "#ffee58"; ctx.beginPath(); ctx.arc(0, 0, 12, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = "#37474f"; ctx.beginPath(); ctx.arc(0, -3, 16, Math.PI, 0); ctx.fill();
       } else if (kind === "door") {
         if (y < 200) {
-          ctx.fillStyle = "#b0bec5"; ctx.fillRect(-8, -55, 16, 200); ctx.strokeRect(-8, -55, 16, 200);
-          ctx.fillStyle = "#fbc02d"; ctx.beginPath(); ctx.arc(14, 65, 6, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+          ctx.fillStyle = "#b0bec5"; ctx.fillRect(-6, -45, 12, 160); ctx.strokeRect(-6, -45, 12, 160);
+          ctx.fillStyle = "#fbc02d"; ctx.beginPath(); ctx.arc(12, 50, 5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
         }
       } else if (kind === "warhead" || kind === "plug") {
         if (kind === "warhead") {
-          ctx.fillStyle = "#616161"; ctx.beginPath(); ctx.arc(0, 0, 15, Math.PI / 2, -Math.PI / 2);
-          ctx.lineTo(26, -15); ctx.lineTo(26, 15); ctx.closePath(); ctx.fill(); ctx.stroke();
+          ctx.fillStyle = "#616161"; ctx.beginPath(); ctx.arc(0, 0, 13, Math.PI / 2, -Math.PI / 2);
+          ctx.lineTo(22, -13); ctx.lineTo(22, 13); ctx.closePath(); ctx.fill(); ctx.stroke();
         } else {
-          ctx.fillStyle = "#d32f2f"; ctx.fillRect(-8, -8, 16, 16); ctx.strokeRect(-8, -8, 16, 16);
+          ctx.fillStyle = "#d32f2f"; ctx.fillRect(-6, -6, 12, 12); ctx.strokeRect(-6, -6, 12, 12);
         }
       } else if (kind === "cat" || kind === "dog") {
         drawAnimatedAvatar(0, 0, kind, "PLAYING");
       } else {
         const EMAP = { diamond: "💎", key: "🔑", pizza: "🍕", crown: "👑", gift: "🎁", cactus: "🌵" };
-        ctx.font = "36px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.font = "30px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
         ctx.fillText(EMAP[kind] || "⭐", 0, 0);
       }
       ctx.restore();
@@ -784,24 +782,24 @@
       }
 
       ctx.save();
-      ctx.strokeStyle = "#333"; ctx.lineWidth = 3;
+      ctx.strokeStyle = "#333"; ctx.lineWidth = 2.5;
       if (levelData.ledge) {
         ctx.beginPath(); ctx.moveTo(levelData.ledge.x1, levelData.ledge.y1); ctx.lineTo(levelData.ledge.x2, levelData.ledge.y2); ctx.stroke();
       }
       if (levelData.table) {
         const t = levelData.table;
-        ctx.fillStyle = "#cfd8dc"; ctx.fillRect(t.x, t.y, t.w, 6); ctx.strokeRect(t.x, t.y, t.w, 6);
-        ctx.strokeRect(t.x + 6, t.y + 6, 6, t.h); ctx.strokeRect(t.x + t.w - 12, t.y + 6, 6, t.h);
+        ctx.fillStyle = "#cfd8dc"; ctx.fillRect(t.x, t.y, t.w, 5); ctx.strokeRect(t.x, t.y, t.w, 5);
+        ctx.strokeRect(t.x + 5, t.y + 5, 5, t.h); ctx.strokeRect(t.x + t.w - 10, t.y + 5, 5, t.h);
       }
       if (levelData.streetFloor) {
-        ctx.fillStyle = "rgba(207, 216, 220, 0.55)"; ctx.fillRect(0, 300, canvas.width, 120);
+        ctx.fillStyle = "rgba(207, 216, 220, 0.55)"; ctx.fillRect(0, 260, canvas.width, 160);
       }
       if (levelData.bench) {
-        ctx.fillStyle = "#d7ccc8"; ctx.fillRect(levelData.bench.x, levelData.bench.y, levelData.bench.w, 10);
-        ctx.strokeRect(levelData.bench.x, levelData.bench.y, levelData.bench.w, 10);
+        ctx.fillStyle = "#d7ccc8"; ctx.fillRect(levelData.bench.x, levelData.bench.y, levelData.bench.w, 8);
+        ctx.strokeRect(levelData.bench.x, levelData.bench.y, levelData.bench.w, 8);
       }
       if (levelData.floorLine) {
-        ctx.fillStyle = "#8d6e63"; ctx.fillRect(0, levelData.floorLine, canvas.width, 8);
+        ctx.fillStyle = "#8d6e63"; ctx.fillRect(0, levelData.floorLine, canvas.width, 6);
       }
       ctx.restore();
 
@@ -809,7 +807,7 @@
         ctx.save();
         ctx.setLineDash([8, 6]);
         ctx.strokeStyle = "#00e676";
-        ctx.lineWidth = 4;
+        ctx.lineWidth = 3.5;
         ctx.beginPath();
         ctx.moveTo(levelData.thief.shoulderX, levelData.thief.shoulderY);
         levelData.pivots.forEach(p => ctx.lineTo(p.x, p.y));
@@ -826,8 +824,8 @@
         if (["cat", "dog", "girl", "boy", "guard", "villain"].includes(h.kind)) {
           drawAnimatedAvatar(h.x, h.y, h.kind, gameState);
         } else if (h.kind === "couple") {
-          drawAnimatedAvatar(h.x - 18, h.y, "boy", gameState);
-          drawAnimatedAvatar(h.x + 18, h.y, "girl", gameState);
+          drawAnimatedAvatar(h.x - 16, h.y, "boy", gameState);
+          drawAnimatedAvatar(h.x + 16, h.y, "girl", gameState);
         } else {
           drawObjectProp(h.x, h.y, h.r, h.kind);
         }
@@ -836,7 +834,7 @@
       drawObjectProp(levelData.target.x, levelData.target.y, levelData.target.r, levelData.target.kind);
 
       ctx.save();
-      ctx.lineWidth = 5; ctx.lineCap = "round"; ctx.lineJoin = "round";
+      ctx.lineWidth = 4.5; ctx.lineCap = "round"; ctx.lineJoin = "round";
       ctx.strokeStyle = (gameState === "RETRACTING" || gameState === "WIN") ? "#00e676" : (gameState === "FAIL" ? "#ff1744" : "#111");
       ctx.beginPath();
       ctx.moveTo(anchorPoints[0].x, anchorPoints[0].y);
@@ -850,9 +848,9 @@
       const handAngle = Math.atan2(hand.y - prevPt.y, hand.x - prevPt.x);
       ctx.translate(hand.x, hand.y); ctx.rotate(handAngle);
       ctx.fillStyle = "#fff"; ctx.strokeStyle = "#111"; ctx.lineWidth = 2.5;
-      ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
       for (let f = -1; f <= 1; f++) {
-        ctx.beginPath(); ctx.roundRect(6, f * 5 - 2, 9, 4, 2); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.roundRect(5, f * 4 - 2, 8, 3.5, 2); ctx.fill(); ctx.stroke();
       }
       ctx.restore();
 
@@ -872,7 +870,7 @@
     canvas.addEventListener("pointerdown", (e) => {
       if (gameState !== "PLAYING") return;
       const pos = getPos(e);
-      if (Math.hypot(pos.x - hand.x, pos.y - hand.y) < 48) {
+      if (Math.hypot(pos.x - hand.x, pos.y - hand.y) < 45) {
         isDragging = true;
       }
     });
@@ -898,7 +896,6 @@
     document.getElementById("homeBtn").onclick = () => window.location.href = "index.html";
     document.getElementById("restartBtn").onclick = () => loadLevel(currentLevelNum);
 
-    // Corrected path from game/thief/level.html up to root ad.html
     document.getElementById("hintBtn").onclick = () => {
       const adModal = document.getElementById("adModal");
       const adIframe = document.getElementById("adIframe");
