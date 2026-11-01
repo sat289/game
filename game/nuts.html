@@ -3,59 +3,1318 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ad</title>
+    <meta name="color-scheme" content="dark">
+    <title>Nuts & Bolts Puzzle</title>
     <style>
         * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
             user-select: none;
             -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
+
         html, body {
+            background-color: #1f0e33 !important;
+            background-image: radial-gradient(circle at 50% 25%, #3b1c54 0%, #241136 70%, #180a26 100%) !important;
+            color: #ffffff !important;
+            height: 100vh;
+            height: 100dvh;
+            width: 100vw;
+            overflow: hidden;
+            position: fixed;
+            inset: 0;
+        }
+
+        .screen {
+            position: absolute;
+            inset: 0;
             width: 100%;
             height: 100%;
-            background: #000000;
-            overflow: hidden;
+            background: radial-gradient(circle at 50% 25%, #3b1c54 0%, #241136 70%, #180a26 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px calc(16px + env(safe-area-inset-bottom, 8px)) 16px;
+            overflow-y: auto;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* ================= MAIN MENU ================= */
+        .menu-top-card {
+            width: 100%;
+            max-width: 400px;
+            background: #2d1646;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            border-radius: 22px;
+            padding: 16px 14px;
+            text-align: center;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+            flex-shrink: 0;
+        }
+
+        .game-title {
+            font-size: 2rem;
+            font-weight: 900;
+            letter-spacing: 1.5px;
+            color: #fcc419;
+            text-shadow: 0 3px 0 #000000;
+            margin-bottom: 6px;
+        }
+
+        .menu-subtitle {
+            font-size: 0.85rem;
+            color: #e5dbff;
+            line-height: 1.35;
+            margin-bottom: 12px;
+        }
+
+        .score-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #6741d9, #4c2889);
+            padding: 7px 18px;
+            border-radius: 999px;
+            font-weight: 800;
+            font-size: 0.95rem;
+            color: #ffffff;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.35);
+        }
+
+        .mode-selector-card {
+            width: 100%;
+            max-width: 400px;
+            background: #fdf6ec;
+            color: #2b173d;
+            border-radius: 24px;
+            padding: 18px 16px;
+            text-align: center;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .mascot-circle {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: #1a1a1a;
+            border: 5px solid #ffffff;
+            box-shadow: 0 5px 14px rgba(0,0,0,0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.6rem;
+        }
+
+        .mode-title {
+            font-size: 1.65rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+        }
+
+        .mode-tabs {
+            display: flex;
+            width: 100%;
+            background: #e9decb;
+            border-radius: 999px;
+            padding: 4px;
+            gap: 4px;
+        }
+
+        .mode-tab {
+            flex: 1;
+            padding: 9px 0;
+            border: none;
+            border-radius: 999px;
+            font-weight: 800;
+            font-size: 0.85rem;
+            cursor: pointer;
+            background: transparent;
+            color: #5c4b3c;
+            transition: all 0.2s;
+        }
+
+        .mode-tab.active-easy { background: #40c057; color: #fff; box-shadow: 0 3px 8px rgba(64,192,87,0.4); }
+        .mode-tab.active-medium { background: #fab005; color: #fff; box-shadow: 0 3px 8px rgba(250,176,5,0.4); }
+        .mode-tab.active-hard { background: #fa5252; color: #fff; box-shadow: 0 3px 8px rgba(250,82,82,0.4); }
+
+        .play-main-btn {
+            width: 88%;
+            padding: 12px 18px;
+            border: none;
+            border-radius: 16px;
+            color: white;
+            font-size: 1.35rem;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: 0 5px 0 rgba(0,0,0,0.25);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1.1;
+        }
+
+        .play-main-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 2px 0 rgba(0,0,0,0.25);
+        }
+
+        .play-main-btn span {
+            font-size: 0.82rem;
+            font-weight: 700;
+            opacity: 0.95;
+            margin-top: 3px;
+        }
+
+        .menu-bottom-nav {
+            display: flex;
+            width: 100%;
+            max-width: 400px;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .nav-btn {
+            height: 52px;
+            padding: 0 16px;
+            border: none;
+            border-radius: 14px;
+            font-size: 1rem;
+            font-weight: 800;
+            color: #ffffff !important;
+            cursor: pointer;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .nav-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,0.35); }
+        .btn-leaderboard { background: linear-gradient(135deg, #9c36b5, #70248a); flex: 1.4; }
+        .btn-portal { background: linear-gradient(135deg, #495057, #343a40); flex: 1; }
+
+        /* ================= GAME SCREEN ================= */
+        .game-header {
+            width: 100%;
+            max-width: 460px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .circle-icon-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            background: #ffffff;
+            color: #2b173d;
+            font-size: 1.3rem;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.35);
             display: flex;
             align-items: center;
             justify-content: center;
         }
-        .ad-wrapper {
+
+        .circle-icon-btn:active { transform: scale(0.92); }
+
+        .header-center { text-align: center; }
+
+        .header-diff {
+            font-size: 0.75rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: #fcc419;
+            text-transform: uppercase;
+        }
+
+        .header-lvl {
+            font-size: 1.45rem;
+            font-weight: 900;
+            color: #ffffff;
+        }
+
+        /* ================= BOARD & REAL 3D BOLTS/NUTS ================= */
+        #game-board {
+            flex: 1;
+            width: 100%;
+            max-width: 460px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-content: center;
+            gap: 24px 16px;
+            padding: 6px 4px;
+        }
+
+        .bolt-wrapper {
+            width: 72px;
+            height: 168px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            cursor: pointer;
+        }
+
+        .bolt-stem {
+            position: absolute;
+            bottom: 16px;
+            width: 22px;
+            height: 132px;
+            background:
+                repeating-linear-gradient(
+                    to bottom,
+                    #e9ecef 0px,
+                    #e9ecef 3px,
+                    #adb5bd 3px,
+                    #868e96 6px
+                );
+            border-radius: 8px 8px 0 0;
+            box-shadow: inset 4px 0 6px rgba(255,255,255,0.7), inset -4px 0 6px rgba(0,0,0,0.35);
+            z-index: 1;
+        }
+
+        .bolt-base {
+            width: 66px;
+            height: 17px;
+            background: linear-gradient(to right, #6c757d, #ced4da 30%, #adb5bd 65%, #495057);
+            border-radius: 50%;
+            box-shadow: 0 6px 10px rgba(0,0,0,0.6), inset 0 2px 3px rgba(255,255,255,0.6);
+            z-index: 2;
+            position: relative;
+        }
+
+        .bolt-wrapper.stub-bolt .bolt-stem {
+            height: 34px;
+            background: repeating-linear-gradient(
+                to bottom,
+                #6c637a 0px,
+                #6c637a 3px,
+                #4b4358 3px,
+                #4b4358 6px
+            );
+        }
+
+        .bolt-wrapper.stub-bolt .bolt-base {
+            background: linear-gradient(to right, #4b4358, #6c637a 45%, #373042);
+        }
+
+        .stub-plus-icon {
+            position: absolute;
+            bottom: 54px;
+            font-size: 1.4rem;
+            color: #fcc419;
+            font-weight: 900;
+            pointer-events: none;
+        }
+
+        .nuts-stack {
+            position: absolute;
+            bottom: 15px;
+            width: 100%;
+            display: flex;
+            flex-direction: column-reverse;
+            align-items: center;
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        .nut {
+            width: 60px;
+            height: 29px;
+            border-radius: 9px;
+            margin-bottom: -2px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 9px;
+            box-shadow:
+                0 4px 6px rgba(0,0,0,0.45),
+                inset 0 4px 4px rgba(255,255,255,0.45),
+                inset 0 -4px 5px rgba(0,0,0,0.35);
+            transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s;
+        }
+
+        .nut::before,
+        .nut::after {
+            content: '';
+            width: 2px;
+            height: 68%;
+            background: rgba(0, 0, 0, 0.22);
+            border-right: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 1px;
+        }
+
+        .nut-emblem {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.24);
+            box-shadow: inset 0 2px 2px rgba(0,0,0,0.45), 0 1px 1px rgba(255,255,255,0.35);
+        }
+
+        .nut.selected {
+            transform: translateY(-32px) rotate(-10deg) scale(1.04);
+            box-shadow:
+                0 14px 18px rgba(0,0,0,0.55),
+                inset 0 4px 4px rgba(255,255,255,0.6),
+                inset 0 -4px 5px rgba(0,0,0,0.35);
+            z-index: 15;
+        }
+
+        .bolt-wrapper.completed-glow .nut {
+            filter: brightness(1.18);
+        }
+        .bolt-wrapper.completed-glow::after {
+            content: '✨';
+            position: absolute;
+            top: -12px;
+            font-size: 1.4rem;
+            animation: popSparkle 0.6s ease-out forwards;
+            z-index: 20;
+        }
+
+        @keyframes popSparkle {
+            0% { transform: scale(0) translateY(15px); opacity: 1; }
+            100% { transform: scale(1.4) translateY(-10px); opacity: 0; }
+        }
+
+        .color-red    { background: linear-gradient(180deg, #ff6b6b 0%, #f03e3e 55%, #c92a2a 100%); }
+        .color-blue   { background: linear-gradient(180deg, #4dabf7 0%, #1c7ed6 55%, #1864ab 100%); }
+        .color-green  { background: linear-gradient(180deg, #51cf66 0%, #2f9e44 55%, #2b8a3e 100%); }
+        .color-yellow { background: linear-gradient(180deg, #ffd43b 0%, #f59f00 55%, #e67700 100%); }
+        .color-purple { background: linear-gradient(180deg, #cc5de8 0%, #9c36b5 55%, #862e9c 100%); }
+        .color-orange { background: linear-gradient(180deg, #ff922b 0%, #f76707 55%, #d9480f 100%); }
+        .color-cyan   { background: linear-gradient(180deg, #3bc9db 0%, #1098ad 55%, #0b7285 100%); }
+        .color-pink   { background: linear-gradient(180deg, #f783ac 0%, #d6336c 55%, #a61e4d 100%); }
+
+        /* ================= FOOTER CONTROLS ================= */
+        .game-footer {
+            width: 100%;
+            max-width: 460px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .footer-action {
+            background: transparent;
+            border: none;
+            color: #e5dbff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            position: relative;
+            font-size: 0.82rem;
+            font-weight: 700;
+        }
+
+        .footer-icon-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #361952;
+            border: 2px solid rgba(255, 255, 255, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.45rem;
+            color: #ffd43b;
+            box-shadow: 0 5px 12px rgba(0,0,0,0.4);
+        }
+
+        .footer-action:active .footer-icon-circle { transform: scale(0.9); }
+        .footer-action.disabled { opacity: 0.45; }
+
+        .badge {
+            position: absolute;
+            top: -3px;
+            right: 0px;
+            background: #ffffff;
+            color: #2b173d;
+            font-size: 0.7rem;
+            font-weight: 900;
+            padding: 2px 6px;
+            border-radius: 999px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+        }
+
+        .badge.badge-ad {
+            background: #2ecc71;
+            color: #ffffff;
+        }
+
+        /* ================= CELEBRATION OVERLAY ================= */
+        #win-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(20, 8, 34, 0.82);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 90;
+        }
+
+        .amazing-text {
+            font-size: 3rem;
+            font-weight: 900;
+            color: #ffd43b;
+            text-shadow: 0 5px 0 #d9480f, 0 10px 25px rgba(0,0,0,0.8);
+            letter-spacing: 2px;
+        }
+
+        .win-sub {
+            margin-top: 10px;
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #63e6be;
+        }
+
+        /* ================= 9:16 FULLSCREEN AD OVERLAY ================= */
+        #ad-modal {
+            position: fixed;
+            inset: 0;
+            background: #000000;
+            z-index: 300;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ad-9-16-frame {
             position: relative;
             width: 100%;
             height: 100%;
             aspect-ratio: 9 / 16;
-            max-width: calc(100vh * 9 / 16);
+            max-width: calc(100dvh * 9 / 16);
             background: #000000;
+            overflow: hidden;
+        }
+
+        #ad-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #000000;
+            display: block;
+        }
+
+        /* Top "into" (X) button inside the 9:16 video */
+        #ad-close-x {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.85);
+            background: rgba(0, 0, 0, 0.65);
+            color: #ffffff;
+            font-size: 1.2rem;
+            font-weight: 900;
             display: flex;
             align-items: center;
             justify-content: center;
+            cursor: pointer;
+            z-index: 310;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
         }
-        video {
+
+        #ad-close-x:active {
+            transform: scale(0.9);
+        }
+
+        /* ================= LEADERBOARD SCREEN ================= */
+        .leaderboard-card {
             width: 100%;
+            max-width: 420px;
             height: 100%;
-            object-fit: cover;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .player-input-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .player-input-row input {
+            flex: 1;
+            padding: 11px 14px;
+            border-radius: 12px;
+            border: 2px solid #845ef7;
+            background: #2b173d !important;
+            color: #ffffff !important;
+            font-weight: 700;
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .player-input-row button {
+            padding: 11px 18px;
+            border-radius: 12px;
+            border: none;
+            background: #f59f00;
+            color: #1f0e33;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: 0 3px 0 #b47100;
+        }
+
+        #leaderboard-list {
+            list-style: none;
+            flex: 1;
+            overflow-y: auto;
+            background: #26123b;
+            border-radius: 16px;
+            padding: 12px;
+            border: 2px solid rgba(255,255,255,0.12);
+        }
+
+        #leaderboard-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 14px;
+            margin-bottom: 8px;
+            background: #361b52;
+            color: #ffffff;
+            border-radius: 12px;
+            font-weight: 700;
+        }
+
+        #leaderboard-list li:nth-child(1) {
+            background: linear-gradient(90deg, #5c3c10, #361b52);
+            border: 1px solid #ffd43b;
+        }
+
+        .back-menu-btn {
+            width: 100%;
+            height: 52px;
+            background: linear-gradient(135deg, #495057, #343a40);
+            color: #ffffff;
+            border: none;
+            border-radius: 14px;
+            font-size: 1rem;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.4);
+            flex-shrink: 0;
         }
     </style>
 </head>
 <body>
-    <div class="ad-wrapper">
-        <video id="ad-vid" src="4910.mp4" autoplay playsinline></video>
+
+    <!-- ==================== MAIN MENU ==================== -->
+    <div id="main-menu" class="screen">
+        <div class="menu-top-card">
+            <div class="game-title">NUTS & BOLTS</div>
+            <p class="menu-subtitle">Move nuts between bolts until each bolt holds only one colour!</p>
+            <div class="score-pill">🏆 Total XP / Score: <span id="menu-total-score">0</span></div>
+        </div>
+
+        <div class="mode-selector-card">
+            <div id="mode-mascot" class="mascot-circle" style="color:#40c057;">👽</div>
+            <div id="mode-title" class="mode-title" style="color:#40c057;">EASY</div>
+
+            <div class="mode-tabs">
+                <button id="tab-easy" class="mode-tab active-easy" onclick="selectMode('easy')">EASY</button>
+                <button id="tab-medium" class="mode-tab" onclick="selectMode('medium')">MEDIUM</button>
+                <button id="tab-hard" class="mode-tab" onclick="selectMode('hard')">HARD</button>
+            </div>
+
+            <button id="play-btn" class="play-main-btn" style="background:#40c057;" onclick="startSelectedMode()">
+                PLAY
+                <span id="play-btn-lvl">Level 1</span>
+            </button>
+        </div>
+
+        <div class="menu-bottom-nav">
+            <button class="nav-btn btn-leaderboard" onclick="showLeaderboard()">🏆 Leaderboard</button>
+            <button class="nav-btn btn-portal" onclick="location.href='../index.html'">🎮 Game</button>
+        </div>
     </div>
 
-    <script>
-        const vid = document.getElementById('ad-vid');
+    <!-- ==================== GAMEPLAY SCREEN ==================== -->
+    <div id="game-screen" class="screen hidden">
+        <div class="game-header">
+            <button class="circle-icon-btn" onclick="backToMenu()">❮</button>
+            <div class="header-center">
+                <div id="difficulty-label" class="header-diff">EASY</div>
+                <div class="header-lvl">Level <span id="level-label">1</span></div>
+            </div>
+            <button class="circle-icon-btn" onclick="restartLevel()">↻</button>
+        </div>
 
-        // Start playback automatically
-        vid.play().catch(() => {
-            vid.muted = true;
-            vid.play().catch(() => {});
+        <div id="game-board"></div>
+
+        <div class="game-footer">
+            <button id="undo-btn" class="footer-action disabled" onclick="undoMove()">
+                <div class="footer-icon-circle">↩</div>
+                <span>Undo</span>
+            </button>
+
+            <button id="hint-btn" class="footer-action" onclick="triggerHint()">
+                <div class="footer-icon-circle">💡</div>
+                <span id="hint-badge" class="badge">2</span>
+                <span>Hint</span>
+            </button>
+
+            <button id="add-bolt-btn" class="footer-action" onclick="triggerAddBolt()">
+                <div class="footer-icon-circle">➕</div>
+                <span class="badge badge-ad">AD</span>
+                <span>Add bolt</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ==================== WIN CELEBRATION OVERLAY ==================== -->
+    <div id="win-overlay" class="hidden">
+        <div class="amazing-text">AMAZING!</div>
+        <div id="win-points-text" class="win-sub">+10 XP</div>
+    </div>
+
+    <!-- ==================== 9:16 AD.HTML OVERLAY (NO BOTTOM BUTTONS/TIMER) ==================== -->
+    <div id="ad-modal" class="hidden">
+        <div class="ad-9-16-frame">
+            <button id="ad-close-x" class="hidden" onclick="collectAdReward()">✕</button>
+            <iframe id="ad-iframe" src="about:blank" allow="autoplay; fullscreen"></iframe>
+        </div>
+    </div>
+
+    <!-- ==================== LEADERBOARD SCREEN ==================== -->
+    <div id="leaderboard-screen" class="screen hidden">
+        <div class="leaderboard-card">
+            <div>
+                <h2 style="text-align:center; font-size:1.65rem; color:#ffd43b;">🏆 Global Leaderboard</h2>
+                <p style="text-align:center; font-size:0.82rem; color:#e5dbff; margin-top:3px;">Unified Score across Easy, Medium & Hard</p>
+                <div class="player-input-row">
+                    <input type="text" id="player-name-input" placeholder="Enter your name" maxlength="18">
+                    <button onclick="savePlayerName()">Save</button>
+                </div>
+            </div>
+
+            <ul id="leaderboard-list">
+                <li>Loading scores...</li>
+            </ul>
+
+            <button class="back-menu-btn" onclick="hideLeaderboard()">❮ Back to Menu</button>
+        </div>
+    </div>
+
+    <!-- ==================== GAME LOGIC ==================== -->
+    <script>
+        const NUT_CAPACITY = 4;
+        const ALL_COLORS = ['red', 'blue', 'green', 'yellow', 'purple', 'orange', 'cyan', 'pink'];
+
+        let selectedDifficulty = 'easy';
+        let progress = JSON.parse(localStorage.getItem('stgames_nuts_progress')) || {
+            easy: 1,
+            medium: 1,
+            hard: 1
+        };
+        let totalScore = parseInt(localStorage.getItem('stgames_score') || '0');
+
+        let bolts = [];
+        let initialBoltsState = [];
+        let moveHistory = [];
+        let selectedBoltIndex = -1;
+        let extraBoltUnlocked = false;
+        let hintsRemaining = 2;
+        let pendingRewardType = null;
+        let adFiveSecTimeout = null;
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playTone(freq, type = 'sine', duration = 0.09, gainVal = 0.12) {
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(gainVal, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {}
+        }
+
+        function updateMenuUI() {
+            document.getElementById('menu-total-score').innerText = totalScore;
+            document.getElementById('play-btn-lvl').innerText = `Level ${progress[selectedDifficulty]}`;
+        }
+
+        function selectMode(mode) {
+            selectedDifficulty = mode;
+            playTone(520, 'triangle', 0.07);
+
+            ['easy', 'medium', 'hard'].forEach(m => {
+                document.getElementById(`tab-${m}`).className = 'mode-tab';
+            });
+            document.getElementById(`tab-${mode}`).classList.add(`active-${mode}`);
+
+            const mascot = document.getElementById('mode-mascot');
+            const title = document.getElementById('mode-title');
+            const playBtn = document.getElementById('play-btn');
+
+            if (mode === 'easy') {
+                mascot.innerText = '👽';
+                title.innerText = 'EASY';
+                title.style.color = '#40c057';
+                playBtn.style.background = '#40c057';
+            } else if (mode === 'medium') {
+                mascot.innerText = '😎';
+                title.innerText = 'MEDIUM';
+                title.style.color = '#fab005';
+                playBtn.style.background = '#fab005';
+            } else {
+                mascot.innerText = '😈';
+                title.innerText = 'HARD';
+                title.style.color = '#fa5252';
+                playBtn.style.background = '#fa5252';
+            }
+            updateMenuUI();
+        }
+
+        function startSelectedMode() {
+            playTone(660, 'sine', 0.12);
+            document.getElementById('main-menu').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            document.getElementById('difficulty-label').innerText = selectedDifficulty.toUpperCase();
+            loadLevel();
+        }
+
+        function backToMenu() {
+            playTone(400, 'sine', 0.08);
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('main-menu').classList.remove('hidden');
+            updateMenuUI();
+            window.dispatchEvent(new CustomEvent('updateScore', { detail: totalScore }));
+        }
+
+        function generateSolvableBolts() {
+            let numColors = selectedDifficulty === 'easy' ? 3 : selectedDifficulty === 'medium' ? 4 : 6;
+            let numEmpty = 2;
+            let state = [];
+
+            for (let c = 0; c < numColors; c++) {
+                state.push(Array(NUT_CAPACITY).fill(ALL_COLORS[c]));
+            }
+            for (let e = 0; e < numEmpty; e++) {
+                state.push([]);
+            }
+
+            let shuffleSteps = numColors * 18;
+            for (let s = 0; s < shuffleSteps; s++) {
+                let nonEmpty = state.map((b, i) => b.length > 0 ? i : -1).filter(i => i !== -1);
+                let nonFull = state.map((b, i) => b.length < NUT_CAPACITY ? i : -1).filter(i => i !== -1);
+                let from = nonEmpty[Math.floor(Math.random() * nonEmpty.length)];
+                let toCandidates = nonFull.filter(i => i !== from);
+                if (toCandidates.length > 0) {
+                    let to = toCandidates[Math.floor(Math.random() * toCandidates.length)];
+                    state[to].push(state[from].pop());
+                }
+            }
+
+            let alreadySolved = state.every(b => b.length === 0 || (b.length === NUT_CAPACITY && b.every(n => n === b[0])));
+            if (alreadySolved && state[0].length > 0) {
+                state[numColors].push(state[0].pop());
+            }
+
+            return state;
+        }
+
+        function loadLevel() {
+            let lvl = progress[selectedDifficulty];
+            document.getElementById('level-label').innerText = lvl;
+            selectedBoltIndex = -1;
+            extraBoltUnlocked = false;
+            moveHistory = [];
+            bolts = generateSolvableBolts();
+            initialBoltsState = JSON.parse(JSON.stringify(bolts));
+            updateFooterButtons();
+            renderBoard();
+        }
+
+        function restartLevel() {
+            playTone(440, 'triangle', 0.1);
+            selectedBoltIndex = -1;
+            moveHistory = [];
+            bolts = JSON.parse(JSON.stringify(initialBoltsState));
+            if (extraBoltUnlocked) bolts.push([]);
+            updateFooterButtons();
+            renderBoard();
+        }
+
+        function renderBoard(completedBoltIdx = -1) {
+            const board = document.getElementById('game-board');
+            board.innerHTML = '';
+
+            bolts.forEach((boltNuts, index) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'bolt-wrapper';
+                if (index === completedBoltIdx) wrapper.classList.add('completed-glow');
+                wrapper.onclick = () => handleBoltClick(index);
+
+                const stem = document.createElement('div');
+                stem.className = 'bolt-stem';
+
+                const stack = document.createElement('div');
+                stack.className = 'nuts-stack';
+
+                let topRunCount = 0;
+                if (index === selectedBoltIndex && boltNuts.length > 0) {
+                    let topColor = boltNuts[boltNuts.length - 1];
+                    for (let k = boltNuts.length - 1; k >= 0; k--) {
+                        if (boltNuts[k] === topColor) topRunCount++;
+                        else break;
+                    }
+                }
+
+                boltNuts.forEach((color, nutIdx) => {
+                    const nut = document.createElement('div');
+                    nut.className = `nut color-${color}`;
+                    if (index === selectedBoltIndex && nutIdx >= boltNuts.length - topRunCount) {
+                        nut.classList.add('selected');
+                    }
+                    const emblem = document.createElement('div');
+                    emblem.className = 'nut-emblem';
+                    nut.appendChild(emblem);
+                    stack.appendChild(nut);
+                });
+
+                const base = document.createElement('div');
+                base.className = 'bolt-base';
+
+                wrapper.appendChild(stem);
+                wrapper.appendChild(stack);
+                wrapper.appendChild(base);
+                board.appendChild(wrapper);
+            });
+
+            if (!extraBoltUnlocked) {
+                const stub = document.createElement('div');
+                stub.className = 'bolt-wrapper stub-bolt';
+                stub.onclick = () => triggerAddBolt();
+
+                const plus = document.createElement('div');
+                plus.className = 'stub-plus-icon';
+                plus.innerText = '+';
+
+                const stem = document.createElement('div');
+                stem.className = 'bolt-stem';
+
+                const base = document.createElement('div');
+                base.className = 'bolt-base';
+
+                stub.appendChild(plus);
+                stub.appendChild(stem);
+                stub.appendChild(base);
+                board.appendChild(stub);
+            }
+        }
+
+        function handleBoltClick(index) {
+            if (selectedBoltIndex === -1) {
+                if (bolts[index].length > 0) {
+                    if (isBoltCompleted(bolts[index])) return;
+                    selectedBoltIndex = index;
+                    playTone(580, 'sine', 0.06);
+                    renderBoard();
+                }
+            } else {
+                if (selectedBoltIndex === index) {
+                    selectedBoltIndex = -1;
+                    playTone(420, 'sine', 0.06);
+                    renderBoard();
+                } else {
+                    attemptMove(selectedBoltIndex, index);
+                }
+            }
+        }
+
+        function attemptMove(fromIdx, toIdx) {
+            let source = bolts[fromIdx];
+            let target = bolts[toIdx];
+            if (source.length === 0) return;
+
+            let movingColor = source[source.length - 1];
+            let canMove = target.length < NUT_CAPACITY && (target.length === 0 || target[target.length - 1] === movingColor);
+
+            if (canMove) {
+                let movedCount = 0;
+                while (
+                    source.length > 0 &&
+                    source[source.length - 1] === movingColor &&
+                    target.length < NUT_CAPACITY
+                ) {
+                    target.push(source.pop());
+                    movedCount++;
+                }
+
+                moveHistory.push({ from: fromIdx, to: toIdx, count: movedCount });
+                selectedBoltIndex = -1;
+                playTone(740, 'triangle', 0.09);
+
+                let newlyCompletedIdx = isBoltCompleted(target) ? toIdx : -1;
+                if (newlyCompletedIdx !== -1) {
+                    playTone(980, 'sine', 0.22, 0.18);
+                }
+
+                updateFooterButtons();
+                renderBoard(newlyCompletedIdx);
+                checkWinCondition();
+            } else {
+                if (target.length > 0 && !isBoltCompleted(target)) {
+                    selectedBoltIndex = toIdx;
+                    playTone(580, 'sine', 0.06);
+                } else {
+                    selectedBoltIndex = -1;
+                    playTone(240, 'sawtooth', 0.08);
+                }
+                renderBoard();
+            }
+        }
+
+        function isBoltCompleted(bolt) {
+            return bolt.length === NUT_CAPACITY && bolt.every(n => n === bolt[0]);
+        }
+
+        function checkWinCondition() {
+            let won = bolts.every(b => b.length === 0 || isBoltCompleted(b));
+            if (won) {
+                let pts = selectedDifficulty === 'hard' ? 30 : selectedDifficulty === 'medium' ? 20 : 10;
+                totalScore += pts;
+                progress[selectedDifficulty]++;
+
+                localStorage.setItem('stgames_score', totalScore);
+                localStorage.setItem('stgames_nuts_progress', JSON.stringify(progress));
+                window.dispatchEvent(new CustomEvent('updateScore', { detail: totalScore }));
+
+                document.getElementById('win-points-text').innerText = `+${pts} Total XP!`;
+                document.getElementById('win-overlay').classList.remove('hidden');
+
+                playTone(523, 'sine', 0.12);
+                setTimeout(() => playTone(659, 'sine', 0.12), 120);
+                setTimeout(() => playTone(784, 'sine', 0.12), 240);
+                setTimeout(() => playTone(1046, 'sine', 0.3), 360);
+
+                setTimeout(() => {
+                    document.getElementById('win-overlay').classList.add('hidden');
+                    loadLevel();
+                }, 1600);
+            }
+        }
+
+        function undoMove() {
+            if (moveHistory.length === 0) return;
+            let last = moveHistory.pop();
+            for (let i = 0; i < last.count; i++) {
+                bolts[last.from].push(bolts[last.to].pop());
+            }
+            selectedBoltIndex = -1;
+            playTone(460, 'sine', 0.08);
+            updateFooterButtons();
+            renderBoard();
+        }
+
+        function updateFooterButtons() {
+            const undoBtn = document.getElementById('undo-btn');
+            if (moveHistory.length > 0) undoBtn.classList.remove('disabled');
+            else undoBtn.classList.add('disabled');
+
+            const hintBadge = document.getElementById('hint-badge');
+            if (hintsRemaining > 0) {
+                hintBadge.innerText = hintsRemaining;
+                hintBadge.className = 'badge';
+            } else {
+                hintBadge.innerText = 'Free';
+                hintBadge.className = 'badge badge-ad';
+            }
+
+            const addBoltBtn = document.getElementById('add-bolt-btn');
+            if (extraBoltUnlocked) addBoltBtn.classList.add('disabled');
+            else addBoltBtn.classList.remove('disabled');
+        }
+
+        function triggerHint() {
+            if (hintsRemaining > 0) {
+                hintsRemaining--;
+                updateFooterButtons();
+                executeSmartHint();
+            } else {
+                openAdModal('hint');
+            }
+        }
+
+        function executeSmartHint() {
+            let bestMove = null;
+
+            for (let i = 0; i < bolts.length; i++) {
+                let src = bolts[i];
+                if (src.length === 0 || isBoltCompleted(src)) continue;
+                let topColor = src[src.length - 1];
+
+                for (let j = 0; j < bolts.length; j++) {
+                    if (i === j) continue;
+                    let tgt = bolts[j];
+                    if (tgt.length >= NUT_CAPACITY) continue;
+
+                    if (tgt.length > 0 && tgt[tgt.length - 1] === topColor) {
+                        bestMove = { from: i, to: j };
+                        break;
+                    }
+                    let srcIsMono = src.every(n => n === topColor);
+                    if (tgt.length === 0 && !srcIsMono && !bestMove) {
+                        bestMove = { from: i, to: j };
+                    }
+                }
+                if (bestMove && bolts[bestMove.to].length > 0) break;
+            }
+
+            if (bestMove) {
+                attemptMove(bestMove.from, bestMove.to);
+            } else {
+                alert("No direct moves left! Try Undo or Add Bolt.");
+            }
+        }
+
+        function triggerAddBolt() {
+            if (extraBoltUnlocked) return;
+            openAdModal('bolt');
+        }
+
+        // Opens ../ad.html in 9:16 with top "✕" appearing after 5s and auto-collection on video end
+        function openAdModal(rewardType) {
+            pendingRewardType = rewardType;
+            const modal = document.getElementById('ad-modal');
+            const iframe = document.getElementById('ad-iframe');
+            const closeX = document.getElementById('ad-close-x');
+
+            modal.classList.remove('hidden');
+            closeX.classList.add('hidden');
+            iframe.src = '../ad.html';
+
+            clearTimeout(adFiveSecTimeout);
+            adFiveSecTimeout = setTimeout(() => {
+                closeX.classList.remove('hidden');
+            }, 5000);
+
+            // Also detect if a <video> inside same-origin ../ad.html finishes playing
+            iframe.onload = () => {
+                try {
+                    const innerVideo = iframe.contentWindow.document.querySelector('video');
+                    if (innerVideo) {
+                        innerVideo.onended = () => collectAdReward();
+                    }
+                } catch (e) {}
+            };
+        }
+
+        function collectAdReward() {
+            if (!pendingRewardType) return;
+            const rewardType = pendingRewardType;
+            pendingRewardType = null;
+
+            clearTimeout(adFiveSecTimeout);
+            const iframe = document.getElementById('ad-iframe');
+            iframe.src = 'about:blank';
+            document.getElementById('ad-modal').classList.add('hidden');
+            document.getElementById('ad-close-x').classList.add('hidden');
+
+            playTone(880, 'sine', 0.15);
+
+            if (rewardType === 'bolt' && !extraBoltUnlocked) {
+                extraBoltUnlocked = true;
+                bolts.push([]);
+                updateFooterButtons();
+                renderBoard();
+            } else if (rewardType === 'hint') {
+                hintsRemaining += 2;
+                updateFooterButtons();
+            }
+        }
+
+        // Listen for postMessage from ../ad.html when video finishes
+        window.addEventListener('message', (event) => {
+            if (event.data === 'AD_COMPLETED' || (event.data && event.data.type === 'AD_COMPLETED')) {
+                collectAdReward();
+            }
         });
 
-        // Automatically collect reward when video finishes
-        vid.addEventListener('ended', () => {
-            window.parent.postMessage('AD_COMPLETED', '*');
+        function showLeaderboard() {
+            document.getElementById('main-menu').classList.add('hidden');
+            document.getElementById('leaderboard-screen').classList.remove('hidden');
+            document.getElementById('player-name-input').value =
+                localStorage.getItem('game_user_name') || 'Satish Kommana';
+            window.dispatchEvent(new Event('fetchLeaderboard'));
+        }
+
+        function hideLeaderboard() {
+            document.getElementById('leaderboard-screen').classList.add('hidden');
+            document.getElementById('main-menu').classList.remove('hidden');
+        }
+
+        function savePlayerName() {
+            const val = document.getElementById('player-name-input').value.trim();
+            if (val) {
+                localStorage.setItem('game_user_name', val);
+                window.dispatchEvent(new CustomEvent('updateScore', { detail: totalScore }));
+                setTimeout(() => window.dispatchEvent(new Event('fetchLeaderboard')), 350);
+            }
+        }
+
+        updateMenuUI();
+    </script>
+
+    <!-- ==================== FIREBASE AUTH + LEADERBOARD MODULE ==================== -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getDatabase, ref, update, get, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDOFx0_vpPDRDCkUW-deQjMNK5msOsGSnI",
+            authDomain: "stgames-289.firebaseapp.com",
+            databaseURL: "https://stgames-289-default-rtdb.firebaseio.com",
+            projectId: "stgames-289",
+            storageBucket: "stgames-289.firebasestorage.app",
+            messagingSenderId: "916146081741",
+            appId: "1:916146081741:web:eb343c4dc0c6648388fe84",
+            measurementId: "G-P8RQ074PWX"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        let currentUid = null;
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUid = user.uid;
+                if (user.displayName && !localStorage.getItem('game_user_name')) {
+                    localStorage.setItem('game_user_name', user.displayName);
+                }
+                const savedScore = parseInt(localStorage.getItem('stgames_score') || '0');
+                syncScoreToFirebase(savedScore);
+            } else {
+                signInAnonymously(auth).catch((err) => {
+                    console.warn("Anonymous Auth not enabled or blocked:", err);
+                });
+            }
+        });
+
+        async function syncScoreToFirebase(scoreVal) {
+            if (!currentUid) return;
+            const userName = localStorage.getItem('game_user_name') || "Satish Kommana";
+
+            try {
+                const snap = await get(ref(db, `leaderboard/${currentUid}`));
+                let existingXp = 0;
+                if (snap.exists()) {
+                    const val = snap.val();
+                    existingXp = val.xp || val.score || 0;
+                }
+                const bestScore = Math.max(scoreVal, existingXp);
+                if (bestScore > scoreVal) {
+                    localStorage.setItem('stgames_score', bestScore);
+                    const scoreEl = document.getElementById('menu-total-score');
+                    if (scoreEl) scoreEl.innerText = bestScore;
+                }
+
+                const payload = {
+                    name: userName,
+                    username: userName,
+                    xp: bestScore,
+                    score: bestScore,
+                    updatedAt: Date.now()
+                };
+
+                await update(ref(db, `leaderboard/${currentUid}`), payload);
+                await update(ref(db, `players/${currentUid}`), payload);
+            } catch (err) {
+                console.warn("Firebase Sync Error:", err);
+            }
+        }
+
+        window.addEventListener('updateScore', (e) => {
+            syncScoreToFirebase(e.detail);
+        });
+
+        window.addEventListener('fetchLeaderboard', async () => {
+            const listEl = document.getElementById('leaderboard-list');
+            const localName = localStorage.getItem('game_user_name') || "Satish Kommana";
+            const localScore = parseInt(localStorage.getItem('stgames_score') || '0');
+
+            listEl.innerHTML = '<li>Loading leaderboard...</li>';
+
+            try {
+                if (!auth.currentUser) {
+                    await signInAnonymously(auth);
+                }
+                currentUid = auth.currentUser ? auth.currentUser.uid : null;
+                await syncScoreToFirebase(localScore);
+
+                const lbQuery = query(ref(db, 'leaderboard'), orderByChild('xp'), limitToLast(50));
+                const snapshot = await get(lbQuery);
+
+                listEl.innerHTML = '';
+                let entries = [];
+                if (snapshot.exists()) {
+                    entries = Object.values(snapshot.val());
+                } else {
+                    entries = [{ username: localName, xp: localScore }];
+                }
+
+                entries.sort((a, b) => ((b.xp ?? b.score ?? 0) - (a.xp ?? a.score ?? 0)));
+
+                entries.forEach((entry, idx) => {
+                    const li = document.createElement('li');
+                    const medal = idx === 0 ? '🥇 ' : idx === 1 ? '🥈 ' : idx === 2 ? '🥉 ' : `#${idx + 1} `;
+                    const displayName = entry.name || entry.username || entry.displayName || 'Player';
+                    const displayPoints = entry.xp ?? entry.score ?? 0;
+                    li.innerHTML = `<span>${medal}${displayName}</span><span>${displayPoints} XP</span>`;
+                    listEl.appendChild(li);
+                });
+            } catch (error) {
+                console.error("Leaderboard error:", error);
+                listEl.innerHTML = `
+                    <li><span>🥇 ${localName} (You)</span><span>${localScore} XP</span></li>
+                    <li style="font-size:0.8rem; color:#fcc419; line-height:1.4;">
+                        ⚠️ Enable "Anonymous" sign-in inside Firebase Console → Authentication → Sign-in method.
+                    </li>
+                `;
+            }
         });
     </script>
 </body>
