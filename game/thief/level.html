@@ -32,13 +32,14 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 14px 18px;
+      padding: 10px 16px;
       background: #2b2b36;
       border-bottom: 2px solid #3b3b4a;
+      flex-shrink: 0;
     }
     .home-circle {
-      width: 42px;
-      height: 42px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       background: linear-gradient(180deg, #ff9d2f, #e86f00);
       color: #fff;
@@ -47,7 +48,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 19px;
+      font-size: 18px;
       cursor: pointer;
     }
     .restart-box {
@@ -57,11 +58,11 @@
       cursor: pointer;
       color: #ff9800;
       font-weight: 800;
-      font-size: 12px;
+      font-size: 11px;
     }
     .restart-icon {
-      width: 36px;
-      height: 36px;
+      width: 34px;
+      height: 34px;
       border-radius: 50%;
       border: 2px solid #fff;
       background: #ff9800;
@@ -69,32 +70,35 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 17px;
+      font-size: 16px;
     }
-    .level-title { font-size: 18px; font-weight: 800; color: #ffeb3b; }
+    .level-title { font-size: 17px; font-weight: 800; color: #ffeb3b; }
     .prompt-text {
       text-align: center;
-      font-size: 16px;
-      padding: 10px 20px;
-      min-height: 46px;
+      font-size: 15px;
+      padding: 8px 16px;
+      min-height: 40px;
       color: #f5f5f5;
       font-weight: 700;
       background: #2c2c38;
       border-bottom: 2px solid #3b3b4a;
+      flex-shrink: 0;
     }
     canvas {
       width: 100%;
-      height: 440px;
+      height: 420px;
       background: #fff8e8;
       touch-action: none;
       cursor: grab;
+      flex-grow: 1;
     }
     .bottom-bar {
       display: flex;
       justify-content: center;
-      padding: 18px;
+      padding: 12px 18px;
       background: #2b2b36;
       border-top: 2px solid #3b3b4a;
+      flex-shrink: 0;
     }
     .hint-btn {
       background: linear-gradient(180deg, #29b6f6, #0288d1);
@@ -102,15 +106,14 @@
       border: 3px solid #fff;
       box-shadow: 0 4px 0 #01579b, 0 8px 15px rgba(0,0,0,0.3);
       border-radius: 40px;
-      padding: 10px 42px;
-      font-size: 20px;
+      padding: 10px 38px;
+      font-size: 18px;
       font-weight: 800;
       display: flex;
       align-items: center;
       gap: 10px;
       cursor: pointer;
     }
-    /* Rewarded Ad Overlay Modal */
     .ad-modal {
       position: absolute;
       inset: 0;
@@ -175,7 +178,7 @@
 
     <div class="prompt-text" id="promptText">Loading level...</div>
 
-    <canvas id="gameCanvas" width="420" height="440"></canvas>
+    <canvas id="gameCanvas" width="420" height="420"></canvas>
 
     <div class="bottom-bar">
       <button class="hint-btn" id="hintBtn">HINT <span>💡</span></button>
@@ -214,7 +217,6 @@
     const db = getDatabase(app);
     const STORAGE_KEY = "thief_puzzle_player_v1";
 
-    // Audio synthesizer
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     let audioCtx = null;
     function playSound(type) {
@@ -253,91 +255,90 @@
       } catch (e) {}
     }
 
-    // 6 Video Levels
     const VIDEO_LEVELS = [
       {
         prompt: "I also want to eat roast chicken",
         thiefStyle: "bandana",
-        ledge: { x1: 0, y1: 215, x2: 95, y2: 215 },
-        table: { x: 255, y: 245, w: 95, h: 70 },
-        thief: { x: 48, y: 140, shoulderX: 62, shoulderY: 132 },
-        handStart: { x: 130, y: 270 },
-        target: { x: 300, y: 232, r: 24, kind: "chicken" },
-        pivots: [{ x: 175, y: 350, r: 24, kind: "rock" }],
+        ledge: { x1: 0, y1: 200, x2: 95, y2: 200 },
+        table: { x: 255, y: 230, w: 95, h: 60 },
+        thief: { x: 48, y: 130, shoulderX: 62, shoulderY: 122 },
+        handStart: { x: 130, y: 250 },
+        target: { x: 300, y: 218, r: 24, kind: "chicken" },
+        pivots: [{ x: 175, y: 330, r: 24, kind: "rock" }],
         hazards: [
-          { x: 215, y: 235, r: 34, kind: "girl" },
-          { x: 380, y: 235, r: 32, kind: "boy" }
+          { x: 215, y: 220, r: 34, kind: "girl" },
+          { x: 380, y: 220, r: 32, kind: "boy" }
         ]
       },
       {
         prompt: "I also want love balloons",
         thiefStyle: "cap",
-        thief: { x: 68, y: 325, shoulderX: 82, shoulderY: 315 },
-        handStart: { x: 135, y: 290 },
-        target: { x: 315, y: 110, r: 28, kind: "balloons" },
-        pivots: [{ x: 105, y: 120, r: 30, kind: "bin" }],
+        thief: { x: 68, y: 305, shoulderX: 82, shoulderY: 295 },
+        handStart: { x: 135, y: 270 },
+        target: { x: 315, y: 100, r: 28, kind: "balloons" },
+        pivots: [{ x: 105, y: 110, r: 30, kind: "bin" }],
         hazards: [
-          { x: 250, y: 195, r: 38, kind: "cat" },
-          { x: 365, y: 195, r: 35, kind: "dog" }
+          { x: 250, y: 180, r: 38, kind: "cat" },
+          { x: 365, y: 180, r: 35, kind: "dog" }
         ]
       },
       {
         prompt: "How to take away the treasure!",
         thiefStyle: "normal",
-        thief: { x: 62, y: 225, shoulderX: 78, shoulderY: 215 },
-        handStart: { x: 138, y: 232 },
-        target: { x: 360, y: 255, r: 25, kind: "treasure" },
-        pivots: [{ x: 200, y: 355, r: 16, kind: "rock" }],
+        thief: { x: 62, y: 210, shoulderX: 78, shoulderY: 200 },
+        handStart: { x: 138, y: 215 },
+        target: { x: 360, y: 240, r: 25, kind: "treasure" },
+        pivots: [{ x: 200, y: 340, r: 16, kind: "rock" }],
         hazards: [
-          { x: 200, y: 140, r: 32, kind: "door" },
-          { x: 200, y: 225, r: 32, kind: "door" },
-          { x: 285, y: 210, r: 35, kind: "guard" }
+          { x: 200, y: 130, r: 32, kind: "door" },
+          { x: 200, y: 210, r: 32, kind: "door" },
+          { x: 285, y: 200, r: 35, kind: "guard" }
         ]
       },
       {
         prompt: "Take the lady's purse.",
         thiefStyle: "mask",
         streetFloor: true,
-        bench: { x: 200, y: 275, w: 200 },
-        thief: { x: 55, y: 270, shoulderX: 68, shoulderY: 260 },
-        handStart: { x: 92, y: 195 },
-        target: { x: 368, y: 258, r: 22, kind: "purse" },
+        bench: { x: 200, y: 260, w: 200 },
+        thief: { x: 55, y: 250, shoulderX: 68, shoulderY: 240 },
+        handStart: { x: 92, y: 180 },
+        target: { x: 368, y: 242, r: 22, kind: "purse" },
         pivots: [
-          { x: 95, y: 90, r: 22, kind: "lamp" },
-          { x: 335, y: 90, r: 22, kind: "lamp" }
+          { x: 95, y: 80, r: 22, kind: "lamp" },
+          { x: 335, y: 80, r: 22, kind: "lamp" }
         ],
         hazards: [
-          { x: 145, y: 270, r: 32, kind: "bin" },
-          { x: 268, y: 245, r: 40, kind: "couple" }
+          { x: 145, y: 250, r: 32, kind: "bin" },
+          { x: 268, y: 230, r: 40, kind: "couple" }
         ]
       },
       {
         prompt: "Save him!",
         thiefStyle: "angel",
-        floorLine: 385,
-        thief: { x: 95, y: 90, shoulderX: 112, shoulderY: 95 },
-        handStart: { x: 175, y: 155 },
-        target: { x: 242, y: 258, r: 20, kind: "plug" },
-        pivots: [{ x: 222, y: 362, r: 16, kind: "rock" }],
+        floorLine: 365,
+        thief: { x: 95, y: 80, shoulderX: 112, shoulderY: 85 },
+        handStart: { x: 175, y: 145 },
+        target: { x: 242, y: 242, r: 20, kind: "plug" },
+        pivots: [{ x: 222, y: 345, r: 16, kind: "rock" }],
         hazards: [
-          { x: 60, y: 290, r: 32, kind: "cat" },
-          { x: 192, y: 258, r: 18, kind: "warhead" },
-          { x: 350, y: 275, r: 38, kind: "villain" }
+          { x: 60, y: 270, r: 32, kind: "cat" },
+          { x: 192, y: 242, r: 18, kind: "warhead" },
+          { x: 350, y: 255, r: 38, kind: "villain" }
         ]
       },
       {
         prompt: "Help him get the fire extinguisher.",
         thiefStyle: "normal",
-        thief: { x: 75, y: 145, shoulderX: 90, shoulderY: 138 },
-        handStart: { x: 145, y: 190 },
-        target: { x: 352, y: 355, r: 25, kind: "extinguisher" },
-        pivots: [{ x: 190, y: 282, r: 22, kind: "flower" }],
+        thief: { x: 75, y: 135, shoulderX: 90, shoulderY: 128 },
+        handStart: { x: 145, y: 175 },
+        target: { x: 352, y: 335, r: 25, kind: "extinguisher" },
+        pivots: [{ x: 190, y: 265, r: 22, kind: "flower" }],
         hazards: [
-          { x: 298, y: 125, r: 38, kind: "fire" },
-          { x: 110, y: 260, r: 32, kind: "fire" },
-          { x: 100, y: 372, r: 32, kind: "fire" },
-          { x: 295, y: 305, r: 34, kind: "fire" },
-          { x: 246, y: 225, r: 22, kind: "hammer" }
+          { x: 298, y: 115, r: 38, kind: "fire" },
+          { x: 110, y: 245, r: 32, kind: "fire" },
+          { x: 100, y: 352, r: 32, kind: "fire" },
+          { x: 295, y: 290, r: 34, kind: "fire" },
+          { x: 246, y: 210, r: 22, kind: "hammer" }
         ]
       }
     ];
@@ -384,18 +385,18 @@
       const thiefOnLeft = levelNum % 4 !== 0;
 
       const thiefX = thiefOnLeft ? Math.floor(52 + rand() * 35) : Math.floor(335 + rand() * 30);
-      const thiefY = Math.floor(110 + rand() * 210);
+      const thiefY = Math.floor(100 + rand() * 190);
       const shoulderX = thiefOnLeft ? thiefX + 14 : thiefX - 14;
       const shoulderY = thiefY - 8;
       const targetX = thiefOnLeft ? Math.floor(315 + rand() * 55) : Math.floor(55 + rand() * 55);
-      const targetY = Math.floor(95 + rand() * 250);
+      const targetY = Math.floor(85 + rand() * 230);
 
       const numPivots = 1 + (levelNum % 3);
       const pivots = [];
       for (let i = 0; i < numPivots; i++) {
         const progress = (i + 1) / (numPivots + 1);
         const px = Math.floor(105 + progress * 210 + (rand() * 50 - 25));
-        const py = (levelNum + i) % 2 === 0 ? Math.floor(310 + rand() * 55) : Math.floor(75 + rand() * 55);
+        const py = (levelNum + i) % 2 === 0 ? Math.floor(290 + rand() * 45) : Math.floor(70 + rand() * 50);
         pivots.push({ x: px, y: py, r: 22, kind: PIVOT_KINDS[(levelNum + i) % PIVOT_KINDS.length] });
       }
 
@@ -407,15 +408,15 @@
       while (hazards.length < desiredHazards && attempts < 40) {
         attempts++;
         const hx = Math.floor(100 + rand() * 220);
-        const hy = Math.floor(85 + rand() * 270);
+        const hy = Math.floor(80 + rand() * 250);
         let clear = true;
         for (let s = 0; s < pathPoints.length - 1; s++) {
-          if (distToSegment({ x: hx, y: hy }, pathPoints[s], pathPoints[s + 1]) < 62) clear = false;
+          if (distToSegment({ x: hx, y: hy }, pathPoints[s], pathPoints[s + 1]) < 58) clear = false;
         }
-        if (Math.hypot(hx - thiefX, hy - thiefY) < 75) clear = false;
-        if (Math.hypot(hx - targetX, hy - targetY) < 70) clear = false;
+        if (Math.hypot(hx - thiefX, hy - thiefY) < 70) clear = false;
+        if (Math.hypot(hx - targetX, hy - targetY) < 65) clear = false;
         if (clear) {
-          hazards.push({ x: hx, y: hy, r: 30, kind: HAZARD_KINDS[(levelNum + hazards.length * 3) % HAZARD_KINDS.length] });
+          hazards.push({ x: hx, y: hy, r: 28, kind: HAZARD_KINDS[(levelNum + hazards.length * 3) % HAZARD_KINDS.length] });
         }
       }
 
@@ -423,7 +424,7 @@
         prompt: `Level ${levelNum}: ${targetChoice.title}`,
         thiefStyle,
         thief: { x: thiefX, y: thiefY, shoulderX, shoulderY },
-        handStart: { x: thiefOnLeft ? shoulderX + 45 : shoulderX - 45, y: Math.min(360, Math.max(70, shoulderY + 40)) },
+        handStart: { x: thiefOnLeft ? shoulderX + 45 : shoulderX - 45, y: Math.min(340, Math.max(60, shoulderY + 40)) },
         target: { x: targetX, y: targetY, r: 24, kind: targetChoice.kind },
         pivots,
         hazards
@@ -793,7 +794,7 @@
         ctx.strokeRect(t.x + 6, t.y + 6, 6, t.h); ctx.strokeRect(t.x + t.w - 12, t.y + 6, 6, t.h);
       }
       if (levelData.streetFloor) {
-        ctx.fillStyle = "rgba(207, 216, 220, 0.55)"; ctx.fillRect(0, 325, canvas.width, 135);
+        ctx.fillStyle = "rgba(207, 216, 220, 0.55)"; ctx.fillRect(0, 300, canvas.width, 120);
       }
       if (levelData.bench) {
         ctx.fillStyle = "#d7ccc8"; ctx.fillRect(levelData.bench.x, levelData.bench.y, levelData.bench.w, 10);
@@ -897,11 +898,11 @@
     document.getElementById("homeBtn").onclick = () => window.location.href = "index.html";
     document.getElementById("restartBtn").onclick = () => loadLevel(currentLevelNum);
 
-    // Rewarded Ad Integration (Opens ad.html and listens for postMessage)
+    // Points adIframe to ../ad.html in the main folder
     document.getElementById("hintBtn").onclick = () => {
       const adModal = document.getElementById("adModal");
       const adIframe = document.getElementById("adIframe");
-      adIframe.src = "ad.html";
+      adIframe.src = "../ad.html";
       adModal.classList.remove("hidden");
     };
 
@@ -911,7 +912,6 @@
         const adIframe = document.getElementById("adIframe");
         adModal.classList.add("hidden");
         adIframe.src = "";
-        // Reward granted: Show hint path
         showHint = true;
       }
     });
