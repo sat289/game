@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>Thief Puzzle - Play Level</title>
+  <title>Thief Puzzle - Play</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; font-family: 'Segoe UI', sans-serif; }
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; font-family: 'Segoe UI', Tahoma, sans-serif; }
     body {
-      background: #f6f4f0;
+      background: #e6e2d8;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -18,13 +18,16 @@
       width: 100%;
       max-width: 420px;
       height: 100vh;
-      max-height: 820px;
-      background: #fbf9f5;
+      max-height: 840px;
+      background:
+        radial-gradient(circle at 20% 25%, rgba(255,255,255,0.8) 0%, transparent 45%),
+        radial-gradient(circle at 80% 70%, rgba(230,225,215,0.6) 0%, transparent 50%),
+        #f9f7f2;
       position: relative;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      border: 2px solid #ddd;
+      box-shadow: 0 10px 35px rgba(0,0,0,0.2);
     }
     .top-bar {
       display: flex;
@@ -32,88 +35,108 @@
       align-items: center;
       padding: 16px 20px;
     }
-    .icon-btn {
+    .home-circle {
       width: 44px;
       height: 44px;
       border-radius: 50%;
-      background: #f58220;
+      background: linear-gradient(180deg, #ff9d2f, #e86f00);
       color: #fff;
       border: 3px solid #fff;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+      box-shadow: 0 3px 8px rgba(0,0,0,0.25);
       display: flex;
       justify-content: center;
       align-items: center;
       font-size: 20px;
       cursor: pointer;
     }
-    .level-title { font-size: 20px; font-weight: 600; color: #333; }
+    .restart-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      color: #e86f00;
+      font-weight: 800;
+      font-size: 13px;
+    }
+    .restart-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 2px solid #222;
+      background: #ff9800;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 18px;
+    }
+    .level-title { font-size: 19px; font-weight: 700; color: #222; }
     .prompt-text {
       text-align: center;
-      font-size: 18px;
-      padding: 0 24px 10px;
+      font-size: 17px;
+      padding: 0 28px 10px;
       min-height: 48px;
       color: #222;
+      line-height: 1.3;
     }
     canvas {
       width: 100%;
       height: 460px;
-      background: #fff3db;
+      background: #ffefd5;
       touch-action: none;
       cursor: grab;
-      border-top: 2px solid #ecd9b5;
-      border-bottom: 2px solid #ecd9b5;
     }
     .bottom-bar {
       display: flex;
       justify-content: center;
-      padding: 24px;
+      gap: 12px;
+      padding: 22px;
     }
     .hint-btn {
-      background: linear-gradient(180deg, #8fd6ff, #5bc0ff);
+      background: linear-gradient(180deg, #8fd6ff, #58b8ff);
       color: #fff;
       border: 3px solid #fff;
-      box-shadow: 0 5px 0 #3aa0e0, 0 8px 15px rgba(0,0,0,0.15);
+      box-shadow: 0 4px 0 #222, 0 8px 15px rgba(0,0,0,0.18);
       border-radius: 40px;
-      padding: 12px 48px;
-      font-size: 22px;
+      padding: 10px 40px;
+      font-size: 20px;
       font-weight: 700;
-      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
       cursor: pointer;
     }
-    /* Win / Fail Overlay Modal */
     .overlay {
       position: absolute;
       inset: 0;
-      background: rgba(0,0,0,0.82);
+      background: rgba(15, 15, 18, 0.86);
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      gap: 22px;
-      z-index: 20;
+      gap: 26px;
+      z-index: 30;
     }
     .hidden { display: none !important; }
-    .badge-box {
-      text-align: center;
-      color: #fff;
-    }
-    .trophy-icon { font-size: 84px; }
-    .ribbon {
+    .trophy-card { text-align: center; }
+    .RibbonText {
       font-size: 32px;
       font-weight: 900;
-      padding: 8px 34px;
+      padding: 8px 36px;
       border-radius: 30px;
-      margin-top: -10px;
       letter-spacing: 2px;
+      color: #fff;
+      margin-top: -12px;
+      border: 3px solid #fff;
     }
-    .ribbon.win { background: #e91e63; color: #fff; box-shadow: 0 4px 0 #ad1457; }
-    .ribbon.fail { background: #5e35b1; color: #fff; box-shadow: 0 4px 0 #311b92; }
+    .RibbonText.win { background: linear-gradient(180deg, #ff2a85, #b8004f); }
+    .RibbonText.fail { background: linear-gradient(180deg, #7e57c2, #4527a0); }
     .modal-btn {
       background: linear-gradient(180deg, #54f000, #2db300);
       color: #fff;
       border: 3px solid #111;
       border-radius: 16px;
-      padding: 14px 48px;
+      padding: 12px 48px;
       font-size: 24px;
       font-weight: 800;
       cursor: pointer;
@@ -124,9 +147,12 @@
 <body>
   <div class="game-wrapper">
     <div class="top-bar">
-      <div class="icon-btn" id="homeBtn" title="Home">🏠</div>
+      <div class="home-circle" id="homeBtn">🏠</div>
       <div class="level-title" id="levelHeader">Level : 1</div>
-      <div class="icon-btn" id="restartBtn" title="Restart">🔄</div>
+      <div class="restart-box" id="restartBtn">
+        <div class="restart-icon">↻</div>
+        <span>ReStart</span>
+      </div>
     </div>
 
     <div class="prompt-text" id="promptText">I also want to eat roast chicken</div>
@@ -134,14 +160,13 @@
     <canvas id="gameCanvas" width="420" height="460"></canvas>
 
     <div class="bottom-bar">
-      <button class="hint-btn" id="hintBtn">HINT 💡</button>
+      <button class="hint-btn" id="hintBtn">HINT <span>▶️</span></button>
     </div>
 
-    <!-- Win/Fail Popup -->
     <div id="resultOverlay" class="overlay hidden">
-      <div class="badge-box">
-        <div id="trophyIcon" class="trophy-icon">🏆</div>
-        <div id="resultRibbon" class="ribbon win">YOU WIN</div>
+      <div class="trophy-card">
+        <div id="trophySvgWrap"></div>
+        <div id="resultRibbon" class="RibbonText win">YOU WIN</div>
       </div>
       <button id="modalActionBtn" class="modal-btn">» NEXT</button>
     </div>
@@ -165,119 +190,178 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const STORAGE_KEY = "thief_puzzle_player_v1";
+    const CUSTOM_LEVELS_KEY = "thief_custom_levels_v1";
+    const PREVIEW_DRAFT_KEY = "thief_preview_draft_v1";
 
-    /**
-     * ==========================================================
-     * ADD NEW LEVELS HERE!
-     * Each level defines:
-     * - prompt: Text shown at top
-     * - thief: { x, y, shoulderX, shoulderY }
-     * - target: { x, y, r, emoji, label }
-     * - pivots: Safe objects the arm can bend around [{ x, y, r, emoji, color }]
-     * - hazards: Obstacles/Guards that cause FAILED if touched [{ x, y, r, emoji, label }]
-     * ==========================================================
-     */
-    const LEVELS = [
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+    function playSound(type) {
+      try {
+        if (!audioCtx) audioCtx = new AudioCtx();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        const now = audioCtx.currentTime;
+
+        if (type === "pop") {
+          osc.frequency.setValueAtTime(520, now);
+          osc.frequency.exponentialRampToValueAtTime(880, now + 0.08);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+          osc.start(now);
+          osc.stop(now + 0.08);
+        } else if (type === "win") {
+          [523, 659, 784, 1046].forEach((freq, idx) => {
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.connect(g); g.connect(audioCtx.destination);
+            o.frequency.setValueAtTime(freq, now + idx * 0.09);
+            g.gain.setValueAtTime(0.18, now + idx * 0.09);
+            g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.09 + 0.25);
+            o.start(now + idx * 0.09);
+            o.stop(now + idx * 0.09 + 0.25);
+          });
+        } else if (type === "fail") {
+          osc.type = "sawtooth";
+          osc.frequency.setValueAtTime(220, now);
+          osc.frequency.linearRampToValueAtTime(110, now + 0.35);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.35);
+          osc.start(now);
+          osc.stop(now + 0.35);
+        }
+      } catch (e) {}
+    }
+
+    const BUILTIN_LEVELS = [
       {
-        // Video 1 - Roast Chicken Level
         prompt: "I also want to eat roast chicken",
-        thief: { x: 65, y: 150, shoulderX: 80, shoulderY: 145 },
-        handStart: { x: 115, y: 270 },
-        target: { x: 295, y: 245, r: 24, emoji: "🍗" },
-        pivots: [
-          { x: 175, y: 360, r: 26, emoji: "🪨", label: "Rock" }
-        ],
+        thiefStyle: "bandana",
+        ledge: { x1: 0, y1: 215, x2: 95, y2: 215 },
+        table: { x: 255, y: 245, w: 95, h: 70 },
+        thief: { x: 48, y: 140, shoulderX: 62, shoulderY: 132 },
+        handStart: { x: 130, y: 270 },
+        target: { x: 300, y: 232, r: 24, kind: "chicken" },
+        pivots: [{ x: 175, y: 360, r: 24, kind: "rock" }],
         hazards: [
-          { x: 210, y: 240, r: 38, emoji: "👩", label: "Girl" },
-          { x: 375, y: 240, r: 35, emoji: "🧑", label: "Boy" }
+          { x: 215, y: 235, r: 36, kind: "girl" },
+          { x: 380, y: 235, r: 34, kind: "boy" }
         ]
       },
       {
-        // Video 1 - Love Balloons Level
         prompt: "I also want love balloons",
-        thief: { x: 75, y: 330, shoulderX: 90, shoulderY: 320 },
-        handStart: { x: 140, y: 300 },
-        target: { x: 315, y: 120, r: 28, emoji: "🎈" },
-        pivots: [
-          { x: 110, y: 130, r: 34, emoji: "🗑️", label: "Bin" }
-        ],
+        thiefStyle: "cap",
+        thief: { x: 68, y: 335, shoulderX: 82, shoulderY: 325 },
+        handStart: { x: 135, y: 300 },
+        target: { x: 315, y: 120, r: 28, kind: "balloons" },
+        pivots: [{ x: 105, y: 130, r: 34, kind: "bin" }],
         hazards: [
-          { x: 250, y: 205, r: 42, emoji: "👩", label: "Girl" },
-          { x: 365, y: 205, r: 38, emoji: "🧑", label: "Boy" }
+          { x: 250, y: 205, r: 40, kind: "girl" },
+          { x: 365, y: 205, r: 36, kind: "boy" }
         ]
       },
       {
-        // Video 2 - Treasure behind Door Level
         prompt: "How to take away the treasure!",
-        thief: { x: 65, y: 230, shoulderX: 80, shoulderY: 225 },
-        handStart: { x: 135, y: 235 },
-        target: { x: 360, y: 255, r: 26, emoji: "🧰" },
+        thiefStyle: "normal",
+        thief: { x: 62, y: 235, shoulderX: 78, shoulderY: 225 },
+        handStart: { x: 138, y: 242 },
+        target: { x: 360, y: 265, r: 25, kind: "treasure" },
         pivots: [
-          { x: 205, y: 365, r: 16, emoji: "⚙️", label: "Bottom Gap" },
-          { x: 360, y: 355, r: 16, emoji: "🪨", label: "Corner" }
+          { x: 200, y: 365, r: 14, kind: "gap" },
+          { x: 360, y: 355, r: 14, kind: "gap" }
         ],
         hazards: [
-          { x: 205, y: 160, r: 35, emoji: "🚪", label: "Door Top" },
-          { x: 205, y: 235, r: 35, emoji: "🚪", label: "Door Mid" },
-          { x: 280, y: 220, r: 40, emoji: "🥷", label: "Guard" }
+          { x: 200, y: 155, r: 34, kind: "door" },
+          { x: 200, y: 235, r: 34, kind: "door" },
+          { x: 285, y: 225, r: 38, kind: "guard" }
         ]
       },
       {
-        // Video 3 - Take the lady's purse
         prompt: "Take the lady's purse.",
-        thief: { x: 55, y: 290, shoulderX: 70, shoulderY: 280 },
-        handStart: { x: 95, y: 220 },
-        target: { x: 370, y: 270, r: 24, emoji: "👛" },
+        thiefStyle: "mask",
+        streetFloor: true,
+        bench: { x: 200, y: 285, w: 200 },
+        thief: { x: 55, y: 280, shoulderX: 68, shoulderY: 270 },
+        handStart: { x: 92, y: 205 },
+        target: { x: 368, y: 268, r: 22, kind: "purse" },
         pivots: [
-          { x: 95, y: 95, r: 24, emoji: "💡", label: "Left Lamp" },
-          { x: 335, y: 95, r: 24, emoji: "💡", label: "Right Lamp" }
+          { x: 95, y: 100, r: 24, kind: "lamp" },
+          { x: 335, y: 100, r: 24, kind: "lamp" }
         ],
         hazards: [
-          { x: 250, y: 260, r: 42, emoji: "💑", label: "Couple" },
-          { x: 145, y: 290, r: 34, emoji: "🗑️", label: "Bin" }
+          { x: 145, y: 280, r: 34, kind: "bin" },
+          { x: 268, y: 255, r: 44, kind: "couple" }
         ]
       },
       {
-        // Video 3 - Save him! (Rocket fuse)
         prompt: "Save him!",
-        thief: { x: 100, y: 110, shoulderX: 115, shoulderY: 110 },
-        handStart: { x: 165, y: 160 },
-        target: { x: 240, y: 270, r: 20, emoji: "🔌" },
-        pivots: [
-          { x: 220, y: 375, r: 16, emoji: "🪨", label: "Stone" }
-        ],
+        thiefStyle: "angel",
+        floorLine: 390,
+        thief: { x: 95, y: 100, shoulderX: 112, shoulderY: 105 },
+        handStart: { x: 175, y: 165 },
+        target: { x: 242, y: 268, r: 18, kind: "plug" },
+        pivots: [{ x: 225, y: 378, r: 14, kind: "rock" }],
         hazards: [
-          { x: 195, y: 270, r: 22, emoji: "🚀", label: "Warhead" },
-          { x: 350, y: 270, r: 40, emoji: "🦹", label: "Villain" }
+          { x: 60, y: 300, r: 35, kind: "boy" },
+          { x: 198, y: 268, r: 20, kind: "warhead" },
+          { x: 350, y: 285, r: 42, kind: "villain" }
+        ]
+      },
+      {
+        prompt: "Help him get the fire extinguisher.",
+        thiefStyle: "normal",
+        thief: { x: 75, y: 155, shoulderX: 90, shoulderY: 148 },
+        handStart: { x: 145, y: 200 },
+        target: { x: 352, y: 365, r: 25, kind: "extinguisher" },
+        pivots: [{ x: 190, y: 292, r: 25, kind: "flower" }],
+        hazards: [
+          { x: 298, y: 135, r: 42, kind: "fire" },
+          { x: 110, y: 270, r: 36, kind: "fire" },
+          { x: 100, y: 382, r: 36, kind: "fire" },
+          { x: 295, y: 315, r: 38, kind: "fire" },
+          { x: 246, y: 235, r: 24, kind: "hammer" }
         ]
       }
     ];
 
+    let allLevels = [...BUILTIN_LEVELS];
+    const localCustom = JSON.parse(localStorage.getItem(CUSTOM_LEVELS_KEY)) || [];
+    if (localCustom.length) allLevels.push(...localCustom);
+
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
-    // Determine initial level
     const params = new URLSearchParams(window.location.search);
+    const isPreviewMode = params.get("preview") === "1";
+
     let player = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
       uid: "guest_" + Math.random().toString(36).substring(2, 9),
-      username: "Guest Thief",
+      username: "Player",
       level: 1
     };
     let currentLevelNum = parseInt(params.get("level")) || player.level || 1;
 
     let levelData = null;
     let hand = { x: 0, y: 0, r: 14 };
-    let anchorPoints = []; // Starts with thief's shoulder, adds pivots as rope wraps
+    let anchorPoints = [];
     let isDragging = false;
-    let gameState = "PLAYING"; // PLAYING | WIN | FAIL
+    let gameState = "PLAYING";
     let showHint = false;
+    let animTick = 0;
 
     function loadLevel(lvlNum) {
-      currentLevelNum = lvlNum;
-      const index = (lvlNum - 1) % LEVELS.length;
-      levelData = LEVELS[index];
+      if (isPreviewMode) {
+        const draft = JSON.parse(localStorage.getItem(PREVIEW_DRAFT_KEY));
+        levelData = draft || JSON.parse(JSON.stringify(BUILTIN_LEVELS[5]));
+        document.getElementById("levelHeader").textContent = "🛠️ PREVIEW TEST";
+      } else {
+        currentLevelNum = lvlNum;
+        const idx = (lvlNum - 1) % allLevels.length;
+        levelData = JSON.parse(JSON.stringify(allLevels[idx]));
+        document.getElementById("levelHeader").textContent = `Level : ${currentLevelNum}`;
+      }
 
-      document.getElementById("levelHeader").textContent = `Level : ${currentLevelNum}`;
       document.getElementById("promptText").textContent = levelData.prompt;
       document.getElementById("resultOverlay").classList.add("hidden");
 
@@ -286,10 +370,8 @@
       anchorPoints = [{ x: levelData.thief.shoulderX, y: levelData.thief.shoulderY }];
       gameState = "PLAYING";
       showHint = false;
-      draw();
     }
 
-    // Distance from point P to segment AB
     function distToSegment(p, a, b) {
       const l2 = (b.x - a.x) ** 2 + (b.y - a.y) ** 2;
       if (l2 === 0) return Math.hypot(p.x - a.x, p.y - a.y);
@@ -300,53 +382,47 @@
 
     function updatePhysics() {
       if (gameState !== "PLAYING") return;
-
       const lastAnchor = anchorPoints[anchorPoints.length - 1];
 
-      // Check if arm wraps around any safe pivot
       for (const piv of levelData.pivots) {
-        const d = distToSegment(piv, lastAnchor, hand);
-        if (d < piv.r + 6) {
-          const alreadyUsed = anchorPoints.some(a => a.pivRef === piv);
-          if (!alreadyUsed) {
-            // Calculate offset point outside the pivot radius
+        if (distToSegment(piv, lastAnchor, hand) < piv.r + 6) {
+          if (!anchorPoints.some(a => a.pivRef === piv)) {
             const angle = Math.atan2(piv.y - lastAnchor.y, piv.x - lastAnchor.x) - Math.PI / 2;
             anchorPoints.push({
-              x: piv.x + Math.cos(angle) * (piv.r + 6),
-              y: piv.y + Math.sin(angle) * (piv.r + 6),
+              x: piv.x + Math.cos(angle) * (piv.r + 7),
+              y: piv.y + Math.sin(angle) * (piv.r + 7),
               pivRef: piv
             });
+            playSound("pop");
           }
         }
       }
 
-      // Check if any segment hits a hazard
-      const allPoints = [...anchorPoints, hand];
-      for (let i = 0; i < allPoints.length - 1; i++) {
-        const a = allPoints[i];
-        const b = allPoints[i + 1];
+      const chain = [...anchorPoints, hand];
+      for (let i = 0; i < chain.length - 1; i++) {
         for (const haz of levelData.hazards) {
-          if (distToSegment(haz, a, b) < haz.r - 4) {
-            triggerEnd("FAIL");
+          if (distToSegment(haz, chain[i], chain[i + 1]) < haz.r - 5) {
+            gameState = "FAIL";
+            isDragging = false;
+            playSound("fail");
+            setTimeout(() => showModal("FAIL"), 850);
             return;
           }
         }
       }
 
-      // Check if hand reached the target
-      const distTarget = Math.hypot(hand.x - levelData.target.x, hand.y - levelData.target.y);
-      if (distTarget < levelData.target.r + hand.r) {
-        triggerEnd("WIN");
+      if (Math.hypot(hand.x - levelData.target.x, hand.y - levelData.target.y) < levelData.target.r + hand.r - 2) {
+        gameState = "RETRACTING";
+        isDragging = false;
+        playSound("pop");
       }
     }
 
     async function saveProgress(completedLevel) {
-      const nextLevel = completedLevel + 1;
-      if (nextLevel > (player.level || 1)) {
-        player.level = nextLevel;
-      }
+      if (isPreviewMode) return;
+      const next = completedLevel + 1;
+      if (next > (player.level || 1)) player.level = next;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(player));
-
       try {
         await set(ref(db, `leaderboard/${player.uid}`), {
           username: player.username,
@@ -357,73 +433,253 @@
           levelCompleted: completedLevel,
           timestamp: Date.now()
         });
-      } catch (e) {
-        console.warn("Saved locally; Firebase sync skipped:", e);
-      }
+      } catch (e) {}
     }
 
-    function triggerEnd(status) {
-      gameState = status;
-      isDragging = false;
-      draw();
+    function showModal(status) {
+      const overlay = document.getElementById("resultOverlay");
+      const wrap = document.getElementById("trophySvgWrap");
+      const ribbon = document.getElementById("resultRibbon");
+      const btn = document.getElementById("modalActionBtn");
 
+      overlay.classList.remove("hidden");
       if (status === "WIN") {
-        saveProgress(currentLevelNum);
+        wrap.innerHTML = `<div style="font-size:85px;">🏆</div>`;
+        ribbon.textContent = isPreviewMode ? "PREVIEW PASSED" : "YOU WIN";
+        ribbon.className = "RibbonText win";
+        btn.textContent = isPreviewMode ? "⬅ Back to Editor" : "» NEXT";
+        btn.onclick = () => {
+          if (isPreviewMode) window.location.href = "index.html";
+          else loadLevel(currentLevelNum + 1);
+        };
+      } else {
+        wrap.innerHTML = `<div style="font-size:85px;">🏆😢</div>`;
+        ribbon.textContent = "FAILED";
+        ribbon.className = "RibbonText fail";
+        btn.textContent = "↻ Replay";
+        btn.onclick = () => loadLevel(currentLevelNum);
       }
-
-      setTimeout(() => {
-        const overlay = document.getElementById("resultOverlay");
-        const trophy = document.getElementById("trophyIcon");
-        const ribbon = document.getElementById("resultRibbon");
-        const btn = document.getElementById("modalActionBtn");
-
-        overlay.classList.remove("hidden");
-        if (status === "WIN") {
-          trophy.textContent = "🏆";
-          ribbon.textContent = "YOU WIN";
-          ribbon.className = "ribbon win";
-          btn.textContent = "» NEXT";
-          btn.onclick = () => loadLevel(currentLevelNum + 1);
-        } else {
-          trophy.textContent = "😢";
-          ribbon.textContent = "FAILED";
-          ribbon.className = "ribbon fail";
-          btn.textContent = "🔄 Replay";
-          btn.onclick = () => loadLevel(currentLevelNum);
-        }
-      }, 650);
     }
 
-    function drawStickman(x, y, labelEmoji) {
+    function drawStickCharacter(x, y, role, state) {
       ctx.save();
+      ctx.translate(x, y);
       ctx.strokeStyle = "#111";
-      ctx.lineWidth = 4;
-      // Head
+      ctx.lineWidth = 3.5;
+      ctx.lineCap = "round";
+
+      if (role === "angel") {
+        ctx.fillStyle = "#e0f7fa";
+        ctx.beginPath();
+        ctx.ellipse(-22, -5, 16, 8, -0.4, 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+        ctx.strokeStyle = "#fbc02d";
+        ctx.beginPath();
+        ctx.ellipse(0, -62, 14, 4, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.strokeStyle = "#111";
+      }
+
+      if (role === "girl") {
+        ctx.fillStyle = "#111";
+        ctx.beginPath();
+        ctx.arc(-22, -45, 10, 0, Math.PI * 2);
+        ctx.ellipse(-34, -38, 12, 7, -0.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      if (role === "girl") {
+        ctx.fillStyle = "#ff80ab";
+        ctx.beginPath();
+        ctx.moveTo(0, -18);
+        ctx.lineTo(-16, 26);
+        ctx.lineTo(16, 26);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+      } else {
+        ctx.fillStyle = role === "villain" ? "#d32f2f" : (role === "boy" ? "#ff9800" : "#1976d2");
+        ctx.fillRect(-9, -18, 18, 34);
+        ctx.strokeRect(-9, -18, 18, 34);
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(-10, 14, 20, 12);
+        ctx.strokeRect(-10, 14, 20, 12);
+      }
+
+      ctx.beginPath();
+      const runOffset = state === "WIN" && (role === "bandana" || role === "cap" || role === "normal") ? Math.sin(animTick * 0.4) * 10 : 0;
+      ctx.moveTo(-5, 26); ctx.lineTo(-12 + runOffset, 56);
+      ctx.moveTo(5, 26); ctx.lineTo(12 - runOffset, 56);
+      ctx.stroke();
+
       ctx.fillStyle = "#fff";
       ctx.beginPath();
-      ctx.arc(x, y - 35, 18, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-      // Body
-      ctx.beginPath();
-      ctx.moveTo(x, y - 17);
-      ctx.lineTo(x, y + 25);
-      // Legs
-      ctx.moveTo(x, y + 25);
-      ctx.lineTo(x - 16, y + 55);
-      ctx.moveTo(x, y + 25);
-      ctx.lineTo(x + 16, y + 55);
-      ctx.stroke();
-      // Thought bubble
-      ctx.font = "20px sans-serif";
-      ctx.fillText(labelEmoji, x + 22, y - 40);
+      ctx.arc(0, -36, 18, 0, Math.PI * 2);
+      ctx.fill(); ctx.stroke();
+
+      if (role === "bandana") {
+        ctx.fillStyle = "#29b6f6";
+        ctx.fillRect(-17, -48, 34, 7);
+        ctx.strokeRect(-17, -48, 34, 7);
+      } else if (role === "cap") {
+        ctx.fillStyle = "#1e88e5";
+        ctx.beginPath();
+        ctx.arc(0, -40, 17, Math.PI, 0);
+        ctx.lineTo(25, -40);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+      } else if (role === "mask" || role === "guard") {
+        ctx.fillStyle = "#222";
+        ctx.fillRect(-17, -43, 34, 10);
+      }
+
+      ctx.fillStyle = "#111";
+      if (role === "girl" || role === "boy") {
+        ctx.fillStyle = "#e91e63";
+        ctx.beginPath();
+        ctx.arc(-6, -38, 3.5, 0, Math.PI * 2);
+        ctx.arc(6, -38, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        ctx.beginPath();
+        ctx.arc(-6, -38, 2.5, 0, Math.PI * 2);
+        ctx.arc(6, -38, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      if (role === "villain") {
+        ctx.fillStyle = "#43a047";
+        ctx.fillRect(-65, -26, 75, 16);
+        ctx.strokeRect(-65, -26, 75, 16);
+      }
       ctx.restore();
     }
 
-    function draw() {
+    function drawObjectProp(x, y, r, kind) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.strokeStyle = "#222";
+      ctx.lineWidth = 2.5;
+
+      if (kind === "rock") {
+        ctx.fillStyle = "#90a4ae";
+        ctx.beginPath();
+        ctx.moveTo(-24, 14); ctx.lineTo(-18, -10); ctx.lineTo(4, -16); ctx.lineTo(24, -4); ctx.lineTo(26, 14);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+      } else if (kind === "bin") {
+        ctx.fillStyle = "#81c784";
+        ctx.fillRect(-24, -30, 48, 60); ctx.strokeRect(-24, -30, 48, 60);
+        ctx.fillStyle = "#4caf50";
+        ctx.fillRect(-28, -36, 56, 8); ctx.strokeRect(-28, -36, 56, 8);
+        ctx.font = "18px sans-serif"; ctx.textAlign = "center"; ctx.fillText("♻️", 0, 6);
+      } else if (kind === "flower") {
+        ctx.fillStyle = "#a1887f";
+        ctx.beginPath();
+        ctx.moveTo(-14, 4); ctx.lineTo(14, 4); ctx.lineTo(10, 24); ctx.lineTo(-10, 24);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.strokeStyle = "#2e7d32";
+        ctx.beginPath(); ctx.moveTo(0, 4); ctx.lineTo(0, -14); ctx.stroke();
+        ctx.fillStyle = "#ff4081";
+        for (let a = 0; a < 5; a++) {
+          const ang = (a * Math.PI * 2) / 5;
+          ctx.beginPath();
+          ctx.arc(Math.cos(ang) * 7, -16 + Math.sin(ang) * 7, 5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.fillStyle = "#ffeb3b";
+        ctx.beginPath(); ctx.arc(0, -16, 4, 0, Math.PI * 2); ctx.fill();
+      } else if (kind === "fire") {
+        const scale = 1 + Math.sin(animTick * 0.25 + x) * 0.08;
+        ctx.scale(scale, scale);
+        ctx.font = "44px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText("🔥", 0, 0);
+      } else if (kind === "hammer") {
+        ctx.rotate(-0.5);
+        ctx.fillStyle = "#8d6e63";
+        ctx.fillRect(-4, -5, 8, 34); ctx.strokeRect(-4, -5, 8, 34);
+        ctx.fillStyle = "#90a4ae";
+        ctx.fillRect(-18, -18, 36, 14); ctx.strokeRect(-18, -18, 36, 14);
+      } else if (kind === "extinguisher") {
+        ctx.fillStyle = "#e53935";
+        ctx.beginPath(); ctx.roundRect(-12, -14, 24, 36, 6); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = "#fff"; ctx.fillRect(-8, -2, 16, 10);
+        ctx.fillStyle = "#222"; ctx.fillRect(-5, -22, 10, 8);
+      } else if (kind === "chicken") {
+        ctx.fillStyle = "#e67e22";
+        ctx.beginPath(); ctx.ellipse(0, 2, 22, 14, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      } else if (kind === "balloons") {
+        ["#29b6f6", "#ff4081", "#ffeb3b"].forEach((c, i) => {
+          ctx.fillStyle = c;
+          ctx.beginPath(); ctx.arc((i - 1) * 16, -8, 14, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo((i - 1) * 16, 6); ctx.lineTo(0, 35); ctx.stroke();
+        });
+      } else if (kind === "treasure") {
+        ctx.fillStyle = "#ffb300";
+        ctx.fillRect(-22, -14, 44, 28); ctx.strokeRect(-22, -14, 44, 28);
+        ctx.fillStyle = "#fff"; ctx.fillRect(-6, -4, 12, 10);
+      } else if (kind === "purse") {
+        ctx.fillStyle = "#f48fb1";
+        ctx.beginPath(); ctx.roundRect(-18, -10, 36, 24, 6); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.arc(0, -10, 10, Math.PI, 0); ctx.stroke();
+      } else if (kind === "lamp") {
+        ctx.strokeStyle = "#cfd8dc"; ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(x < 200 ? -65 : 65, 220);
+        ctx.lineTo(x < 200 ? -65 : 65, -25);
+        ctx.lineTo(0, -25);
+        ctx.stroke();
+        ctx.fillStyle = "#ffee58";
+        ctx.beginPath(); ctx.arc(0, 0, 14, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#37474f";
+        ctx.beginPath(); ctx.arc(0, -4, 20, Math.PI, 0); ctx.fill();
+      } else if (kind === "door") {
+        if (y < 200) {
+          ctx.fillStyle = "#b0bec5";
+          ctx.fillRect(-8, -60, 16, 210); ctx.strokeRect(-8, -60, 16, 210);
+          ctx.fillStyle = "#fbc02d";
+          ctx.beginPath(); ctx.arc(14, 70, 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        }
+      } else if (kind === "warhead" || kind === "plug") {
+        if (kind === "warhead") {
+          ctx.fillStyle = "#616161";
+          ctx.beginPath(); ctx.arc(0, 0, 16, Math.PI / 2, -Math.PI / 2);
+          ctx.lineTo(28, -16); ctx.lineTo(28, 16); ctx.closePath(); ctx.fill(); ctx.stroke();
+        } else {
+          ctx.fillStyle = "#d32f2f";
+          ctx.fillRect(-8, -8, 16, 16); ctx.strokeRect(-8, -8, 16, 16);
+        }
+      }
+      ctx.restore();
+    }
+
+    function renderLoop() {
+      animTick++;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw Hint Path if clicked
+      if (gameState === "RETRACTING") {
+        const targetPt = anchorPoints[anchorPoints.length - 1];
+        const dx = targetPt.x - hand.x;
+        const dy = targetPt.y - hand.y;
+        const dist = Math.hypot(dx, dy);
+        const speed = 13;
+        if (dist <= speed) {
+          hand.x = targetPt.x;
+          hand.y = targetPt.y;
+          if (anchorPoints.length > 1) {
+            anchorPoints.pop();
+          } else {
+            gameState = "WIN";
+            playSound("win");
+            saveProgress(currentLevelNum);
+            setTimeout(() => showModal("WIN"), 900);
+          }
+        } else {
+          hand.x += (dx / dist) * speed;
+          hand.y += (dy / dist) * speed;
+        }
+        levelData.target.x = hand.x;
+        levelData.target.y = hand.y;
+      }
+
       if (showHint) {
         ctx.save();
         ctx.setLineDash([8, 6]);
@@ -437,51 +693,30 @@
         ctx.restore();
       }
 
-      // Draw Thief Stickman
-      drawStickman(levelData.thief.x, levelData.thief.y, levelData.target.emoji);
+      drawStickCharacter(levelData.thief.x, levelData.thief.y, levelData.thiefStyle || "normal", gameState);
 
-      // Draw Safe Pivots
       levelData.pivots.forEach(p => {
-        ctx.save();
-        ctx.fillStyle = "rgba(120, 180, 120, 0.25)";
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.font = `${p.r * 1.3}px sans-serif`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(p.emoji, p.x, p.y);
-        ctx.restore();
+        if (p.kind !== "gap") drawObjectProp(p.x, p.y, p.r, p.kind);
       });
 
-      // Draw Hazards
       levelData.hazards.forEach(h => {
-        ctx.save();
-        ctx.fillStyle = gameState === "FAIL" ? "rgba(255, 0, 0, 0.25)" : "rgba(255, 100, 100, 0.12)";
-        ctx.beginPath();
-        ctx.arc(h.x, h.y, h.r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.font = `${h.r * 1.3}px sans-serif`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(h.emoji, h.x, h.y);
-        ctx.restore();
+        if (["girl", "boy", "guard", "villain"].includes(h.kind)) {
+          drawStickCharacter(h.x, h.y, h.kind, gameState);
+        } else if (h.kind === "couple") {
+          drawStickCharacter(h.x - 18, h.y, "boy", gameState);
+          drawStickCharacter(h.x + 18, h.y, "girl", gameState);
+        } else {
+          drawObjectProp(h.x, h.y, h.r, h.kind);
+        }
       });
 
-      // Draw Target
-      ctx.save();
-      ctx.font = `${levelData.target.r * 1.5}px sans-serif`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(levelData.target.emoji, levelData.target.x, levelData.target.y);
-      ctx.restore();
+      drawObjectProp(levelData.target.x, levelData.target.y, levelData.target.r, levelData.target.kind);
 
-      // Draw Elastic Thief Arm
       ctx.save();
       ctx.lineWidth = 5;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
-      ctx.strokeStyle = gameState === "WIN" ? "#1e88e5" : (gameState === "FAIL" ? "#e53935" : "#111");
+      ctx.strokeStyle = (gameState === "RETRACTING" || gameState === "WIN") ? "#29b6f6" : "#111";
       ctx.beginPath();
       ctx.moveTo(anchorPoints[0].x, anchorPoints[0].y);
       for (let i = 1; i < anchorPoints.length; i++) {
@@ -490,71 +725,70 @@
       ctx.lineTo(hand.x, hand.y);
       ctx.stroke();
 
-      // Draw Hand Glove
+      const prevPt = anchorPoints[anchorPoints.length - 1];
+      const handAngle = Math.atan2(hand.y - prevPt.y, hand.x - prevPt.x);
+      ctx.translate(hand.x, hand.y);
+      ctx.rotate(handAngle);
       ctx.fillStyle = "#fff";
       ctx.strokeStyle = "#111";
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 2.5;
       ctx.beginPath();
-      ctx.arc(hand.x, hand.y, hand.r, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-      ctx.font = "18px sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("🤚", hand.x, hand.y);
+      ctx.arc(0, 0, 10, 0, Math.PI * 2);
+      ctx.fill(); ctx.stroke();
+      for (let f = -1; f <= 1; f++) {
+        ctx.beginPath();
+        ctx.roundRect(6, f * 5 - 2, 9, 4, 2);
+        ctx.fill(); ctx.stroke();
+      }
       ctx.restore();
+
+      requestAnimationFrame(renderLoop);
     }
 
-    // Pointer Events for Mouse & Touch
     function getPos(e) {
       const rect = canvas.getBoundingClientRect();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      const cx = e.touches ? e.touches[0].clientX : e.clientX;
+      const cy = e.touches ? e.touches[0].clientY : e.clientY;
       return {
-        x: (clientX - rect.left) * (canvas.width / rect.width),
-        y: (clientY - rect.top) * (canvas.height / rect.height)
+        x: (cx - rect.left) * (canvas.width / rect.width),
+        y: (cy - rect.top) * (canvas.height / rect.height)
       };
     }
 
-    function onStart(e) {
+    canvas.addEventListener("pointerdown", (e) => {
       if (gameState !== "PLAYING") return;
       const pos = getPos(e);
-      if (Math.hypot(pos.x - hand.x, pos.y - hand.y) < hand.r + 28) {
+      if (Math.hypot(pos.x - hand.x, pos.y - hand.y) < 42) {
         isDragging = true;
       }
-    }
+    });
 
-    function onMove(e) {
+    window.addEventListener("pointermove", (e) => {
       if (!isDragging || gameState !== "PLAYING") return;
-      e.preventDefault();
       const pos = getPos(e);
-      hand.x = Math.max(15, Math.min(canvas.width - 15, pos.x));
-      hand.y = Math.max(15, Math.min(canvas.height - 15, pos.y));
+      hand.x = Math.max(16, Math.min(canvas.width - 16, pos.x));
+      hand.y = Math.max(16, Math.min(canvas.height - 16, pos.y));
       updatePhysics();
-      draw();
-    }
+    });
 
-    function onEnd() {
-      isDragging = false;
-    }
+    window.addEventListener("pointerup", () => { isDragging = false; });
 
-    canvas.addEventListener("mousedown", onStart);
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onEnd);
-
-    canvas.addEventListener("touchstart", onStart, { passive: false });
-    window.addEventListener("touchmove", onMove, { passive: false });
-    window.addEventListener("touchend", onEnd);
-
-    // Top & Bottom Buttons
     document.getElementById("homeBtn").onclick = () => window.location.href = "index.html";
     document.getElementById("restartBtn").onclick = () => loadLevel(currentLevelNum);
-    document.getElementById("hintBtn").onclick = () => {
-      showHint = true;
-      draw();
-    };
+    document.getElementById("hintBtn").onclick = () => { showHint = true; };
+
+    fetch("levels.json?t=" + Date.now())
+      .then(r => r.ok ? r.json() : null)
+      .then(remote => {
+        if (Array.isArray(remote) && remote.length) {
+          allLevels = [...BUILTIN_LEVELS, ...remote];
+          loadLevel(currentLevelNum);
+        }
+      })
+      .catch(() => {});
 
     loadLevel(currentLevelNum);
+    requestAnimationFrame(renderLoop);
   </script>
 </body>
 </html>
