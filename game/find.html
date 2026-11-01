@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><meta name="theme-color" content="#16b9df">
+<title>ST Games — Hidden Wonders 3D</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#b9efff;font-family:Arial,sans-serif;touch-action:none}#app{height:100dvh;display:flex;flex-direction:column;background:linear-gradient(#b9f0ff,#70d7f4)}header{height:58px;flex:none;background:linear-gradient(180deg,#35c3ee,#168fc7);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 14px;font-family:Georgia,serif;font-weight:bold;font-size:22px;text-shadow:0 2px 3px #17618b}header button{border:0;border-radius:50%;width:40px;height:40px;background:#d7f8ff;color:#0877a4;font-size:24px;box-shadow:0 2px 4px #27728b}.heart{background:#ef4661;color:white;border-radius:25px;padding:8px 15px;font: bold 19px Arial}#stage{position:relative;flex:1;min-height:0;margin:10px 12px 8px;border:3px solid #8bd9ed;border-radius:4px;overflow:hidden;background:linear-gradient(135deg,#f7d5b9,#f2b999);box-shadow:0 3px 8px #5495a8}canvas{display:block;width:100%;height:100%;touch-action:none}#zoom{position:absolute;right:10px;top:12px;display:flex;flex-direction:column;gap:9px}#zoom button{width:48px;height:48px;border-radius:50%;border:3px solid white;background:#1597c8;color:white;font-size:26px;font-weight:bold;box-shadow:0 2px 6px #567}#targets{height:94px;flex:none;display:flex;gap:7px;align-items:center;overflow-x:auto;padding:7px 10px;background:#d7faff;border-top:4px solid #8dd8e9;border-bottom:4px solid #8dd8e9;scrollbar-width:none}#targets::-webkit-scrollbar{display:none}.target{flex:0 0 66px;height:68px;border:3px solid #8dcddd;border-radius:12px;background:linear-gradient(#fff,#e9fbff);display:flex;align-items:center;justify-content:center;font-size:37px;box-shadow:0 2px 2px #82b5c5}.target.done{opacity:.28;filter:grayscale(1);text-decoration:line-through}#bottom{height:112px;flex:none;background:linear-gradient(120deg,#31c9e9,#149dce);display:grid;grid-template-columns:1fr 100px 1fr;align-items:center;padding:8px 16px;color:white;font-weight:bold;text-shadow:0 1px 3px #1682a8}#count{font-size:22px}#hint{justify-self:center;border:5px solid #ffe98b;border-radius:50%;width:86px;height:86px;background:radial-gradient(#fff27c,#ff9b00);font-size:39px;box-shadow:0 0 14px #ffe76a;position:relative}#hint small{position:absolute;right:-5px;top:-5px;background:#ef4554;color:white;border-radius:50%;font: bold 16px Arial;padding:6px}#skip{justify-self:end;border:0;border-radius:28px;background:linear-gradient(#68f45e,#16b92f);color:white;padding:16px 20px;font-size:17px;font-weight:bold;box-shadow:0 4px 0 #168b2a}footer{height:34px;flex:none;background:#101e39;color:#fff;text-align:center;padding:8px;font-size:12px;letter-spacing:2px}#modal{display:none;position:fixed;inset:0;background:#0009;z-index:10;align-items:center;justify-content:center;padding:20px}#panel{width:min(340px,100%);background:linear-gradient(#fff3c8,#ffb85a);border:5px solid #ff8b2e;border-radius:25px;padding:22px;text-align:center;box-shadow:0 8px 25px #2228;color:#a94716}#panel h2{margin:0 0 10px;color:#fff;text-shadow:0 2px 3px #d87525}#panel button{border:0;border-radius:25px;padding:12px 24px;font-weight:bold;font-size:17px;background:linear-gradient(#45caff,#087dc6);color:#fff;box-shadow:0 3px 0 #075d99;margin:7px}#close{display:none;position:absolute;right:calc(50% - 160px);top:calc(50% - 120px);border-radius:50%!important;padding:6px 12px!important;background:#e74c55!important}#panel p{font-size:16px;line-height:1.4}#cancelModal{display:none}#toast{position:fixed;left:50%;bottom:150px;transform:translateX(-50%);background:#10233e;color:white;padding:10px 18px;border-radius:20px;display:none;z-index:20;font-weight:bold}#win{display:none;position:absolute;inset:0;background:#06152dcc;color:#fff;z-index:5;align-items:center;justify-content:center;text-align:center}#win .card{background:#fff2c8;color:#81420d;padding:25px;border-radius:25px;border:5px solid #ffb52e}#win button{background:#28c84b;color:white;border:0;border-radius:25px;padding:13px 25px;font-weight:bold;font-size:18px}
+</style></head>
+<body><div id="app"><header><button id="back">‹</button><span id="level">Level 1</span><span class="heart">❤️ <b id="lives">6</b></span></header><main id="stage"><canvas id="world"></canvas><div id="zoom"><button id="plus">+</button><button id="minus">−</button><button id="home">⌂</button></div><div id="win"><div class="card"><h1>🎉 Level Complete!</h1><p>You found all 30 hidden objects.</p><button id="next">Next Level</button></div></div></main><div id="targets"></div><section id="bottom"><div id="count">0/30</div><button id="hint">💡<small id="hintnum">2</small></button><button id="skip">Skip Level</button></section><footer>ST GAMES • HIDDEN WONDERS 3D</footer></div><div id="modal"><div id="panel"><button id="close">✕</button><h2 id="modalTitle">HINT</h2><div id="modalIcon" style="font-size:55px">💡</div><p id="modalText">Watch the short ad to claim one hint.</p><button id="watch">Get Hint • Watch Ad</button><button id="cancelModal" style="background:linear-gradient(#aaa,#666)">Cancel</button></div></div><div id="toast"></div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+const canvas=document.querySelector('#world'), stage=document.querySelector('#stage');
+let renderer;try{renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});}catch(err){stage.innerHTML='<div style="padding:24px;text-align:center;color:#7b2c20;font-weight:bold">3D scene could not start. Please open this game in Chrome with WebGL enabled and an internet connection.</div>';throw err;}renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+const scene=new THREE.Scene();scene.background=new THREE.Color('#f7c8aa');
+const camera=new THREE.OrthographicCamera(-9,9,12,-12,.1,100);camera.position.set(15,18,20);camera.lookAt(0,2,0);
+scene.add(new THREE.HemisphereLight(0xffffff,0x9b6a67,2));const sun=new THREE.DirectionalLight(0xffffff,2.1);sun.position.set(9,18,10);sun.castShadow=true;scene.add(sun);
+const root=new THREE.Group();scene.add(root);const decor=new THREE.Group();root.add(decor);const targetsGroup=new THREE.Group();root.add(targetsGroup);
+const mat=(c,rough=.85)=>new THREE.MeshStandardMaterial({color:c,roughness:rough});
+const wood=mat('#a95f50'),wood2=mat('#d68b70'),wall=mat('#ffe3ce'),blue=mat('#7889b6'),trim=mat('#f4c69d'),dark=mat('#4e4567'),green=mat('#369b75'),leaf=mat('#52b887'),gold=mat('#eebd43'),white=mat('#fff0d8');
+function box(g,x,y,z,sx,sy,sz,m,rz=0){let o=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),m);o.position.set(x,y,z);o.rotation.y=rz;o.castShadow=true;o.receiveShadow=true;g.add(o);return o}
+function sphere(g,x,y,z,r,m,sx=1,sy=1,sz=1){let o=new THREE.Mesh(new THREE.SphereGeometry(r,16,12),m);o.position.set(x,y,z);o.scale.set(sx,sy,sz);o.castShadow=true;g.add(o);return o}
+function cylinder(g,x,y,z,r1,r2,h,m){let o=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,16),m);o.position.set(x,y,z);o.castShadow=true;g.add(o);return o}
+function floor(x,z,sx,sz,m,y=0){box(decor,x,y,z,sx,.22,sz,m)}
+// Three-dimensional split-level fantasy house
+floor(0,0,15,13,wood2,0);floor(-3,1,8,8,wood,.18);floor(3,1,8,8,blue,.18);floor(0,-4,14,4,wall,.38);
+// walls and room partitions
+box(decor,-7,2,0,.35,4,13,wood);box(decor,7,2,0,.35,4,13,wood);box(decor,0,2,-6.4,14,4,.3,wall);box(decor,0,1.7,0,.28,3.3,12,trim);
+// upper gallery platforms and stairs
+floor(-3,-2,7,4,wall,2.15);floor(3,-2,7,4,wall,2.15);floor(0,3,5,3,wood2,1.2);
+for(let i=0;i<7;i++){box(decor,-1.6+i*.42,1.2+i*.16,2.4-i*.2,.55,.18,1.3,trim);box(decor,2.4+i*.42,.65+i*.14,-.1+i*.15,.55,.18,1.25,trim)}
+// arched window (frame + panes)
+box(decor,5,3.2,-6.15,2.5,3.2,.18,dark);box(decor,5,3.2,-6.02,2.15,2.85,.12,mat('#9fe5ed'));box(decor,5,3.2,-5.92,.12,2.9,.1,white);box(decor,5,3.2,-5.9,2.2,.12,.1,white);
+// furniture clutter
+for(const [x,z] of [[-5,-3],[4,-3],[-5,3],[4,3],[0,-1]]){box(decor,x,.65,z,1.7,.22,1.1,wood2);for(let dx of [-.65,.65])for(let dz of [-.35,.35])box(decor,x+dx,.3,z+dz,.12,.7,.12,dark)}
+for(const [x,z] of [[-5,-4],[6,-2],[-6,4],[5,4],[0,-5]]){cylinder(decor,x,.65,z,.38,.3,.85,mat('#8b5caa'));sphere(decor,x,1.15,z,.48,green,.9,1.3,.9);for(let k=0;k<4;k++)sphere(decor,x+Math.cos(k*1.57)*.35,1.25,z+Math.sin(k*1.57)*.35,.22,leaf,.6,1.4,.6)}
+// bookshelves
+for(const x of [-6,0,6]){box(decor,x,2.9,-5.4,1.4,2.2,.5,wood);for(let y of [2.2,2.8,3.4]){box(decor,x,y,-5.05,1.3,.09,.45,trim);for(let j=0;j<4;j++)box(decor,x-.48+j*.3,y+.2,-5.1,.18,.35,.25,[mat('#e05b54'),mat('#e9c34e'),mat('#498cbb'),mat('#5b9b75')][j])}}
+// decorative lanterns, rugs, wall art
+for(const [x,z] of [[-2,-3],[3,1],[-5,1],[5,5]]){cylinder(decor,x,.55,z,.24,.28,.12,gold);cylinder(decor,x,.9,z,.07,.07,.65,white);sphere(decor,x,1.25,z,.18,gold)}
+box(decor,-2,.34,3,3,.08,2,mat('#e98c9b'));box(decor,3,.36,3,3,.08,2,mat('#e7c98e'));
+// unique hidden objects, one instance each; meshes deliberately vary in shape and scale
+const items=[
+['🧸','Teddy bear','bear'],['🌿','Fern plant','plant'],['🕰️','Clock','clock'],['🦋','Butterfly','butterfly'],['📚','Books','books'],['🧁','Cupcake','cupcake'],['🐈','Cat','cat'],['🦆','Duck','duck'],['🪴','Potted flower','pot'],['🍄','Mushroom','mushroom'],['🎁','Gift box','gift'],['⭐','Star','star'],['🔑','Key','key'],['🎈','Balloon','balloon'],['🐠','Fish','fish'],['🦉','Owl','owl'],['🍎','Apple','apple'],['🚂','Toy train','train'],['⚽','Ball','ball'],['🪆','Nesting doll','doll'],['🎸','Guitar','guitar'],['🪞','Mirror','mirror'],['🕯️','Candle','candle'],['🧺','Basket','basket'],['🐢','Turtle','turtle'],['🦜','Parrot','parrot'],['🍓','Strawberry','berry'],['🪇','Rattle','rattle'],['🧩','Puzzle','puzzle'],['🪙','Coin','coin']
+];
+const positions=[[-5.4,1.2,-2.9],[-4,2.6,-3.8],[-1.7,1.5,-2.4],[1.1,3,-3.4],[4.5,1.1,-3.2],[5.5,2.7,-1.2],[-5.4,.8,1.8],[-3.3,2.7,1.5],[-1,1.1,3.7],[1.3,2.7,2.8],[4.4,.8,3.5],[5.5,2.5,4.5],[-5.6,1.5,4.5],[-3.3,.8,-.2],[-1.2,3.1,-.3],[1.5,.8,-4.5],[3.3,2.7,-.4],[5.3,1.1,-4.4],[-5.1,2.8,-.5],[-3.4,.8,4.6],[-1.2,2.7,4.4],[1.1,.8,5],[3.3,2.8,4.9],[5.7,1.2,1.3],[-5.6,2.6,3.1],[-2,1.2,-5],[.3,2.7,5],[2.4,1.1,-2.4],[4.1,2.8,1.4],[0,.9,5.5]];
+const targetMeshes=[];let level=1;
+// Each level changes the room palette, viewing angle and hidden-object arrangement.
+const levelThemes=[
+ {bg:'#f7c8aa',floor:'#c98773',side:'#7185b5',wall:'#ffe3ce',trim:'#f4c69d'},
+ {bg:'#b9e8d1',floor:'#68a98a',side:'#547fa5',wall:'#e2f5d9',trim:'#f4d18a'},
+ {bg:'#d7c5f4',floor:'#8c70b7',side:'#496a9b',wall:'#f0e2ff',trim:'#f6c0d0'},
+ {bg:'#f6df9c',floor:'#c68b43',side:'#4b9a9b',wall:'#fff0c9',trim:'#e8a6a0'},
+ {bg:'#b7d9f4',floor:'#6e8cb7',side:'#9a6e9c',wall:'#e6f5ff',trim:'#f4c69d'},
+ {bg:'#f3bfd0',floor:'#b86f85',side:'#6478a8',wall:'#ffe8ee',trim:'#f5ce82'}
+];
+function applyLevelTheme(){const t=levelThemes[(level-1)%levelThemes.length];scene.background=new THREE.Color(t.bg);wood.color.set(t.floor);wood2.color.set(t.floor);blue.color.set(t.side);wall.color.set(t.wall);trim.color.set(t.trim);root.rotation.y=((level-1)%4)*Math.PI/2;targetsGroup.rotation.y=0;targetsGroup.children.forEach((g,i)=>{const pos=positions[(i+((level-1)*7))%positions.length];g.position.set(pos[0],pos[1],pos[2]);g.rotation.y=((level+i)%5)*.18});}
+
+function makeItem(type,x,y,z,index){const g=new THREE.Group();g.position.set(x,y,z);targetsGroup.add(g);const a=mat(['#a96b42','#43a36f','#d5a64d','#f09a37','#d34d4d','#efb8d3'][index%6]);
+ switch(type){case'bear':case'doll':sphere(g,0,.25,0,.27,a,1,.9,.8);sphere(g,0,.62,0,.22,a);sphere(g,-.16,.78,0,.1,a);sphere(g,.16,.78,0,.1,a);sphere(g,-.08,.65,.19,.035,dark);sphere(g,.08,.65,.19,.035,dark);break;
+ case'plant':case'pot':cylinder(g,0,.15,0,.25,.34,.3,mat('#ba6949'));for(let k=0;k<5;k++){let l=sphere(g,Math.sin(k*1.25)*.25,.55+Math.cos(k)*.1,Math.cos(k*1.25)*.2,.22,green,.55,1.6,.5);l.rotation.z=k*.5}break;
+ case'clock':cylinder(g,0,.25,0,.36,.36,.12,gold);sphere(g,0,.3,.08,.28,white,1,1,.3);box(g,0,.42,.18,.035,.22,.025,dark);box(g,.08,.32,.18,.17,.035,.025,dark);break;
+ case'butterfly':sphere(g,0,.35,0,.06,dark);for(let s of [-1,1]){sphere(g,s*.18,.42,0,.19,mat('#f28b27'),1,.8,.25);sphere(g,s*.17,.2,0,.13,mat('#f6c24a'),1,.8,.25)}break;
+ case'books':for(let j=0;j<3;j++)box(g,0,.12+j*.13,0,.62,.12,.38,[mat('#c84e4a'),mat('#397eb5'),mat('#e5bd4c')][j],j*.04);break;
+ case'cupcake':cylinder(g,0,.15,0,.28,.2,.3,mat('#d982a4'));sphere(g,0,.4,0,.3,mat('#f6d5a8'));sphere(g,0,.64,0,.1,mat('#ed7195'));break;
+ case'cat':case'owl':sphere(g,0,.3,0,.28,a);sphere(g,0,.64,0,.23,a);for(let s of [-1,1]){sphere(g,s*.15,.84,0,.1,a);sphere(g,s*.08,.68,.19,.035,white)}break;
+ case'duck':sphere(g,0,.25,0,.28,mat('#f1c83e'),1.2,.8,.8);sphere(g,.2,.52,0,.19,mat('#f1c83e'));box(g,.39,.49,.1,.2,.08,.1,mat('#ed8a34'));break;
+ case'mushroom':cylinder(g,0,.22,0,.13,.17,.42,white);sphere(g,0,.5,0,.35,mat('#e75c46'),1,.55,1);for(let k=0;k<4;k++)sphere(g,Math.cos(k*1.57)*.18,.58,Math.sin(k*1.57)*.18,.05,white);break;
+ case'gift':box(g,0,.25,0,.5,.5,.5,mat('#e34f59'));box(g,0,.25,.27,.09,.52,.025,gold);box(g,0,.52,0,.54,.1,.54,gold);break;
+ case'star':{let sh=new THREE.Shape();for(let k=0;k<10;k++){let r=k%2?.18:.38,ang=k*Math.PI/5-Math.PI/2;k?sh.lineTo(Math.cos(ang)*r,Math.sin(ang)*r):sh.moveTo(Math.cos(ang)*r,Math.sin(ang)*r)}sh.closePath();let m=new THREE.Mesh(new THREE.ExtrudeGeometry(sh,{depth:.12,bevelEnabled:true,bevelSize:.03,bevelThickness:.03}),gold);m.position.y=.3;g.add(m);break}
+ case'key':cylinder(g,0,.45,0,.18,.18,.09,gold);box(g,.28,.44,0,.45,.07,.07,gold);break;
+ case'balloon':sphere(g,0,.52,0,.28,mat('#e94d4d'),.8,1.1,.8);cylinder(g,0,.17,0,.015,.015,.45,dark);break;
+ case'fish':sphere(g,0,.35,0,.3,mat('#e98c45'),1.3,.7,.7);sphere(g,.36,.35,0,.18,mat('#e98c45'),.6,1,.5);sphere(g,-.13,.42,.2,.04,dark);break;
+ case'apple':sphere(g,0,.35,0,.27,mat('#df4541'),1,.9,1);cylinder(g,0,.68,0,.035,.025,.18,green);break;
+ case'train':box(g,0,.25,0,.62,.32,.3,mat('#4b93c6'));for(let xx of [-.2,.2])cylinder(g,xx,.08,.18,.09,.09,.08,dark);break;
+ case'ball':sphere(g,0,.3,0,.31,mat('#e8b94a'));break;
+ case'guitar':sphere(g,0,.3,0,.23,mat('#bf743d'),.7,1.3,.35);box(g,0,.63,0,.1,.55,.12,wood);break;
+ case'mirror':box(g,0,.42,0,.55,.72,.08,gold);box(g,0,.42,.06,.4,.57,.03,mat('#a9e4ef'));break;
+ case'candle':cylinder(g,0,.25,0,.1,.12,.5,white);sphere(g,0,.58,0,.07,gold,.6,1.5,.6);break;
+ case'basket':cylinder(g,0,.2,0,.3,.35,.32,mat('#c99552'));break;
+ case'turtle':sphere(g,0,.3,0,.34,green,1.2,.6,1);sphere(g,.3,.34,0,.13,green);break;
+ case'parrot':sphere(g,0,.35,0,.22,mat('#36a879'),.8,1.4,.8);sphere(g,.02,.64,0,.17,mat('#efbd42'));break;
+ case'berry':sphere(g,0,.3,0,.24,mat('#e64a58'),.85,1.2,.85);for(let k=0;k<3;k++)sphere(g,Math.cos(k*2.1)*.12,.55,Math.sin(k*2.1)*.12,.08,green);break;
+ case'rattle':cylinder(g,0,.2,0,.13,.13,.35,mat('#dca44a'));sphere(g,0,.48,0,.25,mat('#e8bd55'));break;
+ case'puzzle':box(g,0,.3,0,.48,.48,.18,mat('#7ebd4b'));sphere(g,0,.56,.03,.11,mat('#7ebd4b'));break;
+ case'coin':cylinder(g,0,.25,0,.27,.27,.09,gold);break;
+ }
+ // slight per-object scale variation, all remain clickable
+ g.scale.setScalar(.82+(index%4)*.08);g.userData={index,type,baseScale:g.scale.x};targetMeshes.push(g);return g}
+items.forEach((it,i)=>makeItem(it[2],...positions[i],i));
+applyLevelTheme();
+// Extra 3D room details: railing, lamps and stair rails
+for(let i=0;i<9;i++){let x=-5+i*1.25;box(decor,x,1.25,2.4,.08,.85,.08,trim)}
+let found=new Set(),hints=2,lives=6;const targetBar=document.querySelector('#targets');
+function renderTargets(){targetBar.innerHTML='';items.forEach((it,i)=>{let b=document.createElement('div');b.className='target'+(found.has(i)?' done':'');b.textContent=it[0];b.title=it[1];targetBar.appendChild(b)})}
+function update(){document.querySelector('#count').textContent=found.size+'/30';document.querySelector('#lives').textContent=lives;renderTargets();if(found.size===30)document.querySelector('#win').style.display='flex'}update();
+function toast(s){let t=document.querySelector('#toast');t.textContent=s;t.style.display='block';setTimeout(()=>t.style.display='none',1600)}
+const ray=new THREE.Raycaster(),pointer=new THREE.Vector2();let down=null;
+let lastMistake=0;
+function pick(e){const r=canvas.getBoundingClientRect();pointer.x=((e.clientX-r.left)/r.width)*2-1;pointer.y=-((e.clientY-r.top)/r.height)*2+1;ray.setFromCamera(pointer,camera);let hits=ray.intersectObjects([targetsGroup,decor],true);if(!hits.length)return;let hit=hits[0].object,obj=hit;while(obj&&obj.userData.index===undefined&&obj.parent)obj=obj.parent;let idx=obj?.userData?.index;if(idx!==undefined){if(found.has(idx))return;found.add(idx);obj.scale.multiplyScalar(1.18);obj.traverse(o=>{if(o.material&&o.material.emissive){o.material.emissive.set('#2cff68');o.material.emissiveIntensity=.45}});update();toast('Found: '+items[idx][1]+' ✓');return}if(Date.now()-lastMistake<650)return;lastMistake=Date.now();lives=Math.max(0,lives-1);document.querySelector('#lives').textContent=lives;toast('Wrong object! −1 heart');if(lives===0)showGameOver()}
+// Drag to pan; two-finger pinch to zoom; wheel + buttons also zoom.
+let pointers=new Map(),startDist=0,startZoom=1,startPan=null,zoom=1;function setZoom(v){zoom=Math.max(.72,Math.min(2.5,v));camera.zoom=zoom;camera.updateProjectionMatrix()}
+canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pointers.size===1)startPan={x:e.clientX,y:e.clientY,cx:camera.position.x,cz:camera.position.z};if(pointers.size===2){let a=[...pointers.values()];startDist=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);startZoom=zoom}down={x:e.clientX,y:e.clientY,t:Date.now()}});
+canvas.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return;pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pointers.size===2){let a=[...pointers.values()],d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);if(startDist)setZoom(startZoom*d/startDist)}else if(pointers.size===1&&startPan){let dx=e.clientX-startPan.x,dy=e.clientY-startPan.y;camera.position.x=startPan.cx-dx*.025/zoom;camera.position.z=startPan.cz+dy*.025/zoom;camera.lookAt(0,1.5,0)}});
+canvas.addEventListener('pointerup',e=>{let p=pointers.get(e.pointerId);pointers.delete(e.pointerId);if(pointers.size===0){if(down&&Math.hypot(e.clientX-down.x,e.clientY-down.y)<9&&Date.now()-down.t<500)pick(e);startPan=null;down=null}if(pointers.size===1){let a=[...pointers.values()][0];startPan={x:a.x,y:a.y,cx:camera.position.x,cz:camera.position.z}}});canvas.addEventListener('pointercancel',e=>{pointers.delete(e.pointerId);startPan=null});canvas.addEventListener('wheel',e=>{e.preventDefault();setZoom(zoom*(e.deltaY<0?1.12:.89))},{passive:false});
+document.querySelector('#plus').onclick=()=>setZoom(zoom*1.2);document.querySelector('#minus').onclick=()=>setZoom(zoom/1.2);document.querySelector('#home').onclick=()=>{setZoom(1);camera.position.set(15,18,20);camera.lookAt(0,1.5,0)};
+function resize(){let w=stage.clientWidth,h=stage.clientHeight;renderer.setSize(w,h,false);let aspect=w/h;camera.left=-9*aspect/0.72;camera.right=9*aspect/0.72;camera.top=12;camera.bottom=-12;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(stage);resize();
+function animate(){requestAnimationFrame(animate);renderer.render(scene,camera)}animate();
+function showModal(title,icon,message,primary,showCancel=true){document.querySelector('#modalTitle').textContent=title;document.querySelector('#modalIcon').textContent=icon;document.querySelector('#modalText').textContent=message;document.querySelector('#watch').textContent=primary;document.querySelector('#cancelModal').style.display=showCancel?'inline-block':'none';document.querySelector('#close').style.display='none';document.querySelector('#modal').style.display='flex'}
+function hideModal(){document.querySelector('#modal').style.display='none'}
+let modalAction=()=>hideModal();
+function openHint(){if(hints>0){hints--;document.querySelector('#hintnum').textContent=hints;let idx=items.findIndex((_,i)=>!found.has(i));if(idx>=0){found.add(idx);update();toast('Hint found: '+items[idx][1])}return}showModal('HINT','💡','Watch the short ad to claim one hint.','Get Hint • Watch Ad',false);modalAction=()=>goAd('hintReward');let c=document.querySelector('#close');setTimeout(()=>{if(document.querySelector('#modal').style.display==='flex')c.style.display='block'},5000)}
+function nextLevel(showPopup=true){found.clear();targetMeshes.forEach(g=>g.scale.setScalar(g.userData.baseScale));level++;lives=6;document.querySelector('#level').textContent='Level '+level;document.querySelector('#win').style.display='none';applyLevelTheme();update();if(showPopup){showModal('LEVEL '+level,'🌟','A new room is ready! Find all 30 hidden objects.','Start Level',false);modalAction=hideModal}}
+function showGameOver(){showModal('MATCH OVER','💔','You used all 6 hearts. Restart this match and try again.','Restart Match',false);modalAction=()=>{hideModal();found.clear();targetMeshes.forEach(g=>g.scale.setScalar(g.userData.baseScale));lives=6;hints=2;document.querySelector('#hintnum').textContent=hints;applyLevelTheme();update();toast('Match restarted!')};document.querySelector('#close').style.display='none'}
+function goAd(reward){const back=location.href.split('?')[0]+'?'+reward+'=1';location.href='../ad.html?returnTo='+encodeURIComponent(back)+'&reward='+reward}
+document.querySelector('#hint').onclick=openHint;
+document.querySelector('#close').onclick=()=>{hideModal();hints++;document.querySelector('#hintnum').textContent=hints;toast('Free hint added')};
+document.querySelector('#watch').onclick=()=>modalAction();
+document.querySelector('#cancelModal').onclick=hideModal;
+const params=new URLSearchParams(location.search);
+if(params.get('hintReward')==='1'){hints++;document.querySelector('#hintnum').textContent=hints;history.replaceState({},'',location.pathname);toast('Ad completed — hint claimed!')}
+if(params.get('skipReward')==='1'){history.replaceState({},'',location.pathname);nextLevel(true)}
+document.querySelector('#skip').onclick=()=>{showModal('SKIP LEVEL','⏭️','Watch a short ad to unlock the next level.','Watch Ad • Skip Level',true);modalAction=()=>goAd('skipReward')};
+document.querySelector('#next').onclick=()=>nextLevel(true);
+document.querySelector('#back').onclick=()=>history.back();
+</script></body></html>
