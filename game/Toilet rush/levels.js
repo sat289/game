@@ -1,4 +1,6 @@
-window.TOTAL_LEVELS = 50;
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5884307693503477"
+     crossorigin="anonymous"></script>
+       window.TOTAL_LEVELS = 50;
 
 window.getLevelConfig = function(lvl) {
   let doors = [];
