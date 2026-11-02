@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Stick Kombat 2D - Reaper Edition</title>
+<style>
+  * { box-sizing: border-box; user-select: none; -webkit-user-select: none; margin: 0; padding: 0; }
+  body { background: #0d0d12; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; }
+  #game-container { position: relative; width: 850px; height: 480px; background: #1a1016; border: 3px solid #333; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+  canvas { display: block; width: 100%; height: 100%; }
+
+  /* UI Overlays */
+  .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: radial-gradient(circle, rgba(25,35,45,0.95) 0%, rgba(10,12,18,0.98) 100%); z-index: 10; }
+  .hidden { display: none !important; }
+
+  h1 { font-size: 32px; letter-spacing: 2px; color: #2efc71; text-shadow: 0 0 10px rgba(46,252,113,0.5); margin-bottom: 10px; }
+  .top-bar { position: absolute; top: 15px; right: 20px; background: #111; padding: 6px 14px; border-radius: 20px; border: 1px solid #444; font-weight: bold; color: #ffd700; font-size: 16px; }
+
+  /* Character Roster */
+  .roster { display: grid; grid-template-columns: repeat(4, 90px); gap: 15px; margin: 15px 0; }
+  .char-card { width: 90px; height: 90px; border-radius: 50%; background: #222a35; border: 3px solid #445; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; position: relative; transition: 0.2s; }
+  .char-card.selected { border-color: #2efc71; box-shadow: 0 0 15px #2efc71; transform: scale(1.08); }
+  .char-card.locked { opacity: 0.65; border-color: #333; }
+  .char-name { font-size: 11px; font-weight: bold; margin-top: 6px; text-transform: uppercase; }
+  .char-price { position: absolute; bottom: -8px; background: #ffd700; color: #000; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 8px; }
+
+  /* Level Selector */
+  .level-selector { display: flex; align-items: center; gap: 15px; margin: 12px 0; font-size: 16px; font-weight: bold; }
+  .btn-small { background: #334; color: #fff; border: 1px solid #667; padding: 5px 12px; border-radius: 6px; cursor: pointer; }
+  .btn-play { background: linear-gradient(180deg, #38ef7d, #11998e); color: #000; font-size: 20px; font-weight: 900; padding: 10px 45px; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 15px rgba(56,239,125,0.4); margin-top: 10px; }
+  .btn-play:active { transform: scale(0.96); }
+
+  /* HUD */
+  #hud { position: absolute; top: 0; left: 0; width: 100%; padding: 12px 20px; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; z-index: 5; }
+  .fighter-hud { width: 38%; }
+  .hud-name { font-size: 14px; font-weight: 800; text-transform: uppercase; margin-bottom: 4px; display: flex; justify-content: space-between; }
+  .hp-bar-bg { width: 100%; height: 14px; background: #222; border: 2px solid #000; border-radius: 4px; overflow: hidden; }
+  .hp-bar-fill { height: 100%; background: linear-gradient(90deg, #a8ff78, #78ffd6); width: 100%; transition: width 0.15s; }
+  .enemy-fill { background: linear-gradient(90deg, #ff416c, #ff4b2b); }
+  .timer-box { font-size: 26px; font-weight: 900; color: #c0ff33; text-shadow: 0 2px 4px #000; text-align: center; }
+  .level-badge { font-size: 11px; color: #ccc; display: block; }
+
+  /* Touch / On-screen Controls */
+  #controls { position: absolute; bottom: 18px; left: 0; width: 100%; padding: 0 25px; display: flex; justify-content: space-between; align-items: flex-end; z-index: 6; pointer-events: none; }
+  .joy-pad { width: 110px; height: 110px; background: rgba(255,255,255,0.12); border: 2px solid rgba(255,255,255,0.25); border-radius: 50%; position: relative; pointer-events: auto; touch-action: none; }
+  .joy-stick { width: 46px; height: 46px; background: #e6612c; border-radius: 50%; position: absolute; top: 30px; left: 30px; pointer-events: none; box-shadow: 0 2px 8px rgba(0,0,0,0.6); }
+  .action-btns { display: flex; gap: 15px; align-items: flex-end; pointer-events: auto; }
+  .btn-act { border-radius: 50%; border: 3px solid rgba(0,0,0,0.6); cursor: pointer; display: flex; justify-content: center; align-items: center; font-weight: 900; color: #111; box-shadow: 0 4px 12px rgba(0,0,0,0.5); user-select: none; }
+  .btn-dash { width: 56px; height: 56px; background: #88929a; font-size: 12px; }
+  .btn-atk { width: 76px; height: 76px; background: #38c172; font-size: 15px; }
+  .btn-act:active { transform: scale(0.92); }
+</style>
+</head>
+<body>
+
+<div id="game-container">
+  <canvas id="canvas" width="850" height="480"></canvas>
+
+  <!-- Character Selection & Level Menu -->
+  <div id="menu-screen" class="screen">
+    <div class="top-bar">COINS: <span id="coin-count">100</span></div>
+    <h1>STICK KOMBAT 2D</h1>
+    <div class="roster" id="roster-grid"></div>
+    <div class="level-selector">
+      <button class="btn-small" onclick="changeLevel(-1)">&#9664;</button>
+      <span id="level-label">STAGE 1: DOJO RUINS (RED)</span>
+      <button class="btn-small" onclick="changeLevel(1)">&#9654;</button>
+    </div>
+    <button class="btn-play" onclick="startMatch()">PLAY</button>
+    <p style="font-size:11px; color:#889; margin-top:10px;">Keyboard: A/D Move, W Jump, J Attack, K Dash | Or use On-Screen Touch</p>
+  </div>
+
+  <!-- Match HUD -->
+  <div id="hud" class="hidden">
+    <div class="fighter-hud">
+      <div class="hud-name"><span id="p1-name">REAPER</span><span id="p1-hp-text">50/50</span></div>
+      <div class="hp-bar-bg"><div id="p1-bar" class="hp-bar-fill"></div></div>
+    </div>
+    <div class="timer-box">
+      <span class="level-badge" id="hud-stage">STAGE 1</span>
+      <span id="match-timer">99</span>
+    </div>
+    <div class="fighter-hud">
+      <div class="hud-name"><span id="p2-hp-text">115/115</span><span id="p2-name">RED</span></div>
+      <div class="hp-bar-bg"><div id="p2-bar" class="hp-bar-fill enemy-fill"></div></div>
+    </div>
+  </div>
+
+  <!-- Touch / Mouse Controls -->
+  <div id="controls" class="hidden">
+    <div class="joy-pad" id="joypad"><div class="joy-stick" id="joystick"></div></div>
+    <div class="action-btns">
+      <div class="btn-act btn-dash" id="btn-dash">DASH</div>
+      <div class="btn-act btn-atk" id="btn-atk">FIST</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+// Fighters Database
+const FIGHTERS = [
+  { id: 'reaper', name: 'Reaper', color: '#2efc71', weapon: 'scythe', hp: 60, dmg: 12, speed: 4.5, cost: 0, unlocked: true },
+  { id: 'red', name: 'Red', color: '#ff3838', weapon: 'gauntlet', hp: 85, dmg: 10, speed: 4.0, cost: 0, unlocked: true },
+  { id: 'frost', name: 'Frost', color: '#00d2ff', weapon: 'spear', hp: 75, dmg: 14, speed: 4.8, cost: 75, unlocked: false },
+  { id: 'chrom', name: 'Chrom', color: '#ffd700', weapon: 'hammer', hp: 110, dmg: 18, speed: 3.6, cost: 150, unlocked: false }
+];
+
+// 5 Progressive Campaign Levels
+const LEVELS = [
+  { stage: 1, title: 'STAGE 1: CRIMSON DOJO', sky: '#3a1c28', ground: '#511f23', enemyName: 'RED', color: '#ff3838', hp: 115, dmg: 6, aiRate: 0.025, reward: 40 },
+  { stage: 2, title: 'STAGE 2: FROZEN TEMPLE', sky: '#142838', ground: '#1b3b4b', enemyName: 'FROST NINJA', color: '#00d2ff', hp: 140, dmg: 8, aiRate: 0.035, reward: 60 },
+  { stage: 3, title: 'STAGE 3: TOXIC CAVERN', sky: '#182b1c', ground: '#213a22', enemyName: 'VENOM', color: '#a8ff3e', hp: 170, dmg: 10, aiRate: 0.045, reward: 85 },
+  { stage: 4, title: 'STAGE 4: CYBER TOWER', sky: '#241b35', ground: '#312244', enemyName: 'CHROM GUARD', color: '#ffd700', hp: 210, dmg: 12, aiRate: 0.055, reward: 120 },
+  { stage: 5, title: 'STAGE 5: SHADOW THRONE', sky: '#110508', ground: '#2a080c', enemyName: 'EMPEROR', color: '#ff007f', hp: 260, dmg: 15, aiRate: 0.07, reward: 200 }
+];
+
+let coins = 100;
+let selectedChar = FIGHTERS[0];
+let currentLevelIdx = 0;
+let gameState = 'MENU';
+let matchTime = 99;
+let timerInterval = null;
+let bannerText = '';
+let bannerTimer = 0;
+let hitCombo = 0;
+let comboTimer = 0;
+let particles = [];
+
+// Input State
+const keys = { left: false, right: false, up: false };
+
+// Render Roster Menu
+function renderMenu() {
+  document.getElementById('coin-count').innerText = coins;
+  const grid = document.getElementById('roster-grid');
+  grid.innerHTML = '';
+  FIGHTERS.forEach(f => {
+    const card = document.createElement('div');
+    card.className = `char-card ${selectedChar.id === f.id ? 'selected' : ''} ${!f.unlocked ? 'locked' : ''}`;
+    card.innerHTML = `
+      <div style="width:28px;height:28px;border-radius:50%;background:${f.color};box-shadow:0 0 8px ${f.color};"></div>
+      <div class="char-name">${f.name}</div>
+      ${!f.unlocked ? `<div class="char-price">${f.cost} C</div>` : ''}
+    `;
+    card.onclick = () => {
+      if (f.unlocked) {
+        selectedChar = f;
+        renderMenu();
+      } else if (coins >= f.cost) {
+        coins -= f.cost;
+        f.unlocked = true;
+        selectedChar = f;
+        renderMenu();
+      }
+    };
+    grid.appendChild(card);
+  });
+  const lvl = LEVELS[currentLevelIdx];
+  document.getElementById('level-label').innerText = `${lvl.title} (${lvl.enemyName})`;
+}
+
+function changeLevel(dir) {
+  currentLevelIdx = (currentLevelIdx + dir + LEVELS.length) % LEVELS.length;
+  renderMenu();
+}
+
+// Fighter Class
+class StickFighter {
+  constructor(x, isAI, config) {
+    this.x = x;
+    this.y = 380;
+    this.vx = 0;
+    this.vy = 0;
+    this.isAI = isAI;
+    this.name = config.name;
+    this.color = config.color;
+    this.maxHp = config.hp;
+    this.hp = config.hp;
+    this.dmg = config.dmg;
+    this.speed = config.speed || 4;
+    this.facing = isAI ? -1 : 1;
+    this.atkTimer = 0;
+    this.dashTimer = 0;
+    this.hurtTimer = 0;
+    this.animTick = 0;
+  }
+
+  update(opponent) {
+    this.animTick += 0.15;
+    if (this.atkTimer > 0) this.atkTimer--;
+    if (this.dashTimer > 0) this.dashTimer--;
+    if (this.hurtTimer > 0) this.hurtTimer--;
+
+    // Gravity
+    this.y += this.vy;
+    if (this.y < 380) {
+      this.vy += 0.65;
+    } else {
+      this.y = 380;
+      this.vy = 0;
+    }
+
+    // Movement
+    this.x += this.vx;
+    this.vx *= 0.82;
+    this.x = Math.max(40, Math.min(810, this.x));
+
+    // Auto face opponent
+    if (this.atkTimer === 0) {
+      this.facing = opponent.x > this.x ? 1 : -1;
+    }
+  }
+
+  attack(opponent) {
+    if (this.atkTimer > 0) return;
+    this.atkTimer = 22;
+    this.vx = this.facing * 5;
+
+    // Hitbox check
+    const dist = Math.abs(this.x - opponent.x);
+    const yDist = Math.abs(this.y - opponent.y);
+    if (dist < 105 && yDist < 80) {
+      opponent.hp = Math.max(0, opponent.hp - this.dmg);
+      opponent.hurtTimer = 12;
+      opponent.vx = this.facing * 8;
+      opponent.vy = -4;
+
+      if (!this.isAI) {
+        hitCombo++;
+        comboTimer = 90;
+      }
+      spawnSparks(opponent.x, opponent.y - 40, this.color);
+      updateHud();
+    }
+  }
+
+  dash() {
+    if (this.dashTimer > 0) return;
+    this.dashTimer = 35;
+    this.vx = this.facing * 15;
+    spawnSparks(this.x, this.y - 20, '#ffffff');
+  }
+
+  draw() {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+
+    // Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 22, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.scale(this.facing, 1);
+
+    // Stickman Body
+    ctx.strokeStyle = this.hurtTimer > 0 ? '#fff' : '#111';
+    ctx.lineWidth = 7;
+    ctx.lineCap = 'round';
+
+    const walkSwing = Math.abs(this.vx) > 0.5 ? Math.sin(this.animTick * 2) * 12 : 0;
+
+    // Legs
+    ctx.beginPath();
+    ctx.moveTo(0, -30);
+    ctx.lineTo(-10 + walkSwing, 0);
+    ctx.moveTo(0, -30);
+    ctx.lineTo(10 - walkSwing, 0);
+    ctx.stroke();
+
+    // Torso & Cloak
+    ctx.beginPath();
+    ctx.moveTo(0, -30);
+    ctx.lineTo(0, -62);
+    ctx.stroke();
+
+    // Head + Glowing Eyes
+    ctx.fillStyle = '#111';
+    ctx.beginPath();
+    ctx.arc(0, -74, 12, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = this.color;
+    ctx.fillRect(3, -77, 7, 4);
+
+    // Weapon / Scythe Animation
+    ctx.save();
+    ctx.translate(5, -52);
+    const swingAngle = this.atkTimer > 0 ? (1 - this.atkTimer / 22) * Math.PI * 1.3 - 0.5 : -0.3;
+    ctx.rotate(swingAngle);
+
+    // Scythe Pole
+    ctx.strokeStyle = '#ddd';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(-15, 15);
+    ctx.lineTo(38, -38);
+    ctx.stroke();
+
+    // Glowing Scythe Blade
+    ctx.strokeStyle = this.color;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.arc(25, -25, 24, -0.4, 1.3);
+    ctx.stroke();
+
+    ctx.restore();
+    ctx.restore();
+  }
+}
+
+let player, enemy;
+
+function spawnSparks(x, y, color) {
+  for (let i = 0; i < 10; i++) {
+    particles.push({
+      x, y,
+      vx: (Math.random() - 0.5) * 10,
+      vy: (Math.random() - 0.5) * 10,
+      life: 20,
+      color
+    });
+  }
+}
+
+function startMatch() {
+  const lvl = LEVELS[currentLevelIdx];
+  player = new StickFighter(200, false, selectedChar);
+  enemy = new StickFighter(650, true, {
+    name: lvl.enemyName,
+    color: lvl.color,
+    hp: lvl.hp,
+    dmg: lvl.dmg,
+    speed: 3.8
+  });
+
+  matchTime = 99;
+  hitCombo = 0;
+  bannerText = 'ROUND 1 - FIGHT!';
+  bannerTimer = 70;
+  gameState = 'PLAYING';
+
+  document.getElementById('menu-screen').classList.add('hidden');
+  document.getElementById('hud').classList.remove('hidden');
+  document.getElementById('controls').classList.remove('hidden');
+  document.getElementById('hud-stage').innerText = `STAGE ${lvl.stage}`;
+  updateHud();
+
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    if (gameState === 'PLAYING' && matchTime > 0) {
+      matchTime--;
+      document.getElementById('match-timer').innerText = matchTime;
+      if (matchTime === 0) endMatch(player.hp >= enemy.hp);
+    }
+  }, 1000);
+}
+
+function updateHud() {
+  document.getElementById('p1-name').innerText = player.name;
+  document.getElementById('p1-hp-text').innerText = `${player.hp}/${player.maxHp}`;
+  document.getElementById('p1-bar').style.width = `${(player.hp / player.maxHp) * 100}%`;
+
+  document.getElementById('p2-name').innerText = enemy.name;
+  document.getElementById('p2-hp-text').innerText = `${enemy.hp}/${enemy.maxHp}`;
+  document.getElementById('p2-bar').style.width = `${(enemy.hp / enemy.maxHp) * 100}%`;
+}
+
+function endMatch(playerWon) {
+  gameState = 'OVER';
+  clearInterval(timerInterval);
+  const lvl = LEVELS[currentLevelIdx];
+  if (playerWon) {
+    coins += lvl.reward;
+    bannerText = `${player.name.toUpperCase()} WINS! (+${lvl.reward} COINS)`;
+    if (currentLevelIdx < LEVELS.length - 1) currentLevelIdx++;
+  } else {
+    bannerText = `${enemy.name.toUpperCase()} WINS!`;
+  }
+  bannerTimer = 130;
+  setTimeout(() => {
+    document.getElementById('hud').classList.add('hidden');
+    document.getElementById('controls').classList.add('hidden');
+    document.getElementById('menu-screen').classList.remove('hidden');
+    renderMenu();
+  }, 2200);
+}
+
+function drawArena() {
+  const lvl = LEVELS[currentLevelIdx];
+  // Sky Gradient
+  const grad = ctx.createLinearGradient(0, 0, 0, 380);
+  grad.addColorStop(0, lvl.sky);
+  grad.addColorStop(1, '#8c4f58');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 850, 380);
+
+  // Silhouette Dojo Torii Gate
+  ctx.fillStyle = 'rgba(20, 10, 15, 0.35)';
+  ctx.fillRect(340, 140, 16, 240);
+  ctx.fillRect(490, 140, 16, 240);
+  ctx.fillRect(310, 130, 230, 18);
+  ctx.fillRect(325, 165, 200, 12);
+
+  // Ground
+  ctx.fillStyle = lvl.ground;
+  ctx.fillRect(0, 380, 850, 100);
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 378, 850, 4);
+}
+
+// Main Game Loop
+function loop() {
+  requestAnimationFrame(loop);
+  if (gameState === 'MENU') return;
+
+  drawArena();
+
+  if (gameState === 'PLAYING') {
+    // Player Controls
+    if (keys.left) player.vx = -player.speed;
+    if (keys.right) player.vx = player.speed;
+    if (keys.up && player.y >= 380) player.vy = -13;
+
+    // AI Logic
+    const dist = enemy.x - player.x;
+    if (Math.abs(dist) > 85) {
+      enemy.vx = dist > 0 ? -enemy.speed * 0.75 : enemy.speed * 0.75;
+    } else if (Math.random() < LEVELS[currentLevelIdx].aiRate) {
+      enemy.attack(player);
+    }
+
+    player.update(enemy);
+    enemy.update(player);
+
+    if (player.hp <= 0) endMatch(false);
+    else if (enemy.hp <= 0) endMatch(true);
+  }
+
+  player.draw();
+  enemy.draw();
+
+  // Particles
+  particles.forEach((p, idx) => {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life--;
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x, p.y, 4, 4);
+    if (p.life <= 0) particles.splice(idx, 1);
+  });
+
+  // Hit Combo Counter
+  if (comboTimer > 0) {
+    comboTimer--;
+    ctx.fillStyle = '#ffa502';
+    ctx.font = '900 26px sans-serif';
+    ctx.fillText(`HIT ${hitCombo}!`, 35, 170);
+  } else {
+    hitCombo = 0;
+  }
+
+  // Center Banner
+  if (bannerTimer > 0) {
+    bannerTimer--;
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillRect(0, 195, 850, 55);
+    ctx.fillStyle = '#2efc71';
+    ctx.font = '900 28px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(bannerText, 425, 232);
+    ctx.textAlign = 'left';
+  }
+}
+
+// Keyboard Controls
+window.addEventListener('keydown', e => {
+  if (e.key === 'a' || e.key === 'ArrowLeft') keys.left = true;
+  if (e.key === 'd' || e.key === 'ArrowRight') keys.right = true;
+  if (e.key === 'w' || e.key === 'ArrowUp') keys.up = true;
+  if ((e.key === 'j' || e.key === ' ') && gameState === 'PLAYING') player.attack(enemy);
+  if (e.key === 'k' && gameState === 'PLAYING') player.dash();
+});
+window.addEventListener('keyup', e => {
+  if (e.key === 'a' || e.key === 'ArrowLeft') keys.left = false;
+  if (e.key === 'd' || e.key === 'ArrowRight') keys.right = false;
+  if (e.key === 'w' || e.key === 'ArrowUp') keys.up = false;
+});
+
+// Touch / Mouse Joystick & Buttons
+const joypad = document.getElementById('joypad');
+const joystick = document.getElementById('joystick');
+let joyActive = false;
+
+function handleJoy(e) {
+  if (!joyActive) return;
+  const rect = joypad.getBoundingClientRect();
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  const dx = Math.max(-35, Math.min(35, clientX - (rect.left + 55)));
+  const dy = Math.max(-35, Math.min(35, clientY - (rect.top + 55)));
+  joystick.style.transform = `translate(${dx}px, ${dy}px)`;
+  keys.left = dx < -12;
+  keys.right = dx > 12;
+  keys.up = dy < -18;
+}
+
+joypad.addEventListener('pointerdown', e => { joyActive = true; handleJoy(e); });
+window.addEventListener('pointermove', handleJoy);
+window.addEventListener('pointerup', () => {
+  joyActive = false;
+  joystick.style.transform = 'translate(0px, 0px)';
+  keys.left = keys.right = keys.up = false;
+});
+
+document.getElementById('btn-atk').addEventListener('pointerdown', () => {
+  if (gameState === 'PLAYING') player.attack(enemy);
+});
+document.getElementById('btn-dash').addEventListener('pointerdown', () => {
+  if (gameState === 'PLAYING') player.dash();
+});
+
+renderMenu();
+loop();
+</script>
+</body>
+</html>
