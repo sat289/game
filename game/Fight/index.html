@@ -3,26 +3,26 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Stick Kombat - Authentic Reaper vs Lumis Edition</title>
+  <title>Stick Kombat - Pro Audio & Modes Edition</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-<div id="viewport-wrapper"> 
+<div id="viewport-wrapper">
   <div id="game-frame">
 
     <!-- Left Floating Sidebar -->
     <div class="side-dock">
       <div class="dock-icon" onclick="returnToMenu()" title="Back to Menu">&#8592;</div>
       <div class="dock-icon" onclick="forceFullscreenLandscape()" title="Fullscreen Rotate">&#9825;</div>
-      <div class="dock-icon" title="Audio">&#128266;</div>
+      <div class="dock-icon" id="dock-mute-btn" onclick="toggleAudioMute()" title="Toggle Sound & Music">&#128266;</div>
     </div>
 
     <!-- 0. MOVIE-STYLE START & LANDSCAPE ROTATION SCREEN -->
     <div id="start-gate-screen" class="screen">
-      <div style="font-size:13px; color:#8fff00; font-weight:900; margin-bottom:8px;">&#127918; FULLSCREEN HORIZONTAL MODE</div>
+      <div style="font-size:13px; color:#8fff00; font-weight:900; margin-bottom:8px;">&#127918; FULLSCREEN + REAL SYNTH SOUND & BGM</div>
       <div style="font-size:32px; font-weight:900; font-style:italic; margin-bottom:20px;">STICK KOMBAT: REAPER VS LUMIS</div>
-      <button class="btn-enter-fullscreen" onclick="enterGameFullscreen()">&#9654; ENTER GAME</button>
+      <button class="btn-enter-fullscreen" onclick="enterGameFullscreen()">&#9654; ENTER GAME (ENABLE AUDIO)</button>
     </div>
 
     <!-- 1. SEAGAMES SPLASH SCREEN -->
@@ -44,26 +44,26 @@
       </div>
     </div>
 
-    <!-- 2. CHARACTER ROSTER MENU + LIVE ANIMATED HERO PREVIEW -->
+    <!-- 2. CHARACTER ROSTER MENU + WORKING GAME MODES + STAT UPGRADES -->
     <div id="menu-screen" class="screen hidden">
       <div class="menu-top-tabs">
-        <div class="tab-icon-btn" title="Training">&#127891;</div>
-        <div class="tab-main-green">1 PLAYER</div>
-        <div class="tab-icon-btn" title="The Tower">&#9820;</div>
-        <div class="tab-icon-btn" title="Rose Arena">&#127801;</div>
-        <div class="tab-icon-btn" style="font-style:italic;" title="2X2 Mode">2X2</div>
+        <div class="tab-icon-btn" id="mode-training" onclick="selectGameMode('TRAINING')" title="Practice Mode">&#127891;</div>
+        <div class="tab-icon-btn active" id="mode-1p" onclick="selectGameMode('1P')">1 PLAYER</div>
+        <div class="tab-icon-btn" id="mode-tower" onclick="selectGameMode('TOWER')" title="10-Floor Survival Tower">&#9820; TOWER</div>
+        <div class="tab-icon-btn" id="mode-upgrade" onclick="upgradeSelectedHero()" title="Upgrade Fighter HP & Attack">&#127801; UPGRADE</div>
+        <div class="tab-icon-btn" id="mode-2x2" onclick="selectGameMode('2X2')" style="font-style:italic;" title="2v2 Tag Team Mode">2X2</div>
       </div>
 
       <div class="hero-header-bar">
         <div class="selected-hero-title" id="hero-title-label">REAPER</div>
-        <div class="hero-stat-pill" id="hero-stat-label">HP: 375 | WEAPON: SCYTHE</div>
+        <div class="hero-stat-pill" id="hero-stat-label">HP: 375 | ATK: 12 | SCYTHE</div>
+        <button class="btn-upgrade-pill" onclick="upgradeSelectedHero()">&#11014; UPGRADE (50 &#129689;)</button>
       </div>
 
       <div class="roster-wrapper">
-        <!-- Live Cel-Shaded Fighter Preview in Menu -->
         <div class="menu-3d-showcase">
           <canvas id="menu-preview-canvas" width="120" height="150"></canvas>
-          <div class="showcase-tag">LIVE FIGHTER</div>
+          <div class="showcase-tag" id="mode-showcase-tag">1 PLAYER MODE</div>
         </div>
 
         <div class="roster-grid" id="roster-grid"></div>
@@ -86,8 +86,8 @@
       <div class="menu-bottom-bar">
         <div class="menu-left-icons">
           <div class="square-btn" onclick="forceFullscreenLandscape()" title="Fullscreen">&#9881;</div>
-          <div class="square-btn" title="News">
-            <span class="news-ribbon">NEWS</span>
+          <div class="square-btn" onclick="claimFreeCoins()" title="Daily Bonus +100 Coins">
+            <span class="news-ribbon">GIFT</span>
             &#9992;
           </div>
         </div>
@@ -108,7 +108,7 @@
             <span class="ad-coin-label">100 &#129689;</span>
           </div>
           <div class="coin-wallet">
-            <span id="coin-amount">59</span>
+            <span id="coin-amount">150</span>
             <span class="coin-icon"></span>
           </div>
         </div>
@@ -116,13 +116,24 @@
     </div>
 
     <!-- UNLOCK FIGHTER MODAL POPUP -->
-    <div id="unlock-modal" class="hidden">
+    <div id="unlock-modal" class="modal-overlay hidden">
       <div class="unlock-card">
         <div class="unlock-close" onclick="closeUnlockModal()">&#10006;</div>
         <div class="unlock-title" id="unlock-modal-title">UNLOCK FIGHTER "FROST"</div>
         <div class="unlock-avatar-preview" id="unlock-modal-avatar"></div>
         <div class="unlock-desc">PURCHASE WITH COINS OR USE GREEN +100 COIN BUTTON</div>
-        <button class="btn-unlock-buy" id="unlock-buy-btn" onclick="confirmUnlockFighter()">200 &#129689;</button>
+        <button class="btn-unlock-buy" id="unlock-buy-btn" onclick="confirmUnlockFighter()">150 &#129689;</button>
+      </div>
+    </div>
+
+    <!-- PAUSE MODAL POPUP -->
+    <div id="pause-modal" class="modal-overlay hidden">
+      <div class="unlock-card">
+        <div class="unlock-title">GAME PAUSED</div>
+        <div style="display:flex; flex-direction:column; gap:10px; margin-top:12px;">
+          <button class="btn-unlock-buy" onclick="togglePauseMatch()">&#9654; RESUME FIGHT</button>
+          <button class="btn-unlock-buy" style="background:#eb3b5a;" onclick="togglePauseMatch(); returnToMenu();">&#8592; QUIT TO MENU</button>
+        </div>
       </div>
     </div>
 
@@ -165,7 +176,7 @@
 
       <!-- Center Pause & Timer -->
       <div class="hud-center">
-        <div class="pause-icon">||</div>
+        <div class="pause-icon" onclick="togglePauseMatch()" title="Pause Game">||</div>
         <div class="timer-digits" id="fight-timer">98</div>
       </div>
 
@@ -174,7 +185,7 @@
         <div class="hud-portrait" id="p2-hud-avatar"></div>
         <div class="hud-bars">
           <div class="hud-label-row">
-            <span id="p2-hud-hp">216/216</span>
+            <span id="p2-hud-hp">260/260</span>
             <span id="p2-hud-name" style="color:#ff9f43;">LUMIS</span>
           </div>
           <div class="hp-outer">
@@ -201,7 +212,7 @@
       <div class="flawless-sub" id="victory-sub-text">FLAWLESS VICTORY! &#10022;</div>
     </div>
 
-    <!-- Left Side Combo & Damage Percentage Overlay (Matches Video 0:06 & 0:30) -->
+    <!-- Left Side Combo & Damage Percentage Overlay -->
     <div id="combo-popup" class="hidden">
       <div class="combo-summary-line" id="combo-hit-small">HIT: 5</div>
       <div class="combo-dmg-line" id="combo-dmg-small">DAMAGE: 30%</div>
@@ -209,20 +220,18 @@
       <div class="combo-big-hit" id="combo-big-num">6!</div>
     </div>
 
-    <!-- Exact Video Controls: Left Joystick + Grey Secondary Fist + Big Green Primary Fist -->
+    <!-- Exact Video Controls -->
     <div id="touch-controls" class="hidden">
       <div class="joystick-base" id="joy-base">
         <div class="joystick-knob" id="joy-knob"></div>
       </div>
       <div class="combat-buttons">
-        <!-- Grey Button: Boomerang Spinning Scythe Throw / Shadow Dash Strike -->
-        <div class="ctrl-btn btn-secondary-grey" id="btn-special" title="Spinning Scythe Boomerang / Dash Strike (K or U)">
+        <div class="ctrl-btn btn-secondary-grey" id="btn-special" title="Spinning Scythe Boomerang / Dash Strike (K)">
           <svg width="34" height="34" viewBox="0 0 24 24" fill="#1e272e">
             <path d="M4 11h6v2H4zm0-4h8v2H4zm0 8h4v2H4zm15.7-4.7l-3.4-3.4c-.4-.4-1-.4-1.4 0l-1.4 1.4 4.8 4.8 1.4-1.4c.4-.4.4-1 0-1.4zM12 10.5V16h5.5l-5.5-5.5z"/>
           </svg>
         </div>
-        <!-- Big Green Button: Two-Handed Scythe Combo + Uppercut Launch -->
-        <div class="ctrl-btn btn-main-fist" id="btn-attack" title="Scythe Combo Slash (J or Space)">
+        <div class="ctrl-btn btn-main-fist" id="btn-attack" title="Scythe Combo Slash (J)">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="#1e272e">
             <path d="M18 11c0-.959-.68-1.761-1.581-1.954C16.779 8.445 17 7.75 17 7c0-2.206-1.794-4-4-4-1.517 0-2.821.857-3.5 2.104C8.821 3.857 7.517 3 6 3 3.794 3 2 4.794 2 7c0 .902.312 1.727.817 2.396A1.994 1.994 0 0 0 2 11v8c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-8zm-4 7H6v-5h8v5z"/>
           </svg>
@@ -235,9 +244,181 @@
 
 <script>
 /* ============================================================================
-   0. FULLSCREEN & LANDSCAPE ROTATION
+   0. WEB AUDIO SYNTHESIZER ENGINE (BGM + Combat SFX - No External MP3 Needed!)
+============================================================================ */
+let audioCtx = null;
+let audioMuted = false;
+let bgmInterval = null;
+let bgmMode = 'NONE'; // 'MENU' or 'FIGHT'
+let bgmStep = 0;
+
+function initAudioEngine() {
+  if (!audioCtx) {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (AudioContextClass) audioCtx = new AudioContextClass();
+  }
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+}
+
+function toggleAudioMute() {
+  audioMuted = !audioMuted;
+  const btn = document.getElementById('dock-mute-btn');
+  btn.innerHTML = audioMuted ? '&#128263;' : '&#128266;';
+  btn.classList.toggle('muted', audioMuted);
+}
+
+function playSFX(type) {
+  if (audioMuted || !audioCtx) return;
+  const now = audioCtx.currentTime;
+
+  if (type === 'CLICK' || type === 'COIN') {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(type === 'COIN' ? 987.77 : 520, now);
+    if (type === 'COIN') osc.frequency.setValueAtTime(1318.5, now + 0.07);
+    gain.gain.setValueAtTime(0.16, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.22);
+  } else if (type === 'SWING') {
+    // Scythe Whoosh Noise
+    const bufferSize = audioCtx.sampleRate * 0.14;
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(900, now);
+    filter.frequency.exponentialRampToValueAtTime(280, now + 0.14);
+
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.25, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.14);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(audioCtx.destination);
+    noise.start(now);
+  } else if (type === 'HIT' || type === 'HEAVY_HIT') {
+    // Punchy Impact Bass + Metallic Slash
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type === 'HEAVY_HIT' ? 'sawtooth' : 'triangle';
+    osc.frequency.setValueAtTime(type === 'HEAVY_HIT' ? 190 : 140, now);
+    osc.frequency.exponentialRampToValueAtTime(32, now + (type === 'HEAVY_HIT' ? 0.26 : 0.15));
+    gain.gain.setValueAtTime(type === 'HEAVY_HIT' ? 0.42 : 0.3, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + (type === 'HEAVY_HIT' ? 0.26 : 0.15));
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + (type === 'HEAVY_HIT' ? 0.26 : 0.15));
+  } else if (type === 'BOOMERANG') {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(340, now);
+    osc.frequency.linearRampToValueAtTime(680, now + 0.15);
+    osc.frequency.linearRampToValueAtTime(340, now + 0.3);
+    gain.gain.setValueAtTime(0.2, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.3);
+  } else if (type === 'GONG') {
+    // Oriental Dojo Gong for Round Start & Victory
+    const freqs = [220, 330, 440, 554.37];
+    freqs.forEach((f) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(f, now);
+      gain.gain.setValueAtTime(0.12, now);
+      gain.gain.exponentialRampToValueAtTime(0.0008, now + 1.1);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 1.1);
+    });
+  }
+}
+
+function startBGM(mode) {
+  initAudioEngine();
+  if (bgmMode === mode && bgmInterval) return;
+  bgmMode = mode;
+  clearInterval(bgmInterval);
+  bgmStep = 0;
+
+  // Japanese Minor Pentatonic Scale (A, C, D, E, G)
+  const menuNotes = [220, 261.63, 293.66, 329.63, 392.00, 329.63, 293.66, 261.63];
+  const fightBass = [110, 110, 130.81, 146.83, 110, 110, 164.81, 146.83];
+  const fightLead = [440, 0, 523.25, 587.33, 659.25, 0, 587.33, 523.25];
+
+  const tempoMs = mode === 'FIGHT' ? 185 : 340;
+
+  bgmInterval = setInterval(() => {
+    if (audioMuted || !audioCtx || audioCtx.state !== 'running') return;
+    const now = audioCtx.currentTime;
+
+    if (bgmMode === 'MENU') {
+      const freq = menuNotes[bgmStep % menuNotes.length];
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, now);
+      gain.gain.setValueAtTime(0.05, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.3);
+    } else if (bgmMode === 'FIGHT') {
+      // Driving Bassline
+      const bFreq = fightBass[bgmStep % fightBass.length];
+      const bOsc = audioCtx.createOscillator();
+      const bGain = audioCtx.createGain();
+      bOsc.type = 'sawtooth';
+      bOsc.frequency.setValueAtTime(bFreq, now);
+      bGain.gain.setValueAtTime(0.065, now);
+      bGain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+      bOsc.connect(bGain);
+      bGain.connect(audioCtx.destination);
+      bOsc.start(now);
+      bOsc.stop(now + 0.16);
+
+      // Ninja Lead Synth
+      const lFreq = fightLead[bgmStep % fightLead.length];
+      if (lFreq > 0 && bgmStep % 2 === 0) {
+        const lOsc = audioCtx.createOscillator();
+        const lGain = audioCtx.createGain();
+        lOsc.type = 'square';
+        lOsc.frequency.setValueAtTime(lFreq, now);
+        lGain.gain.setValueAtTime(0.03, now);
+        lGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+        lOsc.connect(lGain);
+        lGain.connect(audioCtx.destination);
+        lOsc.start(now);
+        lOsc.stop(now + 0.15);
+      }
+    }
+    bgmStep++;
+  }, tempoMs);
+}
+
+/* ============================================================================
+   1. FULLSCREEN & LANDSCAPE ROTATION
 ============================================================================ */
 async function forceFullscreenLandscape() {
+  initAudioEngine();
   try {
     const docEl = document.documentElement;
     if (docEl.requestFullscreen) await docEl.requestFullscreen();
@@ -250,6 +431,8 @@ async function forceFullscreenLandscape() {
 }
 
 function enterGameFullscreen() {
+  initAudioEngine();
+  playSFX('GONG');
   forceFullscreenLandscape();
   document.getElementById('start-gate-screen').classList.add('hidden');
   document.getElementById('splash-screen').classList.remove('hidden');
@@ -263,7 +446,7 @@ function getLogicalDimensions() {
 }
 
 /* ============================================================================
-   1. 16 FIGHTERS ROSTER (Exact Video Stats: Reaper 375 HP, Lumis 216 HP, etc.)
+   2. 16 FIGHTERS ROSTER & MODES
 ============================================================================ */
 const ROSTER = [
   { id: 'reaper', name: 'REAPER', color: '#00f2fe', eye: '#00ffaa', skin: '#0d1117', cape: '#0c1017', hair: null, headType: 'hood', weapon: 'SCYTHE', hp: 375, dmg: 12, unlocked: true, cost: 0 },
@@ -293,16 +476,15 @@ const STAGES = [
 
 const DIFFICULTIES = ['AUTO', 'EASY', 'NORMAL', 'HARD'];
 
-let coins = 59;
-let selectedHero = ROSTER[0];  // REAPER
-let selectedEnemy = ROSTER[1]; // LUMIS (Exact matchup from Video!)
+let coins = 150;
+let selectedHero = ROSTER[0];
+let selectedEnemy = ROSTER[1];
 let pendingUnlockFighter = null;
 let diffIndex = 0;
 let stageIndex = 0;
+let currentMode = '1P'; // '1P', 'TOWER', '2X2', 'TRAINING'
+let towerFloor = 1;
 
-/* ============================================================================
-   HD VECTOR AVATAR PORTRAIT BUILDER (Matches Video Reaper & Lumis Portraits)
-============================================================================ */
 function buildAvatarSVG(f) {
   let headArt = '';
   switch (f.headType) {
@@ -316,7 +498,7 @@ function buildAvatarSVG(f) {
         <polygon points="32,41 52,37 48,45 32,45" fill="${f.eye}"/>
       `;
       break;
-    case 'longhair': // Exact Lumis Portrait (White flowing hair, purple face, yellow eyes, smirk)
+    case 'longhair':
       headArt = `
         <path d="M8,66 C8,14 26,8 42,8 C60,8 72,22 72,68 C58,52 56,28 40,24 C26,28 20,50 8,66 Z" fill="#ffffff" stroke="#dcdde1" stroke-width="1.5"/>
         <circle cx="40" cy="46" r="18" fill="${f.skin}"/>
@@ -408,7 +590,7 @@ function buildAvatarSVG(f) {
 }
 
 /* ============================================================================
-   2. MENU & UNLOCK LOGIC
+   3. MENU, MODES & STAT UPGRADES
 ============================================================================ */
 function runEntrySplash() {
   const fill = document.getElementById('splash-fill');
@@ -423,6 +605,7 @@ function runEntrySplash() {
       setTimeout(() => {
         document.getElementById('splash-screen').classList.add('hidden');
         document.getElementById('menu-screen').classList.remove('hidden');
+        startBGM('MENU');
         renderRosterMenu();
       }, 280);
     }
@@ -433,10 +616,38 @@ function runEntrySplash() {
   }, 140);
 }
 
+function selectGameMode(mode) {
+  playSFX('CLICK');
+  currentMode = mode;
+  document.getElementById('mode-training').classList.toggle('active', mode === 'TRAINING');
+  document.getElementById('mode-1p').classList.toggle('active', mode === '1P');
+  document.getElementById('mode-tower').classList.toggle('active', mode === 'TOWER');
+  document.getElementById('mode-2x2').classList.toggle('active', mode === '2X2');
+
+  const tag = document.getElementById('mode-showcase-tag');
+  if (mode === 'TOWER') tag.innerText = `TOWER FLOOR ${towerFloor}`;
+  else if (mode === '2X2') tag.innerText = '2V2 TAG TEAM';
+  else if (mode === 'TRAINING') tag.innerText = 'PRACTICE MODE';
+  else tag.innerText = '1 PLAYER MODE';
+}
+
+function upgradeSelectedHero() {
+  initAudioEngine();
+  if (coins >= 50) {
+    coins -= 50;
+    selectedHero.hp += 25;
+    selectedHero.dmg += 2;
+    playSFX('COIN');
+    renderRosterMenu();
+  } else {
+    alert('Upgrade kosam 50 Coins kavali! Kindha unna Green [▶ 100 🪙] button nokki Free Coins pondandi.');
+  }
+}
+
 function renderRosterMenu() {
   document.getElementById('coin-amount').innerText = coins;
   document.getElementById('hero-title-label').innerText = selectedHero.name;
-  document.getElementById('hero-stat-label').innerText = `HP: ${selectedHero.hp} | WEAPON: ${selectedHero.weapon}`;
+  document.getElementById('hero-stat-label').innerText = `HP: ${selectedHero.hp} | ATK: ${selectedHero.dmg} | ${selectedHero.weapon}`;
   document.getElementById('stage-badge').innerText = STAGES[stageIndex].name;
   const grid = document.getElementById('roster-grid');
   grid.innerHTML = '';
@@ -452,6 +663,8 @@ function renderRosterMenu() {
     `;
 
     item.onclick = () => {
+      initAudioEngine();
+      playSFX('CLICK');
       if (f.unlocked) {
         selectedHero = f;
         selectedEnemy = f.id === 'lumis' ? ROSTER[0] : ROSTER[1];
@@ -483,6 +696,7 @@ function confirmUnlockFighter() {
     coins -= pendingUnlockFighter.cost;
     pendingUnlockFighter.unlocked = true;
     selectedHero = pendingUnlockFighter;
+    playSFX('COIN');
     closeUnlockModal();
     renderRosterMenu();
   } else {
@@ -491,21 +705,27 @@ function confirmUnlockFighter() {
 }
 
 function claimFreeCoins() {
+  initAudioEngine();
   coins += 100;
+  playSFX('COIN');
   renderRosterMenu();
 }
 
 function cycleDifficulty(dir) {
+  playSFX('CLICK');
   diffIndex = (diffIndex + dir + DIFFICULTIES.length) % DIFFICULTIES.length;
   document.getElementById('diff-label').innerText = DIFFICULTIES[diffIndex];
 }
 
 function cycleStage(dir) {
+  playSFX('CLICK');
   stageIndex = (stageIndex + dir) % STAGES.length;
   renderRosterMenu();
 }
 
 function triggerMatchLoad() {
+  initAudioEngine();
+  playSFX('GONG');
   forceFullscreenLandscape();
   document.getElementById('menu-screen').classList.add('hidden');
   const compScreen = document.getElementById('loading-components-screen');
@@ -530,10 +750,22 @@ function triggerMatchLoad() {
   }, 100);
 }
 
+function togglePauseMatch() {
+  if (gameState === 'FIGHT') {
+    gameState = 'PAUSED';
+    document.getElementById('pause-modal').classList.remove('hidden');
+  } else if (gameState === 'PAUSED') {
+    gameState = 'FIGHT';
+    document.getElementById('pause-modal').classList.add('hidden');
+  }
+}
+
 function returnToMenu() {
-  if (gameState === 'FIGHT' || gameState === 'ROUND_OVER') {
+  if (gameState === 'FIGHT' || gameState === 'ROUND_OVER' || gameState === 'PAUSED') {
     gameState = 'MENU';
     clearInterval(matchClock);
+    startBGM('MENU');
+    document.getElementById('pause-modal').classList.add('hidden');
     document.getElementById('arena-canvas').classList.add('hidden');
     document.getElementById('fight-hud').classList.add('hidden');
     document.getElementById('touch-controls').classList.add('hidden');
@@ -545,7 +777,7 @@ function returnToMenu() {
 }
 
 /* ============================================================================
-   3. AUTHENTIC CEL-SHADED ARTICULATED FIGHT ENGINE (Exact Match to Video!)
+   4. AUTHENTIC CEL-SHADED ARTICULATED FIGHT ENGINE
 ============================================================================ */
 const arenaCanvas = document.getElementById('arena-canvas');
 const ctx = arenaCanvas.getContext('2d');
@@ -568,6 +800,8 @@ window.addEventListener('resize', resizeArenaCanvas);
 window.addEventListener('orientationchange', () => setTimeout(resizeArenaCanvas, 200));
 
 let p1, p2;
+let p1TagPartnerUsed = false;
+let p2TagPartnerUsed = false;
 let gameState = 'MENU';
 let matchTimer = 98;
 let matchClock = null;
@@ -579,15 +813,14 @@ let comboCount = 0;
 let comboDmgAccum = 0;
 let comboResetTimer = 0;
 let screenShake = 0;
+let slowMoFrames = 0;
 
-// Visual Effects Arrays (Golden Starbursts, Dust Puffs, Spinning Boomerang Scythes)
 let starbursts = [];
 let dustPuffs = [];
 let projectiles = [];
 
-const input = { left: false, right: false, up: false, down: false };
+const input = { left: false, right: false, up: false };
 
-/* Articulated Cel-Shaded Fighter Class */
 class CelFighter {
   constructor(config, x, facing, isPlayer) {
     this.config = config;
@@ -600,8 +833,7 @@ class CelFighter {
     this.vy = 0;
     this.facing = facing;
 
-    // Animation & Combat States
-    this.state = 'IDLE'; // IDLE, RUN, JUMP, SLASH1, SLASH2, SLASH3, THROW_SCYTHE, HURT, AIR_TUMBLE, KO_DOWN, VICTORY
+    this.state = 'IDLE';
     this.stateTick = 0;
     this.animTime = 0;
     this.comboStep = 0;
@@ -609,29 +841,27 @@ class CelFighter {
     this.invuln = 0;
     this.bolts = 2;
     this.boltRecharge = 0;
-    this.bodyAngle = 0; // Used for mid-air ragdoll tumble (0:15, 0:37)
+    this.bodyAngle = 0;
   }
 
   update(opponent) {
     this.animTime += 0.16;
     if (this.invuln > 0) this.invuln--;
 
-    // Recharge Lightning Bolts (⚡⚡)
     if (this.bolts < 2) {
       this.boltRecharge++;
-      if (this.boltRecharge > 160) {
+      if (this.boltRecharge > 150) {
         this.bolts++;
         this.boltRecharge = 0;
         refreshFightHUD();
       }
     }
 
-    // Physics & Gravity
     this.x += this.vx;
     this.y += this.vy;
 
     if (this.y < GROUND_Y) {
-      this.vy += 0.68; // Gravity
+      this.vy += 0.68;
     } else {
       if (this.vy > 4) spawnDustPuff(this.x, GROUND_Y);
       this.y = GROUND_Y;
@@ -650,11 +880,10 @@ class CelFighter {
     this.vx *= 0.82;
     this.x = Math.max(65, Math.min(CW - 65, this.x));
 
-    // State Machine Progression
     if (this.stateTick > 0) {
       this.stateTick--;
       if (this.state === 'AIR_TUMBLE') {
-        this.bodyAngle += this.facing * -0.22; // Mid-air spin like Lumis at 0:15 & 0:37
+        this.bodyAngle += this.facing * -0.22;
       }
       if (this.stateTick === 0 && this.state !== 'KO_DOWN' && this.state !== 'VICTORY') {
         this.state = 'IDLE';
@@ -663,7 +892,6 @@ class CelFighter {
     } else if (this.hp <= 0) {
       this.state = 'KO_DOWN';
     } else {
-      // Auto Face Opponent when idle/moving
       this.facing = opponent.x >= this.x ? 1 : -1;
       if (this.y < GROUND_Y) this.state = 'JUMP';
       else if (Math.abs(this.vx) > 0.8) this.state = 'RUN';
@@ -671,18 +899,16 @@ class CelFighter {
     }
   }
 
-  // Primary Green Fist Button: Two-Handed Scythe Combo + Uppercut Ragdoll Launch
   attackPrimary(opponent) {
     if (this.state === 'KO_DOWN' || this.state === 'AIR_TUMBLE' || this.stateTick > 6) return;
 
     const dist = Math.abs(this.x - opponent.x);
-
-    // If enemy is far away & we have our weapon, throw Boomerang Spinning Scythe like 0:12 & 0:30!
     if (dist > 220 && this.hasWeaponInHand && this.bolts >= 1) {
       this.throwBoomerangWeapon(opponent);
       return;
     }
 
+    playSFX('SWING');
     this.comboStep = (this.comboStep % 3) + 1;
     this.state = `SLASH${this.comboStep}`;
     this.stateTick = 18;
@@ -696,14 +922,13 @@ class CelFighter {
     }
   }
 
-  // Secondary Grey Fist Button: Boomerang Scythe Throw OR Shadow Dash Through Enemy (0:26)
   attackSecondary(opponent) {
     if (this.state === 'KO_DOWN' || this.state === 'AIR_TUMBLE' || this.stateTick > 4) return;
 
     if (this.hasWeaponInHand && Math.abs(this.x - opponent.x) > 140) {
       this.throwBoomerangWeapon(opponent);
     } else {
-      // Dash Slice right through the enemy like 0:26 - 0:27!
+      playSFX('SWING');
       this.state = 'SLASH3';
       this.stateTick = 20;
       this.vx = this.facing * 19;
@@ -714,9 +939,9 @@ class CelFighter {
     }
   }
 
-  // Exact Boomerang Spinning Scythe Vortex from Video (0:12, 0:18, 0:30, 0:33)
   throwBoomerangWeapon(opponent) {
     if (!this.hasWeaponInHand) return;
+    playSFX('BOOMERANG');
     this.hasWeaponInHand = false;
     if (this.bolts > 0) this.bolts--;
     this.state = 'THROW_SCYTHE';
@@ -743,19 +968,21 @@ class CelFighter {
     opponent.invuln = 12;
 
     if (launchAir || opponent.hp <= 0) {
+      playSFX('HEAVY_HIT');
       opponent.state = 'AIR_TUMBLE';
       opponent.stateTick = 38;
       opponent.vx = this.facing * 13;
-      opponent.vy = -12.5; // High parabolic knockback arc like 0:04 & 0:15!
+      opponent.vy = -12.5;
       screenShake = 9;
+      if (opponent.hp <= 0) slowMoFrames = 35; // Cinematic Slow-Motion KO!
     } else {
+      playSFX('HIT');
       opponent.state = 'HURT';
       opponent.stateTick = 14;
       opponent.vx = this.facing * 6.5;
       screenShake = 4;
     }
 
-    // Spawn Golden Starburst Impact + Radial Screen Rays (Exact match to 0:04 & 0:12)
     const hitX = (this.x + opponent.x) * 0.5 + this.facing * 20;
     const hitY = opponent.y - 58;
     spawnStarburst(hitX, hitY, launchAir);
@@ -769,20 +996,15 @@ class CelFighter {
     refreshFightHUD();
   }
 
-  /* ==========================================================================
-     CEL-SHADED ARTICULATED CHARACTER RENDERER (Draws Reaper, Lumis, etc.)
-     ========================================================================== */
   draw(c, scale = 1) {
     c.save();
     c.translate(this.x, this.y);
     c.scale(scale, scale);
 
-    // 1. Player Green Floor & Overhead Triangle Indicators (▼ / ▲ from Video)
     if (this.isPlayer && c === ctx && gameState === 'FIGHT') {
       c.fillStyle = '#2ed573';
       c.strokeStyle = '#000';
       c.lineWidth = 2;
-      // Floor oval + upward triangle
       c.beginPath();
       c.moveTo(-26, 2);
       c.lineTo(26, 2);
@@ -791,7 +1013,6 @@ class CelFighter {
       c.fill();
       c.stroke();
 
-      // Overhead downward triangle
       const bob = Math.sin(this.animTime * 2) * 4;
       c.beginPath();
       c.moveTo(-8, -125 + bob);
@@ -802,13 +1023,11 @@ class CelFighter {
       c.stroke();
     }
 
-    // Ground Shadow
     c.fillStyle = 'rgba(0, 0, 0, 0.35)';
     c.beginPath();
     c.ellipse(0, 2, 28, 6, 0, 0, Math.PI * 2);
     c.fill();
 
-    // Handle KO lying flat on ground (0:20, 0:43)
     if (this.state === 'KO_DOWN') {
       c.translate(0, -12);
       c.rotate(this.facing * Math.PI * 0.47);
@@ -821,7 +1040,6 @@ class CelFighter {
 
     c.scale(this.facing, 1);
 
-    // Victory Dropped Scythe Behind Reaper (Exact match to 0:20 & 0:43!)
     if (this.state === 'VICTORY') {
       c.save();
       c.translate(-55, -8);
@@ -835,7 +1053,6 @@ class CelFighter {
     const isAttacking = this.state.startsWith('SLASH');
     const leanForward = isAttacking ? 0.28 : (this.state === 'RUN' ? 0.18 : 0.08);
 
-    // 2. Flowing Cape / Cloak (For Reaper, Oni, Red, etc.)
     if (this.config.cape) {
       c.fillStyle = this.config.cape;
       c.strokeStyle = '#000';
@@ -850,7 +1067,6 @@ class CelFighter {
       c.stroke();
     }
 
-    // 3. Long Flowing White Anime Hair (For Lumis / Wars - Matches Video!)
     if (this.config.hair) {
       c.fillStyle = this.config.hair;
       c.strokeStyle = '#111';
@@ -865,16 +1081,13 @@ class CelFighter {
       c.stroke();
     }
 
-    // 4. Back Leg & Front Leg with Cyan/Colored Armor Plates
     this.drawLeg(c, -8, -42, -14 + walkSin * 20, 0, false);
     this.drawLeg(c, 8, -42, 14 - walkSin * 20, 0, true);
 
-    // 5. Articulated Torso & Armor Vest
     c.save();
     c.translate(0, -42 + idleBreathe);
     c.rotate(leanForward);
 
-    // Torso core
     c.fillStyle = '#11161d';
     c.strokeStyle = '#000';
     c.lineWidth = 2.5;
@@ -887,12 +1100,10 @@ class CelFighter {
     c.fill();
     c.stroke();
 
-    // Colored Armor Strips & Belt Sash (Like Reaper's Cyan Armor in Video)
     c.fillStyle = this.config.color;
     c.fillRect(-11, -6, 22, 6);
     c.fillRect(-6, -34, 14, 10);
 
-    // 6. Head, Hood, Visor Eyes
     c.save();
     c.translate(2, -48);
     c.fillStyle = this.config.skin;
@@ -903,7 +1114,6 @@ class CelFighter {
     c.fill();
     c.stroke();
 
-    // Reaper's Cyan Hood Trim
     if (this.config.headType === 'hood') {
       c.strokeStyle = this.config.color;
       c.lineWidth = 3.5;
@@ -912,10 +1122,8 @@ class CelFighter {
       c.stroke();
     }
 
-    // Glowing Slanted Visor Eye
     c.fillStyle = this.config.eye;
     c.beginPath();
-    c.polygon = [ [2, -3], [12, -5], [10, 1], [2, 1] ];
     c.moveTo(2, -3);
     c.lineTo(12, -6);
     c.lineTo(10, 1);
@@ -924,7 +1132,6 @@ class CelFighter {
     c.fill();
     c.restore();
 
-    // 7. Two-Handed Arms & Weapon Slash Animation
     if (this.hasWeaponInHand && this.state !== 'VICTORY') {
       c.save();
       c.translate(4, -28);
@@ -932,18 +1139,17 @@ class CelFighter {
       let swingRot = -0.25;
       if (this.state === 'SLASH1') {
         const p = 1 - this.stateTick / 18;
-        swingRot = -1.6 + p * 3.1; // Overhead downward cleave
+        swingRot = -1.6 + p * 3.1;
       } else if (this.state === 'SLASH2') {
         const p = 1 - this.stateTick / 18;
-        swingRot = 1.4 - p * 3.0;  // Rising upward slash
+        swingRot = 1.4 - p * 3.0;
       } else if (this.state === 'SLASH3') {
         const p = 1 - this.stateTick / 18;
-        swingRot = -2.1 + p * 4.2; // Heavy full cleave
+        swingRot = -2.1 + p * 4.2;
       }
 
       c.rotate(swingRot);
 
-      // Draw Weapon + Motion Blur Arc when slashing
       if (isAttacking) {
         c.save();
         c.strokeStyle = 'rgba(200, 245, 255, 0.65)';
@@ -956,7 +1162,6 @@ class CelFighter {
 
       this.drawWeaponMesh(c);
 
-      // Front Arm & Cyan Gauntlet holding weapon
       c.fillStyle = '#11161d';
       c.strokeStyle = '#000';
       c.lineWidth = 2.2;
@@ -968,8 +1173,8 @@ class CelFighter {
       c.restore();
     }
 
-    c.restore(); // End Torso
-    c.restore(); // End Fighter
+    c.restore();
+    c.restore();
   }
 
   drawLeg(c, hipX, hipY, footX, footY, isFront) {
@@ -990,7 +1195,6 @@ class CelFighter {
     c.lineWidth = 7;
     c.stroke();
 
-    // Colored Shin Guard Strip
     if (isFront) {
       c.strokeStyle = this.config.color;
       c.lineWidth = 3.5;
@@ -1003,7 +1207,6 @@ class CelFighter {
 
   drawWeaponMesh(c) {
     if (this.config.weapon === 'CLAWS') {
-      // Lumis Purple Energy Claws
       c.strokeStyle = this.config.color;
       c.lineWidth = 3.5;
       for (let i = -1; i <= 1; i++) {
@@ -1015,9 +1218,7 @@ class CelFighter {
       return;
     }
 
-    // Reaper's Signature Two-Handed Curved Scythe (Matches Video!)
     c.save();
-    // Long Dark/Cyan Pole
     c.strokeStyle = '#000';
     c.lineWidth = 7;
     c.beginPath();
@@ -1029,7 +1230,6 @@ class CelFighter {
     c.lineWidth = 3.5;
     c.stroke();
 
-    // Cyan Grip Wraps
     c.strokeStyle = this.config.color;
     c.lineWidth = 4.5;
     c.beginPath();
@@ -1037,7 +1237,6 @@ class CelFighter {
     c.lineTo(15, -6);
     c.stroke();
 
-    // Giant Curved Silver & Black Scythe Blade
     c.translate(50, -22);
     c.rotate(0.25);
     c.fillStyle = '#dfe4ea';
@@ -1051,7 +1250,6 @@ class CelFighter {
     c.fill();
     c.stroke();
 
-    // Glowing Inner Blade Edge
     c.strokeStyle = this.config.color;
     c.lineWidth = 2;
     c.beginPath();
@@ -1064,7 +1262,7 @@ class CelFighter {
 }
 
 /* ============================================================================
-   4. VISUAL EFFECTS (Golden Starbursts, Dust Puffs, Spinning Scythe Vortex)
+   5. VISUAL EFFECTS & BACKGROUND
 ============================================================================ */
 function spawnStarburst(x, y, isHeavy) {
   starbursts.push({
@@ -1072,7 +1270,6 @@ function spawnStarburst(x, y, isHeavy) {
     radius: isHeavy ? 68 : 42,
     rays: isHeavy ? 12 : 8,
     life: 12,
-    maxLife: 12,
     heavy: isHeavy
   });
 }
@@ -1093,25 +1290,21 @@ function spawnDustPuff(x, y) {
 function drawArenaBackground() {
   const stg = STAGES[stageIndex];
 
-  // Pink/Crimson Sky Gradient (Matches Video!)
   const skyGrad = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
   skyGrad.addColorStop(0, stg.skyTop);
   skyGrad.addColorStop(1, stg.skyBot);
   ctx.fillStyle = skyGrad;
   ctx.fillRect(0, 0, CW, GROUND_Y);
 
-  // Background Silhouette: Torii Gate, Pagoda Roof & Giant Martial Artist Statue (Matches Video!)
   ctx.fillStyle = stg.silhouette;
   ctx.globalAlpha = 0.35;
 
-  // Left Torii Gate
   const tx = CW * 0.25;
   ctx.fillRect(tx - 70, GROUND_Y - 220, 14, 220);
   ctx.fillRect(tx + 56, GROUND_Y - 220, 14, 220);
   ctx.fillRect(tx - 95, GROUND_Y - 230, 190, 16);
   ctx.fillRect(tx - 80, GROUND_Y - 195, 160, 12);
 
-  // Center Giant Martial Artist Silhouette Statue
   const sx = CW * 0.52;
   ctx.beginPath();
   ctx.arc(sx, GROUND_Y - 255, 22, 0, Math.PI * 2);
@@ -1120,19 +1313,16 @@ function drawArenaBackground() {
   ctx.strokeStyle = stg.silhouette;
   ctx.lineCap = 'round';
   ctx.beginPath();
-  // Torso & Legs
   ctx.moveTo(sx, GROUND_Y - 230);
   ctx.lineTo(sx - 15, GROUND_Y - 120);
   ctx.lineTo(sx - 55, GROUND_Y);
   ctx.moveTo(sx - 15, GROUND_Y - 120);
   ctx.lineTo(sx + 40, GROUND_Y);
-  // Giant Raised Martial Arts Arms
   ctx.moveTo(sx - 85, GROUND_Y - 190);
   ctx.lineTo(sx, GROUND_Y - 215);
   ctx.lineTo(sx + 95, GROUND_Y - 265);
   ctx.stroke();
 
-  // Right Torii Gate
   const rx = CW * 0.82;
   ctx.fillRect(rx - 55, GROUND_Y - 170, 12, 170);
   ctx.fillRect(rx + 45, GROUND_Y - 170, 12, 170);
@@ -1140,7 +1330,6 @@ function drawArenaBackground() {
 
   ctx.globalAlpha = 1.0;
 
-  // Ground Floor
   const flGrad = ctx.createLinearGradient(0, GROUND_Y, 0, CH);
   flGrad.addColorStop(0, stg.groundTop);
   flGrad.addColorStop(1, stg.groundBot);
@@ -1152,22 +1341,28 @@ function drawArenaBackground() {
 }
 
 /* ============================================================================
-   5. MATCH & ROUND FLOW
+   6. MATCH & ROUND FLOW (Supports 1P, Tower, and 2x2 Tag Team!)
 ============================================================================ */
 function startBestOf3Match() {
   document.getElementById('arena-canvas').classList.remove('hidden');
   document.getElementById('fight-hud').classList.remove('hidden');
   document.getElementById('touch-controls').classList.remove('hidden');
 
+  startBGM('FIGHT');
   resizeArenaCanvas();
   currentRound = 1;
   p1RoundWins = 0;
   p2RoundWins = 0;
+  if (currentMode === 'TOWER') {
+    selectedEnemy = ROSTER[(towerFloor) % ROSTER.length];
+  }
   updateRoundDots();
   startSingleRound();
 }
 
 function startSingleRound() {
+  p1TagPartnerUsed = false;
+  p2TagPartnerUsed = false;
   p1 = new CelFighter(selectedHero, CW * 0.28, 1, true);
   p2 = new CelFighter(selectedEnemy, CW * 0.72, -1, false);
   projectiles = [];
@@ -1232,8 +1427,32 @@ function refreshFightHUD() {
 }
 
 function finishRound(p1Won) {
+  // Check 2X2 Tag Team Partner Swap before ending round!
+  if (currentMode === '2X2') {
+    if (!p1Won && !p1TagPartnerUsed) {
+      p1TagPartnerUsed = true;
+      const partner = ROSTER[2];
+      p1 = new CelFighter(partner, CW * 0.2, 1, true);
+      p1.y = 80;
+      document.getElementById('p1-hud-avatar').innerHTML = buildAvatarSVG(partner);
+      playSFX('GONG');
+      refreshFightHUD();
+      return;
+    } else if (p1Won && !p2TagPartnerUsed) {
+      p2TagPartnerUsed = true;
+      const partner = ROSTER[3];
+      p2 = new CelFighter(partner, CW * 0.8, -1, false);
+      p2.y = 80;
+      document.getElementById('p2-hud-avatar').innerHTML = buildAvatarSVG(partner);
+      playSFX('GONG');
+      refreshFightHUD();
+      return;
+    }
+  }
+
   gameState = 'ROUND_OVER';
   clearInterval(matchClock);
+  playSFX('GONG');
 
   if (p1Won) {
     p1RoundWins++;
@@ -1254,12 +1473,14 @@ function finishRound(p1Won) {
   const isFlawless = (p1Won && p1.hp === p1.maxHp) || (!p1Won && p2.hp === p2.maxHp);
 
   mainTxt.innerText = `${winnerName} WINS!`;
-  subTxt.innerText = isFlawless ? 'FLAWLESS VICTORY! ✦' : (p1RoundWins >= 2 || p2RoundWins >= 2 ? 'MATCH VICTORY! +60 🪙' : `ROUND ${currentRound} COMPLETE!`);
+  subTxt.innerText = isFlawless ? 'FLAWLESS VICTORY! ✦' : (p1RoundWins >= 2 || p2RoundWins >= 2 ? 'MATCH VICTORY! +75 🪙' : `ROUND ${currentRound} COMPLETE!`);
   bannerWrap.classList.remove('hidden');
 
   if (p1RoundWins >= 2 || p2RoundWins >= 2) {
     if (p1RoundWins >= 2) {
-      coins += 60;
+      coins += 75;
+      playSFX('COIN');
+      if (currentMode === 'TOWER') towerFloor++;
       stageIndex = (stageIndex + 1) % STAGES.length;
     }
     setTimeout(() => { returnToMenu(); }, 2700);
@@ -1270,15 +1491,15 @@ function finishRound(p1Won) {
 }
 
 /* ============================================================================
-   6. MAIN ANIMATION LOOP (Menu Live Preview + Fight Loop)
+   7. MAIN ANIMATION LOOP
 ============================================================================ */
 let menuPreviewDummy = null;
 let aiCooldown = 0;
+let slowMoToggle = 0;
 
 function mainLoop() {
   requestAnimationFrame(mainLoop);
 
-  // 1. Live Cel-Shaded Preview in Menu Screen
   if (!document.getElementById('menu-screen').classList.contains('hidden')) {
     if (!menuPreviewDummy || menuPreviewDummy.config.id !== selectedHero.id) {
       menuPreviewDummy = new CelFighter(selectedHero, 60, 1, false);
@@ -1292,6 +1513,13 @@ function mainLoop() {
 
   if (gameState !== 'FIGHT' && gameState !== 'ROUND_OVER') return;
 
+  // Slow-Motion KO Frame Skip
+  if (slowMoFrames > 0) {
+    slowMoFrames--;
+    slowMoToggle = (slowMoToggle + 1) % 3;
+    if (slowMoToggle !== 0) return;
+  }
+
   ctx.save();
   if (screenShake > 0) {
     ctx.translate((Math.random() - 0.5) * screenShake * 2.2, (Math.random() - 0.5) * screenShake * 2.2);
@@ -1301,26 +1529,30 @@ function mainLoop() {
   drawArenaBackground();
 
   if (gameState === 'FIGHT') {
-    // Player Movement
     if (p1.state !== 'AIR_TUMBLE' && p1.state !== 'KO_DOWN') {
       if (input.left) p1.vx = -6.2;
       if (input.right) p1.vx = 6.2;
       if (input.up && p1.y >= GROUND_Y) {
         p1.vy = -14.5;
+        playSFX('SWING');
         spawnDustPuff(p1.x, GROUND_Y);
       }
     }
 
-    // Tactical AI (Lumis / Enemy)
-    if (aiCooldown > 0) aiCooldown--;
-    const dist = p2.x - p1.x;
-    if (p2.state !== 'AIR_TUMBLE' && p2.state !== 'KO_DOWN') {
-      if (Math.abs(dist) > 130) {
-        p2.vx = dist > 0 ? -4.2 : 4.2;
-      } else if (aiCooldown === 0) {
-        if (Math.random() < 0.7) p2.attackPrimary(p1);
-        else p2.attackSecondary(p1);
-        aiCooldown = 34 - diffIndex * 5;
+    if (currentMode === 'TRAINING') {
+      // Practice Dummy heals automatically
+      if (p2.hp < p2.maxHp * 0.3) p2.hp = p2.maxHp;
+    } else {
+      if (aiCooldown > 0) aiCooldown--;
+      const dist = p2.x - p1.x;
+      if (p2.state !== 'AIR_TUMBLE' && p2.state !== 'KO_DOWN') {
+        if (Math.abs(dist) > 130) {
+          p2.vx = dist > 0 ? -4.2 : 4.2;
+        } else if (aiCooldown === 0) {
+          if (Math.random() < 0.7) p2.attackPrimary(p1);
+          else p2.attackSecondary(p1);
+          aiCooldown = 34 - diffIndex * 5;
+        }
       }
     }
 
@@ -1344,7 +1576,6 @@ function mainLoop() {
     p2.update(p1);
   }
 
-  // Draw Dust Puffs
   for (let i = dustPuffs.length - 1; i >= 0; i--) {
     const d = dustPuffs[i];
     d.x += d.vx;
@@ -1357,11 +1588,9 @@ function mainLoop() {
     if (d.life <= 0) dustPuffs.splice(i, 1);
   }
 
-  // Draw Fighters
   p2.draw(ctx);
   p1.draw(ctx);
 
-  // Update & Draw Boomerang Spinning Scythe Vortex Projectiles (0:12, 0:30)
   for (let i = projectiles.length - 1; i >= 0; i--) {
     const proj = projectiles[i];
     proj.angle += 0.48;
@@ -1385,18 +1614,15 @@ function mainLoop() {
       }
     }
 
-    // Check Hit on Target
     if (proj.hitCooldown === 0 && Math.abs(proj.x - proj.target.x) < 75 && Math.abs(proj.y - (proj.target.y - 50)) < 75) {
       proj.hitCooldown = 16;
       proj.owner.applyHit(proj.target, proj.owner.config.dmg, proj.returning);
     }
 
-    // Draw Blue/White Spinning Scythe Vortex (Exact match to 0:12 & 0:30!)
     ctx.save();
     ctx.translate(proj.x, proj.y);
     ctx.rotate(proj.angle);
 
-    // Outer Cyan/WhiteSwirl Rings
     ctx.strokeStyle = 'rgba(0, 242, 254, 0.75)';
     ctx.lineWidth = 8;
     ctx.beginPath();
@@ -1413,7 +1639,6 @@ function mainLoop() {
     ctx.restore();
   }
 
-  // Draw Golden Starburst Impact Flashes & Screen Rays (Exact match to 0:04 & 0:12!)
   for (let i = starbursts.length - 1; i >= 0; i--) {
     const sb = starbursts[i];
     sb.life--;
@@ -1421,7 +1646,6 @@ function mainLoop() {
     ctx.save();
     ctx.translate(sb.x, sb.y);
 
-    // Long Screen-Spanning Impact Rays on Heavy Hits (like 0:04)
     if (sb.heavy && sb.life > 6) {
       ctx.strokeStyle = 'rgba(255, 235, 130, 0.75)';
       ctx.lineWidth = 6;
@@ -1434,7 +1658,6 @@ function mainLoop() {
       }
     }
 
-    // Spiky Yellow/White Comic Starburst
     ctx.fillStyle = '#fff9c4';
     ctx.strokeStyle = '#ffeb3b';
     ctx.lineWidth = 3;
@@ -1458,7 +1681,7 @@ function mainLoop() {
 }
 
 /* ============================================================================
-   7. PORTRAIT-AWARE JOYSTICK & BUTTON LISTENERS
+   8. PORTRAIT-AWARE JOYSTICK & BUTTON LISTENERS
 ============================================================================ */
 window.addEventListener('keydown', (e) => {
   const k = e.key.toLowerCase();
@@ -1467,6 +1690,7 @@ window.addEventListener('keydown', (e) => {
   if (k === 'w' || e.key === 'ArrowUp') input.up = true;
   if ((k === 'j' || k === ' ') && gameState === 'FIGHT') p1.attackPrimary(p2);
   if ((k === 'k' || k === 'u' || k === 'l') && gameState === 'FIGHT') p1.attackSecondary(p2);
+  if (k === 'p' || e.key === 'Escape') togglePauseMatch();
 });
 
 window.addEventListener('keyup', (e) => {
