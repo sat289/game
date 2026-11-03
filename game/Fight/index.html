@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Stick Kombat 3D - Reaper vs Wars</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- Three.js for 3D Stickman Models, Scythe, Hair & Torii Dojo Arena -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+<div id="game-frame">
+  <!-- Persistent Left Floating Sidebar from Video -->
+  <div class="side-dock">
+    <div class="dock-icon" onclick="returnToMenu()" title="Back to Menu">&#8592;</div>
+    <div class="dock-icon" title="Favorite">&#9825;</div>
+    <div class="dock-icon" title="Mute / Audio">&#128266;</div>
+  </div>
+
+  <!-- 1. SEAGAMES SPLASH SCREEN (0:02 - 0:04) -->
+  <div id="splash-screen" class="screen">
+    <svg class="octopus-logo" viewBox="0 0 100 100">
+      <!-- Stylized White Octopus with Headphones -->
+      <path d="M20,52 A30,30 0 0,1 80,52" fill="none" stroke="#fff" stroke-width="6"/>
+      <rect x="12" y="42" width="10" height="20" rx="5" fill="#fff"/>
+      <rect x="78" y="42" width="10" height="20" rx="5" fill="#fff"/>
+      <circle cx="50" cy="48" r="24" fill="#fff"/>
+      <rect x="34" y="42" width="32" height="12" rx="6" fill="#050508"/>
+      <circle cx="43" cy="48" r="4" fill="#fff"/>
+      <circle cx="57" cy="48" r="4" fill="#fff"/>
+      <path d="M32,68 C25,82 35,88 38,76 M44,70 C42,86 50,88 50,74 M56,70 C58,86 65,86 62,74 M68,68 C75,82 65,88 62,76" stroke="#fff" stroke-width="6" stroke-linecap="round" fill="none"/>
+    </svg>
+    <div class="seagames-title">SeaGames</div>
+    <div class="splash-loader-text" id="splash-status">Generating game content: 14%</div>
+    <div class="splash-bar-bg">
+      <div class="splash-bar-fill" id="splash-fill"></div>
+    </div>
+  </div>
+
+  <!-- 2. CHARACTER ROSTER & STAGE MENU (0:05 - 0:12) -->
+  <div id="menu-screen" class="screen hidden">
+    <div class="menu-top-tabs">
+      <div class="mode-tab active">&#129354; 1 PLAYER</div>
+      <div class="mode-tab">&#9203; TOWER</div>
+      <div class="mode-tab">&#128101; 2X2</div>
+    </div>
+
+    <div class="selected-hero-title" id="hero-title-label">REAPER</div>
+
+    <div class="roster-wrapper">
+      <div class="roster-grid" id="roster-grid"></div>
+      <div class="boss-emblem" onclick="cycleStage(1)" title="Click to Change Arena Stage">
+        <div style="font-size:22px;">&#128127;</div>
+        <div style="font-size:9px; font-weight:900; color:#9eff00;" id="stage-badge">STAGE 1</div>
+      </div>
+    </div>
+
+    <div class="menu-bottom-bar">
+      <div class="menu-left-icons">
+        <div class="square-btn" title="Settings">&#9881;</div>
+        <div class="square-btn" title="Share">&#9992;</div>
+      </div>
+
+      <div class="center-play-zone">
+        <div class="diff-title">DIFFICULTY</div>
+        <div class="diff-selector">
+          <span class="diff-arrow" onclick="cycleDifficulty(-1)">&#9664;</span>
+          <span id="diff-label">AUTO</span>
+          <span class="diff-arrow" onclick="cycleDifficulty(1)">&#9654;</span>
+        </div>
+        <button class="btn-play-main" onclick="triggerMatchLoad()">PLAY</button>
+      </div>
+
+      <div class="coin-wallet">
+        <span id="coin-amount">37</span>
+        <span class="coin-icon"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. LOADING COMPONENTS SCREEN (0:13) -->
+  <div id="loading-components-screen" class="screen hidden">
+    <div class="comp-text" id="comp-label">LOADING COMPONENTS: 100%</div>
+    <div class="comp-bar-bg">
+      <div class="comp-bar-fill" id="comp-fill"></div>
+    </div>
+  </div>
+
+  <!-- 4. 3D WEBGL FIGHT ARENA & HUD (0:14+) -->
+  <div id="three-canvas-container" class="hidden"></div>
+
+  <div id="fight-hud" class="hidden">
+    <div class="hud-side left">
+      <div class="hud-portrait" id="p1-hud-avatar"></div>
+      <div class="hud-bars">
+        <div class="hud-label-row">
+          <span id="p1-hud-name" style="color:#ff9f43;">REAPER</span>
+          <span id="p1-hud-hp">50/50</span>
+        </div>
+        <div class="hp-outer"><div class="hp-inner" id="p1-hp-fill"></div></div>
+      </div>
+    </div>
+
+    <div class="hud-center">
+      <div class="pause-icon">||</div>
+      <div class="timer-digits" id="fight-timer">98</div>
+    </div>
+
+    <div class="hud-side right">
+      <div class="hud-portrait" id="p2-hud-avatar"></div>
+      <div class="hud-bars">
+        <div class="hud-label-row">
+          <span id="p2-hud-hp">125/125</span>
+          <span id="p2-hud-name" style="color:#ff5252;">WARS</span>
+        </div>
+        <div class="hp-outer"><div class="hp-inner" id="p2-hp-fill"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="round-banner" class="hidden">ROUND 1</div>
+  <div id="combo-popup" class="hidden">HIT 1!</div>
+
+  <!-- On-Screen Touch / Mouse Controls -->
+  <div id="touch-controls" class="hidden">
+    <div class="joystick-base" id="joy-base">
+      <div class="joystick-knob" id="joy-knob"></div>
+    </div>
+    <div class="combat-buttons">
+      <div class="ctrl-btn btn-jump-kick" id="btn-dash" title="Dash / Roll (K)">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="#111"><path d="M13.5 5.5c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM9.8 8.9L7 23h2.1l1.8-8 2.1 2v6h2v-7.5l-2.1-2 .6-3C14.8 12 16.8 13 19 13v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1L6 8.3V13h2V9.6l1.8-.7"/></svg>
+      </div>
+      <div class="ctrl-btn btn-heavy-skill" id="btn-skill" title="3D Spin Slash (L)">3D ULT</div>
+      <div class="ctrl-btn btn-main-fist" id="btn-attack" title="Weapon Strike (J)">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="#111"><path d="M18 11c0-.959-.68-1.761-1.581-1.954C16.779 8.445 17 7.75 17 7c0-2.206-1.794-4-4-4-1.517 0-2.821.857-3.5 2.104C8.821 3.857 7.517 3 6 3 3.794 3 2 4.794 2 7c0 .902.312 1.727.817 2.396A1.994 1.994 0 0 0 2 11v8c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-8zm-4 7H6v-5h8v5z"/></svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================================
+   1. 10 FIGHTERS ROSTER WITH CUSTOM SVG AVATARS (Matching Video 0:05 - 0:12)
+============================================================================ */
+const ROSTER = [
+  { id: 'reaper', name: 'REAPER', color: '#2efc71', eye: '#39ff14', hair: null, weapon: 'scythe', hp: 50, dmg: 14, unlocked: true, cost: 0 },
+  { id: 'red', name: 'RED', color: '#ff3838', eye: '#ffffff', hair: '#ff2222', weapon: 'gauntlet', hp: 115, dmg: 11, unlocked: true, cost: 0 },
+  { id: 'wars', name: 'WARS', color: '#c56cf0', eye: '#ff3838', hair: '#e0d8ff', weapon: 'dualblades', hp: 125, dmg: 13, unlocked: true, cost: 0 },
+  { id: 'frost', name: 'FROST', color: '#00d2ff', eye: '#00ffff', hair: '#00a8ff', weapon: 'spear', hp: 130, dmg: 15, unlocked: false, cost: 30 },
+  { id: 'venom', name: 'VENOM', color: '#7bed9f', eye: '#2ed573', hair: null, weapon: 'scythe', hp: 140, dmg: 16, unlocked: false, cost: 50 },
+  { id: 'blaze', name: 'BLAZE', color: '#ff9f1a', eye: '#fff200', hair: '#ff6b00', weapon: 'gauntlet', hp: 145, dmg: 16, unlocked: false, cost: 65 },
+  { id: 'ronin', name: 'RONIN', color: '#dfe4ea', eye: '#ff4757', hair: '#ced6e0', weapon: 'dualblades', hp: 155, dmg: 18, unlocked: false, cost: 80 },
+  { id: 'chrom', name: 'CHROM', color: '#ffd32a', eye: '#00d8d6', hair: null, weapon: 'hammer', hp: 175, dmg: 20, unlocked: false, cost: 100 },
+  { id: 'titan', name: 'TITAN', color: '#ff5e57', eye: '#ffdd59', hair: '#485460', weapon: 'hammer', hp: 200, dmg: 22, unlocked: false, cost: 130 },
+  { id: 'void', name: 'VOID LORD', color: '#a55eea', eye: '#0be881', hair: '#d2dae2', weapon: 'scythe', hp: 240, dmg: 26, unlocked: false, cost: 180 }
+];
+
+const STAGES = [
+  { name: 'STAGE 1: CRIMSON TORII', skyTop: 0x3b1d2e, skyBot: 0x9b5460, ground: 0x5c1f24, fog: 0x6d3540 },
+  { name: 'STAGE 2: SHADOWBAMBOO', skyTop: 0x0f2b2e, skyBot: 0x2e6f73, ground: 0x17363a, fog: 0x235357 },
+  { name: 'STAGE 3: VIOLET SHRINE', skyTop: 0x241338, skyBot: 0x6e3b8c, ground: 0x2f1647, fog: 0x4b246b },
+  { name: 'STAGE 4: INFERNO DOJO', skyTop: 0x3d0c08, skyBot: 0xa63c1e, ground: 0x4a120d, fog: 0x732214 }
+];
+
+const DIFFICULTIES = ['AUTO', 'EASY', 'NORMAL', 'HARD', 'INSANE'];
+
+let coins = 37;
+let selectedHero = ROSTER[0]; // Reaper
+let selectedEnemy = ROSTER[2]; // Wars (from 0:08 & 0:15 in video)
+let diffIndex = 0;
+let stageIndex = 0;
+
+function buildAvatarSVG(fighter) {
+  return `
+    <svg viewBox="0 0 80 80">
+      <defs>
+        <radialGradient id="g-${fighter.id}" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="${fighter.color}" stop-opacity="0.55"/>
+          <stop offset="100%" stop-color="#0b0e12" stop-opacity="0.95"/>
+        </radialGradient>
+      </defs>
+      <circle cx="40" cy="40" r="37" fill="url(#g-${fighter.id})"/>
+      <!-- Weapon Silhouette -->
+      <path d="M16,65 L64,18" stroke="${fighter.color}" stroke-width="3.5" stroke-linecap="round"/>
+      ${fighter.hair ? `<path d="M24,38 C18,20 42,10 62,25 C56,42 58,56 64,66 C48,55 32,48 24,38 Z" fill="${fighter.hair}"/>` : ''}
+      <!-- Hood / Head -->
+      <circle cx="38" cy="42" r="15" fill="#090a0f" stroke="${fighter.color}" stroke-width="1.5"/>
+      <!-- Glowing Slanted Eyes -->
+      <polygon points="39,39 50,36 48,42 39,42" fill="${fighter.eye}"/>
+    </svg>
+  `;
+}
+
+/* ============================================================================
+   2. ENTRY SPLASH ANIMATION -> MENU -> COMPONENT LOADER
+============================================================================ */
+function runEntrySplash() {
+  const fill = document.getElementById('splash-fill');
+  const status = document.getElementById('splash-status');
+  let progress = 14;
+
+  const interval = setInterval(() => {
+    progress += Math.floor(Math.random() * 18) + 8;
+    if (progress >= 100) {
+      progress = 100;
+      clearInterval(interval);
+      setTimeout(() => {
+        document.getElementById('splash-screen').classList.add('hidden');
+        document.getElementById('menu-screen').classList.remove('hidden');
+        renderRosterMenu();
+      }, 350);
+    }
+    fill.style.width = progress + '%';
+    status.innerText = progress < 65
+      ? `Generating game content: ${progress}%`
+      : `Arranging game rules: ${progress}%`;
+  }, 180);
+}
+
+function renderRosterMenu() {
+  document.getElementById('coin-amount').innerText = coins;
+  document.getElementById('hero-title-label').innerText = selectedHero.name;
+  document.getElementById('stage-badge').innerText = `STAGE ${stageIndex + 1}`;
+  const grid = document.getElementById('roster-grid');
+  grid.innerHTML = '';
+
+  ROSTER.forEach((f) => {
+    const item = document.createElement('div');
+    const isP1 = selectedHero.id === f.id;
+    const isP2 = selectedEnemy.id === f.id;
+    item.className = `avatar-circle ${isP1 ? 'selected-p1' : ''} ${isP2 ? 'selected-p2' : ''} ${!f.unlocked ? 'locked' : ''}`;
+    item.innerHTML = buildAvatarSVG(f) + (!f.unlocked ? `<div class="lock-badge">&#128274;</div>` : '');
+
+    item.onclick = () => {
+      if (f.unlocked) {
+        selectedHero = f;
+        // Pick another unlocked fighter or Wars as rival
+        selectedEnemy = f.id === 'wars' ? ROSTER[1] : ROSTER[2];
+        renderRosterMenu();
+      } else if (coins >= f.cost) {
+        coins -= f.cost;
+        f.unlocked = true;
+        selectedHero = f;
+        renderRosterMenu();
+      } else {
+        alert(`Need ${f.cost} Coins to unlock ${f.name}! Win matches to earn coins.`);
+      }
+    };
+    grid.appendChild(item);
+  });
+}
+
+function cycleDifficulty(dir) {
+  diffIndex = (diffIndex + dir + DIFFICULTIES.length) % DIFFICULTIES.length;
+  document.getElementById('diff-label').innerText = DIFFICULTIES[diffIndex];
+}
+
+function cycleStage(dir) {
+  stageIndex = (stageIndex + dir) % STAGES.length;
+  renderRosterMenu();
+}
+
+function triggerMatchLoad() {
+  document.getElementById('menu-screen').classList.add('hidden');
+  const compScreen = document.getElementById('loading-components-screen');
+  const compFill = document.getElementById('comp-fill');
+  const compLabel = document.getElementById('comp-label');
+  compScreen.classList.remove('hidden');
+
+  let p = 20;
+  compFill.style.width = '20%';
+  const loader = setInterval(() => {
+    p += 25;
+    if (p >= 100) {
+      p = 100;
+      clearInterval(loader);
+      setTimeout(() => {
+        compScreen.classList.add('hidden');
+        start3DFight();
+      }, 300);
+    }
+    compFill.style.width = p + '%';
+    compLabel.innerText = `LOADING COMPONENTS: ${p}%`;
+  }, 110);
+}
+
+function returnToMenu() {
+  if (gameState === 'FIGHT') {
+    gameState = 'MENU';
+    clearInterval(matchClock);
+    document.getElementById('three-canvas-container').classList.add('hidden');
+    document.getElementById('fight-hud').classList.add('hidden');
+    document.getElementById('touch-controls').classList.add('hidden');
+    document.getElementById('round-banner').classList.add('hidden');
+    document.getElementById('menu-screen').classList.remove('hidden');
+    renderRosterMenu();
+  }
+}
+
+/* ============================================================================
+   3. THREE.JS 3D STICKMAN FIGHT ENGINE (Reaper vs Wars in 3D Dojo)
+============================================================================ */
+let scene, camera, renderer;
+let p1Model, p2Model;
+let particles3D = [];
+let gameState = 'SPLASH';
+let matchTimer = 98;
+let matchClock = null;
+let comboCount = 0;
+let comboTimeout = null;
+
+const input = { left: false, right: false, up: false };
+
+function initThreeWorld() {
+  const container = document.getElementById('three-canvas-container');
+  container.innerHTML = '';
+
+  scene = new THREE.Scene();
+  const stg = STAGES[stageIndex];
+  scene.background = new THREE.Color(stg.skyBot);
+  scene.fog = new THREE.FogExp2(stg.fog, 0.028);
+
+  camera = new THREE.PerspectiveCamera(42, 920 / 500, 0.1, 200);
+  camera.position.set(0, 3.3, 13.5);
+
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(920, 500);
+  renderer.shadowMap.enabled = true;
+  container.appendChild(renderer.domElement);
+
+  // Lights
+  const ambient = new THREE.AmbientLight(0xffffff, 0.65);
+  scene.add(ambient);
+
+  const sun = new THREE.DirectionalLight(0xffd1b3, 1.2);
+  sun.position.set(6, 15, 10);
+  sun.castShadow = true;
+  scene.add(sun);
+
+  // 3D Ground Floor
+  const floorGeo = new THREE.BoxGeometry(40, 2, 14);
+  const floorMat = new THREE.MeshStandardMaterial({ color: stg.ground, roughness: 0.8 });
+  const floor = new THREE.Mesh(floorGeo, floorMat);
+  floor.position.y = -1;
+  floor.receiveShadow = true;
+  scene.add(floor);
+
+  // 3D Background Japanese Torii Gate & Giant Shadow Statue (Matching Video Background)
+  const gateMat = new THREE.MeshStandardMaterial({ color: 0x241016, roughness: 0.9 });
+  const pillarL = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 9, 12), gateMat);
+  pillarL.position.set(-4.5, 4, -5.5);
+  const pillarR = pillarL.clone();
+  pillarR.position.x = 4.5;
+  const topBeam = new THREE.Mesh(new THREE.BoxGeometry(11.5, 0.65, 0.9), gateMat);
+  topBeam.position.set(0, 8.2, -5.5);
+  const subBeam = new THREE.Mesh(new THREE.BoxGeometry(9.5, 0.45, 0.7), gateMat);
+  subBeam.position.set(0, 6.7, -5.5);
+  scene.add(pillarL, pillarR, topBeam, subBeam);
+}
+
+class Fighter3D {
+  constructor(config, startX, facing) {
+    this.config = config;
+    this.maxHp = config.hp;
+    this.hp = config.hp;
+    this.x = startX;
+    this.y = 0;
+    this.vx = 0;
+    this.vy = 0;
+    this.facing = facing;
+    this.atkTimer = 0;
+    this.spinTimer = 0;
+    this.hurtTimer = 0;
+    this.walkCycle = 0;
+
+    this.root = new THREE.Group();
+    this.build3DMesh();
+    this.root.position.set(this.x, 0, 0);
+    scene.add(this.root);
+  }
+
+  build3DMesh() {
+    const blackMat = new THREE.MeshStandardMaterial({ color: 0x0e1014, roughness: 0.4 });
+    const glowMat = new THREE.MeshBasicMaterial({ color: this.config.color });
+    const clothMat = new THREE.MeshStandardMaterial({ color: 0x192028, roughness: 0.7 });
+
+    // Torso
+    this.torso = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.36, 1.45, 12), clothMat);
+    this.torso.position.y = 1.65;
+    this.torso.castShadow = true;
+    this.root.add(this.torso);
+
+    // Neon Belt / Sash
+    const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.37, 0.37, 0.14, 12), glowMat);
+    belt.position.y = 1.15;
+    this.root.add(belt);
+
+    // Head
+    this.head = new THREE.Mesh(new THREE.SphereGeometry(0.38, 16, 16), blackMat);
+    this.head.position.y = 2.68;
+    this.root.add(this.head);
+
+    // Glowing Visor Eyes
+    const eyeGeo = new THREE.BoxGeometry(0.26, 0.09, 0.22);
+    const eye = new THREE.Mesh(eyeGeo, new THREE.MeshBasicMaterial({ color: this.config.eye }));
+    eye.position.set(0.24, 2.7, 0);
+    this.root.add(eye);
+
+    // Flowing Anime Hair (For Wars / Red / Frost)
+    if (this.config.hair) {
+      const hairMat = new THREE.MeshStandardMaterial({ color: this.config.hair, roughness: 0.3 });
+      this.hairGroup = new THREE.Group();
+      for (let i = 0; i < 4; i++) {
+        const strand = new THREE.Mesh(new THREE.ConeGeometry(0.22, 1.35, 8), hairMat);
+        strand.rotation.z = 0.65 + i * 0.12;
+        strand.position.set(-0.45 - i * 0.12, 2.45 - i * 0.15, (i - 1.5) * 0.12);
+        this.hairGroup.add(strand);
+      }
+      this.root.add(this.hairGroup);
+    }
+
+    // Limbs
+    const limbGeo = new THREE.CylinderGeometry(0.11, 0.09, 0.95, 8);
+    this.legL = new THREE.Mesh(limbGeo, blackMat);
+    this.legL.position.set(0, 0.5, 0.16);
+    this.legR = new THREE.Mesh(limbGeo, blackMat);
+    this.legR.position.set(0, 0.5, -0.16);
+    this.root.add(this.legL, this.legR);
+
+    // Weapon Arm Pivot
+    this.armPivot = new THREE.Group();
+    this.armPivot.position.set(0, 2.15, 0.25);
+
+    const armMesh = new THREE.Mesh(limbGeo, blackMat);
+    armMesh.rotation.z = -Math.PI / 3;
+    armMesh.position.set(0.35, -0.15, 0);
+    this.armPivot.add(armMesh);
+
+    // 3D Weapon Model (Scythe for Reaper, Dual Energy Blades for Wars, etc.)
+    const poleMat = new THREE.MeshStandardMaterial({ color: 0xdadfe6, metalness: 0.7, roughness: 0.2 });
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 2.5, 8), poleMat);
+    pole.position.set(0.85, 0.1, 0);
+    pole.rotation.z = -0.35;
+    this.armPivot.add(pole);
+
+    // Glowing Curved Scythe / Blade
+    const bladeGeo = new THREE.TorusGeometry(0.65, 0.07, 8, 20, Math.PI * 0.68);
+    const blade = new THREE.Mesh(bladeGeo, glowMat);
+    blade.position.set(1.22, 0.95, 0);
+    blade.rotation.z = -0.7;
+    this.armPivot.add(blade);
+
+    this.root.add(this.armPivot);
+  }
+
+  update(opponent) {
+    this.walkCycle += 0.22;
+    if (this.atkTimer > 0) this.atkTimer--;
+    if (this.spinTimer > 0) this.spinTimer--;
+    if (this.hurtTimer > 0) this.hurtTimer--;
+
+    // Gravity
+    this.y += this.vy;
+    if (this.y > 0) {
+      this.vy -= 0.018;
+    } else {
+      this.y = 0;
+      this.vy = 0;
+    }
+
+    // Horizontal physics
+    this.x += this.vx;
+    this.vx *= 0.82;
+    this.x = Math.max(-6.2, Math.min(6.2, this.x));
+
+    // Face opponent
+    if (this.atkTimer === 0 && this.spinTimer === 0) {
+      this.facing = opponent.x >= this.x ? 1 : -1;
+    }
+
+    this.root.position.set(this.x, this.y, 0);
+    this.root.scale.x = this.facing;
+
+    // 3D Spin Skill rotation
+    if (this.spinTimer > 0) {
+      this.root.rotation.y += 0.45;
+    } else {
+      this.root.rotation.y = 0;
+    }
+
+    // Walk Leg Animation
+    const speed = Math.abs(this.vx);
+    if (speed > 0.02) {
+      this.legL.rotation.z = Math.sin(this.walkCycle) * 0.65;
+      this.legR.rotation.z = -Math.sin(this.walkCycle) * 0.65;
+    } else {
+      this.legL.rotation.z = 0.12;
+      this.legR.rotation.z = -0.12;
+    }
+
+    // Weapon Slash Animation
+    if (this.atkTimer > 0) {
+      const progress = 1 - this.atkTimer / 18;
+      this.armPivot.rotation.z = -progress * Math.PI * 1.15 + 0.6;
+    } else {
+      this.armPivot.rotation.z = Math.sin(this.walkCycle * 0.5) * 0.08;
+    }
+  }
+
+  strike(opponent, isHeavy = false) {
+    if (this.atkTimer > 0) return;
+    this.atkTimer = 18;
+    if (isHeavy) this.spinTimer = 24;
+    this.vx = this.facing * (isHeavy ? 0.26 : 0.15);
+
+    const dist = Math.abs(this.x - opponent.x);
+    const yDist = Math.abs(this.y - opponent.y);
+    if (dist < 2.35 && yDist < 1.8) {
+      const dmg = isHeavy ? Math.round(this.config.dmg * 1.6) : this.config.dmg;
+      opponent.hp = Math.max(0, opponent.hp - dmg);
+      opponent.vx = this.facing * 0.24;
+      opponent.vy = 0.16;
+      spawn3DHitSparks(opponent.x, opponent.y + 1.6, this.config.color);
+
+      if (this === p1Model) {
+        comboCount++;
+        showComboBadge(comboCount);
+      }
+      refreshFightHUD();
+    }
+  }
+
+  dash() {
+    this.vx = this.facing * 0.36;
+    this.vy = 0.12;
+    spawn3DHitSparks(this.x, this.y + 0.5, '#ffffff');
+  }
+}
+
+function spawn3DHitSparks(x, y, hexColor) {
+  const mat = new THREE.MeshBasicMaterial({ color: hexColor });
+  for (let i = 0; i < 12; i++) {
+    const spark = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.12), mat);
+    spark.position.set(x, y, (Math.random() - 0.5) * 0.8);
+    scene.add(spark);
+    particles3D.push({
+      mesh: spark,
+      vx: (Math.random() - 0.5) * 0.22,
+      vy: Math.random() * 0.2,
+      vz: (Math.random() - 0.5) * 0.22,
+      life: 22
+    });
+  }
+}
+
+function showComboBadge(count) {
+  const el = document.getElementById('combo-popup');
+  el.innerText = `HIT ${count}!`;
+  el.classList.remove('hidden');
+  clearTimeout(comboTimeout);
+  comboTimeout = setTimeout(() => {
+    comboCount = 0;
+    el.classList.add('hidden');
+  }, 1400);
+}
+
+function start3DFight() {
+  document.getElementById('three-canvas-container').classList.remove('hidden');
+  document.getElementById('fight-hud').classList.remove('hidden');
+  document.getElementById('touch-controls').classList.remove('hidden');
+
+  initThreeWorld();
+  p1Model = new Fighter3D(selectedHero, -2.8, 1);
+  p2Model = new Fighter3D(selectedEnemy, 2.8, -1);
+
+  document.getElementById('p1-hud-avatar').innerHTML = buildAvatarSVG(selectedHero);
+  document.getElementById('p2-hud-avatar').innerHTML = buildAvatarSVG(selectedEnemy);
+
+  matchTimer = 98;
+  comboCount = 0;
+  refreshFightHUD();
+
+  // Show ROUND 1 -> FIGHT!
+  const banner = document.getElementById('round-banner');
+  banner.innerText = 'ROUND 1';
+  banner.classList.remove('hidden');
+  setTimeout(() => { banner.innerText = 'FIGHT!'; }, 900);
+  setTimeout(() => { banner.classList.add('hidden'); }, 1600);
+
+  gameState = 'FIGHT';
+  clearInterval(matchClock);
+  matchClock = setInterval(() => {
+    if (gameState === 'FIGHT' && matchTimer > 0) {
+      matchTimer--;
+      document.getElementById('fight-timer').innerText = matchTimer;
+      if (matchTimer === 0) finishMatch(p1Model.hp >= p2Model.hp);
+    }
+  }, 1000);
+}
+
+function refreshFightHUD() {
+  document.getElementById('p1-hud-name').innerText = p1Model.config.name;
+  document.getElementById('p1-hud-hp').innerText = `${p1Model.hp}/${p1Model.maxHp}`;
+  document.getElementById('p1-hp-fill').style.width = `${(p1Model.hp / p1Model.maxHp) * 100}%`;
+
+  document.getElementById('p2-hud-name').innerText = p2Model.config.name;
+  document.getElementById('p2-hud-hp').innerText = `${p2Model.hp}/${p2Model.maxHp}`;
+  document.getElementById('p2-hp-fill').style.width = `${(p2Model.hp / p2Model.maxHp) * 100}%`;
+}
+
+function finishMatch(playerWon) {
+  gameState = 'OVER';
+  clearInterval(matchClock);
+  const banner = document.getElementById('round-banner');
+  if (playerWon) {
+    coins += 45;
+    stageIndex = (stageIndex + 1) % STAGES.length;
+    banner.style.color = '#39ff14';
+    banner.innerText = `${p1Model.config.name} WINS! (+45 COINS)`;
+  } else {
+    banner.style.color = '#ff3838';
+    banner.innerText = `${p2Model.config.name} WINS!`;
+  }
+  banner.classList.remove('hidden');
+
+  setTimeout(() => {
+    banner.style.color = '#fff';
+    banner.classList.add('hidden');
+    document.getElementById('three-canvas-container').classList.add('hidden');
+    document.getElementById('fight-hud').classList.add('hidden');
+    document.getElementById('touch-controls').classList.add('hidden');
+    document.getElementById('menu-screen').classList.remove('hidden');
+    renderRosterMenu();
+  }, 2400);
+}
+
+/* ============================================================================
+   4. MAIN 3D ANIMATION LOOP & DYNAMIC CAMERA
+============================================================================ */
+function animate3D() {
+  requestAnimationFrame(animate3D);
+  if (gameState !== 'FIGHT' && gameState !== 'OVER') return;
+
+  if (gameState === 'FIGHT') {
+    // Player Movement
+    if (input.left) p1Model.vx = -0.11;
+    if (input.right) p1Model.vx = 0.11;
+    if (input.up && p1Model.y === 0) p1Model.vy = 0.28;
+
+    // Enemy AI
+    const dist = p2Model.x - p1Model.x;
+    const aiAggro = 0.025 + diffIndex * 0.012;
+    if (Math.abs(dist) > 1.85) {
+      p2Model.vx = dist > 0 ? -0.075 : 0.075;
+    } else if (Math.random() < aiAggro) {
+      p2Model.strike(p1Model, Math.random() < 0.25);
+    }
+
+    p1Model.update(p2Model);
+    p2Model.update(p1Model);
+
+    if (p1Model.hp <= 0) finishMatch(false);
+    else if (p2Model.hp <= 0) finishMatch(true);
+  }
+
+  // Update 3D Sparks
+  for (let i = particles3D.length - 1; i >= 0; i--) {
+    const p = particles3D[i];
+    p.mesh.position.x += p.vx;
+    p.mesh.position.y += p.vy;
+    p.mesh.position.z += p.vz;
+    p.life--;
+    if (p.life <= 0) {
+      scene.remove(p.mesh);
+      particles3D.splice(i, 1);
+    }
+  }
+
+  // Smooth 3D Camera Tracking & Zoom
+  const midX = (p1Model.x + p2Model.x) * 0.5;
+  const sep = Math.abs(p1Model.x - p2Model.x);
+  camera.position.x += (midX - camera.position.x) * 0.1;
+  camera.position.z += (Math.max(10.5, Math.min(15.5, 9.5 + sep * 0.7)) - camera.position.z) * 0.1;
+  camera.lookAt(midX, 1.8, 0);
+
+  renderer.render(scene, camera);
+}
+
+/* ============================================================================
+   5. KEYBOARD & VIRTUAL JOYSTICK LISTENERS
+============================================================================ */
+window.addEventListener('keydown', (e) => {
+  const k = e.key.toLowerCase();
+  if (k === 'a' || e.key === 'ArrowLeft') input.left = true;
+  if (k === 'd' || e.key === 'ArrowRight') input.right = true;
+  if (k === 'w' || e.key === 'ArrowUp') input.up = true;
+  if ((k === 'j' || k === ' ') && gameState === 'FIGHT') p1Model.strike(p2Model, false);
+  if (k === 'l' && gameState === 'FIGHT') p1Model.strike(p2Model, true);
+  if (k === 'k' && gameState === 'FIGHT') p1Model.dash();
+});
+
+window.addEventListener('keyup', (e) => {
+  const k = e.key.toLowerCase();
+  if (k === 'a' || e.key === 'ArrowLeft') input.left = false;
+  if (k === 'd' || e.key === 'ArrowRight') input.right = false;
+  if (k === 'w' || e.key === 'ArrowUp') input.up = false;
+});
+
+// Touch / Mouse Joystick
+const joyBase = document.getElementById('joy-base');
+const joyKnob = document.getElementById('joy-knob');
+let draggingJoy = false;
+
+function moveJoystick(e) {
+  if (!draggingJoy) return;
+  const rect = joyBase.getBoundingClientRect();
+  const cx = e.touches ? e.touches[0].clientX : e.clientX;
+  const cy = e.touches ? e.touches[0].clientY : e.clientY;
+  const dx = Math.max(-36, Math.min(36, cx - (rect.left + 60)));
+  const dy = Math.max(-36, Math.min(36, cy - (rect.top + 60)));
+  joyKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+  input.left = dx < -12;
+  input.right = dx > 12;
+  input.up = dy < -18;
+}
+
+joyBase.addEventListener('pointerdown', (e) => { draggingJoy = true; moveJoystick(e); });
+window.addEventListener('pointermove', moveJoystick);
+window.addEventListener('pointerup', () => {
+  draggingJoy = false;
+  joyKnob.style.transform = 'translate(0px, 0px)';
+  input.left = input.right = input.up = false;
+});
+
+document.getElementById('btn-attack').addEventListener('pointerdown', () => {
+  if (gameState === 'FIGHT') p1Model.strike(p2Model, false);
+});
+document.getElementById('btn-skill').addEventListener('pointerdown', () => {
+  if (gameState === 'FIGHT') p1Model.strike(p2Model, true);
+});
+document.getElementById('btn-dash').addEventListener('pointerdown', () => {
+  if (gameState === 'FIGHT') p1Model.dash();
+});
+
+// Start sequence
+runEntrySplash();
+animate3D();
+</script>
+</body>
+</html>
