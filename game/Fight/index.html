@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Stick Kombat 3D - Ultra HD Avatars & 3D Animations</title>
+  <title>Stick Kombat - Authentic Reaper vs Lumis Edition</title>
   <link rel="stylesheet" href="style.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
@@ -15,14 +14,14 @@
     <!-- Left Floating Sidebar -->
     <div class="side-dock">
       <div class="dock-icon" onclick="returnToMenu()" title="Back to Menu">&#8592;</div>
-      <div class="dock-icon" onclick="forceFullscreenLandscape()" title="Fullscreen Rotate">&#9974;</div>
+      <div class="dock-icon" onclick="forceFullscreenLandscape()" title="Fullscreen Rotate">&#9825;</div>
       <div class="dock-icon" title="Audio">&#128266;</div>
     </div>
 
     <!-- 0. MOVIE-STYLE START & LANDSCAPE ROTATION SCREEN -->
     <div id="start-gate-screen" class="screen">
-      <div style="font-size:13px; color:#8fff00; font-weight:900; margin-bottom:8px;">&#127918; FULLSCREEN HORIZONTAL 3D MODE</div>
-      <div style="font-size:32px; font-weight:900; font-style:italic; margin-bottom:20px;">STICK KOMBAT 3D ULTRA</div>
+      <div style="font-size:13px; color:#8fff00; font-weight:900; margin-bottom:8px;">&#127918; FULLSCREEN HORIZONTAL MODE</div>
+      <div style="font-size:32px; font-weight:900; font-style:italic; margin-bottom:20px;">STICK KOMBAT: REAPER VS LUMIS</div>
       <button class="btn-enter-fullscreen" onclick="enterGameFullscreen()">&#9654; ENTER GAME</button>
     </div>
 
@@ -45,7 +44,7 @@
       </div>
     </div>
 
-    <!-- 2. ULTRA-CLEAR 16 AVATAR MENU + LIVE 3D TURNTABLE -->
+    <!-- 2. CHARACTER ROSTER MENU + LIVE ANIMATED HERO PREVIEW -->
     <div id="menu-screen" class="screen hidden">
       <div class="menu-top-tabs">
         <div class="tab-icon-btn" title="Training">&#127891;</div>
@@ -57,20 +56,18 @@
 
       <div class="hero-header-bar">
         <div class="selected-hero-title" id="hero-title-label">REAPER</div>
-        <div class="hero-stat-pill" id="hero-stat-label">HP: 280 | WEAPON: SCYTHE</div>
+        <div class="hero-stat-pill" id="hero-stat-label">HP: 375 | WEAPON: SCYTHE</div>
       </div>
 
       <div class="roster-wrapper">
-        <!-- LIVE 3D ROTATING FIGHTER PREVIEW IN MENU -->
+        <!-- Live Cel-Shaded Fighter Preview in Menu -->
         <div class="menu-3d-showcase">
-          <canvas id="menu-3d-canvas" width="115" height="148"></canvas>
-          <div class="showcase-tag">LIVE 3D MODEL</div>
+          <canvas id="menu-preview-canvas" width="120" height="150"></canvas>
+          <div class="showcase-tag">LIVE FIGHTER</div>
         </div>
 
-        <!-- 16 BRIGHT HD AVATARS (8x2 Grid) -->
         <div class="roster-grid" id="roster-grid"></div>
 
-        <!-- Right Side "FREE!" Purple Horned Boss Emblem -->
         <div class="boss-free-container" onclick="cycleStage(1)" title="Click to Change Arena Stage">
           <div class="free-pill">FREE!</div>
           <div class="boss-emblem">
@@ -111,7 +108,7 @@
             <span class="ad-coin-label">100 &#129689;</span>
           </div>
           <div class="coin-wallet">
-            <span id="coin-amount">150</span>
+            <span id="coin-amount">59</span>
             <span class="coin-icon"></span>
           </div>
         </div>
@@ -137,24 +134,27 @@
       </div>
     </div>
 
-    <!-- 4. 3D WEBGL FIGHT ARENA & HUD -->
-    <div id="three-canvas-container" class="hidden"></div>
-    <div id="dmg-float-layer" class="hidden"></div>
+    <!-- 4. EXACT VIDEO CEL-SHADED FIGHT ARENA & HUD -->
+    <canvas id="arena-canvas" class="hidden"></canvas>
 
     <div id="fight-hud" class="hidden">
+      <!-- Player 1 (REAPER) -->
       <div class="hud-side left">
         <div class="hud-portrait" id="p1-hud-avatar"></div>
         <div class="hud-bars">
           <div class="hud-label-row">
             <span id="p1-hud-name" style="color:#ff9f43;">REAPER</span>
-            <span id="p1-hud-hp">280/280</span>
+            <span id="p1-hud-hp">375/375</span>
           </div>
           <div class="hp-outer">
             <div class="hp-damage-delay" id="p1-hp-delay"></div>
             <div class="hp-inner" id="p1-hp-fill"></div>
           </div>
           <div class="hud-sub-row">
-            <div class="energy-outer"><div class="energy-inner" id="p1-energy-fill"></div></div>
+            <div class="lightning-bolts">
+              <span class="bolt-icon charged" id="p1-bolt-1">&#9889;</span>
+              <span class="bolt-icon charged" id="p1-bolt-2">&#9889;</span>
+            </div>
             <div class="round-dots">
               <div class="r-dot" id="p1-dot-1"></div>
               <div class="r-dot" id="p1-dot-2"></div>
@@ -163,24 +163,29 @@
         </div>
       </div>
 
+      <!-- Center Pause & Timer -->
       <div class="hud-center">
         <div class="pause-icon">||</div>
-        <div class="timer-digits" id="fight-timer">99</div>
+        <div class="timer-digits" id="fight-timer">98</div>
       </div>
 
+      <!-- Player 2 (LUMIS) -->
       <div class="hud-side right">
         <div class="hud-portrait" id="p2-hud-avatar"></div>
         <div class="hud-bars">
           <div class="hud-label-row">
-            <span id="p2-hud-hp">300/300</span>
-            <span id="p2-hud-name" style="color:#ff5252;">RED</span>
+            <span id="p2-hud-hp">216/216</span>
+            <span id="p2-hud-name" style="color:#ff9f43;">LUMIS</span>
           </div>
           <div class="hp-outer">
             <div class="hp-damage-delay" id="p2-hp-delay"></div>
             <div class="hp-inner" id="p2-hp-fill"></div>
           </div>
           <div class="hud-sub-row">
-            <div class="energy-outer"><div class="energy-inner" id="p2-energy-fill"></div></div>
+            <div class="lightning-bolts">
+              <span class="bolt-icon charged" id="p2-bolt-1">&#9889;</span>
+              <span class="bolt-icon charged" id="p2-bolt-2">&#9889;</span>
+            </div>
             <div class="round-dots">
               <div class="r-dot" id="p2-dot-1"></div>
               <div class="r-dot" id="p2-dot-2"></div>
@@ -190,29 +195,37 @@
       </div>
     </div>
 
-    <div id="round-banner" class="hidden">ROUND 1</div>
-    <div id="combo-popup" class="hidden">HIT 1!</div>
+    <!-- Victory Banner ("REAPER WINS! FLAWLESS VICTORY!") -->
+    <div id="victory-banner-wrap" class="hidden">
+      <div class="victory-green-strip" id="victory-main-text">REAPER WINS!</div>
+      <div class="flawless-sub" id="victory-sub-text">FLAWLESS VICTORY! &#10022;</div>
+    </div>
 
-    <!-- Touch Controls Overlay -->
+    <!-- Left Side Combo & Damage Percentage Overlay (Matches Video 0:06 & 0:30) -->
+    <div id="combo-popup" class="hidden">
+      <div class="combo-summary-line" id="combo-hit-small">HIT: 5</div>
+      <div class="combo-dmg-line" id="combo-dmg-small">DAMAGE: 30%</div>
+      <div style="font-size:13px; font-weight:900; font-style:italic; color:#ccc; text-shadow:1px 1px 0 #000;">HIT</div>
+      <div class="combo-big-hit" id="combo-big-num">6!</div>
+    </div>
+
+    <!-- Exact Video Controls: Left Joystick + Grey Secondary Fist + Big Green Primary Fist -->
     <div id="touch-controls" class="hidden">
       <div class="joystick-base" id="joy-base">
         <div class="joystick-knob" id="joy-knob"></div>
       </div>
       <div class="combat-buttons">
-        <div class="ctrl-btn btn-dash-roll" id="btn-dash" title="Shadow Dash (-Stamina)">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="#111"><path d="M13.5 5.5c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM9.8 8.9L7 23h2.1l1.8-8 2.1 2v6h2v-7.5l-2.1-2 .6-3C14.8 12 16.8 13 19 13v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1L6 8.3V13h2V9.6l1.8-.7"/></svg>
-          <span>DASH</span>
+        <!-- Grey Button: Boomerang Spinning Scythe Throw / Shadow Dash Strike -->
+        <div class="ctrl-btn btn-secondary-grey" id="btn-special" title="Spinning Scythe Boomerang / Dash Strike (K or U)">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="#1e272e">
+            <path d="M4 11h6v2H4zm0-4h8v2H4zm0 8h4v2H4zm15.7-4.7l-3.4-3.4c-.4-.4-1-.4-1.4 0l-1.4 1.4 4.8 4.8 1.4-1.4c.4-.4.4-1 0-1.4zM12 10.5V16h5.5l-5.5-5.5z"/>
+          </svg>
         </div>
-        <div class="ctrl-btn btn-flip-kick" id="btn-kick" title="Flip Kick (-14 HP)">
-          <span>FLIP</span>
-          <span>-14 HP</span>
-        </div>
-        <div class="ctrl-btn btn-heavy-skill" id="btn-skill" title="3D Ultimate (-22 HP)">
-          <span>ULT</span>
-          <span>-22 HP</span>
-        </div>
-        <div class="ctrl-btn btn-main-fist" id="btn-attack" title="Weapon Combo (-6 / -11 HP)">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="#111"><path d="M18 11c0-.959-.68-1.761-1.581-1.954C16.779 8.445 17 7.75 17 7c0-2.206-1.794-4-4-4-1.517 0-2.821.857-3.5 2.104C8.821 3.857 7.517 3 6 3 3.794 3 2 4.794 2 7c0 .902.312 1.727.817 2.396A1.994 1.994 0 0 0 2 11v8c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-8zm-4 7H6v-5h8v5z"/></svg>
+        <!-- Big Green Button: Two-Handed Scythe Combo + Uppercut Launch -->
+        <div class="ctrl-btn btn-main-fist" id="btn-attack" title="Scythe Combo Slash (J or Space)">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="#1e272e">
+            <path d="M18 11c0-.959-.68-1.761-1.581-1.954C16.779 8.445 17 7.75 17 7c0-2.206-1.794-4-4-4-1.517 0-2.821.857-3.5 2.104C8.821 3.857 7.517 3 6 3 3.794 3 2 4.794 2 7c0 .902.312 1.727.817 2.396A1.994 1.994 0 0 0 2 11v8c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-8zm-4 7H6v-5h8v5z"/>
+          </svg>
         </div>
       </div>
     </div>
@@ -233,7 +246,7 @@ async function forceFullscreenLandscape() {
       await screen.orientation.lock('landscape').catch(() => {});
     }
   } catch (e) {}
-  setTimeout(resize3DViewport, 200);
+  setTimeout(resizeArenaCanvas, 200);
 }
 
 function enterGameFullscreen() {
@@ -250,95 +263,84 @@ function getLogicalDimensions() {
 }
 
 /* ============================================================================
-   1. 16 ULTRA-VIBRANT FIGHTERS ROSTER (8x2 Grid, Distinct Weapons & Headgear)
+   1. 16 FIGHTERS ROSTER (Exact Video Stats: Reaper 375 HP, Lumis 216 HP, etc.)
 ============================================================================ */
 const ROSTER = [
-  // Row 1 (8 Fighters)
-  { id: 'reaper', name: 'REAPER', color: '#00f2fe', eye: '#00ff88', armor: 0x0abde3, headType: 'hood', weapon: 'SCYTHE', hp: 280, lightDmg: 6, heavyDmg: 11, kickDmg: 14, ultDmg: 22, unlocked: true, cost: 0 },
-  { id: 'red', name: 'RED', color: '#ff2a2a', eye: '#ffffff', armor: 0xd63031, headType: 'bandana', weapon: 'KATANA', hp: 300, lightDmg: 6, heavyDmg: 10, kickDmg: 13, ultDmg: 20, unlocked: true, cost: 0 },
-  { id: 'wars', name: 'WARS', color: '#c56cf0', eye: '#ffeb3b', armor: 0x8e44ad, headType: 'longhair', weapon: 'DUAL BLADES', hp: 310, lightDmg: 7, heavyDmg: 11, kickDmg: 14, ultDmg: 22, unlocked: true, cost: 0 },
-  { id: 'frost', name: 'FROST', color: '#00d2ff', eye: '#70a1ff', armor: 0x1e90ff, headType: 'topknot', weapon: 'ICE SPEAR', hp: 315, lightDmg: 7, heavyDmg: 12, kickDmg: 15, ultDmg: 23, unlocked: false, cost: 150 },
-  { id: 'oni', name: 'SHADOW ONI', color: '#ff4757', eye: '#ff6b81', armor: 0x2f3542, headType: 'horns', weapon: 'KATANA', hp: 320, lightDmg: 7, heavyDmg: 12, kickDmg: 15, ultDmg: 24, unlocked: false, cost: 200 },
-  { id: 'venom', name: 'VENOM', color: '#2ed573', eye: '#7bed9f', armor: 0x218c74, headType: 'hood', weapon: 'SCYTHE', hp: 325, lightDmg: 7, heavyDmg: 12, kickDmg: 16, ultDmg: 24, unlocked: false, cost: 250 },
-  { id: 'cyber', name: 'CYBER ZERO', color: '#18dcff', eye: '#fff200', armor: 0x17c0eb, headType: 'visor', weapon: 'DUAL BLADES', hp: 330, lightDmg: 8, heavyDmg: 13, kickDmg: 16, ultDmg: 25, unlocked: false, cost: 300 },
-  { id: 'samurai', name: 'RONIN KAGE', color: '#ffa502', eye: '#ffffff', armor: 0xe67e22, headType: 'samurai', weapon: 'KATANA', hp: 335, lightDmg: 8, heavyDmg: 13, kickDmg: 16, ultDmg: 25, unlocked: false, cost: 350 },
-
-  // Row 2 (8 Fighters)
-  { id: 'fang', name: 'WOLF FANG', color: '#ff7f50', eye: '#ffeb3b', armor: 0x57606f, headType: 'spiky', weapon: 'DUAL BLADES', hp: 340, lightDmg: 8, heavyDmg: 13, kickDmg: 16, ultDmg: 25, unlocked: false, cost: 400 },
-  { id: 'skull', name: 'SKULL LORD', color: '#f1f2f6', eye: '#ff3838', armor: 0x747d8c, headType: 'horns', weapon: 'SCYTHE', hp: 345, lightDmg: 8, heavyDmg: 13, kickDmg: 17, ultDmg: 26, unlocked: false, cost: 450 },
-  { id: 'iron', name: 'IRON TEMPLAR', color: '#ced6e0', eye: '#ffa502', armor: 0xa4b0be, headType: 'bucket', weapon: 'WAR HAMMER', hp: 350, lightDmg: 8, heavyDmg: 14, kickDmg: 17, ultDmg: 26, unlocked: false, cost: 500 },
-  { id: 'chrom', name: 'CHROM', color: '#ffd32a', eye: '#2ed573', armor: 0xf1c40f, headType: 'visor', weapon: 'WAR HAMMER', hp: 355, lightDmg: 8, heavyDmg: 14, kickDmg: 18, ultDmg: 27, unlocked: false, cost: 550 },
-  { id: 'wraith', name: 'DARK WRAITH', color: '#a55eea', eye: '#00f2fe', armor: 0x8854d0, headType: 'hood', weapon: 'SCYTHE', hp: 360, lightDmg: 9, heavyDmg: 15, kickDmg: 18, ultDmg: 28, unlocked: false, cost: 600 },
-  { id: 'void', name: 'NIGHTSHADE', color: '#ff6b81', eye: '#ffffff', armor: 0xeb3b5a, headType: 'longhair', weapon: 'ICE SPEAR', hp: 365, lightDmg: 9, heavyDmg: 15, kickDmg: 19, ultDmg: 29, unlocked: false, cost: 650 },
-  { id: 'raiden', name: 'THUNDER GOD', color: '#70a1ff', eye: '#ffffff', armor: 0x1e90ff, headType: 'samurai', weapon: 'ICE SPEAR', hp: 370, lightDmg: 9, heavyDmg: 15, kickDmg: 19, ultDmg: 30, unlocked: false, cost: 700 },
-  { id: 'shogun', name: 'BLOOD SHOGUN', color: '#ff3838', eye: '#ffd32a', armor: 0xc0392b, headType: 'horns', weapon: 'WAR HAMMER', hp: 380, lightDmg: 10, heavyDmg: 16, kickDmg: 20, ultDmg: 32, unlocked: false, cost: 800 }
+  { id: 'reaper', name: 'REAPER', color: '#00f2fe', eye: '#00ffaa', skin: '#0d1117', cape: '#0c1017', hair: null, headType: 'hood', weapon: 'SCYTHE', hp: 375, dmg: 12, unlocked: true, cost: 0 },
+  { id: 'lumis', name: 'LUMIS', color: '#c56cf0', eye: '#ffeb3b', skin: '#9b59b6', cape: null, hair: '#f5f6fa', headType: 'longhair', weapon: 'CLAWS', hp: 260, dmg: 11, unlocked: true, cost: 0 },
+  { id: 'red', name: 'RED', color: '#ff2a2a', eye: '#ffffff', skin: '#b31217', cape: '#7d0b0e', hair: null, headType: 'bandana', weapon: 'KATANA', hp: 310, dmg: 11, unlocked: true, cost: 0 },
+  { id: 'frost', name: 'FROST', color: '#00d2ff', eye: '#70a1ff', skin: '#1e272e', cape: '#0984e3', hair: null, headType: 'topknot', weapon: 'SPEAR', hp: 320, dmg: 12, unlocked: false, cost: 150 },
+  { id: 'oni', name: 'SHADOW ONI', color: '#ff4757', eye: '#ff6b81', skin: '#111', cape: '#2f3542', hair: null, headType: 'horns', weapon: 'KATANA', hp: 330, dmg: 13, unlocked: false, cost: 200 },
+  { id: 'venom', name: 'VENOM', color: '#2ed573', eye: '#7bed9f', skin: '#111', cape: '#10ac4b', hair: null, headType: 'hood', weapon: 'SCYTHE', hp: 340, dmg: 13, unlocked: false, cost: 250 },
+  { id: 'cyber', name: 'CYBER ZERO', color: '#18dcff', eye: '#fff200', skin: '#2f3640', cape: null, hair: null, headType: 'visor', weapon: 'KATANA', hp: 345, dmg: 14, unlocked: false, cost: 300 },
+  { id: 'samurai', name: 'RONIN KAGE', color: '#ffa502', eye: '#ffffff', skin: '#1e272e', cape: '#cc8e35', hair: null, headType: 'samurai', weapon: 'KATANA', hp: 350, dmg: 14, unlocked: false, cost: 350 },
+  { id: 'fang', name: 'WOLF FANG', color: '#ff7f50', eye: '#ffeb3b', skin: '#2f3542', cape: null, hair: '#ff7f50', headType: 'spiky', weapon: 'CLAWS', hp: 355, dmg: 14, unlocked: false, cost: 400 },
+  { id: 'skull', name: 'SKULL LORD', color: '#f1f2f6', eye: '#ff3838', skin: '#dfe4ea', cape: '#1e272e', hair: null, headType: 'horns', weapon: 'SCYTHE', hp: 360, dmg: 15, unlocked: false, cost: 450 },
+  { id: 'iron', name: 'IRON TEMPLAR', color: '#ced6e0', eye: '#ffa502', skin: '#747d8c', cape: '#57606f', hair: null, headType: 'bucket', weapon: 'HAMMER', hp: 365, dmg: 15, unlocked: false, cost: 500 },
+  { id: 'chrom', name: 'CHROM', color: '#ffd32a', eye: '#2ed573', skin: '#dfe4ea', cape: '#b7950b', hair: null, headType: 'visor', weapon: 'HAMMER', hp: 370, dmg: 16, unlocked: false, cost: 550 },
+  { id: 'wraith', name: 'DARK WRAITH', color: '#a55eea', eye: '#00f2fe', skin: '#111', cape: '#4b2c70', hair: null, headType: 'hood', weapon: 'SCYTHE', hp: 375, dmg: 16, unlocked: false, cost: 600 },
+  { id: 'void', name: 'NIGHTSHADE', color: '#ff6b81', eye: '#ffffff', skin: '#833471', cape: null, hair: '#ffffff', headType: 'longhair', weapon: 'SPEAR', hp: 380, dmg: 16, unlocked: false, cost: 650 },
+  { id: 'raiden', name: 'THUNDER GOD', color: '#70a1ff', eye: '#ffffff', skin: '#1e272e', cape: '#1e3799', hair: null, headType: 'samurai', weapon: 'SPEAR', hp: 390, dmg: 17, unlocked: false, cost: 700 },
+  { id: 'shogun', name: 'BLOOD SHOGUN', color: '#ff3838', eye: '#ffd32a', skin: '#111', cape: '#6e0b14', hair: null, headType: 'horns', weapon: 'HAMMER', hp: 400, dmg: 18, unlocked: false, cost: 800 }
 ];
 
 const STAGES = [
-  { name: 'STAGE 1', skyBot: 0x9b5460, ground: 0x5c1f24, fog: 0x6d3540 },
-  { name: 'STAGE 2', skyBot: 0x2e6f73, ground: 0x17363a, fog: 0x235357 },
-  { name: 'STAGE 3', skyBot: 0x6e3b8c, ground: 0x2f1647, fog: 0x4b246b },
-  { name: 'STAGE 4', skyBot: 0xa63c1e, ground: 0x4a120d, fog: 0x732214 }
+  { name: 'STAGE 1', skyTop: '#9c5268', skyBot: '#d98880', groundTop: '#7a2e38', groundBot: '#3b1219', silhouette: '#5e2c3d' },
+  { name: 'STAGE 2', skyTop: '#24526a', skyBot: '#6ab0c9', groundTop: '#1b3b4b', groundBot: '#0c1c24', silhouette: '#1b3d4f' },
+  { name: 'STAGE 3', skyTop: '#4b2a63', skyBot: '#9c6bb8', groundTop: '#351c47', groundBot: '#180b21', silhouette: '#381f4a' },
+  { name: 'STAGE 4', skyTop: '#6e2219', skyBot: '#d46a4c', groundTop: '#4f160f', groundBot: '#240805', silhouette: '#521a13' }
 ];
 
 const DIFFICULTIES = ['AUTO', 'EASY', 'NORMAL', 'HARD'];
 
-let coins = 150;
-let selectedHero = ROSTER[0];
-let selectedEnemy = ROSTER[1];
+let coins = 59;
+let selectedHero = ROSTER[0];  // REAPER
+let selectedEnemy = ROSTER[1]; // LUMIS (Exact matchup from Video!)
 let pendingUnlockFighter = null;
 let diffIndex = 0;
 let stageIndex = 0;
 
 /* ============================================================================
-   ULTRA-BRIGHT HD VECTOR AVATAR GENERATOR (Every Face is Sharp & Colorful!)
+   HD VECTOR AVATAR PORTRAIT BUILDER (Matches Video Reaper & Lumis Portraits)
 ============================================================================ */
 function buildAvatarSVG(f) {
   let headArt = '';
   switch (f.headType) {
     case 'hood':
       headArt = `
-        <!-- Glowing Scythe Behind -->
         <path d="M12,68 L66,14" stroke="#ffffff" stroke-width="4"/>
         <path d="M40,12 Q68,6 74,30 Q54,22 40,26 Z" fill="${f.color}"/>
-        <!-- Bright Colored Hood -->
         <path d="M14,72 C14,22 36,16 44,18 C60,20 68,42 66,72 Z" fill="${f.color}"/>
         <circle cx="42" cy="46" r="17" fill="#0d1117"/>
-        <!-- Ninja Mask & Glowing Visor Eyes -->
         <path d="M24,48 Q42,40 60,48 L56,70 L28,70 Z" fill="#1e272e" stroke="${f.color}" stroke-width="1.5"/>
-        <polygon points="30,42 41,45 31,47" fill="${f.eye}"/>
-        <polygon points="54,42 43,45 53,47" fill="${f.eye}"/>
+        <polygon points="32,41 52,37 48,45 32,45" fill="${f.eye}"/>
+      `;
+      break;
+    case 'longhair': // Exact Lumis Portrait (White flowing hair, purple face, yellow eyes, smirk)
+      headArt = `
+        <path d="M8,66 C8,14 26,8 42,8 C60,8 72,22 72,68 C58,52 56,28 40,24 C26,28 20,50 8,66 Z" fill="#ffffff" stroke="#dcdde1" stroke-width="1.5"/>
+        <circle cx="40" cy="46" r="18" fill="${f.skin}"/>
+        <path d="M18,20 C30,12 52,12 64,30 C50,22 36,24 20,38 Z" fill="#f5f6fa"/>
+        <polygon points="27,42 38,46 28,48" fill="${f.eye}"/>
+        <polygon points="53,42 42,46 52,48" fill="${f.eye}"/>
+        <path d="M33,55 Q40,60 48,54" stroke="#ffffff" stroke-width="2.5" fill="none" stroke-linecap="round"/>
       `;
       break;
     case 'bandana':
       headArt = `
         <path d="M14,66 L68,16" stroke="#dfe4ea" stroke-width="4"/>
         <circle cx="40" cy="44" r="22" fill="#2f3640"/>
-        <!-- Bright Red/Colored Headband -->
         <path d="M18,34 Q40,24 62,34 L62,42 Q40,34 18,42 Z" fill="${f.color}"/>
-        <!-- Face Mask with Teeth Stitch -->
         <path d="M20,47 Q40,54 60,47 L56,70 L24,70 Z" fill="${f.color}"/>
         <path d="M28,56 L52,56" stroke="#fff" stroke-width="2.5" stroke-dasharray="3,2"/>
         <polygon points="26,39 38,44 27,45" fill="#fff"/>
         <polygon points="54,39 42,44 53,45" fill="#fff"/>
       `;
       break;
-    case 'longhair':
-      headArt = `
-        <!-- Flowing White/Silver Anime Hair -->
-        <path d="M10,64 C10,16 28,10 42,10 C58,10 70,22 70,66 C58,52 56,30 40,26 C26,30 22,50 10,64 Z" fill="#ffffff"/>
-        <circle cx="40" cy="46" r="18" fill="${f.color}"/>
-        <path d="M18,22 C30,14 48,14 62,28 C50,22 36,24 22,36 Z" fill="#f1f2f6"/>
-        <polygon points="27,42 38,46 28,48" fill="${f.eye}"/>
-        <polygon points="53,42 42,46 52,48" fill="${f.eye}"/>
-        <path d="M33,55 Q40,60 47,55" stroke="#fff" stroke-width="2.5" fill="none"/>
-      `;
-      break;
     case 'topknot':
       headArt = `
         <circle cx="44" cy="13" r="8" fill="#111" stroke="${f.color}" stroke-width="2"/>
         <circle cx="40" cy="45" r="21" fill="#353b48"/>
-        <!-- Forehead Bandage & Metal Plate -->
         <path d="M18,33 L62,39 L60,47 L18,41 Z" fill="#f5f6fa"/>
         <path d="M22,48 L58,48 L54,70 L26,70 Z" fill="#1e272e" stroke="${f.color}" stroke-width="2"/>
         <polygon points="28,41 39,44 29,46" fill="${f.color}"/>
@@ -347,12 +349,10 @@ function buildAvatarSVG(f) {
       break;
     case 'horns':
       headArt = `
-        <!-- Bright Demon / Skull Horns -->
         <path d="M16,28 Q6,6 28,16" stroke="${f.color}" stroke-width="6" fill="none" stroke-linecap="round"/>
         <path d="M64,28 Q74,6 52,16" stroke="${f.color}" stroke-width="6" fill="none" stroke-linecap="round"/>
         <circle cx="40" cy="46" r="21" fill="#f1f2f6" stroke="#2f3542" stroke-width="2"/>
         <path d="M22,52 L58,52 L52,68 L28,68 Z" fill="#1e272e"/>
-        <path d="M28,56 L33,62 L38,56 L43,62 L48,56 L52,62" stroke="${f.color}" stroke-width="2.5" fill="none"/>
         <polygon points="26,40 37,45 27,47" fill="#111"/>
         <polygon points="54,40 43,45 53,47" fill="#111"/>
         <circle cx="32" cy="44" r="2.5" fill="${f.eye}"/>
@@ -361,17 +361,13 @@ function buildAvatarSVG(f) {
       break;
     case 'visor':
       headArt = `
-        <!-- Futuristic Chrome / Cyber Helmet -->
         <circle cx="40" cy="43" r="23" fill="#dfe4ea" stroke="${f.color}" stroke-width="2.5"/>
         <path d="M22,35 Q40,44 58,35 L54,58 Q40,66 26,58 Z" fill="#1e272e"/>
-        <!-- Neon Glowing Cyber Visor -->
         <polygon points="24,38 40,44 56,38 52,47 40,51 28,47" fill="${f.color}"/>
-        <line x1="40" y1="20" x2="40" y2="36" stroke="${f.color}" stroke-width="3"/>
       `;
       break;
     case 'bucket':
       headArt = `
-        <!-- Crusader / Iron Knight Helmet -->
         <rect x="20" y="20" width="40" height="46" rx="9" fill="#ced6e0" stroke="#2f3542" stroke-width="2.5"/>
         <rect x="24" y="36" width="32" height="8" rx="3" fill="#111"/>
         <polygon points="28,38 37,40 28,42" fill="${f.eye}"/>
@@ -381,21 +377,17 @@ function buildAvatarSVG(f) {
       break;
     case 'samurai':
       headArt = `
-        <!-- Samurai Kabuto Crest & Hat -->
         <polygon points="10,32 40,12 70,32" fill="${f.color}" stroke="#fff" stroke-width="1.5"/>
-        <path d="M32,10 L40,24 L48,10" stroke="#ffd32a" stroke-width="3" fill="none"/>
         <circle cx="40" cy="47" r="18" fill="#1e272e"/>
         <polygon points="27,42 38,45 28,48" fill="${f.eye}"/>
         <polygon points="53,42 42,45 52,48" fill="${f.eye}"/>
         <path d="M26,52 L54,52 L50,68 L30,68 Z" fill="${f.color}"/>
       `;
       break;
-    default: // Spiky Wolf / Fang
+    default:
       headArt = `
         <polygon points="14,36 24,12 36,24 44,10 56,24 68,14 64,38" fill="${f.color}"/>
         <circle cx="40" cy="46" r="19" fill="#2f3542"/>
-        <path d="M24,49 L56,49 L52,67 L28,67 Z" fill="#111"/>
-        <path d="M27,54 L32,60 L37,54 L42,60 L47,54 L52,60" stroke="#fff" stroke-width="2.5" fill="none"/>
         <polygon points="27,40 38,44 28,46" fill="${f.eye}"/>
         <polygon points="53,40 42,44 52,46" fill="${f.eye}"/>
       `;
@@ -416,43 +408,8 @@ function buildAvatarSVG(f) {
 }
 
 /* ============================================================================
-   2. MENU & LIVE 3D HERO TURNTABLE PREVIEW
+   2. MENU & UNLOCK LOGIC
 ============================================================================ */
-let menuScene, menuCamera, menuRenderer, menuPreviewFighter;
-
-function initMenu3DPreview() {
-  const canvas = document.getElementById('menu-3d-canvas');
-  menuScene = new THREE.Scene();
-  menuCamera = new THREE.PerspectiveCamera(38, 115 / 148, 0.1, 50);
-  menuCamera.position.set(0, 2.0, 5.6);
-  menuCamera.lookAt(0, 1.5, 0);
-
-  menuRenderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-  menuRenderer.setSize(115, 148);
-  menuRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-  menuScene.add(new THREE.AmbientLight(0xffffff, 0.9));
-  const dirLight = new THREE.DirectionalLight(0xffffff, 1.3);
-  dirLight.position.set(3, 6, 5);
-  menuScene.add(dirLight);
-
-  // Glowing Pedestal Base
-  const pad = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.1, 1.25, 0.18, 24),
-    new THREE.MeshStandardMaterial({ color: 0x2ed573, metalness: 0.5, roughness: 0.3 })
-  );
-  pad.position.y = -0.1;
-  menuScene.add(pad);
-
-  updateMenu3DHero();
-}
-
-function updateMenu3DHero() {
-  if (!menuScene) return;
-  if (menuPreviewFighter) menuScene.remove(menuPreviewFighter.root);
-  menuPreviewFighter = new Fighter3D(selectedHero, 0, 1, menuScene);
-}
-
 function runEntrySplash() {
   const fill = document.getElementById('splash-fill');
   const status = document.getElementById('splash-status');
@@ -466,7 +423,6 @@ function runEntrySplash() {
       setTimeout(() => {
         document.getElementById('splash-screen').classList.add('hidden');
         document.getElementById('menu-screen').classList.remove('hidden');
-        initMenu3DPreview();
         renderRosterMenu();
       }, 280);
     }
@@ -498,8 +454,7 @@ function renderRosterMenu() {
     item.onclick = () => {
       if (f.unlocked) {
         selectedHero = f;
-        selectedEnemy = f.id === 'red' ? ROSTER[2] : ROSTER[1];
-        updateMenu3DHero();
+        selectedEnemy = f.id === 'lumis' ? ROSTER[0] : ROSTER[1];
         renderRosterMenu();
       } else {
         openUnlockModal(f);
@@ -529,10 +484,9 @@ function confirmUnlockFighter() {
     pendingUnlockFighter.unlocked = true;
     selectedHero = pendingUnlockFighter;
     closeUnlockModal();
-    updateMenu3DHero();
     renderRosterMenu();
   } else {
-    alert(`Meeru ${pendingUnlockFighter.name} unlock cheyyadaniki ${pendingUnlockFighter.cost} Coins kavali! Kindha unna Green [▶ 100 🪙] button nokki Free Coins pondandi.`);
+    alert(`Need ${pendingUnlockFighter.cost} Coins! Click the Green [▶ 100 🪙] button for free coins.`);
   }
 }
 
@@ -580,528 +534,663 @@ function returnToMenu() {
   if (gameState === 'FIGHT' || gameState === 'ROUND_OVER') {
     gameState = 'MENU';
     clearInterval(matchClock);
-    document.getElementById('three-canvas-container').classList.add('hidden');
-    document.getElementById('dmg-float-layer').classList.add('hidden');
+    document.getElementById('arena-canvas').classList.add('hidden');
     document.getElementById('fight-hud').classList.add('hidden');
     document.getElementById('touch-controls').classList.add('hidden');
-    document.getElementById('round-banner').classList.add('hidden');
+    document.getElementById('victory-banner-wrap').classList.add('hidden');
+    document.getElementById('combo-popup').classList.add('hidden');
     document.getElementById('menu-screen').classList.remove('hidden');
-    updateMenu3DHero();
     renderRosterMenu();
   }
 }
 
 /* ============================================================================
-   3. UPGRADED 3D FIGHT ENGINE (Custom 3D Headgear, Armor & 5 Unique 3D Weapons)
+   3. AUTHENTIC CEL-SHADED ARTICULATED FIGHT ENGINE (Exact Match to Video!)
 ============================================================================ */
-let scene, camera, renderer;
-let p1Model, p2Model;
-let particles3D = [];
-let shockwaves3D = [];
-let slashArcs3D = [];
-let gameState = 'MENU';
-let matchTimer = 99;
-let matchClock = null;
+const arenaCanvas = document.getElementById('arena-canvas');
+const ctx = arenaCanvas.getContext('2d');
+const previewCanvas = document.getElementById('menu-preview-canvas');
+const pCtx = previewCanvas.getContext('2d');
 
+let CW = 920;
+let CH = 500;
+let GROUND_Y = 385;
+
+function resizeArenaCanvas() {
+  const dim = getLogicalDimensions();
+  CW = dim.width;
+  CH = dim.height;
+  arenaCanvas.width = CW;
+  arenaCanvas.height = CH;
+  GROUND_Y = Math.round(CH * 0.77);
+}
+window.addEventListener('resize', resizeArenaCanvas);
+window.addEventListener('orientationchange', () => setTimeout(resizeArenaCanvas, 200));
+
+let p1, p2;
+let gameState = 'MENU';
+let matchTimer = 98;
+let matchClock = null;
 let currentRound = 1;
 let p1RoundWins = 0;
 let p2RoundWins = 0;
 
 let comboCount = 0;
-let comboDamageTotal = 0;
-let comboTimeout = null;
+let comboDmgAccum = 0;
+let comboResetTimer = 0;
 let screenShake = 0;
 
-const input = { left: false, right: false, up: false };
+// Visual Effects Arrays (Golden Starbursts, Dust Puffs, Spinning Boomerang Scythes)
+let starbursts = [];
+let dustPuffs = [];
+let projectiles = [];
 
-function resize3DViewport() {
-  if (!renderer || !camera) return;
-  const dim = getLogicalDimensions();
-  camera.aspect = dim.width / dim.height;
-  camera.updateProjectionMatrix();
-  renderer.setSize(dim.width, dim.height);
-}
-window.addEventListener('resize', resize3DViewport);
-window.addEventListener('orientationchange', () => setTimeout(resize3DViewport, 200));
+const input = { left: false, right: false, up: false, down: false };
 
-function initThreeWorld() {
-  const container = document.getElementById('three-canvas-container');
-  container.innerHTML = '';
-
-  const dim = getLogicalDimensions();
-  scene = new THREE.Scene();
-  const stg = STAGES[stageIndex];
-  scene.background = new THREE.Color(stg.skyBot);
-  scene.fog = new THREE.FogExp2(stg.fog, 0.022);
-
-  camera = new THREE.PerspectiveCamera(42, dim.width / dim.height, 0.1, 200);
-  camera.position.set(0, 3.2, 13.5);
-
-  renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setSize(dim.width, dim.height);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.shadowMap.enabled = true;
-  container.appendChild(renderer.domElement);
-
-  scene.add(new THREE.AmbientLight(0xffffff, 0.78));
-
-  const sun = new THREE.DirectionalLight(0xffe0b3, 1.3);
-  sun.position.set(6, 15, 10);
-  sun.castShadow = true;
-  scene.add(sun);
-
-  // Arena Floor with Glowing Center Line
-  const floor = new THREE.Mesh(
-    new THREE.BoxGeometry(45, 2, 16),
-    new THREE.MeshStandardMaterial({ color: stg.ground, roughness: 0.75 })
-  );
-  floor.position.y = -1;
-  floor.receiveShadow = true;
-  scene.add(floor);
-
-  // Japanese Torii Gate + Glowing Lanterns
-  const gateMat = new THREE.MeshStandardMaterial({ color: 0x241016, roughness: 0.85 });
-  const pillarL = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 9, 12), gateMat);
-  pillarL.position.set(-4.5, 4, -5.5);
-  const pillarR = pillarL.clone();
-  pillarR.position.x = 4.5;
-  const topBeam = new THREE.Mesh(new THREE.BoxGeometry(11.5, 0.65, 0.9), gateMat);
-  topBeam.position.set(0, 8.2, -5.5);
-  const subBeam = new THREE.Mesh(new THREE.BoxGeometry(9.5, 0.45, 0.7), gateMat);
-  subBeam.position.set(0, 6.7, -5.5);
-  scene.add(pillarL, pillarR, topBeam, subBeam);
-
-  // Glowing Dojo Lanterns
-  const lanternMat = new THREE.MeshBasicMaterial({ color: 0xff9f1a });
-  const lanternL = new THREE.Mesh(new THREE.SphereGeometry(0.35, 12, 12), lanternMat);
-  lanternL.position.set(-3.2, 5.8, -5.0);
-  const lanternR = lanternL.clone();
-  lanternR.position.x = 3.2;
-  scene.add(lanternL, lanternR);
-}
-
-class Fighter3D {
-  constructor(config, startX, facing, targetScene = scene) {
+/* Articulated Cel-Shaded Fighter Class */
+class CelFighter {
+  constructor(config, x, facing, isPlayer) {
     this.config = config;
-    this.sceneRef = targetScene;
+    this.isPlayer = isPlayer;
     this.maxHp = config.hp;
     this.hp = config.hp;
-    this.energy = 45;
-    this.x = startX;
-    this.y = 0;
+    this.x = x;
+    this.y = GROUND_Y;
     this.vx = 0;
     this.vy = 0;
     this.facing = facing;
 
-    this.atkTimer = 0;
+    // Animation & Combat States
+    this.state = 'IDLE'; // IDLE, RUN, JUMP, SLASH1, SLASH2, SLASH3, THROW_SCYTHE, HURT, AIR_TUMBLE, KO_DOWN, VICTORY
+    this.stateTick = 0;
+    this.animTime = 0;
     this.comboStep = 0;
-    this.spinTimer = 0;
-    this.flipTimer = 0;
-    this.kickCooldown = 0;
-    this.invulnTimer = 0;
-    this.isBlocking = false;
-    this.walkCycle = 0;
-
-    this.root = new THREE.Group();
-    this.bodyPivot = new THREE.Group();
-    this.bodyPivot.position.y = 1.4;
-    this.root.add(this.bodyPivot);
-
-    this.build3DMesh();
-    this.root.position.set(this.x, 0, 0);
-    this.sceneRef.add(this.root);
-  }
-
-  build3DMesh() {
-    const blackMat = new THREE.MeshStandardMaterial({ color: 0x11151c, roughness: 0.35 });
-    const glowMat = new THREE.MeshBasicMaterial({ color: this.config.color });
-    const armorMat = new THREE.MeshStandardMaterial({ color: this.config.armor, roughness: 0.4, metalness: 0.3 });
-
-    // Torso + Colored Chest ArmorVest
-    this.torso = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.36, 1.45, 12), armorMat);
-    this.torso.position.y = 0.25;
-    this.bodyPivot.add(this.torso);
-
-    // Shoulder Pads
-    const padGeo = new THREE.SphereGeometry(0.22, 10, 10);
-    const padL = new THREE.Mesh(padGeo, glowMat);
-    padL.position.set(0, 0.85, 0.34);
-    const padR = padL.clone();
-    padR.position.z = -0.34;
-    this.bodyPivot.add(padL, padR);
-
-    // Belt
-    const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.16, 12), glowMat);
-    belt.position.y = -0.25;
-    this.bodyPivot.add(belt);
-
-    // Head
-    this.head = new THREE.Mesh(new THREE.SphereGeometry(0.39, 16, 16), blackMat);
-    this.head.position.y = 1.28;
-    this.bodyPivot.add(this.head);
-
-    // Glowing Visor Eyes
-    const eye = new THREE.Mesh(
-      new THREE.BoxGeometry(0.28, 0.1, 0.24),
-      new THREE.MeshBasicMaterial({ color: this.config.eye })
-    );
-    eye.position.set(0.25, 1.3, 0);
-    this.bodyPivot.add(eye);
-
-    // Custom 3D Headgear per Fighter Style
-    if (this.config.headType === 'horns') {
-      const hornGeo = new THREE.ConeGeometry(0.1, 0.55, 8);
-      const hornL = new THREE.Mesh(hornGeo, glowMat);
-      hornL.position.set(0.05, 1.72, 0.22);
-      hornL.rotation.z = -0.35;
-      const hornR = hornL.clone();
-      hornR.position.z = -0.22;
-      this.bodyPivot.add(hornL, hornR);
-    } else if (this.config.headType === 'samurai') {
-      const hat = new THREE.Mesh(new THREE.ConeGeometry(0.75, 0.3, 16), glowMat);
-      hat.position.set(0, 1.62, 0);
-      this.bodyPivot.add(hat);
-    } else if (this.config.headType === 'longhair' || this.config.headType === 'spiky') {
-      const hairMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 });
-      for (let i = 0; i < 4; i++) {
-        const strand = new THREE.Mesh(new THREE.ConeGeometry(0.22, 1.35, 8), hairMat);
-        strand.rotation.z = 0.65 + i * 0.12;
-        strand.position.set(-0.45 - i * 0.12, 1.05 - i * 0.15, (i - 1.5) * 0.12);
-        this.bodyPivot.add(strand);
-      }
-    }
-
-    // Articulated Legs
-    const limbGeo = new THREE.CylinderGeometry(0.12, 0.1, 0.95, 8);
-    this.legL = new THREE.Mesh(limbGeo, blackMat);
-    this.legL.position.set(0, -0.9, 0.17);
-    this.legR = new THREE.Mesh(limbGeo, blackMat);
-    this.legR.position.set(0, -0.9, -0.17);
-    this.bodyPivot.add(this.legL, this.legR);
-
-    // Weapon Arm + Distinct 3D Weapon Model
-    this.armPivot = new THREE.Group();
-    this.armPivot.position.set(0, 0.75, 0.28);
-
-    const armMesh = new THREE.Mesh(limbGeo, blackMat);
-    armMesh.rotation.z = -Math.PI / 3;
-    armMesh.position.set(0.35, -0.15, 0);
-    this.armPivot.add(armMesh);
-
-    const steelMat = new THREE.MeshStandardMaterial({ color: 0xecf0f1, metalness: 0.8, roughness: 0.2 });
-
-    if (this.config.weapon === 'WAR HAMMER') {
-      const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.3, 8), steelMat);
-      shaft.position.set(0.8, 0.1, 0);
-      shaft.rotation.z = -0.35;
-      const headBlock = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.95, 0.55), glowMat);
-      headBlock.position.set(1.2, 0.95, 0);
-      headBlock.rotation.z = -0.35;
-      this.armPivot.add(shaft, headBlock);
-    } else if (this.config.weapon === 'ICE SPEAR') {
-      const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 2.7, 8), steelMat);
-      shaft.position.set(0.9, 0.15, 0);
-      shaft.rotation.z = -0.35;
-      const tip = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.75, 8), glowMat);
-      tip.position.set(1.38, 1.32, 0);
-      tip.rotation.z = -0.35;
-      this.armPivot.add(shaft, tip);
-    } else if (this.config.weapon === 'KATANA' || this.config.weapon === 'DUAL BLADES') {
-      const hilt = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.6, 8), blackMat);
-      hilt.position.set(0.6, -0.2, 0);
-      hilt.rotation.z = -0.45;
-      const katanaBlade = new THREE.Mesh(new THREE.BoxGeometry(0.08, 2.1, 0.03), glowMat);
-      katanaBlade.position.set(1.1, 0.75, 0);
-      katanaBlade.rotation.z = -0.45;
-      this.armPivot.add(hilt, katanaBlade);
-    } else {
-      // Default Giant Glowing Scythe
-      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 2.5, 8), steelMat);
-      pole.position.set(0.85, 0.1, 0);
-      pole.rotation.z = -0.35;
-      const bladeGeo = new THREE.TorusGeometry(0.68, 0.08, 8, 20, Math.PI * 0.72);
-      const blade = new THREE.Mesh(bladeGeo, glowMat);
-      blade.position.set(1.22, 0.95, 0);
-      blade.rotation.z = -0.7;
-      this.armPivot.add(pole, blade);
-    }
-
-    this.bodyPivot.add(this.armPivot);
+    this.hasWeaponInHand = true;
+    this.invuln = 0;
+    this.bolts = 2;
+    this.boltRecharge = 0;
+    this.bodyAngle = 0; // Used for mid-air ragdoll tumble (0:15, 0:37)
   }
 
   update(opponent) {
-    this.walkCycle += 0.22;
-    if (this.atkTimer > 0) this.atkTimer--;
-    if (this.spinTimer > 0) this.spinTimer--;
-    if (this.flipTimer > 0) this.flipTimer--;
-    if (this.kickCooldown > 0) this.kickCooldown--;
-    if (this.invulnTimer > 0) this.invulnTimer--;
+    this.animTime += 0.16;
+    if (this.invuln > 0) this.invuln--;
 
-    if (this.energy < 100) this.energy = Math.min(100, this.energy + 0.12);
-
-    this.y += this.vy;
-    if (this.y > 0) {
-      this.vy -= 0.017;
-    } else {
-      this.y = 0;
-      this.vy = 0;
+    // Recharge Lightning Bolts (⚡⚡)
+    if (this.bolts < 2) {
+      this.boltRecharge++;
+      if (this.boltRecharge > 160) {
+        this.bolts++;
+        this.boltRecharge = 0;
+        refreshFightHUD();
+      }
     }
 
+    // Physics & Gravity
     this.x += this.vx;
+    this.y += this.vy;
+
+    if (this.y < GROUND_Y) {
+      this.vy += 0.68; // Gravity
+    } else {
+      if (this.vy > 4) spawnDustPuff(this.x, GROUND_Y);
+      this.y = GROUND_Y;
+      this.vy = 0;
+      if (this.state === 'AIR_TUMBLE') {
+        if (this.hp <= 0) {
+          this.state = 'KO_DOWN';
+          this.stateTick = 999;
+        } else {
+          this.state = 'IDLE';
+          this.bodyAngle = 0;
+        }
+      }
+    }
+
     this.vx *= 0.82;
-    this.x = Math.max(-6.8, Math.min(6.8, this.x));
+    this.x = Math.max(65, Math.min(CW - 65, this.x));
 
-    if (this.atkTimer === 0 && this.spinTimer === 0 && this.flipTimer === 0) {
+    // State Machine Progression
+    if (this.stateTick > 0) {
+      this.stateTick--;
+      if (this.state === 'AIR_TUMBLE') {
+        this.bodyAngle += this.facing * -0.22; // Mid-air spin like Lumis at 0:15 & 0:37
+      }
+      if (this.stateTick === 0 && this.state !== 'KO_DOWN' && this.state !== 'VICTORY') {
+        this.state = 'IDLE';
+        this.bodyAngle = 0;
+      }
+    } else if (this.hp <= 0) {
+      this.state = 'KO_DOWN';
+    } else {
+      // Auto Face Opponent when idle/moving
       this.facing = opponent.x >= this.x ? 1 : -1;
-    }
-
-    const movingAway = (this.facing === 1 && this.vx < -0.02) || (this.facing === -1 && this.vx > 0.02);
-    this.isBlocking = movingAway && this.atkTimer === 0 && this.y === 0;
-
-    this.root.position.set(this.x, this.y, 0);
-    this.root.scale.x = this.facing;
-
-    if (this.spinTimer > 0) {
-      this.root.rotation.y += 0.58;
-    } else {
-      this.root.rotation.y = 0;
-    }
-
-    if (this.flipTimer > 0) {
-      const flipProg = 1 - this.flipTimer / 24;
-      this.bodyPivot.rotation.z = -flipProg * Math.PI * 2;
-      this.legR.rotation.z = 1.2;
-    } else {
-      this.bodyPivot.rotation.z = 0;
-      const speed = Math.abs(this.vx);
-      if (speed > 0.02) {
-        this.legL.rotation.z = Math.sin(this.walkCycle) * 0.7;
-        this.legR.rotation.z = -Math.sin(this.walkCycle) * 0.7;
-      } else {
-        this.legL.rotation.z = 0.12;
-        this.legR.rotation.z = -0.12;
-      }
-    }
-
-    if (this.atkTimer > 0) {
-      const p = 1 - this.atkTimer / 20;
-      if (this.comboStep === 1) {
-        this.armPivot.rotation.z = 1.15 - p * 2.5;
-      } else if (this.comboStep === 2) {
-        this.armPivot.rotation.z = -1.35 + p * 2.6;
-      } else {
-        this.armPivot.rotation.z = 1.45 - p * 3.1;
-      }
-    } else if (this.isBlocking) {
-      this.armPivot.rotation.z = 0.85;
-    } else {
-      this.armPivot.rotation.z = Math.sin(this.walkCycle * 0.5) * 0.08;
+      if (this.y < GROUND_Y) this.state = 'JUMP';
+      else if (Math.abs(this.vx) > 0.8) this.state = 'RUN';
+      else this.state = 'IDLE';
     }
   }
 
-  inflictDamage(opponent, rawDmg, moveLabel, knockbackX, knockbackY) {
-    if (opponent.invulnTimer > 0) return;
+  // Primary Green Fist Button: Two-Handed Scythe Combo + Uppercut Ragdoll Launch
+  attackPrimary(opponent) {
+    if (this.state === 'KO_DOWN' || this.state === 'AIR_TUMBLE' || this.stateTick > 6) return;
 
-    let finalDmg = rawDmg;
-    let blocked = false;
-    if (opponent.isBlocking) {
-      finalDmg = Math.max(2, Math.round(rawDmg * 0.3));
-      blocked = true;
+    const dist = Math.abs(this.x - opponent.x);
+
+    // If enemy is far away & we have our weapon, throw Boomerang Spinning Scythe like 0:12 & 0:30!
+    if (dist > 220 && this.hasWeaponInHand && this.bolts >= 1) {
+      this.throwBoomerangWeapon(opponent);
+      return;
     }
 
-    opponent.hp = Math.max(0, opponent.hp - finalDmg);
-    opponent.invulnTimer = 20;
-    opponent.vx = this.facing * (blocked ? knockbackX * 0.3 : knockbackX);
-    if (!blocked && knockbackY > 0) opponent.vy = knockbackY;
-
-    this.energy = Math.min(100, this.energy + 12);
-    opponent.energy = Math.min(100, opponent.energy + 8);
-
-    spawn3DHitSparks(opponent.x, opponent.y + 1.5, blocked ? '#ffffff' : this.config.color);
-    spawnFloatingDamage(opponent.x, opponent.y + 2.4, blocked ? `BLOCK -${finalDmg}` : `-${finalDmg} HP (${moveLabel})`, blocked ? '#dfe4ea' : '#ffeb3b');
-
-    if (this === p1Model) {
-      comboCount++;
-      comboDamageTotal += finalDmg;
-      showComboBadge(comboCount, comboDamageTotal);
-    }
-    refreshFightHUD();
-  }
-
-  comboStrike(opponent) {
-    if (this.atkTimer > 0) return;
     this.comboStep = (this.comboStep % 3) + 1;
-    this.atkTimer = 20;
-    this.vx = this.facing * 0.14;
-    spawn3DSlashArc(this.x + this.facing * 0.9, this.y + 1.6, this.config.color);
+    this.state = `SLASH${this.comboStep}`;
+    this.stateTick = 18;
+    this.vx = this.facing * (this.comboStep === 3 ? 11 : 6);
+    spawnDustPuff(this.x - this.facing * 20, GROUND_Y);
 
-    const dist = Math.abs(this.x - opponent.x);
-    const yDist = Math.abs(this.y - opponent.y);
-    if (dist < 2.45 && yDist < 1.9) {
-      if (this.comboStep < 3) {
-        this.inflictDamage(opponent, this.config.lightDmg, `SLASH ${this.comboStep}`, 0.14, 0);
-      } else {
-        screenShake = 5;
-        spawnShockwaveRing(opponent.x, opponent.y + 1.0, this.config.color);
-        this.inflictDamage(opponent, this.config.heavyDmg, 'FINISHER', 0.26, 0.16);
+    if (dist < 155 && Math.abs(this.y - opponent.y) < 110) {
+      const isFinisher = this.comboStep === 3;
+      const dmg = isFinisher ? Math.round(this.config.dmg * 1.45) : this.config.dmg;
+      this.applyHit(opponent, dmg, isFinisher);
+    }
+  }
+
+  // Secondary Grey Fist Button: Boomerang Scythe Throw OR Shadow Dash Through Enemy (0:26)
+  attackSecondary(opponent) {
+    if (this.state === 'KO_DOWN' || this.state === 'AIR_TUMBLE' || this.stateTick > 4) return;
+
+    if (this.hasWeaponInHand && Math.abs(this.x - opponent.x) > 140) {
+      this.throwBoomerangWeapon(opponent);
+    } else {
+      // Dash Slice right through the enemy like 0:26 - 0:27!
+      this.state = 'SLASH3';
+      this.stateTick = 20;
+      this.vx = this.facing * 19;
+      spawnDustPuff(this.x, GROUND_Y);
+      if (Math.abs(this.x - opponent.x) < 180) {
+        this.applyHit(opponent, Math.round(this.config.dmg * 1.3), true);
       }
     }
   }
 
-  somersaultKick(opponent) {
-    if (this.flipTimer > 0 || this.kickCooldown > 0) return;
-    this.flipTimer = 24;
-    this.kickCooldown = 140;
-    this.vy = 0.26;
-    this.vx = this.facing * 0.22;
-    spawn3DSlashArc(this.x, this.y + 1.8, '#ff9f1a');
+  // Exact Boomerang Spinning Scythe Vortex from Video (0:12, 0:18, 0:30, 0:33)
+  throwBoomerangWeapon(opponent) {
+    if (!this.hasWeaponInHand) return;
+    this.hasWeaponInHand = false;
+    if (this.bolts > 0) this.bolts--;
+    this.state = 'THROW_SCYTHE';
+    this.stateTick = 22;
+    refreshFightHUD();
 
-    const dist = Math.abs(this.x - opponent.x);
-    if (dist < 2.55) {
-      screenShake = 6;
-      this.inflictDamage(opponent, this.config.kickDmg, 'FLIP KICK', 0.22, 0.26);
-    }
+    projectiles.push({
+      owner: this,
+      target: opponent,
+      x: this.x + this.facing * 50,
+      y: this.y - 58,
+      vx: this.facing * 15,
+      returning: false,
+      angle: 0,
+      hitCooldown: 0,
+      life: 95
+    });
   }
 
-  ultimateTornado(opponent) {
-    if (this.spinTimer > 0 || this.energy < 60) return;
-    this.energy -= 60;
-    this.spinTimer = 28;
-    this.atkTimer = 24;
-    this.vx = this.facing * 0.28;
-    spawnShockwaveRing(this.x, this.y + 0.2, this.config.color);
-    spawn3DSlashArc(this.x, this.y + 1.6, '#a855f7');
+  applyHit(opponent, dmg, launchAir) {
+    if (opponent.invuln > 0 || opponent.state === 'KO_DOWN') return;
 
-    const dist = Math.abs(this.x - opponent.x);
-    if (dist < 2.95) {
-      screenShake = 10;
-      spawnShockwaveRing(opponent.x, opponent.y + 1.2, '#a855f7');
-      this.inflictDamage(opponent, this.config.ultDmg, '3D ULTIMATE', 0.34, 0.22);
+    opponent.hp = Math.max(0, opponent.hp - dmg);
+    opponent.invuln = 12;
+
+    if (launchAir || opponent.hp <= 0) {
+      opponent.state = 'AIR_TUMBLE';
+      opponent.stateTick = 38;
+      opponent.vx = this.facing * 13;
+      opponent.vy = -12.5; // High parabolic knockback arc like 0:04 & 0:15!
+      screenShake = 9;
+    } else {
+      opponent.state = 'HURT';
+      opponent.stateTick = 14;
+      opponent.vx = this.facing * 6.5;
+      screenShake = 4;
+    }
+
+    // Spawn Golden Starburst Impact + Radial Screen Rays (Exact match to 0:04 & 0:12)
+    const hitX = (this.x + opponent.x) * 0.5 + this.facing * 20;
+    const hitY = opponent.y - 58;
+    spawnStarburst(hitX, hitY, launchAir);
+
+    if (this.isPlayer) {
+      comboCount++;
+      comboDmgAccum += dmg;
+      comboResetTimer = 110;
+      updateComboOverlay(opponent.maxHp);
     }
     refreshFightHUD();
   }
 
-  shadowDash() {
-    if (this.energy < 15) return;
-    this.energy -= 15;
-    spawn3DHitSparks(this.x, this.y + 1.0, '#ffffff');
-    this.vx = this.facing * 0.38;
-    this.vy = 0.08;
-    refreshFightHUD();
+  /* ==========================================================================
+     CEL-SHADED ARTICULATED CHARACTER RENDERER (Draws Reaper, Lumis, etc.)
+     ========================================================================== */
+  draw(c, scale = 1) {
+    c.save();
+    c.translate(this.x, this.y);
+    c.scale(scale, scale);
+
+    // 1. Player Green Floor & Overhead Triangle Indicators (▼ / ▲ from Video)
+    if (this.isPlayer && c === ctx && gameState === 'FIGHT') {
+      c.fillStyle = '#2ed573';
+      c.strokeStyle = '#000';
+      c.lineWidth = 2;
+      // Floor oval + upward triangle
+      c.beginPath();
+      c.moveTo(-26, 2);
+      c.lineTo(26, 2);
+      c.lineTo(0, -5);
+      c.closePath();
+      c.fill();
+      c.stroke();
+
+      // Overhead downward triangle
+      const bob = Math.sin(this.animTime * 2) * 4;
+      c.beginPath();
+      c.moveTo(-8, -125 + bob);
+      c.lineTo(8, -125 + bob);
+      c.lineTo(0, -113 + bob);
+      c.closePath();
+      c.fill();
+      c.stroke();
+    }
+
+    // Ground Shadow
+    c.fillStyle = 'rgba(0, 0, 0, 0.35)';
+    c.beginPath();
+    c.ellipse(0, 2, 28, 6, 0, 0, Math.PI * 2);
+    c.fill();
+
+    // Handle KO lying flat on ground (0:20, 0:43)
+    if (this.state === 'KO_DOWN') {
+      c.translate(0, -12);
+      c.rotate(this.facing * Math.PI * 0.47);
+      c.translate(0, 45);
+    } else if (this.state === 'AIR_TUMBLE') {
+      c.translate(0, -50);
+      c.rotate(this.bodyAngle);
+      c.translate(0, 50);
+    }
+
+    c.scale(this.facing, 1);
+
+    // Victory Dropped Scythe Behind Reaper (Exact match to 0:20 & 0:43!)
+    if (this.state === 'VICTORY') {
+      c.save();
+      c.translate(-55, -8);
+      c.rotate(-2.85);
+      this.drawWeaponMesh(c);
+      c.restore();
+    }
+
+    const walkSin = this.state === 'RUN' ? Math.sin(this.animTime * 2.4) : 0;
+    const idleBreathe = Math.sin(this.animTime) * 2;
+    const isAttacking = this.state.startsWith('SLASH');
+    const leanForward = isAttacking ? 0.28 : (this.state === 'RUN' ? 0.18 : 0.08);
+
+    // 2. Flowing Cape / Cloak (For Reaper, Oni, Red, etc.)
+    if (this.config.cape) {
+      c.fillStyle = this.config.cape;
+      c.strokeStyle = '#000';
+      c.lineWidth = 2.5;
+      const capeWave = Math.sin(this.animTime * 1.8) * 8 - Math.abs(this.vx) * 2.5;
+      c.beginPath();
+      c.moveTo(-6, -78 + idleBreathe);
+      c.quadraticCurveTo(-36 + capeWave, -45, -34 + capeWave * 1.3, -4);
+      c.lineTo(-10, -12);
+      c.closePath();
+      c.fill();
+      c.stroke();
+    }
+
+    // 3. Long Flowing White Anime Hair (For Lumis / Wars - Matches Video!)
+    if (this.config.hair) {
+      c.fillStyle = this.config.hair;
+      c.strokeStyle = '#111';
+      c.lineWidth = 2.2;
+      const hairWave = Math.sin(this.animTime * 1.6) * 7 - this.vx * 2;
+      c.beginPath();
+      c.moveTo(-4, -96 + idleBreathe);
+      c.bezierCurveTo(-38 + hairWave, -90, -48 + hairWave, -45, -36 + hairWave * 1.4, -22);
+      c.bezierCurveTo(-22, -32, -18, -58, -4, -76);
+      c.closePath();
+      c.fill();
+      c.stroke();
+    }
+
+    // 4. Back Leg & Front Leg with Cyan/Colored Armor Plates
+    this.drawLeg(c, -8, -42, -14 + walkSin * 20, 0, false);
+    this.drawLeg(c, 8, -42, 14 - walkSin * 20, 0, true);
+
+    // 5. Articulated Torso & Armor Vest
+    c.save();
+    c.translate(0, -42 + idleBreathe);
+    c.rotate(leanForward);
+
+    // Torso core
+    c.fillStyle = '#11161d';
+    c.strokeStyle = '#000';
+    c.lineWidth = 2.5;
+    c.beginPath();
+    c.moveTo(-11, 0);
+    c.lineTo(-14, -38);
+    c.lineTo(13, -38);
+    c.lineTo(10, 0);
+    c.closePath();
+    c.fill();
+    c.stroke();
+
+    // Colored Armor Strips & Belt Sash (Like Reaper's Cyan Armor in Video)
+    c.fillStyle = this.config.color;
+    c.fillRect(-11, -6, 22, 6);
+    c.fillRect(-6, -34, 14, 10);
+
+    // 6. Head, Hood, Visor Eyes
+    c.save();
+    c.translate(2, -48);
+    c.fillStyle = this.config.skin;
+    c.strokeStyle = '#000';
+    c.lineWidth = 2.5;
+    c.beginPath();
+    c.arc(0, 0, 13, 0, Math.PI * 2);
+    c.fill();
+    c.stroke();
+
+    // Reaper's Cyan Hood Trim
+    if (this.config.headType === 'hood') {
+      c.strokeStyle = this.config.color;
+      c.lineWidth = 3.5;
+      c.beginPath();
+      c.arc(-1, -1, 13, -Math.PI * 0.75, Math.PI * 0.25);
+      c.stroke();
+    }
+
+    // Glowing Slanted Visor Eye
+    c.fillStyle = this.config.eye;
+    c.beginPath();
+    c.polygon = [ [2, -3], [12, -5], [10, 1], [2, 1] ];
+    c.moveTo(2, -3);
+    c.lineTo(12, -6);
+    c.lineTo(10, 1);
+    c.lineTo(2, 1);
+    c.closePath();
+    c.fill();
+    c.restore();
+
+    // 7. Two-Handed Arms & Weapon Slash Animation
+    if (this.hasWeaponInHand && this.state !== 'VICTORY') {
+      c.save();
+      c.translate(4, -28);
+
+      let swingRot = -0.25;
+      if (this.state === 'SLASH1') {
+        const p = 1 - this.stateTick / 18;
+        swingRot = -1.6 + p * 3.1; // Overhead downward cleave
+      } else if (this.state === 'SLASH2') {
+        const p = 1 - this.stateTick / 18;
+        swingRot = 1.4 - p * 3.0;  // Rising upward slash
+      } else if (this.state === 'SLASH3') {
+        const p = 1 - this.stateTick / 18;
+        swingRot = -2.1 + p * 4.2; // Heavy full cleave
+      }
+
+      c.rotate(swingRot);
+
+      // Draw Weapon + Motion Blur Arc when slashing
+      if (isAttacking) {
+        c.save();
+        c.strokeStyle = 'rgba(200, 245, 255, 0.65)';
+        c.lineWidth = 18;
+        c.beginPath();
+        c.arc(0, 0, 68, -1.1, 1.1);
+        c.stroke();
+        c.restore();
+      }
+
+      this.drawWeaponMesh(c);
+
+      // Front Arm & Cyan Gauntlet holding weapon
+      c.fillStyle = '#11161d';
+      c.strokeStyle = '#000';
+      c.lineWidth = 2.2;
+      c.fillRect(-4, -6, 26, 9);
+      c.strokeRect(-4, -6, 26, 9);
+      c.fillStyle = this.config.color;
+      c.fillRect(10, -6, 10, 9);
+
+      c.restore();
+    }
+
+    c.restore(); // End Torso
+    c.restore(); // End Fighter
+  }
+
+  drawLeg(c, hipX, hipY, footX, footY, isFront) {
+    const kneeX = (hipX + footX) * 0.5 + 6;
+    const kneeY = (hipY + footY) * 0.5 - 2;
+
+    c.strokeStyle = '#000';
+    c.lineWidth = 11;
+    c.lineCap = 'round';
+    c.lineJoin = 'round';
+    c.beginPath();
+    c.moveTo(hipX, hipY);
+    c.lineTo(kneeX, kneeY);
+    c.lineTo(footX, footY - 4);
+    c.stroke();
+
+    c.strokeStyle = isFront ? '#18202c' : '#0d1117';
+    c.lineWidth = 7;
+    c.stroke();
+
+    // Colored Shin Guard Strip
+    if (isFront) {
+      c.strokeStyle = this.config.color;
+      c.lineWidth = 3.5;
+      c.beginPath();
+      c.moveTo(kneeX, kneeY);
+      c.lineTo(footX, footY - 8);
+      c.stroke();
+    }
+  }
+
+  drawWeaponMesh(c) {
+    if (this.config.weapon === 'CLAWS') {
+      // Lumis Purple Energy Claws
+      c.strokeStyle = this.config.color;
+      c.lineWidth = 3.5;
+      for (let i = -1; i <= 1; i++) {
+        c.beginPath();
+        c.moveTo(22, i * 4);
+        c.lineTo(48, i * 7);
+        c.stroke();
+      }
+      return;
+    }
+
+    // Reaper's Signature Two-Handed Curved Scythe (Matches Video!)
+    c.save();
+    // Long Dark/Cyan Pole
+    c.strokeStyle = '#000';
+    c.lineWidth = 7;
+    c.beginPath();
+    c.moveTo(-38, 18);
+    c.lineTo(54, -24);
+    c.stroke();
+
+    c.strokeStyle = '#95a5a6';
+    c.lineWidth = 3.5;
+    c.stroke();
+
+    // Cyan Grip Wraps
+    c.strokeStyle = this.config.color;
+    c.lineWidth = 4.5;
+    c.beginPath();
+    c.moveTo(-15, 7);
+    c.lineTo(15, -6);
+    c.stroke();
+
+    // Giant Curved Silver & Black Scythe Blade
+    c.translate(50, -22);
+    c.rotate(0.25);
+    c.fillStyle = '#dfe4ea';
+    c.strokeStyle = '#000';
+    c.lineWidth = 2.5;
+    c.beginPath();
+    c.moveTo(0, 0);
+    c.quadraticCurveTo(22, 28, -22, 56);
+    c.quadraticCurveTo(4, 24, -10, -4);
+    c.closePath();
+    c.fill();
+    c.stroke();
+
+    // Glowing Inner Blade Edge
+    c.strokeStyle = this.config.color;
+    c.lineWidth = 2;
+    c.beginPath();
+    c.moveTo(-4, 2);
+    c.quadraticCurveTo(12, 24, -18, 50);
+    c.stroke();
+
+    c.restore();
   }
 }
 
-function spawn3DSlashArc(x, y, hexColor) {
-  const geo = new THREE.TorusGeometry(1.05, 0.06, 8, 20, Math.PI * 0.85);
-  const mat = new THREE.MeshBasicMaterial({ color: hexColor, transparent: true, opacity: 0.9 });
-  const arc = new THREE.Mesh(geo, mat);
-  arc.position.set(x, y, 0.35);
-  arc.rotation.z = Math.random() * Math.PI;
-  scene.add(arc);
-  slashArcs3D.push({ mesh: arc, life: 10 });
+/* ============================================================================
+   4. VISUAL EFFECTS (Golden Starbursts, Dust Puffs, Spinning Scythe Vortex)
+============================================================================ */
+function spawnStarburst(x, y, isHeavy) {
+  starbursts.push({
+    x, y,
+    radius: isHeavy ? 68 : 42,
+    rays: isHeavy ? 12 : 8,
+    life: 12,
+    maxLife: 12,
+    heavy: isHeavy
+  });
 }
 
-function spawnFloatingDamage(worldX, worldY, text, color) {
-  const layer = document.getElementById('dmg-float-layer');
-  const el = document.createElement('div');
-  el.className = 'dmg-number';
-  el.style.color = color;
-  el.innerText = text;
-  const pctX = Math.max(15, Math.min(85, 50 + (worldX / 12) * 70));
-  el.style.left = pctX + '%';
-  el.style.top = '32%';
-  layer.appendChild(el);
-  setTimeout(() => el.remove(), 750);
-}
-
-function spawn3DHitSparks(x, y, hexColor) {
-  const mat = new THREE.MeshBasicMaterial({ color: hexColor });
-  for (let i = 0; i < 10; i++) {
-    const spark = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.12), mat);
-    spark.position.set(x, y, (Math.random() - 0.5) * 0.8);
-    scene.add(spark);
-    particles3D.push({
-      mesh: spark,
-      vx: (Math.random() - 0.5) * 0.22,
-      vy: Math.random() * 0.2,
-      vz: (Math.random() - 0.5) * 0.22,
-      life: 20
+function spawnDustPuff(x, y) {
+  for (let i = 0; i < 5; i++) {
+    dustPuffs.push({
+      x: x + (Math.random() - 0.5) * 24,
+      y: y - Math.random() * 6,
+      vx: (Math.random() - 0.5) * 4,
+      vy: -Math.random() * 1.8,
+      r: 6 + Math.random() * 8,
+      life: 18
     });
   }
 }
 
-function spawnShockwaveRing(x, y, hexColor) {
-  const geo = new THREE.RingGeometry(0.2, 0.45, 24);
-  const mat = new THREE.MeshBasicMaterial({ color: hexColor, side: THREE.DoubleSide, transparent: true, opacity: 0.9 });
-  const ring = new THREE.Mesh(geo, mat);
-  ring.rotation.x = Math.PI / 2;
-  ring.position.set(x, y, 0);
-  scene.add(ring);
-  shockwaves3D.push({ mesh: ring, scale: 1, life: 18 });
-}
+function drawArenaBackground() {
+  const stg = STAGES[stageIndex];
 
-function showComboBadge(hits, totalDmg) {
-  const el = document.getElementById('combo-popup');
-  el.innerHTML = `HIT: ${hits}<br><span style="color:#ff4757;font-size:13px;">DAMAGE: ${totalDmg}</span><br><span style="font-size:24px;color:#ffa502;">${hits}!</span>`;
-  el.classList.remove('hidden');
-  clearTimeout(comboTimeout);
-  comboTimeout = setTimeout(() => {
-    comboCount = 0;
-    comboDamageTotal = 0;
-    el.classList.add('hidden');
-  }, 1600);
+  // Pink/Crimson Sky Gradient (Matches Video!)
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
+  skyGrad.addColorStop(0, stg.skyTop);
+  skyGrad.addColorStop(1, stg.skyBot);
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, CW, GROUND_Y);
+
+  // Background Silhouette: Torii Gate, Pagoda Roof & Giant Martial Artist Statue (Matches Video!)
+  ctx.fillStyle = stg.silhouette;
+  ctx.globalAlpha = 0.35;
+
+  // Left Torii Gate
+  const tx = CW * 0.25;
+  ctx.fillRect(tx - 70, GROUND_Y - 220, 14, 220);
+  ctx.fillRect(tx + 56, GROUND_Y - 220, 14, 220);
+  ctx.fillRect(tx - 95, GROUND_Y - 230, 190, 16);
+  ctx.fillRect(tx - 80, GROUND_Y - 195, 160, 12);
+
+  // Center Giant Martial Artist Silhouette Statue
+  const sx = CW * 0.52;
+  ctx.beginPath();
+  ctx.arc(sx, GROUND_Y - 255, 22, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.lineWidth = 24;
+  ctx.strokeStyle = stg.silhouette;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  // Torso & Legs
+  ctx.moveTo(sx, GROUND_Y - 230);
+  ctx.lineTo(sx - 15, GROUND_Y - 120);
+  ctx.lineTo(sx - 55, GROUND_Y);
+  ctx.moveTo(sx - 15, GROUND_Y - 120);
+  ctx.lineTo(sx + 40, GROUND_Y);
+  // Giant Raised Martial Arts Arms
+  ctx.moveTo(sx - 85, GROUND_Y - 190);
+  ctx.lineTo(sx, GROUND_Y - 215);
+  ctx.lineTo(sx + 95, GROUND_Y - 265);
+  ctx.stroke();
+
+  // Right Torii Gate
+  const rx = CW * 0.82;
+  ctx.fillRect(rx - 55, GROUND_Y - 170, 12, 170);
+  ctx.fillRect(rx + 45, GROUND_Y - 170, 12, 170);
+  ctx.fillRect(rx - 75, GROUND_Y - 180, 150, 14);
+
+  ctx.globalAlpha = 1.0;
+
+  // Ground Floor
+  const flGrad = ctx.createLinearGradient(0, GROUND_Y, 0, CH);
+  flGrad.addColorStop(0, stg.groundTop);
+  flGrad.addColorStop(1, stg.groundBot);
+  ctx.fillStyle = flGrad;
+  ctx.fillRect(0, GROUND_Y, CW, CH - GROUND_Y);
+
+  ctx.fillStyle = '#2b0d12';
+  ctx.fillRect(0, GROUND_Y - 2, CW, 4);
 }
 
 /* ============================================================================
-   4. BEST-OF-3 ROUNDS MANAGEMENT
+   5. MATCH & ROUND FLOW
 ============================================================================ */
 function startBestOf3Match() {
-  document.getElementById('three-canvas-container').classList.remove('hidden');
-  document.getElementById('dmg-float-layer').classList.remove('hidden');
+  document.getElementById('arena-canvas').classList.remove('hidden');
   document.getElementById('fight-hud').classList.remove('hidden');
   document.getElementById('touch-controls').classList.remove('hidden');
 
+  resizeArenaCanvas();
   currentRound = 1;
   p1RoundWins = 0;
   p2RoundWins = 0;
   updateRoundDots();
-
-  initThreeWorld();
-  resize3DViewport();
   startSingleRound();
 }
 
 function startSingleRound() {
-  if (p1Model) scene.remove(p1Model.root);
-  if (p2Model) scene.remove(p2Model.root);
-
-  p1Model = new Fighter3D(selectedHero, -2.8, 1, scene);
-  p2Model = new Fighter3D(selectedEnemy, 2.8, -1, scene);
+  p1 = new CelFighter(selectedHero, CW * 0.28, 1, true);
+  p2 = new CelFighter(selectedEnemy, CW * 0.72, -1, false);
+  projectiles = [];
+  starbursts = [];
+  dustPuffs = [];
 
   document.getElementById('p1-hud-avatar').innerHTML = buildAvatarSVG(selectedHero);
   document.getElementById('p2-hud-avatar').innerHTML = buildAvatarSVG(selectedEnemy);
+  document.getElementById('victory-banner-wrap').classList.add('hidden');
+  document.getElementById('combo-popup').classList.add('hidden');
 
-  matchTimer = 99;
+  matchTimer = 98;
   comboCount = 0;
-  comboDamageTotal = 0;
+  comboDmgAccum = 0;
   refreshFightHUD();
 
-  const banner = document.getElementById('round-banner');
-  banner.style.color = '#fff';
-  banner.innerText = `ROUND ${currentRound}`;
-  banner.classList.remove('hidden');
-  setTimeout(() => { banner.innerText = 'FIGHT!'; }, 900);
-  setTimeout(() => {
-    banner.classList.add('hidden');
-    gameState = 'FIGHT';
-  }, 1600);
-
+  gameState = 'FIGHT';
   clearInterval(matchClock);
   matchClock = setInterval(() => {
     if (gameState === 'FIGHT' && matchTimer > 0) {
       matchTimer--;
       document.getElementById('fight-timer').innerText = matchTimer;
-      if (matchTimer === 0) handleRoundEnd(p1Model.hp >= p2Model.hp);
+      if (matchTimer === 0) finishRound(p1.hp >= p2.hp);
     }
   }, 1000);
 }
@@ -1113,176 +1202,271 @@ function updateRoundDots() {
   document.getElementById('p2-dot-2').className = `r-dot ${p2RoundWins >= 2 ? 'won' : ''}`;
 }
 
-function refreshFightHUD() {
-  const p1Pct = (p1Model.hp / p1Model.maxHp) * 100;
-  const p2Pct = (p2Model.hp / p2Model.maxHp) * 100;
-
-  document.getElementById('p1-hud-name').innerText = p1Model.config.name;
-  document.getElementById('p1-hud-hp').innerText = `${p1Model.hp}/${p1Model.maxHp}`;
-  document.getElementById('p1-hp-fill').style.width = `${p1Pct}%`;
-  document.getElementById('p1-hp-delay').style.width = `${p1Pct}%`;
-  document.getElementById('p1-energy-fill').style.width = `${p1Model.energy}%`;
-
-  document.getElementById('p2-hud-name').innerText = p2Model.config.name;
-  document.getElementById('p2-hud-hp').innerText = `${p2Model.hp}/${p2Model.maxHp}`;
-  document.getElementById('p2-hp-fill').style.width = `${p2Pct}%`;
-  document.getElementById('p2-hp-delay').style.width = `${p2Pct}%`;
-  document.getElementById('p2-energy-fill').style.width = `${p2Model.energy}%`;
-
-  document.getElementById('btn-kick').classList.toggle('on-cooldown', p1Model.kickCooldown > 0);
-  document.getElementById('btn-skill').classList.toggle('on-cooldown', p1Model.energy < 60);
+function updateComboOverlay(enemyMaxHp) {
+  const popup = document.getElementById('combo-popup');
+  const pct = Math.min(100, Math.round((comboDmgAccum / enemyMaxHp) * 100));
+  document.getElementById('combo-hit-small').innerText = `HIT: ${comboCount}`;
+  document.getElementById('combo-dmg-small').innerText = `DAMAGE: ${pct}%`;
+  document.getElementById('combo-big-num').innerText = `${comboCount}!`;
+  popup.classList.remove('hidden');
 }
 
-function handleRoundEnd(p1WonRound) {
+function refreshFightHUD() {
+  if (!p1 || !p2) return;
+  const p1Pct = (p1.hp / p1.maxHp) * 100;
+  const p2Pct = (p2.hp / p2.maxHp) * 100;
+
+  document.getElementById('p1-hud-name').innerText = p1.config.name;
+  document.getElementById('p1-hud-hp').innerText = `${p1.hp}/${p1.maxHp}`;
+  document.getElementById('p1-hp-fill').style.width = `${p1Pct}%`;
+  document.getElementById('p1-hp-delay').style.width = `${p1Pct}%`;
+  document.getElementById('p1-bolt-1').className = `bolt-icon ${p1.bolts >= 1 ? 'charged' : ''}`;
+  document.getElementById('p1-bolt-2').className = `bolt-icon ${p1.bolts >= 2 ? 'charged' : ''}`;
+
+  document.getElementById('p2-hud-name').innerText = p2.config.name;
+  document.getElementById('p2-hud-hp').innerText = `${p2.hp}/${p2.maxHp}`;
+  document.getElementById('p2-hp-fill').style.width = `${p2Pct}%`;
+  document.getElementById('p2-hp-delay').style.width = `${p2Pct}%`;
+  document.getElementById('p2-bolt-1').className = `bolt-icon ${p2.bolts >= 1 ? 'charged' : ''}`;
+  document.getElementById('p2-bolt-2').className = `bolt-icon ${p2.bolts >= 2 ? 'charged' : ''}`;
+}
+
+function finishRound(p1Won) {
   gameState = 'ROUND_OVER';
   clearInterval(matchClock);
 
-  if (p1WonRound) p1RoundWins++;
-  else p2RoundWins++;
+  if (p1Won) {
+    p1RoundWins++;
+    p1.state = 'VICTORY';
+    p2.state = 'KO_DOWN';
+  } else {
+    p2RoundWins++;
+    p2.state = 'VICTORY';
+    p1.state = 'KO_DOWN';
+  }
   updateRoundDots();
 
-  const banner = document.getElementById('round-banner');
+  const bannerWrap = document.getElementById('victory-banner-wrap');
+  const mainTxt = document.getElementById('victory-main-text');
+  const subTxt = document.getElementById('victory-sub-text');
+
+  const winnerName = p1Won ? p1.config.name : p2.config.name;
+  const isFlawless = (p1Won && p1.hp === p1.maxHp) || (!p1Won && p2.hp === p2.maxHp);
+
+  mainTxt.innerText = `${winnerName} WINS!`;
+  subTxt.innerText = isFlawless ? 'FLAWLESS VICTORY! ✦' : (p1RoundWins >= 2 || p2RoundWins >= 2 ? 'MATCH VICTORY! +60 🪙' : `ROUND ${currentRound} COMPLETE!`);
+  bannerWrap.classList.remove('hidden');
 
   if (p1RoundWins >= 2 || p2RoundWins >= 2) {
-    const matchWon = p1RoundWins >= 2;
-    if (matchWon) {
-      coins += 80;
+    if (p1RoundWins >= 2) {
+      coins += 60;
       stageIndex = (stageIndex + 1) % STAGES.length;
-      banner.style.color = '#2ed573';
-      banner.innerText = `${p1Model.config.name} WINS! (+80 🪙)`;
-    } else {
-      banner.style.color = '#ff4757';
-      banner.innerText = `${p2Model.config.name} WINS!`;
     }
-    banner.classList.remove('hidden');
-    setTimeout(() => { returnToMenu(); }, 2500);
+    setTimeout(() => { returnToMenu(); }, 2700);
   } else {
     currentRound++;
-    banner.style.color = '#ffd32a';
-    banner.innerText = p1WonRound
-      ? `ROUND WON! GET READY FOR ROUND ${currentRound}`
-      : `ROUND LOST! GET READY FOR ROUND ${currentRound}`;
-    banner.classList.remove('hidden');
-    setTimeout(() => { startSingleRound(); }, 2000);
+    setTimeout(() => { startSingleRound(); }, 2300);
   }
 }
 
 /* ============================================================================
-   5. MAIN 3D ANIMATION LOOP (Menu 3D Turntable + Arena Fight)
+   6. MAIN ANIMATION LOOP (Menu Live Preview + Fight Loop)
 ============================================================================ */
-let aiThinkCooldown = 0;
+let menuPreviewDummy = null;
+let aiCooldown = 0;
 
-function animate3D() {
-  requestAnimationFrame(animate3D);
+function mainLoop() {
+  requestAnimationFrame(mainLoop);
 
-  // Rotate Live 3D Fighter in Menu Screen
-  if (menuRenderer && menuPreviewFighter && !document.getElementById('menu-screen').classList.contains('hidden')) {
-    menuPreviewFighter.root.rotation.y += 0.03;
-    menuPreviewFighter.armPivot.rotation.z = Math.sin(Date.now() * 0.005) * 0.25;
-    menuRenderer.render(menuScene, menuCamera);
+  // 1. Live Cel-Shaded Preview in Menu Screen
+  if (!document.getElementById('menu-screen').classList.contains('hidden')) {
+    if (!menuPreviewDummy || menuPreviewDummy.config.id !== selectedHero.id) {
+      menuPreviewDummy = new CelFighter(selectedHero, 60, 1, false);
+      menuPreviewDummy.y = 132;
+    }
+    menuPreviewDummy.animTime += 0.12;
+    pCtx.clearRect(0, 0, 120, 150);
+    menuPreviewDummy.draw(pCtx, 0.85);
+    return;
   }
 
   if (gameState !== 'FIGHT' && gameState !== 'ROUND_OVER') return;
 
-  if (gameState === 'FIGHT') {
-    if (input.left) p1Model.vx = -0.11;
-    if (input.right) p1Model.vx = 0.11;
-    if (input.up && p1Model.y === 0) p1Model.vy = 0.27;
-
-    if (aiThinkCooldown > 0) aiThinkCooldown--;
-    const dist = p2Model.x - p1Model.x;
-
-    if (Math.abs(dist) > 2.0) {
-      p2Model.vx = dist > 0 ? -0.075 : 0.075;
-    } else if (aiThinkCooldown === 0) {
-      const r = Math.random();
-      if (r < 0.55) {
-        p2Model.comboStrike(p1Model);
-        aiThinkCooldown = 28 - diffIndex * 4;
-      } else if (r < 0.75) {
-        p2Model.somersaultKick(p1Model);
-        aiThinkCooldown = 40;
-      } else if (r < 0.9 && p2Model.energy >= 60) {
-        p2Model.ultimateTornado(p1Model);
-        aiThinkCooldown = 50;
-      } else {
-        p2Model.vx = -p2Model.facing * 0.12;
-        aiThinkCooldown = 25;
-      }
-    }
-
-    p1Model.update(p2Model);
-    p2Model.update(p1Model);
-    refreshFightHUD();
-
-    if (p1Model.hp <= 0) handleRoundEnd(false);
-    else if (p2Model.hp <= 0) handleRoundEnd(true);
-  }
-
-  for (let i = particles3D.length - 1; i >= 0; i--) {
-    const p = particles3D[i];
-    p.mesh.position.x += p.vx;
-    p.mesh.position.y += p.vy;
-    p.mesh.position.z += p.vz;
-    p.life--;
-    if (p.life <= 0) {
-      scene.remove(p.mesh);
-      particles3D.splice(i, 1);
-    }
-  }
-
-  for (let i = shockwaves3D.length - 1; i >= 0; i--) {
-    const sw = shockwaves3D[i];
-    sw.scale += 0.32;
-    sw.mesh.scale.set(sw.scale, sw.scale, 1);
-    sw.mesh.material.opacity = sw.life / 18;
-    sw.life--;
-    if (sw.life <= 0) {
-      scene.remove(sw.mesh);
-      shockwaves3D.splice(i, 1);
-    }
-  }
-
-  for (let i = slashArcs3D.length - 1; i >= 0; i--) {
-    const arc = slashArcs3D[i];
-    arc.mesh.scale.multiplyScalar(1.08);
-    arc.mesh.material.opacity = arc.life / 10;
-    arc.life--;
-    if (arc.life <= 0) {
-      scene.remove(arc.mesh);
-      slashArcs3D.splice(i, 1);
-    }
-  }
-
-  const midX = (p1Model.x + p2Model.x) * 0.5;
-  const sep = Math.abs(p1Model.x - p2Model.x);
-  let shakeX = 0, shakeY = 0;
+  ctx.save();
   if (screenShake > 0) {
-    shakeX = (Math.random() - 0.5) * 0.28;
-    shakeY = (Math.random() - 0.5) * 0.28;
+    ctx.translate((Math.random() - 0.5) * screenShake * 2.2, (Math.random() - 0.5) * screenShake * 2.2);
     screenShake--;
   }
 
-  camera.position.x += (midX - camera.position.x) * 0.12 + shakeX;
-  camera.position.y = 3.1 + shakeY;
-  camera.position.z += (Math.max(10.2, Math.min(15.0, 9.2 + sep * 0.65)) - camera.position.z) * 0.1;
-  camera.lookAt(midX, 1.7, 0);
+  drawArenaBackground();
 
-  renderer.render(scene, camera);
+  if (gameState === 'FIGHT') {
+    // Player Movement
+    if (p1.state !== 'AIR_TUMBLE' && p1.state !== 'KO_DOWN') {
+      if (input.left) p1.vx = -6.2;
+      if (input.right) p1.vx = 6.2;
+      if (input.up && p1.y >= GROUND_Y) {
+        p1.vy = -14.5;
+        spawnDustPuff(p1.x, GROUND_Y);
+      }
+    }
+
+    // Tactical AI (Lumis / Enemy)
+    if (aiCooldown > 0) aiCooldown--;
+    const dist = p2.x - p1.x;
+    if (p2.state !== 'AIR_TUMBLE' && p2.state !== 'KO_DOWN') {
+      if (Math.abs(dist) > 130) {
+        p2.vx = dist > 0 ? -4.2 : 4.2;
+      } else if (aiCooldown === 0) {
+        if (Math.random() < 0.7) p2.attackPrimary(p1);
+        else p2.attackSecondary(p1);
+        aiCooldown = 34 - diffIndex * 5;
+      }
+    }
+
+    p1.update(p2);
+    p2.update(p1);
+
+    if (comboResetTimer > 0) {
+      comboResetTimer--;
+      if (comboResetTimer === 0) {
+        comboCount = 0;
+        comboDmgAccum = 0;
+        document.getElementById('combo-popup').classList.add('hidden');
+      }
+    }
+
+    if (p1.hp <= 0 || p2.hp <= 0) {
+      finishRound(p2.hp <= 0);
+    }
+  } else {
+    p1.update(p2);
+    p2.update(p1);
+  }
+
+  // Draw Dust Puffs
+  for (let i = dustPuffs.length - 1; i >= 0; i--) {
+    const d = dustPuffs[i];
+    d.x += d.vx;
+    d.y += d.vy;
+    d.life--;
+    ctx.fillStyle = `rgba(255, 255, 255, ${d.life / 18})`;
+    ctx.beginPath();
+    ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+    ctx.fill();
+    if (d.life <= 0) dustPuffs.splice(i, 1);
+  }
+
+  // Draw Fighters
+  p2.draw(ctx);
+  p1.draw(ctx);
+
+  // Update & Draw Boomerang Spinning Scythe Vortex Projectiles (0:12, 0:30)
+  for (let i = projectiles.length - 1; i >= 0; i--) {
+    const proj = projectiles[i];
+    proj.angle += 0.48;
+    proj.life--;
+    if (proj.hitCooldown > 0) proj.hitCooldown--;
+
+    if (!proj.returning) {
+      proj.x += proj.vx;
+      proj.vx *= 0.94;
+      if (Math.abs(proj.vx) < 1.5 || proj.life < 55) proj.returning = true;
+    } else {
+      const dx = proj.owner.x - proj.x;
+      const dy = (proj.owner.y - 55) - proj.y;
+      const d = Math.hypot(dx, dy);
+      proj.x += (dx / d) * 15;
+      proj.y += (dy / d) * 15;
+      if (d < 40 || proj.life <= 0) {
+        proj.owner.hasWeaponInHand = true;
+        projectiles.splice(i, 1);
+        continue;
+      }
+    }
+
+    // Check Hit on Target
+    if (proj.hitCooldown === 0 && Math.abs(proj.x - proj.target.x) < 75 && Math.abs(proj.y - (proj.target.y - 50)) < 75) {
+      proj.hitCooldown = 16;
+      proj.owner.applyHit(proj.target, proj.owner.config.dmg, proj.returning);
+    }
+
+    // Draw Blue/White Spinning Scythe Vortex (Exact match to 0:12 & 0:30!)
+    ctx.save();
+    ctx.translate(proj.x, proj.y);
+    ctx.rotate(proj.angle);
+
+    // Outer Cyan/WhiteSwirl Rings
+    ctx.strokeStyle = 'rgba(0, 242, 254, 0.75)';
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.arc(0, 0, 52, 0, Math.PI * 1.4);
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.arc(0, 0, 38, Math.PI * 0.5, Math.PI * 1.8);
+    ctx.stroke();
+
+    proj.owner.drawWeaponMesh(ctx);
+    ctx.restore();
+  }
+
+  // Draw Golden Starburst Impact Flashes & Screen Rays (Exact match to 0:04 & 0:12!)
+  for (let i = starbursts.length - 1; i >= 0; i--) {
+    const sb = starbursts[i];
+    sb.life--;
+
+    ctx.save();
+    ctx.translate(sb.x, sb.y);
+
+    // Long Screen-Spanning Impact Rays on Heavy Hits (like 0:04)
+    if (sb.heavy && sb.life > 6) {
+      ctx.strokeStyle = 'rgba(255, 235, 130, 0.75)';
+      ctx.lineWidth = 6;
+      for (let r = 0; r < 6; r++) {
+        const ang = (r / 6) * Math.PI * 2 + 0.3;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(Math.cos(ang) * CW, Math.sin(ang) * CW);
+        ctx.stroke();
+      }
+    }
+
+    // Spiky Yellow/White Comic Starburst
+    ctx.fillStyle = '#fff9c4';
+    ctx.strokeStyle = '#ffeb3b';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    const spikes = sb.rays * 2;
+    for (let s = 0; s < spikes; s++) {
+      const rad = s % 2 === 0 ? sb.radius : sb.radius * 0.35;
+      const a = (s / spikes) * Math.PI * 2;
+      if (s === 0) ctx.moveTo(Math.cos(a) * rad, Math.sin(a) * rad);
+      else ctx.lineTo(Math.cos(a) * rad, Math.sin(a) * rad);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.restore();
+    if (sb.life <= 0) starbursts.splice(i, 1);
+  }
+
+  ctx.restore();
 }
 
 /* ============================================================================
-   6. PORTRAIT-AWARE JOYSTICK & BUTTON LISTENERS
+   7. PORTRAIT-AWARE JOYSTICK & BUTTON LISTENERS
 ============================================================================ */
 window.addEventListener('keydown', (e) => {
   const k = e.key.toLowerCase();
   if (k === 'a' || e.key === 'ArrowLeft') input.left = true;
   if (k === 'd' || e.key === 'ArrowRight') input.right = true;
   if (k === 'w' || e.key === 'ArrowUp') input.up = true;
-  if ((k === 'j' || k === ' ') && gameState === 'FIGHT') p1Model.comboStrike(p2Model);
-  if (k === 'u' && gameState === 'FIGHT') p1Model.somersaultKick(p2Model);
-  if (k === 'l' && gameState === 'FIGHT') p1Model.ultimateTornado(p2Model);
-  if (k === 'k' && gameState === 'FIGHT') p1Model.shadowDash();
+  if ((k === 'j' || k === ' ') && gameState === 'FIGHT') p1.attackPrimary(p2);
+  if ((k === 'k' || k === 'u' || k === 'l') && gameState === 'FIGHT') p1.attackSecondary(p2);
 });
 
 window.addEventListener('keyup', (e) => {
@@ -1314,8 +1498,8 @@ function moveJoystick(e) {
     dy = -rawDx;
   }
 
-  dx = Math.max(-34, Math.min(34, dx));
-  dy = Math.max(-34, Math.min(34, dy));
+  dx = Math.max(-36, Math.min(36, dx));
+  dy = Math.max(-36, Math.min(36, dy));
 
   joyKnob.style.transform = `translate(${dx}px, ${dy}px)`;
   input.left = dx < -10;
@@ -1332,19 +1516,13 @@ window.addEventListener('pointerup', () => {
 });
 
 document.getElementById('btn-attack').addEventListener('pointerdown', () => {
-  if (gameState === 'FIGHT') p1Model.comboStrike(p2Model);
+  if (gameState === 'FIGHT') p1.attackPrimary(p2);
 });
-document.getElementById('btn-kick').addEventListener('pointerdown', () => {
-  if (gameState === 'FIGHT') p1Model.somersaultKick(p2Model);
-});
-document.getElementById('btn-skill').addEventListener('pointerdown', () => {
-  if (gameState === 'FIGHT') p1Model.ultimateTornado(p2Model);
-});
-document.getElementById('btn-dash').addEventListener('pointerdown', () => {
-  if (gameState === 'FIGHT') p1Model.shadowDash();
+document.getElementById('btn-special').addEventListener('pointerdown', () => {
+  if (gameState === 'FIGHT') p1.attackSecondary(p2);
 });
 
-animate3D();
+mainLoop();
 </script>
 </body>
 </html>
