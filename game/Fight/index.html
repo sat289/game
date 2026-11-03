@@ -11,21 +11,18 @@
 <div id="viewport-wrapper">
   <div id="game-frame">
 
-    <!-- లెఫ్ట్ సైడ్ డాక్ (సౌండ్/మ్యూజిక్ టోగుల్ బటన్) -->
     <div class="side-dock">
       <div class="dock-icon" onclick="returnToMenu()" title="Back to Menu">&#8592;</div>
       <div class="dock-icon" onclick="forceFullscreenLandscape()" title="Fullscreen">&#9825;</div>
       <div class="dock-icon" id="dock-mute-btn" onclick="toggleAudioMute()" title="Mute/Unmute">&#128266;</div>
     </div>
 
-    <!-- 0. స్టార్ట్ గేట్ (ఫుల్‌స్క్రీన్ & ఆడియో ఎనేబుల్) -->
     <div id="start-gate-screen" class="screen">
       <div style="font-size:13px; color:#2ed573; font-weight:900; margin-bottom:8px;">🇮🇳 INDIA #1 TOP ACTION FIGHTING GAME</div>
       <div style="font-size:33px; font-weight:900; font-style:italic; margin-bottom:22px; text-shadow: 0 3px 10px rgba(0,0,0,0.8);">STICK KOMBAT: ULTIMATE EDITION</div>
       <button class="btn-enter-fullscreen" onclick="enterGameFullscreen()">▶ ENTER GAME (START AUDIO)</button>
     </div>
 
-    <!-- 1. సీగేమ్స్ స్ప్లాష్ స్క్రీన్ -->
     <div id="splash-screen" class="screen hidden">
       <svg class="octopus-logo" viewBox="0 0 100 100">
         <path d="M20,52 A30,30 0 0,1 80,52" fill="none" stroke="#fff" stroke-width="6"/>
@@ -44,7 +41,6 @@
       </div>
     </div>
 
-    <!-- 2. మెనూ స్క్రీన్ (రోస్టర్, గేమ్ మోడ్స్, అప్‌గ్రేడ్స్) -->
     <div id="menu-screen" class="screen hidden">
       <div class="menu-top-tabs">
         <div class="tab-icon-btn" id="mode-training" onclick="selectGameMode('TRAINING')">🥋 PRACTICE</div>
@@ -115,7 +111,6 @@
       </div>
     </div>
 
-    <!-- అన్‌లాక్ మోడల్ -->
     <div id="unlock-modal" class="modal-overlay hidden">
       <div class="unlock-card">
         <div class="unlock-close" onclick="closeUnlockModal()">✕</div>
@@ -126,7 +121,6 @@
       </div>
     </div>
 
-    <!-- పాజ్ మోడల్ -->
     <div id="pause-modal" class="modal-overlay hidden">
       <div class="unlock-card">
         <div class="unlock-title">GAME PAUSED</div>
@@ -137,8 +131,6 @@
       </div>
     </div>
 
-    <!-- 3. లోడింగ్ స్క్రీన్ -->
-    #loading-components-screen
     <div id="loading-components-screen" class="screen hidden">
       <div class="comp-text" id="comp-label">LOADING COMPONENTS: 100%</div>
       <div class="comp-bar-bg">
@@ -146,11 +138,9 @@
       </div>
     </div>
 
-    <!-- 4. ఫైట్ అరెనా & HUD -->
     <canvas id="arena-canvas" class="hidden"></canvas>
 
     <div id="fight-hud" class="hidden">
-      <!-- ప్లేయర్ 1 (REAPER) -->
       <div class="hud-side left">
         <div class="hud-portrait" id="p1-hud-avatar"></div>
         <div class="hud-bars">
@@ -175,13 +165,11 @@
         </div>
       </div>
 
-      <!-- టైమర్ -->
       <div class="hud-center">
         <div class="pause-icon" onclick="togglePauseMatch()">⏸</div>
         <div class="timer-digits" id="fight-timer">98</div>
       </div>
 
-      <!-- ప్లేయర్ 2 (LUMIS) -->
       <div class="hud-side right">
         <div class="hud-portrait" id="p2-hud-avatar"></div>
         <div class="hud-bars">
@@ -207,13 +195,11 @@
       </div>
     </div>
 
-    <!-- విక్టరీ బ్యానర్ -->
     <div id="victory-banner-wrap" class="hidden">
       <div class="victory-green-strip" id="victory-main-text">REAPER WINS!</div>
       <div class="flawless-sub" id="victory-sub-text">FLAWLESS VICTORY! ✦</div>
     </div>
 
-    <!-- కాంబో కౌంటర్ -->
     <div id="combo-popup" class="hidden">
       <div class="combo-summary-line" id="combo-hit-small">HIT: 5</div>
       <div class="combo-dmg-line" id="combo-dmg-small">DAMAGE: 30%</div>
@@ -221,7 +207,6 @@
       <div class="combo-big-hit" id="combo-big-num">6!</div>
     </div>
 
-    <!-- టచ్ కంట్రోల్స్ -->
     <div id="touch-controls" class="hidden">
       <div class="joystick-base" id="joy-base">
         <div class="joystick-knob" id="joy-knob"></div>
@@ -245,7 +230,7 @@
 
 <script>
 /* ============================================================================
-   అడ్వాన్స్‌డ్ వెబ్ ఆడియో సింథసైజర్ (సాఫ్ట్ & క్లీన్ సౌండ్స్ + BGM)
+   సాఫ్ట్ & క్లీన్ ఆడియో ఇంజిన్ (సాఫ్ట్ స్లాష్ & బ్రైట్ BGM)
 ============================================================================ */
 let audioCtx = null;
 let audioMuted = false;
@@ -279,72 +264,58 @@ function playSFX(type) {
     const gain = audioCtx.createGain();
     osc.type = 'sine';
     osc.frequency.setValueAtTime(type === 'COIN' ? 1046.5 : 587.33, now);
-    gain.gain.setValueAtTime(0.08, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+    gain.gain.setValueAtTime(0.06, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
     osc.connect(gain);
     gain.connect(audioCtx.destination);
     osc.start(now);
-    osc.stop(now + 0.18);
+    osc.stop(now + 0.15);
   } else if (type === 'SWING') {
-    // సాఫ్ట్ & క్లీన్ హూష్ సౌండ్
-    const bufferSize = audioCtx.sampleRate * 0.12;
+    const bufferSize = audioCtx.sampleRate * 0.1;
     const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
     const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * 0.5;
+    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * 0.4;
     const noise = audioCtx.createBufferSource();
     noise.buffer = buffer;
 
     const filter = audioCtx.createBiquadFilter();
     filter.type = 'bandpass';
-    filter.frequency.setValueAtTime(750, now);
-    filter.frequency.exponentialRampToValueAtTime(250, now + 0.12);
+    filter.frequency.setValueAtTime(800, now);
+    filter.frequency.exponentialRampToValueAtTime(300, now + 0.1);
 
     const gain = audioCtx.createGain();
-    gain.gain.setValueAtTime(0.12, now);
-    gain.gain.exponentialRampToValueAtTime(0.005, now + 0.12);
+    gain.gain.setValueAtTime(0.08, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
 
     noise.connect(filter);
     filter.connect(gain);
     gain.connect(audioCtx.destination);
     noise.start(now);
   } else if (type === 'HIT' || type === 'HEAVY_HIT') {
-    // డార్క్ "డబ్-డబ్" సౌండ్స్ స్థానంలో ప్యూర్ మెటాలిక్ స్లాష్ & థాడ్ సౌండ్
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(type === 'HEAVY_HIT' ? 220 : 160, now);
-    osc.frequency.exponentialRampToValueAtTime(40, now + 0.15);
-    gain.gain.setValueAtTime(0.18, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start(now);
-    osc.stop(now + 0.15);
-  } else if (type === 'BOOMERANG') {
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(440, now);
-    osc.frequency.linearRampToValueAtTime(880, now + 0.12);
-    gain.gain.setValueAtTime(0.1, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+    osc.frequency.setValueAtTime(type === 'HEAVY_HIT' ? 300 : 200, now);
+    osc.frequency.exponentialRampToValueAtTime(60, now + 0.12);
+    gain.gain.setValueAtTime(0.12, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
     osc.connect(gain);
     gain.connect(audioCtx.destination);
     osc.start(now);
-    osc.stop(now + 0.25);
+    osc.stop(now + 0.12);
   } else if (type === 'GONG') {
-    const freqs = [261.63, 392.00, 523.25];
+    const freqs = [329.63, 440.00, 659.25];
     freqs.forEach((f) => {
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.type = 'sine';
       osc.frequency.setValueAtTime(f, now);
-      gain.gain.setValueAtTime(0.1, now);
-      gain.gain.exponentialRampToValueAtTime(0.0008, now + 1.2);
+      gain.gain.setValueAtTime(0.08, now);
+      gain.gain.exponentialRampToValueAtTime(0.0008, now + 1.0);
       osc.connect(gain);
       gain.connect(audioCtx.destination);
       osc.start(now);
-      osc.stop(now + 1.2);
+      osc.stop(now + 1.0);
     });
   }
 }
@@ -356,46 +327,29 @@ function startBGM(mode) {
   clearInterval(bgmInterval);
   bgmStep = 0;
 
-  const menuNotes = [329.63, 392.00, 440.00, 523.25, 587.33];
-  const fightBass = [110, 130.81, 146.83, 164.81];
-
-  const tempoMs = mode === 'FIGHT' ? 170 : 320;
+  const notes = mode === 'FIGHT' ? [220, 246.94, 261.63, 329.63, 392.00] : [329.63, 392.00, 440.00, 523.25];
+  const tempoMs = mode === 'FIGHT' ? 160 : 300;
 
   bgmInterval = setInterval(() => {
     if (audioMuted || !audioCtx || audioCtx.state !== 'running') return;
     const now = audioCtx.currentTime;
-
-    if (bgmMode === 'MENU') {
-      const freq = menuNotes[bgmStep % menuNotes.length];
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq, now);
-      gain.gain.setValueAtTime(0.04, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start(now);
-      osc.stop(now + 0.25);
-    } else if (bgmMode === 'FIGHT') {
-      const bFreq = fightBass[bgmStep % fightBass.length];
-      const bOsc = audioCtx.createOscillator();
-      const bGain = audioCtx.createGain();
-      bOsc.type = 'triangle';
-      bOsc.frequency.setValueAtTime(bFreq, now);
-      bGain.gain.setValueAtTime(0.05, now);
-      bGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
-      bOsc.connect(bGain);
-      bGain.connect(audioCtx.destination);
-      bOsc.start(now);
-      bOsc.stop(now + 0.14);
-    }
+    const freq = notes[bgmStep % notes.length];
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(freq, now);
+    gain.gain.setValueAtTime(0.03, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.2);
     bgmStep++;
   }, tempoMs);
 }
 
 /* ============================================================================
-   ఫుల్‌స్క్రీన్ & రొటేషన్ మేనేజ్‌మెంట్
+   ఫుల్‌స్క్రీన్ & రొటేషన్
 ============================================================================ */
 async function forceFullscreenLandscape() {
   initAudioEngine();
@@ -426,7 +380,7 @@ function getLogicalDimensions() {
 }
 
 /* ============================================================================
-   16 ఫైటర్స్ రోస్టర్ & గేమ్ మోడ్స్
+   16 ఫైటర్స్ రోస్టర్
 ============================================================================ */
 const ROSTER = [
   { id: 'reaper', name: 'REAPER', color: '#00f2fe', eye: '#00ffaa', skin: '#0d1117', cape: '#0c1017', hair: null, headType: 'hood', weapon: 'SCYTHE', hp: 375, dmg: 12, unlocked: true, cost: 0 },
@@ -481,7 +435,7 @@ function buildAvatarSVG(f) {
 }
 
 /* ============================================================================
-   మెనూ & అప్‌గ్రేడ్ ఫంక్షన్స్
+   మెనూ ఫంక్షన్స్
 ============================================================================ */
 function runEntrySplash() {
   const fill = document.getElementById('splash-fill');
@@ -512,12 +466,6 @@ function selectGameMode(mode) {
   document.getElementById('mode-1p').classList.toggle('active', mode === '1P');
   document.getElementById('mode-tower').classList.toggle('active', mode === 'TOWER');
   document.getElementById('mode-2x2').classList.toggle('active', mode === '2X2');
-
-  const tag = document.getElementById('mode-showcase-tag');
-  if (mode === 'TOWER') tag.innerText = `TOWER FLOOR ${towerFloor}`;
-  else if (mode === '2X2') tag.innerText = '2V2 TAG TEAM';
-  else if (mode === 'TRAINING') tag.innerText = 'PRACTICE MODE';
-  else tag.innerText = '1 PLAYER MODE';
 }
 
 function upgradeSelectedHero() {
@@ -529,7 +477,7 @@ function upgradeSelectedHero() {
     playSFX('COIN');
     renderRosterMenu();
   } else {
-    alert('అప్‌గ్రేడ్ కొరకు 50 కాయిన్స్ కావలెను! కింది గ్రీన్ బోనస్ బటన్ నొక్కండి.');
+    alert('కాయిన్స్ సరిపోవు!');
   }
 }
 
@@ -663,7 +611,7 @@ function returnToMenu() {
 }
 
 /* ============================================================================
-   ఫైట్ అరెనా & యానిమేషన్ ఇంజిన్
+   ఫైట్ ఇంజిన్ & ఫైటర్స్ డ్రా చేయడం (Corrected Rendering)
 ============================================================================ */
 const arenaCanvas = document.getElementById('arena-canvas');
 const ctx = arenaCanvas.getContext('2d');
@@ -687,6 +635,7 @@ window.addEventListener('resize', resizeArenaCanvas);
 let p1, p2;
 let p1TagPartnerUsed = false;
 let p2TagPartnerUsed = false;
+let gameState = 'MENU';
 let matchTimer = 98;
 let matchClock = null;
 let currentRound = 1;
@@ -702,7 +651,7 @@ let slowMoFrames = 0;
 let starbursts = [];
 let dustPuffs = [];
 let projectiles = [];
-let lanterns = []; // బ్యాక్‌గ్రౌండ్ యానిమేషన్ కోసం ఫ్లోటింగ్ ల్యాంట్రన్స్
+let lanterns = [];
 
 for (let i = 0; i < 8; i++) {
   lanterns.push({
@@ -1070,7 +1019,7 @@ class CelFighter {
 }
 
 /* ============================================================================
-   విజువల్ ఎఫెక్ట్స్ & అట్రాక్టివ్ బ్యాక్‌గ్రౌండ్ యానిమేషన్
+   విజువల్ ఎఫెక్ట్స్ & అరెనా బ్యాక్‌గ్రౌండ్
 ============================================================================ */
 function spawnStarburst(x, y, isHeavy) {
   starbursts.push({
@@ -1104,7 +1053,6 @@ function drawArenaBackground() {
   ctx.fillStyle = skyGrad;
   ctx.fillRect(0, 0, CW, GROUND_Y);
 
-  // బ్యాక్‌గ్రౌండ్ లో ఫ్లోటింగ్ ల్యాంట్రన్స్ (అట్రాక్టివ్ యానిమేషన్)
   ctx.fillStyle = '#ffd32a';
   lanterns.forEach(l => {
     l.y -= l.speedY;
@@ -1140,7 +1088,7 @@ function drawArenaBackground() {
 }
 
 /* ============================================================================
-   మ్యాచ్ & రౌండ్ ఫ్లో
+   మ్యాచ్ మేనేజ్‌మెంట్
 ============================================================================ */
 function startBestOf3Match() {
   document.getElementById('arena-canvas').classList.remove('hidden');
@@ -1229,7 +1177,7 @@ function finishRound(p1Won) {
       p1TagPartnerUsed = true;
       const partner = ROSTER[2];
       p1 = new CelFighter(partner, CW * 0.2, 1, true);
-      p1.y = 80;
+      p1.y = GROUND_Y;
       document.getElementById('p1-hud-avatar').innerHTML = buildAvatarSVG(partner);
       playSFX('GONG');
       refreshFightHUD();
@@ -1238,7 +1186,7 @@ function finishRound(p1Won) {
       p2TagPartnerUsed = true;
       const partner = ROSTER[3];
       p2 = new CelFighter(partner, CW * 0.8, -1, false);
-      p2.y = 80;
+      p2.y = GROUND_Y;
       document.getElementById('p2-hud-avatar').innerHTML = buildAvatarSVG(partner);
       playSFX('GONG');
       refreshFightHUD();
@@ -1287,7 +1235,7 @@ function finishRound(p1Won) {
 }
 
 /* ============================================================================
-   మెయిన్ యానిమేషన్ లూప్
+   మెయిన్ లూప్
 ============================================================================ */
 let menuPreviewDummy = null;
 let aiCooldown = 0;
@@ -1435,7 +1383,7 @@ function mainLoop() {
 }
 
 /* ============================================================================
-   టచ్ & కీబోర్డ్ కంట్రోల్స్
+   కంట్రోల్స్
 ============================================================================ */
 window.addEventListener('keydown', (e) => {
   const k = e.key.toLowerCase();
