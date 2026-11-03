@@ -8,13 +8,13 @@
 </head>
 <body>
 
-<div id="viewport-wrapper"> 
+<div id="viewport-wrapper">
   <div id="game-frame">
 
     <div class="side-dock">
       <div class="dock-icon" onclick="returnToMenu()" title="Back to Menu">&#8592;</div>
       <div class="dock-icon" onclick="forceFullscreenLandscape()" title="Fullscreen">&#9825;</div>
-      <div class="dock-icon" id="dock-mute-btn" onclick="toggleAudioMute()" title="Mute/Unmute">&#128266;</div>
+      <div class="dock-icon" id="dock-mute-btn" onclick="toggleAudioMute()" title="Mute/Unmute">🔊</div>
     </div>
 
     <div id="start-gate-screen" class="screen">
@@ -229,9 +229,6 @@
 </div>
 
 <script>
-/* ============================================================================
-   సాఫ్ట్ & క్లీన్ ఆడియో ఇంజిన్ (సాఫ్ట్ స్లాష్ & బ్రైట్ BGM)
-============================================================================ */
 let audioCtx = null;
 let audioMuted = false;
 let bgmInterval = null;
@@ -348,9 +345,6 @@ function startBGM(mode) {
   }, tempoMs);
 }
 
-/* ============================================================================
-   ఫుల్‌స్క్రీన్ & రొటేషన్
-============================================================================ */
 async function forceFullscreenLandscape() {
   initAudioEngine();
   try {
@@ -379,9 +373,6 @@ function getLogicalDimensions() {
   return { width: Math.max(w, h), height: Math.min(w, h) };
 }
 
-/* ============================================================================
-   16 ఫైటర్స్ రోస్టర్
-============================================================================ */
 const ROSTER = [
   { id: 'reaper', name: 'REAPER', color: '#00f2fe', eye: '#00ffaa', skin: '#0d1117', cape: '#0c1017', hair: null, headType: 'hood', weapon: 'SCYTHE', hp: 375, dmg: 12, unlocked: true, cost: 0 },
   { id: 'lumis', name: 'LUMIS', color: '#c56cf0', eye: '#ffeb3b', skin: '#9b59b6', cape: null, hair: '#f5f6fa', headType: 'longhair', weapon: 'CLAWS', hp: 260, dmg: 11, unlocked: true, cost: 0 },
@@ -434,9 +425,6 @@ function buildAvatarSVG(f) {
   return `<svg viewBox="0 0 80 80"><defs><radialGradient id="grad-${f.id}" cx="50%" cy="45%" r="55%"><stop offset="0%" stop-color="${f.color}" stop-opacity="0.85"/><stop offset="100%" stop-color="#141c29" stop-opacity="1"/></radialGradient></defs><circle cx="40" cy="40" r="39" fill="url(#grad-${f.id})"/>${headArt}</svg>`;
 }
 
-/* ============================================================================
-   మెనూ ఫంక్షన్స్
-============================================================================ */
 function runEntrySplash() {
   const fill = document.getElementById('splash-fill');
   const status = document.getElementById('splash-status');
@@ -610,9 +598,6 @@ function returnToMenu() {
   }
 }
 
-/* ============================================================================
-   ఫైట్ ఇంజిన్ & ఫైటర్స్ డ్రా చేయడం (Corrected Rendering)
-============================================================================ */
 const arenaCanvas = document.getElementById('arena-canvas');
 const ctx = arenaCanvas.getContext('2d');
 const previewCanvas = document.getElementById('menu-preview-canvas');
@@ -836,6 +821,7 @@ class CelFighter {
     refreshFightHUD();
   }
 
+  /* Fixed Draw Method to ensure Avatars/Fighters render completely clear */
   draw(c, scale = 1) {
     c.save();
     c.translate(this.x, this.y);
@@ -855,7 +841,7 @@ class CelFighter {
       c.fill(); c.stroke();
     }
 
-    c.fillStyle = 'rgba(0, 0, 0, 0.35)';
+    c.fillStyle = 'rgba(0, 0, 0, 0.4)';
     c.beginPath();
     c.ellipse(0, 2, 28, 6, 0, 0, Math.PI * 2);
     c.fill();
@@ -962,7 +948,7 @@ class CelFighter {
 
       if (isAttacking) {
         c.save();
-        c.strokeStyle = 'rgba(200, 245, 255, 0.75)';
+        c.strokeStyle = 'rgba(200, 245, 255, 0.85)';
         c.lineWidth = 18;
         c.beginPath();
         c.arc(0, 0, 68, -1.1, 1.1);
@@ -1018,9 +1004,6 @@ class CelFighter {
   }
 }
 
-/* ============================================================================
-   విజువల్ ఎఫెక్ట్స్ & అరెనా బ్యాక్‌గ్రౌండ్
-============================================================================ */
 function spawnStarburst(x, y, isHeavy) {
   starbursts.push({
     x, y,
@@ -1087,9 +1070,6 @@ function drawArenaBackground() {
   ctx.fillRect(0, GROUND_Y - 2, CW, 4);
 }
 
-/* ============================================================================
-   మ్యాచ్ మేనేజ్‌మెంట్
-============================================================================ */
 function startBestOf3Match() {
   document.getElementById('arena-canvas').classList.remove('hidden');
   document.getElementById('fight-hud').classList.remove('hidden');
@@ -1234,9 +1214,6 @@ function finishRound(p1Won) {
   }
 }
 
-/* ============================================================================
-   మెయిన్ లూప్
-============================================================================ */
 let menuPreviewDummy = null;
 let aiCooldown = 0;
 let slowMoToggle = 0;
@@ -1382,9 +1359,6 @@ function mainLoop() {
   ctx.restore();
 }
 
-/* ============================================================================
-   కంట్రోల్స్
-============================================================================ */
 window.addEventListener('keydown', (e) => {
   const k = e.key.toLowerCase();
   if (k === 'a' || e.key === 'ArrowLeft') input.left = true;
