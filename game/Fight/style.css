@@ -4,62 +4,86 @@
   padding: 0;
   user-select: none;
   -webkit-user-select: none;
+  -webkit-touch-callout: none;
   font-family: 'Segoe UI', Impact, sans-serif;
 }
 
-body {
-  background: #060709;
+html, body {
+  width: 100%;
+  height: 100%;
+  background: #040507;
   color: #fff;
+  overflow: hidden;
+  touch-action: none;
+}
+
+/* ==========================================================================
+   AUTO LANDSCAPE ROTATION (Movie Fullscreen Mode on Portrait Mobile Phones)
+   ========================================================================== */
+#viewport-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #000;
+  overflow: hidden;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
-  overflow: hidden;
+}
+
+/* If phone is held vertically (Portrait), rotate entire game 90deg like a movie player */
+@media screen and (orientation: portrait) {
+  #viewport-wrapper {
+    width: 100vh;
+    height: 100vw;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(90deg);
+  }
 }
 
 #game-frame {
   position: relative;
-  width: 920px;
-  height: 500px;
+  width: 100%;
+  height: 100%;
   background: #000;
-  border-radius: 16px;
-  border: 3px solid #252830;
   overflow: hidden;
-  box-shadow: 0 15px 45px rgba(0, 0, 0, 0.9);
 }
 
-/* Left Floating Dock from Video */
+/* Left Floating Dock (Matches Video) */
 .side-dock {
   position: absolute;
   left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  width: 38px;
-  height: 155px;
-  background: rgba(35, 38, 45, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  width: 36px;
+  height: 150px;
+  background: rgba(30, 34, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 20px;
   display: flex;
   flex-direction: column;
   justify-content: space-around;
   align-items: center;
-  padding: 12px 0;
-  z-index: 50;
+  padding: 10px 0;
+  z-index: 90;
   backdrop-filter: blur(6px);
 }
 
 .dock-icon {
-  color: #9aa0a6;
+  color: #b0b8c4;
   font-size: 16px;
   cursor: pointer;
-  transition: 0.2s;
+  transition: 0.15s;
 }
-.dock-icon:hover {
-  color: #fff;
-  transform: scale(1.15);
+.dock-icon:active {
+  color: #39ff14;
+  transform: scale(1.2);
 }
 
-/* Screens */
+/* Common Screen Layout */
 .screen {
   position: absolute;
   inset: 0;
@@ -74,30 +98,64 @@ body {
   display: none !important;
 }
 
-/* 1. SeaGames Splash Screen */
+/* 0. INITIAL "ENTER FULLSCREEN GAME" OVERLAY */
+#start-gate-screen {
+  background: radial-gradient(circle, #183642 0%, #05080c 100%);
+  z-index: 100;
+  text-align: center;
+  padding: 20px;
+}
+
+.gate-badge {
+  font-size: 13px;
+  color: #8fff00;
+  letter-spacing: 2px;
+  font-weight: 900;
+  margin-bottom: 8px;
+}
+
+.gate-title {
+  font-size: 34px;
+  font-weight: 900;
+  font-style: italic;
+  text-shadow: 0 4px 15px rgba(0,0,0,0.8);
+  margin-bottom: 22px;
+}
+
+.btn-enter-fullscreen {
+  background: linear-gradient(180deg, #4eff00 0%, #179e00 100%);
+  color: #000;
+  font-size: 20px;
+  font-weight: 900;
+  padding: 14px 38px;
+  border: 3px solid #b7ff94;
+  border-radius: 50px;
+  cursor: pointer;
+  box-shadow: 0 0 25px rgba(78, 255, 0, 0.6);
+  animation: pulseBtn 1.4s infinite ease-in-out;
+}
+
+@keyframes pulseBtn {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+
+/* 1. SEAGAMES SPLASH SCREEN */
 #splash-screen {
   background: #040406;
-  z-index: 40;
+  z-index: 50;
 }
 
 .octopus-logo {
-  width: 90px;
-  height: 90px;
+  width: 82px;
+  height: 82px;
   margin-bottom: 6px;
-  filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.2));
-  animation: pulseLogo 1.6s infinite ease-in-out;
-}
-
-@keyframes pulseLogo {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.06); }
 }
 
 .seagames-title {
   font-size: 18px;
   font-weight: 900;
-  letter-spacing: 0.5px;
-  margin-bottom: 45px;
+  margin-bottom: 32px;
 }
 
 .splash-loader-text {
@@ -108,8 +166,8 @@ body {
 }
 
 .splash-bar-bg {
-  width: 340px;
-  height: 10px;
+  width: 300px;
+  height: 9px;
   background: #2b2b33;
   border-radius: 8px;
   overflow: hidden;
@@ -123,25 +181,25 @@ body {
   transition: width 0.15s ease;
 }
 
-/* 2. Character Select Menu (Teal/Dark Radial Gradient from Video) */
+/* 2. CHARACTER SELECT MENU (No Overlap in Landscape) */
 #menu-screen {
   background: radial-gradient(circle at 50% 35%, #1e4d58 0%, #0d2128 55%, #071014 100%);
   justify-content: space-between;
-  padding: 18px 40px 20px 65px;
+  padding: 12px 35px 14px 62px;
 }
 
 .menu-top-tabs {
   display: flex;
   gap: 8px;
-  background: rgba(0, 0, 0, 0.45);
-  padding: 5px;
+  background: rgba(0, 0, 0, 0.48);
+  padding: 4px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .mode-tab {
-  padding: 6px 18px;
-  font-size: 13px;
+  padding: 5px 16px;
+  font-size: 12px;
   font-weight: 900;
   font-style: italic;
   color: #bbb;
@@ -156,32 +214,32 @@ body {
 }
 
 .selected-hero-title {
-  font-size: 20px;
+  font-size: 19px;
   font-weight: 900;
   font-style: italic;
   letter-spacing: 1.5px;
   color: #ffffff;
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
-  margin-top: 2px;
 }
 
-/* 10-Fighter Circular Roster (2 rows x 5 columns) */
 .roster-wrapper {
   display: flex;
   align-items: center;
-  gap: 28px;
+  justify-content: center;
+  gap: 22px;
+  width: 100%;
 }
 
 .roster-grid {
   display: grid;
-  grid-template-columns: repeat(5, 74px);
-  grid-template-rows: repeat(2, 74px);
-  gap: 14px;
+  grid-template-columns: repeat(5, 64px);
+  grid-template-rows: repeat(2, 64px);
+  gap: 11px;
 }
 
 .avatar-circle {
-  width: 74px;
-  height: 74px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
   background: radial-gradient(circle, #2e3b46 0%, #141a20 100%);
   border: 3px solid #556370;
@@ -190,24 +248,25 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  transition: transform 0.18s, border-color 0.18s, box-shadow 0.18s;
+  flex-shrink: 0;
   overflow: hidden;
+  transition: transform 0.15s, border-color 0.15s;
 }
 
 .avatar-circle svg {
-  width: 64px;
-  height: 64px;
+  width: 56px;
+  height: 56px;
 }
 
 .avatar-circle.selected-p1 {
   border-color: #39ff14;
-  box-shadow: 0 0 18px rgba(57, 255, 20, 0.75);
+  box-shadow: 0 0 15px rgba(57, 255, 20, 0.85);
   transform: scale(1.08);
 }
 
 .avatar-circle.selected-p2 {
   border-color: #ff2a2a;
-  box-shadow: 0 0 18px rgba(255, 42, 42, 0.75);
+  box-shadow: 0 0 15px rgba(255, 42, 42, 0.85);
 }
 
 .avatar-circle.locked {
@@ -217,33 +276,34 @@ body {
 .lock-badge {
   position: absolute;
   bottom: 2px;
-  right: 4px;
-  background: rgba(0, 0, 0, 0.85);
+  right: 2px;
+  background: rgba(0, 0, 0, 0.9);
   border: 1px solid #777;
   border-radius: 50%;
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 11px;
+  font-size: 10px;
 }
 
 .boss-emblem {
-  width: 68px;
-  height: 68px;
+  width: 62px;
+  height: 62px;
   border-radius: 50%;
   background: radial-gradient(circle, #3a1c54, #140824);
   border: 2px solid #7cff00;
-  box-shadow: 0 0 18px rgba(124, 255, 0, 0.4);
+  box-shadow: 0 0 15px rgba(124, 255, 0, 0.45);
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
-/* Bottom Controls Bar in Menu */
+/* Bottom Controls Bar */
 .menu-bottom-bar {
   width: 100%;
   display: flex;
@@ -253,12 +313,12 @@ body {
 
 .menu-left-icons {
   display: flex;
-  gap: 10px;
+  gap: 8px;
 }
 
 .square-btn {
-  width: 42px;
-  height: 42px;
+  width: 38px;
+  height: 38px;
   border-radius: 8px;
   background: #2769b0;
   border: 2px solid #57a5ff;
@@ -266,7 +326,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 18px;
+  font-size: 16px;
   cursor: pointer;
 }
 
@@ -274,11 +334,11 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .diff-title {
-  font-size: 10px;
+  font-size: 9px;
   color: #a5b8c2;
   letter-spacing: 1px;
 }
@@ -288,65 +348,62 @@ body {
   align-items: center;
   gap: 14px;
   background: rgba(0, 0, 0, 0.55);
-  padding: 3px 14px;
+  padding: 2px 14px;
   border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.15);
   font-weight: 900;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .diff-arrow {
   cursor: pointer;
   color: #39ff14;
-  font-size: 16px;
+  font-size: 15px;
 }
 
 .btn-play-main {
   background: linear-gradient(180deg, #42e66c 0%, #1ea846 100%);
   border: 2px solid #85ff9e;
   color: #fff;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 900;
-  padding: 7px 48px;
+  padding: 6px 44px;
   border-radius: 8px;
   cursor: pointer;
   box-shadow: 0 5px 18px rgba(46, 252, 113, 0.45);
   text-shadow: 0 2px 3px rgba(0, 0, 0, 0.6);
 }
-.btn-play-main:active {
-  transform: scale(0.95);
-}
 
 .coin-wallet {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   background: rgba(0, 0, 0, 0.65);
   border: 2px solid #3c4856;
-  padding: 6px 14px;
+  padding: 5px 12px;
   border-radius: 10px;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 900;
 }
 
 .coin-icon {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   background: radial-gradient(circle, #ffe600, #c88a00);
   border-radius: 50%;
   border: 2px solid #fff;
   display: inline-block;
 }
 
-/* 3. Component Loading Transition Screen (0:13 in video) */
+/* 3. LOADING COMPONENTS SCREEN */
 #loading-components-screen {
   background: #000000;
-  z-index: 35;
+  z-index: 45;
 }
 
 .comp-text {
   color: #b4ff39;
-  font-size: 15px;
+  font-size: 14px;
   font-style: italic;
   font-weight: 900;
   letter-spacing: 1px;
@@ -354,8 +411,8 @@ body {
 }
 
 .comp-bar-bg {
-  width: 76%;
-  height: 8px;
+  width: 75%;
+  height: 7px;
   background: #222;
 }
 
@@ -366,7 +423,7 @@ body {
   transition: width 0.1s linear;
 }
 
-/* 4. 3D Fight HUD & Controls */
+/* 4. 3D FIGHT ARENA & HUD */
 #three-canvas-container {
   position: absolute;
   inset: 0;
@@ -378,7 +435,7 @@ body {
   top: 0;
   left: 0;
   width: 100%;
-  padding: 14px 28px 0 65px;
+  padding: 10px 24px 0 58px;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -398,8 +455,8 @@ body {
 }
 
 .hud-portrait {
-  width: 52px;
-  height: 52px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   background: #182026;
   border: 2px solid #fff;
@@ -414,16 +471,16 @@ body {
 .hud-label-row {
   display: flex;
   justify-content: space-between;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 900;
   font-style: italic;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
   text-shadow: 1px 1px 3px #000;
 }
 
 .hp-outer {
   width: 100%;
-  height: 13px;
+  height: 12px;
   background: #2a0d10;
   border: 2px solid #000;
   transform: skewX(-18deg);
@@ -434,7 +491,7 @@ body {
   height: 100%;
   width: 100%;
   background: linear-gradient(90deg, #8fff00, #32d900);
-  transition: width 0.15s ease-out;
+  transition: width 0.12s ease-out;
 }
 
 .hud-side.right .hp-outer {
@@ -451,13 +508,13 @@ body {
 }
 
 .pause-icon {
-  font-size: 18px;
+  font-size: 15px;
   color: #ddd;
   letter-spacing: 2px;
 }
 
 .timer-digits {
-  font-size: 26px;
+  font-size: 24px;
   font-weight: 900;
   color: #b4ff00;
   text-shadow: 0 2px 5px #000;
@@ -466,23 +523,24 @@ body {
 /* Round Banner & Combo Popups */
 #round-banner {
   position: absolute;
-  top: 42%;
+  top: 40%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 44px;
+  font-size: 38px;
   font-weight: 900;
   font-style: italic;
   color: #fff;
-  text-shadow: 0 4px 15px rgba(0, 0, 0, 0.9);
+  text-shadow: 0 4px 15px rgba(0, 0, 0, 0.95);
   z-index: 18;
   pointer-events: none;
+  text-align: center;
 }
 
 #combo-popup {
   position: absolute;
-  left: 75px;
-  top: 135px;
-  font-size: 28px;
+  left: 68px;
+  top: 90px;
+  font-size: 24px;
   font-weight: 900;
   font-style: italic;
   color: #ffae00;
@@ -491,13 +549,13 @@ body {
   pointer-events: none;
 }
 
-/* Touch Controls Overlay */
+/* Touch Controls Overlay (Fixed Aspect Ratio Circle & Multi-Move Buttons) */
 #touch-controls {
   position: absolute;
-  bottom: 22px;
+  bottom: 16px;
   left: 0;
   width: 100%;
-  padding: 0 38px 0 85px;
+  padding: 0 28px 0 68px;
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
@@ -506,66 +564,82 @@ body {
 }
 
 .joystick-base {
-  width: 120px;
-  height: 120px;
+  width: 106px;
+  height: 106px;
+  aspect-ratio: 1 / 1;
+  flex-shrink: 0;
   border-radius: 50%;
   background: rgba(120, 130, 145, 0.32);
-  border: 3px solid rgba(20, 20, 25, 0.7);
+  border: 3px solid rgba(20, 20, 25, 0.75);
   position: relative;
   pointer-events: auto;
   touch-action: none;
 }
 
 .joystick-knob {
-  width: 52px;
-  height: 52px;
+  width: 46px;
+  height: 46px;
+  aspect-ratio: 1 / 1;
   border-radius: 50%;
   background: #e85d1a;
   position: absolute;
-  top: 31px;
-  left: 31px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+  top: 27px;
+  left: 27px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.65);
   pointer-events: none;
 }
 
 .combat-buttons {
   display: flex;
   align-items: flex-end;
-  gap: 18px;
+  gap: 12px;
   pointer-events: auto;
 }
 
 .ctrl-btn {
   border-radius: 50%;
+  aspect-ratio: 1 / 1;
+  flex-shrink: 0;
   border: 3px solid #15181c;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   cursor: pointer;
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.65);
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.7);
   transition: transform 0.08s;
+  font-weight: 900;
 }
 .ctrl-btn:active {
-  transform: scale(0.9);
+  transform: scale(0.88);
 }
 
-.btn-jump-kick {
-  width: 58px;
-  height: 58px;
+.btn-dash-roll {
+  width: 52px;
+  height: 52px;
   background: #737d8c;
+  color: #111;
+  font-size: 10px;
+}
+
+.btn-flip-kick {
+  width: 54px;
+  height: 54px;
+  background: #ff9f1a;
+  color: #111;
+  font-size: 10px;
 }
 
 .btn-heavy-skill {
-  width: 54px;
-  height: 54px;
+  width: 56px;
+  height: 56px;
   background: #a855f7;
   color: #fff;
-  font-weight: 900;
-  font-size: 12px;
+  font-size: 10px;
 }
 
 .btn-main-fist {
-  width: 84px;
-  height: 84px;
+  width: 78px;
+  height: 78px;
   background: #30b866;
 }
