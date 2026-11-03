@@ -1,281 +1,298 @@
 const container = document.getElementById('canvas-container');
 const playerBadge = document.getElementById('player-badge');
-const enemyBadge = document.getElementById('enemy-badge');
 const progressFill = document.getElementById('progress-fill');
+const levelBadge = document.getElementById('current-level-badge');
+const coinAmountEl = document.getElementById('coin-amount');
+const statusOverlay = document.getElementById('status-overlay');
+
+const modalOverlay = document.getElementById('modal-overlay');
+const modalTitle = document.getElementById('modal-title');
+const modalSubtitle = document.getElementById('modal-subtitle');
+const resumeBtn = document.getElementById('resume-btn');
+const restartBtn = document.getElementById('restart-btn');
+const pauseBtn = document.getElementById('pause-btn');
+const exitBtn = document.getElementById('exit-btn');
+const fullscreenBtn = document.getElementById('fullscreen-btn');
+
+// --- GAME STATE (50 LEVELS) ---
+const MAX_LEVELS = 50;
+let currentLevel = 1;
+let coins = 144;
+let playerCount = 25;
+let isRunning = false;
+let isPaused = false;
+let levelLength = 220;
 
 // --- 1. SCENE, CAMERA & RENDERER ---
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0xbce6ff, 0.0045);
+scene.fog = new THREE.FogExp2(0x9be2fe, 0.0038);
 
-const camera = new THREE.PerspectiveCamera(
-  45,
-  container.clientWidth / container.clientHeight,
-  0.1,
-  500
-);
-
+const camera = new THREE.PerspectiveCamera(48, window.innerWidth / window.innerHeight, 0.1, 600);
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-renderer.setSize(container.clientWidth, container.clientHeight);
+renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 container.appendChild(renderer.domElement);
 
 // --- 2. LIGHTING ---
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
-scene.add(ambientLight);
-
+scene.add(new THREE.AmbientLight(0xffffff, 0.78));
 const dirLight = new THREE.DirectionalLight(0xfffdf8, 0.65);
-dirLight.position.set(-25, 50, 30);
+dirLight.position.set(-25, 60, 35);
 dirLight.castShadow = true;
-dirLight.shadow.mapSize.width = 2048;
-dirLight.shadow.mapSize.height = 2048;
-dirLight.shadow.camera.near = 1;
-dirLight.shadow.camera.far = 200;
-const d = 60;
-dirLight.shadow.camera.left = -d;
-dirLight.shadow.camera.right = d;
-dirLight.shadow.camera.top = d;
-dirLight.shadow.camera.bottom = -d;
 scene.add(dirLight);
 
-// --- 3. TRACK / BRIDGE ---
-const TRACK_WIDTH = 16;
-const TRACK_LENGTH = 260;
+// --- 3. ANIMATED SURROUNDINGS (MOUNTAINS, CLOUDS, SNOW) ---
+const envGroup = new THREE.Group();
+scene.add(envGroup);
 
-const roadGroup = new THREE.Group();
-scene.add(roadGroup);
+const clouds = [];
+function createAnimatedSurroundings() {
+  // Clear previous surroundings
+  while (envGroup.children.length > 0) envGroup.remove(envGroup.children[0]);
+  clouds.length = 0;
 
-// Main White Road Surface
-const roadGeo = new THREE.BoxGeometry(TRACK_WIDTH, 2, TRACK_LENGTH);
-const roadMat = new THREE.MeshLambertMaterial({ color: 0xf4f7f9 });
-const roadMesh = new THREE.Mesh(roadGeo, roadMat);
-roadMesh.position.set(0, -1, -70);
-roadMesh.receiveShadow = true;
-roadGroup.add(roadMesh);
+  // Ice Mountains along the entire level length
+  for (let z = 20; z > -levelLength - 80; z -= 22) {
+    [-1, 1].forEach(side => {
+      const x = side * (16 + Math.random() * 16);
+      const height = 42 + Math.random() * 28;
+      const radius = 6 + Math.random() * 5;
 
-// Subtle Gray Curbs
-const curbGeo = new THREE.BoxGeometry(0.45, 2.25, TRACK_LENGTH);
-const curbMat = new THREE.MeshLambertMaterial({ color: 0xd0d9e0 });
+      const peakGroup = new THREE.Group();
+      const rock = new THREE.Mesh(
+        new THREE.ConeGeometry(radius, height, 6),
+        new THREE.MeshLambertMaterial({ color: 0x5ab1d8, flatShading: true })
+      );
+      const cap = new THREE.Mesh(
+        new THREE.ConeGeometry(radius * 0.46, height * 0.44, 6),
+        new THREE.MeshLambertMaterial({ color: 0xe6f8ff, flatShading: true })
+      );
+      cap.position.y = height * 0.285;
+      peakGroup.add(rock, cap);
+      peakGroup.position.set(x, height / 2 - 36, z + (Math.random() * 8 - 4));
+      peakGroup.rotation.y = Math.random() * Math.PI;
+      envGroup.add(peakGroup);
+    });
+  }
 
-const leftCurb = new THREE.Mesh(curbGeo, curbMat);
-leftCurb.position.set(-TRACK_WIDTH / 2 - 0.22, -0.95, -70);
-roadGroup.add(leftCurb);
-
-const rightCurb = new THREE.Mesh(curbGeo, curbMat);
-rightCurb.position.set(TRACK_WIDTH / 2 + 0.22, -0.95, -70);
-roadGroup.add(rightCurb);
-
-// --- 4. LOW-POLY ICE MOUNTAINS ---
-function createIcePeak(x, z, radius, height) {
-  const peakGroup = new THREE.Group();
-
-  // Base cyan/blue crystal rock
-  const rockGeo = new THREE.ConeGeometry(radius, height, 6);
-  const rockMat = new THREE.MeshLambertMaterial({
-    color: 0x67b7dc,
-    flatShading: true
-  });
-  const rock = new THREE.Mesh(rockGeo, rockMat);
-  peakGroup.add(rock);
-
-  // White/Ice snow cap on top
-  const capGeo = new THREE.ConeGeometry(radius * 0.46, height * 0.44, 6);
-  const capMat = new THREE.MeshLambertMaterial({
-    color: 0xdff6ff,
-    flatShading: true
-  });
-  const cap = new THREE.Mesh(capGeo, capMat);
-  cap.position.y = height * 0.285;
-  cap.rotation.y = 0.05;
-  peakGroup.add(cap);
-
-  peakGroup.position.set(x, height / 2 - 38, z);
-  peakGroup.rotation.y = Math.random() * Math.PI;
-  scene.add(peakGroup);
+  // Floating 3D Low-Poly Clouds
+  const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.88 });
+  for (let i = 0; i < 24; i++) {
+    const cloud = new THREE.Group();
+    for (let j = 0; j < 3; j++) {
+      const puff = new THREE.Mesh(new THREE.DodecahedronGeometry(2.2 + Math.random() * 1.5, 1), cloudMat);
+      puff.position.set(j * 2.1 - 2.1, Math.random() * 0.6, Math.random() * 0.8);
+      cloud.add(puff);
+    }
+    cloud.position.set(
+      (Math.random() > 0.5 ? 1 : -1) * (15 + Math.random() * 30),
+      14 + Math.random() * 12,
+      -Math.random() * (levelLength + 60)
+    );
+    cloud.userData = { speed: 0.02 + Math.random() * 0.03, baseY: cloud.position.y, phase: Math.random() * 6 };
+    envGroup.add(cloud);
+    clouds.push(cloud);
+  }
 }
 
-// Place mountains matching the video composition
-const mountainLayout = [
-  [-17, 10, 6.5, 42], [18, 12, 7, 41],
-  [-28, -5, 9, 55], [27, -12, 8.5, 50],
-  [-16, -28, 7, 48], [16, -35, 6.5, 46],
-  [-32, -48, 11, 64], [30, -55, 10, 60],
-  [-19, -75, 8.5, 54], [20, -82, 8, 52],
-  [-35, -105, 13, 68], [34, -110, 12, 65],
-  [-18, -130, 8, 50], [18, -135, 8, 50]
-];
-mountainLayout.forEach(m => createIcePeak(m[0], m[1], m[2], m[3]));
+// Falling Snow Particles
+const snowGeo = new THREE.BufferGeometry();
+const snowCount = 450;
+const snowPositions = new Float32Array(snowCount * 3);
+for (let i = 0; i < snowCount * 3; i += 3) {
+  snowPositions[i] = (Math.random() - 0.5) * 70;
+  snowPositions[i + 1] = Math.random() * 40;
+  snowPositions[i + 2] = -Math.random() * 260;
+}
+snowGeo.setAttribute('position', new THREE.BufferAttribute(snowPositions, 3));
+const snowParticles = new THREE.Points(
+  snowGeo,
+  new THREE.PointsMaterial({ color: 0xffffff, size: 0.45, transparent: true, opacity: 0.8 })
+);
+scene.add(snowParticles);
 
-// --- 5. GATES (+ / x MULTIPLIERS) ---
-const gates = [];
+// --- 4. LEVEL BUILDER (1 TO 50 LEVELS) ---
+const levelGroup = new THREE.Group();
+scene.add(levelGroup);
 
-function createGateTexture(label) {
+let gates = [];
+let obstacles = [];
+let enemyGroups = [];
+
+function createGateTexture(label, isPositive) {
   const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 256;
+  canvas.width = 256;
+  canvas.height = 128;
   const ctx = canvas.getContext('2d');
 
-  // Semi-transparent cyan forcefield
-  const grad = ctx.createLinearGradient(0, 0, 0, 256);
-  grad.addColorStop(0, 'rgba(60, 210, 255, 0.28)');
-  grad.addColorStop(1, 'rgba(0, 175, 255, 0.55)');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, 512, 256);
+  ctx.fillStyle = isPositive ? 'rgba(0, 185, 255, 0.48)' : 'rgba(244, 63, 94, 0.48)';
+  ctx.fillRect(0, 0, 256, 128);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+  ctx.fillRect(0, 0, 256, 6);
+  ctx.fillRect(0, 122, 256, 6);
 
-  // Top & bottom glowing border lines
-  ctx.fillStyle = 'rgba(180, 245, 255, 0.8)';
-  ctx.fillRect(0, 0, 512, 8);
-  ctx.fillRect(0, 248, 512, 8);
-
-  // Outlined 3D-style text
-  ctx.font = '900 130px "Segoe UI", Arial, sans-serif';
+  ctx.font = '900 64px "Segoe UI", Arial';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.lineWidth = 8;
-  ctx.strokeStyle = 'rgba(0, 110, 170, 0.85)';
-  ctx.strokeText(label, 256, 132);
-  ctx.fillStyle = 'rgba(210, 250, 255, 0.95)';
-  ctx.fillText(label, 256, 132);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(label, 128, 66);
 
   return new THREE.CanvasTexture(canvas);
 }
 
-function addGate(x, z, width, text, operation, value) {
-  const gateGroup = new THREE.Group();
-  const height = 3.6;
-
-  // Translucent Banner
-  const planeGeo = new THREE.PlaneGeometry(width, height);
-  const planeMat = new THREE.MeshBasicMaterial({
-    map: createGateTexture(text),
-    transparent: true,
-    side: THREE.DoubleSide,
-    depthWrite: false
-  });
-  const banner = new THREE.Mesh(planeGeo, planeMat);
-  banner.position.y = height / 2;
-  gateGroup.add(banner);
-
-  // Dark Gray Side Posts
-  const postGeo = new THREE.CylinderGeometry(0.28, 0.28, height + 0.3, 16);
-  const postMat = new THREE.MeshLambertMaterial({ color: 0x374151 });
-
-  const leftPost = new THREE.Mesh(postGeo, postMat);
-  leftPost.position.set(-width / 2, height / 2, 0);
-  gateGroup.add(leftPost);
-
-  const rightPost = new THREE.Mesh(postGeo, postMat);
-  rightPost.position.set(width / 2, height / 2, 0);
-  gateGroup.add(rightPost);
-
-  gateGroup.position.set(x, 0, z);
-  scene.add(gateGroup);
-
-  gates.push({
-    mesh: gateGroup,
-    x, z, width,
-    operation, value,
-    triggered: false
-  });
-}
-
-// Foreground Gate: "x3" on the left (matching 00:00 frame)
-addGate(-3.8, 17.5, 7.6, 'x3', 'multiply', 3);
-
-// Midground Gate: "+50" on the left
-addGate(-3.8, -14, 7.6, '+50', 'add', 50);
-
-// Far Double Gates: "+80" and "+70"
-addGate(-3.9, -68, 7.7, '+80', 'add', 80);
-addGate(3.9, -68, 7.7, '+70', 'add', 70);
-
-// --- 6. PURPLE ROTATING SAW BARRELS ---
-const obstacles = [];
-
-function createPurplePillars(zPos) {
-  const xs = [1.2, 3.6, 6.0];
-  xs.forEach(x => {
-    const pillarGroup = new THREE.Group();
-    const segments = 5;
-    const segHeight = 0.85;
-
-    for (let i = 0; i < segments; i++) {
-      // Purple Cylinder Drum
-      const cylGeo = new THREE.CylinderGeometry(0.82, 0.82, segHeight * 0.86, 16);
-      const cylMat = new THREE.MeshPhongMaterial({
-        color: 0x7e22ce,
-        shininess: 60
-      });
-      const cyl = new THREE.Mesh(cylGeo, cylMat);
-      cyl.position.y = i * segHeight + segHeight / 2;
-      cyl.castShadow = true;
-      pillarGroup.add(cyl);
-
-      // Metallic Saw-tooth Ring
-      const ringGeo = new THREE.CylinderGeometry(0.95, 0.95, 0.1, 10);
-      const ringMat = new THREE.MeshLambertMaterial({ color: 0xc084fc });
-      const ring = new THREE.Mesh(ringGeo, ringMat);
-      ring.position.y = i * segHeight + segHeight;
-      pillarGroup.add(ring);
-    }
-
-    // Yellow Top Cap
-    const topCapGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.15, 16);
-    const topCapMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
-    const topCap = new THREE.Mesh(topCapGeo, topCapMat);
-    topCap.position.y = segments * segHeight + 0.08;
-    pillarGroup.add(topCap);
-
-    pillarGroup.position.set(x, 0, zPos);
-    scene.add(pillarGroup);
-    obstacles.push(pillarGroup);
-  });
-}
-
-createPurplePillars(-11.5);
-
-// --- 7. STICKMAN CROWD GENERATOR ---
 function createStickmanMesh(colorHex) {
   const charGroup = new THREE.Group();
-  const mat = new THREE.MeshPhongMaterial({
-    color: colorHex,
-    shininess: 70
-  });
-
-  // Head
-  const headGeo = new THREE.SphereGeometry(0.32, 12, 12);
-  const head = new THREE.Mesh(headGeo, mat);
+  const mat = new THREE.MeshPhongMaterial({ color: colorHex, shininess: 65 });
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.32, 10, 10), mat);
   head.position.y = 1.25;
-  head.castShadow = true;
-  charGroup.add(head);
-
-  // Rounded Body
-  const bodyGeo = new THREE.CylinderGeometry(0.22, 0.28, 0.85, 10);
-  const body = new THREE.Mesh(bodyGeo, mat);
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.28, 0.85, 8), mat);
   body.position.y = 0.62;
-  body.castShadow = true;
-  charGroup.add(body);
-
+  charGroup.add(head, body);
   return charGroup;
 }
 
-// Player Blue Crowd (Starts with 67 stickmen as shown in the video)
-let playerCount = 67;
-const playerCrowdGroup = new THREE.Group();
-playerCrowdGroup.position.set(-1.9, 0, 5.5);
-scene.add(playerCrowdGroup);
+function buildLevel(lvl) {
+  while (levelGroup.children.length > 0) levelGroup.remove(levelGroup.children[0]);
+  gates = [];
+  obstacles = [];
+  enemyGroups = [];
 
+  // Level length increases with level number
+  levelLength = 180 + lvl * 12;
+  const TRACK_WIDTH = 15;
+
+  // Road & Curbs
+  const road = new THREE.Mesh(
+    new THREE.BoxGeometry(TRACK_WIDTH, 2, levelLength + 40),
+    new THREE.MeshLambertMaterial({ color: 0xf8fafc })
+  );
+  road.position.set(0, -1, -levelLength / 2 + 10);
+  levelGroup.add(road);
+
+  const curbGeo = new THREE.BoxGeometry(0.45, 2.3, levelLength + 40);
+  const curbMat = new THREE.MeshLambertMaterial({ color: 0xcbd5e1 });
+  const leftCurb = new THREE.Mesh(curbGeo, curbMat);
+  leftCurb.position.set(-TRACK_WIDTH / 2 - 0.22, -0.9, -levelLength / 2 + 10);
+  const rightCurb = new THREE.Mesh(curbGeo, curbMat);
+  rightCurb.position.set(TRACK_WIDTH / 2 + 0.22, -0.9, -levelLength / 2 + 10);
+  levelGroup.add(leftCurb, rightCurb);
+
+  // Finish Line Checkerboard
+  const finishGeo = new THREE.BoxGeometry(TRACK_WIDTH, 0.1, 4);
+  const finishMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+  const finishLine = new THREE.Mesh(finishGeo, finishMat);
+  finishLine.position.set(0, 0.05, -levelLength + 10);
+  levelGroup.add(finishLine);
+
+  // Spawn Gates, Spinning Purple Obstacles & Enemy Crowds dynamically
+  for (let z = -18; z > -levelLength + 28; z -= 32) {
+    // 1. Gates
+    const leftVal = Math.floor(10 + lvl * 3 + Math.random() * 25);
+    const rightMult = Math.random() > 0.65 ? 2 : 3;
+    spawnGate(-3.6, z, 7.0, `+${leftVal}`, 'add', leftVal);
+    spawnGate(3.6, z, 7.0, `x${rightMult}`, 'multiply', rightMult);
+
+    // 2. Purple Rotating Saw Pillars
+    const obsZ = z - 12;
+    const pillarCount = Math.min(3, 1 + Math.floor(lvl / 4));
+    for (let i = 0; i < pillarCount; i++) {
+      const px = (i - 1) * 3.4 + (Math.random() * 1.5 - 0.75);
+      const pillar = createPurplePillar(px, obsZ);
+      levelGroup.add(pillar);
+      obstacles.push(pillar);
+    }
+
+    // 3. Red Enemy Crowd Zone
+    if (z < -40) {
+      const enemyZ = z - 22;
+      const count = Math.min(60, 12 + lvl * 2);
+      spawnEnemyCrowd((Math.random() - 0.5) * 4, enemyZ, count);
+    }
+  }
+
+  createAnimatedSurroundings();
+}
+
+function spawnGate(x, z, width, text, operation, value) {
+  const gateGroup = new THREE.Group();
+  const height = 3.5;
+  const banner = new THREE.Mesh(
+    new THREE.PlaneGeometry(width, height),
+    new THREE.MeshBasicMaterial({
+      map: createGateTexture(text, true),
+      transparent: true,
+      side: THREE.DoubleSide,
+      depthWrite: false
+    })
+  );
+  banner.position.y = height / 2;
+  gateGroup.add(banner);
+
+  const postGeo = new THREE.CylinderGeometry(0.24, 0.24, height + 0.2, 12);
+  const postMat = new THREE.MeshLambertMaterial({ color: 0x334155 });
+  const lp = new THREE.Mesh(postGeo, postMat);
+  lp.position.set(-width / 2, height / 2, 0);
+  const rp = new THREE.Mesh(postGeo, postMat);
+  rp.position.set(width / 2, height / 2, 0);
+  gateGroup.add(lp, rp);
+
+  gateGroup.position.set(x, 0, z);
+  levelGroup.add(gateGroup);
+  gates.push({ mesh: gateGroup, x, z, width, operation, value, triggered: false });
+}
+
+function createPurplePillar(x, z) {
+  const pillarGroup = new THREE.Group();
+  for (let i = 0; i < 4; i++) {
+    const cyl = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.8, 0.8, 0.75, 14),
+      new THREE.MeshPhongMaterial({ color: 0x7e22ce })
+    );
+    cyl.position.y = i * 0.85 + 0.4;
+    const ring = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.95, 0.95, 0.1, 8),
+      new THREE.MeshLambertMaterial({ color: 0xd8b4fe })
+    );
+    ring.position.y = i * 0.85 + 0.8;
+    pillarGroup.add(cyl, ring);
+  }
+  pillarGroup.position.set(x, 0, z);
+  return pillarGroup;
+}
+
+function spawnEnemyCrowd(x, z, count) {
+  const group = new THREE.Group();
+  const disc = new THREE.Mesh(
+    new THREE.CircleGeometry(3.2, 24),
+    new THREE.MeshBasicMaterial({ color: 0xfca5a5, transparent: true, opacity: 0.5, side: THREE.DoubleSide })
+  );
+  disc.rotation.x = -Math.PI / 2;
+  disc.position.y = 0.03;
+  group.add(disc);
+
+  for (let i = 0; i < Math.min(count, 45); i++) {
+    const redMan = createStickmanMesh(0xef4444);
+    const r = 0.35 * Math.sqrt(i);
+    const a = i * 2.39996;
+    redMan.position.set(r * Math.cos(a), 0, r * Math.sin(a));
+    group.add(redMan);
+  }
+  group.position.set(x, 0, z);
+  levelGroup.add(group);
+  enemyGroups.push({ mesh: group, x, z, count, triggered: false });
+}
+
+// --- 5. PLAYER CROWD ---
+const playerCrowdGroup = new THREE.Group();
+scene.add(playerCrowdGroup);
 const playerStickmen = [];
 
 function rebuildPlayerCrowd(targetCount) {
-  targetCount = Math.max(0, Math.min(targetCount, 220)); // Cap for smooth FPS
-  while (playerStickmen.length < targetCount) {
+  const visualCap = Math.max(0, Math.min(targetCount, 180));
+  while (playerStickmen.length < visualCap) {
     const idx = playerStickmen.length;
-    const man = createStickmanMesh(0x38bdf8);
-
-    // Golden-angle phyllotaxis spiral for tight natural clustering
-    const radius = 0.36 * Math.sqrt(idx);
+    const man = createStickmanMesh(0x29b6f6);
+    const radius = 0.35 * Math.sqrt(idx);
     const theta = idx * 2.39996;
     man.userData = {
       baseX: radius * Math.cos(theta),
@@ -286,156 +303,213 @@ function rebuildPlayerCrowd(targetCount) {
     playerCrowdGroup.add(man);
     playerStickmen.push(man);
   }
-
-  while (playerStickmen.length > targetCount) {
-    const removed = playerStickmen.pop();
-    playerCrowdGroup.remove(removed);
+  while (playerStickmen.length > visualCap) {
+    playerCrowdGroup.remove(playerStickmen.pop());
   }
+  playerBadge.textContent = Math.max(0, targetCount);
 }
 
-rebuildPlayerCrowd(playerCount);
-
-// Red Enemy Crowd + Circular Red Arena Zone
-const enemyCrowdGroup = new THREE.Group();
-enemyCrowdGroup.position.set(0.3, 0, -42);
-scene.add(enemyCrowdGroup);
-
-// Red Target Ring on the Floor
-const ringGeo = new THREE.RingGeometry(3.4, 3.7, 32);
-const ringMat = new THREE.MeshBasicMaterial({
-  color: 0xf87171,
-  side: THREE.DoubleSide
-});
-const zoneRing = new THREE.Mesh(ringGeo, ringMat);
-zoneRing.rotation.x = -Math.PI / 2;
-zoneRing.position.y = 0.04;
-enemyCrowdGroup.add(zoneRing);
-
-const zoneDiscGeo = new THREE.CircleGeometry(3.4, 32);
-const zoneDiscMat = new THREE.MeshBasicMaterial({
-  color: 0xfecaca,
-  transparent: true,
-  opacity: 0.45,
-  side: THREE.DoubleSide
-});
-const zoneDisc = new THREE.Mesh(zoneDiscGeo, zoneDiscMat);
-zoneDisc.rotation.x = -Math.PI / 2;
-zoneDisc.position.y = 0.02;
-enemyCrowdGroup.add(zoneDisc);
-
-// Populate Red Stickmen
-let enemyCount = 35;
-for (let i = 0; i < enemyCount; i++) {
-  const redMan = createStickmanMesh(0xef4444);
-  const r = 0.34 * Math.sqrt(i);
-  const a = i * 2.39996;
-  redMan.position.set(r * Math.cos(a), 0, r * Math.sin(a));
-  redMan.userData = { phase: Math.random() * Math.PI * 2 };
-  enemyCrowdGroup.add(redMan);
+function resetLevelState() {
+  playerCount = 20 + currentLevel * 2;
+  playerCrowdGroup.position.set(0, 0, 8);
+  targetX = 0;
+  isRunning = false;
+  isPaused = false;
+  levelBadge.textContent = currentLevel;
+  progressFill.style.width = '0%';
+  statusOverlay.textContent = `Touch & Drag to Run (Level ${currentLevel} of ${MAX_LEVELS})`;
+  rebuildPlayerCrowd(playerCount);
+  buildLevel(currentLevel);
 }
 
-// Floating Pink '?' Mystery Box above track
-const boxGeo = new THREE.BoxGeometry(1.3, 1.3, 1.3);
-const boxMat = new THREE.MeshLambertMaterial({ color: 0xf472b6 });
-const mysteryBox = new THREE.Mesh(boxGeo, boxMat);
-mysteryBox.position.set(0.3, 6.2, -48);
-scene.add(mysteryBox);
+// --- 6. CONTROLS (STEERING, PAUSE, EXIT, FULLSCREEN) ---
+let targetX = 0;
 
-// --- 8. INTERACTIVITY & CAMERA CONTROLS ---
-let targetX = playerCrowdGroup.position.x;
-let isRunning = false;
+function handlePointerMove(clientX) {
+  if (isPaused) return;
+  const normX = (clientX / window.innerWidth) * 2 - 1;
+  targetX = Math.max(-5.5, Math.min(5.5, normX * 6.0));
+}
 
-window.addEventListener('mousemove', (e) => {
-  const rect = container.getBoundingClientRect();
-  if (e.clientX >= rect.left) {
-    const normX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    targetX = normX * 5.2;
+window.addEventListener('mousemove', e => handlePointerMove(e.clientX));
+window.addEventListener('mousedown', (e) => {
+  if (e.target.closest('#hud-top') || e.target.closest('#modal-overlay')) return;
+  if (!isPaused) isRunning = true;
+});
+
+window.addEventListener('touchstart', (e) => {
+  if (e.target.closest('#hud-top') || e.target.closest('#modal-overlay')) return;
+  if (!isPaused) isRunning = true;
+  handlePointerMove(e.touches[0].clientX);
+});
+window.addEventListener('touchmove', e => handlePointerMove(e.touches[0].clientX));
+
+// Top-Left Pause Button
+pauseBtn.addEventListener('click', () => {
+  isPaused = true;
+  modalTitle.textContent = 'Game Paused ⏸️';
+  modalSubtitle.textContent = `Level ${currentLevel} / ${MAX_LEVELS}`;
+  resumeBtn.textContent = 'Resume Game';
+  modalOverlay.classList.remove('hidden');
+});
+
+// Top-Left Exit Button
+exitBtn.addEventListener('click', () => {
+  isPaused = true;
+  modalTitle.textContent = 'Exit Game? 🚪';
+  modalSubtitle.textContent = `Current Progress: Level ${currentLevel} of ${MAX_LEVELS}`;
+  resumeBtn.textContent = 'Continue Playing';
+  modalOverlay.classList.remove('hidden');
+});
+
+// Top-Left Fullscreen Toggle Button
+fullscreenBtn.addEventListener('click', () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen().catch(() => {});
   }
 });
 
-window.addEventListener('mousedown', () => { isRunning = true; });
-window.addEventListener('touchstart', () => { isRunning = true; });
-window.addEventListener('touchmove', (e) => {
-  const rect = container.getBoundingClientRect();
-  const touch = e.touches[0];
-  const normX = ((touch.clientX - rect.left) / rect.width) * 2 - 1;
-  targetX = Math.max(-5.5, Math.min(5.5, normX * 5.5));
+resumeBtn.addEventListener('click', () => {
+  modalOverlay.classList.add('hidden');
+  isPaused = false;
+  if (playerCrowdGroup.position.z <= -levelLength + 12) {
+    // Advance to next level
+    currentLevel = currentLevel < MAX_LEVELS ? currentLevel + 1 : 1;
+    resetLevelState();
+  } else if (playerCount <= 0) {
+    resetLevelState();
+  }
 });
 
-// Helper to project 3D coordinates to 2D HUD screen coordinates
-function updateFloatingBadge(badgeEl, worldPos, yOffset) {
-  const pos = worldPos.clone();
-  pos.y += yOffset;
-  pos.project(camera);
+restartBtn.addEventListener('click', () => {
+  modalOverlay.classList.add('hidden');
+  resetLevelState();
+});
 
-  const halfW = container.clientWidth / 2;
-  const halfH = container.clientHeight / 2;
-
-  const screenX = (pos.x * halfW) + halfW;
-  const screenY = -(pos.y * halfH) + halfH;
-
-  badgeEl.style.left = `${screenX}px`;
-  badgeEl.style.top = `${screenY}px`;
-}
-
-// --- 9. ANIMATION LOOP ---
+// --- 7. MAIN ANIMATION LOOP ---
 const clock = new THREE.Clock();
+
+function updateBadgePosition() {
+  const pos = playerCrowdGroup.position.clone();
+  pos.y += 3.0;
+  pos.project(camera);
+  const x = (pos.x * 0.5 + 0.5) * window.innerWidth;
+  const y = (-(pos.y * 0.5) + 0.5) * window.innerHeight;
+  playerBadge.style.left = `${x}px`;
+  playerBadge.style.top = `${y}px`;
+}
 
 function animate() {
   requestAnimationFrame(animate);
   const elapsed = clock.getElapsedTime();
 
-  // Smooth horizontal steering
-  playerCrowdGroup.position.x += (targetX - playerCrowdGroup.position.x) * 0.1;
+  // Animate Floating Clouds & Snow
+  clouds.forEach(c => {
+    c.position.y = c.userData.baseY + Math.sin(elapsed * 1.5 + c.userData.phase) * 0.6;
+  });
 
-  // Optional forward movement when user clicks/touches
-  if (isRunning && playerCrowdGroup.position.z > -90) {
-    playerCrowdGroup.position.z -= 0.16;
-
-    // Update top level progress bar
-    const progress = Math.min(100, Math.max(15, ((20 - playerCrowdGroup.position.z) / 110) * 100));
-    progressFill.style.width = `${progress}%`;
+  const snowAttr = snowGeo.getAttribute('position');
+  for (let i = 1; i < snowAttr.count * 3; i += 3) {
+    snowAttr.array[i] -= 0.12;
+    if (snowAttr.array[i] < -5) snowAttr.array[i] = 38;
   }
+  snowAttr.needsUpdate = true;
 
-  // Check gate collisions
-  gates.forEach(g => {
-    if (!g.triggered && Math.abs(playerCrowdGroup.position.z - g.z) < 1.2) {
-      if (Math.abs(playerCrowdGroup.position.x - g.x) < g.width / 2 + 1.2) {
-        g.triggered = true;
-        g.mesh.visible = false;
-        if (g.operation === 'multiply') playerCount *= g.value;
-        if (g.operation === 'add') playerCount += g.value;
-        playerBadge.textContent = playerCount;
-        rebuildPlayerCrowd(playerCount);
+  // Rotate Obstacles
+  obstacles.forEach(p => { p.rotation.y += 0.05; });
+
+  if (!isPaused) {
+    playerCrowdGroup.position.x += (targetX - playerCrowdGroup.position.x) * 0.12;
+
+    if (isRunning) {
+      const speed = 0.24 + currentLevel * 0.004;
+      playerCrowdGroup.position.z -= speed;
+
+      // Update Progress Bar
+      const pct = Math.min(100, Math.max(0, ((8 - playerCrowdGroup.position.z) / (levelLength - 4)) * 100));
+      progressFill.style.width = `${pct}%`;
+
+      // Gate Collisions
+      gates.forEach(g => {
+        if (!g.triggered && Math.abs(playerCrowdGroup.position.z - g.z) < 1.2) {
+          if (Math.abs(playerCrowdGroup.position.x - g.x) < g.width / 2 + 1.0) {
+            g.triggered = true;
+            g.mesh.visible = false;
+            if (g.operation === 'multiply') playerCount *= g.value;
+            if (g.operation === 'add') playerCount += g.value;
+            rebuildPlayerCrowd(playerCount);
+          }
+        }
+      });
+
+      // Purple Saw Obstacle Collisions
+      obstacles.forEach(obs => {
+        if (
+          Math.abs(playerCrowdGroup.position.z - obs.position.z) < 1.1 &&
+          Math.abs(playerCrowdGroup.position.x - obs.position.x) < 1.8
+        ) {
+          playerCount = Math.max(0, playerCount - 1);
+          rebuildPlayerCrowd(playerCount);
+        }
+      });
+
+      // Enemy Crowd Collisions
+      enemyGroups.forEach(eg => {
+        if (!eg.triggered && Math.abs(playerCrowdGroup.position.z - eg.z) < 2.2) {
+          if (Math.abs(playerCrowdGroup.position.x - eg.x) < 3.8) {
+            eg.triggered = true;
+            eg.mesh.visible = false;
+            playerCount -= eg.count;
+            rebuildPlayerCrowd(playerCount);
+          }
+        }
+      });
+
+      // Check Game Over
+      if (playerCount <= 0) {
+        isPaused = true;
+        modalTitle.textContent = 'Level Failed! 💥';
+        modalSubtitle.textContent = `Try Level ${currentLevel} Again`;
+        resumeBtn.textContent = 'Retry Level';
+        modalOverlay.classList.remove('hidden');
+      }
+
+      // Check Level Complete
+      if (playerCrowdGroup.position.z <= -levelLength + 10) {
+        isPaused = true;
+        coins += 50 + currentLevel * 10;
+        coinAmountEl.textContent = coins;
+        modalTitle.textContent = `Level ${currentLevel} Complete! 🎉`;
+        modalSubtitle.textContent = currentLevel < MAX_LEVELS
+          ? `Ready for Level ${currentLevel + 1} / ${MAX_LEVELS}`
+          : 'You Beat All 50 Levels! 🏆';
+        resumeBtn.textContent = currentLevel < MAX_LEVELS ? 'Next Level ➔' : 'Play Again';
+        modalOverlay.classList.remove('hidden');
       }
     }
-  });
 
-  // Subtle idle/run bounce for stickmen
-  playerStickmen.forEach(man => {
-    man.position.y = Math.abs(Math.sin(elapsed * 8 + man.userData.phase)) * 0.22;
-  });
+    // Bounce Stickmen
+    playerStickmen.forEach(man => {
+      man.position.y = Math.abs(Math.sin(elapsed * 9 + man.userData.phase)) * 0.24;
+    });
+  }
 
-  // Rotate purple obstacle pillars and floating mystery box
-  obstacles.forEach(p => { p.rotation.y += 0.04; });
-  mysteryBox.rotation.y += 0.02;
-  mysteryBox.position.y = 6.2 + Math.sin(elapsed * 3) * 0.35;
+  // Follow Camera
+  camera.position.set(0, 15.5, playerCrowdGroup.position.z + 22.5);
+  camera.lookAt(0, 1.0, playerCrowdGroup.position.z - 20);
+  snowParticles.position.z = playerCrowdGroup.position.z;
 
-  // Keep camera locked at the exact angle from the screenshot
-  camera.position.set(0, 15.5, playerCrowdGroup.position.z + 23.5);
-  camera.lookAt(0, 1.0, playerCrowdGroup.position.z - 22);
-
-  // Sync 2D HTML number badge above the 3D blue crowd
-  updateFloatingBadge(playerBadge, playerCrowdGroup.position, 3.2);
-
+  updateBadgePosition();
   renderer.render(scene, camera);
 }
 
-// Handle Window Resize
 window.addEventListener('resize', () => {
-  camera.aspect = container.clientWidth / container.clientHeight;
+  camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
-  renderer.setSize(container.clientWidth, container.clientHeight);
+  renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
+resetLevelState();
 animate();
