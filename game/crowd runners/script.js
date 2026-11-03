@@ -1,5 +1,5 @@
 const container = document.getElementById('canvas-container');
-const playerBadge = document.getElementById('player-badge'); 
+const playerBadge = document.getElementById('player-badge');  
 const progressFill = document.getElementById('progress-fill');
 const levelBadge = document.getElementById('current-level-badge');
 const coinAmountEl = document.getElementById('coin-amount');
