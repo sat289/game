@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Stick Kombat 3D - Fullscreen Landscape Edition</title>
+  <title>Stick Kombat 2D/3D - Pro Balanced Edition</title>
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -12,7 +12,7 @@
 <div id="viewport-wrapper">
   <div id="game-frame">
 
-    <!-- Persistent Left Floating Sidebar -->
+    <!-- Left Floating Sidebar -->
     <div class="side-dock">
       <div class="dock-icon" onclick="returnToMenu()" title="Back to Menu">&#8592;</div>
       <div class="dock-icon" onclick="forceFullscreenLandscape()" title="Fullscreen Rotate">&#9974;</div>
@@ -21,10 +21,9 @@
 
     <!-- 0. MOVIE-STYLE START & LANDSCAPE ROTATION SCREEN -->
     <div id="start-gate-screen" class="screen">
-      <div class="gate-badge">&#127918; AUTO LANDSCAPE WIDESCREEN</div>
-      <div class="gate-title">STICK KOMBAT 3D</div>
-      <button class="btn-enter-fullscreen" onclick="enterGameFullscreen()">&#9654; ENTER GAME (FULLSCREEN)</button>
-      <p style="font-size:12px; color:#9aa; margin-top:14px;">Automatically rotates to Fullscreen Horizontal Mode like a Movie Player</p>
+      <div style="font-size:13px; color:#8fff00; font-weight:900; margin-bottom:8px;">&#127918; FULLSCREEN HORIZONTAL MODE</div>
+      <div style="font-size:32px; font-weight:900; font-style:italic; margin-bottom:20px;">STICK KOMBAT 3D</div>
+      <button class="btn-enter-fullscreen" onclick="enterGameFullscreen()">&#9654; ENTER GAME</button>
     </div>
 
     <!-- 1. SEAGAMES SPLASH SCREEN -->
@@ -46,43 +45,78 @@
       </div>
     </div>
 
-    <!-- 2. CHARACTER ROSTER & STAGE MENU -->
+    <!-- 2. EXACT CHARACTER ROSTER MENU (Matches Screenshot 2) -->
     <div id="menu-screen" class="screen hidden">
       <div class="menu-top-tabs">
-        <div class="mode-tab active">&#129354; 1 PLAYER</div>
-        <div class="mode-tab">&#9203; TOWER</div>
-        <div class="mode-tab">&#128101; 2X2</div>
+        <div class="tab-icon-btn" title="Training / Tutorial">&#127891;</div>
+        <div class="tab-main-green">1 PLAYER</div>
+        <div class="tab-icon-btn" title="The Tower">&#9820;</div>
+        <div class="tab-icon-btn" title="Rose / Special">&#127801;</div>
+        <div class="tab-icon-btn" style="font-style:italic;" title="2X2 Mode">2X2</div>
       </div>
 
       <div class="selected-hero-title" id="hero-title-label">REAPER</div>
 
       <div class="roster-wrapper">
         <div class="roster-grid" id="roster-grid"></div>
-        <div class="boss-emblem" onclick="cycleStage(1)" title="Tap to Change Arena">
-          <div style="font-size:20px;">&#128127;</div>
-          <div style="font-size:9px; font-weight:900; color:#9eff00;" id="stage-badge">STAGE 1</div>
+
+        <!-- Right Side "FREE!" Purple Horned Boss Emblem -->
+        <div class="boss-free-container" onclick="cycleStage(1)" title="Click to Change Stage / Boss">
+          <div class="free-pill">FREE!</div>
+          <div class="boss-emblem">
+            <svg width="58" height="58" viewBox="0 0 80 80">
+              <path d="M18,22 Q12,6 28,18 M62,22 Q68,6 52,18" stroke="#4a148c" stroke-width="6" fill="none" stroke-linecap="round"/>
+              <circle cx="40" cy="44" r="22" fill="#311b92"/>
+              <path d="M22,36 Q40,26 58,36 L54,60 Q40,66 26,60 Z" fill="#4527a0"/>
+              <polygon points="28,44 37,47 29,50" fill="#fff"/>
+              <polygon points="52,44 43,47 51,50" fill="#fff"/>
+            </svg>
+          </div>
+          <div style="font-size:9px; color:#a4ff00; font-weight:900; margin-top:3px;" id="stage-badge">STAGE 1</div>
         </div>
       </div>
 
       <div class="menu-bottom-bar">
         <div class="menu-left-icons">
-          <div class="square-btn" onclick="forceFullscreenLandscape()" title="Fullscreen">&#9974;</div>
-          <div class="square-btn" title="Share">&#9992;</div>
+          <div class="square-btn" onclick="forceFullscreenLandscape()" title="Settings / Fullscreen">&#9881;</div>
+          <div class="square-btn" title="News">
+            <span class="news-ribbon">NEWS</span>
+            &#9992;
+          </div>
         </div>
 
         <div class="center-play-zone">
           <div class="diff-title">DIFFICULTY</div>
           <div class="diff-selector">
-            <span class="diff-arrow" onclick="cycleDifficulty(-1)">&#9664;</span>
+            <span class="diff-arrow" onclick="cycleDifficulty(-1)">&#10094;</span>
             <span id="diff-label">AUTO</span>
-            <span class="diff-arrow" onclick="cycleDifficulty(1)">&#9654;</span>
+            <span class="diff-arrow" onclick="cycleDifficulty(1)">&#10095;</span>
           </div>
           <button class="btn-play-main" onclick="triggerMatchLoad()">PLAY</button>
         </div>
 
-        <div class="coin-wallet">
-          <span id="coin-amount">37</span>
-          <span class="coin-icon"></span>
+        <div class="menu-right-coins">
+          <div class="btn-ad-coins" onclick="claimFreeCoins()" title="Click for +100 Free Coins!">
+            <span class="ad-film-icon">&#9658;</span>
+            <span class="ad-coin-label">100 &#129689;</span>
+          </div>
+          <div class="coin-wallet">
+            <span id="coin-amount">37</span>
+            <span class="coin-icon"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- UNLOCK FIGHTER MODAL POPUP (Matches Video 0:09 & 0:11) -->
+    <div id="unlock-modal" class="hidden">
+      <div class="unlock-card">
+        <div class="unlock-close" onclick="closeUnlockModal()">&#10006;</div>
+        <div class="unlock-title" id="unlock-modal-title">UNLOCK FIGHTER "FROST"</div>
+        <div class="unlock-avatar-preview" id="unlock-modal-avatar"></div>
+        <div class="unlock-desc" id="unlock-modal-desc">PURCHASE ONLY WITH COINS</div>
+        <div class="unlock-actions">
+          <button class="btn-unlock-buy" id="unlock-buy-btn" onclick="confirmUnlockFighter()">220 &#129689;</button>
         </div>
       </div>
     </div>
@@ -95,34 +129,58 @@
       </div>
     </div>
 
-    <!-- 4. 3D WEBGL FIGHT ARENA & HUD -->
+    <!-- 4. 3D WEBGL FIGHT ARENA & BALANCED HUD -->
     <div id="three-canvas-container" class="hidden"></div>
+    <div id="dmg-float-layer" class="hidden"></div>
 
     <div id="fight-hud" class="hidden">
+      <!-- Player 1 HUD -->
       <div class="hud-side left">
         <div class="hud-portrait" id="p1-hud-avatar"></div>
         <div class="hud-bars">
           <div class="hud-label-row">
             <span id="p1-hud-name" style="color:#ff9f43;">REAPER</span>
-            <span id="p1-hud-hp">120/120</span>
+            <span id="p1-hud-hp">280/280</span>
           </div>
-          <div class="hp-outer"><div class="hp-inner" id="p1-hp-fill"></div></div>
+          <div class="hp-outer">
+            <div class="hp-damage-delay" id="p1-hp-delay"></div>
+            <div class="hp-inner" id="p1-hp-fill"></div>
+          </div>
+          <div class="hud-sub-row">
+            <div class="energy-outer"><div class="energy-inner" id="p1-energy-fill"></div></div>
+            <div class="round-dots">
+              <div class="r-dot" id="p1-dot-1"></div>
+              <div class="r-dot" id="p1-dot-2"></div>
+            </div>
+          </div>
         </div>
       </div>
 
+      <!-- Center Timer -->
       <div class="hud-center">
         <div class="pause-icon">||</div>
-        <div class="timer-digits" id="fight-timer">98</div>
+        <div class="timer-digits" id="fight-timer">99</div>
       </div>
 
+      <!-- Player 2 (AI) HUD -->
       <div class="hud-side right">
         <div class="hud-portrait" id="p2-hud-avatar"></div>
         <div class="hud-bars">
           <div class="hud-label-row">
-            <span id="p2-hud-hp">125/125</span>
-            <span id="p2-hud-name" style="color:#ff5252;">WARS</span>
+            <span id="p2-hud-hp">300/300</span>
+            <span id="p2-hud-name" style="color:#ff5252;">RED</span>
           </div>
-          <div class="hp-outer"><div class="hp-inner" id="p2-hp-fill"></div></div>
+          <div class="hp-outer">
+            <div class="hp-damage-delay" id="p2-hp-delay"></div>
+            <div class="hp-inner" id="p2-hp-fill"></div>
+          </div>
+          <div class="hud-sub-row">
+            <div class="energy-outer"><div class="energy-inner" id="p2-energy-fill"></div></div>
+            <div class="round-dots">
+              <div class="r-dot" id="p2-dot-1"></div>
+              <div class="r-dot" id="p2-dot-2"></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -130,25 +188,25 @@
     <div id="round-banner" class="hidden">ROUND 1</div>
     <div id="combo-popup" class="hidden">HIT 1!</div>
 
-    <!-- Upgraded Touch Controls with 4 Distinct Fighting Moves -->
+    <!-- Touch Controls Overlay -->
     <div id="touch-controls" class="hidden">
       <div class="joystick-base" id="joy-base">
         <div class="joystick-knob" id="joy-knob"></div>
       </div>
       <div class="combat-buttons">
-        <div class="ctrl-btn btn-dash-roll" id="btn-dash" title="Shadow Dash (K)">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="#111"><path d="M13.5 5.5c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM9.8 8.9L7 23h2.1l1.8-8 2.1 2v6h2v-7.5l-2.1-2 .6-3C14.8 12 16.8 13 19 13v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1L6 8.3V13h2V9.6l1.8-.7"/></svg>
+        <div class="ctrl-btn btn-dash-roll" id="btn-dash" title="Shadow Dash (-Stamina)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#111"><path d="M13.5 5.5c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM9.8 8.9L7 23h2.1l1.8-8 2.1 2v6h2v-7.5l-2.1-2 .6-3C14.8 12 16.8 13 19 13v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1L6 8.3V13h2V9.6l1.8-.7"/></svg>
           <span>DASH</span>
         </div>
-        <div class="ctrl-btn btn-flip-kick" id="btn-kick" title="Somersault Flip Kick (U)">
+        <div class="ctrl-btn btn-flip-kick" id="btn-kick" title="Flip Kick (-14 HP)">
           <span>FLIP</span>
-          <span>KICK</span>
+          <span>-14 HP</span>
         </div>
-        <div class="ctrl-btn btn-heavy-skill" id="btn-skill" title="3D Tornado Slash (L)">
-          <span>3D</span>
+        <div class="ctrl-btn btn-heavy-skill" id="btn-skill" title="3D Ultimate (-22 HP)">
           <span>ULT</span>
+          <span>-22 HP</span>
         </div>
-        <div class="ctrl-btn btn-main-fist" id="btn-attack" title="3-Hit Combo Slash (J)">
+        <div class="ctrl-btn btn-main-fist" id="btn-attack" title="Weapon Combo (-6 / -11 HP)">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="#111"><path d="M18 11c0-.959-.68-1.761-1.581-1.954C16.779 8.445 17 7.75 17 7c0-2.206-1.794-4-4-4-1.517 0-2.821.857-3.5 2.104C8.821 3.857 7.517 3 6 3 3.794 3 2 4.794 2 7c0 .902.312 1.727.817 2.396A1.994 1.994 0 0 0 2 11v8c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-8zm-4 7H6v-5h8v5z"/></svg>
         </div>
       </div>
@@ -159,16 +217,13 @@
 
 <script>
 /* ============================================================================
-   0. FULLSCREEN & MOVIE-PLAYER LANDSCAPE LOCK ENGINE
+   0. FULLSCREEN & LANDSCAPE ROTATION
 ============================================================================ */
 async function forceFullscreenLandscape() {
   try {
     const docEl = document.documentElement;
-    if (docEl.requestFullscreen) {
-      await docEl.requestFullscreen();
-    } else if (docEl.webkitRequestFullscreen) {
-      await docEl.webkitRequestFullscreen();
-    }
+    if (docEl.requestFullscreen) await docEl.requestFullscreen();
+    else if (docEl.webkitRequestFullscreen) await docEl.webkitRequestFullscreen();
     if (screen.orientation && screen.orientation.lock) {
       await screen.orientation.lock('landscape').catch(() => {});
     }
@@ -186,64 +241,158 @@ function enterGameFullscreen() {
 function getLogicalDimensions() {
   const w = window.innerWidth;
   const h = window.innerHeight;
-  // Because CSS rotates #viewport-wrapper 90deg in portrait, logical width is always the longer side
-  return {
-    width: Math.max(w, h),
-    height: Math.min(w, h)
-  };
+  return { width: Math.max(w, h), height: Math.min(w, h) };
 }
 
 /* ============================================================================
-   1. 10 FIGHTERS ROSTER WITH CUSTOM SVG AVATARS
+   1. 12 FIGHTERS ROSTER (Exact 6x2 Grid & Detailed Avatars from Screenshot 2)
+   * High HP (280 - 360 HP) & Controlled Attack Damage so fights last long!
 ============================================================================ */
 const ROSTER = [
-  { id: 'reaper', name: 'REAPER', color: '#2efc71', eye: '#39ff14', hair: null, weapon: 'scythe', hp: 120, dmg: 14, unlocked: true, cost: 0 },
-  { id: 'red', name: 'RED', color: '#ff3838', eye: '#ffffff', hair: '#ff2222', weapon: 'gauntlet', hp: 115, dmg: 12, unlocked: true, cost: 0 },
-  { id: 'wars', name: 'WARS', color: '#c56cf0', eye: '#ff3838', hair: '#e0d8ff', weapon: 'dualblades', hp: 125, dmg: 13, unlocked: true, cost: 0 },
-  { id: 'frost', name: 'FROST', color: '#00d2ff', eye: '#00ffff', hair: '#00a8ff', weapon: 'spear', hp: 135, dmg: 15, unlocked: false, cost: 30 },
-  { id: 'venom', name: 'VENOM', color: '#7bed9f', eye: '#2ed573', hair: null, weapon: 'scythe', hp: 145, dmg: 16, unlocked: false, cost: 50 },
-  { id: 'blaze', name: 'BLAZE', color: '#ff9f1a', eye: '#fff200', hair: '#ff6b00', weapon: 'gauntlet', hp: 150, dmg: 17, unlocked: false, cost: 65 },
-  { id: 'ronin', name: 'RONIN', color: '#dfe4ea', eye: '#ff4757', hair: '#ced6e0', weapon: 'dualblades', hp: 160, dmg: 18, unlocked: false, cost: 80 },
-  { id: 'chrom', name: 'CHROM', color: '#ffd32a', eye: '#00d8d6', hair: null, weapon: 'hammer', hp: 180, dmg: 20, unlocked: false, cost: 100 },
-  { id: 'titan', name: 'TITAN', color: '#ff5e57', eye: '#ffdd59', hair: '#485460', weapon: 'hammer', hp: 205, dmg: 22, unlocked: false, cost: 130 },
-  { id: 'void', name: 'VOID LORD', color: '#a55eea', eye: '#0be881', hair: '#d2dae2', weapon: 'scythe', hp: 240, dmg: 26, unlocked: false, cost: 180 }
+  // Row 1 (6 Fighters)
+  { id: 'reaper', name: 'REAPER', color: '#00f2fe', eye: '#00ff88', hair: null, style: 'reaper', hp: 280, lightDmg: 6, heavyDmg: 11, kickDmg: 14, ultDmg: 22, unlocked: true, cost: 0 },
+  { id: 'red', name: 'RED', color: '#ff2a2a', eye: '#ffffff', hair: '#ff1e1e', style: 'red', hp: 300, lightDmg: 6, heavyDmg: 10, kickDmg: 13, ultDmg: 20, unlocked: true, cost: 0 },
+  { id: 'wars', name: 'WARS', color: '#b339ff', eye: '#ffeb3b', hair: '#f1f2f6', style: 'wars', hp: 310, lightDmg: 7, heavyDmg: 11, kickDmg: 14, ultDmg: 22, unlocked: true, cost: 0 },
+  { id: 'frost', name: 'FROST', color: '#00d2ff', eye: '#ffffff', hair: '#2f3542', style: 'frost', hp: 315, lightDmg: 7, heavyDmg: 12, kickDmg: 15, ultDmg: 23, unlocked: false, cost: 220 },
+  { id: 'oni', name: 'SHADOW ONI', color: '#57606f', eye: '#ffffff', hair: null, style: 'oni', hp: 320, lightDmg: 7, heavyDmg: 12, kickDmg: 15, ultDmg: 24, unlocked: false, cost: 300 },
+  { id: 'venom', name: 'VENOM', color: '#7bed9f', eye: '#ffffff', hair: null, style: 'venom', hp: 325, lightDmg: 7, heavyDmg: 12, kickDmg: 16, ultDmg: 24, unlocked: false, cost: 400 },
+  // Row 2 (6 Fighters)
+  { id: 'fang', name: 'FANG', color: '#a4b0be', eye: '#ffffff', hair: '#2f3542', style: 'fang', hp: 330, lightDmg: 8, heavyDmg: 13, kickDmg: 16, ultDmg: 25, unlocked: false, cost: 450 },
+  { id: 'skull', name: 'SKULL DEMON', color: '#dfe4ea', eye: '#111111', hair: null, style: 'skull', hp: 340, lightDmg: 8, heavyDmg: 13, kickDmg: 17, ultDmg: 25, unlocked: false, cost: 520 },
+  { id: 'iron', name: 'IRON GUARD', color: '#ff6348', eye: '#ffa502', hair: null, style: 'knight', hp: 345, lightDmg: 8, heavyDmg: 14, kickDmg: 17, ultDmg: 26, unlocked: false, cost: 600 },
+  { id: 'chrom', name: 'CHROM', color: '#ffd32a', eye: '#2ed573', hair: null, style: 'chrom', hp: 350, lightDmg: 8, heavyDmg: 14, kickDmg: 18, ultDmg: 27, unlocked: false, cost: 750 },
+  { id: 'wraith', name: 'WRAITH', color: '#ced6e0', eye: '#ffffff', hair: null, style: 'wraith', hp: 355, lightDmg: 9, heavyDmg: 15, kickDmg: 18, ultDmg: 28, unlocked: false, cost: 850 },
+  { id: 'void', name: 'NIGHTSHADE', color: '#747d8c', eye: '#ffffff', hair: '#1e272e', style: 'nightshade', hp: 360, lightDmg: 9, heavyDmg: 15, kickDmg: 19, ultDmg: 30, unlocked: false, cost: 1000 }
 ];
 
 const STAGES = [
-  { name: 'STAGE 1: CRIMSON TORII', skyTop: 0x3b1d2e, skyBot: 0x9b5460, ground: 0x5c1f24, fog: 0x6d3540 },
-  { name: 'STAGE 2: SHADOW BAMBOO', skyTop: 0x0f2b2e, skyBot: 0x2e6f73, ground: 0x17363a, fog: 0x235357 },
-  { name: 'STAGE 3: VIOLET SHRINE', skyTop: 0x241338, skyBot: 0x6e3b8c, ground: 0x2f1647, fog: 0x4b246b },
-  { name: 'STAGE 4: INFERNO DOJO', skyTop: 0x3d0c08, skyBot: 0xa63c1e, ground: 0x4a120d, fog: 0x732214 }
+  { name: 'STAGE 1', skyBot: 0x9b5460, ground: 0x5c1f24, fog: 0x6d3540 },
+  { name: 'STAGE 2', skyBot: 0x2e6f73, ground: 0x17363a, fog: 0x235357 },
+  { name: 'STAGE 3', skyBot: 0x6e3b8c, ground: 0x2f1647, fog: 0x4b246b },
+  { name: 'STAGE 4', skyBot: 0xa63c1e, ground: 0x4a120d, fog: 0x732214 }
 ];
 
-const DIFFICULTIES = ['AUTO', 'EASY', 'NORMAL', 'HARD', 'INSANE'];
+const DIFFICULTIES = ['AUTO', 'EASY', 'NORMAL', 'HARD'];
 
 let coins = 37;
 let selectedHero = ROSTER[0];
-let selectedEnemy = ROSTER[2];
+let selectedEnemy = ROSTER[1];
+let pendingUnlockFighter = null;
 let diffIndex = 0;
 let stageIndex = 0;
 
-function buildAvatarSVG(fighter) {
+/* Detailed Character Portrait Generator matching Screenshot 2 */
+function buildAvatarSVG(f) {
+  let art = '';
+  switch (f.style) {
+    case 'reaper': // Cyan Hooded Ninja with Scythe
+      art = `
+        <path d="M12,68 L66,14" stroke="#d1d8e0" stroke-width="4"/>
+        <path d="M44,12 Q68,8 72,30" stroke="#00f2fe" stroke-width="4" fill="none"/>
+        <path d="M16,66 Q24,20 48,22 L62,56 Z" fill="#00d2ff"/>
+        <circle cx="42" cy="44" r="16" fill="#0b0e14"/>
+        <path d="M26,44 Q42,36 58,44 L54,64 L28,64 Z" fill="#1e272e"/>
+        <polygon points="36,41 48,38 46,44 36,44" fill="#00ffaa"/>
+      `;
+      break;
+    case 'red': // Red Masked Ninja with Headband
+      art = `
+        <circle cx="42" cy="42" r="22" fill="#b31217"/>
+        <path d="M18,34 Q42,26 66,34" stroke="#ff2a2a" stroke-width="6" fill="none"/>
+        <path d="M22,44 Q42,52 62,44 L58,68 L26,68 Z" fill="#d63031"/>
+        <polygon points="30,38 40,42 30,43" fill="#fff"/>
+        <polygon points="54,38 44,42 54,43" fill="#fff"/>
+        <path d="M28,50 L54,50" stroke="#fff" stroke-width="2" stroke-dasharray="3,2"/>
+      `;
+      break;
+    case 'wars': // White Long Hair + Purple Demon Face + Yellow Eyes
+      art = `
+        <circle cx="40" cy="44" r="20" fill="#8e2de2"/>
+        <path d="M14,48 Q16,14 42,14 Q68,14 68,52 C60,40 54,28 40,26 C26,28 20,40 14,48 Z" fill="#f5f6fa"/>
+        <polygon points="28,42 38,45 30,47" fill="#ffeb3b"/>
+        <polygon points="52,42 42,45 50,47" fill="#ffeb3b"/>
+        <path d="M33,54 Q40,58 47,54" stroke="#fff" stroke-width="2.5" fill="none"/>
+      `;
+      break;
+    case 'frost': // Top-knot Ninja with Bandage & Kunai
+      art = `
+        <circle cx="44" cy="14" r="8" fill="#1e272e"/>
+        <circle cx="40" cy="44" r="20" fill="#2f3542"/>
+        <path d="M20,34 L60,40 L58,48 L20,42 Z" fill="#dfe4ea"/>
+        <path d="M22,46 L58,46 L54,68 L26,68 Z" fill="#1e272e"/>
+        <polygon points="32,40 42,42 32,44" fill="#00d2ff"/>
+      `;
+      break;
+    case 'oni': // Dark Horned Ninja
+      art = `
+        <path d="M18,24 Q12,8 28,18 M62,24 Q68,8 52,18" stroke="#1e272e" stroke-width="5" fill="none"/>
+        <circle cx="40" cy="44" r="20" fill="#111"/>
+        <polygon points="29,42 37,45 30,47" fill="#fff"/>
+        <polygon points="51,42 43,45 50,47" fill="#fff"/>
+      `;
+      break;
+    case 'venom': // Asymmetric Big Eye Mask
+      art = `
+        <circle cx="40" cy="44" r="21" fill="#1e272e"/>
+        <polygon points="26,36 40,44 26,48" fill="#fff"/>
+        <circle cx="50" cy="43" r="2.5" fill="#fff"/>
+      `;
+      break;
+    case 'fang': // Spiky Hair + Sharp Teeth Mask
+      art = `
+        <path d="M16,32 L28,14 L38,24 L48,12 L62,28 Z" fill="#2f3542"/>
+        <circle cx="40" cy="45" r="19" fill="#57606f"/>
+        <path d="M24,48 L56,48 L52,64 L28,64 Z" fill="#1e272e"/>
+        <path d="M28,52 L33,57 L38,52 L43,57 L48,52" stroke="#fff" stroke-width="2" fill="none"/>
+      `;
+      break;
+    case 'skull': // White Horned Skull
+      art = `
+        <path d="M16,22 Q10,6 28,18 M64,22 Q70,6 52,18" stroke="#111" stroke-width="6" fill="none"/>
+        <circle cx="40" cy="44" r="21" fill="#dfe4ea"/>
+        <circle cx="32" cy="44" r="5" fill="#111"/>
+        <circle cx="48" cy="44" r="5" fill="#111"/>
+      `;
+      break;
+    case 'knight': // Dark Bucket Helmet Knight
+      art = `
+        <rect x="22" y="22" width="36" height="42" rx="8" fill="#2f3542" stroke="#ced6e0" stroke-width="3"/>
+        <line x1="28" y1="38" x2="52" y2="38" stroke="#111" stroke-width="5"/>
+        <line x1="40" y1="26" x2="40" y2="58" stroke="#ced6e0" stroke-width="3"/>
+      `;
+      break;
+    case 'chrom': // Futuristic Visor Helmet
+      art = `
+        <circle cx="40" cy="42" r="22" fill="#ced6e0" stroke="#2f3542" stroke-width="3"/>
+        <path d="M24,36 Q40,44 56,36 L52,54 Q40,60 28,54 Z" fill="#1e272e"/>
+        <polygon points="28,40 38,44 30,46" fill="#a4ff00"/>
+        <polygon points="52,40 42,44 50,46" fill="#a4ff00"/>
+      `;
+      break;
+    default: // Hooded Wraith / Nightshade
+      art = `
+        <path d="M16,66 Q20,16 40,16 Q60,16 64,66 Z" fill="#1e272e"/>
+        <circle cx="40" cy="44" r="15" fill="#090b10"/>
+        <polygon points="30,42 38,45 31,47" fill="#fff"/>
+        <polygon points="50,42 42,45 49,47" fill="#fff"/>
+      `;
+  }
   return `
     <svg viewBox="0 0 80 80">
       <defs>
-        <radialGradient id="g-${fighter.id}" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stop-color="${fighter.color}" stop-opacity="0.6"/>
-          <stop offset="100%" stop-color="#0b0e12" stop-opacity="0.95"/>
+        <radialGradient id="bg-${f.id}" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="${f.color}" stop-opacity="0.45"/>
+          <stop offset="100%" stop-color="#10151e" stop-opacity="0.98"/>
         </radialGradient>
       </defs>
-      <circle cx="40" cy="40" r="37" fill="url(#g-${fighter.id})"/>
-      <path d="M16,65 L64,18" stroke="${fighter.color}" stroke-width="3.5" stroke-linecap="round"/>
-      ${fighter.hair ? `<path d="M24,38 C18,20 42,10 62,25 C56,42 58,56 64,66 C48,55 32,48 24,38 Z" fill="${fighter.hair}"/>` : ''}
-      <circle cx="38" cy="42" r="15" fill="#090a0f" stroke="${fighter.color}" stroke-width="1.5"/>
-      <polygon points="39,39 50,36 48,42 39,42" fill="${fighter.eye}"/>
+      <circle cx="40" cy="40" r="38" fill="url(#bg-${f.id})"/>
+      ${art}
     </svg>
   `;
 }
 
 /* ============================================================================
-   2. SPLASH -> MENU -> COMPONENT LOADER
+   2. MENU & UNLOCK POPUP FUNCTIONS
 ============================================================================ */
 function runEntrySplash() {
   const fill = document.getElementById('splash-fill');
@@ -265,13 +414,13 @@ function runEntrySplash() {
     status.innerText = progress < 65
       ? `Generating game content: ${progress}%`
       : `Arranging game rules: ${progress}%`;
-  }, 160);
+  }, 150);
 }
 
 function renderRosterMenu() {
   document.getElementById('coin-amount').innerText = coins;
   document.getElementById('hero-title-label').innerText = selectedHero.name;
-  document.getElementById('stage-badge').innerText = `STAGE ${stageIndex + 1}`;
+  document.getElementById('stage-badge').innerText = STAGES[stageIndex].name;
   const grid = document.getElementById('roster-grid');
   grid.innerHTML = '';
 
@@ -280,24 +429,54 @@ function renderRosterMenu() {
     const isP1 = selectedHero.id === f.id;
     const isP2 = selectedEnemy.id === f.id;
     item.className = `avatar-circle ${isP1 ? 'selected-p1' : ''} ${isP2 ? 'selected-p2' : ''} ${!f.unlocked ? 'locked' : ''}`;
-    item.innerHTML = buildAvatarSVG(f) + (!f.unlocked ? `<div class="lock-badge">&#128274;</div>` : '');
+    item.innerHTML = `
+      <div class="avatar-inner-clip">${buildAvatarSVG(f)}</div>
+      ${!f.unlocked ? `<div class="lock-badge">&#128274;</div>` : ''}
+    `;
 
     item.onclick = () => {
       if (f.unlocked) {
         selectedHero = f;
-        selectedEnemy = f.id === 'wars' ? ROSTER[1] : ROSTER[2];
-        renderRosterMenu();
-      } else if (coins >= f.cost) {
-        coins -= f.cost;
-        f.unlocked = true;
-        selectedHero = f;
+        // Pick a different opponent automatically
+        selectedEnemy = f.id === 'red' ? ROSTER[2] : ROSTER[1];
         renderRosterMenu();
       } else {
-        alert(`Need ${f.cost} Coins to unlock ${f.name}!`);
+        openUnlockModal(f);
       }
     };
     grid.appendChild(item);
   });
+}
+
+function openUnlockModal(fighter) {
+  pendingUnlockFighter = fighter;
+  document.getElementById('unlock-modal-title').innerText = `UNLOCK FIGHTER '${fighter.name}'`;
+  document.getElementById('unlock-modal-avatar').innerHTML = buildAvatarSVG(fighter);
+  document.getElementById('unlock-buy-btn').innerText = `${fighter.cost} 🪙`;
+  document.getElementById('unlock-modal').classList.remove('hidden');
+}
+
+function closeUnlockModal() {
+  pendingUnlockFighter = null;
+  document.getElementById('unlock-modal').classList.add('hidden');
+}
+
+function confirmUnlockFighter() {
+  if (!pendingUnlockFighter) return;
+  if (coins >= pendingUnlockFighter.cost) {
+    coins -= pendingUnlockFighter.cost;
+    pendingUnlockFighter.unlocked = true;
+    selectedHero = pendingUnlockFighter;
+    closeUnlockModal();
+    renderRosterMenu();
+  } else {
+    alert(`Meeru ${pendingUnlockFighter.name} unlock cheyyadaniki ${pendingUnlockFighter.cost} Coins kavali! Kindha unna Green [▶ 100 🪙] button nokki Free Coins pondandi.`);
+  }
+}
+
+function claimFreeCoins() {
+  coins += 100;
+  renderRosterMenu();
 }
 
 function cycleDifficulty(dir) {
@@ -327,7 +506,7 @@ function triggerMatchLoad() {
       clearInterval(loader);
       setTimeout(() => {
         compScreen.classList.add('hidden');
-        start3DFight();
+        startBestOf3Match();
       }, 250);
     }
     compFill.style.width = p + '%';
@@ -336,10 +515,11 @@ function triggerMatchLoad() {
 }
 
 function returnToMenu() {
-  if (gameState === 'FIGHT') {
+  if (gameState === 'FIGHT' || gameState === 'ROUND_OVER') {
     gameState = 'MENU';
     clearInterval(matchClock);
     document.getElementById('three-canvas-container').classList.add('hidden');
+    document.getElementById('dmg-float-layer').classList.add('hidden');
     document.getElementById('fight-hud').classList.add('hidden');
     document.getElementById('touch-controls').classList.add('hidden');
     document.getElementById('round-banner').classList.add('hidden');
@@ -349,16 +529,24 @@ function returnToMenu() {
 }
 
 /* ============================================================================
-   3. THREE.JS 3D FIGHT ENGINE WITH 4 COMBAT MOVES & DYNAMIC CAMERA
+   3. BALANCED 3D FIGHT ENGINE (Slow Blood Loss, Exact Damage Per Move, 2 Rounds)
 ============================================================================ */
 let scene, camera, renderer;
 let p1Model, p2Model;
 let particles3D = [];
 let shockwaves3D = [];
 let gameState = 'GATE';
-let matchTimer = 98;
+let matchTimer = 99;
 let matchClock = null;
+
+// Round Tracking (Best of 3)
+let currentRound = 1;
+let p1RoundWins = 0;
+let p2RoundWins = 0;
+
+// Combo & Damage Counter (Like Video 0:35 "HIT: 4 / DAMAGE: 24")
 let comboCount = 0;
+let comboDamageTotal = 0;
 let comboTimeout = null;
 let screenShake = 0;
 
@@ -393,8 +581,7 @@ function initThreeWorld() {
   renderer.shadowMap.enabled = true;
   container.appendChild(renderer.domElement);
 
-  const ambient = new THREE.AmbientLight(0xffffff, 0.7);
-  scene.add(ambient);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.72));
 
   const sun = new THREE.DirectionalLight(0xffd1b3, 1.25);
   sun.position.set(6, 15, 10);
@@ -402,14 +589,15 @@ function initThreeWorld() {
   scene.add(sun);
 
   // Arena Floor
-  const floorGeo = new THREE.BoxGeometry(45, 2, 16);
-  const floorMat = new THREE.MeshStandardMaterial({ color: stg.ground, roughness: 0.8 });
-  const floor = new THREE.Mesh(floorGeo, floorMat);
+  const floor = new THREE.Mesh(
+    new THREE.BoxGeometry(45, 2, 16),
+    new THREE.MeshStandardMaterial({ color: stg.ground, roughness: 0.8 })
+  );
   floor.position.y = -1;
   floor.receiveShadow = true;
   scene.add(floor);
 
-  // Japanese Torii Gate Background
+  // Japanese Torii Gate Silhouette
   const gateMat = new THREE.MeshStandardMaterial({ color: 0x241016, roughness: 0.9 });
   const pillarL = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 9, 12), gateMat);
   pillarL.position.set(-4.5, 4, -5.5);
@@ -427,21 +615,25 @@ class Fighter3D {
     this.config = config;
     this.maxHp = config.hp;
     this.hp = config.hp;
+    this.energy = 45; // Max 100 energy for Ultimate
     this.x = startX;
     this.y = 0;
     this.vx = 0;
     this.vy = 0;
     this.facing = facing;
 
-    // Animation States for Rich Combat Moves
+    // Cooldowns & States so players/AI cannot spam fast kills
     this.atkTimer = 0;
-    this.comboStep = 0; // Cycles 1 -> 2 -> 3
-    this.spinTimer = 0; // 3D Tornado Ultimate
-    this.flipTimer = 0; // Somersault Flip Kick
+    this.comboStep = 0;
+    this.spinTimer = 0;
+    this.flipTimer = 0;
+    this.kickCooldown = 0; // 150 frames (~2.5s) cooldown
+    this.invulnTimer = 0;  // 22 frames hit protection so HP doesn't melt
+    this.isBlocking = false;
     this.walkCycle = 0;
 
     this.root = new THREE.Group();
-    this.bodyPivot = new THREE.Group(); // Used for 360 somersault flips
+    this.bodyPivot = new THREE.Group();
     this.bodyPivot.position.y = 1.4;
     this.root.add(this.bodyPivot);
 
@@ -455,7 +647,7 @@ class Fighter3D {
     const glowMat = new THREE.MeshBasicMaterial({ color: this.config.color });
     const clothMat = new THREE.MeshStandardMaterial({ color: 0x192028, roughness: 0.7 });
 
-    // Torso (Relative to bodyPivot at y=1.4)
+    // Torso
     this.torso = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.36, 1.45, 12), clothMat);
     this.torso.position.y = 0.25;
     this.bodyPivot.add(this.torso);
@@ -478,7 +670,7 @@ class Fighter3D {
     eye.position.set(0.24, 1.3, 0);
     this.bodyPivot.add(eye);
 
-    // Flowing Anime Hair
+    // Hair
     if (this.config.hair) {
       const hairMat = new THREE.MeshStandardMaterial({ color: this.config.hair, roughness: 0.3 });
       this.hairGroup = new THREE.Group();
@@ -499,7 +691,7 @@ class Fighter3D {
     this.legR.position.set(0, -0.9, -0.16);
     this.bodyPivot.add(this.legL, this.legR);
 
-    // Weapon Arm + Glowing Weapon Trail
+    // Weapon Arm
     this.armPivot = new THREE.Group();
     this.armPivot.position.set(0, 0.75, 0.25);
 
@@ -524,15 +716,20 @@ class Fighter3D {
   }
 
   update(opponent) {
-    this.walkCycle += 0.24;
+    this.walkCycle += 0.2;
     if (this.atkTimer > 0) this.atkTimer--;
     if (this.spinTimer > 0) this.spinTimer--;
     if (this.flipTimer > 0) this.flipTimer--;
+    if (this.kickCooldown > 0) this.kickCooldown--;
+    if (this.invulnTimer > 0) this.invulnTimer--;
+
+    // Passive Stamina Regeneration
+    if (this.energy < 100) this.energy = Math.min(100, this.energy + 0.12);
 
     // Gravity
     this.y += this.vy;
     if (this.y > 0) {
-      this.vy -= 0.018;
+      this.vy -= 0.017;
     } else {
       this.y = 0;
       this.vy = 0;
@@ -548,154 +745,173 @@ class Fighter3D {
       this.facing = opponent.x >= this.x ? 1 : -1;
     }
 
+    // Auto-Block when walking backward away from opponent
+    const movingAway = (this.facing === 1 && this.vx < -0.02) || (this.facing === -1 && this.vx > 0.02);
+    this.isBlocking = movingAway && this.atkTimer === 0 && this.y === 0;
+
     this.root.position.set(this.x, this.y, 0);
     this.root.scale.x = this.facing;
 
-    // 1. 3D Tornado Spin Animation
     if (this.spinTimer > 0) {
       this.root.rotation.y += 0.55;
     } else {
       this.root.rotation.y = 0;
     }
 
-    // 2. 360 Somersault Flip Kick Animation
     if (this.flipTimer > 0) {
-      const flipProg = 1 - this.flipTimer / 22;
+      const flipProg = 1 - this.flipTimer / 24;
       this.bodyPivot.rotation.z = -flipProg * Math.PI * 2;
-      this.legR.rotation.z = 1.2; // Extended flying kick leg
+      this.legR.rotation.z = 1.2;
     } else {
       this.bodyPivot.rotation.z = 0;
-      // Normal Walk Legs
       const speed = Math.abs(this.vx);
       if (speed > 0.02) {
-        this.legL.rotation.z = Math.sin(this.walkCycle) * 0.7;
-        this.legR.rotation.z = -Math.sin(this.walkCycle) * 0.7;
+        this.legL.rotation.z = Math.sin(this.walkCycle) * 0.65;
+        this.legR.rotation.z = -Math.sin(this.walkCycle) * 0.65;
       } else {
         this.legL.rotation.z = 0.12;
         this.legR.rotation.z = -0.12;
       }
     }
 
-    // 3. Multi-Angle Weapon Combo Animation
     if (this.atkTimer > 0) {
-      const p = 1 - this.atkTimer / 16;
+      const p = 1 - this.atkTimer / 20;
       if (this.comboStep === 1) {
-        // Overhead Downward Cleave
-        this.armPivot.rotation.z = 1.1 - p * 2.6;
-        this.armPivot.rotation.y = 0;
+        this.armPivot.rotation.z = 1.1 - p * 2.5;
       } else if (this.comboStep === 2) {
-        // Rising Uppercut Slash
-        this.armPivot.rotation.z = -1.4 + p * 2.8;
-        this.armPivot.rotation.y = 0.5;
+        this.armPivot.rotation.z = -1.3 + p * 2.6;
       } else {
-        // 360 Heavy Finisher
-        this.armPivot.rotation.z = 1.4 - p * 3.1;
-        this.root.rotation.y = p * Math.PI * 2;
+        this.armPivot.rotation.z = 1.4 - p * 3.0;
       }
+    } else if (this.isBlocking) {
+      this.armPivot.rotation.z = 0.85; // Guard stance
     } else {
       this.armPivot.rotation.z = Math.sin(this.walkCycle * 0.5) * 0.08;
-      this.armPivot.rotation.y = 0;
     }
   }
 
-  // MOVE 1: 3-Hit Weapon Combo Chain
+  // Centralized Controlled Damage Application
+  inflictDamage(opponent, rawDmg, moveLabel, knockbackX, knockbackY) {
+    if (opponent.invulnTimer > 0) return;
+
+    let finalDmg = rawDmg;
+    let blocked = false;
+    if (opponent.isBlocking) {
+      finalDmg = Math.max(2, Math.round(rawDmg * 0.3)); // 70% damage reduction on block!
+      blocked = true;
+    }
+
+    opponent.hp = Math.max(0, opponent.hp - finalDmg);
+    opponent.invulnTimer = 20; // Prevents instant multi-frame drain
+    opponent.vx = this.facing * (blocked ? knockbackX * 0.3 : knockbackX);
+    if (!blocked && knockbackY > 0) opponent.vy = knockbackY;
+
+    this.energy = Math.min(100, this.energy + 12);
+    opponent.energy = Math.min(100, opponent.energy + 8);
+
+    spawn3DHitSparks(opponent.x, opponent.y + 1.5, blocked ? '#ffffff' : this.config.color);
+    spawnFloatingDamage(opponent.x, opponent.y + 2.4, blocked ? `BLOCK -${finalDmg}` : `-${finalDmg} HP (${moveLabel})`, blocked ? '#dfe4ea' : '#ffeb3b');
+
+    if (this === p1Model) {
+      comboCount++;
+      comboDamageTotal += finalDmg;
+      showComboBadge(comboCount, comboDamageTotal);
+    }
+    refreshFightHUD();
+  }
+
+  // MOVE 1: Weapon Strike (Hit 1: -6 HP, Hit 2: -6 HP, Hit 3 Finisher: -11 HP)
   comboStrike(opponent) {
-    if (this.atkTimer > 4) return;
+    if (this.atkTimer > 0) return;
     this.comboStep = (this.comboStep % 3) + 1;
-    this.atkTimer = 16;
-    this.vx = this.facing * (this.comboStep === 3 ? 0.28 : 0.16);
+    this.atkTimer = 20;
+    this.vx = this.facing * 0.14;
 
     const dist = Math.abs(this.x - opponent.x);
     const yDist = Math.abs(this.y - opponent.y);
-    if (dist < 2.5 && yDist < 2.0) {
-      const mult = this.comboStep === 3 ? 1.5 : 1.0;
-      const dmg = Math.round(this.config.dmg * mult);
-      opponent.hp = Math.max(0, opponent.hp - dmg);
-      opponent.vx = this.facing * (this.comboStep === 3 ? 0.34 : 0.18);
-      if (this.comboStep === 3) {
-        opponent.vy = 0.22;
-        screenShake = 8;
+    if (dist < 2.45 && yDist < 1.9) {
+      if (this.comboStep < 3) {
+        this.inflictDamage(opponent, this.config.lightDmg, `SLASH ${this.comboStep}`, 0.14, 0);
+      } else {
+        screenShake = 5;
         spawnShockwaveRing(opponent.x, opponent.y + 1.0, this.config.color);
+        this.inflictDamage(opponent, this.config.heavyDmg, 'FINISHER', 0.26, 0.16);
       }
-      spawn3DHitSparks(opponent.x, opponent.y + 1.5, this.config.color);
-      if (this === p1Model) {
-        comboCount++;
-        showComboBadge(`${comboCount} HIT COMBO!`);
-      }
-      refreshFightHUD();
     }
   }
 
-  // MOVE 2: Somersault Flip Kick (Launches Enemy Into Air)
+  // MOVE 2: Flip Kick (-14 HP, 2.5s Cooldown)
   somersaultKick(opponent) {
-    if (this.flipTimer > 0) return;
-    this.flipTimer = 22;
-    this.vy = 0.28;
-    this.vx = this.facing * 0.26;
-    spawn3DHitSparks(this.x, this.y + 0.8, '#ff9f1a');
+    if (this.flipTimer > 0 || this.kickCooldown > 0) return;
+    this.flipTimer = 24;
+    this.kickCooldown = 140; // Cooldown so it can't be spammed
+    this.vy = 0.26;
+    this.vx = this.facing * 0.22;
 
     const dist = Math.abs(this.x - opponent.x);
-    if (dist < 2.6) {
-      const dmg = Math.round(this.config.dmg * 1.35);
-      opponent.hp = Math.max(0, opponent.hp - dmg);
-      opponent.vy = 0.32; // High air launch
-      opponent.vx = this.facing * 0.25;
+    if (dist < 2.55) {
       screenShake = 6;
-      spawn3DHitSparks(opponent.x, opponent.y + 1.8, '#ff9f1a');
-      if (this === p1Model) {
-        comboCount++;
-        showComboBadge(`AIR LAUNCH x${comboCount}!`);
-      }
-      refreshFightHUD();
+      this.inflictDamage(opponent, this.config.kickDmg, 'FLIP KICK', 0.22, 0.26);
     }
   }
 
-  // MOVE 3: 3D Ultimate Tornado Slash + Shockwave Ring
+  // MOVE 3: 3D Ultimate Tornado (-22 HP, Requires 60 Energy)
   ultimateTornado(opponent) {
-    if (this.spinTimer > 0) return;
+    if (this.spinTimer > 0 || this.energy < 60) return;
+    this.energy -= 60;
     this.spinTimer = 28;
-    this.atkTimer = 20;
-    this.vx = this.facing * 0.32;
+    this.atkTimer = 24;
+    this.vx = this.facing * 0.28;
     spawnShockwaveRing(this.x, this.y + 0.2, this.config.color);
 
     const dist = Math.abs(this.x - opponent.x);
-    if (dist < 3.1) {
-      const dmg = Math.round(this.config.dmg * 1.85);
-      opponent.hp = Math.max(0, opponent.hp - dmg);
-      opponent.vx = this.facing * 0.42;
-      opponent.vy = 0.26;
-      screenShake = 12;
-      spawn3DHitSparks(opponent.x, opponent.y + 1.6, '#a855f7');
+    if (dist < 2.95) {
+      screenShake = 10;
       spawnShockwaveRing(opponent.x, opponent.y + 1.2, '#a855f7');
-      if (this === p1Model) {
-        comboCount += 2;
-        showComboBadge(`ULTIMATE SLASH! (${comboCount})`);
-      }
-      refreshFightHUD();
+      this.inflictDamage(opponent, this.config.ultDmg, '3D ULTIMATE', 0.34, 0.22);
     }
+    refreshFightHUD();
   }
 
-  // MOVE 4: Shadow Teleport Dash
-  shadowDash(opponent) {
+  // MOVE 4: Shadow Dash (Costs 15 Energy)
+  shadowDash() {
+    if (this.energy < 15) return;
+    this.energy -= 15;
     spawn3DHitSparks(this.x, this.y + 1.0, '#ffffff');
-    // Dash rapidly toward or behind opponent
-    this.vx = this.facing * 0.42;
-    this.vy = 0.1;
+    this.vx = this.facing * 0.38;
+    this.vy = 0.08;
+    refreshFightHUD();
   }
+}
+
+/* Floating Screen Damage Number Generator */
+function spawnFloatingDamage(worldX, worldY, text, color) {
+  const layer = document.getElementById('dmg-float-layer');
+  const el = document.createElement('div');
+  el.className = 'dmg-number';
+  el.style.color = color;
+  el.innerText = text;
+
+  // Map 3D world X (-6 to +6) to percentage
+  const pctX = Math.max(15, Math.min(85, 50 + (worldX / 12) * 70));
+  el.style.left = pctX + '%';
+  el.style.top = '32%';
+  layer.appendChild(el);
+  setTimeout(() => el.remove(), 750);
 }
 
 function spawn3DHitSparks(x, y, hexColor) {
   const mat = new THREE.MeshBasicMaterial({ color: hexColor });
-  for (let i = 0; i < 14; i++) {
-    const spark = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.13, 0.13), mat);
-    spark.position.set(x, y, (Math.random() - 0.5) * 0.9);
+  for (let i = 0; i < 10; i++) {
+    const spark = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.12), mat);
+    spark.position.set(x, y, (Math.random() - 0.5) * 0.8);
     scene.add(spark);
     particles3D.push({
       mesh: spark,
-      vx: (Math.random() - 0.5) * 0.26,
-      vy: Math.random() * 0.24,
-      vz: (Math.random() - 0.5) * 0.26,
-      life: 22
+      vx: (Math.random() - 0.5) * 0.22,
+      vy: Math.random() * 0.2,
+      vz: (Math.random() - 0.5) * 0.22,
+      life: 20
     });
   }
 }
@@ -710,24 +926,40 @@ function spawnShockwaveRing(x, y, hexColor) {
   shockwaves3D.push({ mesh: ring, scale: 1, life: 18 });
 }
 
-function showComboBadge(text) {
+function showComboBadge(hits, totalDmg) {
   const el = document.getElementById('combo-popup');
-  el.innerText = text;
+  el.innerHTML = `HIT: ${hits}<br><span style="color:#ff4757;font-size:13px;">DAMAGE: ${totalDmg}</span><br><span style="font-size:24px;color:#ffa502;">${hits}!</span>`;
   el.classList.remove('hidden');
   clearTimeout(comboTimeout);
   comboTimeout = setTimeout(() => {
     comboCount = 0;
+    comboDamageTotal = 0;
     el.classList.add('hidden');
-  }, 1500);
+  }, 1600);
 }
 
-function start3DFight() {
+/* ============================================================================
+   4. BEST-OF-3 ROUNDS MANAGEMENT
+============================================================================ */
+function startBestOf3Match() {
   document.getElementById('three-canvas-container').classList.remove('hidden');
+  document.getElementById('dmg-float-layer').classList.remove('hidden');
   document.getElementById('fight-hud').classList.remove('hidden');
   document.getElementById('touch-controls').classList.remove('hidden');
 
+  currentRound = 1;
+  p1RoundWins = 0;
+  p2RoundWins = 0;
+  updateRoundDots();
+
   initThreeWorld();
   resize3DViewport();
+  startSingleRound();
+}
+
+function startSingleRound() {
+  if (p1Model) scene.remove(p1Model.root);
+  if (p2Model) scene.remove(p2Model.root);
 
   p1Model = new Fighter3D(selectedHero, -2.8, 1);
   p2Model = new Fighter3D(selectedEnemy, 2.8, -1);
@@ -735,95 +967,147 @@ function start3DFight() {
   document.getElementById('p1-hud-avatar').innerHTML = buildAvatarSVG(selectedHero);
   document.getElementById('p2-hud-avatar').innerHTML = buildAvatarSVG(selectedEnemy);
 
-  matchTimer = 98;
+  matchTimer = 99;
   comboCount = 0;
+  comboDamageTotal = 0;
   refreshFightHUD();
 
   const banner = document.getElementById('round-banner');
-  banner.innerText = 'ROUND 1';
+  banner.style.color = '#fff';
+  banner.innerText = `ROUND ${currentRound}`;
   banner.classList.remove('hidden');
-  setTimeout(() => { banner.innerText = 'FIGHT!'; }, 850);
-  setTimeout(() => { banner.classList.add('hidden'); }, 1550);
+  setTimeout(() => { banner.innerText = 'FIGHT!'; }, 900);
+  setTimeout(() => {
+    banner.classList.add('hidden');
+    gameState = 'FIGHT';
+  }, 1600);
 
-  gameState = 'FIGHT';
   clearInterval(matchClock);
   matchClock = setInterval(() => {
     if (gameState === 'FIGHT' && matchTimer > 0) {
       matchTimer--;
       document.getElementById('fight-timer').innerText = matchTimer;
-      if (matchTimer === 0) finishMatch(p1Model.hp >= p2Model.hp);
+      if (matchTimer === 0) handleRoundEnd(p1Model.hp >= p2Model.hp);
     }
   }, 1000);
 }
 
+function updateRoundDots() {
+  document.getElementById('p1-dot-1').className = `r-dot ${p1RoundWins >= 1 ? 'won' : ''}`;
+  document.getElementById('p1-dot-2').className = `r-dot ${p1RoundWins >= 2 ? 'won' : ''}`;
+  document.getElementById('p2-dot-1').className = `r-dot ${p2RoundWins >= 1 ? 'won' : ''}`;
+  document.getElementById('p2-dot-2').className = `r-dot ${p2RoundWins >= 2 ? 'won' : ''}`;
+}
+
 function refreshFightHUD() {
+  const p1Pct = (p1Model.hp / p1Model.maxHp) * 100;
+  const p2Pct = (p2Model.hp / p2Model.maxHp) * 100;
+
   document.getElementById('p1-hud-name').innerText = p1Model.config.name;
   document.getElementById('p1-hud-hp').innerText = `${p1Model.hp}/${p1Model.maxHp}`;
-  document.getElementById('p1-hp-fill').style.width = `${(p1Model.hp / p1Model.maxHp) * 100}%`;
+  document.getElementById('p1-hp-fill').style.width = `${p1Pct}%`;
+  document.getElementById('p1-hp-delay').style.width = `${p1Pct}%`;
+  document.getElementById('p1-energy-fill').style.width = `${p1Model.energy}%`;
 
   document.getElementById('p2-hud-name').innerText = p2Model.config.name;
   document.getElementById('p2-hud-hp').innerText = `${p2Model.hp}/${p2Model.maxHp}`;
-  document.getElementById('p2-hp-fill').style.width = `${(p2Model.hp / p2Model.maxHp) * 100}%`;
+  document.getElementById('p2-hp-fill').style.width = `${p2Pct}%`;
+  document.getElementById('p2-hp-delay').style.width = `${p2Pct}%`;
+  document.getElementById('p2-energy-fill').style.width = `${p2Model.energy}%`;
+
+  // Cooldown visual state on buttons
+  document.getElementById('btn-kick').classList.toggle('on-cooldown', p1Model.kickCooldown > 0);
+  document.getElementById('btn-skill').classList.toggle('on-cooldown', p1Model.energy < 60);
 }
 
-function finishMatch(playerWon) {
-  gameState = 'OVER';
+function handleRoundEnd(p1WonRound) {
+  gameState = 'ROUND_OVER';
   clearInterval(matchClock);
-  const banner = document.getElementById('round-banner');
-  if (playerWon) {
-    coins += 50;
-    stageIndex = (stageIndex + 1) % STAGES.length;
-    banner.style.color = '#39ff14';
-    banner.innerText = `${p1Model.config.name} WINS! (+50 COINS)`;
-  } else {
-    banner.style.color = '#ff3838';
-    banner.innerText = `${p2Model.config.name} WINS!`;
-  }
-  banner.classList.remove('hidden');
 
-  setTimeout(() => {
-    banner.style.color = '#fff';
-    banner.classList.add('hidden');
-    document.getElementById('three-canvas-container').classList.add('hidden');
-    document.getElementById('fight-hud').classList.add('hidden');
-    document.getElementById('touch-controls').classList.add('hidden');
-    document.getElementById('menu-screen').classList.remove('hidden');
-    renderRosterMenu();
-  }, 2400);
+  if (p1WonRound) p1RoundWins++;
+  else p2RoundWins++;
+  updateRoundDots();
+
+  const banner = document.getElementById('round-banner');
+
+  // Check if someone won 2 rounds (Best of 3)
+  if (p1RoundWins >= 2 || p2RoundWins >= 2) {
+    const matchWon = p1RoundWins >= 2;
+    if (matchWon) {
+      coins += 65;
+      stageIndex = (stageIndex + 1) % STAGES.length;
+      banner.style.color = '#2ed573';
+      banner.innerText = `${p1Model.config.name} WINS! (+65 🪙)`;
+    } else {
+      banner.style.color = '#ff4757';
+      banner.innerText = `${p2Model.config.name} WINS!`;
+    }
+    banner.classList.remove('hidden');
+
+    setTimeout(() => {
+      returnToMenu();
+    }, 2500);
+  } else {
+    // Next Round!
+    currentRound++;
+    banner.style.color = '#ffd32a';
+    banner.innerText = p1WonRound
+      ? `ROUND WON! GET READY FOR ROUND ${currentRound}`
+      : `ROUND LOST! GET READY FOR ROUND ${currentRound}`;
+    banner.classList.remove('hidden');
+
+    setTimeout(() => {
+      startSingleRound();
+    }, 2000);
+  }
 }
 
 /* ============================================================================
-   4. MAIN 3D ANIMATION LOOP
+   5. MAIN 3D ANIMATION LOOP (Measured AI Pacing)
 ============================================================================ */
+let aiThinkCooldown = 0;
+
 function animate3D() {
   requestAnimationFrame(animate3D);
-  if (gameState !== 'FIGHT' && gameState !== 'OVER') return;
+  if (gameState !== 'FIGHT' && gameState !== 'ROUND_OVER') return;
 
   if (gameState === 'FIGHT') {
-    if (input.left) p1Model.vx = -0.12;
-    if (input.right) p1Model.vx = 0.12;
-    if (input.up && p1Model.y === 0) p1Model.vy = 0.28;
+    if (input.left) p1Model.vx = -0.11;
+    if (input.right) p1Model.vx = 0.11;
+    if (input.up && p1Model.y === 0) p1Model.vy = 0.27;
 
-    // Smart AI with Combo, Flip Kick & Ultimate moves
+    // Paced AI Logic (Doesn't spam attacks every frame; fights tactically)
+    if (aiThinkCooldown > 0) aiThinkCooldown--;
     const dist = p2Model.x - p1Model.x;
-    const aiAggro = 0.025 + diffIndex * 0.012;
-    if (Math.abs(dist) > 1.9) {
-      p2Model.vx = dist > 0 ? -0.08 : 0.08;
-    } else if (Math.random() < aiAggro) {
+
+    if (Math.abs(dist) > 2.0) {
+      p2Model.vx = dist > 0 ? -0.075 : 0.075;
+    } else if (aiThinkCooldown === 0) {
       const r = Math.random();
-      if (r < 0.6) p2Model.comboStrike(p1Model);
-      else if (r < 0.85) p2Model.somersaultKick(p1Model);
-      else p2Model.ultimateTornado(p1Model);
+      if (r < 0.55) {
+        p2Model.comboStrike(p1Model);
+        aiThinkCooldown = 28 - diffIndex * 4;
+      } else if (r < 0.75) {
+        p2Model.somersaultKick(p1Model);
+        aiThinkCooldown = 40;
+      } else if (r < 0.9 && p2Model.energy >= 60) {
+        p2Model.ultimateTornado(p1Model);
+        aiThinkCooldown = 50;
+      } else {
+        // AI backs up briefly to block/reposition
+        p2Model.vx = -p2Model.facing * 0.12;
+        aiThinkCooldown = 25;
+      }
     }
 
     p1Model.update(p2Model);
     p2Model.update(p1Model);
+    refreshFightHUD();
 
-    if (p1Model.hp <= 0) finishMatch(false);
-    else if (p2Model.hp <= 0) finishMatch(true);
+    if (p1Model.hp <= 0) handleRoundEnd(false);
+    else if (p2Model.hp <= 0) handleRoundEnd(true);
   }
 
-  // Update 3D Sparks
   for (let i = particles3D.length - 1; i >= 0; i--) {
     const p = particles3D[i];
     p.mesh.position.x += p.vx;
@@ -836,10 +1120,9 @@ function animate3D() {
     }
   }
 
-  // Update Expanding 3D Shockwave Rings
   for (let i = shockwaves3D.length - 1; i >= 0; i--) {
     const sw = shockwaves3D[i];
-    sw.scale += 0.35;
+    sw.scale += 0.32;
     sw.mesh.scale.set(sw.scale, sw.scale, 1);
     sw.mesh.material.opacity = sw.life / 18;
     sw.life--;
@@ -849,26 +1132,25 @@ function animate3D() {
     }
   }
 
-  // Camera Tracking + Screen Shake on Heavy Hits
   const midX = (p1Model.x + p2Model.x) * 0.5;
   const sep = Math.abs(p1Model.x - p2Model.x);
   let shakeX = 0, shakeY = 0;
   if (screenShake > 0) {
-    shakeX = (Math.random() - 0.5) * 0.35;
-    shakeY = (Math.random() - 0.5) * 0.35;
+    shakeX = (Math.random() - 0.5) * 0.28;
+    shakeY = (Math.random() - 0.5) * 0.28;
     screenShake--;
   }
 
   camera.position.x += (midX - camera.position.x) * 0.12 + shakeX;
   camera.position.y = 3.1 + shakeY;
-  camera.position.z += (Math.max(10.0, Math.min(15.0, 9.2 + sep * 0.65)) - camera.position.z) * 0.1;
+  camera.position.z += (Math.max(10.2, Math.min(15.0, 9.2 + sep * 0.65)) - camera.position.z) * 0.1;
   camera.lookAt(midX, 1.7, 0);
 
   renderer.render(scene, camera);
 }
 
 /* ============================================================================
-   5. PORTRAIT-AWARE JOYSTICK & ACTION BUTTON LISTENERS
+   6. PORTRAIT-AWARE JOYSTICK & BUTTON LISTENERS
 ============================================================================ */
 window.addEventListener('keydown', (e) => {
   const k = e.key.toLowerCase();
@@ -878,7 +1160,7 @@ window.addEventListener('keydown', (e) => {
   if ((k === 'j' || k === ' ') && gameState === 'FIGHT') p1Model.comboStrike(p2Model);
   if (k === 'u' && gameState === 'FIGHT') p1Model.somersaultKick(p2Model);
   if (k === 'l' && gameState === 'FIGHT') p1Model.ultimateTornado(p2Model);
-  if (k === 'k' && gameState === 'FIGHT') p1Model.shadowDash(p2Model);
+  if (k === 'k' && gameState === 'FIGHT') p1Model.shadowDash();
 });
 
 window.addEventListener('keyup', (e) => {
@@ -888,7 +1170,6 @@ window.addEventListener('keyup', (e) => {
   if (k === 'w' || e.key === 'ArrowUp') input.up = false;
 });
 
-// Touch / Mouse Joystick (Automatically maps coordinates even when rotated 90deg in Portrait!)
 const joyBase = document.getElementById('joy-base');
 const joyKnob = document.getElementById('joy-knob');
 let draggingJoy = false;
@@ -906,7 +1187,6 @@ function moveJoystick(e) {
   let dx = rawDx;
   let dy = rawDy;
 
-  // If the phone is physically held in portrait and CSS rotated the wrapper 90deg clockwise:
   if (window.innerHeight > window.innerWidth) {
     dx = rawDy;
     dy = -rawDx;
@@ -939,7 +1219,7 @@ document.getElementById('btn-skill').addEventListener('pointerdown', () => {
   if (gameState === 'FIGHT') p1Model.ultimateTornado(p2Model);
 });
 document.getElementById('btn-dash').addEventListener('pointerdown', () => {
-  if (gameState === 'FIGHT') p1Model.shadowDash(p2Model);
+  if (gameState === 'FIGHT') p1Model.shadowDash();
 });
 
 animate3D();
