@@ -1,0 +1,571 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  font-family: 'Segoe UI', Impact, sans-serif;
+}
+
+body {
+  background: #060709;
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#game-frame {
+  position: relative;
+  width: 920px;
+  height: 500px;
+  background: #000;
+  border-radius: 16px;
+  border: 3px solid #252830;
+  overflow: hidden;
+  box-shadow: 0 15px 45px rgba(0, 0, 0, 0.9);
+}
+
+/* Left Floating Dock from Video */
+.side-dock {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px;
+  height: 155px;
+  background: rgba(35, 38, 45, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: center;
+  padding: 12px 0;
+  z-index: 50;
+  backdrop-filter: blur(6px);
+}
+
+.dock-icon {
+  color: #9aa0a6;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.dock-icon:hover {
+  color: #fff;
+  transform: scale(1.15);
+}
+
+/* Screens */
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 20;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* 1. SeaGames Splash Screen */
+#splash-screen {
+  background: #040406;
+  z-index: 40;
+}
+
+.octopus-logo {
+  width: 90px;
+  height: 90px;
+  margin-bottom: 6px;
+  filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.2));
+  animation: pulseLogo 1.6s infinite ease-in-out;
+}
+
+@keyframes pulseLogo {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+
+.seagames-title {
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  margin-bottom: 45px;
+}
+
+.splash-loader-text {
+  font-size: 11px;
+  color: #ccc;
+  margin-bottom: 8px;
+  font-family: sans-serif;
+}
+
+.splash-bar-bg {
+  width: 340px;
+  height: 10px;
+  background: #2b2b33;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.splash-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: #ffffff;
+  border-radius: 8px;
+  transition: width 0.15s ease;
+}
+
+/* 2. Character Select Menu (Teal/Dark Radial Gradient from Video) */
+#menu-screen {
+  background: radial-gradient(circle at 50% 35%, #1e4d58 0%, #0d2128 55%, #071014 100%);
+  justify-content: space-between;
+  padding: 18px 40px 20px 65px;
+}
+
+.menu-top-tabs {
+  display: flex;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 5px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mode-tab {
+  padding: 6px 18px;
+  font-size: 13px;
+  font-weight: 900;
+  font-style: italic;
+  color: #bbb;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.mode-tab.active {
+  background: linear-gradient(180deg, #52ff00, #1db900);
+  color: #000;
+  box-shadow: 0 0 12px rgba(82, 255, 0, 0.5);
+}
+
+.selected-hero-title {
+  font-size: 20px;
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: 1.5px;
+  color: #ffffff;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
+  margin-top: 2px;
+}
+
+/* 10-Fighter Circular Roster (2 rows x 5 columns) */
+.roster-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.roster-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 74px);
+  grid-template-rows: repeat(2, 74px);
+  gap: 14px;
+}
+
+.avatar-circle {
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #2e3b46 0%, #141a20 100%);
+  border: 3px solid #556370;
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: transform 0.18s, border-color 0.18s, box-shadow 0.18s;
+  overflow: hidden;
+}
+
+.avatar-circle svg {
+  width: 64px;
+  height: 64px;
+}
+
+.avatar-circle.selected-p1 {
+  border-color: #39ff14;
+  box-shadow: 0 0 18px rgba(57, 255, 20, 0.75);
+  transform: scale(1.08);
+}
+
+.avatar-circle.selected-p2 {
+  border-color: #ff2a2a;
+  box-shadow: 0 0 18px rgba(255, 42, 42, 0.75);
+}
+
+.avatar-circle.locked {
+  filter: grayscale(0.85) brightness(0.6);
+}
+
+.lock-badge {
+  position: absolute;
+  bottom: 2px;
+  right: 4px;
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid #777;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 11px;
+}
+
+.boss-emblem {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #3a1c54, #140824);
+  border: 2px solid #7cff00;
+  box-shadow: 0 0 18px rgba(124, 255, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+}
+
+/* Bottom Controls Bar in Menu */
+.menu-bottom-bar {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.menu-left-icons {
+  display: flex;
+  gap: 10px;
+}
+
+.square-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  background: #2769b0;
+  border: 2px solid #57a5ff;
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.center-play-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.diff-title {
+  font-size: 10px;
+  color: #a5b8c2;
+  letter-spacing: 1px;
+}
+
+.diff-selector {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(0, 0, 0, 0.55);
+  padding: 3px 14px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  font-weight: 900;
+  font-size: 14px;
+}
+
+.diff-arrow {
+  cursor: pointer;
+  color: #39ff14;
+  font-size: 16px;
+}
+
+.btn-play-main {
+  background: linear-gradient(180deg, #42e66c 0%, #1ea846 100%);
+  border: 2px solid #85ff9e;
+  color: #fff;
+  font-size: 22px;
+  font-weight: 900;
+  padding: 7px 48px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 5px 18px rgba(46, 252, 113, 0.45);
+  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.6);
+}
+.btn-play-main:active {
+  transform: scale(0.95);
+}
+
+.coin-wallet {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.65);
+  border: 2px solid #3c4856;
+  padding: 6px 14px;
+  border-radius: 10px;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.coin-icon {
+  width: 24px;
+  height: 24px;
+  background: radial-gradient(circle, #ffe600, #c88a00);
+  border-radius: 50%;
+  border: 2px solid #fff;
+  display: inline-block;
+}
+
+/* 3. Component Loading Transition Screen (0:13 in video) */
+#loading-components-screen {
+  background: #000000;
+  z-index: 35;
+}
+
+.comp-text {
+  color: #b4ff39;
+  font-size: 15px;
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+
+.comp-bar-bg {
+  width: 76%;
+  height: 8px;
+  background: #222;
+}
+
+.comp-bar-fill {
+  width: 0%;
+  height: 100%;
+  background: #fff;
+  transition: width 0.1s linear;
+}
+
+/* 4. 3D Fight HUD & Controls */
+#three-canvas-container {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+#fight-hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 14px 28px 0 65px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  z-index: 15;
+  pointer-events: none;
+}
+
+.hud-side {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 42%;
+}
+
+.hud-side.right {
+  flex-direction: row-reverse;
+}
+
+.hud-portrait {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #182026;
+  border: 2px solid #fff;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.hud-bars {
+  flex-grow: 1;
+}
+
+.hud-label-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 900;
+  font-style: italic;
+  margin-bottom: 4px;
+  text-shadow: 1px 1px 3px #000;
+}
+
+.hp-outer {
+  width: 100%;
+  height: 13px;
+  background: #2a0d10;
+  border: 2px solid #000;
+  transform: skewX(-18deg);
+  overflow: hidden;
+}
+
+.hp-inner {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #8fff00, #32d900);
+  transition: width 0.15s ease-out;
+}
+
+.hud-side.right .hp-outer {
+  transform: skewX(18deg);
+}
+
+.hud-side.right .hp-inner {
+  background: linear-gradient(90deg, #ff3b30, #d70015);
+  float: right;
+}
+
+.hud-center {
+  text-align: center;
+}
+
+.pause-icon {
+  font-size: 18px;
+  color: #ddd;
+  letter-spacing: 2px;
+}
+
+.timer-digits {
+  font-size: 26px;
+  font-weight: 900;
+  color: #b4ff00;
+  text-shadow: 0 2px 5px #000;
+}
+
+/* Round Banner & Combo Popups */
+#round-banner {
+  position: absolute;
+  top: 42%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 44px;
+  font-weight: 900;
+  font-style: italic;
+  color: #fff;
+  text-shadow: 0 4px 15px rgba(0, 0, 0, 0.9);
+  z-index: 18;
+  pointer-events: none;
+}
+
+#combo-popup {
+  position: absolute;
+  left: 75px;
+  top: 135px;
+  font-size: 28px;
+  font-weight: 900;
+  font-style: italic;
+  color: #ffae00;
+  text-shadow: 2px 2px 0 #000;
+  z-index: 16;
+  pointer-events: none;
+}
+
+/* Touch Controls Overlay */
+#touch-controls {
+  position: absolute;
+  bottom: 22px;
+  left: 0;
+  width: 100%;
+  padding: 0 38px 0 85px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  z-index: 16;
+  pointer-events: none;
+}
+
+.joystick-base {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: rgba(120, 130, 145, 0.32);
+  border: 3px solid rgba(20, 20, 25, 0.7);
+  position: relative;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.joystick-knob {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #e85d1a;
+  position: absolute;
+  top: 31px;
+  left: 31px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+
+.combat-buttons {
+  display: flex;
+  align-items: flex-end;
+  gap: 18px;
+  pointer-events: auto;
+}
+
+.ctrl-btn {
+  border-radius: 50%;
+  border: 3px solid #15181c;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.65);
+  transition: transform 0.08s;
+}
+.ctrl-btn:active {
+  transform: scale(0.9);
+}
+
+.btn-jump-kick {
+  width: 58px;
+  height: 58px;
+  background: #737d8c;
+}
+
+.btn-heavy-skill {
+  width: 54px;
+  height: 54px;
+  background: #a855f7;
+  color: #fff;
+  font-weight: 900;
+  font-size: 12px;
+}
+
+.btn-main-fist {
+  width: 84px;
+  height: 84px;
+  background: #30b866;
+}
