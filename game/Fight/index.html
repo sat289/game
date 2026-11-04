@@ -3,13 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Stick Kombat - Pro Audio & Modes Edition</title>
+  <title>Stick Kombat - Pro Audio, 1v1 Online & Cloud Sync Edition</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
 <div id="viewport-wrapper">
   <div id="game-frame">
+
+    <!-- Hidden Score Element for Firebase Auto-Scanner Compatibility -->
+    <div id="score" class="hidden">0</div>
 
     <!-- Left Floating Sidebar -->
     <div class="side-dock">
@@ -20,7 +23,7 @@
 
     <!-- 0. MOVIE-STYLE START & LANDSCAPE ROTATION SCREEN -->
     <div id="start-gate-screen" class="screen">
-      <div style="font-size:13px; color:#8fff00; font-weight:900; margin-bottom:8px;">&#127918; FULLSCREEN + REAL SYNTH SOUND & BGM</div>
+      <div style="font-size:13px; color:#8fff00; font-weight:900; margin-bottom:8px;">&#127918; FULLSCREEN + REAL SYNTH SOUND & ONLINE 1V1</div>
       <div style="font-size:32px; font-weight:900; font-style:italic; margin-bottom:20px;">STICK KOMBAT: REAPER VS LUMIS</div>
       <button class="btn-enter-fullscreen" onclick="enterGameFullscreen()">&#9654; ENTER GAME (ENABLE AUDIO)</button>
     </div>
@@ -44,7 +47,7 @@
       </div>
     </div>
 
-    <!-- 2. CHARACTER ROSTER MENU + WORKING GAME MODES + STAT UPGRADES -->
+    <!-- 2. CHARACTER ROSTER MENU + WORKING GAME MODES + 1V1 ONLINE ROOMS -->
     <div id="menu-screen" class="screen hidden">
       <div class="menu-top-tabs">
         <div class="tab-icon-btn" id="mode-training" onclick="selectGameMode('TRAINING')" title="Practice Mode">&#127891;</div>
@@ -52,12 +55,14 @@
         <div class="tab-icon-btn" id="mode-tower" onclick="selectGameMode('TOWER')" title="10-Floor Survival Tower">&#9820; TOWER</div>
         <div class="tab-icon-btn" id="mode-upgrade" onclick="upgradeSelectedHero()" title="Upgrade Fighter HP & Attack">&#127801; UPGRADE</div>
         <div class="tab-icon-btn" id="mode-2x2" onclick="selectGameMode('2X2')" style="font-style:italic;" title="2v2 Tag Team Mode">2X2</div>
+        <div class="tab-icon-btn tab-online-btn" id="mode-online" onclick="openOnlineRoomModal()" title="Play 1v1 Online with Friends">&#9876; 1V1 ONLINE</div>
       </div>
 
       <div class="hero-header-bar">
         <div class="selected-hero-title" id="hero-title-label">REAPER</div>
         <div class="hero-stat-pill" id="hero-stat-label">HP: 375 | ATK: 12 | SCYTHE</div>
         <button class="btn-upgrade-pill" onclick="upgradeSelectedHero()">&#11014; UPGRADE (50 &#129689;)</button>
+        <div class="cloud-sync-pill" id="cloud-status-badge">&#9729; GUEST MODE</div>
       </div>
 
       <div class="roster-wrapper">
@@ -111,6 +116,25 @@
             <span id="coin-amount">150</span>
             <span class="coin-icon"></span>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 1V1 ONLINE ROOM CODE MODAL POPUP -->
+    <div id="online-modal" class="modal-overlay hidden">
+      <div class="unlock-card" style="width:410px;">
+        <div class="unlock-close" onclick="closeOnlineRoomModal()">&#10006;</div>
+        <div class="unlock-title">&#9876; 1V1 ONLINE FRIEND MATCH</div>
+        <div class="unlock-desc" id="online-status-text">CREATE A ROOM CODE OR ENTER YOUR FRIEND'S CODE</div>
+
+        <div style="margin-bottom:12px;">
+          <button class="btn-unlock-buy" onclick="window.createOnlineRoom()">+ CREATE ROOM CODE</button>
+          <div class="room-code-box hidden" id="generated-code-display">------</div>
+        </div>
+
+        <div style="border-top:1px solid rgba(255,255,255,0.35); padding-top:10px; display:flex; justify-content:center; gap:8px; align-items:center;">
+          <input type="text" id="join-code-input" class="room-input" placeholder="ENTER CODE" maxlength="6" />
+          <button class="btn-unlock-buy" style="background:linear-gradient(180deg,#ff9f43,#ee5253);" onclick="window.joinOnlineRoom()">JOIN</button>
         </div>
       </div>
     </div>
@@ -180,7 +204,7 @@
         <div class="timer-digits" id="fight-timer">98</div>
       </div>
 
-      <!-- Player 2 (LUMIS) -->
+      <!-- Player 2 (LUMIS / ONLINE FRIEND) -->
       <div class="hud-side right">
         <div class="hud-portrait" id="p2-hud-avatar"></div>
         <div class="hud-bars">
@@ -249,7 +273,7 @@
 let audioCtx = null;
 let audioMuted = false;
 let bgmInterval = null;
-let bgmMode = 'NONE'; // 'MENU' or 'FIGHT'
+let bgmMode = 'NONE';
 let bgmStep = 0;
 
 function initAudioEngine() {
@@ -279,47 +303,45 @@ function playSFX(type) {
     osc.type = 'sine';
     osc.frequency.setValueAtTime(type === 'COIN' ? 987.77 : 520, now);
     if (type === 'COIN') osc.frequency.setValueAtTime(1318.5, now + 0.07);
-    gain.gain.setValueAtTime(0.16, now);
+    gain.gain.setValueAtTime(0.14, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
     osc.connect(gain);
     gain.connect(audioCtx.destination);
     osc.start(now);
     osc.stop(now + 0.22);
   } else if (type === 'SWING') {
-    // Scythe Whoosh Noise
-    const bufferSize = audioCtx.sampleRate * 0.14;
+    const bufferSize = audioCtx.sampleRate * 0.12;
     const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
     const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * 0.6;
     const noise = audioCtx.createBufferSource();
     noise.buffer = buffer;
 
     const filter = audioCtx.createBiquadFilter();
     filter.type = 'bandpass';
     filter.frequency.setValueAtTime(900, now);
-    filter.frequency.exponentialRampToValueAtTime(280, now + 0.14);
+    filter.frequency.exponentialRampToValueAtTime(280, now + 0.12);
 
     const gain = audioCtx.createGain();
-    gain.gain.setValueAtTime(0.25, now);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.14);
+    gain.gain.setValueAtTime(0.18, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
 
     noise.connect(filter);
     filter.connect(gain);
     gain.connect(audioCtx.destination);
     noise.start(now);
   } else if (type === 'HIT' || type === 'HEAVY_HIT') {
-    // Punchy Impact Bass + Metallic Slash
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
-    osc.type = type === 'HEAVY_HIT' ? 'sawtooth' : 'triangle';
-    osc.frequency.setValueAtTime(type === 'HEAVY_HIT' ? 190 : 140, now);
-    osc.frequency.exponentialRampToValueAtTime(32, now + (type === 'HEAVY_HIT' ? 0.26 : 0.15));
-    gain.gain.setValueAtTime(type === 'HEAVY_HIT' ? 0.42 : 0.3, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + (type === 'HEAVY_HIT' ? 0.26 : 0.15));
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(type === 'HEAVY_HIT' ? 240 : 170, now);
+    osc.frequency.exponentialRampToValueAtTime(45, now + 0.15);
+    gain.gain.setValueAtTime(0.22, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
     osc.connect(gain);
     gain.connect(audioCtx.destination);
     osc.start(now);
-    osc.stop(now + (type === 'HEAVY_HIT' ? 0.26 : 0.15));
+    osc.stop(now + 0.15);
   } else if (type === 'BOOMERANG') {
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
@@ -327,21 +349,20 @@ function playSFX(type) {
     osc.frequency.setValueAtTime(340, now);
     osc.frequency.linearRampToValueAtTime(680, now + 0.15);
     osc.frequency.linearRampToValueAtTime(340, now + 0.3);
-    gain.gain.setValueAtTime(0.2, now);
+    gain.gain.setValueAtTime(0.16, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
     osc.connect(gain);
     gain.connect(audioCtx.destination);
     osc.start(now);
     osc.stop(now + 0.3);
   } else if (type === 'GONG') {
-    // Oriental Dojo Gong for Round Start & Victory
     const freqs = [220, 330, 440, 554.37];
     freqs.forEach((f) => {
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.type = 'sine';
       osc.frequency.setValueAtTime(f, now);
-      gain.gain.setValueAtTime(0.12, now);
+      gain.gain.setValueAtTime(0.1, now);
       gain.gain.exponentialRampToValueAtTime(0.0008, now + 1.1);
       osc.connect(gain);
       gain.connect(audioCtx.destination);
@@ -358,7 +379,6 @@ function startBGM(mode) {
   clearInterval(bgmInterval);
   bgmStep = 0;
 
-  // Japanese Minor Pentatonic Scale (A, C, D, E, G)
   const menuNotes = [220, 261.63, 293.66, 329.63, 392.00, 329.63, 293.66, 261.63];
   const fightBass = [110, 110, 130.81, 146.83, 110, 110, 164.81, 146.83];
   const fightLead = [440, 0, 523.25, 587.33, 659.25, 0, 587.33, 523.25];
@@ -375,32 +395,30 @@ function startBGM(mode) {
       const gain = audioCtx.createGain();
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(freq, now);
-      gain.gain.setValueAtTime(0.05, now);
+      gain.gain.setValueAtTime(0.045, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
       osc.connect(gain);
       gain.connect(audioCtx.destination);
       osc.start(now);
       osc.stop(now + 0.3);
     } else if (bgmMode === 'FIGHT') {
-      // Driving Bassline
       const bFreq = fightBass[bgmStep % fightBass.length];
       const bOsc = audioCtx.createOscillator();
       const bGain = audioCtx.createGain();
-      bOsc.type = 'sawtooth';
+      bOsc.type = 'triangle';
       bOsc.frequency.setValueAtTime(bFreq, now);
-      bGain.gain.setValueAtTime(0.065, now);
+      bGain.gain.setValueAtTime(0.055, now);
       bGain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
       bOsc.connect(bGain);
       bGain.connect(audioCtx.destination);
       bOsc.start(now);
       bOsc.stop(now + 0.16);
 
-      // Ninja Lead Synth
       const lFreq = fightLead[bgmStep % fightLead.length];
       if (lFreq > 0 && bgmStep % 2 === 0) {
         const lOsc = audioCtx.createOscillator();
         const lGain = audioCtx.createGain();
-        lOsc.type = 'square';
+        lOsc.type = 'sine';
         lOsc.frequency.setValueAtTime(lFreq, now);
         lGain.gain.setValueAtTime(0.03, now);
         lGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
@@ -477,13 +495,19 @@ const STAGES = [
 const DIFFICULTIES = ['AUTO', 'EASY', 'NORMAL', 'HARD'];
 
 let coins = 150;
+window.score = 150; // Synced with Firebase score tracker
 let selectedHero = ROSTER[0];
 let selectedEnemy = ROSTER[1];
 let pendingUnlockFighter = null;
 let diffIndex = 0;
 let stageIndex = 0;
-let currentMode = '1P'; // '1P', 'TOWER', '2X2', 'TRAINING'
+let currentMode = '1P'; // '1P', 'TOWER', '2X2', 'TRAINING', 'ONLINE_1V1'
 let towerFloor = 1;
+
+// Online 1v1 Multiplayer State
+let isOnlineMatch = false;
+let onlineRole = null; // 'HOST' or 'GUEST'
+let activeRoomCode = null;
 
 function buildAvatarSVG(f) {
   let headArt = '';
@@ -590,7 +614,7 @@ function buildAvatarSVG(f) {
 }
 
 /* ============================================================================
-   3. MENU, MODES & STAT UPGRADES
+   3. MENU, MODES, UPGRADES & 1V1 ONLINE MODAL
 ============================================================================ */
 function runEntrySplash() {
   const fill = document.getElementById('splash-fill');
@@ -618,6 +642,7 @@ function runEntrySplash() {
 
 function selectGameMode(mode) {
   playSFX('CLICK');
+  isOnlineMatch = false;
   currentMode = mode;
   document.getElementById('mode-training').classList.toggle('active', mode === 'TRAINING');
   document.getElementById('mode-1p').classList.toggle('active', mode === '1P');
@@ -631,6 +656,19 @@ function selectGameMode(mode) {
   else tag.innerText = '1 PLAYER MODE';
 }
 
+function openOnlineRoomModal() {
+  initAudioEngine();
+  playSFX('CLICK');
+  document.getElementById('online-status-text').innerText = "CREATE A ROOM CODE OR ENTER YOUR FRIEND'S CODE";
+  document.getElementById('generated-code-display').classList.add('hidden');
+  document.getElementById('online-modal').classList.remove('hidden');
+}
+
+function closeOnlineRoomModal() {
+  document.getElementById('online-modal').classList.add('hidden');
+  if (window.cleanupOnlineRoom) window.cleanupOnlineRoom();
+}
+
 function upgradeSelectedHero() {
   initAudioEngine();
   if (coins >= 50) {
@@ -639,6 +677,7 @@ function upgradeSelectedHero() {
     selectedHero.dmg += 2;
     playSFX('COIN');
     renderRosterMenu();
+    if (window.savePlayerCloudData) window.savePlayerCloudData();
   } else {
     alert('Upgrade kosam 50 Coins kavali! Kindha unna Green [▶ 100 🪙] button nokki Free Coins pondandi.');
   }
@@ -646,6 +685,8 @@ function upgradeSelectedHero() {
 
 function renderRosterMenu() {
   document.getElementById('coin-amount').innerText = coins;
+  window.score = coins;
+  document.getElementById('score').innerText = coins;
   document.getElementById('hero-title-label').innerText = selectedHero.name;
   document.getElementById('hero-stat-label').innerText = `HP: ${selectedHero.hp} | ATK: ${selectedHero.dmg} | ${selectedHero.weapon}`;
   document.getElementById('stage-badge').innerText = STAGES[stageIndex].name;
@@ -699,6 +740,7 @@ function confirmUnlockFighter() {
     playSFX('COIN');
     closeUnlockModal();
     renderRosterMenu();
+    if (window.savePlayerCloudData) window.savePlayerCloudData();
   } else {
     alert(`Need ${pendingUnlockFighter.cost} Coins! Click the Green [▶ 100 🪙] button for free coins.`);
   }
@@ -709,6 +751,8 @@ function claimFreeCoins() {
   coins += 100;
   playSFX('COIN');
   renderRosterMenu();
+  if (window.submitScore) window.submitScore(coins);
+  if (window.savePlayerCloudData) window.savePlayerCloudData();
 }
 
 function cycleDifficulty(dir) {
@@ -728,6 +772,7 @@ function triggerMatchLoad() {
   playSFX('GONG');
   forceFullscreenLandscape();
   document.getElementById('menu-screen').classList.add('hidden');
+  document.getElementById('online-modal').classList.add('hidden');
   const compScreen = document.getElementById('loading-components-screen');
   const compFill = document.getElementById('comp-fill');
   const compLabel = document.getElementById('comp-label');
@@ -763,6 +808,8 @@ function togglePauseMatch() {
 function returnToMenu() {
   if (gameState === 'FIGHT' || gameState === 'ROUND_OVER' || gameState === 'PAUSED') {
     gameState = 'MENU';
+    isOnlineMatch = false;
+    if (window.cleanupOnlineRoom) window.cleanupOnlineRoom();
     clearInterval(matchClock);
     startBGM('MENU');
     document.getElementById('pause-modal').classList.add('hidden');
@@ -974,7 +1021,7 @@ class CelFighter {
       opponent.vx = this.facing * 13;
       opponent.vy = -12.5;
       screenShake = 9;
-      if (opponent.hp <= 0) slowMoFrames = 35; // Cinematic Slow-Motion KO!
+      if (opponent.hp <= 0) slowMoFrames = 35;
     } else {
       playSFX('HIT');
       opponent.state = 'HURT';
@@ -992,6 +1039,9 @@ class CelFighter {
       comboDmgAccum += dmg;
       comboResetTimer = 110;
       updateComboOverlay(opponent.maxHp);
+      if (isOnlineMatch && window.sendOnlineHitToEnemy) {
+        window.sendOnlineHitToEnemy(opponent.hp);
+      }
     }
     refreshFightHUD();
   }
@@ -1341,7 +1391,7 @@ function drawArenaBackground() {
 }
 
 /* ============================================================================
-   6. MATCH & ROUND FLOW (Supports 1P, Tower, and 2x2 Tag Team!)
+   6. MATCH & ROUND FLOW (Supports 1P, Tower, 2x2 Tag Team, and Online 1v1!)
 ============================================================================ */
 function startBestOf3Match() {
   document.getElementById('arena-canvas').classList.remove('hidden');
@@ -1353,7 +1403,7 @@ function startBestOf3Match() {
   currentRound = 1;
   p1RoundWins = 0;
   p2RoundWins = 0;
-  if (currentMode === 'TOWER') {
+  if (currentMode === 'TOWER' && !isOnlineMatch) {
     selectedEnemy = ROSTER[(towerFloor) % ROSTER.length];
   }
   updateRoundDots();
@@ -1418,7 +1468,7 @@ function refreshFightHUD() {
   document.getElementById('p1-bolt-1').className = `bolt-icon ${p1.bolts >= 1 ? 'charged' : ''}`;
   document.getElementById('p1-bolt-2').className = `bolt-icon ${p1.bolts >= 2 ? 'charged' : ''}`;
 
-  document.getElementById('p2-hud-name').innerText = p2.config.name;
+  document.getElementById('p2-hud-name').innerText = isOnlineMatch ? `${p2.config.name} (ONLINE)` : p2.config.name;
   document.getElementById('p2-hud-hp').innerText = `${p2.hp}/${p2.maxHp}`;
   document.getElementById('p2-hp-fill').style.width = `${p2Pct}%`;
   document.getElementById('p2-hp-delay').style.width = `${p2Pct}%`;
@@ -1427,8 +1477,7 @@ function refreshFightHUD() {
 }
 
 function finishRound(p1Won) {
-  // Check 2X2 Tag Team Partner Swap before ending round!
-  if (currentMode === '2X2') {
+  if (currentMode === '2X2' && !isOnlineMatch) {
     if (!p1Won && !p1TagPartnerUsed) {
       p1TagPartnerUsed = true;
       const partner = ROSTER[2];
@@ -1479,7 +1528,11 @@ function finishRound(p1Won) {
   if (p1RoundWins >= 2 || p2RoundWins >= 2) {
     if (p1RoundWins >= 2) {
       coins += 75;
+      window.score = coins;
+      document.getElementById('score').innerText = coins;
       playSFX('COIN');
+      if (window.submitScore) window.submitScore(coins);
+      if (window.savePlayerCloudData) window.savePlayerCloudData();
       if (currentMode === 'TOWER') towerFloor++;
       stageIndex = (stageIndex + 1) % STAGES.length;
     }
@@ -1496,6 +1549,7 @@ function finishRound(p1Won) {
 let menuPreviewDummy = null;
 let aiCooldown = 0;
 let slowMoToggle = 0;
+let onlineSyncTick = 0;
 
 function mainLoop() {
   requestAnimationFrame(mainLoop);
@@ -1513,7 +1567,6 @@ function mainLoop() {
 
   if (gameState !== 'FIGHT' && gameState !== 'ROUND_OVER') return;
 
-  // Slow-Motion KO Frame Skip
   if (slowMoFrames > 0) {
     slowMoFrames--;
     slowMoToggle = (slowMoToggle + 1) % 3;
@@ -1539,8 +1592,13 @@ function mainLoop() {
       }
     }
 
-    if (currentMode === 'TRAINING') {
-      // Practice Dummy heals automatically
+    if (isOnlineMatch) {
+      // Online 1v1: Sync local player state to Firebase every 3 frames
+      onlineSyncTick++;
+      if (onlineSyncTick % 3 === 0 && window.pushOnlineState) {
+        window.pushOnlineState();
+      }
+    } else if (currentMode === 'TRAINING') {
       if (p2.hp < p2.maxHp * 0.3) p2.hp = p2.maxHp;
     } else {
       if (aiCooldown > 0) aiCooldown--;
@@ -1748,5 +1806,295 @@ document.getElementById('btn-special').addEventListener('pointerdown', () => {
 
 mainLoop();
 </script>
+
+<!-- ================= FIREBASE AUTO CLOUD SYNC & 1V1 ONLINE ROOMS ================= -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+  import { getDatabase, ref, set, get, update, onValue, off, child } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBzLchy5M2fLne4c7Ghw1KNN8wVrlZdd8M",
+    authDomain: "friendsgame-872f5.firebaseapp.com",
+    databaseURL: "https://friendsgame-872f5-default-rtdb.firebaseio.com",
+    projectId: "friendsgame-872f5",
+    storageBucket: "friendsgame-872f5.firebasestorage.app",
+    messagingSenderId: "522534013233",
+    appId: "1:522534013233:web:f5faa6e6795023d0420810",
+    measurementId: "G-PW5H3G97QR"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getDatabase(app);
+
+  // 1. Set the game name here
+  const GAME_KEY = "stickkombat";
+
+  let currentUser = null;
+  let currentHighScore = parseInt(localStorage.getItem(`${GAME_KEY}_hi`) || "0", 10);
+
+  // Load saved local unlocks/coins first
+  try {
+    const savedLocal = JSON.parse(localStorage.getItem(`${GAME_KEY}_save`) || "null");
+    if (savedLocal) applySavedData(savedLocal);
+  } catch (e) {}
+
+  function applySavedData(data) {
+    if (typeof data.coins === "number" && data.coins > coins) {
+      coins = data.coins;
+    }
+    if (Array.isArray(data.unlockedIds)) {
+      ROSTER.forEach(f => {
+        if (data.unlockedIds.includes(f.id)) f.unlocked = true;
+      });
+    }
+    if (data.stats) {
+      ROSTER.forEach(f => {
+        if (data.stats[f.id]) {
+          f.hp = data.stats[f.id].hp || f.hp;
+          f.dmg = data.stats[f.id].dmg || f.dmg;
+        }
+      });
+    }
+    renderRosterMenu();
+  }
+
+  window.savePlayerCloudData = function() {
+    const payload = {
+      coins: coins,
+      unlockedIds: ROSTER.filter(f => f.unlocked).map(f => f.id),
+      stats: {}
+    };
+    ROSTER.forEach(f => {
+      payload.stats[f.id] = { hp: f.hp, dmg: f.dmg };
+    });
+    localStorage.setItem(`${GAME_KEY}_save`, JSON.stringify(payload));
+    if (currentUser) {
+      set(ref(db, `users/${currentUser.uid}/${GAME_KEY}_data`), payload).catch(() => {});
+    }
+  };
+
+  // 2. Automatically listen to user login state from your main website
+  onAuthStateChanged(auth, async (user) => {
+    const badge = document.getElementById("cloud-status-badge");
+    if (user) {
+      currentUser = user;
+      if (badge) badge.innerText = `☁ SYNCED: ${user.displayName || user.email || "PLAYER"}`;
+      try {
+        // Sync High Score
+        const snapshot = await get(child(ref(db), `scores/${user.uid}/${GAME_KEY}_high`));
+        if (snapshot.exists()) {
+          const cloudScore = parseInt(snapshot.val(), 10) || 0;
+          if (cloudScore > currentHighScore) {
+            currentHighScore = cloudScore;
+            localStorage.setItem(`${GAME_KEY}_hi`, currentHighScore.toString());
+          } else if (currentHighScore > cloudScore) {
+            set(ref(db, `scores/${user.uid}/${GAME_KEY}_high`), currentHighScore);
+          }
+        } else if (currentHighScore > 0) {
+          set(ref(db, `scores/${user.uid}/${GAME_KEY}_high`), currentHighScore);
+        }
+
+        // Sync Coins, Unlocked Fighters & Upgrades
+        const dataSnap = await get(child(ref(db), `users/${user.uid}/${GAME_KEY}_data`));
+        if (dataSnap.exists()) {
+          applySavedData(dataSnap.val());
+        } else {
+          window.savePlayerCloudData();
+        }
+      } catch (err) {
+        console.error("Firebase sync error:", err);
+      }
+    } else {
+      if (badge) badge.innerText = "☁ LOCAL SAVE";
+    }
+  });
+
+  // 3. Simple global helper function
+  window.submitScore = function(newScore) {
+    const val = parseInt(newScore, 10);
+    if (isNaN(val)) return;
+
+    if (val > currentHighScore) {
+      currentHighScore = val;
+      localStorage.setItem(`${GAME_KEY}_hi`, currentHighScore.toString());
+      if (currentUser) {
+        set(ref(db, `scores/${currentUser.uid}/${GAME_KEY}_high`), currentHighScore);
+      }
+    }
+  };
+
+  // 4. Fallback Auto-Scanner
+  setInterval(() => {
+    let detected = 0;
+    if (typeof window.score === "number") detected = window.score;
+    const elem = document.getElementById("score") || document.getElementById("finalScore");
+    if (elem) {
+      const parsed = parseInt(elem.innerText.replace(/[^0-9]/g, ""), 10);
+      if (!isNaN(parsed)) detected = Math.max(detected, parsed);
+    }
+    if (detected > currentHighScore) {
+      window.submitScore(detected);
+    }
+  }, 1000);
+
+  /* ============================================================================
+     5. 1V1 ONLINE ROOM CODE SYSTEM (Play With Friends via 6-Digit Code)
+  ============================================================================ */
+  let roomListenerRef = null;
+
+  window.cleanupOnlineRoom = function() {
+    if (roomListenerRef) {
+      off(roomListenerRef);
+      roomListenerRef = null;
+    }
+  };
+
+  window.createOnlineRoom = async function() {
+    window.cleanupOnlineRoom();
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    activeRoomCode = code;
+    onlineRole = "HOST";
+
+    const codeBox = document.getElementById("generated-code-display");
+    const statusTxt = document.getElementById("online-status-text");
+    codeBox.innerText = code;
+    codeBox.classList.remove("hidden");
+    statusTxt.innerText = "SHARE THIS CODE WITH YOUR FRIEND. WAITING FOR FRIEND TO JOIN...";
+
+    const roomRef = ref(db, `stickkombat_rooms/${code}`);
+    await set(roomRef, {
+      status: "WAITING",
+      stage: stageIndex,
+      host: {
+        heroId: selectedHero.id,
+        xPct: 0.28,
+        yOffset: 0,
+        facing: 1,
+        state: "IDLE",
+        hp: selectedHero.hp
+      }
+    });
+
+    roomListenerRef = roomRef;
+    onValue(roomRef, (snap) => {
+      const data = snap.val();
+      if (!data) return;
+
+      if (data.status === "READY" && gameState !== "FIGHT" && gameState !== "ROUND_OVER") {
+        const guestHero = ROSTER.find(f => f.id === data.guest?.heroId) || ROSTER[1];
+        selectedEnemy = guestHero;
+        isOnlineMatch = true;
+        currentMode = "ONLINE_1V1";
+        triggerMatchLoad();
+      }
+
+      if (isOnlineMatch && gameState === "FIGHT" && data.guest && p2 && p1) {
+        // Mirror opponent X position so both players see accurate arena spacing
+        p2.x = (1 - data.guest.xPct) * CW;
+        p2.y = GROUND_Y - (data.guest.yOffset || 0);
+        p2.facing = -data.guest.facing;
+        if (data.guest.state && data.guest.state.startsWith("SLASH") && p2.state !== data.guest.state) {
+          p2.state = data.guest.state;
+          p2.stateTick = 16;
+          playSFX("SWING");
+        }
+        if (typeof data.hostTargetHp === "number" && data.hostTargetHp < p1.hp) {
+          p1.hp = Math.max(0, data.hostTargetHp);
+          p1.state = "HURT";
+          p1.stateTick = 12;
+          spawnStarburst(p1.x, p1.y - 58, false);
+          refreshFightHUD();
+        }
+      }
+    });
+  };
+
+  window.joinOnlineRoom = async function() {
+    const code = document.getElementById("join-code-input").value.trim();
+    const statusTxt = document.getElementById("online-status-text");
+    if (code.length !== 6) {
+      statusTxt.innerText = "PLEASE ENTER A VALID 6-DIGIT ROOM CODE!";
+      return;
+    }
+
+    const roomRef = ref(db, `stickkombat_rooms/${code}`);
+    const snap = await get(roomRef);
+    if (!snap.exists()) {
+      statusTxt.innerText = "ROOM NOT FOUND! CHECK THE CODE.";
+      return;
+    }
+
+    window.cleanupOnlineRoom();
+    activeRoomCode = code;
+    onlineRole = "GUEST";
+    const roomData = snap.val();
+    stageIndex = roomData.stage || 0;
+    const hostHero = ROSTER.find(f => f.id === roomData.host?.heroId) || ROSTER[0];
+    selectedEnemy = hostHero;
+
+    await update(roomRef, {
+      status: "READY",
+      guest: {
+        heroId: selectedHero.id,
+        xPct: 0.28,
+        yOffset: 0,
+        facing: 1,
+        state: "IDLE",
+        hp: selectedHero.hp
+      }
+    });
+
+    isOnlineMatch = true;
+    currentMode = "ONLINE_1V1";
+    triggerMatchLoad();
+
+    roomListenerRef = roomRef;
+    onValue(roomRef, (s) => {
+      const d = s.val();
+      if (!d) return;
+      if (isOnlineMatch && gameState === "FIGHT" && d.host && p2 && p1) {
+        p2.x = (1 - d.host.xPct) * CW;
+        p2.y = GROUND_Y - (d.host.yOffset || 0);
+        p2.facing = -d.host.facing;
+        if (d.host.state && d.host.state.startsWith("SLASH") && p2.state !== d.host.state) {
+          p2.state = d.host.state;
+          p2.stateTick = 16;
+          playSFX("SWING");
+        }
+        if (typeof d.guestTargetHp === "number" && d.guestTargetHp < p1.hp) {
+          p1.hp = Math.max(0, d.guestTargetHp);
+          p1.state = "HURT";
+          p1.stateTick = 12;
+          spawnStarburst(p1.x, p1.y - 58, false);
+          refreshFightHUD();
+        }
+      }
+    });
+  };
+
+  window.pushOnlineState = function() {
+    if (!isOnlineMatch || !activeRoomCode || !p1) return;
+    const roleKey = onlineRole === "HOST" ? "host" : "guest";
+    update(ref(db, `stickkombat_rooms/${activeRoomCode}/${roleKey}`), {
+      heroId: selectedHero.id,
+      xPct: Number((p1.x / CW).toFixed(3)),
+      yOffset: Math.round(GROUND_Y - p1.y),
+      facing: p1.facing,
+      state: p1.state,
+      hp: p1.hp
+    }).catch(() => {});
+  };
+
+  window.sendOnlineHitToEnemy = function(newEnemyHp) {
+    if (!isOnlineMatch || !activeRoomCode) return;
+    const targetField = onlineRole === "HOST" ? "guestTargetHp" : "hostTargetHp";
+    update(ref(db, `stickkombat_rooms/${activeRoomCode}`), {
+      [targetField]: newEnemyHp
+    }).catch(() => {});
+  };
+</script>
+<!-- ================================================================================= -->
 </body>
 </html>
