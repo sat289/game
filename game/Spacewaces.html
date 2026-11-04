@@ -2,13 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
 <title>Wave Space</title>
 
 <style>
 * {
   box-sizing: border-box;
-  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -22,6 +23,7 @@ canvas {
   display: block;
   width: 100vw;
   height: 100vh;
+  touch-action: none;
 }
 
 #scoreBox {
@@ -31,13 +33,13 @@ canvas {
   width: 100%;
   text-align: center;
   color: white;
-  font-size: 28px;
+  font-size: 26px;
   font-weight: bold;
   z-index: 2;
+  pointer-events: none;
 }
 
-#startScreen,
-#gameOver {
+.screen {
   position: fixed;
   inset: 0;
   display: flex;
@@ -46,8 +48,8 @@ canvas {
   flex-direction: column;
   color: white;
   text-align: center;
-  z-index: 3;
-  background: rgba(0,0,0,.35);
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.45);
 }
 
 #gameOver {
@@ -61,35 +63,39 @@ h1 {
 
 p {
   font-size: 18px;
+  margin: 10px;
 }
 
 button {
-  padding: 14px 30px;
+  padding: 15px 35px;
+  margin-top: 20px;
   border: none;
-  border-radius: 10px;
-  font-size: 18px;
+  border-radius: 12px;
+  font-size: 20px;
+  font-weight: bold;
   cursor: pointer;
   background: #00e5ff;
   color: #001018;
-  font-weight: bold;
 }
 </style>
 </head>
 
 <body>
 
-<div id="scoreBox">Score: <span id="score">0</span></div>
-
-<div id="startScreen">
-  <h1>WAVE SPACE</h1>
-  <p>Hold SPACE / Click / Touch to fly up</p>
-  <button onclick="startGame()">START GAME</button>
+<div id="scoreBox">
+  Score: <span id="score">0</span>
 </div>
 
-<div id="gameOver">
+<div id="startScreen" class="screen">
+  <h1>WAVE SPACE</h1>
+  <p>Hold the screen to fly up</p>
+  <button id="startButton">START GAME</button>
+</div>
+
+<div id="gameOver" class="screen">
   <h1>GAME OVER</h1>
   <p>Your Score: <span id="finalScore">0</span></p>
-  <button onclick="startGame()">PLAY AGAIN</button>
+  <button id="restartButton">PLAY AGAIN</button>
 </div>
 
 <canvas id="game"></canvas>
@@ -98,13 +104,10 @@ button {
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-function resize() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
-resize();
-
-window.addEventListener("resize", resize);
+const startScreen = document.getElementById("startScreen");
+const gameOverScreen = document.getElementById("gameOver");
+const startButton = document.getElementById("startButton");
+const restartButton = document.getElementById("restartButton");
 
 let running = false;
 let holding = false;
@@ -113,10 +116,18 @@ let speed = 5;
 let frame = 0;
 let obstacles = [];
 
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
+
 const player = {
   x: 150,
   y: 300,
-  size: 24,
+  size: 28,
   velocity: 0,
   rotation: 0
 };
@@ -130,6 +141,7 @@ function resetGame() {
   player.x = Math.min(150, canvas.width * 0.25);
   player.y = canvas.height / 2;
   player.velocity = 0;
+  player.rotation = 0;
 
   document.getElementById("score").textContent = score;
 }
@@ -137,18 +149,35 @@ function resetGame() {
 function startGame() {
   resetGame();
 
-  document.getElementById("startScreen").style.display = "none";
-  document.getElementById("gameOver").style.display = "none";
-
+  holding = false;
   running = true;
+
+  startScreen.style.display = "none";
+  gameOverScreen.style.display = "none";
 }
 
-function createObstacle() {
-  const gap = Math.max(150, canvas.height * 0.28);
-  const margin = 70;
+startButton.addEventListener("click", startGame);
+restartButton.addEventListener("click", startGame);
 
-  const maxTop = canvas.height - gap - margin * 2;
-  const topHeight = margin + Math.random() * maxTop;
+/* Mobile touch support for buttons */
+startButton.addEventListener("touchend", function(e) {
+  e.preventDefault();
+  startGame();
+});
+
+restartButton.addEventListener("touchend", function(e) {
+  e.preventDefault();
+  startGame();
+});
+
+function createObstacle() {
+  const gap = Math.max(170, canvas.height * 0.30);
+  const margin = 50;
+
+  const availableSpace = canvas.height - gap - margin * 2;
+
+  const topHeight =
+    margin + Math.random() * Math.max(50, availableSpace);
 
   obstacles.push({
     x: canvas.width + 80,
@@ -164,7 +193,7 @@ function update() {
 
   frame++;
 
-  // Wave movement
+  /* Wave movement */
   if (holding) {
     player.velocity -= 0.55;
     player.rotation -= 0.08;
@@ -176,18 +205,20 @@ function update() {
   player.velocity = Math.max(-9, Math.min(9, player.velocity));
   player.y += player.velocity;
 
-  // Create obstacles
+  /* Create obstacles */
   if (frame % 110 === 0) {
     createObstacle();
   }
 
-  // Move obstacles
+  /* Move obstacles */
   for (let i = obstacles.length - 1; i >= 0; i--) {
     const obs = obstacles[i];
+
     obs.x -= speed;
 
     if (!obs.passed && obs.x + obs.width < player.x) {
       obs.passed = true;
+
       score++;
       document.getElementById("score").textContent = score;
 
@@ -196,35 +227,40 @@ function update() {
       }
     }
 
-    if (obs.x + obs.width < -20) {
+    if (obs.x + obs.width < 0) {
       obstacles.splice(i, 1);
     }
   }
 
-  // Screen collision
+  /* Screen collision */
   if (
     player.y - player.size / 2 <= 0 ||
     player.y + player.size / 2 >= canvas.height
   ) {
     endGame();
+    return;
   }
 
-  // Obstacle collision
+  /* Obstacle collision */
   for (const obs of obstacles) {
-    const left = player.x - player.size / 2;
-    const right = player.x + player.size / 2;
-    const top = player.y - player.size / 2;
-    const bottom = player.y + player.size / 2;
+    const playerLeft = player.x - player.size / 2;
+    const playerRight = player.x + player.size / 2;
+    const playerTop = player.y - player.size / 2;
+    const playerBottom = player.y + player.size / 2;
 
     const insideX =
-      right > obs.x &&
-      left < obs.x + obs.width;
+      playerRight > obs.x &&
+      playerLeft < obs.x + obs.width;
 
-    const hitTop = top < obs.topHeight;
-    const hitBottom = bottom > obs.bottomY;
-
-    if (insideX && (hitTop || hitBottom)) {
+    if (
+      insideX &&
+      (
+        playerTop < obs.topHeight ||
+        playerBottom > obs.bottomY
+      )
+    ) {
       endGame();
+      return;
     }
   }
 }
@@ -233,49 +269,23 @@ function drawBackground() {
   ctx.fillStyle = "#050816";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Stars
-  ctx.fillStyle = "rgba(255,255,255,0.35)";
-  for (let i = 0; i < 70; i++) {
-    const x = (i * 137 + frame * 0.2) % canvas.width;
+  ctx.fillStyle = "rgba(255,255,255,0.4)";
+
+  for (let i = 0; i < 60; i++) {
+    const x = (i * 137 + frame * 0.3) % canvas.width;
     const y = (i * 83) % canvas.height;
 
     ctx.fillRect(x, y, 2, 2);
   }
 }
 
-function drawPlayer() {
-  ctx.save();
-
-  ctx.translate(player.x, player.y);
-  ctx.rotate(player.rotation);
-
-  // Glow
-  ctx.shadowColor = "#00e5ff";
-  ctx.shadowBlur = 20;
-
-  ctx.fillStyle = "#00e5ff";
-  ctx.fillRect(
-    -player.size / 2,
-    -player.size / 2,
-    player.size,
-    player.size
-  );
-
-  ctx.fillStyle = "white";
-  ctx.fillRect(-5, -5, 10, 10);
-
-  ctx.restore();
-}
-
 function drawObstacles() {
   for (const obs of obstacles) {
-
     ctx.shadowColor = "#9c27ff";
     ctx.shadowBlur = 15;
 
     ctx.fillStyle = "#7c3aed";
 
-    // Top obstacle
     ctx.fillRect(
       obs.x,
       0,
@@ -283,7 +293,6 @@ function drawObstacles() {
       obs.topHeight
     );
 
-    // Bottom obstacle
     ctx.fillRect(
       obs.x,
       obs.bottomY,
@@ -293,7 +302,6 @@ function drawObstacles() {
 
     ctx.shadowBlur = 0;
 
-    // Neon edges
     ctx.fillStyle = "#d8b4fe";
 
     ctx.fillRect(
@@ -312,6 +320,30 @@ function drawObstacles() {
   }
 }
 
+function drawPlayer() {
+  ctx.save();
+
+  ctx.translate(player.x, player.y);
+  ctx.rotate(player.rotation);
+
+  ctx.shadowColor = "#00e5ff";
+  ctx.shadowBlur = 20;
+
+  ctx.fillStyle = "#00e5ff";
+
+  ctx.fillRect(
+    -player.size / 2,
+    -player.size / 2,
+    player.size,
+    player.size
+  );
+
+  ctx.fillStyle = "white";
+  ctx.fillRect(-6, -6, 12, 12);
+
+  ctx.restore();
+}
+
 function draw() {
   drawBackground();
   drawObstacles();
@@ -322,41 +354,53 @@ function endGame() {
   if (!running) return;
 
   running = false;
+  holding = false;
 
   document.getElementById("finalScore").textContent = score;
-  document.getElementById("gameOver").style.display = "flex";
+  gameOverScreen.style.display = "flex";
 }
 
-// Keyboard controls
-window.addEventListener("keydown", e => {
-  if (e.code === "Space") {
+/* Keyboard controls */
+window.addEventListener("keydown", function(e) {
+  if (e.code === "Space" && running) {
     e.preventDefault();
     holding = true;
   }
 });
 
-window.addEventListener("keyup", e => {
+window.addEventListener("keyup", function(e) {
   if (e.code === "Space") {
     holding = false;
   }
 });
 
-// Mouse controls
-window.addEventListener("mousedown", () => {
-  holding = true;
+/* Mouse controls - canvas only */
+canvas.addEventListener("mousedown", function() {
+  if (running) holding = true;
 });
 
-window.addEventListener("mouseup", () => {
+canvas.addEventListener("mouseup", function() {
   holding = false;
 });
 
-// Touch controls
-window.addEventListener("touchstart", e => {
-  e.preventDefault();
-  holding = true;
+canvas.addEventListener("mouseleave", function() {
+  holding = false;
+});
+
+/* Mobile touch controls - canvas only */
+canvas.addEventListener("touchstart", function(e) {
+  if (running) {
+    e.preventDefault();
+    holding = true;
+  }
 }, { passive: false });
 
-window.addEventListener("touchend", () => {
+canvas.addEventListener("touchend", function(e) {
+  e.preventDefault();
+  holding = false;
+}, { passive: false });
+
+canvas.addEventListener("touchcancel", function() {
   holding = false;
 });
 
