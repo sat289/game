@@ -4,72 +4,221 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#f6a2ce">
 <title>ST GAMES - Rope Pals</title>
-<meta name="theme-color" content="#ff8fc7">
+
 <style>
 *{box-sizing:border-box}
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#ffc0dc;font-family:Arial,sans-serif;touch-action:none}
-#game{position:relative;width:100%;height:100%;overflow:hidden;background:linear-gradient(#ff9fc9,#ffc4d9 60%,#ffe0e8)}
-canvas{display:block;width:100%;height:100%;touch-action:none}
-#top{position:absolute;top:env(safe-area-inset-top,8px);left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:10px 12px;pointer-events:none}
-.pill{pointer-events:auto;border:2px solid #fff;background:#ffffffd9;color:#7a315d;border-radius:20px;padding:8px 12px;font-weight:900;font-size:12px;box-shadow:0 3px 0 #d76b9e}
-#brand{font-size:14px;letter-spacing:1px;color:#fff;text-shadow:0 2px 4px #a83c79;font-weight:1000}
-#controls{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);display:flex;justify-content:space-between;align-items:end;padding:0 14px;pointer-events:none}
-.cluster{display:flex;gap:8px;pointer-events:auto;align-items:center}
-.ctrl{width:56px;height:56px;border:3px solid #fff;border-radius:18px;background:#fff9;color:#923c6b;font-size:20px;font-weight:900;box-shadow:0 5px 0 #d76b9e;touch-action:none}
-.ctrl.small{width:48px;height:48px;font-size:12px}
-.ctrl.active{background:#ff5da7;color:white;transform:translateY(3px);box-shadow:0 2px 0 #b7437d}
-#hint{position:absolute;left:50%;bottom:100px;transform:translateX(-50%);padding:8px 14px;border-radius:20px;background:#ffffffc9;color:#81365f;font-weight:800;font-size:12px;white-space:nowrap;pointer-events:none}
-#overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#7e315d55;backdrop-filter:blur(5px);z-index:5}
-.panel{width:min(88%,370px);max-height:86%;overflow:auto;background:linear-gradient(160deg,#fff,#ffeaf4);border:4px solid #fff;border-radius:28px;padding:22px;text-align:center;box-shadow:0 12px 0 #d76b9e,0 20px 45px #8a315b55;color:#773052}
-h1{margin:0 0 6px;font-size:27px;color:#f04e9a;text-shadow:0 2px #ffd0e5}
-.sub{font-size:13px;line-height:1.5;color:#9a5276;margin:7px 0 17px}
-.action{width:100%;border:0;border-radius:16px;padding:13px;margin:6px 0;background:linear-gradient(90deg,#ff5ca8,#ff8cc4);color:#fff;font-weight:1000;font-size:15px;box-shadow:0 4px 0 #c84885}
-.action.secondary{background:#fff;color:#a13f70;border:2px solid #ffc0dc;box-shadow:0 3px 0 #e89abd}
+html,body{
+ margin:0;width:100%;height:100%;overflow:hidden;
+ background:#f6b3d4;
+ font-family:Arial,sans-serif;
+ touch-action:none;user-select:none;
+}
+#game{
+ position:relative;width:100%;height:100%;overflow:hidden;
+ background:linear-gradient(#f7b1d2,#ffcfce,#ffdfbd);
+}
+canvas{width:100%;height:100%;display:block;touch-action:none}
+
+#top{
+ position:absolute;top:env(safe-area-inset-top,8px);
+ left:0;right:0;padding:12px;
+ display:flex;align-items:center;justify-content:space-between;
+ pointer-events:none;
+}
+#brand{
+ color:white;font-size:14px;font-weight:1000;
+ text-shadow:0 2px 5px #a83c79;letter-spacing:1px;
+}
+.pill{
+ pointer-events:auto;border:2px solid white;
+ background:#ffffffdf;color:#85365e;
+ border-radius:20px;padding:8px 13px;
+ font-weight:900;font-size:12px;
+ box-shadow:0 3px 0 #d76b9e;
+}
+#hint{
+ position:absolute;bottom:88px;left:50%;
+ transform:translateX(-50%);
+ background:#ffffffdf;color:#873b63;
+ border-radius:22px;padding:9px 13px;
+ font-size:10px;font-weight:900;
+ white-space:nowrap;pointer-events:none;
+ max-width:95%;overflow:hidden;text-overflow:ellipsis;
+}
+#toast{
+ position:absolute;top:72px;left:50%;
+ transform:translateX(-50%);
+ background:white;color:#a13f70;
+ padding:9px 15px;border-radius:20px;
+ font-size:12px;font-weight:900;
+ display:none;z-index:8;
+ text-align:center;max-width:90%;
+}
+
+/* BOTTOM GAME BUTTONS */
+#bottomControls{
+ position:absolute;
+ bottom:calc(10px + env(safe-area-inset-bottom,0px));
+ left:0;right:0;
+ display:none;
+ grid-template-columns:1fr 1.35fr 1.15fr;
+ align-items:center;
+ gap:8px;
+ padding:0 10px;
+ z-index:3;
+ pointer-events:auto;
+}
+.controlBtn{
+ min-width:0;
+ height:65px;
+ border:3px solid white;
+ border-radius:25px;
+ outline:2px solid #693044;
+ outline-offset:-5px;
+ font-weight:1000;
+ box-shadow:0 5px 0 #873c60,0 7px 12px #71314b44;
+ display:flex;
+ flex-direction:column;
+ justify-content:center;
+ align-items:center;
+ gap:2px;
+ position:relative;
+ overflow:hidden;
+}
+.controlBtn:active{
+ transform:translateY(3px);
+ box-shadow:0 2px 0 #873c60;
+}
+.controlBtn .mainText{
+ font-size:clamp(15px,4vw,23px);
+ line-height:1;
+}
+.controlBtn .smallText{
+ font-size:clamp(9px,2.5vw,13px);
+ font-weight:900;
+}
+#playerBtn{
+ color:#87400b;
+ background:linear-gradient(#ffe849,#ffad08);
+}
+#directionBtn{
+ color:#286d17;
+ background:linear-gradient(#70ff15,#31d900);
+}
+#ropeAdBtn{
+ color:#80400a;
+ background:linear-gradient(#ffe849,#ffad08);
+}
+.adBadge{
+ position:absolute;
+ top:2px;right:3px;
+ background:#22e33d;
+ color:#126c18;
+ border:2px solid white;
+ border-radius:9px;
+ font-size:9px;
+ padding:2px 5px;
+ box-shadow:0 2px 3px #0003;
+}
+#ropeAdBtn.removed{
+ background:linear-gradient(#b9ffd0,#58df91);
+ color:#17643a;
+}
+
+#overlay,#pause{
+ position:absolute;inset:0;display:flex;
+ align-items:center;justify-content:center;
+ background:#79335466;backdrop-filter:blur(5px);
+ z-index:5;
+}
+#pause{display:none;z-index:6}
+.panel{
+ width:min(88%,370px);max-height:85%;
+ overflow:auto;text-align:center;
+ background:linear-gradient(160deg,#fff,#ffeaf4);
+ border:4px solid white;border-radius:27px;
+ padding:22px;color:#773052;
+ box-shadow:0 12px 0 #d76b9e,0 20px 45px #8a315b55;
+}
+h1{margin:0 0 7px;color:#f04e9a;font-size:28px}
+.sub{font-size:13px;line-height:1.5;color:#9a5276;margin:8px 0 17px}
+.action{
+ width:100%;border:0;border-radius:15px;
+ padding:14px;margin:6px 0;
+ background:linear-gradient(90deg,#ff5ca8,#ff8cc4);
+ color:white;font-size:15px;font-weight:1000;
+ box-shadow:0 4px 0 #c84885;
+}
+.secondary{
+ background:white;color:#a13f70;
+ border:2px solid #ffc0dc;
+ box-shadow:0 3px 0 #e89abd;
+}
 .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin:12px 0}
-.level{border:2px solid #ffc1dc;background:#fff;border-radius:12px;padding:10px 0;color:#9b4772;font-weight:900}
+.level{
+ border:2px solid #ffc1dc;background:white;
+ border-radius:12px;padding:11px 0;
+ color:#9b4772;font-weight:900;
+}
 .level.done{background:#ffe0ef;border-color:#ff72b2}
 .level:disabled{opacity:.35}
-#toast{position:absolute;top:70px;left:50%;transform:translateX(-50%);padding:8px 14px;border-radius:20px;background:#fff;color:#a13f70;font-size:12px;font-weight:900;display:none;z-index:4}
-#pause{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:#7e315d55;z-index:4}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+
+@media(max-width:380px){
+ #bottomControls{gap:5px;padding:0 6px}
+ .controlBtn{height:59px;border-radius:19px}
+ #hint{bottom:79px;font-size:9px}
+}
 </style>
 </head>
+
 <body>
 <div id="game">
 <canvas id="c"></canvas>
 
 <div id="top">
  <div id="brand">✦ ST GAMES</div>
- <div class="cluster">
+ <div style="display:flex;gap:8px">
   <button class="pill" id="levelLabel">LEVEL 1</button>
   <button class="pill" id="pauseBtn">Ⅱ</button>
  </div>
 </div>
 
-<div id="hint">HOLD ▶ TO RUN & JUMP · RELEASE TO SWITCH PAL</div>
-
-<div id="controls">
- <div class="cluster">
-  <button class="ctrl" id="back">◀</button>
-  <button class="ctrl" id="forward">▶</button>
- </div>
- <div class="cluster">
-  <button class="ctrl small" id="switch">1P</button>
-  <button class="ctrl small" id="rope">ROPE</button>
-  <button class="ctrl small" id="skins">🐾</button>
- </div>
-</div>
-
+<div id="hint">HOLD ANYWHERE TO MOVE · SWITCH PAL AFTER LANDING</div>
 <div id="toast"></div>
+
+<!-- NEW BOTTOM BUTTONS -->
+<div id="bottomControls">
+ <button class="controlBtn" id="playerBtn">
+  <span class="mainText" id="playerText">1P ⟳</span>
+  <span class="smallText">SWITCH PET</span>
+ </button>
+
+ <button class="controlBtn" id="directionBtn">
+  <span class="mainText" id="directionText">Forward ⇄</span>
+  <span class="smallText">CHANGE DIRECTION</span>
+ </button>
+
+ <button class="controlBtn" id="ropeAdBtn">
+  <span class="adBadge" id="adBadge">AD</span>
+  <span class="mainText" id="ropeText">🔗</span>
+  <span class="smallText" id="ropeSmallText">Remove Rope</span>
+ </button>
+</div>
 
 <div id="overlay">
  <div class="panel" id="panel">
   <h1>ROPE PALS</h1>
-  <div class="sub">A cute two-player rope adventure<br>Run, jump and keep your pals connected!</div>
+  <div class="sub">
+   TWO PETS · ONE ROPE · ONE ADVENTURE<br>
+   Jump forward and help both pals reach the finish!
+  </div>
   <button class="action" id="play">PLAY</button>
   <button class="action secondary" id="levelsBtn">SELECT LEVEL</button>
   <button class="action secondary" id="more">MORE GAMES · ST GAMES</button>
-  <div class="sub">Progress saves automatically on this device.</div>
+  <div class="sub">Your progress saves automatically.</div>
  </div>
 </div>
 
@@ -81,36 +230,61 @@ h1{margin:0 0 6px;font-size:27px;color:#f04e9a;text-shadow:0 2px #ffd0e5}
   <button class="action secondary" id="home">LEVEL MENU</button>
  </div>
 </div>
+
 </div>
 
 <script>
 (()=>{
 'use strict';
 
-const canvas=document.getElementById('c');
-const ctx=canvas.getContext('2d');
 const $=id=>document.getElementById(id);
+const canvas=$('c');
+const ctx=canvas.getContext('2d');
+const gameScreen=$('game');
 
-let W=0,H=0,dpr=1,cam=0,level=1,active=0;
-let ropeOn=true,skin=0,running=false,paused=false,won=false,last=0;
+let W=0,H=0,dpr=1;
+let cam=0,level=1,active=0;
+let running=false,paused=false,won=false;
+let ropeOn=true,skin=0,last=0;
+let hopping=false,hopPet=-1;
+let screenHolding=false,pointerId=null;
+let world=[],pets=[],particles=[];
+let goal=0;
+let gameOver=false;
+let checkpoint=null;
+let direction=1;
+let adBusy=false;
 
-const saved=JSON.parse(localStorage.getItem('st_ropepals_progress')||'{"unlocked":1,"done":[],"skin":0}');
-skin=saved.skin||0;
+const gravity=1700;
+const ropeLen=185;
+const moveSpeed=265;
 
 const palettes=[
- ['#ff70ad','#ffb34e'],
- ['#8a78ff','#56d9dc'],
- ['#ff8b65','#9bdc69'],
- ['#6d9fff','#ff8bc8']
+ ['#ffffff','#ffb3c7'],
+ ['#bca2ff','#6ce2dc'],
+ ['#ffad79','#b3e68b'],
+ ['#91b9ff','#ff91c7']
 ];
 
-let world=[],pets=[],particles=[],goal=0;
-const gravity=1700,ropeLen=154;
-const keys={f:false,b:false};
+let saved;
+try{
+ saved=JSON.parse(localStorage.getItem('st_ropepals_progress'))||
+ {unlocked:1,done:[],skin:0};
+}catch(e){
+ saved={unlocked:1,done:[],skin:0};
+}
+skin=saved.skin||0;
+
+function save(){
+ try{
+  localStorage.setItem('st_ropepals_progress',JSON.stringify(saved));
+ }catch(e){}
+}
 
 function resize(){
  dpr=Math.min(devicePixelRatio||1,2);
- W=innerWidth;H=innerHeight;
+ W=innerWidth;
+ H=innerHeight;
  canvas.width=W*dpr;
  canvas.height=H*dpr;
  ctx.setTransform(dpr,0,0,dpr,0,0);
@@ -118,252 +292,577 @@ function resize(){
 addEventListener('resize',resize);
 resize();
 
-function makeLevel(n){
- world=[];
- let x=70,y=H*.68,base=H*.68;
- world.push({x:0,y:base+40,w:310,h:90});
-
- for(let i=0;i<9+n%5;i++){
-  x+=190+(i%3)*35;
-  y=base+Math.sin((i+n)*1.25)*55+(i%2?22:-8);
-  world.push({x,y:y+35,w:125+(i%2)*30,h:35});
- }
-
- goal=x+170;
- world.push({x:goal,y:base+10,w:190,h:90});
-
- pets=[
-  {x:95,y:base-8,vx:0,vy:0,r:19,ground:false,face:1,anim:0,color:palettes[skin][0]},
-  {x:135,y:base-8,vx:0,vy:0,r:19,ground:false,face:1,anim:0,color:palettes[skin][1]}
- ];
-
- cam=0;
- particles=[];
- won=false;
- running=false;
- active=0;
- $('levelLabel').textContent='LEVEL '+n;
+function sound(freq=440,duration=.1,type='sine'){
+ try{
+  let ac=sound.ac||(sound.ac=new(window.AudioContext||window.webkitAudioContext)());
+  let o=ac.createOscillator();
+  let g=ac.createGain();
+  o.type=type;
+  o.frequency.value=freq;
+  g.gain.setValueAtTime(.065,ac.currentTime);
+  g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+duration);
+  o.connect(g);
+  g.connect(ac.destination);
+  o.start();
+  o.stop(ac.currentTime+duration);
+ }catch(e){}
 }
 
-function groundAt(x,oldY,newY){
- let best=null;
- for(const p of world){
-  if(x+15>p.x&&x-15<p.x+p.w&&oldY+18<=p.y+5&&newY+18>=p.y-2){
-   if(!best||p.y<best.y)best=p;
-  }
- }
- return best;
+function toast(message){
+ $('toast').textContent=message;
+ $('toast').style.display='block';
+ clearTimeout(toast.timer);
+ toast.timer=setTimeout(()=>{
+  $('toast').style.display='none';
+ },1500);
 }
 
-function burst(x,y,color,count=8){
+function burst(x,y,color,count=10){
  for(let i=0;i<count;i++){
   particles.push({
    x,y,
    vx:(Math.random()-.5)*220,
-   vy:-Math.random()*190-30,
-   life:.45+Math.random()*.35,
-   color,
-   size:2+Math.random()*4
+   vy:-Math.random()*200-30,
+   life:.45+Math.random()*.4,
+   size:2+Math.random()*4,
+   color
   });
  }
 }
 
-function sfx(freq=440,dur=.08,type='sine'){
- try{
-  let ac=sfx.ac||(sfx.ac=new(window.AudioContext||window.webkitAudioContext)());
-  let o=ac.createOscillator(),g=ac.createGain();
-  o.type=type;
-  o.frequency.value=freq;
-  g.gain.setValueAtTime(.07,ac.currentTime);
-  g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+dur);
-  o.connect(g);g.connect(ac.destination);
-  o.start();o.stop(ac.currentTime+dur);
- }catch(e){}
+function updateButtons(){
+ $('playerText').textContent=(active===0?'1P':'2P')+' ⟳';
+
+ $('directionText').textContent=
+  direction===1?'Forward ⇄':'Reverse ⇄';
+
+ $('ropeText').textContent=ropeOn?'🔗':'✓';
+ $('ropeSmallText').textContent=ropeOn?'Remove Rope':'Rope Removed';
+
+ $('ropeAdBtn').classList.toggle('removed',!ropeOn);
+ $('adBadge').style.display=ropeOn?'block':'none';
 }
 
-function toast(t){
- $('toast').textContent=t;
- $('toast').style.display='block';
- clearTimeout(toast.t);
- toast.t=setTimeout(()=>$('toast').style.display='none',1300);
+function setActive(next){
+ if(pets.length!==2)return;
+
+ if(pets[next].fallen){
+  toast('THIS PET HAS FALLEN!');
+  return;
+ }
+
+ active=next;
+ updateButtons();
+
+ $('hint').textContent=
+  'PLAYER '+(active+1)+' READY · HOLD TO MOVE';
+
+ sound(620,.07,'triangle');
 }
 
-function start(n=level){
+function switchPlayer(){
+ if(!running||paused||won||gameOver)return;
+
+ const other=1-active;
+
+ if(pets[other].fallen){
+  toast('YOUR OTHER PET HAS FALLEN!');
+  return;
+ }
+
+ setActive(other);
+}
+
+function switchDirection(){
+ if(!running||paused||won||gameOver)return;
+
+ direction*=-1;
+ updateButtons();
+
+ if(direction===1){
+  toast('FORWARD MODE');
+ }else{
+  toast('REVERSE MODE');
+ }
+
+ sound(430,.08,'triangle');
+}
+
+function makeLevel(n){
  level=n;
- makeLevel(level);
+ world=[];
+ particles=[];
+ cam=0;
+ active=0;
+ direction=1;
+ hopping=false;
+ hopPet=-1;
+ won=false;
+ gameOver=false;
+ screenHolding=false;
+ pointerId=null;
+ checkpoint=null;
+ ropeOn=true;
+
+ let base=H*.68;
+ let x=0;
+
+ world.push({
+  x:0,y:base+40,w:340,h:130
+ });
+
+ for(let i=0;i<10+(n%5);i++){
+  x+=175+(i%3)*35;
+  let y=base+Math.sin((i+n)*1.1)*45;
+
+  world.push({
+   x,
+   y:y+35,
+   w:125+(i%2)*25,
+   h:100
+  });
+ }
+
+ goal=x+190;
+
+ world.push({
+  x:goal,
+  y:base+40,
+  w:240,
+  h:130
+ });
+
+ pets=[
+  {
+   x:105,y:base+40-17,
+   vx:0,vy:0,
+   ground:true,
+   face:1,
+   anim:0,
+   color:palettes[skin][0],
+   hopping:false,
+   fallen:false
+  },
+  {
+   x:150,y:base+40-17,
+   vx:0,vy:0,
+   ground:true,
+   face:1,
+   anim:0,
+   color:palettes[skin][1],
+   hopping:false,
+   fallen:false
+  }
+ ];
+
+ saveCheckpoint();
+ updateButtons();
+
+ $('levelLabel').textContent='LEVEL '+n;
+ $('hint').textContent='HOLD ANYWHERE TO MOVE · SWITCH PAL AFTER LANDING';
+}
+
+function saveCheckpoint(){
+ const alive=pets.filter(p=>!p.fallen);
+ if(alive.length===0)return;
+
+ checkpoint=pets.map(p=>({
+  x:p.x,
+  y:p.y,
+  ground:p.ground,
+  fallen:p.fallen
+ }));
+}
+
+function groundAt(x,oldY,newY){
+ let best=null;
+
+ for(const p of world){
+  if(
+   x+15>p.x&&x-15<p.x+p.w&&
+   oldY+17<=p.y+6&&
+   newY+17>=p.y-2
+  ){
+   if(!best||p.y<best.y)best=p;
+  }
+ }
+
+ return best;
+}
+
+function start(n){
+ makeLevel(n);
+
  $('overlay').style.display='none';
- paused=false;
  $('pause').style.display='none';
+ $('bottomControls').style.display='grid';
+
+ paused=false;
+ running=true;
  last=performance.now();
+
  requestAnimationFrame(loop);
 }
 
-function win(){
- if(won)return;
- won=true;
+/* JUMP: horizontal movement is controlled only by holding */
+function jump(){
+ if(won||paused||gameOver||hopping)return;
+
+ const p=pets[active];
+
+ if(p.fallen){
+  switchToLivingPet();
+  return;
+ }
+
+ if(!p.ground){
+  toast('WAIT FOR YOUR PET TO LAND!');
+  return;
+ }
+
+ hopping=true;
+ hopPet=active;
+
+ p.hopping=true;
+ p.ground=false;
+ p.face=direction;
+
+ // No automatic horizontal movement.
+ p.vx=0;
+
+ // Vertical jump.
+ p.vy=-625;
+ p.anim=0;
+
+ burst(p.x,p.y+15,'#ffffff',7);
+ sound(520,.09,'triangle');
+
+ $('hint').textContent=
+  'HOLD TO MOVE '+(direction===1?'FORWARD':'BACKWARD');
+}
+
+function switchToLivingPet(){
+ const other=1-active;
+
+ if(!pets[other].fallen){
+  active=other;
+  updateButtons();
+  $('hint').textContent='PLAYER '+(active+1)+' READY · HOLD TO MOVE';
+ }
+}
+
+function finishJump(i){
+ const p=pets[i];
+
+ p.vx=0;
+ p.vy=0;
+ p.hopping=false;
+
+ hopping=false;
+ hopPet=-1;
+
+ if(pets[1-i].fallen){
+  active=i;
+ }else{
+  active=1-i;
+ }
+
+ updateButtons();
+
+ $('hint').textContent=
+  'PLAYER '+(active+1)+' READY · HOLD TO MOVE';
+
+ burst(p.x,p.y+15,'#ffffff',10);
+ sound(720,.1,'triangle');
+
+ if(pets.every(p=>p.ground&&!p.fallen)){
+  saveCheckpoint();
+ }
+}
+
+/* Apply the maximum rope distance without sagging. */
+function constrainRope(p,other){
+ if(!ropeOn||p.fallen||other.fallen)return;
+
+ const dx=p.x-other.x;
+ const dy=p.y-other.y;
+ const dist=Math.hypot(dx,dy);
+
+ if(dist<=ropeLen)return;
+
+ const nx=dx/dist;
+ const ny=dy/dist;
+
+ // Keep the pet exactly on the rope-length boundary.
+ p.x=other.x+nx*ropeLen;
+ p.y=other.y+ny*ropeLen;
+
+ // Remove velocity that would stretch the rope farther.
+ const outward=p.vx*nx+p.vy*ny;
+
+ if(outward>0){
+  p.vx-=outward*nx;
+  p.vy-=outward*ny;
+ }
+}
+
+/* Hold = move. Release = stop. */
+function moveWithRope(p,other,dt){
+ if(!screenHolding||!p.hopping)return;
+
+ const nextX=p.x+(moveSpeed*direction*dt);
+
+ if(ropeOn&&!other.fallen){
+  const nextDx=nextX-other.x;
+  const dy=p.y-other.y;
+  const dist=Math.hypot(nextDx,dy);
+
+  if(dist>ropeLen){
+   const maxHorizontal=Math.sqrt(
+    Math.max(0,ropeLen*ropeLen-dy*dy)
+   );
+
+   p.x=other.x+Math.sign(nextDx)*maxHorizontal;
+   toast('ROPE LIMIT REACHED!');
+   sound(250,.06,'square');
+   return;
+  }
+ }
+
+ p.x=nextX;
+}
+
+function handlePetFall(i){
+ const p=pets[i];
+
+ if(p.fallen)return;
+
+ p.fallen=true;
+ p.hopping=false;
+ p.ground=false;
+ p.vx=0;
+
+ if(hopPet===i){
+  hopping=false;
+  hopPet=-1;
+ }
+
+ screenHolding=false;
+ pointerId=null;
+
+ const other=1-i;
+
+ if(!pets[other].fallen){
+  active=other;
+  updateButtons();
+
+  toast('PET '+(i+1)+' FELL! PET '+(other+1)+' IS ACTIVE');
+  $('hint').textContent='PLAYER '+(other+1)+' · SAVE YOUR PAL!';
+
+  sound(260,.18,'sawtooth');
+ }else{
+  active=i;
+  updateButtons();
+  bothPetsFallen();
+ }
+}
+
+function bothPetsFallen(){
+ if(gameOver)return;
+
+ gameOver=true;
  running=false;
- sfx(760,.25,'triangle');
+ paused=false;
+ hopping=false;
+ screenHolding=false;
+ pointerId=null;
 
- for(let i=0;i<70;i++){
-  burst(goal+cam,H*.45,['#fff','#ff54a6','#ffd45c','#8be8dc'][i%4],1);
+ sound(180,.3,'sawtooth');
+
+ showPanel(
+  'BOTH PETS FELL!',
+  'Oh no! Your pals need another try. Replay the level or watch a rewarded ad to continue from your last checkpoint.',
+  'REPLAY LEVEL',
+  'WATCH AD & CONTINUE',
+  ()=>start(level),
+  watchAdAndContinue
+ );
+}
+
+function watchAdAndContinue(){
+ if(typeof window.showRewardedAd!=='function'){
+  toast('REWARDED AD IS NOT CONNECTED YET');
+  return;
  }
 
- saved.done=[...new Set([...(saved.done||[]),level])];
- saved.unlocked=Math.max(saved.unlocked||1,level+1);
- localStorage.setItem('st_ropepals_progress',JSON.stringify(saved));
+ if(adBusy)return;
+ adBusy=true;
 
- setTimeout(()=>{
-  showPanel(
-   'LEVEL '+level+' COMPLETE!',
-   'Great teamwork! Your next adventure is ready.',
-   'NEXT LEVEL',
-   'LEVEL MENU',
-   ()=>start(level+1),
-   showLevels
-  );
- },500);
-}
+ $('hint').textContent='LOADING REWARDED AD...';
 
-function showPanel(title,desc,b1,b2,fn1,fn2){
- $('overlay').style.display='flex';
- $('panel').innerHTML=`
- <h1>${title}</h1>
- <div class="sub">${desc}</div>
- <button class="action" id="p1">${b1}</button>
- <button class="action secondary" id="p2">${b2}</button>
- <button class="action secondary" id="pmore">MORE GAMES · ST GAMES</button>`;
- $('p1').onclick=fn1;
- $('p2').onclick=fn2;
- $('pmore').onclick=()=>location.href='../index.html';
-}
+ try{
+  window.showRewardedAd(function(completed){
+   adBusy=false;
 
-function showLevels(){
- let done=saved.done||[];
- $('overlay').style.display='flex';
- $('panel').innerHTML=`
- <h1>CHOOSE LEVEL</h1>
- <div class="sub">Complete a level to unlock the next one.</div>
- <div class="grid" id="levelGrid"></div>
- <button class="action secondary" id="backMenu">BACK</button>
- <button class="action secondary" id="more2">MORE GAMES · ST GAMES</button>`;
-
- let g=$('levelGrid');
- for(let i=1;i<=40;i++){
-  let b=document.createElement('button');
-  b.className='level '+(done.includes(i)?'done':'');
-  b.textContent=i;
-  b.disabled=i>(saved.unlocked||1);
-  b.onclick=()=>start(i);
-  g.appendChild(b);
+   if(completed===true){
+    continueFromCheckpoint();
+   }else{
+    toast('WATCH THE FULL AD TO CONTINUE');
+   }
+  });
+ }catch(e){
+  adBusy=false;
+  toast('AD COULD NOT BE LOADED');
  }
- $('backMenu').onclick=()=>menu();
- $('more2').onclick=()=>location.href='../index.html';
 }
 
-function menu(){
- $('overlay').style.display='flex';
- $('panel').innerHTML=`
- <h1>ROPE PALS</h1>
- <div class="sub">A cute two-player rope adventure<br>Run, jump and keep your pals connected!</div>
- <button class="action" id="play">PLAY</button>
- <button class="action secondary" id="levelsBtn">SELECT LEVEL</button>
- <button class="action secondary" id="more">MORE GAMES · ST GAMES</button>
- <div class="sub">Progress saves automatically on this device.</div>`;
- $('play').onclick=()=>start(saved.unlocked||1);
- $('levelsBtn').onclick=showLevels;
- $('more').onclick=()=>location.href='../index.html';
+function continueFromCheckpoint(){
+ if(!checkpoint){
+  start(level);
+  return;
+ }
+
+ pets.forEach((p,i)=>{
+  const cp=checkpoint[i];
+
+  p.x=cp.x;
+  p.y=cp.y;
+  p.vx=0;
+  p.vy=0;
+  p.ground=true;
+  p.hopping=false;
+  p.fallen=false;
+ });
+
+ active=0;
+ hopping=false;
+ hopPet=-1;
+ gameOver=false;
+ won=false;
+ screenHolding=false;
+ pointerId=null;
+
+ cam=Math.max(0,pets[0].x-W*.35);
+
+ $('overlay').style.display='none';
+ $('pause').style.display='none';
+ $('bottomControls').style.display='grid';
+
+ paused=false;
+ running=true;
+ last=performance.now();
+
+ updateButtons();
+ toast('YOUR PETS ARE BACK!');
+
+ requestAnimationFrame(loop);
+}
+
+/* REMOVE ROPE ONLY AFTER A REAL REWARDED AD CALLBACK */
+function removeRopeWithAd(){
+ if(!running||paused||won||gameOver)return;
+ if(!ropeOn)return;
+ if(adBusy)return;
+
+ if(typeof window.showRewardedAd!=='function'){
+  toast('REWARDED AD IS NOT CONNECTED YET');
+  return;
+ }
+
+ screenHolding=false;
+ pointerId=null;
+ adBusy=true;
+
+ toast('LOADING REWARDED AD...');
+
+ try{
+  window.showRewardedAd(function(completed){
+   adBusy=false;
+
+   if(completed===true){
+    ropeOn=false;
+    updateButtons();
+    toast('ROPE REMOVED! ENJOY THE LEVEL');
+    sound(850,.15,'triangle');
+    burst(pets[active].x,pets[active].y,'#ffe16a',18);
+   }else{
+    toast('AD NOT COMPLETED · ROPE REMAINS');
+   }
+  });
+ }catch(e){
+  adBusy=false;
+  toast('AD COULD NOT BE LOADED');
+ }
 }
 
 function update(dt){
- if(paused||won)return;
+ if(paused||won||gameOver)return;
 
- const p=pets[active];
- const dir=(keys.f?1:0)-(keys.b?1:0);
+ for(let i=0;i<2;i++){
+  const p=pets[i];
 
- if(dir){
-  p.vx+=dir*1200*dt;
-  p.face=dir;
-  p.anim+=dt*13;
- }else{
-  p.vx*=Math.pow(.02,dt);
- }
+  if(p.fallen)continue;
 
- p.vx=Math.max(-235,Math.min(235,p.vx));
+  const oldY=p.y;
 
- if((keys.f||keys.b)&&p.ground&&p.jumpWait<=0){
-  p.vy=-590;
+  // Only the active pet moves horizontally while screen is held.
+  if(p.hopping&&i===active&&screenHolding){
+   moveWithRope(p,pets[1-i],dt);
+  }
+
+  // Vertical jump physics.
+  p.vy+=gravity*dt;
+  p.y+=p.vy*dt;
+
+  // Rope constraint also protects against excessive vertical distance.
+  if(ropeOn&&!pets[1-i].fallen){
+   constrainRope(p,pets[1-i]);
+  }
+
   p.ground=false;
-  p.jumpWait=.24;
-  burst(p.x,p.y+16,'#fff',4);
-  sfx(520,.06);
- }
 
- p.jumpWait=Math.max(0,(p.jumpWait||0)-dt);
+  const platform=groundAt(p.x,oldY,p.y);
 
- for(const q of pets){
-  let old=q.y;
-  q.vy+=gravity*dt;
-  q.x+=q.vx*dt;
-  q.y+=q.vy*dt;
-  q.ground=false;
-
-  const platform=groundAt(q.x,old,q.y);
   if(platform){
-   q.y=platform.y-18;
-   q.vy=0;
-   q.ground=true;
-  }
+   p.y=platform.y-17;
+   p.vy=0;
+   p.ground=true;
 
-  if(q.y>H+300){
-   q.y=H*.45;
-   q.vy=0;
-   q.x=Math.max(50,q.x-80);
-   toast('Try that jump again!');
-  }
- }
-
- // Rope distance constraint
- if(ropeOn){
-  let dx=pets[1].x-pets[0].x;
-  let dy=pets[1].y-pets[0].y;
-  let d=Math.hypot(dx,dy);
-
-  if(d>ropeLen){
-   let excess=d-ropeLen;
-   let nx=dx/d,ny=dy/d;
-   pets[0].x+=nx*excess*.5;
-   pets[0].y+=ny*excess*.5;
-   pets[1].x-=nx*excess*.5;
-   pets[1].y-=ny*excess*.5;
-
-   if(d>ropeLen+8&&Math.random()<.12){
-    burst((pets[0].x+pets[1].x)/2,(pets[0].y+pets[1].y)/2,'#fff',1);
+   if(p.hopping){
+    finishJump(i);
+   }else{
+    p.vx=0;
    }
   }
+
+  p.anim+=dt*(p.hopping?14:3);
+
+  if(p.y>H+55){
+   handlePetFall(i);
+  }
  }
 
- for(const q of pets){
-  q.x=Math.max(20,q.x);
-  q.y=Math.min(q.y,H+400);
+ const living=pets.filter(p=>!p.fallen);
+
+ if(living.length){
+  const furthest=Math.max(...living.map(p=>p.x));
+  const target=furthest-W*.35;
+
+  cam+=(
+   Math.max(0,Math.min(goal-W*.55,target))-cam
+  )*Math.min(1,dt*5);
  }
 
- cam=Math.max(0,Math.min(
-  goal-W*.65,
-  Math.max(cam,pets[0].x-W*.32,pets[1].x-W*.32)
- ));
+ particles=particles.filter(p=>p.life>0);
 
- particles=particles.filter(a=>a.life>0);
- for(const a of particles){
-  a.life-=dt;
-  a.x+=a.vx*dt;
-  a.y+=a.vy*dt;
-  a.vy+=400*dt;
+ for(const p of particles){
+  p.life-=dt;
+  p.x+=p.vx*dt;
+  p.y+=p.vy*dt;
+  p.vy+=400*dt;
  }
 
- if(
-  (pets[0].x>goal-35&&pets[1].x>goal-35)||
-  Math.min(pets[0].x,pets[1].x)>goal-90
- ){
+ if(pets.every(p=>!p.fallen&&p.x>goal-55)){
   win();
  }
 }
@@ -375,216 +874,466 @@ function rounded(x,y,w,h,r,color){
  ctx.fill();
 }
 
-function draw(){
- ctx.clearRect(0,0,W,H);
+function drawBackground(){
+ let g=ctx.createLinearGradient(0,0,0,H);
+ g.addColorStop(0,'#f7a9d0');
+ g.addColorStop(.55,'#ffd0ce');
+ g.addColorStop(1,'#ffe3b8');
 
- let sky=ctx.createLinearGradient(0,0,0,H);
- sky.addColorStop(0,'#ff9bc6');
- sky.addColorStop(.65,'#ffd0df');
- sky.addColorStop(1,'#ffe9e9');
- ctx.fillStyle=sky;
+ ctx.fillStyle=g;
  ctx.fillRect(0,0,W,H);
 
- // Clouds
  for(let i=0;i<7;i++){
-  let x=((i*180-cam*.18)%(W+220)+W+220)%(W+220)-90;
+  let x=((i*190-cam*.16)%(W+250)+W+250)%(W+250)-100;
+  let y=100+(i%3)*65;
+
   ctx.fillStyle='#ffffff45';
   ctx.beginPath();
-  ctx.arc(x,100+(i%3)*55,28,0,7);
-  ctx.arc(x+28,98+(i%3)*55,38,0,7);
-  ctx.arc(x+60,108+(i%3)*55,25,0,7);
+  ctx.arc(x,y,28,0,Math.PI*2);
+  ctx.arc(x+32,y-10,38,0,Math.PI*2);
+  ctx.arc(x+65,y,27,0,Math.PI*2);
   ctx.fill();
  }
 
- ctx.save();
- ctx.translate(-cam,0);
+ const sun=ctx.createRadialGradient(W*.82,H*.45,5,W*.82,H*.45,180);
+ sun.addColorStop(0,'#fff7b955');
+ sun.addColorStop(1,'#fff7b900');
 
- // Platforms
- for(let i=0;i<world.length;i++){
-  let p=world[i];
-  rounded(p.x,p.y,p.w,p.h,12,'#df4f9b');
-  rounded(p.x,p.y,p.w,12,8,'#ff8ac2');
-  ctx.strokeStyle='#ffb4d6';
-  ctx.lineWidth=2;
-  for(let k=12;k<p.w-8;k+=23){
-   ctx.beginPath();
-   ctx.moveTo(p.x+k,p.y+18);
-   ctx.lineTo(p.x+k+9,p.y+29);
-   ctx.stroke();
+ ctx.fillStyle=sun;
+ ctx.fillRect(0,0,W,H);
+}
+
+function drawPlatforms(){
+ for(const p of world){
+  rounded(p.x,p.y,p.w,p.h,3,'#c82768');
+
+  ctx.fillStyle='#ffcf56';
+  ctx.fillRect(p.x,p.y,p.w,9);
+
+  ctx.fillStyle='#f6a92d';
+  ctx.fillRect(p.x,p.y+8,p.w,5);
+
+  ctx.fillStyle='#ed397a';
+
+  for(let x=p.x+10;x<p.x+p.w-5;x+=18){
+   for(let y=p.y+28;y<p.y+p.h-5;y+=22){
+    ctx.beginPath();
+    ctx.arc(x,y,1.5,0,Math.PI*2);
+    ctx.fill();
+   }
   }
  }
+}
 
- // Finish gate
+function drawFinish(){
+ const p=world[world.length-1];
+
  ctx.fillStyle='#fff';
- ctx.fillRect(goal+80,world[world.length-1].y-90,8,90);
- ctx.fillStyle='#ff4d9c';
+ ctx.fillRect(goal+120,p.y-95,8,95);
+
+ ctx.fillStyle='#ff4b99';
  ctx.beginPath();
- ctx.moveTo(goal+88,world[world.length-1].y-90);
- ctx.lineTo(goal+142,world[world.length-1].y-70);
- ctx.lineTo(goal+88,world[world.length-1].y-48);
+ ctx.moveTo(goal+128,p.y-95);
+ ctx.lineTo(goal+180,p.y-75);
+ ctx.lineTo(goal+128,p.y-53);
  ctx.fill();
+}
 
- // Rope
- if(ropeOn){
-  let a=pets[0],b=pets[1];
-  let mx=(a.x+b.x)/2,my=(a.y+b.y)/2-10;
-  ctx.strokeStyle='#fff';
-  ctx.lineWidth=7;
-  ctx.lineCap='round';
-  ctx.beginPath();
-  ctx.moveTo(a.x,a.y);
-  ctx.quadraticCurveTo(mx,my,b.x,b.y);
-  ctx.stroke();
+/* STRAIGHT DOTTED ROPE - NO SAG */
+function drawRope(){
+ if(!ropeOn)return;
 
-  ctx.strokeStyle='#ff4e9d';
-  ctx.lineWidth=3;
-  ctx.beginPath();
-  ctx.moveTo(a.x,a.y);
-  ctx.quadraticCurveTo(mx,my,b.x,b.y);
-  ctx.stroke();
- }
+ const a=pets[0];
+ const b=pets[1];
 
- pets.forEach((p,i)=>drawPet(p,i));
+ if(a.fallen&&b.fallen)return;
 
- for(const a of particles){
-  ctx.globalAlpha=Math.max(0,a.life*2);
-  ctx.fillStyle=a.color;
-  ctx.beginPath();
-  ctx.arc(a.x,a.y,a.size,0,7);
-  ctx.fill();
-  ctx.globalAlpha=1;
- }
+ ctx.save();
+
+ ctx.beginPath();
+ ctx.moveTo(a.x,a.y);
+ ctx.lineTo(b.x,b.y);
+
+ ctx.strokeStyle='#b18b25';
+ ctx.lineWidth=5;
+ ctx.setLineDash([3,6]);
+ ctx.lineCap='round';
+ ctx.stroke();
+
+ ctx.beginPath();
+ ctx.moveTo(a.x,a.y);
+ ctx.lineTo(b.x,b.y);
+
+ ctx.strokeStyle='#ffe16a';
+ ctx.lineWidth=1.5;
+ ctx.setLineDash([2,7]);
+ ctx.stroke();
+
+ ctx.setLineDash([]);
  ctx.restore();
 
- // Progress bar
- rounded(12,58,W-24,6,4,'#ffffff80');
- rounded(12,58,(W-24)*Math.min(1,(pets[0].x+pets[1].x)/2/goal),6,4,'#ff4f9d');
+ for(const p of [a,b]){
+  if(p.fallen)continue;
+
+  ctx.fillStyle='#b78322';
+  ctx.beginPath();
+  ctx.arc(p.x,p.y,4,0,Math.PI*2);
+  ctx.fill();
+ }
+}
+
+function drawArrow(p){
+ const pulse=Math.sin(performance.now()/150)*4;
+
+ ctx.save();
+ ctx.translate(p.x,p.y-56+pulse);
+
+ // Arrow points in the selected movement direction.
+ ctx.rotate(direction===1?Math.PI/2:-Math.PI/2);
+
+ ctx.shadowColor='#a72cba';
+ ctx.shadowBlur=9;
+
+ ctx.fillStyle='#d84be9';
+ ctx.strokeStyle='#6c188f';
+ ctx.lineWidth=2.5;
+
+ ctx.beginPath();
+ ctx.moveTo(0,12);
+ ctx.lineTo(-12,-1);
+ ctx.lineTo(-5,-1);
+ ctx.lineTo(-5,-19);
+ ctx.lineTo(5,-19);
+ ctx.lineTo(5,-1);
+ ctx.lineTo(12,-1);
+ ctx.closePath();
+
+ ctx.fill();
+ ctx.stroke();
+ ctx.restore();
 }
 
 function drawPet(p,i){
- let bob=p.ground?Math.sin(p.anim)*1.5:0;
- let x=p.x,y=p.y+bob;
-
- ctx.fillStyle='#9a3d6b33';
- ctx.beginPath();
- ctx.ellipse(x,y+20,17,5,0,0,7);
- ctx.fill();
+ const bob=p.ground?Math.sin(p.anim)*1.5:0;
+ const x=p.x;
+ const y=p.y+bob;
 
  ctx.save();
  ctx.translate(x,y);
- if(p.face<0)ctx.scale(-1,1);
+
+ if(i===active&&!p.fallen&&!gameOver&&!won){
+  ctx.restore();
+  drawArrow(p);
+  ctx.save();
+  ctx.translate(x,y);
+ }
+
+ ctx.globalAlpha=p.fallen?.75:1;
+
+ ctx.fillStyle='#7e345333';
+ ctx.beginPath();
+ ctx.ellipse(0,19,18,5,0,0,Math.PI*2);
+ ctx.fill();
 
  ctx.fillStyle=p.color;
+ ctx.strokeStyle='#63334c';
+ ctx.lineWidth=2.5;
+
  ctx.beginPath();
- ctx.roundRect(-17,-17,34,34,10);
+ ctx.roundRect(-17,-17,34,34,9);
+ ctx.fill();
+ ctx.stroke();
+
+ ctx.fillStyle='#29202c';
+ ctx.beginPath();
+ ctx.arc(-6,-4,2.5,0,Math.PI*2);
+ ctx.arc(8,-4,2.5,0,Math.PI*2);
  ctx.fill();
 
- ctx.fillStyle='#fff';
+ ctx.fillStyle='white';
  ctx.beginPath();
- ctx.arc(-6,-4,4,0,7);
- ctx.arc(7,-4,4,0,7);
+ ctx.arc(-6.5,-5,1,0,Math.PI*2);
+ ctx.arc(7.5,-5,1,0,Math.PI*2);
  ctx.fill();
 
- ctx.fillStyle='#63324c';
- ctx.beginPath();
- ctx.arc(-5,-3,1.8,0,7);
- ctx.arc(8,-3,1.8,0,7);
- ctx.fill();
-
- ctx.strokeStyle='#63324c';
- ctx.lineWidth=1.8;
+ ctx.strokeStyle='#63334c';
+ ctx.lineWidth=1.6;
  ctx.beginPath();
  ctx.arc(1,4,4,.15,Math.PI-.15);
  ctx.stroke();
 
- // Ears
  ctx.fillStyle=p.color;
  ctx.beginPath();
- ctx.moveTo(-13,-14);
- ctx.lineTo(-18,-26);
- ctx.lineTo(-5,-18);
+ ctx.moveTo(-12,-14);
+ ctx.lineTo(-18,-27);
+ ctx.lineTo(-4,-18);
  ctx.fill();
+ ctx.stroke();
 
  ctx.beginPath();
  ctx.moveTo(7,-17);
  ctx.lineTo(18,-25);
  ctx.lineTo(15,-10);
  ctx.fill();
+ ctx.stroke();
 
  ctx.fillStyle='#fff';
  ctx.font='bold 9px Arial';
  ctx.textAlign='center';
- ctx.fillText(i===0?'A':'B',0,29);
+ ctx.fillText(i===0?'1':'2',0,29);
 
  ctx.restore();
 }
 
+function drawParticles(){
+ for(const p of particles){
+  ctx.globalAlpha=Math.max(0,p.life*2);
+  ctx.fillStyle=p.color;
+
+  ctx.beginPath();
+  ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.globalAlpha=1;
+ }
+}
+
+function drawProgress(){
+ rounded(12,57,W-24,6,4,'#ffffff80');
+
+ const living=pets.filter(p=>!p.fallen);
+ const furthest=living.length?Math.max(...living.map(p=>p.x)):0;
+ const progress=Math.min(1,Math.max(0,furthest/goal));
+
+ rounded(12,57,(W-24)*progress,6,4,'#ff4f9d');
+}
+
+function draw(){
+ ctx.clearRect(0,0,W,H);
+
+ drawBackground();
+
+ ctx.save();
+ ctx.translate(-cam,0);
+
+ drawPlatforms();
+ drawFinish();
+ drawRope();
+
+ pets.forEach((p,i)=>drawPet(p,i));
+
+ drawParticles();
+
+ ctx.restore();
+
+ drawProgress();
+}
+
 function loop(t){
  if(!running)return;
- let dt=Math.min(.033,(t-last)/1000||0);
+
+ const dt=Math.min(.033,(t-last)/1000||0);
  last=t;
+
  update(dt);
  draw();
- if(running)requestAnimationFrame(loop);
-}
 
-function bindHold(id,key){
- let el=$(id);
- el.addEventListener('pointerdown',e=>{
-  e.preventDefault();
-  keys[key]=true;
-  el.classList.add('active');
-  running=true;
-  last=performance.now();
+ if(running){
   requestAnimationFrame(loop);
- });
-
- ['pointerup','pointercancel','pointerleave'].forEach(ev=>
-  el.addEventListener(ev,()=>{
-   keys[key]=false;
-   el.classList.remove('active');
-  })
- );
+ }
 }
 
-bindHold('forward','f');
-bindHold('back','b');
+/* TOUCH CONTROL */
+function pointerDown(e){
+ if(
+  $('overlay').style.display!=='none'||
+  $('pause').style.display==='flex'||
+  won||gameOver||hopping
+ )return;
 
-$('switch').onclick=()=>{
- active=1-active;
- $('switch').textContent=(active===0?'1P':'2P');
- toast('PAL '+(active+1)+' SELECTED');
- sfx(620,.05);
-};
+ if(e.target.closest('button'))return;
 
-$('rope').onclick=()=>{
- ropeOn=!ropeOn;
- $('rope').textContent=ropeOn?'ROPE':'NO ROPE';
- toast(ropeOn?'ROPE CONNECTED':'ROPE REMOVED');
- sfx(400,.06);
-};
+ e.preventDefault();
 
-$('skins').onclick=()=>{
- skin=(skin+1)%palettes.length;
- pets[0].color=palettes[skin][0];
- pets[1].color=palettes[skin][1];
- saved.skin=skin;
- localStorage.setItem('st_ropepals_progress',JSON.stringify(saved));
- toast('NEW PET COLORS!');
- sfx(700,.07);
-};
+ if(screenHolding)return;
+
+ screenHolding=true;
+ pointerId=e.pointerId;
+
+ try{
+  gameScreen.setPointerCapture(e.pointerId);
+ }catch(err){}
+
+ jump();
+}
+
+function pointerUp(e){
+ if(!screenHolding)return;
+
+ if(pointerId!==null&&e.pointerId!==pointerId)return;
+
+ screenHolding=false;
+ pointerId=null;
+}
+
+gameScreen.addEventListener('pointerdown',pointerDown);
+gameScreen.addEventListener('pointerup',pointerUp);
+gameScreen.addEventListener('pointercancel',pointerUp);
+gameScreen.addEventListener('lostpointercapture',pointerUp);
+
+/* NEW BUTTON EVENTS */
+$('playerBtn').addEventListener('pointerdown',e=>e.stopPropagation());
+$('directionBtn').addEventListener('pointerdown',e=>e.stopPropagation());
+$('ropeAdBtn').addEventListener('pointerdown',e=>e.stopPropagation());
+
+$('playerBtn').onclick=switchPlayer;
+$('directionBtn').onclick=switchDirection;
+$('ropeAdBtn').onclick=removeRopeWithAd;
+
+function win(){
+ if(won)return;
+
+ won=true;
+ running=false;
+ hopping=false;
+ screenHolding=false;
+
+ sound(780,.3,'triangle');
+
+ for(let i=0;i<60;i++){
+  burst(
+   goal+100+Math.random()*100,
+   H*.4+Math.random()*100,
+   ['#fff','#ff54a6','#ffd45c','#8be8dc'][i%4],
+   1
+  );
+ }
+
+ saved.done=[...new Set([...(saved.done||[]),level])];
+ saved.unlocked=Math.max(saved.unlocked||1,level+1);
+ save();
+
+ setTimeout(()=>{
+  showPanel(
+   'LEVEL '+level+' COMPLETE!',
+   'Amazing teamwork! Both pals reached the finish.',
+   'NEXT LEVEL',
+   'LEVEL MENU',
+   ()=>start(level+1),
+   showLevels
+  );
+ },450);
+}
+
+function showPanel(title,desc,b1,b2,fn1,fn2){
+ $('overlay').style.display='flex';
+ $('bottomControls').style.display='none';
+
+ $('panel').innerHTML=`
+ <h1>${title}</h1>
+ <div class="sub">${desc}</div>
+ <button class="action" id="p1">${b1}</button>
+ <button class="action secondary" id="p2">${b2}</button>
+ <button class="action secondary" id="pmore">MORE GAMES · ST GAMES</button>`;
+
+ $('p1').onclick=fn1;
+ $('p2').onclick=fn2;
+ $('pmore').onclick=goHome;
+}
+
+function showLevels(){
+ $('overlay').style.display='flex';
+ $('bottomControls').style.display='none';
+
+ $('panel').innerHTML=`
+ <h1>CHOOSE LEVEL</h1>
+ <div class="sub">Complete levels to unlock more adventures.</div>
+ <div class="grid" id="levelGrid"></div>
+ <button class="action secondary" id="backMenu">BACK</button>
+ <button class="action secondary" id="more2">MORE GAMES · ST GAMES</button>`;
+
+ const grid=$('levelGrid');
+
+ for(let i=1;i<=40;i++){
+  const b=document.createElement('button');
+
+  b.className='level '+((saved.done||[]).includes(i)?'done':'');
+  b.textContent=i;
+  b.disabled=i>(saved.unlocked||1);
+  b.onclick=()=>start(i);
+
+  grid.appendChild(b);
+ }
+
+ $('backMenu').onclick=menu;
+ $('more2').onclick=goHome;
+}
+
+function menu(){
+ running=false;
+ hopping=false;
+ screenHolding=false;
+ pointerId=null;
+
+ $('pause').style.display='none';
+ $('overlay').style.display='flex';
+ $('bottomControls').style.display='none';
+
+ $('panel').innerHTML=`
+ <h1>ROPE PALS</h1>
+ <div class="sub">
+ TWO PETS · ONE ROPE · ONE ADVENTURE<br>
+ Jump forward and help both pals reach the finish!
+ </div>
+ <button class="action" id="play">PLAY</button>
+ <button class="action secondary" id="levelsBtn">SELECT LEVEL</button>
+ <button class="action secondary" id="skinBtn">🐾 CHANGE PET SKINS</button>
+ <button class="action secondary" id="ropeBtn">🪢 ${ropeOn?'REMOVE':'CONNECT'} ROPE</button>
+ <button class="action secondary" id="more">MORE GAMES · ST GAMES</button>
+ <div class="sub">Progress saves automatically on this device.</div>`;
+
+ $('play').onclick=()=>start(saved.unlocked||1);
+ $('levelsBtn').onclick=showLevels;
+
+ $('skinBtn').onclick=()=>{
+  skin=(skin+1)%palettes.length;
+  saved.skin=skin;
+  save();
+  menu();
+  toast('PET SKIN CHANGED');
+ };
+
+ $('ropeBtn').onclick=()=>{
+  ropeOn=!ropeOn;
+  menu();
+ };
+
+ $('more').onclick=goHome;
+}
+
+function goHome(){
+ location.href='../index.html';
+}
 
 $('pauseBtn').onclick=()=>{
+ if($('overlay').style.display!=='none'||gameOver)return;
+
  paused=true;
  running=false;
+ screenHolding=false;
+ pointerId=null;
+
+ $('bottomControls').style.display='none';
  $('pause').style.display='flex';
 };
 
 $('resume').onclick=()=>{
  paused=false;
  $('pause').style.display='none';
- running=true;
+ $('bottomControls').style.display='grid';
+
  last=performance.now();
+ running=true;
  requestAnimationFrame(loop);
 };
 
@@ -592,16 +1341,15 @@ $('restart').onclick=()=>start(level);
 
 $('home').onclick=()=>{
  $('pause').style.display='none';
- running=false;
  menu();
 };
 
-$('play').onclick=()=>start(saved.unlocked||1);
-$('levelsBtn').onclick=showLevels;
-$('more').onclick=()=>location.href='../index.html';
-
 makeLevel(1);
 draw();
+
+$('play').onclick=()=>start(saved.unlocked||1);
+$('levelsBtn').onclick=showLevels;
+$('more').onclick=goHome;
 
 })();
 </script>
