@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -495,7 +494,7 @@
           <article class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200/60 dark:border-slate-700">
             <h4 class="font-extrabold text-sm text-[#07222d] theme-text-primary mb-1">⚔️ 1v1 Battles & Classic Arcade</h4>
             <p class="text-xs text-slate-600 theme-text-sub leading-relaxed">
-              Challenge friends locally or test your tactics against AI in Pro Tic-Tac-Toe, Ludo King Royale, Ninja Shadow Duel, and Badminton Star Duel, or revisit timeless retro hits like Cyber Snake Retro and Fruit Arcade Pro.
+              Challenge friends locally or test your tactics against AI in Pro Tic-Tac-Toe and Ninja Shadow Duel, or revisit timeless retro hits like Cyber Snake Retro, Bird Action Mania, and Fruit Arcade Pro.
             </p>
           </article>
         </div>
@@ -790,6 +789,36 @@
 
     const TOP_GAMES_LIMIT = 10;
 
+    /* Blocked / Removed Game IDs & Titles */
+    const REMOVED_GAME_IDS = new Set([
+      'hitknite.', 'hitknite', 'hit-knife-pro',
+      'ludo game', 'ludo', 'ludo-king-royale',
+      'sports', 'badminton-star-duel',
+      'subway-mini', 'subway-surfers-mini'
+    ]);
+
+    const REMOVED_GAME_TITLES = new Set([
+      'hit knife pro',
+      'ludo king royale',
+      'badminton star duel',
+      'subway surfers mini'
+    ]);
+
+    const REMOVED_GAME_URLS = new Set([
+      'game/hitknite.html',
+      'game/ludo/index.html',
+      'game/sports.html',
+      'game/subway.html'
+    ]);
+
+    function isRemovedGame(g) {
+      if (!g) return true;
+      const id = String(g.id || '').trim().toLowerCase();
+      const title = String(g.title || '').trim().toLowerCase();
+      const url = String(g.url || '').trim().toLowerCase();
+      return REMOVED_GAME_IDS.has(id) || REMOVED_GAME_TITLES.has(title) || REMOVED_GAME_URLS.has(url);
+    }
+
     const DEFAULT_GAMES = [
       { id: 'subway-runner', title: 'Street Subway Runner', url: 'game/subway/index.html', logo: 'logo/subway.jpg', icon: 'fa-solid fa-person-running', size: 'large', categories: ['single', 'popular'], badge: '✨ HIT', bg: 'linear-gradient(135deg, #f59e0b, #b45309)' },
       { id: 'tic-tac-toe', title: 'Pro Tic-Tac-Toe', url: 'game/tictactoe/index.html', logo: 'logo/tic-tac-toe.png', icon: 'fa-solid fa-baseball-bat-ball', size: 'normal', categories: ['sports', 'single', 'popular'], badge: 'TOP', bg: 'linear-gradient(135deg, #14b8a6, #0f766e)' },
@@ -799,11 +828,7 @@
       { id: 'bird game', title: 'Bird Action Mania', url: 'game/clumsy.html', logo: 'logo/bird.jpg', icon: 'fa-solid fa-rocket', size: 'normal', categories: ['classic', 'single', 'popular'], badge: 'NEW', bg: 'linear-gradient(135deg, #f43f5e, #fb923c)' },
       { id: 'game-hub-battle', title: 'Ninja Shadow Duel', url: 'game/fight.html', logo: 'logo/fight.jpg', icon: 'fa-solid fa-gamepad', size: 'normal', categories: ['1v1', 'popular'], badge: '1v1', bg: 'linear-gradient(135deg, #ef4444, #7f1d1d)' },
       { id: 'snake-ladder', title: 'Monster Truck Stunts', url: 'game/ladder/index.html', logo: 'logo/ladder.jpg', icon: 'fa-solid fa-motorcycle', size: 'normal', categories: ['racing', 'single', 'popular'], badge: 'HOT', bg: 'linear-gradient(135deg, #f97316, #c2410c)' },
-      { id: 'hitknite.', title: 'Hit Knife Pro', url: 'game/hitknite.html', logo: 'logo/craft.jpg', icon: 'fa-solid fa-cube', size: 'normal', categories: ['1v1', 'classic', 'popular'], badge: 'CO-OP', bg: 'linear-gradient(135deg, #8b5cf6, #5b21b6)' },
-      { id: 'typing-race', title: 'Typing Race Championship', url: 'game/typerace/index.html', logo: 'logo/typerace.jpg', icon: 'fa-solid fa-truck', size: 'large', categories: ['racing', 'single', 'popular'], badge: '', bg: 'linear-gradient(135deg, #64748b, #334155)' },
-      { id: 'ludo game', title: 'Ludo King Royale', url: 'game/Ludo/index.html', logo: 'logo/ludo.jpg', icon: 'fa-solid fa-paw', size: 'normal', categories: ['classic', 'single'], badge: '', bg: 'linear-gradient(135deg, #84cc16, #4d7c0f)' },
-      { id: 'sports', title: 'Badminton Star Duel', url: 'game/sports.html', logo: 'logo/game.jpg', icon: 'fa-solid fa-medal', size: 'normal', categories: ['1v1', 'sports', 'popular'], badge: '1v1', bg: 'linear-gradient(135deg, #059669, #065f46)' },
-      { id: 'subway-mini', title: 'Subway Surfers Mini', url: 'game/subway.html', logo: 'logo/subway.jpg', icon: 'fa-solid fa-circle-dot', size: 'normal', categories: ['single'], badge: '', bg: 'linear-gradient(135deg, #334155, #1e293b)' }
+      { id: 'typing-race', title: 'Typing Race Championship', url: 'game/typerace/index.html', logo: 'logo/typerace.jpg', icon: 'fa-solid fa-truck', size: 'large', categories: ['racing', 'single', 'popular'], badge: '', bg: 'linear-gradient(135deg, #64748b, #334155)' }
     ];
 
     let GAMES_DATA = [...DEFAULT_GAMES];
@@ -830,7 +855,7 @@
           const sharedGames = await res.json();
           if (Array.isArray(sharedGames)) {
             sharedGames.forEach(g => {
-              if (g && g.id && !merged.some(existing => existing.id === g.id || existing.url === g.url)) {
+              if (g && g.id && !isRemovedGame(g) && !merged.some(existing => existing.id === g.id || existing.url === g.url)) {
                 merged.push(g);
               }
             });
@@ -839,7 +864,7 @@
       } catch (_) {}
 
       DEFAULT_GAMES.forEach(g => {
-        if (!merged.some(existing => existing.id === g.id || existing.url === g.url)) {
+        if (!isRemovedGame(g) && !merged.some(existing => existing.id === g.id || existing.url === g.url)) {
           merged.push(g);
         }
       });
@@ -940,6 +965,7 @@
       const emptyEl = document.getElementById('emptyState');
 
       let filteredGames = GAMES_DATA.filter(game => {
+        if (isRemovedGame(game)) return false;
         const searchable = (game.title + ' ' + game.url).toLowerCase();
         const matchesSearch = searchable.includes(currentSearch.toLowerCase());
         const matchesFav = !favoritesOnly || favoriteGames.has(game.id);
@@ -958,7 +984,7 @@
         topGridEl.innerHTML = topTenGames.map(g => createCardHTML(g, true, false)).join('');
       }
 
-      const popularGames = GAMES_DATA.filter(game => game.categories && game.categories.includes('popular'));
+      const popularGames = GAMES_DATA.filter(game => !isRemovedGame(game) && game.categories && game.categories.includes('popular'));
       document.getElementById('popularCountBadge').textContent = popularGames.length;
       popularRowEl.innerHTML = popularGames.map(g => createCardHTML(g, false, true)).join('');
 
