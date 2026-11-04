@@ -1,6 +1,6 @@
 * {
   box-sizing: border-box;
-  margin: 0; 
+  margin: 0;
   padding: 0;
   user-select: none;
   -webkit-user-select: none;
@@ -12,20 +12,32 @@ body, html {
   height: 100vh;
   overflow: hidden;
   font-family: 'Segoe UI', Roboto, Helvetica, sans-serif;
-  background-color: #38bdf8;
+  background-color: #1e3a8a;
 }
 
 #game-viewport {
   position: relative;
   width: 100vw;
   height: 100vh;
-  background: linear-gradient(180deg, #2563eb 0%, #60a5fa 45%, #bae6fd 80%, #f0f9ff 100%);
+  background: linear-gradient(180deg, #1d4ed8 0%, #38bdf8 50%, #bae6fd 82%, #f0f9ff 100%);
   overflow: hidden;
 }
 
 #canvas-container {
   width: 100%;
   height: 100%;
+}
+
+/* Screen Shake Effect Class */
+.shake-screen {
+  animation: screenShake 0.18s ease-in-out;
+}
+
+@keyframes screenShake {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-5px, 4px); }
+  50% { transform: translate(5px, -4px); }
+  75% { transform: translate(-4px, -3px); }
 }
 
 /* Top HUD */
@@ -44,24 +56,24 @@ body, html {
 
 #top-left-controls {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   pointer-events: auto;
 }
 
 .hud-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
   border: 2px solid rgba(255, 255, 255, 0.9);
-  background: rgba(15, 23, 42, 0.65);
+  background: rgba(15, 23, 42, 0.7);
   backdrop-filter: blur(6px);
   color: #fff;
-  font-size: 17px;
+  font-size: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
   transition: transform 0.1s;
 }
 
@@ -77,14 +89,14 @@ body, html {
   padding: 3px;
   border-radius: 20px;
   border: 2px solid #1e3a8a;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
 }
 
 .level-badge {
   min-width: 28px;
   height: 28px;
   padding: 0 6px;
-  background: linear-gradient(135deg, #0284c7, #2563eb);
+  background: linear-gradient(135deg, #0284c7, #1d4ed8);
   color: #fff;
   font-weight: 900;
   font-size: 13px;
@@ -96,7 +108,7 @@ body, html {
 }
 
 .progress-track {
-  width: 95px;
+  width: 90px;
   height: 10px;
   background: #cbd5e1;
   margin: 0 -4px;
@@ -106,7 +118,7 @@ body, html {
 #progress-fill {
   width: 0%;
   height: 100%;
-  background: linear-gradient(90deg, #00f2fe, #4facfe);
+  background: linear-gradient(90deg, #00f2fe, #0284c7);
   transition: width 0.1s linear;
 }
 
@@ -125,7 +137,7 @@ body, html {
 
 /* Coin Counter */
 #coin-counter {
-  background: rgba(15, 23, 42, 0.65);
+  background: rgba(15, 23, 42, 0.7);
   backdrop-filter: blur(6px);
   padding: 5px 10px 5px 14px;
   border-radius: 20px;
@@ -170,7 +182,7 @@ body, html {
   font-weight: 900;
   font-size: 14px;
   cursor: pointer;
-  box-shadow: 0 6px 16px rgba(234, 88, 12, 0.45);
+  box-shadow: 0 6px 16px rgba(234, 88, 12, 0.5);
   transition: transform 0.1s;
 }
 
@@ -191,35 +203,36 @@ body, html {
   font-weight: 900;
   font-size: 15px;
   border: 2px solid #fff;
-  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.6);
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.65);
   z-index: 16;
-  animation: pulseBanner 0.45s infinite alternate;
+  animation: pulseBanner 0.4s infinite alternate;
 }
 
 @keyframes pulseBanner {
   from { transform: translateX(-50%) scale(0.95); }
-  to { transform: translateX(-50%) scale(1.07); }
+  to { transform: translateX(-50%) scale(1.08); }
 }
 
 /* Floating Gate Gain Popup */
 #gain-popup {
   position: absolute;
-  top: 42%;
+  top: 40%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 36px;
+  font-size: 40px;
   font-weight: 900;
   color: #fef08a;
-  text-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
+  -webkit-text-stroke: 2px #0369a1;
+  text-shadow: 0 5px 12px rgba(0, 0, 0, 0.5);
   pointer-events: none;
   z-index: 25;
-  animation: floatUp 0.7s ease-out forwards;
+  animation: floatUp 0.75s ease-out forwards;
 }
 
 @keyframes floatUp {
-  0% { opacity: 1; transform: translate(-50%, 0) scale(0.8); }
-  50% { opacity: 1; transform: translate(-50%, -30px) scale(1.15); }
-  100% { opacity: 0; transform: translate(-50%, -55px) scale(1); }
+  0% { opacity: 1; transform: translate(-50%, 0) scale(0.7); }
+  45% { opacity: 1; transform: translate(-50%, -32px) scale(1.2); }
+  100% { opacity: 0; transform: translate(-50%, -60px) scale(1); }
 }
 
 .hidden { display: none !important; }
@@ -236,7 +249,7 @@ body, html {
   pointer-events: none;
   z-index: 12;
   border: 2px solid #ffffff;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
 }
 
 .blue-badge { background: linear-gradient(135deg, #0284c7, #1d4ed8); }
@@ -286,7 +299,7 @@ body, html {
   bottom: 22px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(15, 23, 42, 0.7);
+  background: rgba(15, 23, 42, 0.75);
   color: #fff;
   padding: 6px 16px;
   border-radius: 20px;
