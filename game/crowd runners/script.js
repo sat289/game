@@ -4,6 +4,7 @@ const playerBadge = document.getElementById('player-badge');
 const enemyBadgesContainer = document.getElementById('enemy-badges-container');
 const progressFill = document.getElementById('progress-fill');
 const levelBadge = document.getElementById('current-level-badge');
+const finishIcon = document.getElementById('finish-icon');
 const coinAmountEl = document.getElementById('coin-amount');
 const statusOverlay = document.getElementById('status-overlay');
 const battleBanner = document.getElementById('battle-banner');
@@ -11,6 +12,10 @@ const gainPopup = document.getElementById('gain-popup');
 const upgradeBar = document.getElementById('upgrade-bar');
 const upgradeCrowdBtn = document.getElementById('upgrade-crowd-btn');
 const upgradeCostEl = document.getElementById('upgrade-cost');
+
+const bossHud = document.getElementById('boss-hud');
+const bossHpText = document.getElementById('boss-hp-text');
+const bossBarFill = document.getElementById('boss-bar-fill');
 
 const modalOverlay = document.getElementById('modal-overlay');
 const modalTitle = document.getElementById('modal-title');
@@ -33,77 +38,58 @@ let isRunning = false;
 let isPaused = false;
 let soundEnabled = true;
 let activeBattleGroup = null;
-let levelLength = 260;
+let levelLength = 240;
 
-// --- 1. WEB AUDIO SYNTHESIZER (BUILT-IN SOUND EFFECTS) ---
+// --- 1. LIGHTWEIGHT WEB AUDIO SYNTHESIZER ---
 let audioCtx = null;
 function initAudio() {
   if (!audioCtx) {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (AudioContextClass) audioCtx = new AudioContextClass();
   }
-  if (audioCtx && audioCtx.state === 'suspended') {
-    audioCtx.resume();
-  }
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
 }
 
 function playSound(type) {
   if (!soundEnabled || !audioCtx) return;
   const now = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
 
   if (type === 'gate') {
-    // Bright power-up chime
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
     osc.type = 'triangle';
     osc.frequency.setValueAtTime(520, now);
-    osc.frequency.exponentialRampToValueAtTime(1040, now + 0.18);
-    gain.gain.setValueAtTime(0.22, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
+    osc.frequency.exponentialRampToValueAtTime(980, now + 0.16);
+    gain.gain.setValueAtTime(0.2, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
     osc.start(now);
-    osc.stop(now + 0.2);
+    osc.stop(now + 0.18);
   } else if (type === 'hit') {
-    // Pop / splat impact sound
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
     osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(180, now);
-    osc.frequency.exponentialRampToValueAtTime(45, now + 0.09);
-    gain.gain.setValueAtTime(0.18, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
+    osc.frequency.setValueAtTime(160, now);
+    osc.frequency.exponentialRampToValueAtTime(45, now + 0.08);
+    gain.gain.setValueAtTime(0.16, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
     osc.start(now);
-    osc.stop(now + 0.09);
+    osc.stop(now + 0.08);
   } else if (type === 'clash') {
-    // Battle sword/punch clack
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
     osc.type = 'square';
-    osc.frequency.setValueAtTime(320 + Math.random() * 120, now);
-    osc.frequency.exponentialRampToValueAtTime(80, now + 0.06);
-    gain.gain.setValueAtTime(0.12, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
+    osc.frequency.setValueAtTime(260 + Math.random() * 100, now);
+    osc.frequency.exponentialRampToValueAtTime(70, now + 0.05);
+    gain.gain.setValueAtTime(0.1, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
     osc.start(now);
-    osc.stop(now + 0.06);
+    osc.stop(now + 0.05);
   } else if (type === 'win') {
-    // Victory fanfare arpeggio
-    [523.25, 659.25, 783.99, 1046.5].forEach((freq, idx) => {
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(freq, now + idx * 0.09);
-      gain.gain.setValueAtTime(0.2, now + idx * 0.09);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.09 + 0.25);
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start(now + idx * 0.09);
-      osc.stop(now + idx * 0.09 + 0.25);
-    });
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(587.33, now);
+    osc.frequency.setValueAtTime(880, now + 0.1);
+    gain.gain.setValueAtTime(0.22, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+    osc.start(now);
+    osc.stop(now + 0.35);
   }
 }
 
@@ -112,103 +98,67 @@ soundBtn.addEventListener('click', () => {
   soundBtn.textContent = soundEnabled ? '🔊' : '🔇';
 });
 
-function triggerScreenShake() {
-  viewport.classList.remove('shake-screen');
-  void viewport.offsetWidth;
-  viewport.classList.add('shake-screen');
-}
-
-// --- 2. SCENE, CAMERA & RENDERER ---
+// --- 2. ULTRA-SMOOTH ZERO-LAG SCENE & RENDERER ---
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0xbae6fd, 0.0028);
+scene.fog = new THREE.FogExp2(0xbae6fd, 0.003);
 
-const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 600);
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.5, 350);
+const renderer = new THREE.WebGLRenderer({
+  antialias: true,
+  alpha: true,
+  powerPreference: 'high-performance'
+});
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.shadowMap.enabled = true;
+// Capping pixelRatio to 1.5 eliminates mobile GPU lag while keeping visuals crisp
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 container.appendChild(renderer.domElement);
 
-scene.add(new THREE.AmbientLight(0xffffff, 0.85));
-const dirLight = new THREE.DirectionalLight(0xfffbeb, 0.75);
-dirLight.position.set(-20, 55, 35);
-dirLight.castShadow = true;
+scene.add(new THREE.AmbientLight(0xffffff, 0.88));
+const dirLight = new THREE.DirectionalLight(0xfffbeb, 0.72);
+dirLight.position.set(-18, 45, 28);
 scene.add(dirLight);
 
-// --- 3. VISUAL EFFECTS (3D SHOCKWAVES, SPLATTERS & PARTICLES) ---
+// --- 3. POOLED PARTICLES (ZERO GARBAGE COLLECTION LAG) ---
 const effectsGroup = new THREE.Group();
 scene.add(effectsGroup);
 const activeParticles = [];
-const activeShockwaves = [];
+const particleGeo = new THREE.BoxGeometry(0.22, 0.22, 0.22);
+const blueParticleMat = new THREE.MeshBasicMaterial({ color: 0x0ea5e9 });
+const redParticleMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+const goldParticleMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
 
-function spawnParticles(worldPos, colorHex, count = 8, withShockwave = false) {
-  const geo = new THREE.BoxGeometry(0.22, 0.22, 0.22);
-  const mat = new THREE.MeshLambertMaterial({ color: colorHex });
+function spawnParticles(worldPos, type = 'blue', count = 5) {
+  if (activeParticles.length > 60) return; // Cap active particles for 60fps
+  const mat = type === 'blue' ? blueParticleMat : (type === 'red' ? redParticleMat : goldParticleMat);
 
   for (let i = 0; i < count; i++) {
-    const p = new THREE.Mesh(geo, mat);
-    p.position.copy(worldPos);
-    p.position.y += 0.8;
+    const p = new THREE.Mesh(particleGeo, mat);
+    p.position.set(worldPos.x, worldPos.y + 0.8, worldPos.z);
     p.userData = {
-      vx: (Math.random() - 0.5) * 0.34,
-      vy: 0.16 + Math.random() * 0.24,
-      vz: (Math.random() - 0.5) * 0.34,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: 0.14 + Math.random() * 0.2,
+      vz: (Math.random() - 0.5) * 0.3,
       life: 1.0
     };
     effectsGroup.add(p);
     activeParticles.push(p);
   }
-
-  // Floor color splat
-  const splat = new THREE.Mesh(
-    new THREE.CircleGeometry(0.42 + Math.random() * 0.2, 10),
-    new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 0.65, side: THREE.DoubleSide })
-  );
-  splat.rotation.x = -Math.PI / 2;
-  splat.position.set(worldPos.x + (Math.random() - 0.5) * 0.5, 0.03, worldPos.z + (Math.random() - 0.5) * 0.5);
-  effectsGroup.add(splat);
-
-  // Expanding 3D Shockwave Ring
-  if (withShockwave) {
-    const ring = new THREE.Mesh(
-      new THREE.RingGeometry(0.4, 0.75, 24),
-      new THREE.MeshBasicMaterial({ color: 0xfef08a, transparent: true, opacity: 0.9, side: THREE.DoubleSide })
-    );
-    ring.rotation.x = -Math.PI / 2;
-    ring.position.set(worldPos.x, 0.08, worldPos.z);
-    ring.userData = { scale: 1, opacity: 0.9 };
-    effectsGroup.add(ring);
-    activeShockwaves.push(ring);
-  }
 }
 
-function updateVisualEffects() {
+function updateParticles(dt) {
+  const step = dt * 60;
   for (let i = activeParticles.length - 1; i >= 0; i--) {
     const p = activeParticles[i];
-    p.position.x += p.userData.vx;
-    p.position.y += p.userData.vy;
-    p.position.z += p.userData.vz;
-    p.userData.vy -= 0.015;
-    p.rotation.x += 0.15;
-    p.rotation.y += 0.15;
-    p.userData.life -= 0.04;
+    p.position.x += p.userData.vx * step;
+    p.position.y += p.userData.vy * step;
+    p.position.z += p.userData.vz * step;
+    p.userData.vy -= 0.015 * step;
+    p.userData.life -= 0.045 * step;
     p.scale.setScalar(Math.max(0.01, p.userData.life));
 
     if (p.userData.life <= 0 || p.position.y < 0) {
       effectsGroup.remove(p);
       activeParticles.splice(i, 1);
-    }
-  }
-
-  for (let i = activeShockwaves.length - 1; i >= 0; i--) {
-    const sw = activeShockwaves[i];
-    sw.userData.scale += 0.35;
-    sw.userData.opacity -= 0.06;
-    sw.scale.setScalar(sw.userData.scale);
-    sw.material.opacity = Math.max(0, sw.userData.opacity);
-    if (sw.userData.opacity <= 0) {
-      effectsGroup.remove(sw);
-      activeShockwaves.splice(i, 1);
     }
   }
 }
@@ -218,43 +168,47 @@ function showGainPopup(text) {
   gainPopup.classList.remove('hidden');
   gainPopup.style.animation = 'none';
   void gainPopup.offsetWidth;
-  gainPopup.style.animation = 'floatUp 0.75s ease-out forwards';
+  gainPopup.style.animation = 'floatUp 0.65s ease-out forwards';
 }
 
-// --- 4. ULTRA-CLEAR HD 3D AVATAR BUILDER (EYES, PUPILS, SHOULDERS, SHADOW RING) ---
+// --- 4. OPTIMIZED CLEAR 3D AVATARS & GIANT BOSS MODEL ---
 const avatarGeos = {
-  shadow: new THREE.CircleGeometry(0.34, 12),
-  head: new THREE.SphereGeometry(0.33, 16, 16),
-  eyeWhite: new THREE.SphereGeometry(0.085, 10, 10),
-  pupil: new THREE.SphereGeometry(0.045, 8, 8),
-  headband: new THREE.CylinderGeometry(0.335, 0.335, 0.1, 14),
-  torso: new THREE.CylinderGeometry(0.21, 0.26, 0.68, 12),
-  chestBadge: new THREE.BoxGeometry(0.22, 0.22, 0.08),
-  belt: new THREE.CylinderGeometry(0.27, 0.27, 0.12, 12),
-  limb: new THREE.CylinderGeometry(0.09, 0.08, 0.38, 8),
-  hand: new THREE.SphereGeometry(0.11, 8, 8),
-  shoe: new THREE.BoxGeometry(0.18, 0.13, 0.28),
-  crown: new THREE.ConeGeometry(0.24, 0.34, 5)
+  shadow: new THREE.CircleGeometry(0.34, 8),
+  head: new THREE.SphereGeometry(0.32, 10, 10),
+  eyeWhite: new THREE.SphereGeometry(0.08, 6, 6),
+  pupil: new THREE.SphereGeometry(0.04, 6, 6),
+  headband: new THREE.CylinderGeometry(0.33, 0.33, 0.09, 10),
+  torso: new THREE.CylinderGeometry(0.2, 0.25, 0.66, 8),
+  belt: new THREE.CylinderGeometry(0.26, 0.26, 0.11, 8),
+  limb: new THREE.CylinderGeometry(0.085, 0.075, 0.38, 6),
+  hand: new THREE.SphereGeometry(0.1, 6, 6),
+  shoe: new THREE.BoxGeometry(0.17, 0.12, 0.26),
+  crown: new THREE.ConeGeometry(0.22, 0.32, 5),
+  horn: new THREE.ConeGeometry(0.18, 0.55, 6),
+  clubStick: new THREE.CylinderGeometry(0.09, 0.09, 1.4, 6),
+  clubHead: new THREE.CylinderGeometry(0.28, 0.18, 0.9, 8)
 };
 
 const avatarMats = {
-  shadow: new THREE.MeshBasicMaterial({ color: 0x0f172a, transparent: true, opacity: 0.28, side: THREE.DoubleSide }),
-  blueMain: new THREE.MeshPhongMaterial({ color: 0x0ea5e9, shininess: 100, specular: 0xe0f2fe }),
+  shadow: new THREE.MeshBasicMaterial({ color: 0x0f172a, transparent: true, opacity: 0.25 }),
+  blueMain: new THREE.MeshLambertMaterial({ color: 0x0ea5e9 }),
   blueDark: new THREE.MeshLambertMaterial({ color: 0x0369a1 }),
-  redMain: new THREE.MeshPhongMaterial({ color: 0xef4444, shininess: 100, specular: 0xfecaca }),
+  redMain: new THREE.MeshLambertMaterial({ color: 0xef4444 }),
   redDark: new THREE.MeshLambertMaterial({ color: 0x991b1b }),
-  white: new THREE.MeshLambertMaterial({ color: 0xffffff }),
+  bossMain: new THREE.MeshLambertMaterial({ color: 0xb91c1c }),
+  bossDark: new THREE.MeshLambertMaterial({ color: 0x450a0a }),
+  white: new THREE.MeshBasicMaterial({ color: 0xffffff }),
   black: new THREE.MeshBasicMaterial({ color: 0x0f172a }),
-  gold: new THREE.MeshPhongMaterial({ color: 0xfacc15, shininess: 100 })
+  gold: new THREE.MeshLambertMaterial({ color: 0xfacc15 }),
+  glowYellow: new THREE.MeshBasicMaterial({ color: 0xfef08a })
 };
 
-function createClearAvatar(isPlayer, isLeader = false) {
+function createClearAvatar(isPlayer, isLeader = false, isGiantBoss = false) {
   const group = new THREE.Group();
-  const mainMat = isPlayer ? avatarMats.blueMain : avatarMats.redMain;
-  const darkMat = isPlayer ? avatarMats.blueDark : avatarMats.redDark;
+  const mainMat = isGiantBoss ? avatarMats.bossMain : (isPlayer ? avatarMats.blueMain : avatarMats.redMain);
+  const darkMat = isGiantBoss ? avatarMats.bossDark : (isPlayer ? avatarMats.blueDark : avatarMats.redDark);
   const faceDir = isPlayer ? -1 : 1;
 
-  // Ground contact shadow ring so every single avatar stands out clearly against the white road
   const shadow = new THREE.Mesh(avatarGeos.shadow, avatarMats.shadow);
   shadow.rotation.x = -Math.PI / 2;
   shadow.position.y = 0.02;
@@ -263,7 +217,6 @@ function createClearAvatar(isPlayer, isLeader = false) {
   const bodyRig = new THREE.Group();
   group.add(bodyRig);
 
-  // Head + Headband + Distinct Eyes & Pupils
   const head = new THREE.Mesh(avatarGeos.head, mainMat);
   head.position.y = 1.42;
   bodyRig.add(head);
@@ -272,36 +225,42 @@ function createClearAvatar(isPlayer, isLeader = false) {
   headband.position.y = 1.52;
   bodyRig.add(headband);
 
-  [-0.12, 0.12].forEach(eyeX => {
-    const eyeW = new THREE.Mesh(avatarGeos.eyeWhite, avatarMats.white);
+  [-0.11, 0.11].forEach(eyeX => {
+    const eyeW = new THREE.Mesh(avatarGeos.eyeWhite, isGiantBoss ? avatarMats.glowYellow : avatarMats.white);
     eyeW.position.set(eyeX, 1.44, faceDir * 0.27);
     const pupil = new THREE.Mesh(avatarGeos.pupil, avatarMats.black);
     pupil.position.set(eyeX, 1.44, faceDir * 0.33);
     bodyRig.add(eyeW, pupil);
   });
 
-  if (isLeader) {
+  if (isLeader && !isGiantBoss) {
     const crown = new THREE.Mesh(avatarGeos.crown, avatarMats.gold);
-    crown.position.set(0, 1.85, 0);
+    crown.position.set(0, 1.84, 0);
     bodyRig.add(crown);
   }
 
-  // Torso, Golden Chest Emblem & Belt
+  // Giant Boss Horns
+  if (isGiantBoss) {
+    const leftHorn = new THREE.Mesh(avatarGeos.horn, avatarMats.gold);
+    leftHorn.position.set(-0.28, 1.78, 0);
+    leftHorn.rotation.z = 0.45;
+    const rightHorn = new THREE.Mesh(avatarGeos.horn, avatarMats.gold);
+    rightHorn.position.set(0.28, 1.78, 0);
+    rightHorn.rotation.z = -0.45;
+    bodyRig.add(leftHorn, rightHorn);
+  }
+
   const torso = new THREE.Mesh(avatarGeos.torso, mainMat);
   torso.position.y = 0.84;
   bodyRig.add(torso);
-
-  const badge = new THREE.Mesh(avatarGeos.chestBadge, avatarMats.gold);
-  badge.position.set(0, 0.9, faceDir * 0.21);
-  bodyRig.add(badge);
 
   const belt = new THREE.Mesh(avatarGeos.belt, darkMat);
   belt.position.y = 0.56;
   bodyRig.add(belt);
 
-  // Arms & White Gloves
+  // Arms
   const leftArmPivot = new THREE.Group();
-  leftArmPivot.position.set(-0.3, 1.06, 0);
+  leftArmPivot.position.set(-0.29, 1.06, 0);
   const leftArm = new THREE.Mesh(avatarGeos.limb, mainMat);
   leftArm.position.y = -0.18;
   const leftGlove = new THREE.Mesh(avatarGeos.hand, avatarMats.white);
@@ -310,17 +269,29 @@ function createClearAvatar(isPlayer, isLeader = false) {
   bodyRig.add(leftArmPivot);
 
   const rightArmPivot = new THREE.Group();
-  rightArmPivot.position.set(0.3, 1.06, 0);
+  rightArmPivot.position.set(0.29, 1.06, 0);
   const rightArm = new THREE.Mesh(avatarGeos.limb, mainMat);
   rightArm.position.y = -0.18;
   const rightGlove = new THREE.Mesh(avatarGeos.hand, avatarMats.white);
   rightGlove.position.y = -0.38;
   rightArmPivot.add(rightArm, rightGlove);
+
+  // Boss Giant Spiked War-Club in Right Hand
+  if (isGiantBoss) {
+    const club = new THREE.Group();
+    const stick = new THREE.Mesh(avatarGeos.clubStick, avatarMats.bossDark);
+    const cHead = new THREE.Mesh(avatarGeos.clubHead, avatarMats.gold);
+    cHead.position.y = 0.6;
+    club.add(stick, cHead);
+    club.rotation.x = Math.PI / 2;
+    club.position.set(0, -0.38, 0.5);
+    rightArmPivot.add(club);
+  }
   bodyRig.add(rightArmPivot);
 
-  // Legs & White Sneakers
+  // Legs
   const leftLegPivot = new THREE.Group();
-  leftLegPivot.position.set(-0.13, 0.48, 0);
+  leftLegPivot.position.set(-0.12, 0.48, 0);
   const leftLeg = new THREE.Mesh(avatarGeos.limb, darkMat);
   leftLeg.position.y = -0.2;
   const leftShoe = new THREE.Mesh(avatarGeos.shoe, avatarMats.white);
@@ -329,7 +300,7 @@ function createClearAvatar(isPlayer, isLeader = false) {
   bodyRig.add(leftLegPivot);
 
   const rightLegPivot = new THREE.Group();
-  rightLegPivot.position.set(0.13, 0.48, 0);
+  rightLegPivot.position.set(0.12, 0.48, 0);
   const rightLeg = new THREE.Mesh(avatarGeos.limb, darkMat);
   rightLeg.position.y = -0.2;
   const rightShoe = new THREE.Mesh(avatarGeos.shoe, avatarMats.white);
@@ -337,7 +308,8 @@ function createClearAvatar(isPlayer, isLeader = false) {
   rightLegPivot.add(rightLeg, rightShoe);
   bodyRig.add(rightLegPivot);
 
-  if (isLeader) group.scale.setScalar(1.25);
+  if (isLeader && !isGiantBoss) group.scale.setScalar(1.22);
+  if (isGiantBoss) group.scale.setScalar(3.4); // Massive Boss Scale!
 
   group.userData.rig = { bodyRig, leftArmPivot, rightArmPivot, leftLegPivot, rightLegPivot };
   return group;
@@ -349,48 +321,44 @@ function animateAvatar(avatar, elapsed, isMoving, speed = 13, isPlayer = true) {
   const phase = avatar.userData.phase || 0;
 
   if (isMoving) {
-    const swing = Math.sin(elapsed * speed + phase) * 0.88;
+    const swing = Math.sin(elapsed * speed + phase) * 0.82;
     rig.leftLegPivot.rotation.x = swing;
     rig.rightLegPivot.rotation.x = -swing;
-    rig.leftArmPivot.rotation.x = -swing * 0.95;
-    rig.rightArmPivot.rotation.x = swing * 0.95;
-
-    rig.bodyRig.rotation.x = isPlayer ? -0.18 : 0.18;
-    rig.bodyRig.rotation.z = Math.cos(elapsed * speed + phase) * 0.09;
-    rig.bodyRig.position.y = Math.abs(Math.sin(elapsed * speed + phase)) * 0.25;
+    rig.leftArmPivot.rotation.x = -swing * 0.9;
+    rig.rightArmPivot.rotation.x = swing * 0.9;
+    rig.bodyRig.rotation.x = isPlayer ? -0.15 : 0.15;
+    rig.bodyRig.position.y = Math.abs(Math.sin(elapsed * speed + phase)) * 0.22;
   } else {
     rig.leftLegPivot.rotation.x = 0;
     rig.rightLegPivot.rotation.x = 0;
-    rig.leftArmPivot.rotation.x = Math.sin(elapsed * 3 + phase) * 0.1;
-    rig.rightArmPivot.rotation.x = -Math.sin(elapsed * 3 + phase) * 0.1;
+    rig.leftArmPivot.rotation.x = Math.sin(elapsed * 3 + phase) * 0.12;
+    rig.rightArmPivot.rotation.x = -Math.sin(elapsed * 3 + phase) * 0.12;
     rig.bodyRig.rotation.x = 0;
-    rig.bodyRig.rotation.z = 0;
-    rig.bodyRig.position.y = Math.abs(Math.sin(elapsed * 3 + phase)) * 0.05;
+    rig.bodyRig.position.y = 0;
   }
 }
 
-// --- 5. SURROUNDINGS (ICY MOUNTAINS & FLOATING CLOUDS) ---
+// --- 5. CLEAN SURROUNDINGS ---
 const envGroup = new THREE.Group();
 scene.add(envGroup);
-const clouds = [];
 
-function createSurroundings() {
+function createSurroundings(isBossLvl) {
   while (envGroup.children.length > 0) envGroup.remove(envGroup.children[0]);
-  clouds.length = 0;
+  const rockColor = isBossLvl ? 0x991b1b : 0x38bdf8;
 
-  for (let z = 20; z > -levelLength - 100; z -= 24) {
+  for (let z = 10; z > -levelLength - 80; z -= 36) {
     [-1, 1].forEach(side => {
-      const x = side * (18 + Math.random() * 14);
-      const height = 45 + Math.random() * 25;
-      const radius = 7 + Math.random() * 4;
+      const x = side * (19 + Math.random() * 12);
+      const height = 44 + Math.random() * 20;
+      const radius = 7 + Math.random() * 3;
 
       const peak = new THREE.Group();
       const rock = new THREE.Mesh(
-        new THREE.ConeGeometry(radius, height, 6),
-        new THREE.MeshLambertMaterial({ color: 0x38bdf8, flatShading: true })
+        new THREE.ConeGeometry(radius, height, 5),
+        new THREE.MeshLambertMaterial({ color: rockColor, flatShading: true })
       );
       const cap = new THREE.Mesh(
-        new THREE.ConeGeometry(radius * 0.45, height * 0.4, 6),
+        new THREE.ConeGeometry(radius * 0.45, height * 0.4, 5),
         new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true })
       );
       cap.position.y = height * 0.3;
@@ -399,27 +367,9 @@ function createSurroundings() {
       envGroup.add(peak);
     });
   }
-
-  const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 });
-  for (let i = 0; i < 20; i++) {
-    const cloud = new THREE.Group();
-    for (let j = 0; j < 3; j++) {
-      const puff = new THREE.Mesh(new THREE.DodecahedronGeometry(2.4 + Math.random(), 1), cloudMat);
-      puff.position.set(j * 2 - 2, Math.random() * 0.5, 0);
-      cloud.add(puff);
-    }
-    cloud.position.set(
-      (Math.random() > 0.5 ? 1 : -1) * (18 + Math.random() * 20),
-      16 + Math.random() * 10,
-      -Math.random() * levelLength
-    );
-    cloud.userData = { baseY: cloud.position.y, phase: Math.random() * 5 };
-    envGroup.add(cloud);
-    clouds.push(cloud);
-  }
 }
 
-// --- 6. LEVEL BUILDER: 5 UNIQUE OBSTACLE MODELS & MIXED ALTERNATING GATES ---
+// --- 6. LEVEL BUILDER: REDUCED OBSTACLES & BOSS EVERY 5 LEVELS ---
 const levelGroup = new THREE.Group();
 scene.add(levelGroup);
 
@@ -433,19 +383,8 @@ function createGateTexture(label, isMultiply) {
   canvas.height = 128;
   const ctx = canvas.getContext('2d');
 
-  const grad = ctx.createLinearGradient(0, 0, 0, 128);
-  if (isMultiply) {
-    // Golden-Orange highlight for ×2 so players can spot it clearly as it swaps sides
-    grad.addColorStop(0, 'rgba(245, 158, 11, 0.55)');
-    grad.addColorStop(1, 'rgba(217, 119, 6, 0.78)');
-  } else {
-    // Vibrant Cyan-Blue for +10 / +15
-    grad.addColorStop(0, 'rgba(56, 189, 248, 0.55)');
-    grad.addColorStop(1, 'rgba(2, 132, 199, 0.78)');
-  }
-  ctx.fillStyle = grad;
+  ctx.fillStyle = isMultiply ? 'rgba(245, 158, 11, 0.72)' : 'rgba(2, 132, 199, 0.72)';
   ctx.fillRect(0, 0, 256, 128);
-
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, 256, 7);
   ctx.fillRect(0, 121, 256, 7);
@@ -453,203 +392,97 @@ function createGateTexture(label, isMultiply) {
   ctx.font = '900 68px "Segoe UI", Arial';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.lineWidth = 6;
-  ctx.strokeStyle = isMultiply ? '#78350f' : '#0369a1';
-  ctx.strokeText(label, 128, 66);
   ctx.fillStyle = '#ffffff';
   ctx.fillText(label, 128, 66);
 
   return new THREE.CanvasTexture(canvas);
 }
 
-// --- 5 DIFFERENT OBSTACLE MODELS ---
-// Model 1: Swinging Overhead Giant Pendulum Axe
-function createSwingingAxeObstacle(z) {
-  const group = new THREE.Group();
-  const postMat = new THREE.MeshLambertMaterial({ color: 0x334155 });
-  const lp = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 9, 12), postMat);
-  lp.position.set(-7.2, 4.5, 0);
-  const rp = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 9, 12), postMat);
-  rp.position.set(7.2, 4.5, 0);
-  const topBar = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 15, 12), postMat);
-  topBar.rotation.z = Math.PI / 2;
-  topBar.position.set(0, 8.8, 0);
-  group.add(lp, rp, topBar);
+// Clean Single Obstacles (1 per step so track is never cluttered!)
+function createSingleObstacle(stepIdx, z) {
+  const type = stepIdx % 4;
 
-  const pivot = new THREE.Group();
-  pivot.position.set(0, 8.8, 0);
-  const rod = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.18, 0.18, 7.2, 10),
-    new THREE.MeshLambertMaterial({ color: 0x94a3b8 })
-  );
-  rod.position.y = -3.6;
-
-  const axeBlade = new THREE.Mesh(
-    new THREE.BoxGeometry(3.8, 2.0, 0.35),
-    new THREE.MeshPhongMaterial({ color: 0xef4444, shininess: 90 })
-  );
-  axeBlade.position.y = -7.2;
-
-  const axeEdge = new THREE.Mesh(
-    new THREE.BoxGeometry(4.0, 0.4, 0.42),
-    new THREE.MeshLambertMaterial({ color: 0xfef08a })
-  );
-  axeEdge.position.y = -8.1;
-
-  pivot.add(rod, axeBlade, axeEdge);
-  group.add(pivot);
-  group.position.set(0, 0, z);
-  levelGroup.add(group);
-
-  return {
-    modelType: 'pendulumAxe',
-    mesh: group,
-    pivot: pivot,
-    z: z,
-    phase: Math.random() * Math.PI * 2,
-    hitX: 0,
-    radius: 2.1
-  };
-}
-
-// Model 2: Rotating 4-Blade Cross Saw Windmill
-function createRotatingCrossSaw(x, z) {
-  const group = new THREE.Group();
-  const hub = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.9, 0.9, 2.2, 16),
-    new THREE.MeshPhongMaterial({ color: 0xdc2626 })
-  );
-  hub.position.y = 1.1;
-
-  const bladesGroup = new THREE.Group();
-  bladesGroup.position.y = 1.0;
-  const bladeMat = new THREE.MeshPhongMaterial({ color: 0xf97316, shininess: 80 });
-  const b1 = new THREE.Mesh(new THREE.BoxGeometry(7.6, 0.45, 0.55), bladeMat);
-  const b2 = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.45, 7.6), bladeMat);
-  bladesGroup.add(b1, b2);
-
-  group.add(hub, bladesGroup);
-  group.position.set(x, 0, z);
-  levelGroup.add(group);
-
-  return {
-    modelType: 'crossSaw',
-    mesh: group,
-    bladesGroup: bladesGroup,
-    z: z,
-    hitX: x,
-    radius: 3.5
-  };
-}
-
-// Model 3: Rolling Spiked Crusher Log
-function createRollingSpikeLog(x, z, range, phase) {
-  const group = new THREE.Group();
-  const roller = new THREE.Group();
-  roller.position.y = 1.1;
-
-  const log = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.0, 1.0, 6.2, 16),
-    new THREE.MeshPhongMaterial({ color: 0xb91c1c })
-  );
-  log.rotation.z = Math.PI / 2;
-  roller.add(log);
-
-  const spikeMat = new THREE.MeshLambertMaterial({ color: 0xfacc15 });
-  for (let lx = -2.4; lx <= 2.4; lx += 1.2) {
-    for (let a = 0; a < Math.PI * 2; a += Math.PI / 2) {
-      const spike = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.6, 6), spikeMat);
-      spike.position.set(lx, Math.cos(a) * 1.15, Math.sin(a) * 1.15);
-      spike.rotation.x = a;
-      roller.add(spike);
+  if (type === 0) {
+    // 1. Single Sliding Purple Saw Pillar
+    const pillarGroup = new THREE.Group();
+    for (let i = 0; i < 4; i++) {
+      const cyl = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.85, 0.85, 0.75, 12),
+        new THREE.MeshLambertMaterial({ color: 0x7e22ce })
+      );
+      cyl.position.y = i * 0.85 + 0.4;
+      const ring = new THREE.Mesh(
+        new THREE.CylinderGeometry(1.08, 1.08, 0.12, 8),
+        new THREE.MeshBasicMaterial({ color: 0xe9d5ff })
+      );
+      ring.position.y = i * 0.85 + 0.8;
+      pillarGroup.add(cyl, ring);
     }
-  }
+    pillarGroup.position.set(0, 0, z);
+    levelGroup.add(pillarGroup);
+    return { modelType: 'sawPillar', mesh: pillarGroup, z, range: 4.5, phase: stepIdx, hitX: 0, radius: 1.35 };
+  } else if (type === 1) {
+    // 2. Single Overhead Swinging Pendulum Axe
+    const group = new THREE.Group();
+    const postMat = new THREE.MeshLambertMaterial({ color: 0x334155 });
+    const lp = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 9, 8), postMat);
+    lp.position.set(-7.2, 4.5, 0);
+    const rp = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 9, 8), postMat);
+    rp.position.set(7.2, 4.5, 0);
+    const topBar = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 15, 8), postMat);
+    topBar.rotation.z = Math.PI / 2;
+    topBar.position.set(0, 8.8, 0);
+    group.add(lp, rp, topBar);
 
-  group.add(roller);
-  group.position.set(x, 0, z);
-  levelGroup.add(group);
-
-  return {
-    modelType: 'spikeRoller',
-    mesh: group,
-    roller: roller,
-    baseX: x,
-    z: z,
-    range: range,
-    phase: phase,
-    hitX: x,
-    radius: 3.1
-  };
-}
-
-// Model 4: Up-and-Down Smashing Thumper Hammers
-function createSmashingHammer(x, z, phase) {
-  const group = new THREE.Group();
-  const frame = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.28, 0.28, 6.5, 10),
-    new THREE.MeshLambertMaterial({ color: 0x334155 })
-  );
-  frame.position.set(0, 3.25, -1.2);
-  group.add(frame);
-
-  const headGroup = new THREE.Group();
-  const block = new THREE.Mesh(
-    new THREE.BoxGeometry(3.4, 2.2, 2.2),
-    new THREE.MeshPhongMaterial({ color: 0x9333ea })
-  );
-  const warnStripe = new THREE.Mesh(
-    new THREE.BoxGeometry(3.5, 0.45, 2.3),
-    new THREE.MeshBasicMaterial({ color: 0xfacc15 })
-  );
-  warnStripe.position.y = -0.8;
-  headGroup.add(block, warnStripe);
-  headGroup.position.y = 1.2;
-  group.add(headGroup);
-
-  group.position.set(x, 0, z);
-  levelGroup.add(group);
-
-  return {
-    modelType: 'thumper',
-    mesh: group,
-    headGroup: headGroup,
-    z: z,
-    phase: phase,
-    hitX: x,
-    isDown: true,
-    radius: 1.9
-  };
-}
-
-// Model 5: Sliding Purple Saw Pillars
-function createSlidingSawPillar(x, z, range, phase) {
-  const pillarGroup = new THREE.Group();
-  for (let i = 0; i < 4; i++) {
-    const cyl = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.85, 0.85, 0.75, 14),
-      new THREE.MeshPhongMaterial({ color: 0x7e22ce, shininess: 70 })
+    const pivot = new THREE.Group();
+    pivot.position.set(0, 8.8, 0);
+    const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 7.2, 8), postMat);
+    rod.position.y = -3.6;
+    const blade = new THREE.Mesh(
+      new THREE.BoxGeometry(3.4, 1.8, 0.32),
+      new THREE.MeshLambertMaterial({ color: 0xef4444 })
     );
-    cyl.position.y = i * 0.85 + 0.4;
-    const ring = new THREE.Mesh(
-      new THREE.CylinderGeometry(1.08, 1.08, 0.12, 8),
-      new THREE.MeshLambertMaterial({ color: 0xe9d5ff })
+    blade.position.y = -7.2;
+    pivot.add(rod, blade);
+    group.add(pivot);
+    group.position.set(0, 0, z);
+    levelGroup.add(group);
+    return { modelType: 'pendulumAxe', mesh: group, pivot, z, phase: stepIdx, hitX: 0, radius: 1.9 };
+  } else if (type === 2) {
+    // 3. Single Center Rotating Cross Saw
+    const group = new THREE.Group();
+    const hub = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.8, 0.8, 2.0, 12),
+      new THREE.MeshLambertMaterial({ color: 0xdc2626 })
     );
-    ring.position.y = i * 0.85 + 0.8;
-    pillarGroup.add(cyl, ring);
+    hub.position.y = 1.0;
+    const bladesGroup = new THREE.Group();
+    bladesGroup.position.y = 1.0;
+    const bMat = new THREE.MeshLambertMaterial({ color: 0xf97316 });
+    const b1 = new THREE.Mesh(new THREE.BoxGeometry(6.8, 0.4, 0.5), bMat);
+    const b2 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.4, 6.8), bMat);
+    bladesGroup.add(b1, b2);
+    group.add(hub, bladesGroup);
+    group.position.set(0, 0, z);
+    levelGroup.add(group);
+    return { modelType: 'crossSaw', mesh: group, bladesGroup, z, hitX: 0, radius: 3.1 };
+  } else {
+    // 4. Single Narrow Spiked Roller on One Side (Easy to steer around!)
+    const sideX = stepIdx % 2 === 0 ? -3.0 : 3.0;
+    const group = new THREE.Group();
+    const roller = new THREE.Group();
+    roller.position.y = 1.0;
+    const log = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.9, 0.9, 5.2, 12),
+      new THREE.MeshLambertMaterial({ color: 0xb91c1c })
+    );
+    log.rotation.z = Math.PI / 2;
+    roller.add(log);
+    group.add(roller);
+    group.position.set(sideX, 0, z);
+    levelGroup.add(group);
+    return { modelType: 'spikeRoller', mesh: group, roller, z, hitX: sideX, radius: 2.6 };
   }
-  pillarGroup.position.set(x, 0, z);
-  levelGroup.add(pillarGroup);
-
-  return {
-    modelType: 'sawPillar',
-    mesh: pillarGroup,
-    baseX: x,
-    z: z,
-    range: range,
-    phase: phase,
-    hitX: x,
-    radius: 1.4
-  };
 }
 
 function buildLevel(lvl) {
@@ -660,7 +493,15 @@ function buildLevel(lvl) {
   obstacles = [];
   enemyGroups = [];
 
-  levelLength = 230 + lvl * 16;
+  const isBossLevel = (lvl % 5 === 0);
+  viewport.classList.toggle('boss-theme', isBossLevel);
+  finishIcon.textContent = isBossLevel ? '👹' : '🏁';
+  bossHud.classList.add('hidden');
+
+  // Spacious 3-section track so objects never pile up on screen
+  const totalSteps = 3;
+  const STEP_SPACING = 68;
+  levelLength = totalSteps * STEP_SPACING + 45;
   const TRACK_WIDTH = 15.4;
 
   // Road & Curbs
@@ -672,7 +513,7 @@ function buildLevel(lvl) {
   levelGroup.add(road);
 
   const curbGeo = new THREE.BoxGeometry(0.45, 2.3, levelLength + 45);
-  const curbMat = new THREE.MeshLambertMaterial({ color: 0x94a3b8 });
+  const curbMat = new THREE.MeshLambertMaterial({ color: isBossLevel ? 0xef4444 : 0x94a3b8 });
   const leftCurb = new THREE.Mesh(curbGeo, curbMat);
   leftCurb.position.set(-TRACK_WIDTH / 2 - 0.22, -0.9, -levelLength / 2 + 10);
   const rightCurb = new THREE.Mesh(curbGeo, curbMat);
@@ -690,70 +531,40 @@ function buildLevel(lvl) {
     levelGroup.add(stair);
   }
 
-  let stepIndex = 0;
-  for (let z = -24; z > -levelLength + 34; z -= 40) {
-    stepIndex++;
+  for (let step = 1; step <= totalSteps; step++) {
+    const baseZ = -step * STEP_SPACING + 32;
 
-    // --- MIXED & ALTERNATING GATES (+10/+15 and ×2) ---
-    // Pattern alternates every step so ×2 is never stuck on one side, plus some gates slide left-to-right!
-    const addValue = stepIndex % 2 === 0 ? 15 : 10;
-    const isMultiplyOnLeft = (stepIndex + lvl) % 2 === 1;
-    const isSlidingGateStep = stepIndex % 3 === 0;
+    // 1. Alternating Gates (+10 / +15 and ×2)
+    const addValue = step % 2 === 0 ? 15 : 10;
+    const isMultiplyLeft = (step + lvl) % 2 === 1;
 
-    if (isSlidingGateStep) {
-      // Staggered sliding gates that move left and right!
-      spawnGate(-2.0, z, 6.2, '×2', 'multiply', 2, true, stepIndex, true, 0);
-      spawnGate(2.0, z - 4.5, 6.2, `+${addValue}`, 'add', addValue, false, stepIndex, true, Math.PI);
-    } else if (isMultiplyOnLeft) {
-      // Left = ×2, Right = +10 or +15
-      spawnGate(-3.7, z, 7.1, '×2', 'multiply', 2, true, stepIndex, false, 0);
-      spawnGate(3.7, z, 7.1, `+${addValue}`, 'add', addValue, false, stepIndex, false, 0);
+    if (isMultiplyLeft) {
+      spawnGate(-3.7, baseZ, 7.1, '×2', 'multiply', 2, true, step);
+      spawnGate(3.7, baseZ, 7.1, `+${addValue}`, 'add', addValue, false, step);
     } else {
-      // Left = +10 or +15, Right = ×2
-      spawnGate(-3.7, z, 7.1, `+${addValue}`, 'add', addValue, false, stepIndex, false, 0);
-      spawnGate(3.7, z, 7.1, '×2', 'multiply', 2, true, stepIndex, false, 0);
+      spawnGate(-3.7, baseZ, 7.1, `+${addValue}`, 'add', addValue, false, step);
+      spawnGate(3.7, baseZ, 7.1, '×2', 'multiply', 2, true, step);
     }
 
-    // --- DIFFERENT OBSTACLE MODEL FOR EVERY STEP ---
-    const obsZ = z - 15;
-    const obstacleTypeIndex = (stepIndex + lvl) % 5;
+    // 2. ONLY ONE Obstacle per step (Clean, spacious, and easy to read!)
+    const obsZ = baseZ - 22;
+    obstacles.push(createSingleObstacle(step + lvl, obsZ));
 
-    if (obstacleTypeIndex === 0) {
-      // Step Type 1: Giant Overhead Swinging Pendulum Axe + Side Saw Pillar
-      obstacles.push(createSwingingAxeObstacle(obsZ));
-      obstacles.push(createSlidingSawPillar(0, obsZ - 5, 4.5, 0));
-    } else if (obstacleTypeIndex === 1) {
-      // Step Type 2: Twin Rotating 4-Blade Cross Saws
-      obstacles.push(createRotatingCrossSaw(-3.6, obsZ));
-      obstacles.push(createRotatingCrossSaw(3.6, obsZ - 5.5));
-    } else if (obstacleTypeIndex === 2) {
-      // Step Type 3: Rolling Spiked Crusher Log + Opposite Saw Pillar
-      obstacles.push(createRollingSpikeLog(0, obsZ, 3.2, 0));
-      obstacles.push(createSlidingSawPillar(0, obsZ - 5.5, 4.2, Math.PI));
-    } else if (obstacleTypeIndex === 3) {
-      // Step Type 4: Twin Smashing Thumper Hammers + Center Rotating Cross Saw
-      obstacles.push(createSmashingHammer(-3.8, obsZ, 0));
-      obstacles.push(createSmashingHammer(3.8, obsZ, Math.PI));
-      obstacles.push(createRotatingCrossSaw(0, obsZ - 5.5));
+    // 3. Enemy Squad OR Giant Boss on the final step of Boss Levels (5, 10, 15... 50)
+    const enemyZ = baseZ - 44;
+    if (isBossLevel && step === totalSteps) {
+      const bossHp = 80 + lvl * 12;
+      spawnGiantBoss(0, enemyZ, bossHp);
     } else {
-      // Step Type 5: Triple Criss-Cross Sliding Purple Saw Pillars
-      obstacles.push(createSlidingSawPillar(-3.5, obsZ, 3.8, 0));
-      obstacles.push(createSlidingSawPillar(3.5, obsZ - 3.5, 3.8, Math.PI));
-      obstacles.push(createSlidingSawPillar(0, obsZ - 7.0, 4.5, 1.5));
-    }
-
-    // --- RED ENEMY CROWD SQUAD (STOP & FIGHT) ---
-    if (z > -levelLength + 54) {
-      const enemyZ = z - 28;
-      const count = Math.min(140, 16 + lvl * 4 + stepIndex * 3);
-      spawnEnemyCrowd((Math.random() - 0.5) * 4, enemyZ, count);
+      const count = Math.min(90, 12 + lvl * 2 + step * 3);
+      spawnEnemyCrowd(( step % 2 === 0 ? 2.2 : -2.2 ), enemyZ, count);
     }
   }
 
-  createSurroundings();
+  createSurroundings(isBossLevel);
 }
 
-function spawnGate(x, z, width, text, operation, value, isMultiply, pairId, isMoving, phase) {
+function spawnGate(x, z, width, text, operation, value, isMultiply, pairId) {
   const gateGroup = new THREE.Group();
   const height = 3.6;
   const banner = new THREE.Mesh(
@@ -768,7 +579,7 @@ function spawnGate(x, z, width, text, operation, value, isMultiply, pairId, isMo
   banner.position.y = height / 2;
   gateGroup.add(banner);
 
-  const postGeo = new THREE.CylinderGeometry(0.25, 0.25, height + 0.25, 12);
+  const postGeo = new THREE.CylinderGeometry(0.24, 0.24, height + 0.2, 8);
   const postMat = new THREE.MeshLambertMaterial({ color: 0x1e293b });
   const lp = new THREE.Mesh(postGeo, postMat);
   lp.position.set(-width / 2, height / 2, 0);
@@ -778,37 +589,23 @@ function spawnGate(x, z, width, text, operation, value, isMultiply, pairId, isMo
 
   gateGroup.position.set(x, 0, z);
   levelGroup.add(gateGroup);
-  gates.push({
-    mesh: gateGroup,
-    baseX: x,
-    x,
-    z,
-    width,
-    text,
-    operation,
-    value,
-    pairId,
-    isMoving,
-    phase,
-    triggered: false
-  });
+  gates.push({ mesh: gateGroup, x, z, width, text, operation, value, pairId, triggered: false });
 }
 
 function spawnEnemyCrowd(x, z, count) {
   const group = new THREE.Group();
   const disc = new THREE.Mesh(
-    new THREE.CircleGeometry(3.8, 28),
-    new THREE.MeshBasicMaterial({ color: 0xfca5a5, transparent: true, opacity: 0.48, side: THREE.DoubleSide })
+    new THREE.CircleGeometry(3.4, 20),
+    new THREE.MeshBasicMaterial({ color: 0xfca5a5, transparent: true, opacity: 0.45, side: THREE.DoubleSide })
   );
   disc.rotation.x = -Math.PI / 2;
   disc.position.y = 0.03;
   group.add(disc);
 
   const avatars = [];
-  const visualCount = Math.min(count, 60);
+  const visualCount = Math.min(count, 35);
   for (let i = 0; i < visualCount; i++) {
-    const redMan = createClearAvatar(false, i === 0);
-    // Wider spacing (0.48) so every red avatar is clearly visible
+    const redMan = createClearAvatar(false, i === 0, false);
     const r = 0.48 * Math.sqrt(i);
     const a = i * 2.39996;
     redMan.position.set(r * Math.cos(a), 0, r * Math.sin(a));
@@ -826,6 +623,7 @@ function spawnEnemyCrowd(x, z, count) {
   enemyBadgesContainer.appendChild(badge);
 
   enemyGroups.push({
+    isBoss: false,
     mesh: group,
     disc,
     avatars,
@@ -833,19 +631,57 @@ function spawnEnemyCrowd(x, z, count) {
     x,
     z,
     count,
+    maxCount: count,
     engaged: false,
     defeated: false
   });
 }
 
-// --- 7. COHESIVE & CLEAR PLAYER CROWD ---
+// Giant Boss Generator for Every 5th Level (5, 10, 15, 20... 50)
+function spawnGiantBoss(x, z, bossHp) {
+  const group = new THREE.Group();
+  const disc = new THREE.Mesh(
+    new THREE.CircleGeometry(4.8, 24),
+    new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.55, side: THREE.DoubleSide })
+  );
+  disc.rotation.x = -Math.PI / 2;
+  disc.position.y = 0.03;
+  group.add(disc);
+
+  const giantBossMesh = createClearAvatar(false, true, true);
+  giantBossMesh.userData.phase = 0;
+  group.add(giantBossMesh);
+
+  group.position.set(x, 0, z);
+  levelGroup.add(group);
+
+  const badge = document.createElement('div');
+  badge.className = 'crowd-badge boss-badge';
+  badge.textContent = `👹 BOSS: ${bossHp}`;
+  enemyBadgesContainer.appendChild(badge);
+
+  enemyGroups.push({
+    isBoss: true,
+    mesh: group,
+    disc,
+    avatars: [giantBossMesh],
+    badge,
+    x,
+    z,
+    count: bossHp,
+    maxCount: bossHp,
+    engaged: false,
+    defeated: false
+  });
+}
+
+// --- 7. ZERO-LAG COHESIVE PLAYER CROWD ---
 const playerCrowdGroup = new THREE.Group();
 scene.add(playerCrowdGroup);
 const playerAvatars = [];
 
 function assignFormationTargets() {
   for (let i = 0; i < playerAvatars.length; i++) {
-    // 0.48 spacing ensures avatars stay in one cohesive group while every single character remains clearly visible
     const r = 0.48 * Math.sqrt(i);
     const theta = i * 2.39996;
     playerAvatars[i].userData.targetX = r * Math.cos(theta);
@@ -854,10 +690,11 @@ function assignFormationTargets() {
 }
 
 function syncPlayerCrowdMeshes() {
-  const visualCap = Math.max(0, Math.min(playerCount, 110));
+  // Capping visual 3D avatars at 65 guarantees silky-smooth 60 FPS on any phone while the counter shows full score!
+  const visualCap = Math.max(0, Math.min(playerCount, 65));
   while (playerAvatars.length < visualCap) {
     const isLeader = playerAvatars.length === 0;
-    const man = createClearAvatar(true, isLeader);
+    const man = createClearAvatar(true, isLeader, false);
     man.userData.phase = Math.random() * Math.PI * 2;
     man.position.set((Math.random() - 0.5) * 0.4, 0, (Math.random() - 0.5) * 0.4);
     playerCrowdGroup.add(man);
@@ -873,37 +710,35 @@ function syncPlayerCrowdMeshes() {
 function killOnePlayerAvatar(worldPos, isObstacleHit = false) {
   if (playerCount <= 0) return;
   playerCount--;
-  if (playerAvatars.length > 0) {
-    const victim = playerAvatars.pop();
-    const vWorld = new THREE.Vector3();
-    victim.getWorldPosition(vWorld);
-    if (!worldPos) worldPos = vWorld;
-    playerCrowdGroup.remove(victim);
-  }
-  if (worldPos) spawnParticles(worldPos, 0x0ea5e9, 7, false);
-  if (isObstacleHit) {
-    playSound('hit');
-    triggerScreenShake();
-  }
-  assignFormationTargets();
-  playerBadge.textContent = Math.max(0, playerCount);
+  syncPlayerCrowdMeshes();
+
+  if (worldPos) spawnParticles(worldPos, 'blue', 4);
+  if (isObstacleHit) playSound('hit');
 }
 
-function killOneEnemyAvatar(eg) {
+function damageEnemyOrBoss(eg) {
   if (eg.count <= 0) return;
   eg.count--;
-  eg.badge.textContent = Math.max(0, eg.count);
-  if (eg.avatars.length > 0) {
-    const victim = eg.avatars.pop();
-    const vWorld = new THREE.Vector3();
-    victim.getWorldPosition(vWorld);
-    spawnParticles(vWorld, 0xef4444, 7, false);
-    eg.mesh.remove(victim);
+
+  if (eg.isBoss) {
+    eg.badge.textContent = `👹 BOSS: ${Math.max(0, eg.count)}`;
+    bossHpText.textContent = Math.max(0, eg.count);
+    bossBarFill.style.width = `${Math.max(0, (eg.count / eg.maxCount) * 100)}%`;
+    spawnParticles(eg.mesh.position, 'red', 3);
+  } else {
+    eg.badge.textContent = Math.max(0, eg.count);
+    const targetVisual = Math.min(eg.count, 35);
+    while (eg.avatars.length > targetVisual) {
+      const victim = eg.avatars.pop();
+      eg.mesh.remove(victim);
+    }
+    spawnParticles(eg.mesh.position, 'red', 3);
   }
 }
 
 // --- 8. RESET & CONTROLS ---
 function resetLevelState() {
+  const isBossLvl = (currentLevel % 5 === 0);
   playerCount = 20 + bonusStartCrowd + (currentLevel - 1) * 2;
   playerCrowdGroup.position.set(0, 0, 8);
   targetX = 0;
@@ -915,7 +750,9 @@ function resetLevelState() {
 
   levelBadge.textContent = currentLevel;
   progressFill.style.width = '0%';
-  statusOverlay.textContent = `Touch & Drag to Run (Level ${currentLevel} of ${MAX_LEVELS})`;
+  statusOverlay.textContent = isBossLvl
+    ? `⚠️ BOSS LEVEL ${currentLevel}! Touch & Drag to Run`
+    : `Touch & Drag to Run (Level ${currentLevel} of ${MAX_LEVELS})`;
 
   while (playerAvatars.length > 0) playerCrowdGroup.remove(playerAvatars.pop());
   syncPlayerCrowdMeshes();
@@ -933,7 +770,7 @@ upgradeCrowdBtn.addEventListener('click', () => {
     upgradeCostEl.textContent = upgradeCost;
     syncPlayerCrowdMeshes();
     playSound('gate');
-    spawnParticles(playerCrowdGroup.position, 0xfacc15, 12, true);
+    spawnParticles(playerCrowdGroup.position, 'gold', 8);
   }
 });
 
@@ -989,16 +826,25 @@ restartBtn.addEventListener('click', () => {
   resetLevelState();
 });
 
-// --- 9. MAIN ANIMATION LOOP ---
+// --- 9. DELTA-TIME SMOOTH ANIMATION LOOP (NO LAG) ---
 const clock = new THREE.Clock();
 let lastDamageTime = 0;
 let lastBattleTime = 0;
 
-function projectToScreen(worldPos, yOffset, badgeEl) {
+function projectToScreen(worldPos, yOffset, badgeEl, maxVisibleDist = 200) {
+  const distZ = Math.abs(playerCrowdGroup.position.z - worldPos.z);
+  // Hide far-away red badges so they never stack up on top of each other!
+  if (distZ > maxVisibleDist) {
+    badgeEl.style.display = 'none';
+    return;
+  }
   const pos = worldPos.clone();
   pos.y += yOffset;
   pos.project(camera);
-  if (pos.z > 1) { badgeEl.style.display = 'none'; return; }
+  if (pos.z > 1) {
+    badgeEl.style.display = 'none';
+    return;
+  }
   badgeEl.style.display = 'block';
   const x = (pos.x * 0.5 + 0.5) * window.innerWidth;
   const y = (-(pos.y * 0.5) + 0.5) * window.innerHeight;
@@ -1008,91 +854,77 @@ function projectToScreen(worldPos, yOffset, badgeEl) {
 
 function animate() {
   requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.05); // Clamped delta-time prevents frame jumps
   const elapsed = clock.getElapsedTime();
 
-  updateVisualEffects();
+  updateParticles(dt);
 
-  clouds.forEach(c => {
-    c.position.y = c.userData.baseY + Math.sin(elapsed * 1.5 + c.userData.phase) * 0.5;
-  });
-
-  // Animate Moving Gates
-  gates.forEach(g => {
-    if (g.isMoving && !g.triggered) {
-      g.x = Math.sin(elapsed * 2.0 + g.phase) * 3.6;
-      g.mesh.position.x = g.x;
-    }
-  });
-
-  // Animate All 5 Obstacle Models
+  // Animate Single Clean Obstacles
   obstacles.forEach((obs) => {
     if (obs.modelType === 'pendulumAxe') {
-      const swingAngle = Math.sin(elapsed * 2.8 + obs.phase) * 0.72;
+      const swingAngle = Math.sin(elapsed * 2.5 + obs.phase) * 0.7;
       obs.pivot.rotation.z = swingAngle;
-      obs.hitX = Math.sin(swingAngle) * 7.5;
+      obs.hitX = Math.sin(swingAngle) * 7.4;
     } else if (obs.modelType === 'crossSaw') {
-      obs.bladesGroup.rotation.y += 0.085;
+      obs.bladesGroup.rotation.y += 4.5 * dt;
     } else if (obs.modelType === 'spikeRoller') {
-      obs.roller.rotation.x -= 0.1;
-      obs.hitX = obs.baseX + Math.sin(elapsed * 2.1 + obs.phase) * obs.range;
-      obs.mesh.position.x = obs.hitX;
-    } else if (obs.modelType === 'thumper') {
-      const lift = Math.max(0, Math.sin(elapsed * 3.6 + obs.phase));
-      obs.headGroup.position.y = 1.1 + lift * 3.8;
-      obs.isDown = lift < 0.35;
+      obs.roller.rotation.x -= 5.0 * dt;
     } else if (obs.modelType === 'sawPillar') {
-      obs.mesh.rotation.y += 0.065;
-      obs.hitX = obs.baseX + Math.sin(elapsed * 2.4 + obs.phase) * obs.range;
+      obs.mesh.rotation.y += 4.0 * dt;
+      obs.hitX = Math.sin(elapsed * 2.1 + obs.phase) * obs.range;
       obs.mesh.position.x = obs.hitX;
     }
   });
 
   if (!isPaused) {
     const isMovingNow = isRunning || Boolean(activeBattleGroup);
-    const animSpeed = activeBattleGroup ? 18 : 13;
+    const animSpeed = activeBattleGroup ? 17 : 13;
+    const lerpFactor = Math.min(1, dt * 12);
 
     playerAvatars.forEach(man => {
-      man.position.x += (man.userData.targetX - man.position.x) * 0.2;
-      man.position.z += (man.userData.targetZ - man.position.z) * 0.2;
+      man.position.x += (man.userData.targetX - man.position.x) * lerpFactor;
+      man.position.z += (man.userData.targetZ - man.position.z) * lerpFactor;
       animateAvatar(man, elapsed, isMovingNow, animSpeed, true);
     });
 
     enemyGroups.forEach(eg => {
       if (!eg.defeated && eg !== activeBattleGroup) {
-        eg.avatars.forEach(redMan => animateAvatar(redMan, elapsed, false, 10, false));
+        eg.avatars.forEach(redMan => animateAvatar(redMan, elapsed, false, 8, false));
       }
     });
 
-    // --- STOP & FIGHT CLASH MODE ---
+    // --- STOP & FIGHT CLASH / BOSS BATTLE MODE ---
     if (activeBattleGroup) {
       const eg = activeBattleGroup;
-      playerCrowdGroup.position.x += (eg.x - playerCrowdGroup.position.x) * 0.1;
-      playerCrowdGroup.position.z += ((eg.z + 1.8) - playerCrowdGroup.position.z) * 0.1;
+      playerCrowdGroup.position.x += (eg.x - playerCrowdGroup.position.x) * (dt * 6);
+      playerCrowdGroup.position.z += ((eg.z + 2.2) - playerCrowdGroup.position.z) * (dt * 6);
 
       eg.avatars.forEach(redMan => {
-        redMan.position.z += 0.035;
+        if (!eg.isBoss) redMan.position.z += dt * 1.8;
         animateAvatar(redMan, elapsed, true, 18, false);
       });
 
       if (elapsed - lastBattleTime > 0.055) {
         lastBattleTime = elapsed;
         playSound('clash');
-        const stepKills = Math.max(1, Math.ceil(Math.min(playerCount, eg.count) / 18));
+        const stepKills = Math.max(1, Math.ceil(Math.min(playerCount, eg.count) / 22));
         for (let k = 0; k < stepKills; k++) {
           if (playerCount > 0 && eg.count > 0) {
             killOnePlayerAvatar(null, false);
-            killOneEnemyAvatar(eg);
+            damageEnemyOrBoss(eg);
           }
         }
 
         if (eg.count <= 0) {
           eg.defeated = true;
           eg.disc.visible = false;
+          eg.mesh.visible = false;
           eg.badge.style.display = 'none';
+          bossHud.classList.add('hidden');
           activeBattleGroup = null;
           battleBanner.classList.add('hidden');
-          spawnParticles(playerCrowdGroup.position, 0xfacc15, 14, true);
-          playSound('gate');
+          spawnParticles(playerCrowdGroup.position, 'gold', 12);
+          playSound('win');
           targetX = playerCrowdGroup.position.x;
         }
 
@@ -1100,24 +932,25 @@ function animate() {
           activeBattleGroup = null;
           battleBanner.classList.add('hidden');
           isPaused = true;
-          modalTitle.textContent = 'Defeated in Battle! 💀';
-          modalSubtitle.textContent = `Red Squad won on Level ${currentLevel}`;
+          modalTitle.textContent = eg.isBoss ? 'Crushed by the Boss! 👹' : 'Defeated in Battle! 💀';
+          modalSubtitle.textContent = `Upgrade your start avatars & retry Level ${currentLevel}`;
           resumeBtn.textContent = 'Retry Level';
           modalOverlay.classList.remove('hidden');
         }
       }
     }
-    // --- FORWARD RUNNING MODE ---
+    // --- SMOOTH FORWARD RUNNING MODE ---
     else if (isRunning) {
-      playerCrowdGroup.position.x += (targetX - playerCrowdGroup.position.x) * 0.15;
-      playerCrowdGroup.position.z -= 0.25 + currentLevel * 0.003;
+      playerCrowdGroup.position.x += (targetX - playerCrowdGroup.position.x) * Math.min(1, dt * 10);
+      const forwardSpeed = 15.0 + currentLevel * 0.15;
+      playerCrowdGroup.position.z -= forwardSpeed * dt;
 
       const pct = Math.min(100, Math.max(0, ((8 - playerCrowdGroup.position.z) / (levelLength - 4)) * 100));
       progressFill.style.width = `${pct}%`;
 
       // Gate Collisions
       gates.forEach(g => {
-        if (!g.triggered && Math.abs(playerCrowdGroup.position.z - g.z) < 1.35) {
+        if (!g.triggered && Math.abs(playerCrowdGroup.position.z - g.z) < 1.4) {
           if (Math.abs(playerCrowdGroup.position.x - g.x) < g.width / 2 + 0.85) {
             gates.forEach(sibling => {
               if (sibling.pairId === g.pairId) sibling.triggered = true;
@@ -1129,32 +962,37 @@ function animate() {
 
             playSound('gate');
             showGainPopup(g.text);
-            spawnParticles(playerCrowdGroup.position, 0xfacc15, 14, true);
+            spawnParticles(playerCrowdGroup.position, 'gold', 8);
             syncPlayerCrowdMeshes();
           }
         }
       });
 
-      // Multi-Model Obstacle Collisions
+      // Single Clean Obstacle Collisions
       obstacles.forEach(obs => {
-        if (obs.modelType === 'thumper' && !obs.isDown) return;
         const dz = Math.abs(playerCrowdGroup.position.z - obs.z);
         const dx = Math.abs(playerCrowdGroup.position.x - obs.hitX);
-        if (dz < 1.3 && dx < obs.radius + 1.0) {
-          if (elapsed - lastDamageTime > 0.065) {
+        if (dz < 1.25 && dx < obs.radius + 0.9) {
+          if (elapsed - lastDamageTime > 0.085) {
             lastDamageTime = elapsed;
             killOnePlayerAvatar(new THREE.Vector3(obs.hitX, 0.5, obs.z), true);
           }
         }
       });
 
-      // Engage Enemy Squad -> Stop & Fight
+      // Engage Enemy Squad or Giant Boss -> Stop & Fight
       enemyGroups.forEach(eg => {
         if (!eg.defeated && !eg.engaged) {
-          if (Math.abs(playerCrowdGroup.position.z - eg.z) < 4.4) {
+          if (Math.abs(playerCrowdGroup.position.z - eg.z) < 4.5) {
             eg.engaged = true;
             activeBattleGroup = eg;
+            battleBanner.textContent = eg.isBoss ? '👹 GIANT BOSS FIGHT! 👹' : '⚔️ CLASH BATTLE! ⚔️';
             battleBanner.classList.remove('hidden');
+            if (eg.isBoss) {
+              bossHpText.textContent = eg.count;
+              bossBarFill.style.width = '100%';
+              bossHud.classList.remove('hidden');
+            }
           }
         }
       });
@@ -1170,24 +1008,29 @@ function animate() {
       if (playerCrowdGroup.position.z <= -levelLength + 10) {
         isPaused = true;
         playSound('win');
-        const reward = 60 + currentLevel * 15 + playerCount;
+        const isBossLvl = (currentLevel % 5 === 0);
+        const reward = (isBossLvl ? 150 : 60) + currentLevel * 15 + playerCount;
         coins += reward;
         coinAmountEl.textContent = coins;
-        modalTitle.textContent = `Level ${currentLevel} Victory! 🏆`;
-        modalSubtitle.textContent = `+${reward} Coins Earned! (${playerCount} Avatars)`;
+        modalTitle.textContent = isBossLvl
+          ? `👹 BOSS LEVEL ${currentLevel} CLEARED! 🏆`
+          : `Level ${currentLevel} Victory! 🏆`;
+        modalSubtitle.textContent = `+${reward} Coins Earned! (${playerCount} Survivors)`;
         resumeBtn.textContent = currentLevel < MAX_LEVELS ? 'Next Level ➔' : 'Play Again';
         modalOverlay.classList.remove('hidden');
       }
     }
   }
 
-  // Slightly closer, clearer camera angle so every avatar detail pops out
-  camera.position.set(0, 14.2, playerCrowdGroup.position.z + 19.5);
-  camera.lookAt(0, 1.2, playerCrowdGroup.position.z - 16);
+  camera.position.set(0, 14.5, playerCrowdGroup.position.z + 20.0);
+  camera.lookAt(0, 1.0, playerCrowdGroup.position.z - 16);
 
-  projectToScreen(playerCrowdGroup.position, 3.2, playerBadge);
+  projectToScreen(playerCrowdGroup.position, 3.2, playerBadge, 300);
   enemyGroups.forEach(eg => {
-    if (!eg.defeated) projectToScreen(eg.mesh.position, 3.0, eg.badge);
+    if (!eg.defeated) {
+      // Only show enemy/boss badge when within 75 units so badges never overlap!
+      projectToScreen(eg.mesh.position, eg.isBoss ? 5.6 : 3.0, eg.badge, 75);
+    }
   });
 
   renderer.render(scene, camera);
