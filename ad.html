@@ -1,69 +1,65 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ST Games Reward Ad</title>
-<style>
-*{box-sizing:border-box}
-html,body{
-  margin:0;width:100%;height:100%;
-  background:#000;overflow:hidden;
-}
-video{
-  width:100%;height:100%;
-  object-fit:contain;
-}
-#status{
-  position:absolute;bottom:20px;width:100%;
-  text-align:center;color:white;
-  font:15px Arial;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Advertisement</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+        html, body {
+            width: 100%; height: 100%;
+            background: #000; overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .ad-wrapper {
+            position: relative; width: 100%; height: 100%;
+            aspect-ratio: 9 / 16; max-width: calc(100vh * 9 / 16);
+            background: #000; display: flex; align-items: center; justify-content: center;
+        }
+        video { width: 100%; height: 100%; object-fit: cover; }
+        /* Cancel / Close button appears after 5 seconds */
+        .close-ad-btn {
+            position: absolute;
+            top: 20px; right: 20px;
+            width: 38px; height: 38px;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff; border: 2px solid #fff;
+            border-radius: 50%; font-size: 18px; font-weight: bold;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; z-index: 99; opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .close-ad-btn.visible {
+            opacity: 1; pointer-events: auto;
+        }
+    </style>
 </head>
 <body>
+    <div class="ad-wrapper">
+        <video id="ad-vid" src="ad.mp4" autoplay playsinline></video>
+        <div id="closeBtn" class="close-ad-btn">✕</div>
+    </div>
 
-<video id="adVideo" autoplay playsinline>
-  <source src="ad.mp4" type="video/mp4">
-</video>
+    <script>
+        const vid = document.getElementById('ad-vid');
+        const closeBtn = document.getElementById('closeBtn');
 
-<div id="status">ST GAMES • Advertisement</div>
+        vid.play().catch(() => {
+            vid.muted = true;
+            vid.play().catch(() => {});
+        });
 
-<script>
-(() => {
-  const video = document.getElementById("adVideo");
-  const params = new URLSearchParams(location.search);
-  const returnTo = params.get("returnTo");
-  let completed = false;
+        // Show cancel / close button (✕) after 5 seconds
+        setTimeout(() => {
+            closeBtn.classList.add('visible');
+        }, 5000);
 
-  video.addEventListener("ended", () => {
-    if (completed) return;
-    completed = true;
-
-    if (returnTo) {
-      try {
-        const destination = new URL(returnTo, location.href);
-        if (destination.origin === location.origin) {
-          location.replace(destination.href);
-          return;
+        function completeAd() {
+            window.parent.postMessage('AD_COMPLETED', '*');
         }
-      } catch (error) {}
-    }
 
-    document.getElementById("status").textContent =
-      "Advertisement completed";
-  });
-
-  video.play().catch(() => {
-    video.muted = true;
-    video.play().catch(() => {
-      document.getElementById("status").textContent =
-        "Tap your browser's play control to start the ad.";
-    });
-  });
-})();
-</script>
-
+        closeBtn.addEventListener('click', completeAd);
+        vid.addEventListener('ended', completeAd);
+    </script>
 </body>
 </html>
