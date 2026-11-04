@@ -1,338 +1,373 @@
 <!DOCTYPE html>
-<html lang="te">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Geometry Wave - 50 Levels</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-        body, html {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #1a001a;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        #game-container {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-        }
-        canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-        }
-        #ui-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            padding: 15px 25px;
-            pointer-events: none;
-        }
-        #top-bar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        #pause-btn {
-            pointer-events: auto;
-            background: rgba(255, 255, 255, 0.2);
-            border: 2px solid #fff;
-            color: #fff;
-            font-weight: bold;
-            font-size: 16px;
-            width: 36px;
-            height: 36px;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-        #progress-container {
-            position: relative;
-            width: 45%;
-            height: 22px;
-            background: rgba(0, 0, 0, 0.5);
-            border: 2px solid #ff66cc;
-            border-radius: 4px;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        #progress-bar {
-            position: absolute;
-            top: 0;
-            left: 0;
-            height: 100%;
-            width: 0%;
-            background: #d4269c;
-        }
-        #progress-text {
-            position: relative;
-            color: #fff;
-            font-size: 12px;
-            font-weight: bold;
-            z-index: 2;
-        }
-        #level-indicator {
-            color: #fff;
-            font-size: 16px;
-            font-weight: bold;
-            text-shadow: 1px 1px 3px #000;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wave Space</title>
+
+<style>
+* {
+  box-sizing: border-box;
+  user-select: none;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background: #050816;
+  font-family: Arial, sans-serif;
+}
+
+canvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+}
+
+#scoreBox {
+  position: fixed;
+  top: 20px;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  color: white;
+  font-size: 28px;
+  font-weight: bold;
+  z-index: 2;
+}
+
+#startScreen,
+#gameOver {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  color: white;
+  text-align: center;
+  z-index: 3;
+  background: rgba(0,0,0,.35);
+}
+
+#gameOver {
+  display: none;
+}
+
+h1 {
+  font-size: 42px;
+  margin: 0 0 15px;
+}
+
+p {
+  font-size: 18px;
+}
+
+button {
+  padding: 14px 30px;
+  border: none;
+  border-radius: 10px;
+  font-size: 18px;
+  cursor: pointer;
+  background: #00e5ff;
+  color: #001018;
+  font-weight: bold;
+}
+</style>
 </head>
+
 <body>
-    <div id="game-container">
-        <div id="ui-layer">
-            <div id="top-bar">
-                <button id="pause-btn">II</button>
-                <div id="progress-container">
-                    <div id="progress-bar"></div>
-                    <span id="progress-text">0%</span>
-                </div>
-                <div id="level-indicator">Level: 1 / 50</div>
-            </div>
-        </div>
-        <canvas id="gameCanvas"></canvas>
-    </div>
 
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const progressBar = document.getElementById('progress-bar');
-        const progressText = document.getElementById('progress-text');
-        const levelIndicator = document.getElementById('level-indicator');
-        const pauseBtn = document.getElementById('pause-btn');
+<div id="scoreBox">Score: <span id="score">0</span></div>
 
-        let width, height;
-        function resize() {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resize);
-        resize();
+<div id="startScreen">
+  <h1>WAVE SPACE</h1>
+  <p>Hold SPACE / Click / Touch to fly up</p>
+  <button onclick="startGame()">START GAME</button>
+</div>
 
-        let currentLevel = 1;
-        const maxLevels = 50;
-        let isHolding = false;
-        let isPaused = false;
-        let cameraX = 0;
-        let levelLength = 3000;
-        let obstacles = [];
+<div id="gameOver">
+  <h1>GAME OVER</h1>
+  <p>Your Score: <span id="finalScore">0</span></p>
+  <button onclick="startGame()">PLAY AGAIN</button>
+</div>
 
-        const player = {
-            x: 150,
-            y: 300,
-            size: 12,
-            speedX: 6,
-            speedY: 6,
-            trail: []
-        };
+<canvas id="game"></canvas>
 
-        window.addEventListener('mousedown', () => isHolding = true);
-        window.addEventListener('mouseup', () => isHolding = false);
-        window.addEventListener('touchstart', (e) => { e.preventDefault(); isHolding = true; }, {passive: false});
-        window.addEventListener('touchend', () => isHolding = false);
-        window.addEventListener('keydown', (e) => {
-            if (e.code === 'Space' || e.code === 'ArrowUp') isHolding = true;
-        });
-        window.addEventListener('keyup', (e) => {
-            if (e.code === 'Space' || e.code === 'ArrowUp') isHolding = false;
-        });
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
 
-        pauseBtn.addEventListener('click', () => {
-            isPaused = !isPaused;
-            pauseBtn.innerText = isPaused ? '▶' : 'II';
-        });
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
 
-        function loadLevel(lvl) {
-            cameraX = 0;
-            player.y = height / 2;
-            player.trail = [{ x: player.x, y: player.y }];
-            obstacles = [];
+window.addEventListener("resize", resize);
 
-            player.speedX = 5.5 + (lvl * 0.12);
-            player.speedY = player.speedX;
-            levelLength = 2500 + (lvl * 300);
+let running = false;
+let holding = false;
+let score = 0;
+let speed = 5;
+let frame = 0;
+let obstacles = [];
 
-            levelIndicator.innerText = `Level: ${lvl} / ${maxLevels}`;
+const player = {
+  x: 150,
+  y: 300,
+  size: 24,
+  velocity: 0,
+  rotation: 0
+};
 
-            let gapSize = Math.max(130, 260 - (lvl * 2.2));
-            let spacing = Math.max(240, 420 - (lvl * 3));
+function resetGame() {
+  score = 0;
+  speed = 5;
+  frame = 0;
+  obstacles = [];
 
-            for (let x = 600; x < levelLength - 400; x += spacing) {
-                let randomFactor = Math.sin(x * 0.01 + lvl) * 0.5 + 0.5;
-                let minTop = 60;
-                let maxTop = height - gapSize - 60;
-                let topHeight = minTop + randomFactor * (maxTop - minTop);
-                let bottomY = topHeight + gapSize;
+  player.x = Math.min(150, canvas.width * 0.25);
+  player.y = canvas.height / 2;
+  player.velocity = 0;
 
-                obstacles.push({
-                    x: x,
-                    y: 40,
-                    w: 110,
-                    h: topHeight - 40,
-                    spikesBottom: true
-                });
+  document.getElementById("score").textContent = score;
+}
 
-                obstacles.push({
-                    x: x,
-                    y: bottomY,
-                    w: 110,
-                    h: height - 40 - bottomY,
-                    spikesTop: true
-                });
-            }
-        }
+function startGame() {
+  resetGame();
 
-        function drawSpikes(x, y, width, dir) {
-            const spikeWidth = 22;
-            const spikeHeight = 22;
-            const count = Math.floor(width / spikeWidth);
+  document.getElementById("startScreen").style.display = "none";
+  document.getElementById("gameOver").style.display = "none";
 
-            ctx.fillStyle = '#5e0a45';
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 2;
+  running = true;
+}
 
-            for (let i = 0; i < count; i++) {
-                let sx = x + i * spikeWidth;
-                ctx.beginPath();
-                if (dir === 'up') {
-                    ctx.moveTo(sx, y);
-                    ctx.lineTo(sx + spikeWidth / 2, y - spikeHeight);
-                    ctx.lineTo(sx + spikeWidth, y);
-                } else {
-                    ctx.moveTo(sx, y);
-                    ctx.lineTo(sx + spikeWidth / 2, y + spikeHeight);
-                    ctx.lineTo(sx + spikeWidth, y);
-                }
-                ctx.closePath();
-                ctx.fill();
-                ctx.stroke();
-            }
-        }
+function createObstacle() {
+  const gap = Math.max(150, canvas.height * 0.28);
+  const margin = 70;
 
-        function update() {
-            if (isPaused) return;
+  const maxTop = canvas.height - gap - margin * 2;
+  const topHeight = margin + Math.random() * maxTop;
 
-            cameraX += player.speedX;
-            if (isHolding) {
-                player.y -= player.speedY;
-            } else {
-                player.y += player.speedY;
-            }
+  obstacles.push({
+    x: canvas.width + 80,
+    width: 70,
+    topHeight: topHeight,
+    bottomY: topHeight + gap,
+    passed: false
+  });
+}
 
-            player.trail.push({ x: cameraX + player.x, y: player.y });
-            if (player.trail.length > 200) player.trail.shift();
+function update() {
+  if (!running) return;
 
-            let progress = Math.min(100, Math.floor((cameraX / levelLength) * 100));
-            progressBar.style.width = progress + '%';
-            progressText.innerText = progress + '%';
+  frame++;
 
-            if (player.y - player.size < 40 || player.y + player.size > height - 40) {
-                loadLevel(currentLevel);
-                return;
-            }
+  // Wave movement
+  if (holding) {
+    player.velocity -= 0.55;
+    player.rotation -= 0.08;
+  } else {
+    player.velocity += 0.55;
+    player.rotation += 0.08;
+  }
 
-            let px = cameraX + player.x;
-            let py = player.y;
+  player.velocity = Math.max(-9, Math.min(9, player.velocity));
+  player.y += player.velocity;
 
-            for (let obs of obstacles) {
-                let hitTop = obs.spikesTop ? obs.y - 18 : obs.y;
-                let hitBottom = obs.spikesBottom ? obs.y + obs.h + 18 : obs.y + obs.h;
+  // Create obstacles
+  if (frame % 110 === 0) {
+    createObstacle();
+  }
 
-                if (px + player.size > obs.x && px - player.size < obs.x + obs.w &&
-                    py + player.size > hitTop && py - player.size < hitBottom) {
-                    loadLevel(currentLevel);
-                    return;
-                }
-            }
+  // Move obstacles
+  for (let i = obstacles.length - 1; i >= 0; i--) {
+    const obs = obstacles[i];
+    obs.x -= speed;
 
-            if (cameraX >= levelLength) {
-                if (currentLevel < maxLevels) {
-                    currentLevel++;
-                    loadLevel(currentLevel);
-                } else {
-                    alert("అభినందనలు! మీరు మొత్తం 50 లెవెల్స్ పూర్తి చేశారు!");
-                    currentLevel = 1;
-                    loadLevel(currentLevel);
-                }
-            }
-        }
+    if (!obs.passed && obs.x + obs.width < player.x) {
+      obs.passed = true;
+      score++;
+      document.getElementById("score").textContent = score;
 
-        function draw() {
-            ctx.fillStyle = '#b8008a';
-            ctx.fillRect(0, 0, width, height);
+      if (score % 5 === 0) {
+        speed += 0.4;
+      }
+    }
 
-            ctx.fillStyle = '#5e0a45';
-            ctx.fillRect(0, 0, width, 40);
-            ctx.fillRect(0, height - 40, width, 40);
+    if (obs.x + obs.width < -20) {
+      obstacles.splice(i, 1);
+    }
+  }
 
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.moveTo(0, 40); ctx.lineTo(width, 40);
-            ctx.moveTo(0, height - 40); ctx.lineTo(width, height - 40);
-            ctx.stroke();
+  // Screen collision
+  if (
+    player.y - player.size / 2 <= 0 ||
+    player.y + player.size / 2 >= canvas.height
+  ) {
+    endGame();
+  }
 
-            for (let obs of obstacles) {
-                let screenX = obs.x - cameraX;
-                if (screenX + obs.w < 0 || screenX > width) continue;
+  // Obstacle collision
+  for (const obs of obstacles) {
+    const left = player.x - player.size / 2;
+    const right = player.x + player.size / 2;
+    const top = player.y - player.size / 2;
+    const bottom = player.y + player.size / 2;
 
-                ctx.fillStyle = '#5e0a45';
-                ctx.strokeStyle = '#ffffff';
-                ctx.lineWidth = 2.5;
-                ctx.fillRect(screenX, obs.y, obs.w, obs.h);
-                ctx.strokeRect(screenX, obs.y, obs.w, obs.h);
+    const insideX =
+      right > obs.x &&
+      left < obs.x + obs.width;
 
-                if (obs.spikesTop) drawSpikes(screenX, obs.y, obs.w, 'up');
-                if (obs.spikesBottom) drawSpikes(screenX, obs.y + obs.h, obs.w, 'down');
-            }
+    const hitTop = top < obs.topHeight;
+    const hitBottom = bottom > obs.bottomY;
 
-,           if (player.trail.length > 1) {
-                ctx.strokeStyle = '#ffffff';
-                ctx.lineWidth = 5;
-                ctx.lineJoin = 'miter';
-                ctx.beginPath();
-                for (let i = 0; i < player.trail.length; i++) {
-                    let pt = player.trail[i];
-                    let sx = pt.x - cameraX;
-                    if (i === 0) ctx.moveTo(sx, pt.y);
-                    else ctx.lineTo(sx, pt.y);
-                }
-                ctx.stroke();
-            }
+    if (insideX && (hitTop || hitBottom)) {
+      endGame();
+    }
+  }
+}
 
-            ctx.save();
-            ctx.translate(player.x, player.y);
-            ctx.rotate(isHolding ? -Math.PI / 4 : Math.PI / 4);
-            ctx.fillStyle = '#ffffff';
-            ctx.beginPath();
-            ctx.moveTo(14, 0);
-            ctx.lineTo(-10, -10);
-            ctx.lineTo(-6, 0);
-            ctx.lineTo(-10, 10);
-            ctx.closePath();
-            ctx.fill();
-            ctx.restore();
-        }
+function drawBackground() {
+  ctx.fillStyle = "#050816";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        function gameLoop() {
-            update();
-            draw();
-            requestAnimationFrame(gameLoop);
-        }
+  // Stars
+  ctx.fillStyle = "rgba(255,255,255,0.35)";
+  for (let i = 0; i < 70; i++) {
+    const x = (i * 137 + frame * 0.2) % canvas.width;
+    const y = (i * 83) % canvas.height;
 
-        loadLevel(currentLevel);
-        gameLoop();
-    </script>
+    ctx.fillRect(x, y, 2, 2);
+  }
+}
+
+function drawPlayer() {
+  ctx.save();
+
+  ctx.translate(player.x, player.y);
+  ctx.rotate(player.rotation);
+
+  // Glow
+  ctx.shadowColor = "#00e5ff";
+  ctx.shadowBlur = 20;
+
+  ctx.fillStyle = "#00e5ff";
+  ctx.fillRect(
+    -player.size / 2,
+    -player.size / 2,
+    player.size,
+    player.size
+  );
+
+  ctx.fillStyle = "white";
+  ctx.fillRect(-5, -5, 10, 10);
+
+  ctx.restore();
+}
+
+function drawObstacles() {
+  for (const obs of obstacles) {
+
+    ctx.shadowColor = "#9c27ff";
+    ctx.shadowBlur = 15;
+
+    ctx.fillStyle = "#7c3aed";
+
+    // Top obstacle
+    ctx.fillRect(
+      obs.x,
+      0,
+      obs.width,
+      obs.topHeight
+    );
+
+    // Bottom obstacle
+    ctx.fillRect(
+      obs.x,
+      obs.bottomY,
+      obs.width,
+      canvas.height - obs.bottomY
+    );
+
+    ctx.shadowBlur = 0;
+
+    // Neon edges
+    ctx.fillStyle = "#d8b4fe";
+
+    ctx.fillRect(
+      obs.x,
+      obs.topHeight - 5,
+      obs.width,
+      5
+    );
+
+    ctx.fillRect(
+      obs.x,
+      obs.bottomY,
+      obs.width,
+      5
+    );
+  }
+}
+
+function draw() {
+  drawBackground();
+  drawObstacles();
+  drawPlayer();
+}
+
+function endGame() {
+  if (!running) return;
+
+  running = false;
+
+  document.getElementById("finalScore").textContent = score;
+  document.getElementById("gameOver").style.display = "flex";
+}
+
+// Keyboard controls
+window.addEventListener("keydown", e => {
+  if (e.code === "Space") {
+    e.preventDefault();
+    holding = true;
+  }
+});
+
+window.addEventListener("keyup", e => {
+  if (e.code === "Space") {
+    holding = false;
+  }
+});
+
+// Mouse controls
+window.addEventListener("mousedown", () => {
+  holding = true;
+});
+
+window.addEventListener("mouseup", () => {
+  holding = false;
+});
+
+// Touch controls
+window.addEventListener("touchstart", e => {
+  e.preventDefault();
+  holding = true;
+}, { passive: false });
+
+window.addEventListener("touchend", () => {
+  holding = false;
+});
+
+function gameLoop() {
+  update();
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script>
+
 </body>
 </html>
