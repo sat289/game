@@ -1,0 +1,609 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>ST GAMES - Rope Pals</title>
+<meta name="theme-color" content="#ff8fc7">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#ffc0dc;font-family:Arial,sans-serif;touch-action:none}
+#game{position:relative;width:100%;height:100%;overflow:hidden;background:linear-gradient(#ff9fc9,#ffc4d9 60%,#ffe0e8)}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+#top{position:absolute;top:env(safe-area-inset-top,8px);left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:10px 12px;pointer-events:none}
+.pill{pointer-events:auto;border:2px solid #fff;background:#ffffffd9;color:#7a315d;border-radius:20px;padding:8px 12px;font-weight:900;font-size:12px;box-shadow:0 3px 0 #d76b9e}
+#brand{font-size:14px;letter-spacing:1px;color:#fff;text-shadow:0 2px 4px #a83c79;font-weight:1000}
+#controls{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);display:flex;justify-content:space-between;align-items:end;padding:0 14px;pointer-events:none}
+.cluster{display:flex;gap:8px;pointer-events:auto;align-items:center}
+.ctrl{width:56px;height:56px;border:3px solid #fff;border-radius:18px;background:#fff9;color:#923c6b;font-size:20px;font-weight:900;box-shadow:0 5px 0 #d76b9e;touch-action:none}
+.ctrl.small{width:48px;height:48px;font-size:12px}
+.ctrl.active{background:#ff5da7;color:white;transform:translateY(3px);box-shadow:0 2px 0 #b7437d}
+#hint{position:absolute;left:50%;bottom:100px;transform:translateX(-50%);padding:8px 14px;border-radius:20px;background:#ffffffc9;color:#81365f;font-weight:800;font-size:12px;white-space:nowrap;pointer-events:none}
+#overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#7e315d55;backdrop-filter:blur(5px);z-index:5}
+.panel{width:min(88%,370px);max-height:86%;overflow:auto;background:linear-gradient(160deg,#fff,#ffeaf4);border:4px solid #fff;border-radius:28px;padding:22px;text-align:center;box-shadow:0 12px 0 #d76b9e,0 20px 45px #8a315b55;color:#773052}
+h1{margin:0 0 6px;font-size:27px;color:#f04e9a;text-shadow:0 2px #ffd0e5}
+.sub{font-size:13px;line-height:1.5;color:#9a5276;margin:7px 0 17px}
+.action{width:100%;border:0;border-radius:16px;padding:13px;margin:6px 0;background:linear-gradient(90deg,#ff5ca8,#ff8cc4);color:#fff;font-weight:1000;font-size:15px;box-shadow:0 4px 0 #c84885}
+.action.secondary{background:#fff;color:#a13f70;border:2px solid #ffc0dc;box-shadow:0 3px 0 #e89abd}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin:12px 0}
+.level{border:2px solid #ffc1dc;background:#fff;border-radius:12px;padding:10px 0;color:#9b4772;font-weight:900}
+.level.done{background:#ffe0ef;border-color:#ff72b2}
+.level:disabled{opacity:.35}
+#toast{position:absolute;top:70px;left:50%;transform:translateX(-50%);padding:8px 14px;border-radius:20px;background:#fff;color:#a13f70;font-size:12px;font-weight:900;display:none;z-index:4}
+#pause{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:#7e315d55;z-index:4}
+</style>
+</head>
+<body>
+<div id="game">
+<canvas id="c"></canvas>
+
+<div id="top">
+ <div id="brand">✦ ST GAMES</div>
+ <div class="cluster">
+  <button class="pill" id="levelLabel">LEVEL 1</button>
+  <button class="pill" id="pauseBtn">Ⅱ</button>
+ </div>
+</div>
+
+<div id="hint">HOLD ▶ TO RUN & JUMP · RELEASE TO SWITCH PAL</div>
+
+<div id="controls">
+ <div class="cluster">
+  <button class="ctrl" id="back">◀</button>
+  <button class="ctrl" id="forward">▶</button>
+ </div>
+ <div class="cluster">
+  <button class="ctrl small" id="switch">1P</button>
+  <button class="ctrl small" id="rope">ROPE</button>
+  <button class="ctrl small" id="skins">🐾</button>
+ </div>
+</div>
+
+<div id="toast"></div>
+
+<div id="overlay">
+ <div class="panel" id="panel">
+  <h1>ROPE PALS</h1>
+  <div class="sub">A cute two-player rope adventure<br>Run, jump and keep your pals connected!</div>
+  <button class="action" id="play">PLAY</button>
+  <button class="action secondary" id="levelsBtn">SELECT LEVEL</button>
+  <button class="action secondary" id="more">MORE GAMES · ST GAMES</button>
+  <div class="sub">Progress saves automatically on this device.</div>
+ </div>
+</div>
+
+<div id="pause">
+ <div class="panel">
+  <h1>PAUSED</h1>
+  <button class="action" id="resume">RESUME</button>
+  <button class="action secondary" id="restart">RESTART LEVEL</button>
+  <button class="action secondary" id="home">LEVEL MENU</button>
+ </div>
+</div>
+</div>
+
+<script>
+(()=>{
+'use strict';
+
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+const $=id=>document.getElementById(id);
+
+let W=0,H=0,dpr=1,cam=0,level=1,active=0;
+let ropeOn=true,skin=0,running=false,paused=false,won=false,last=0;
+
+const saved=JSON.parse(localStorage.getItem('st_ropepals_progress')||'{"unlocked":1,"done":[],"skin":0}');
+skin=saved.skin||0;
+
+const palettes=[
+ ['#ff70ad','#ffb34e'],
+ ['#8a78ff','#56d9dc'],
+ ['#ff8b65','#9bdc69'],
+ ['#6d9fff','#ff8bc8']
+];
+
+let world=[],pets=[],particles=[],goal=0;
+const gravity=1700,ropeLen=154;
+const keys={f:false,b:false};
+
+function resize(){
+ dpr=Math.min(devicePixelRatio||1,2);
+ W=innerWidth;H=innerHeight;
+ canvas.width=W*dpr;
+ canvas.height=H*dpr;
+ ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+addEventListener('resize',resize);
+resize();
+
+function makeLevel(n){
+ world=[];
+ let x=70,y=H*.68,base=H*.68;
+ world.push({x:0,y:base+40,w:310,h:90});
+
+ for(let i=0;i<9+n%5;i++){
+  x+=190+(i%3)*35;
+  y=base+Math.sin((i+n)*1.25)*55+(i%2?22:-8);
+  world.push({x,y:y+35,w:125+(i%2)*30,h:35});
+ }
+
+ goal=x+170;
+ world.push({x:goal,y:base+10,w:190,h:90});
+
+ pets=[
+  {x:95,y:base-8,vx:0,vy:0,r:19,ground:false,face:1,anim:0,color:palettes[skin][0]},
+  {x:135,y:base-8,vx:0,vy:0,r:19,ground:false,face:1,anim:0,color:palettes[skin][1]}
+ ];
+
+ cam=0;
+ particles=[];
+ won=false;
+ running=false;
+ active=0;
+ $('levelLabel').textContent='LEVEL '+n;
+}
+
+function groundAt(x,oldY,newY){
+ let best=null;
+ for(const p of world){
+  if(x+15>p.x&&x-15<p.x+p.w&&oldY+18<=p.y+5&&newY+18>=p.y-2){
+   if(!best||p.y<best.y)best=p;
+  }
+ }
+ return best;
+}
+
+function burst(x,y,color,count=8){
+ for(let i=0;i<count;i++){
+  particles.push({
+   x,y,
+   vx:(Math.random()-.5)*220,
+   vy:-Math.random()*190-30,
+   life:.45+Math.random()*.35,
+   color,
+   size:2+Math.random()*4
+  });
+ }
+}
+
+function sfx(freq=440,dur=.08,type='sine'){
+ try{
+  let ac=sfx.ac||(sfx.ac=new(window.AudioContext||window.webkitAudioContext)());
+  let o=ac.createOscillator(),g=ac.createGain();
+  o.type=type;
+  o.frequency.value=freq;
+  g.gain.setValueAtTime(.07,ac.currentTime);
+  g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+dur);
+  o.connect(g);g.connect(ac.destination);
+  o.start();o.stop(ac.currentTime+dur);
+ }catch(e){}
+}
+
+function toast(t){
+ $('toast').textContent=t;
+ $('toast').style.display='block';
+ clearTimeout(toast.t);
+ toast.t=setTimeout(()=>$('toast').style.display='none',1300);
+}
+
+function start(n=level){
+ level=n;
+ makeLevel(level);
+ $('overlay').style.display='none';
+ paused=false;
+ $('pause').style.display='none';
+ last=performance.now();
+ requestAnimationFrame(loop);
+}
+
+function win(){
+ if(won)return;
+ won=true;
+ running=false;
+ sfx(760,.25,'triangle');
+
+ for(let i=0;i<70;i++){
+  burst(goal+cam,H*.45,['#fff','#ff54a6','#ffd45c','#8be8dc'][i%4],1);
+ }
+
+ saved.done=[...new Set([...(saved.done||[]),level])];
+ saved.unlocked=Math.max(saved.unlocked||1,level+1);
+ localStorage.setItem('st_ropepals_progress',JSON.stringify(saved));
+
+ setTimeout(()=>{
+  showPanel(
+   'LEVEL '+level+' COMPLETE!',
+   'Great teamwork! Your next adventure is ready.',
+   'NEXT LEVEL',
+   'LEVEL MENU',
+   ()=>start(level+1),
+   showLevels
+  );
+ },500);
+}
+
+function showPanel(title,desc,b1,b2,fn1,fn2){
+ $('overlay').style.display='flex';
+ $('panel').innerHTML=`
+ <h1>${title}</h1>
+ <div class="sub">${desc}</div>
+ <button class="action" id="p1">${b1}</button>
+ <button class="action secondary" id="p2">${b2}</button>
+ <button class="action secondary" id="pmore">MORE GAMES · ST GAMES</button>`;
+ $('p1').onclick=fn1;
+ $('p2').onclick=fn2;
+ $('pmore').onclick=()=>location.href='../index.html';
+}
+
+function showLevels(){
+ let done=saved.done||[];
+ $('overlay').style.display='flex';
+ $('panel').innerHTML=`
+ <h1>CHOOSE LEVEL</h1>
+ <div class="sub">Complete a level to unlock the next one.</div>
+ <div class="grid" id="levelGrid"></div>
+ <button class="action secondary" id="backMenu">BACK</button>
+ <button class="action secondary" id="more2">MORE GAMES · ST GAMES</button>`;
+
+ let g=$('levelGrid');
+ for(let i=1;i<=40;i++){
+  let b=document.createElement('button');
+  b.className='level '+(done.includes(i)?'done':'');
+  b.textContent=i;
+  b.disabled=i>(saved.unlocked||1);
+  b.onclick=()=>start(i);
+  g.appendChild(b);
+ }
+ $('backMenu').onclick=()=>menu();
+ $('more2').onclick=()=>location.href='../index.html';
+}
+
+function menu(){
+ $('overlay').style.display='flex';
+ $('panel').innerHTML=`
+ <h1>ROPE PALS</h1>
+ <div class="sub">A cute two-player rope adventure<br>Run, jump and keep your pals connected!</div>
+ <button class="action" id="play">PLAY</button>
+ <button class="action secondary" id="levelsBtn">SELECT LEVEL</button>
+ <button class="action secondary" id="more">MORE GAMES · ST GAMES</button>
+ <div class="sub">Progress saves automatically on this device.</div>`;
+ $('play').onclick=()=>start(saved.unlocked||1);
+ $('levelsBtn').onclick=showLevels;
+ $('more').onclick=()=>location.href='../index.html';
+}
+
+function update(dt){
+ if(paused||won)return;
+
+ const p=pets[active];
+ const dir=(keys.f?1:0)-(keys.b?1:0);
+
+ if(dir){
+  p.vx+=dir*1200*dt;
+  p.face=dir;
+  p.anim+=dt*13;
+ }else{
+  p.vx*=Math.pow(.02,dt);
+ }
+
+ p.vx=Math.max(-235,Math.min(235,p.vx));
+
+ if((keys.f||keys.b)&&p.ground&&p.jumpWait<=0){
+  p.vy=-590;
+  p.ground=false;
+  p.jumpWait=.24;
+  burst(p.x,p.y+16,'#fff',4);
+  sfx(520,.06);
+ }
+
+ p.jumpWait=Math.max(0,(p.jumpWait||0)-dt);
+
+ for(const q of pets){
+  let old=q.y;
+  q.vy+=gravity*dt;
+  q.x+=q.vx*dt;
+  q.y+=q.vy*dt;
+  q.ground=false;
+
+  const platform=groundAt(q.x,old,q.y);
+  if(platform){
+   q.y=platform.y-18;
+   q.vy=0;
+   q.ground=true;
+  }
+
+  if(q.y>H+300){
+   q.y=H*.45;
+   q.vy=0;
+   q.x=Math.max(50,q.x-80);
+   toast('Try that jump again!');
+  }
+ }
+
+ // Rope distance constraint
+ if(ropeOn){
+  let dx=pets[1].x-pets[0].x;
+  let dy=pets[1].y-pets[0].y;
+  let d=Math.hypot(dx,dy);
+
+  if(d>ropeLen){
+   let excess=d-ropeLen;
+   let nx=dx/d,ny=dy/d;
+   pets[0].x+=nx*excess*.5;
+   pets[0].y+=ny*excess*.5;
+   pets[1].x-=nx*excess*.5;
+   pets[1].y-=ny*excess*.5;
+
+   if(d>ropeLen+8&&Math.random()<.12){
+    burst((pets[0].x+pets[1].x)/2,(pets[0].y+pets[1].y)/2,'#fff',1);
+   }
+  }
+ }
+
+ for(const q of pets){
+  q.x=Math.max(20,q.x);
+  q.y=Math.min(q.y,H+400);
+ }
+
+ cam=Math.max(0,Math.min(
+  goal-W*.65,
+  Math.max(cam,pets[0].x-W*.32,pets[1].x-W*.32)
+ ));
+
+ particles=particles.filter(a=>a.life>0);
+ for(const a of particles){
+  a.life-=dt;
+  a.x+=a.vx*dt;
+  a.y+=a.vy*dt;
+  a.vy+=400*dt;
+ }
+
+ if(
+  (pets[0].x>goal-35&&pets[1].x>goal-35)||
+  Math.min(pets[0].x,pets[1].x)>goal-90
+ ){
+  win();
+ }
+}
+
+function rounded(x,y,w,h,r,color){
+ ctx.fillStyle=color;
+ ctx.beginPath();
+ ctx.roundRect(x,y,w,h,r);
+ ctx.fill();
+}
+
+function draw(){
+ ctx.clearRect(0,0,W,H);
+
+ let sky=ctx.createLinearGradient(0,0,0,H);
+ sky.addColorStop(0,'#ff9bc6');
+ sky.addColorStop(.65,'#ffd0df');
+ sky.addColorStop(1,'#ffe9e9');
+ ctx.fillStyle=sky;
+ ctx.fillRect(0,0,W,H);
+
+ // Clouds
+ for(let i=0;i<7;i++){
+  let x=((i*180-cam*.18)%(W+220)+W+220)%(W+220)-90;
+  ctx.fillStyle='#ffffff45';
+  ctx.beginPath();
+  ctx.arc(x,100+(i%3)*55,28,0,7);
+  ctx.arc(x+28,98+(i%3)*55,38,0,7);
+  ctx.arc(x+60,108+(i%3)*55,25,0,7);
+  ctx.fill();
+ }
+
+ ctx.save();
+ ctx.translate(-cam,0);
+
+ // Platforms
+ for(let i=0;i<world.length;i++){
+  let p=world[i];
+  rounded(p.x,p.y,p.w,p.h,12,'#df4f9b');
+  rounded(p.x,p.y,p.w,12,8,'#ff8ac2');
+  ctx.strokeStyle='#ffb4d6';
+  ctx.lineWidth=2;
+  for(let k=12;k<p.w-8;k+=23){
+   ctx.beginPath();
+   ctx.moveTo(p.x+k,p.y+18);
+   ctx.lineTo(p.x+k+9,p.y+29);
+   ctx.stroke();
+  }
+ }
+
+ // Finish gate
+ ctx.fillStyle='#fff';
+ ctx.fillRect(goal+80,world[world.length-1].y-90,8,90);
+ ctx.fillStyle='#ff4d9c';
+ ctx.beginPath();
+ ctx.moveTo(goal+88,world[world.length-1].y-90);
+ ctx.lineTo(goal+142,world[world.length-1].y-70);
+ ctx.lineTo(goal+88,world[world.length-1].y-48);
+ ctx.fill();
+
+ // Rope
+ if(ropeOn){
+  let a=pets[0],b=pets[1];
+  let mx=(a.x+b.x)/2,my=(a.y+b.y)/2-10;
+  ctx.strokeStyle='#fff';
+  ctx.lineWidth=7;
+  ctx.lineCap='round';
+  ctx.beginPath();
+  ctx.moveTo(a.x,a.y);
+  ctx.quadraticCurveTo(mx,my,b.x,b.y);
+  ctx.stroke();
+
+  ctx.strokeStyle='#ff4e9d';
+  ctx.lineWidth=3;
+  ctx.beginPath();
+  ctx.moveTo(a.x,a.y);
+  ctx.quadraticCurveTo(mx,my,b.x,b.y);
+  ctx.stroke();
+ }
+
+ pets.forEach((p,i)=>drawPet(p,i));
+
+ for(const a of particles){
+  ctx.globalAlpha=Math.max(0,a.life*2);
+  ctx.fillStyle=a.color;
+  ctx.beginPath();
+  ctx.arc(a.x,a.y,a.size,0,7);
+  ctx.fill();
+  ctx.globalAlpha=1;
+ }
+ ctx.restore();
+
+ // Progress bar
+ rounded(12,58,W-24,6,4,'#ffffff80');
+ rounded(12,58,(W-24)*Math.min(1,(pets[0].x+pets[1].x)/2/goal),6,4,'#ff4f9d');
+}
+
+function drawPet(p,i){
+ let bob=p.ground?Math.sin(p.anim)*1.5:0;
+ let x=p.x,y=p.y+bob;
+
+ ctx.fillStyle='#9a3d6b33';
+ ctx.beginPath();
+ ctx.ellipse(x,y+20,17,5,0,0,7);
+ ctx.fill();
+
+ ctx.save();
+ ctx.translate(x,y);
+ if(p.face<0)ctx.scale(-1,1);
+
+ ctx.fillStyle=p.color;
+ ctx.beginPath();
+ ctx.roundRect(-17,-17,34,34,10);
+ ctx.fill();
+
+ ctx.fillStyle='#fff';
+ ctx.beginPath();
+ ctx.arc(-6,-4,4,0,7);
+ ctx.arc(7,-4,4,0,7);
+ ctx.fill();
+
+ ctx.fillStyle='#63324c';
+ ctx.beginPath();
+ ctx.arc(-5,-3,1.8,0,7);
+ ctx.arc(8,-3,1.8,0,7);
+ ctx.fill();
+
+ ctx.strokeStyle='#63324c';
+ ctx.lineWidth=1.8;
+ ctx.beginPath();
+ ctx.arc(1,4,4,.15,Math.PI-.15);
+ ctx.stroke();
+
+ // Ears
+ ctx.fillStyle=p.color;
+ ctx.beginPath();
+ ctx.moveTo(-13,-14);
+ ctx.lineTo(-18,-26);
+ ctx.lineTo(-5,-18);
+ ctx.fill();
+
+ ctx.beginPath();
+ ctx.moveTo(7,-17);
+ ctx.lineTo(18,-25);
+ ctx.lineTo(15,-10);
+ ctx.fill();
+
+ ctx.fillStyle='#fff';
+ ctx.font='bold 9px Arial';
+ ctx.textAlign='center';
+ ctx.fillText(i===0?'A':'B',0,29);
+
+ ctx.restore();
+}
+
+function loop(t){
+ if(!running)return;
+ let dt=Math.min(.033,(t-last)/1000||0);
+ last=t;
+ update(dt);
+ draw();
+ if(running)requestAnimationFrame(loop);
+}
+
+function bindHold(id,key){
+ let el=$(id);
+ el.addEventListener('pointerdown',e=>{
+  e.preventDefault();
+  keys[key]=true;
+  el.classList.add('active');
+  running=true;
+  last=performance.now();
+  requestAnimationFrame(loop);
+ });
+
+ ['pointerup','pointercancel','pointerleave'].forEach(ev=>
+  el.addEventListener(ev,()=>{
+   keys[key]=false;
+   el.classList.remove('active');
+  })
+ );
+}
+
+bindHold('forward','f');
+bindHold('back','b');
+
+$('switch').onclick=()=>{
+ active=1-active;
+ $('switch').textContent=(active===0?'1P':'2P');
+ toast('PAL '+(active+1)+' SELECTED');
+ sfx(620,.05);
+};
+
+$('rope').onclick=()=>{
+ ropeOn=!ropeOn;
+ $('rope').textContent=ropeOn?'ROPE':'NO ROPE';
+ toast(ropeOn?'ROPE CONNECTED':'ROPE REMOVED');
+ sfx(400,.06);
+};
+
+$('skins').onclick=()=>{
+ skin=(skin+1)%palettes.length;
+ pets[0].color=palettes[skin][0];
+ pets[1].color=palettes[skin][1];
+ saved.skin=skin;
+ localStorage.setItem('st_ropepals_progress',JSON.stringify(saved));
+ toast('NEW PET COLORS!');
+ sfx(700,.07);
+};
+
+$('pauseBtn').onclick=()=>{
+ paused=true;
+ running=false;
+ $('pause').style.display='flex';
+};
+
+$('resume').onclick=()=>{
+ paused=false;
+ $('pause').style.display='none';
+ running=true;
+ last=performance.now();
+ requestAnimationFrame(loop);
+};
+
+$('restart').onclick=()=>start(level);
+
+$('home').onclick=()=>{
+ $('pause').style.display='none';
+ running=false;
+ menu();
+};
+
+$('play').onclick=()=>start(saved.unlocked||1);
+$('levelsBtn').onclick=showLevels;
+$('more').onclick=()=>location.href='../index.html';
+
+makeLevel(1);
+draw();
+
+})();
+</script>
+</body>
+</html>
