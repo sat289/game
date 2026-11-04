@@ -495,13 +495,13 @@ const STAGES = [
 const DIFFICULTIES = ['AUTO', 'EASY', 'NORMAL', 'HARD'];
 
 let coins = 150;
-window.score = 150; // Synced with Firebase score tracker
+window.score = 150;
 let selectedHero = ROSTER[0];
 let selectedEnemy = ROSTER[1];
 let pendingUnlockFighter = null;
 let diffIndex = 0;
 let stageIndex = 0;
-let currentMode = '1P'; // '1P', 'TOWER', '2X2', 'TRAINING', 'ONLINE_1V1'
+let currentMode = '1P';
 let towerFloor = 1;
 
 // Online 1v1 Multiplayer State
@@ -660,13 +660,16 @@ function openOnlineRoomModal() {
   initAudioEngine();
   playSFX('CLICK');
   document.getElementById('online-status-text').innerText = "CREATE A ROOM CODE OR ENTER YOUR FRIEND'S CODE";
+  document.getElementById('online-status-text').style.color = "#ffffff";
   document.getElementById('generated-code-display').classList.add('hidden');
   document.getElementById('online-modal').classList.remove('hidden');
 }
 
 function closeOnlineRoomModal() {
   document.getElementById('online-modal').classList.add('hidden');
-  if (window.cleanupOnlineRoom) window.cleanupOnlineRoom();
+  if (!isOnlineMatch && window.cleanupOnlineRoom) {
+    window.cleanupOnlineRoom();
+  }
 }
 
 function upgradeSelectedHero() {
@@ -1391,7 +1394,7 @@ function drawArenaBackground() {
 }
 
 /* ============================================================================
-   6. MATCH & ROUND FLOW (Supports 1P, Tower, 2x2 Tag Team, and Online 1v1!)
+   6. MATCH & ROUND FLOW
 ============================================================================ */
 function startBestOf3Match() {
   document.getElementById('arena-canvas').classList.remove('hidden');
@@ -1593,7 +1596,6 @@ function mainLoop() {
     }
 
     if (isOnlineMatch) {
-      // Online 1v1: Sync local player state to Firebase every 3 frames
       onlineSyncTick++;
       if (onlineSyncTick % 3 === 0 && window.pushOnlineState) {
         window.pushOnlineState();
@@ -1807,11 +1809,11 @@ document.getElementById('btn-special').addEventListener('pointerdown', () => {
 mainLoop();
 </script>
 
-<!-- ================= FIREBASE AUTO CLOUD SYNC & 1V1 ONLINE ROOMS ================= -->
+<!-- ================= FIREBASE AUTO CLOUD SYNC & 1V1 ONLINE ROOMS (FIXED) ================= -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-  import { getDatabase, ref, set, get, update, onValue, off, child } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js";
+  import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+  import { getDatabase, ref, set, get, update, onValue, off, child, onDisconnect } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBzLchy5M2fLne4c7Ghw1KNN8wVrlZdd8M",
@@ -1828,8 +1830,8 @@ mainLoop();
   const auth = getAuth(app);
   const db = getDatabase(app);
 
-  // 1. Set the game name here
   const GAME_KEY = "stickkombat";
+  const ROOMS_PATH = "scores/stickkombat_rooms";
 
   let currentUser = null;
   let currentHighScore = parseInt(localStorage.getItem(`${GAME_KEY}_hi`) || "0", 10);
@@ -1871,18 +1873,20 @@ mainLoop();
     });
     localStorage.setItem(`${GAME_KEY}_save`, JSON.stringify(payload));
     if (currentUser) {
-      set(ref(db, `users/${currentUser.uid}/${GAME_KEY}_data`), payload).catch(() => {});
+      set(ref(db, `scores/${currentUser.uid}/${GAME_KEY}_data`), payload).catch(() => {});
     }
   };
 
-  // 2. Automatically listen to user login state from your main website
   onAuthStateChanged(auth, async (user) => {
     const badge = document.getElementById("cloud-status-badge");
     if (user) {
       currentUser = user;
-      if (badge) badge.innerText = `☁ SYNCED: ${user.displayName || user.email || "PLAYER"}`;
+      if (badge) {
+        badge.innerText = user.isAnonymous
+          ? "☁ ONLINE READY"
+          : `☁ SYNCED: ${user.displayName || user.email || "PLAYER"}`;
+      }
       try {
-        // Sync High Score
         const snapshot = await get(child(ref(db), `scores/${user.uid}/${GAME_KEY}_high`));
         if (snapshot.exists()) {
           const cloudScore = parseInt(snapshot.val(), 10) || 0;
@@ -1896,22 +1900,22 @@ mainLoop();
           set(ref(db, `scores/${user.uid}/${GAME_KEY}_high`), currentHighScore);
         }
 
-        // Sync Coins, Unlocked Fighters & Upgrades
-        const dataSnap = await get(child(ref(db), `users/${user.uid}/${GAME_KEY}_data`));
+        const dataSnap = await get(child(ref(db), `scores/${user.uid}/${GAME_KEY}_data`));
         if (dataSnap.exists()) {
           applySavedData(dataSnap.val());
         } else {
           window.savePlayerCloudData();
         }
       } catch (err) {
-        console.error("Firebase sync error:", err);
+        console.warn("Firebase sync notice:", err.message);
       }
     } else {
-      if (badge) badge.innerText = "☁ LOCAL SAVE";
+      signInAnonymously(auth).catch(() => {
+        if (badge) badge.innerText = "☁ LOCAL SAVE";
+      });
     }
   });
 
-  // 3. Simple global helper function
   window.submitScore = function(newScore) {
     const val = parseInt(newScore, 10);
     if (isNaN(val)) return;
@@ -1920,12 +1924,11 @@ mainLoop();
       currentHighScore = val;
       localStorage.setItem(`${GAME_KEY}_hi`, currentHighScore.toString());
       if (currentUser) {
-        set(ref(db, `scores/${currentUser.uid}/${GAME_KEY}_high`), currentHighScore);
+        set(ref(db, `scores/${currentUser.uid}/${GAME_KEY}_high`), currentHighScore).catch(() => {});
       }
     }
   };
 
-  // 4. Fallback Auto-Scanner
   setInterval(() => {
     let detected = 0;
     if (typeof window.score === "number") detected = window.score;
@@ -1940,19 +1943,86 @@ mainLoop();
   }, 1000);
 
   /* ============================================================================
-     5. 1V1 ONLINE ROOM CODE SYSTEM (Play With Friends via 6-Digit Code)
+     5. FIXED 1V1 ONLINE ROOM CODE SYSTEM (Real-Time Sync & Auto Match Start)
   ============================================================================ */
   let roomListenerRef = null;
+  let matchStartedInRoom = false;
 
   window.cleanupOnlineRoom = function() {
     if (roomListenerRef) {
       off(roomListenerRef);
       roomListenerRef = null;
     }
+    matchStartedInRoom = false;
   };
 
+  function bindRoomRealtimeListener(roomRef) {
+    roomListenerRef = roomRef;
+
+    onValue(roomRef, (snap) => {
+      const data = snap.val();
+      if (!data) return;
+
+      if (data.status === "READY" && !matchStartedInRoom) {
+        matchStartedInRoom = true;
+
+        if (onlineRole === "HOST") {
+          const guestHero = ROSTER.find(f => f.id === data.guest?.heroId) || ROSTER[1];
+          selectedEnemy = guestHero;
+        } else {
+          const hostHero = ROSTER.find(f => f.id === data.host?.heroId) || ROSTER[0];
+          selectedEnemy = hostHero;
+          stageIndex = typeof data.stage === "number" ? data.stage : 0;
+        }
+
+        isOnlineMatch = true;
+        currentMode = "ONLINE_1V1";
+        document.getElementById("online-status-text").innerText = "FRIEND CONNECTED! STARTING FIGHT...";
+        document.getElementById("online-status-text").style.color = "#b8ff33";
+
+        setTimeout(() => {
+          triggerMatchLoad();
+        }, 300);
+      }
+
+      if (isOnlineMatch && gameState === "FIGHT" && p1 && p2) {
+        const oppData = onlineRole === "HOST" ? data.guest : data.host;
+        const myTargetHp = onlineRole === "HOST" ? data.hostTargetHp : data.guestTargetHp;
+
+        if (oppData) {
+          p2.x = (1 - oppData.xPct) * CW;
+          p2.y = GROUND_Y - (oppData.yOffset || 0);
+          p2.facing = -oppData.facing;
+
+          if (oppData.state && oppData.state !== p2.state) {
+            p2.state = oppData.state;
+            if (oppData.state.startsWith("SLASH")) {
+              p2.stateTick = 18;
+              playSFX("SWING");
+            } else if (oppData.state === "THROW_SCYTHE") {
+              p2.throwBoomerangWeapon(p1);
+            }
+          }
+        }
+
+        if (typeof myTargetHp === "number" && myTargetHp < p1.hp) {
+          const dmgTaken = p1.hp - myTargetHp;
+          p1.hp = Math.max(0, myTargetHp);
+          p1.state = p1.hp <= 0 ? "AIR_TUMBLE" : "HURT";
+          p1.stateTick = p1.hp <= 0 ? 35 : 14;
+          playSFX(dmgTaken > 13 ? "HEAVY_HIT" : "HIT");
+          spawnStarburst(p1.x, p1.y - 58, dmgTaken > 13);
+          refreshFightHUD();
+        }
+      }
+    });
+  }
+
   window.createOnlineRoom = async function() {
+    initAudioEngine();
+    playSFX("CLICK");
     window.cleanupOnlineRoom();
+
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     activeRoomCode = code;
     onlineRole = "HOST";
@@ -1961,123 +2031,99 @@ mainLoop();
     const statusTxt = document.getElementById("online-status-text");
     codeBox.innerText = code;
     codeBox.classList.remove("hidden");
-    statusTxt.innerText = "SHARE THIS CODE WITH YOUR FRIEND. WAITING FOR FRIEND TO JOIN...";
+    statusTxt.style.color = "#ffd32a";
+    statusTxt.innerText = "CREATING ROOM ON SERVER...";
 
-    const roomRef = ref(db, `stickkombat_rooms/${code}`);
-    await set(roomRef, {
-      status: "WAITING",
-      stage: stageIndex,
-      host: {
-        heroId: selectedHero.id,
-        xPct: 0.28,
-        yOffset: 0,
-        facing: 1,
-        state: "IDLE",
-        hp: selectedHero.hp
-      }
-    });
-
-    roomListenerRef = roomRef;
-    onValue(roomRef, (snap) => {
-      const data = snap.val();
-      if (!data) return;
-
-      if (data.status === "READY" && gameState !== "FIGHT" && gameState !== "ROUND_OVER") {
-        const guestHero = ROSTER.find(f => f.id === data.guest?.heroId) || ROSTER[1];
-        selectedEnemy = guestHero;
-        isOnlineMatch = true;
-        currentMode = "ONLINE_1V1";
-        triggerMatchLoad();
-      }
-
-      if (isOnlineMatch && gameState === "FIGHT" && data.guest && p2 && p1) {
-        // Mirror opponent X position so both players see accurate arena spacing
-        p2.x = (1 - data.guest.xPct) * CW;
-        p2.y = GROUND_Y - (data.guest.yOffset || 0);
-        p2.facing = -data.guest.facing;
-        if (data.guest.state && data.guest.state.startsWith("SLASH") && p2.state !== data.guest.state) {
-          p2.state = data.guest.state;
-          p2.stateTick = 16;
-          playSFX("SWING");
+    try {
+      const roomRef = ref(db, `${ROOMS_PATH}/${code}`);
+      await set(roomRef, {
+        status: "WAITING",
+        stage: stageIndex,
+        createdAt: Date.now(),
+        hostTargetHp: selectedHero.hp,
+        guestTargetHp: 300,
+        host: {
+          heroId: selectedHero.id,
+          xPct: 0.28,
+          yOffset: 0,
+          facing: 1,
+          state: "IDLE",
+          hp: selectedHero.hp
         }
-        if (typeof data.hostTargetHp === "number" && data.hostTargetHp < p1.hp) {
-          p1.hp = Math.max(0, data.hostTargetHp);
-          p1.state = "HURT";
-          p1.stateTick = 12;
-          spawnStarburst(p1.x, p1.y - 58, false);
-          refreshFightHUD();
-        }
-      }
-    });
+      });
+
+      onDisconnect(roomRef).remove().catch(() => {});
+      statusTxt.style.color = "#b8ff33";
+      statusTxt.innerText = "SHARE THIS CODE WITH YOUR FRIEND! WAITING FOR FRIEND TO JOIN...";
+
+      bindRoomRealtimeListener(roomRef);
+    } catch (err) {
+      console.error("Create room error:", err);
+      statusTxt.style.color = "#ff4757";
+      statusTxt.innerText = `FIREBASE PERMISSION ERROR: ${err.message}`;
+    }
   };
 
   window.joinOnlineRoom = async function() {
-    const code = document.getElementById("join-code-input").value.trim();
+    initAudioEngine();
+    playSFX("CLICK");
+    const inputEl = document.getElementById("join-code-input");
+    const code = inputEl.value.replace(/[^0-9]/g, "").trim();
     const statusTxt = document.getElementById("online-status-text");
+
     if (code.length !== 6) {
-      statusTxt.innerText = "PLEASE ENTER A VALID 6-DIGIT ROOM CODE!";
+      statusTxt.style.color = "#ff4757";
+      statusTxt.innerText = "PLEASE ENTER A VALID 6-DIGIT NUMBER CODE!";
       return;
     }
 
-    const roomRef = ref(db, `stickkombat_rooms/${code}`);
-    const snap = await get(roomRef);
-    if (!snap.exists()) {
-      statusTxt.innerText = "ROOM NOT FOUND! CHECK THE CODE.";
-      return;
+    statusTxt.style.color = "#ffd32a";
+    statusTxt.innerText = `CONNECTING TO ROOM ${code}...`;
+
+    try {
+      const roomRef = ref(db, `${ROOMS_PATH}/${code}`);
+      const snap = await get(roomRef);
+
+      if (!snap.exists()) {
+        statusTxt.style.color = "#ff4757";
+        statusTxt.innerText = "ROOM NOT FOUND! MAKE SURE HOST CREATED THE CODE.";
+        return;
+      }
+
+      window.cleanupOnlineRoom();
+      activeRoomCode = code;
+      onlineRole = "GUEST";
+
+      const roomData = snap.val();
+      stageIndex = typeof roomData.stage === "number" ? data.stage : 0;
+      const hostHero = ROSTER.find(f => f.id === roomData.host?.heroId) || ROSTER[0];
+      selectedEnemy = hostHero;
+
+      bindRoomRealtimeListener(roomRef);
+
+      await update(roomRef, {
+        status: "READY",
+        guestTargetHp: selectedHero.hp,
+        guest: {
+          heroId: selectedHero.id,
+          xPct: 0.28,
+          yOffset: 0,
+          facing: 1,
+          state: "IDLE",
+          hp: selectedHero.hp
+        }
+      });
+    } catch (err) {
+      console.error("Join room error:", err);
+      statusTxt.style.color = "#ff4757";
+      statusTxt.innerText = `CONNECTION ERROR: ${err.message}`;
     }
-
-    window.cleanupOnlineRoom();
-    activeRoomCode = code;
-    onlineRole = "GUEST";
-    const roomData = snap.val();
-    stageIndex = roomData.stage || 0;
-    const hostHero = ROSTER.find(f => f.id === roomData.host?.heroId) || ROSTER[0];
-    selectedEnemy = hostHero;
-
-    await update(roomRef, {
-      status: "READY",
-      guest: {
-        heroId: selectedHero.id,
-        xPct: 0.28,
-        yOffset: 0,
-        facing: 1,
-        state: "IDLE",
-        hp: selectedHero.hp
-      }
-    });
-
-    isOnlineMatch = true;
-    currentMode = "ONLINE_1V1";
-    triggerMatchLoad();
-
-    roomListenerRef = roomRef;
-    onValue(roomRef, (s) => {
-      const d = s.val();
-      if (!d) return;
-      if (isOnlineMatch && gameState === "FIGHT" && d.host && p2 && p1) {
-        p2.x = (1 - d.host.xPct) * CW;
-        p2.y = GROUND_Y - (d.host.yOffset || 0);
-        p2.facing = -d.host.facing;
-        if (d.host.state && d.host.state.startsWith("SLASH") && p2.state !== d.host.state) {
-          p2.state = d.host.state;
-          p2.stateTick = 16;
-          playSFX("SWING");
-        }
-        if (typeof d.guestTargetHp === "number" && d.guestTargetHp < p1.hp) {
-          p1.hp = Math.max(0, d.guestTargetHp);
-          p1.state = "HURT";
-          p1.stateTick = 12;
-          spawnStarburst(p1.x, p1.y - 58, false);
-          refreshFightHUD();
-        }
-      }
-    });
   };
 
   window.pushOnlineState = function() {
     if (!isOnlineMatch || !activeRoomCode || !p1) return;
     const roleKey = onlineRole === "HOST" ? "host" : "guest";
-    update(ref(db, `stickkombat_rooms/${activeRoomCode}/${roleKey}`), {
+    update(ref(db, `${ROOMS_PATH}/${activeRoomCode}/${roleKey}`), {
       heroId: selectedHero.id,
       xPct: Number((p1.x / CW).toFixed(3)),
       yOffset: Math.round(GROUND_Y - p1.y),
@@ -2090,11 +2136,10 @@ mainLoop();
   window.sendOnlineHitToEnemy = function(newEnemyHp) {
     if (!isOnlineMatch || !activeRoomCode) return;
     const targetField = onlineRole === "HOST" ? "guestTargetHp" : "hostTargetHp";
-    update(ref(db, `stickkombat_rooms/${activeRoomCode}`), {
+    update(ref(db, `${ROOMS_PATH}/${activeRoomCode}`), {
       [targetField]: newEnemyHp
     }).catch(() => {});
   };
 </script>
-<!-- ================================================================================= -->
 </body>
 </html>
