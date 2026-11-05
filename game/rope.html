@@ -57,70 +57,46 @@ canvas{width:100%;height:100%;display:block;touch-action:none}
  text-align:center;max-width:90%;
 }
 
-/* BOTTOM GAME BUTTONS */
 #bottomControls{
  position:absolute;
  bottom:calc(10px + env(safe-area-inset-bottom,0px));
  left:0;right:0;
  display:none;
  grid-template-columns:1fr 1.35fr 1.15fr;
- align-items:center;
- gap:8px;
- padding:0 10px;
- z-index:3;
- pointer-events:auto;
+ align-items:center;gap:8px;padding:0 10px;
+ z-index:3;pointer-events:auto;
 }
 .controlBtn{
- min-width:0;
- height:65px;
- border:3px solid white;
- border-radius:25px;
- outline:2px solid #693044;
- outline-offset:-5px;
+ min-width:0;height:65px;
+ border:3px solid white;border-radius:25px;
+ outline:2px solid #693044;outline-offset:-5px;
  font-weight:1000;
  box-shadow:0 5px 0 #873c60,0 7px 12px #71314b44;
- display:flex;
- flex-direction:column;
- justify-content:center;
- align-items:center;
- gap:2px;
- position:relative;
- overflow:hidden;
+ display:flex;flex-direction:column;
+ justify-content:center;align-items:center;
+ gap:2px;position:relative;overflow:hidden;
 }
 .controlBtn:active{
  transform:translateY(3px);
  box-shadow:0 2px 0 #873c60;
 }
 .controlBtn .mainText{
- font-size:clamp(15px,4vw,23px);
- line-height:1;
+ font-size:clamp(15px,4vw,23px);line-height:1;
 }
 .controlBtn .smallText{
- font-size:clamp(9px,2.5vw,13px);
- font-weight:900;
+ font-size:clamp(9px,2.5vw,13px);font-weight:900;
 }
-#playerBtn{
- color:#87400b;
- background:linear-gradient(#ffe849,#ffad08);
+#playerBtn,#ropeAdBtn{
+ color:#87400b;background:linear-gradient(#ffe849,#ffad08);
 }
 #directionBtn{
- color:#286d17;
- background:linear-gradient(#70ff15,#31d900);
-}
-#ropeAdBtn{
- color:#80400a;
- background:linear-gradient(#ffe849,#ffad08);
+ color:#286d17;background:linear-gradient(#70ff15,#31d900);
 }
 .adBadge{
- position:absolute;
- top:2px;right:3px;
- background:#22e33d;
- color:#126c18;
- border:2px solid white;
- border-radius:9px;
- font-size:9px;
- padding:2px 5px;
- box-shadow:0 2px 3px #0003;
+ position:absolute;top:2px;right:3px;
+ background:#22e33d;color:#126c18;
+ border:2px solid white;border-radius:9px;
+ font-size:9px;padding:2px 5px;
 }
 #ropeAdBtn.removed{
  background:linear-gradient(#b9ffd0,#58df91);
@@ -135,9 +111,8 @@ canvas{width:100%;height:100%;display:block;touch-action:none}
 }
 #pause{display:none;z-index:6}
 .panel{
- width:min(88%,370px);max-height:85%;
- overflow:auto;text-align:center;
- background:linear-gradient(160deg,#fff,#ffeaf4);
+ width:min(88%,370px);max-height:85%;overflow:auto;
+ text-align:center;background:linear-gradient(160deg,#fff,#ffeaf4);
  border:4px solid white;border-radius:27px;
  padding:22px;color:#773052;
  box-shadow:0 12px 0 #d76b9e,0 20px 45px #8a315b55;
@@ -145,26 +120,35 @@ canvas{width:100%;height:100%;display:block;touch-action:none}
 h1{margin:0 0 7px;color:#f04e9a;font-size:28px}
 .sub{font-size:13px;line-height:1.5;color:#9a5276;margin:8px 0 17px}
 .action{
- width:100%;border:0;border-radius:15px;
- padding:14px;margin:6px 0;
- background:linear-gradient(90deg,#ff5ca8,#ff8cc4);
+ width:100%;border:0;border-radius:15px;padding:14px;
+ margin:6px 0;background:linear-gradient(90deg,#ff5ca8,#ff8cc4);
  color:white;font-size:15px;font-weight:1000;
  box-shadow:0 4px 0 #c84885;
 }
 .secondary{
  background:white;color:#a13f70;
- border:2px solid #ffc0dc;
- box-shadow:0 3px 0 #e89abd;
+ border:2px solid #ffc0dc;box-shadow:0 3px 0 #e89abd;
 }
 .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin:12px 0}
 .level{
  border:2px solid #ffc1dc;background:white;
- border-radius:12px;padding:11px 0;
- color:#9b4772;font-weight:900;
+ border-radius:12px;padding:11px 0;color:#9b4772;font-weight:900;
 }
 .level.done{background:#ffe0ef;border-color:#ff72b2}
 .level:disabled{opacity:.35}
 button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+
+.skinGrid{
+ display:grid;grid-template-columns:repeat(4,1fr);
+ gap:8px;margin:12px 0;
+}
+.skinItem{
+ background:white;border:2px solid #ffc1dc;
+ border-radius:13px;padding:10px 3px;
+ color:#873b63;font-weight:900;font-size:25px;
+}
+.skinItem.selected{border-color:#ff4f9d;background:#ffe0ef}
+.skinItem small{display:block;font-size:9px;margin-top:5px}
 
 @media(max-width:380px){
  #bottomControls{gap:5px;padding:0 6px}
@@ -189,7 +173,6 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 <div id="hint">HOLD ANYWHERE TO MOVE · SWITCH PAL AFTER LANDING</div>
 <div id="toast"></div>
 
-<!-- NEW BOTTOM BUTTONS -->
 <div id="bottomControls">
  <button class="controlBtn" id="playerBtn">
   <span class="mainText" id="playerText">1P ⟳</span>
@@ -230,7 +213,6 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   <button class="action secondary" id="home">LEVEL MENU</button>
  </div>
 </div>
-
 </div>
 
 <script>
@@ -245,25 +227,31 @@ const gameScreen=$('game');
 let W=0,H=0,dpr=1;
 let cam=0,level=1,active=0;
 let running=false,paused=false,won=false;
-let ropeOn=true,skin=0,last=0;
-let hopping=false,hopPet=-1;
-let screenHolding=false,pointerId=null;
+let ropeOn=true,skin=0;
+let holding=false;
+let pointerId=null;
 let world=[],pets=[],particles=[];
 let goal=0;
-let gameOver=false;
 let checkpoint=null;
 let direction=1;
 let adBusy=false;
+let last=0;
+let rescueToast=false;
 
-const gravity=1700;
+const gravity=1450;
 const ropeLen=185;
-const moveSpeed=265;
+const moveSpeed=190;
+const rescueSpeed=115;
 
-const palettes=[
- ['#ffffff','#ffb3c7'],
- ['#bca2ff','#6ce2dc'],
- ['#ffad79','#b3e68b'],
- ['#91b9ff','#ff91c7']
+const skins=[
+ {emoji:'🐥',name:'Chick',color:'#ffe45c'},
+ {emoji:'🐱',name:'Cat',color:'#ffb65e'},
+ {emoji:'🐸',name:'Frog',color:'#75e88b'},
+ {emoji:'🐼',name:'Panda',color:'#ffffff'},
+ {emoji:'🐰',name:'Bunny',color:'#ffd4e8'},
+ {emoji:'🦊',name:'Fox',color:'#ff995e'},
+ {emoji:'🐵',name:'Monkey',color:'#bb855f'},
+ {emoji:'🐧',name:'Penguin',color:'#b8e7ff'}
 ];
 
 let saved;
@@ -283,8 +271,7 @@ function save(){
 
 function resize(){
  dpr=Math.min(devicePixelRatio||1,2);
- W=innerWidth;
- H=innerHeight;
+ W=innerWidth;H=innerHeight;
  canvas.width=W*dpr;
  canvas.height=H*dpr;
  ctx.setTransform(dpr,0,0,dpr,0,0);
@@ -299,12 +286,10 @@ function sound(freq=440,duration=.1,type='sine'){
   let g=ac.createGain();
   o.type=type;
   o.frequency.value=freq;
-  g.gain.setValueAtTime(.065,ac.currentTime);
+  g.gain.setValueAtTime(.05,ac.currentTime);
   g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+duration);
-  o.connect(g);
-  g.connect(ac.destination);
-  o.start();
-  o.stop(ac.currentTime+duration);
+  o.connect(g);g.connect(ac.destination);
+  o.start();o.stop(ac.currentTime+duration);
  }catch(e){}
 }
 
@@ -312,80 +297,27 @@ function toast(message){
  $('toast').textContent=message;
  $('toast').style.display='block';
  clearTimeout(toast.timer);
- toast.timer=setTimeout(()=>{
-  $('toast').style.display='none';
- },1500);
+ toast.timer=setTimeout(()=>$('toast').style.display='none',1500);
 }
 
 function burst(x,y,color,count=10){
  for(let i=0;i<count;i++){
   particles.push({
-   x,y,
-   vx:(Math.random()-.5)*220,
-   vy:-Math.random()*200-30,
-   life:.45+Math.random()*.4,
-   size:2+Math.random()*4,
-   color
+   x,y,vx:(Math.random()-.5)*180,
+   vy:-Math.random()*160-20,
+   life:.4+Math.random()*.4,
+   size:2+Math.random()*4,color
   });
  }
 }
 
 function updateButtons(){
  $('playerText').textContent=(active===0?'1P':'2P')+' ⟳';
-
- $('directionText').textContent=
-  direction===1?'Forward ⇄':'Reverse ⇄';
-
+ $('directionText').textContent=direction===1?'Forward →':'Reverse ←';
  $('ropeText').textContent=ropeOn?'🔗':'✓';
  $('ropeSmallText').textContent=ropeOn?'Remove Rope':'Rope Removed';
-
  $('ropeAdBtn').classList.toggle('removed',!ropeOn);
  $('adBadge').style.display=ropeOn?'block':'none';
-}
-
-function setActive(next){
- if(pets.length!==2)return;
-
- if(pets[next].fallen){
-  toast('THIS PET HAS FALLEN!');
-  return;
- }
-
- active=next;
- updateButtons();
-
- $('hint').textContent=
-  'PLAYER '+(active+1)+' READY · HOLD TO MOVE';
-
- sound(620,.07,'triangle');
-}
-
-function switchPlayer(){
- if(!running||paused||won||gameOver)return;
-
- const other=1-active;
-
- if(pets[other].fallen){
-  toast('YOUR OTHER PET HAS FALLEN!');
-  return;
- }
-
- setActive(other);
-}
-
-function switchDirection(){
- if(!running||paused||won||gameOver)return;
-
- direction*=-1;
- updateButtons();
-
- if(direction===1){
-  toast('FORWARD MODE');
- }else{
-  toast('REVERSE MODE');
- }
-
- sound(430,.08,'triangle');
 }
 
 function makeLevel(n){
@@ -395,433 +327,254 @@ function makeLevel(n){
  cam=0;
  active=0;
  direction=1;
- hopping=false;
- hopPet=-1;
  won=false;
- gameOver=false;
- screenHolding=false;
+ holding=false;
  pointerId=null;
  checkpoint=null;
  ropeOn=true;
+ rescueToast=false;
 
- let base=H*.68;
+ const base=H*.68;
  let x=0;
 
- world.push({
-  x:0,y:base+40,w:340,h:130
- });
+ world.push({x:0,y:base+40,w:340,h:130});
 
  for(let i=0;i<10+(n%5);i++){
   x+=175+(i%3)*35;
   let y=base+Math.sin((i+n)*1.1)*45;
-
-  world.push({
-   x,
-   y:y+35,
-   w:125+(i%2)*25,
-   h:100
-  });
+  world.push({x,y:y+35,w:125+(i%2)*25,h:100});
  }
 
  goal=x+190;
-
- world.push({
-  x:goal,
-  y:base+40,
-  w:240,
-  h:130
- });
+ world.push({x:goal,y:base+40,w:240,h:130});
 
  pets=[
-  {
-   x:105,y:base+40-17,
-   vx:0,vy:0,
-   ground:true,
-   face:1,
-   anim:0,
-   color:palettes[skin][0],
-   hopping:false,
-   fallen:false
-  },
-  {
-   x:150,y:base+40-17,
-   vx:0,vy:0,
-   ground:true,
-   face:1,
-   anim:0,
-   color:palettes[skin][1],
-   hopping:false,
-   fallen:false
-  }
+  createPet(105,base+23,0),
+  createPet(150,base+23,1)
  ];
 
  saveCheckpoint();
  updateButtons();
-
  $('levelLabel').textContent='LEVEL '+n;
  $('hint').textContent='HOLD ANYWHERE TO MOVE · SWITCH PAL AFTER LANDING';
 }
 
-function saveCheckpoint(){
- const alive=pets.filter(p=>!p.fallen);
- if(alive.length===0)return;
-
- checkpoint=pets.map(p=>({
-  x:p.x,
-  y:p.y,
-  ground:p.ground,
-  fallen:p.fallen
- }));
+function createPet(x,y,i){
+ return {
+  x,y,vx:0,vy:0,
+  ground:true,
+  face:1,
+  anim:0,
+  hopping:false,
+  fallen:false,
+  rescuing:false,
+  id:i,
+  emoji:skins[skin].emoji
+ };
 }
 
-function groundAt(x,oldY,newY){
- let best=null;
-
- for(const p of world){
-  if(
-   x+15>p.x&&x-15<p.x+p.w&&
-   oldY+17<=p.y+6&&
-   newY+17>=p.y-2
-  ){
-   if(!best||p.y<best.y)best=p;
-  }
+function saveCheckpoint(){
+ if(pets.every(p=>p.ground&&!p.fallen&&!p.rescuing)){
+  checkpoint=pets.map(p=>({x:p.x,y:p.y}));
  }
-
- return best;
 }
 
 function start(n){
  makeLevel(n);
-
  $('overlay').style.display='none';
  $('pause').style.display='none';
  $('bottomControls').style.display='grid';
-
  paused=false;
  running=true;
  last=performance.now();
-
  requestAnimationFrame(loop);
 }
 
-/* JUMP: horizontal movement is controlled only by holding */
-function jump(){
- if(won||paused||gameOver||hopping)return;
-
- const p=pets[active];
-
- if(p.fallen){
-  switchToLivingPet();
-  return;
- }
-
- if(!p.ground){
-  toast('WAIT FOR YOUR PET TO LAND!');
-  return;
- }
-
- hopping=true;
- hopPet=active;
-
- p.hopping=true;
- p.ground=false;
- p.face=direction;
-
- // No automatic horizontal movement.
- p.vx=0;
-
- // Vertical jump.
- p.vy=-625;
- p.anim=0;
-
- burst(p.x,p.y+15,'#ffffff',7);
- sound(520,.09,'triangle');
-
- $('hint').textContent=
-  'HOLD TO MOVE '+(direction===1?'FORWARD':'BACKWARD');
+function setActive(i){
+ if(pets[i].fallen||pets[i].rescuing)return;
+ active=i;
+ updateButtons();
 }
 
-function switchToLivingPet(){
+function switchPlayer(){
+ if(!running||paused||won)return;
  const other=1-active;
+ if(pets[other].fallen||pets[other].rescuing){
+  toast('YOUR PAL IS BEING RESCUED!');
+  return;
+ }
+ setActive(other);
+ sound(620,.07,'triangle');
+}
 
- if(!pets[other].fallen){
-  active=other;
-  updateButtons();
-  $('hint').textContent='PLAYER '+(active+1)+' READY · HOLD TO MOVE';
+function switchDirection(){
+ if(!running||paused||won)return;
+ direction*=-1;
+ updateButtons();
+ toast(direction===1?'FORWARD MODE':'REVERSE MODE');
+ sound(430,.07,'triangle');
+}
+
+/* Jump only the active pet. */
+function jump(){
+ if(!running||paused||won)return;
+ const p=pets[active];
+ if(p.fallen||p.rescuing||!p.ground)return;
+
+ p.ground=false;
+ p.hopping=true;
+ p.face=direction;
+ p.vy=-560;
+ p.vx=0;
+ burst(p.x,p.y+12,'#ffffff',6);
+ sound(520,.08,'triangle');
+ $('hint').textContent='HOLD TO MOVE '+(direction===1?'FORWARD':'BACKWARD');
+}
+
+/* Find a platform directly underneath a pet. */
+function groundAt(p,oldY){
+ let best=null;
+ for(const a of world){
+  if(p.x+13>a.x&&p.x-13<a.x+a.w&&
+     oldY+17<=a.y+8&&p.y+17>=a.y-2){
+   if(!best||a.y<best.y)best=a;
+  }
+ }
+ return best;
+}
+
+/* Straight rope distance constraint.
+   Both pets move gently instead of the rope stretching. */
+function constrainRope(dt){
+ if(!ropeOn)return;
+ const a=pets[0],b=pets[1];
+ if(a.fallen||b.fallen||a.rescuing||b.rescuing)return;
+
+ let dx=b.x-a.x,dy=b.y-a.y;
+ let dist=Math.hypot(dx,dy);
+ if(dist<=ropeLen)return;
+
+ let excess=dist-ropeLen;
+ let nx=dx/dist,ny=dy/dist;
+
+ const aFree=!a.ground;
+ const bFree=!b.ground;
+
+ if(aFree&&bFree){
+  a.x+=nx*excess*.5;
+  a.y+=ny*excess*.5;
+  b.x-=nx*excess*.5;
+  b.y-=ny*excess*.5;
+ }else if(aFree){
+  a.x+=nx*excess;
+  a.y+=ny*excess;
+ }else if(bFree){
+  b.x-=nx*excess;
+  b.y-=ny*excess;
+ }else{
+  if(active===0)b.x-=nx*excess;
+  else a.x+=nx*excess;
  }
 }
 
-function finishJump(i){
+/* Rescue a fallen pet by smoothly pulling it towards its partner. */
+function beginRescue(i){
  const p=pets[i];
+ if(p.fallen||p.rescuing)return;
 
+ p.fallen=true;
+ p.rescuing=true;
+ p.ground=false;
+ p.hopping=false;
  p.vx=0;
  p.vy=0;
- p.hopping=false;
 
- hopping=false;
- hopPet=-1;
+ const other=1-i;
 
- if(pets[1-i].fallen){
-  active=i;
+ if(!pets[other].fallen&&!pets[other].rescuing){
+  active=other;
+  updateButtons();
+  toast('PULLING YOUR PAL BACK!');
+  $('hint').textContent='HOLD TO MOVE · RESCUING YOUR PAL';
+  sound(330,.15,'triangle');
  }else{
-  active=1-i;
+  failLevel();
+ }
+}
+
+/* Place rescued pet gently beside the active pet. */
+function updateRescue(p,other,dt){
+ if(!p.rescuing)return;
+
+ const targetX=other.x-direction*45;
+ const targetY=other.y;
+
+ const dx=targetX-p.x;
+ const dy=targetY-p.y;
+ const dist=Math.hypot(dx,dy);
+
+ if(dist>5){
+  const speed=Math.min(rescueSpeed*dt,dist);
+  p.x+=dx/dist*speed;
+  p.y+=dy/dist*speed;
  }
 
- updateButtons();
+ p.vx=0;p.vy=0;
 
- $('hint').textContent=
-  'PLAYER '+(active+1)+' READY · HOLD TO MOVE';
+ if(dist<13&&other.ground){
+  p.x=other.x-direction*43;
+  p.y=other.y;
+  p.rescuing=false;
+  p.fallen=false;
+  p.ground=true;
+  p.hopping=false;
 
- burst(p.x,p.y+15,'#ffffff',10);
- sound(720,.1,'triangle');
+  active=p.id;
+  updateButtons();
 
- if(pets.every(p=>p.ground&&!p.fallen)){
+  burst(p.x,p.y,'#fff',16);
+  sound(780,.13,'triangle');
+  toast('PAL RESCUED! PLAYER '+(active+1)+' ACTIVE');
+  $('hint').textContent='BOTH PETS READY · HOLD TO MOVE';
+
   saveCheckpoint();
  }
 }
 
-/* Apply the maximum rope distance without sagging. */
-function constrainRope(p,other){
- if(!ropeOn||p.fallen||other.fallen)return;
-
- const dx=p.x-other.x;
- const dy=p.y-other.y;
- const dist=Math.hypot(dx,dy);
-
- if(dist<=ropeLen)return;
-
- const nx=dx/dist;
- const ny=dy/dist;
-
- // Keep the pet exactly on the rope-length boundary.
- p.x=other.x+nx*ropeLen;
- p.y=other.y+ny*ropeLen;
-
- // Remove velocity that would stretch the rope farther.
- const outward=p.vx*nx+p.vy*ny;
-
- if(outward>0){
-  p.vx-=outward*nx;
-  p.vy-=outward*ny;
- }
-}
-
-/* Hold = move. Release = stop. */
-function moveWithRope(p,other,dt){
- if(!screenHolding||!p.hopping)return;
-
- const nextX=p.x+(moveSpeed*direction*dt);
-
- if(ropeOn&&!other.fallen){
-  const nextDx=nextX-other.x;
-  const dy=p.y-other.y;
-  const dist=Math.hypot(nextDx,dy);
-
-  if(dist>ropeLen){
-   const maxHorizontal=Math.sqrt(
-    Math.max(0,ropeLen*ropeLen-dy*dy)
-   );
-
-   p.x=other.x+Math.sign(nextDx)*maxHorizontal;
-   toast('ROPE LIMIT REACHED!');
-   sound(250,.06,'square');
-   return;
-  }
- }
-
- p.x=nextX;
-}
-
-function handlePetFall(i){
- const p=pets[i];
-
- if(p.fallen)return;
-
- p.fallen=true;
- p.hopping=false;
- p.ground=false;
- p.vx=0;
-
- if(hopPet===i){
-  hopping=false;
-  hopPet=-1;
- }
-
- screenHolding=false;
- pointerId=null;
-
- const other=1-i;
-
- if(!pets[other].fallen){
-  active=other;
-  updateButtons();
-
-  toast('PET '+(i+1)+' FELL! PET '+(other+1)+' IS ACTIVE');
-  $('hint').textContent='PLAYER '+(other+1)+' · SAVE YOUR PAL!';
-
-  sound(260,.18,'sawtooth');
- }else{
-  active=i;
-  updateButtons();
-  bothPetsFallen();
- }
-}
-
-function bothPetsFallen(){
- if(gameOver)return;
-
- gameOver=true;
+function failLevel(){
  running=false;
- paused=false;
- hopping=false;
- screenHolding=false;
- pointerId=null;
-
- sound(180,.3,'sawtooth');
-
+ holding=false;
  showPanel(
   'BOTH PETS FELL!',
-  'Oh no! Your pals need another try. Replay the level or watch a rewarded ad to continue from your last checkpoint.',
-  'REPLAY LEVEL',
-  'WATCH AD & CONTINUE',
-  ()=>start(level),
-  watchAdAndContinue
+  'Your pals need another try.',
+  'REPLAY LEVEL','LEVEL MENU',
+  ()=>start(level),showLevels
  );
 }
 
-function watchAdAndContinue(){
- if(typeof window.showRewardedAd!=='function'){
-  toast('REWARDED AD IS NOT CONNECTED YET');
-  return;
- }
-
- if(adBusy)return;
- adBusy=true;
-
- $('hint').textContent='LOADING REWARDED AD...';
-
- try{
-  window.showRewardedAd(function(completed){
-   adBusy=false;
-
-   if(completed===true){
-    continueFromCheckpoint();
-   }else{
-    toast('WATCH THE FULL AD TO CONTINUE');
-   }
-  });
- }catch(e){
-  adBusy=false;
-  toast('AD COULD NOT BE LOADED');
- }
-}
-
-function continueFromCheckpoint(){
- if(!checkpoint){
-  start(level);
-  return;
- }
-
- pets.forEach((p,i)=>{
-  const cp=checkpoint[i];
-
-  p.x=cp.x;
-  p.y=cp.y;
-  p.vx=0;
-  p.vy=0;
-  p.ground=true;
-  p.hopping=false;
-  p.fallen=false;
- });
-
- active=0;
- hopping=false;
- hopPet=-1;
- gameOver=false;
- won=false;
- screenHolding=false;
- pointerId=null;
-
- cam=Math.max(0,pets[0].x-W*.35);
-
- $('overlay').style.display='none';
- $('pause').style.display='none';
- $('bottomControls').style.display='grid';
-
- paused=false;
- running=true;
- last=performance.now();
-
- updateButtons();
- toast('YOUR PETS ARE BACK!');
-
- requestAnimationFrame(loop);
-}
-
-/* REMOVE ROPE ONLY AFTER A REAL REWARDED AD CALLBACK */
-function removeRopeWithAd(){
- if(!running||paused||won||gameOver)return;
- if(!ropeOn)return;
- if(adBusy)return;
-
- if(typeof window.showRewardedAd!=='function'){
-  toast('REWARDED AD IS NOT CONNECTED YET');
-  return;
- }
-
- screenHolding=false;
- pointerId=null;
- adBusy=true;
-
- toast('LOADING REWARDED AD...');
-
- try{
-  window.showRewardedAd(function(completed){
-   adBusy=false;
-
-   if(completed===true){
-    ropeOn=false;
-    updateButtons();
-    toast('ROPE REMOVED! ENJOY THE LEVEL');
-    sound(850,.15,'triangle');
-    burst(pets[active].x,pets[active].y,'#ffe16a',18);
-   }else{
-    toast('AD NOT COMPLETED · ROPE REMAINS');
-   }
-  });
- }catch(e){
-  adBusy=false;
-  toast('AD COULD NOT BE LOADED');
- }
-}
-
+/* Main physics */
 function update(dt){
- if(paused||won||gameOver)return;
+ if(paused||won)return;
 
  for(let i=0;i<2;i++){
   const p=pets[i];
+  if(p.rescuing)continue;
 
   if(p.fallen)continue;
 
   const oldY=p.y;
 
-  // Only the active pet moves horizontally while screen is held.
-  if(p.hopping&&i===active&&screenHolding){
-   moveWithRope(p,pets[1-i],dt);
+  // Active pet moves horizontally only while held.
+  if(i===active&&holding&&p.hopping){
+   p.x+=moveSpeed*direction*dt;
+   p.face=direction;
   }
 
-  // Vertical jump physics.
   p.vy+=gravity*dt;
   p.y+=p.vy*dt;
 
-  // Rope constraint also protects against excessive vertical distance.
-  if(ropeOn&&!pets[1-i].fallen){
-   constrainRope(p,pets[1-i]);
-  }
-
   p.ground=false;
-
-  const platform=groundAt(p.x,oldY,p.y);
+  const platform=groundAt(p,oldY);
 
   if(platform){
    p.y=platform.y-17;
@@ -829,41 +582,62 @@ function update(dt){
    p.ground=true;
 
    if(p.hopping){
-    finishJump(i);
-   }else{
+    p.hopping=false;
     p.vx=0;
+    holding=false;
+    const other=1-i;
+
+    // Switch only if the other pet is safe.
+    if(!pets[other].fallen&&!pets[other].rescuing){
+     active=other;
+    }
+    updateButtons();
+
+    burst(p.x,p.y+12,'#ffffff',8);
+    sound(700,.08,'triangle');
+    $('hint').textContent='PLAYER '+(active+1)+' READY · HOLD TO MOVE';
    }
   }
 
-  p.anim+=dt*(p.hopping?14:3);
+  p.anim+=dt*5;
 
-  if(p.y>H+55){
-   handlePetFall(i);
+  // Falling pet becomes a rescue target, not a dead pet.
+  if(p.y>H+20){
+   beginRescue(i);
+  }
+ }
+
+ // Apply rope constraint after normal movement.
+ constrainRope(dt);
+
+ // Rescue movement is separate from normal physics.
+ for(let i=0;i<2;i++){
+  if(pets[i].rescuing){
+   updateRescue(pets[i],pets[1-i],dt);
   }
  }
 
  const living=pets.filter(p=>!p.fallen);
-
  if(living.length){
   const furthest=Math.max(...living.map(p=>p.x));
   const target=furthest-W*.35;
-
-  cam+=(
-   Math.max(0,Math.min(goal-W*.55,target))-cam
-  )*Math.min(1,dt*5);
+  cam+=(Math.max(0,Math.min(goal-W*.55,target))-cam)*Math.min(1,dt*3);
  }
 
  particles=particles.filter(p=>p.life>0);
-
  for(const p of particles){
   p.life-=dt;
   p.x+=p.vx*dt;
   p.y+=p.vy*dt;
-  p.vy+=400*dt;
+  p.vy+=350*dt;
  }
 
- if(pets.every(p=>!p.fallen&&p.x>goal-55)){
+ if(pets.every(p=>!p.fallen&&!p.rescuing&&p.x>goal-55)){
   win();
+ }
+
+ if(pets.every(p=>p.ground&&!p.fallen&&!p.rescuing)){
+  saveCheckpoint();
  }
 }
 
@@ -879,14 +653,12 @@ function drawBackground(){
  g.addColorStop(0,'#f7a9d0');
  g.addColorStop(.55,'#ffd0ce');
  g.addColorStop(1,'#ffe3b8');
-
  ctx.fillStyle=g;
  ctx.fillRect(0,0,W,H);
 
  for(let i=0;i<7;i++){
   let x=((i*190-cam*.16)%(W+250)+W+250)%(W+250)-100;
   let y=100+(i%3)*65;
-
   ctx.fillStyle='#ffffff45';
   ctx.beginPath();
   ctx.arc(x,y,28,0,Math.PI*2);
@@ -894,11 +666,9 @@ function drawBackground(){
   ctx.arc(x+65,y,27,0,Math.PI*2);
   ctx.fill();
  }
-
  const sun=ctx.createRadialGradient(W*.82,H*.45,5,W*.82,H*.45,180);
  sun.addColorStop(0,'#fff7b955');
  sun.addColorStop(1,'#fff7b900');
-
  ctx.fillStyle=sun;
  ctx.fillRect(0,0,W,H);
 }
@@ -906,13 +676,10 @@ function drawBackground(){
 function drawPlatforms(){
  for(const p of world){
   rounded(p.x,p.y,p.w,p.h,3,'#c82768');
-
   ctx.fillStyle='#ffcf56';
   ctx.fillRect(p.x,p.y,p.w,9);
-
   ctx.fillStyle='#f6a92d';
   ctx.fillRect(p.x,p.y+8,p.w,5);
-
   ctx.fillStyle='#ed397a';
 
   for(let x=p.x+10;x<p.x+p.w-5;x+=18){
@@ -927,10 +694,8 @@ function drawPlatforms(){
 
 function drawFinish(){
  const p=world[world.length-1];
-
  ctx.fillStyle='#fff';
  ctx.fillRect(goal+120,p.y-95,8,95);
-
  ctx.fillStyle='#ff4b99';
  ctx.beginPath();
  ctx.moveTo(goal+128,p.y-95);
@@ -939,65 +704,56 @@ function drawFinish(){
  ctx.fill();
 }
 
-/* STRAIGHT DOTTED ROPE - NO SAG */
+/* Real straight rope visual: no sagging curve. */
 function drawRope(){
  if(!ropeOn)return;
-
- const a=pets[0];
- const b=pets[1];
-
+ const a=pets[0],b=pets[1];
  if(a.fallen&&b.fallen)return;
 
  ctx.save();
-
  ctx.beginPath();
  ctx.moveTo(a.x,a.y);
  ctx.lineTo(b.x,b.y);
-
- ctx.strokeStyle='#b18b25';
- ctx.lineWidth=5;
- ctx.setLineDash([3,6]);
+ ctx.strokeStyle='#98691f';
+ ctx.lineWidth=6;
  ctx.lineCap='round';
  ctx.stroke();
 
  ctx.beginPath();
  ctx.moveTo(a.x,a.y);
  ctx.lineTo(b.x,b.y);
-
  ctx.strokeStyle='#ffe16a';
- ctx.lineWidth=1.5;
- ctx.setLineDash([2,7]);
+ ctx.lineWidth=3;
  ctx.stroke();
 
- ctx.setLineDash([]);
- ctx.restore();
+ // Small rope twist marks.
+ const dx=b.x-a.x,dy=b.y-a.y;
+ const dist=Math.hypot(dx,dy);
+ const count=Math.floor(dist/12);
 
- for(const p of [a,b]){
-  if(p.fallen)continue;
+ ctx.strokeStyle='#bd8a2a';
+ ctx.lineWidth=1.5;
 
-  ctx.fillStyle='#b78322';
+ for(let i=1;i<count;i++){
+  const t=i/count;
+  const x=a.x+dx*t,y=a.y+dy*t;
   ctx.beginPath();
-  ctx.arc(p.x,p.y,4,0,Math.PI*2);
-  ctx.fill();
+  ctx.arc(x,y,3,0,Math.PI*2);
+  ctx.stroke();
  }
+ ctx.restore();
 }
 
 function drawArrow(p){
- const pulse=Math.sin(performance.now()/150)*4;
-
+ const pulse=Math.sin(performance.now()/180)*3;
  ctx.save();
- ctx.translate(p.x,p.y-56+pulse);
-
- // Arrow points in the selected movement direction.
+ ctx.translate(p.x,p.y-55+pulse);
  ctx.rotate(direction===1?Math.PI/2:-Math.PI/2);
-
  ctx.shadowColor='#a72cba';
  ctx.shadowBlur=9;
-
  ctx.fillStyle='#d84be9';
  ctx.strokeStyle='#6c188f';
  ctx.lineWidth=2.5;
-
  ctx.beginPath();
  ctx.moveTo(0,12);
  ctx.lineTo(-12,-1);
@@ -1007,80 +763,47 @@ function drawArrow(p){
  ctx.lineTo(5,-1);
  ctx.lineTo(12,-1);
  ctx.closePath();
-
- ctx.fill();
- ctx.stroke();
+ ctx.fill();ctx.stroke();
  ctx.restore();
 }
 
 function drawPet(p,i){
  const bob=p.ground?Math.sin(p.anim)*1.5:0;
- const x=p.x;
- const y=p.y+bob;
+ const x=p.x,y=p.y+bob;
 
  ctx.save();
  ctx.translate(x,y);
 
- if(i===active&&!p.fallen&&!gameOver&&!won){
+ if(i===active&&!p.fallen&&!p.rescuing&&!won){
   ctx.restore();
   drawArrow(p);
   ctx.save();
   ctx.translate(x,y);
  }
 
- ctx.globalAlpha=p.fallen?.75:1;
+ ctx.globalAlpha=p.rescuing?.85:1;
 
  ctx.fillStyle='#7e345333';
  ctx.beginPath();
- ctx.ellipse(0,19,18,5,0,0,Math.PI*2);
+ ctx.ellipse(0,19,19,5,0,0,Math.PI*2);
  ctx.fill();
 
- ctx.fillStyle=p.color;
- ctx.strokeStyle='#63334c';
- ctx.lineWidth=2.5;
-
- ctx.beginPath();
- ctx.roundRect(-17,-17,34,34,9);
- ctx.fill();
- ctx.stroke();
-
- ctx.fillStyle='#29202c';
- ctx.beginPath();
- ctx.arc(-6,-4,2.5,0,Math.PI*2);
- ctx.arc(8,-4,2.5,0,Math.PI*2);
- ctx.fill();
-
- ctx.fillStyle='white';
- ctx.beginPath();
- ctx.arc(-6.5,-5,1,0,Math.PI*2);
- ctx.arc(7.5,-5,1,0,Math.PI*2);
- ctx.fill();
-
- ctx.strokeStyle='#63334c';
- ctx.lineWidth=1.6;
- ctx.beginPath();
- ctx.arc(1,4,4,.15,Math.PI-.15);
- ctx.stroke();
-
- ctx.fillStyle=p.color;
- ctx.beginPath();
- ctx.moveTo(-12,-14);
- ctx.lineTo(-18,-27);
- ctx.lineTo(-4,-18);
- ctx.fill();
- ctx.stroke();
-
- ctx.beginPath();
- ctx.moveTo(7,-17);
- ctx.lineTo(18,-25);
- ctx.lineTo(15,-10);
- ctx.fill();
- ctx.stroke();
-
+ // White circular character badge.
  ctx.fillStyle='#fff';
- ctx.font='bold 9px Arial';
+ ctx.strokeStyle='#b74f90';
+ ctx.lineWidth=3;
+ ctx.beginPath();
+ ctx.arc(0,0,21,0,Math.PI*2);
+ ctx.fill();ctx.stroke();
+
+ ctx.font='30px Arial';
  ctx.textAlign='center';
- ctx.fillText(i===0?'1':'2',0,29);
+ ctx.textBaseline='middle';
+ ctx.fillText(skins[skin].emoji,0,1);
+
+ ctx.fillStyle='#873b63';
+ ctx.font='bold 9px Arial';
+ ctx.fillText(i===0?'1':'2',0,31);
 
  ctx.restore();
 }
@@ -1089,41 +812,31 @@ function drawParticles(){
  for(const p of particles){
   ctx.globalAlpha=Math.max(0,p.life*2);
   ctx.fillStyle=p.color;
-
   ctx.beginPath();
   ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
   ctx.fill();
-
   ctx.globalAlpha=1;
  }
 }
 
 function drawProgress(){
  rounded(12,57,W-24,6,4,'#ffffff80');
-
- const living=pets.filter(p=>!p.fallen);
- const furthest=living.length?Math.max(...living.map(p=>p.x)):0;
+ const furthest=Math.max(pets[0].x,pets[1].x);
  const progress=Math.min(1,Math.max(0,furthest/goal));
-
  rounded(12,57,(W-24)*progress,6,4,'#ff4f9d');
 }
 
 function draw(){
  ctx.clearRect(0,0,W,H);
-
  drawBackground();
 
  ctx.save();
  ctx.translate(-cam,0);
-
  drawPlatforms();
  drawFinish();
  drawRope();
-
  pets.forEach((p,i)=>drawPet(p,i));
-
  drawParticles();
-
  ctx.restore();
 
  drawProgress();
@@ -1131,48 +844,36 @@ function draw(){
 
 function loop(t){
  if(!running)return;
-
- const dt=Math.min(.033,(t-last)/1000||0);
+ const dt=Math.min(.025,(t-last)/1000||0);
  last=t;
-
  update(dt);
  draw();
-
- if(running){
-  requestAnimationFrame(loop);
- }
+ if(running)requestAnimationFrame(loop);
 }
 
-/* TOUCH CONTROL */
+/* TOUCH INPUT */
 function pointerDown(e){
- if(
-  $('overlay').style.display!=='none'||
-  $('pause').style.display==='flex'||
-  won||gameOver||hopping
- )return;
+ if($('overlay').style.display!=='none'||
+    $('pause').style.display==='flex'||
+    won)return;
 
  if(e.target.closest('button'))return;
-
  e.preventDefault();
 
- if(screenHolding)return;
+ if(holding)return;
 
- screenHolding=true;
+ holding=true;
  pointerId=e.pointerId;
 
- try{
-  gameScreen.setPointerCapture(e.pointerId);
- }catch(err){}
+ try{gameScreen.setPointerCapture(e.pointerId)}catch(err){}
 
  jump();
 }
 
 function pointerUp(e){
- if(!screenHolding)return;
-
+ if(!holding)return;
  if(pointerId!==null&&e.pointerId!==pointerId)return;
-
- screenHolding=false;
+ holding=false;
  pointerId=null;
 }
 
@@ -1181,32 +882,54 @@ gameScreen.addEventListener('pointerup',pointerUp);
 gameScreen.addEventListener('pointercancel',pointerUp);
 gameScreen.addEventListener('lostpointercapture',pointerUp);
 
-/* NEW BUTTON EVENTS */
 $('playerBtn').addEventListener('pointerdown',e=>e.stopPropagation());
 $('directionBtn').addEventListener('pointerdown',e=>e.stopPropagation());
 $('ropeAdBtn').addEventListener('pointerdown',e=>e.stopPropagation());
 
 $('playerBtn').onclick=switchPlayer;
 $('directionBtn').onclick=switchDirection;
+
+function removeRopeWithAd(){
+ if(!running||paused||won||!ropeOn||adBusy)return;
+
+ if(typeof window.showRewardedAd!=='function'){
+  toast('REWARDED AD IS NOT CONNECTED YET');
+  return;
+ }
+
+ holding=false;
+ adBusy=true;
+ toast('LOADING REWARDED AD...');
+
+ try{
+  window.showRewardedAd(function(completed){
+   adBusy=false;
+   if(completed===true){
+    ropeOn=false;
+    updateButtons();
+    toast('ROPE REMOVED!');
+    sound(850,.15,'triangle');
+   }else{
+    toast('AD NOT COMPLETED');
+   }
+  });
+ }catch(e){
+  adBusy=false;
+  toast('AD COULD NOT BE LOADED');
+ }
+}
 $('ropeAdBtn').onclick=removeRopeWithAd;
 
 function win(){
  if(won)return;
-
  won=true;
  running=false;
- hopping=false;
- screenHolding=false;
-
+ holding=false;
  sound(780,.3,'triangle');
 
  for(let i=0;i<60;i++){
-  burst(
-   goal+100+Math.random()*100,
-   H*.4+Math.random()*100,
-   ['#fff','#ff54a6','#ffd45c','#8be8dc'][i%4],
-   1
-  );
+  burst(goal+100+Math.random()*100,H*.4+Math.random()*100,
+  ['#fff','#ff54a6','#ffd45c','#8be8dc'][i%4],1);
  }
 
  saved.done=[...new Set([...(saved.done||[]),level])];
@@ -1217,10 +940,8 @@ function win(){
   showPanel(
    'LEVEL '+level+' COMPLETE!',
    'Amazing teamwork! Both pals reached the finish.',
-   'NEXT LEVEL',
-   'LEVEL MENU',
-   ()=>start(level+1),
-   showLevels
+   'NEXT LEVEL','LEVEL MENU',
+   ()=>start(level+1),showLevels
   );
  },450);
 }
@@ -1228,14 +949,12 @@ function win(){
 function showPanel(title,desc,b1,b2,fn1,fn2){
  $('overlay').style.display='flex';
  $('bottomControls').style.display='none';
-
  $('panel').innerHTML=`
  <h1>${title}</h1>
  <div class="sub">${desc}</div>
  <button class="action" id="p1">${b1}</button>
  <button class="action secondary" id="p2">${b2}</button>
  <button class="action secondary" id="pmore">MORE GAMES · ST GAMES</button>`;
-
  $('p1').onclick=fn1;
  $('p2').onclick=fn2;
  $('pmore').onclick=goHome;
@@ -1244,7 +963,6 @@ function showPanel(title,desc,b1,b2,fn1,fn2){
 function showLevels(){
  $('overlay').style.display='flex';
  $('bottomControls').style.display='none';
-
  $('panel').innerHTML=`
  <h1>CHOOSE LEVEL</h1>
  <div class="sub">Complete levels to unlock more adventures.</div>
@@ -1256,12 +974,10 @@ function showLevels(){
 
  for(let i=1;i<=40;i++){
   const b=document.createElement('button');
-
   b.className='level '+((saved.done||[]).includes(i)?'done':'');
   b.textContent=i;
   b.disabled=i>(saved.unlocked||1);
   b.onclick=()=>start(i);
-
   grid.appendChild(b);
  }
 
@@ -1269,12 +985,38 @@ function showLevels(){
  $('more2').onclick=goHome;
 }
 
+function showSkins(){
+ $('overlay').style.display='flex';
+ $('panel').innerHTML=`
+ <h1>🐾 PET SKINS</h1>
+ <div class="sub">Choose your favourite pet character.</div>
+ <div class="skinGrid" id="skinGrid"></div>
+ <button class="action secondary" id="skinBack">BACK</button>`;
+
+ const grid=$('skinGrid');
+
+ skins.forEach((s,i)=>{
+  const b=document.createElement('button');
+  b.className='skinItem '+(skin===i?'selected':'');
+  b.innerHTML=s.emoji+'<small>'+s.name+'</small>';
+  b.onclick=()=>{
+   skin=i;
+   saved.skin=skin;
+   save();
+   pets.forEach(p=>p.emoji=s.emoji);
+   showSkins();
+   toast(s.name+' SKIN SELECTED');
+  };
+  grid.appendChild(b);
+ });
+
+ $('skinBack').onclick=menu;
+}
+
 function menu(){
  running=false;
- hopping=false;
- screenHolding=false;
+ holding=false;
  pointerId=null;
-
  $('pause').style.display='none';
  $('overlay').style.display='flex';
  $('bottomControls').style.display='none';
@@ -1288,26 +1030,12 @@ function menu(){
  <button class="action" id="play">PLAY</button>
  <button class="action secondary" id="levelsBtn">SELECT LEVEL</button>
  <button class="action secondary" id="skinBtn">🐾 CHANGE PET SKINS</button>
- <button class="action secondary" id="ropeBtn">🪢 ${ropeOn?'REMOVE':'CONNECT'} ROPE</button>
  <button class="action secondary" id="more">MORE GAMES · ST GAMES</button>
  <div class="sub">Progress saves automatically on this device.</div>`;
 
  $('play').onclick=()=>start(saved.unlocked||1);
  $('levelsBtn').onclick=showLevels;
-
- $('skinBtn').onclick=()=>{
-  skin=(skin+1)%palettes.length;
-  saved.skin=skin;
-  save();
-  menu();
-  toast('PET SKIN CHANGED');
- };
-
- $('ropeBtn').onclick=()=>{
-  ropeOn=!ropeOn;
-  menu();
- };
-
+ $('skinBtn').onclick=showSkins;
  $('more').onclick=goHome;
 }
 
@@ -1316,13 +1044,11 @@ function goHome(){
 }
 
 $('pauseBtn').onclick=()=>{
- if($('overlay').style.display!=='none'||gameOver)return;
-
+ if($('overlay').style.display!=='none')return;
  paused=true;
  running=false;
- screenHolding=false;
+ holding=false;
  pointerId=null;
-
  $('bottomControls').style.display='none';
  $('pause').style.display='flex';
 };
@@ -1331,18 +1057,13 @@ $('resume').onclick=()=>{
  paused=false;
  $('pause').style.display='none';
  $('bottomControls').style.display='grid';
-
  last=performance.now();
  running=true;
  requestAnimationFrame(loop);
 };
 
 $('restart').onclick=()=>start(level);
-
-$('home').onclick=()=>{
- $('pause').style.display='none';
- menu();
-};
+$('home').onclick=menu;
 
 makeLevel(1);
 draw();
