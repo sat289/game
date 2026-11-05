@@ -408,19 +408,45 @@
     <!-- Main 2-Column Games Grid -->
     <div id="games-container" class="games-grid"></div>
 
-    <!-- Bottom Arcade Bar -->
-    <div class="bottom-bar">
-        <button class="side-circle-btn" onclick="alert('No Ads Mode Enabled for ST Games APK!')">
-            <span class="ads-text">ADS</span>
-            <div class="ads-slash"></div>
-        </button>
+    <!-- Bottom Toolbar with Referral Button -->
+<div style="display: flex; align-items: center; justify-content: space-around; padding: 10px 16px; background: #0f172a; border-top: 1px solid #1e293b;">
+    
+    <!-- Referral / Share Button (Replaced Ads) -->
+    <button onclick="generateReferralLink()" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; border: none; padding: 10px 18px; border-radius: 22px; font-weight: bold; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 3px 10px rgba(245, 158, 11, 0.4);">
+        🎁 Refer & Earn
+    </button>
 
-        <button class="play-main-btn" onclick="playRandomGame()">PLAY</button>
+    <!-- Main Play Button -->
+    <button style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; padding: 12px 28px; border-radius: 25px; font-weight: 900; font-size: 15px; cursor: pointer; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);">
+        PLAY
+    </button>
 
-        <button class="side-circle-btn" onclick="clearSavedGames()">
-            <i class="fa-solid fa-gear" style="font-size: 24px; color: #3b82f6;"></i>
-        </button>
-    </div>
+    <!-- Settings Button -->
+    <button style="background: #1e293b; color: #94a3b8; border: none; width: 42px; height: 42px; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+        ⚙️
+    </button>
+</div>
+
+<script>
+function generateReferralLink() {
+    // Generates a unique direct download link with a referral tracking code
+    const uniqueId = Math.random().toString(36).substring(2, 8);
+    const referralDownloadUrl = "https://stgames.online/ST-Games.apk?ref=" + uniqueId;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: 'ST Games App',
+            text: 'Play your favorite offline games! Download ST Games app using my link:',
+            url: referralDownloadUrl,
+        }).catch(() => {});
+    } else {
+        // Fallback: Copy link directly to clipboard
+        navigator.clipboard.writeText(referralDownloadUrl);
+        alert("Referral Link Generated & Copied!\n\n" + referralDownloadUrl);
+    }
+}
+</script>
+
 
     <!-- Fullscreen Game Player -->
     <div id="player-modal" class="player-modal">
