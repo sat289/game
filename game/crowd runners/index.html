@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="te">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Crowd Runner 3D - 50 Levels Ultimate Edition</title>
+  <title>Crowd Runner 3D - Ultimate Edition</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <style>
     * {
@@ -397,7 +397,7 @@
 
     <!-- Boss Level HUD -->
     <div id="boss-hud" class="hidden">
-      <div id="boss-title-text" class="boss-title">👹 BOSS TASK (120 HP)</div>
+      <div id="boss-title-text" class="boss-title">BOSS TASK (120 HP)</div>
       <div class="boss-bar-bg">
         <div id="boss-bar-fill"></div>
       </div>
@@ -406,12 +406,12 @@
     <!-- Upgrade Crowd Button -->
     <div id="upgrade-bar">
       <button id="upgrade-crowd-btn" class="upgrade-btn">
-        ✨ +5 Start Avatars (<span id="upgrade-cost">40</span> $)
+        +5 Start Avatars (<span id="upgrade-cost">40</span> $)
       </button>
     </div>
 
     <!-- Clash Battle / Finale Banner -->
-    <div id="battle-banner" class="hidden">⚔️ CLASH BATTLE! ⚔️</div>
+    <div id="battle-banner" class="hidden">CLASH BATTLE!</div>
 
     <!-- Floating Gain / Balloon Pop Popup -->
     <div id="gain-popup" class="hidden">+15</div>
@@ -425,19 +425,19 @@
     <!-- Pause / Score Summary Modal Overlay -->
     <div id="modal-overlay" class="hidden">
       <div class="modal-card">
-        <h2 id="modal-title">Level Complete! 🎉</h2>
+        <h2 id="modal-title">Level Complete!</h2>
         <p id="modal-subtitle">Level 1 / 50</p>
 
         <!-- Detailed End-of-Level Score Check Box -->
         <div id="score-breakdown" class="score-box hidden">
-          <div class="score-row"><span>👥 మిగిలిన అవతార్స్:</span> <strong id="sc-survivors">0</strong></div>
-          <div class="score-row"><span>🎈 పగిలిన బెలూన్స్:</span> <strong id="sc-balloons">0</strong></div>
-          <div class="score-row"><span>🏆 చేరుకున్న మల్టిప్లయర్:</span> <strong id="sc-mult">x1</strong></div>
-          <div class="score-row total-row"><span>💰 మొత్తం బోనస్ కాయిన్స్:</span> <strong id="sc-coins">+0 $</strong></div>
+          <div class="score-row"><span>Survivors:</span> <strong id="sc-survivors">0</strong></div>
+          <div class="score-row"><span>Balloons Popped:</span> <strong id="sc-balloons">0 (+0$)</strong></div>
+          <div class="score-row"><span>Multiplier:</span> <strong id="sc-mult">x1</strong></div>
+          <div class="score-row total-row"><span>Total Bonus Coins:</span> <strong id="sc-coins">+0 $</strong></div>
         </div>
 
         <div class="modal-actions">
-          <button id="resume-btn" class="action-btn primary-btn">Next Level ➔</button>
+          <button id="resume-btn" class="action-btn primary-btn">Next Level →</button>
           <button id="restart-btn" class="action-btn secondary-btn">Replay Level</button>
         </div>
       </div>
@@ -1231,7 +1231,7 @@
         group.position.set(x, 0, z);
         levelGroup.add(group);
 
-        const labelPrefix = bossType === 'mega' ? '👹 MEGA BOSS' : '⚔️ MINI BOSS';
+        const labelPrefix = bossType === 'mega' ? 'MEGA BOSS' : 'MINI BOSS';
         const badge = document.createElement('div');
         badge.className = 'crowd-badge boss-badge';
         badge.textContent = `${labelPrefix}: ${bossHp}`;
@@ -1305,15 +1305,15 @@
         coins += totalEarned;
         coinAmountEl.textContent = coins;
 
-        modalTitle.textContent = `🎉 Level ${currentLevel} Complete!`;
-        modalSubtitle.textContent = `అద్భుతమైన విజయం! స్కోర్ వివరాలు చూడండి:`;
+        modalTitle.textContent = `Level ${currentLevel} Complete!`;
+        modalSubtitle.textContent = `Awesome Victory! Score Breakdown:`;
         scSurvivors.textContent = survivorsAtFinish;
         scBalloons.textContent = `${poppedBalloonsCount} (+${balloonBonus}$)`;
         scMult.textContent = `x${reachedMultiplier}`;
         scCoins.textContent = `+${totalEarned} $`;
         scoreBreakdown.classList.remove('hidden');
 
-        resumeBtn.textContent = currentLevel < MAX_LEVELS ? 'Next Level ➔' : 'Play Again';
+        resumeBtn.textContent = currentLevel < MAX_LEVELS ? 'Next Level →' : 'Play Again';
         modalOverlay.classList.remove('hidden');
       }
 
@@ -1332,9 +1332,9 @@
         progressFill.style.width = '0%';
 
         if (isMegaBoss) {
-          statusOverlay.textContent = `👹 MEGA-BOSS TASK (Level ${currentLevel})! Drag to Run`;
+          statusOverlay.textContent = `MEGA-BOSS TASK (Level ${currentLevel})! Drag to Run`;
         } else if (isMiniBoss) {
-          statusOverlay.textContent = `⚔️ MINI-BOSS TASK (Level ${currentLevel})! Drag to Run`;
+          statusOverlay.textContent = `MINI-BOSS TASK (Level ${currentLevel})! Drag to Run`;
         } else {
           statusOverlay.textContent = `Touch & Drag to Run (Level ${currentLevel} of ${MAX_LEVELS})`;
         }
@@ -1380,7 +1380,7 @@
       pauseBtn.addEventListener('click', () => {
         isPaused = true;
         scoreBreakdown.classList.add('hidden');
-        modalTitle.textContent = 'Game Paused ⏸️';
+        modalTitle.textContent = 'Game Paused';
         modalSubtitle.textContent = `Level ${currentLevel} / ${MAX_LEVELS}`;
         resumeBtn.textContent = 'Resume';
         modalOverlay.classList.remove('hidden');
@@ -1388,7 +1388,7 @@
       exitBtn.addEventListener('click', () => {
         isPaused = true;
         scoreBreakdown.classList.add('hidden');
-        modalTitle.textContent = 'Exit Game? 🚪';
+        modalTitle.textContent = 'Exit Game?';
         modalSubtitle.textContent = `Level ${currentLevel} / ${MAX_LEVELS}`;
         resumeBtn.textContent = 'Continue';
         modalOverlay.classList.remove('hidden');
@@ -1479,7 +1479,7 @@
                   poppedBalloonsCount++;
                   playSound('balloon');
                   spawnParticles(b.mesh.position, 'confetti', 10);
-                  showGainPopup(`🎈 +${b.bonusCoins}$`);
+                  showGainPopup(`+${b.bonusCoins}$`);
                 }
               }
             });
@@ -1489,7 +1489,7 @@
                 st.reached = true;
                 reachedMultiplier = st.multiplier;
                 playerCrowdGroup.position.y = st.y;
-                battleBanner.textContent = `🎈 SCORE MULTIPLIER: x${reachedMultiplier}! 🎈`;
+                battleBanner.textContent = `SCORE MULTIPLIER: x${reachedMultiplier}!`;
                 spawnParticles(playerCrowdGroup.position, 'confetti', 8);
 
                 playerCount = Math.max(0, playerCount - st.cost);
@@ -1530,8 +1530,8 @@
               if (playerCount <= 0) {
                 activeBattleGroup = null; battleBanner.classList.add('hidden'); isPaused = true;
                 scoreBreakdown.classList.add('hidden');
-                modalTitle.textContent = eg.isBoss ? 'Boss Task Failed! 👹' : 'Defeated in Battle! 💀';
-                modalSubtitle.textContent = `Upgrade +5 Start Avatars & Retry Level ${currentLevel}`;
+                modalTitle.textContent = eg.isBoss ? 'Boss Task Failed!' : 'Defeated in Battle!';
+                modalSubtitle.textContent = `Upgrade Avatars & Retry Level ${currentLevel}`;
                 resumeBtn.textContent = 'Retry Level'; modalOverlay.classList.remove('hidden');
               }
             }
@@ -1569,7 +1569,7 @@
               if (!eg.defeated && !eg.engaged) {
                 if (Math.abs(playerCrowdGroup.position.z - eg.z) < 4.5) {
                   eg.engaged = true; activeBattleGroup = eg;
-                  battleBanner.textContent = eg.isBoss ? `${eg.labelPrefix} FIGHT!` : '⚔️ CLASH BATTLE! ⚔️';
+                  battleBanner.textContent = eg.isBoss ? `${eg.labelPrefix} FIGHT!` : 'CLASH BATTLE!';
                   battleBanner.classList.remove('hidden');
                   if (eg.isBoss) {
                     bossTitleText.textContent = `${eg.labelPrefix} (${eg.count} HP)`;
@@ -1583,7 +1583,7 @@
             if (playerCount <= 0) {
               isPaused = true;
               scoreBreakdown.classList.add('hidden');
-              modalTitle.textContent = 'Crowd Eliminated! 💥';
+              modalTitle.textContent = 'Crowd Eliminated!';
               modalSubtitle.textContent = `Try Level ${currentLevel} Again`;
               resumeBtn.textContent = 'Retry Level';
               modalOverlay.classList.remove('hidden');
@@ -1592,7 +1592,7 @@
             if (playerCrowdGroup.position.z <= -levelLength + 14) {
               isEndingFinale = true;
               survivorsAtFinish = playerCount;
-              battleBanner.textContent = '🎈 POP BALLOONS & CLIMB SCORE STAIRS! 🎈';
+              battleBanner.textContent = 'POP BALLOONS & CLIMB SCORE STAIRS!';
               battleBanner.classList.remove('hidden');
               playSound('win');
             }
