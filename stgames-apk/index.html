@@ -7,6 +7,47 @@
     <title>ST Games App</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        :root {
+            --bg-main: #f0f9ff;
+            --text-main: #1e293b;
+            --brand-bar: #0f172a;
+            --card-bg: #ffffff;
+            --card-border: #e2e8f0;
+            --footer-bg: #bae6fd;
+            --footer-border: #7dd3fc;
+        }
+
+        /* Theme Styles */
+        body.theme-gold {
+            --bg-main: #121212;
+            --text-main: #fbbf24;
+            --brand-bar: #1c1917;
+            --card-bg: #1e1b18;
+            --card-border: #78350f;
+            --footer-bg: #292524;
+            --footer-border: #b45309;
+        }
+
+        body.theme-black {
+            --bg-main: #000000;
+            --text-main: #f8fafc;
+            --brand-bar: #09090b;
+            --card-bg: #18181b;
+            --card-border: #27272a;
+            --footer-bg: #09090b;
+            --footer-border: #27272a;
+        }
+
+        body.theme-neon {
+            --bg-main: #0f051d;
+            --text-main: #e879f9;
+            --brand-bar: #2e1065;
+            --card-bg: #1e1b4b;
+            --card-border: #7c3aed;
+            --footer-bg: #3b0764;
+            --footer-border: #9333ea;
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
@@ -17,15 +58,16 @@
         }
 
         body {
-            background-color: #f0f9ff;
-            color: #1e293b;
+            background-color: var(--bg-main);
+            color: var(--text-main);
             padding-bottom: 110px;
             overflow-x: hidden;
+            transition: background 0.3s, color 0.3s;
         }
 
         /* Online / Offline Top App Switcher */
         .mode-bar {
-            background: #0f172a;
+            background: var(--brand-bar);
             padding: 10px 15px;
             display: flex;
             justify-content: space-between;
@@ -84,9 +126,9 @@
             box-shadow: 0 2px 8px rgba(59, 130, 246, 0.5);
         }
 
-        /* Category Filter Bar (Matches Screenshot) */
+        /* Category Filter Bar */
         .category-nav {
-            background: #d8f3fe;
+            background: rgba(2, 132, 199, 0.1);
             margin: 12px 14px;
             padding: 6px;
             border-radius: 30px;
@@ -94,14 +136,14 @@
             gap: 6px;
             overflow-x: auto;
             scrollbar-width: none;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
         }
         .category-nav::-webkit-scrollbar { display: none; }
 
         .cat-pill {
             border: 2px solid transparent;
             background: transparent;
-            color: #2563eb;
+            color: inherit;
+            opacity: 0.8;
             padding: 7px 18px;
             border-radius: 22px;
             font-weight: 800;
@@ -112,10 +154,11 @@
         }
 
         .cat-pill.active {
-            background: #93dbfb;
-            border-color: #0284c7;
-            color: #0369a1;
-            box-shadow: 0 2px 6px rgba(2, 132, 199, 0.15);
+            background: #3b82f6;
+            border-color: #60a5fa;
+            color: #fff;
+            opacity: 1;
+            box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
         }
 
         /* 2-Column Arcade Game Grid */
@@ -127,11 +170,11 @@
         }
 
         .game-card {
-            background: #fff;
+            background: var(--card-bg);
             border-radius: 22px;
             padding: 6px;
-            box-shadow: 0 6px 14px rgba(148, 163, 184, 0.25);
-            border: 3px solid #e2e8f0;
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
+            border: 3px solid var(--card-border);
             position: relative;
             cursor: pointer;
             transition: transform 0.15s;
@@ -202,7 +245,6 @@
             align-items: flex-end;
         }
 
-        /* NEW! Sticker Badge */
         .game-badge {
             background: #22c55e;
             color: #fff;
@@ -215,7 +257,6 @@
             text-transform: uppercase;
         }
 
-        /* Saved Offline Status Icon */
         .dl-indicator {
             width: 28px;
             height: 28px;
@@ -234,14 +275,14 @@
             border-color: #fff;
         }
 
-        /* Offline Warning / Empty State Box */
+        /* Empty State Box */
         .empty-box {
             grid-column: 1 / -1;
-            background: #fff;
+            background: var(--card-bg);
             border-radius: 20px;
             padding: 35px 20px;
             text-align: center;
-            border: 3px dashed #cbd5e1;
+            border: 3px dashed var(--card-border);
             margin: 15px 0;
         }
         .empty-box i {
@@ -252,11 +293,10 @@
         .empty-box h3 {
             font-size: 18px;
             margin-bottom: 6px;
-            color: #0f172a;
         }
         .empty-box p {
             font-size: 14px;
-            color: #64748b;
+            opacity: 0.8;
             margin-bottom: 18px;
             line-height: 1.4;
         }
@@ -272,62 +312,54 @@
             box-shadow: 0 4px 12px rgba(34, 197, 94, 0.35);
         }
 
-        /* Bottom Arcade Navigation Bar (Matches Screenshot) */
+        /* Bottom Arcade Navigation Bar */
         .bottom-bar {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
             height: 76px;
-            background: #bae6fd;
-            border-top: 3px solid #7dd3fc;
+            background: var(--footer-bg);
+            border-top: 3px solid var(--footer-border);
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 0 22px;
             z-index: 300;
+            transition: background 0.3s, border 0.3s;
         }
 
         .side-circle-btn {
             width: 54px;
             height: 54px;
             border-radius: 50%;
-            background: #e0f2fe;
-            border: 3px solid #0284c7;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            border: 3px solid #fff;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-            position: relative;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+            color: #fff;
+            font-weight: 900;
+            font-size: 10px;
         }
         .side-circle-btn:active { transform: scale(0.92); }
 
-        .ads-text {
-            font-weight: 900;
-            font-size: 15px;
-            color: #f59e0b;
-            text-shadow: 1px 1px 0 #78350f, -1px -1px 0 #78350f, 1px -1px 0 #78350f, -1px 1px 0 #78350f;
-        }
-        .ads-slash {
-            position: absolute;
-            width: 75%;
-            height: 4px;
-            background: #ef4444;
-            transform: rotate(-30deg);
-            border-radius: 2px;
+        .gear-btn {
+            background: linear-gradient(135deg, #38bdf8, #0284c7);
         }
 
         .play-main-btn {
-            width: 175px;
-            height: 68px;
-            margin-top: -28px;
+            width: 165px;
+            height: 62px;
+            margin-top: -24px;
             background: linear-gradient(180deg, #4ade80 0%, #16a34a 100%);
-            border: 5px solid #e0f2fe;
-            outline: 3px solid #0284c7;
-            border-radius: 40px;
+            border: 4px solid #fff;
+            border-radius: 35px;
             color: #fff;
-            font-size: 26px;
+            font-size: 22px;
             font-weight: 900;
             letter-spacing: 2px;
             text-shadow: 0 2px 3px rgba(0,0,0,0.35);
@@ -342,7 +374,81 @@
             box-shadow: 0 3px 0 #15803d, 0 5px 10px rgba(0,0,0,0.2);
         }
 
-        /* Fullscreen In-App Game Player Modal */
+        /* Settings Modal */
+        .settings-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .settings-modal.open { display: flex; }
+
+        .settings-card {
+            background: var(--card-bg);
+            border: 2px solid var(--card-border);
+            border-radius: 24px;
+            width: 100%;
+            max-width: 360px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .settings-title {
+            font-size: 20px;
+            font-weight: 900;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .theme-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .theme-option {
+            padding: 12px;
+            border-radius: 14px;
+            border: 2px solid #475569;
+            font-weight: 800;
+            font-size: 13px;
+            cursor: pointer;
+            text-align: center;
+            color: #fff;
+        }
+        .theme-option.default { background: #0f172a; }
+        .theme-option.gold { background: #1c1917; border-color: #f59e0b; color: #f59e0b; }
+        .theme-option.black { background: #000000; border-color: #52525b; }
+        .theme-option.neon { background: #2e1065; border-color: #d946ef; color: #e879f9; }
+
+        .setting-toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(100,100,100,0.1);
+            padding: 12px 16px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+            font-weight: 800;
+            font-size: 14px;
+        }
+
+        .close-settings {
+            width: 100%;
+            background: #3b82f6;
+            color: #fff;
+            border: none;
+            padding: 12px;
+            border-radius: 16px;
+            font-weight: 900;
+            cursor: pointer;
+        }
+
+        /* Fullscreen Game Player Modal */
         .player-modal {
             position: fixed;
             inset: 0;
@@ -381,7 +487,12 @@
         }
     </style>
 </head>
-<body>
+<body id="app-body">
+
+    <!-- Background Audio Element (Low Volume, Loops Automatically) -->
+    <audio id="bg-music" loop preload="auto">
+        <source src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf756.mp3?filename=8-bit-arcade-138828.mp3" type="audio/mpeg">
+    </audio>
 
     <!-- Top Online / Offline Mode Bar -->
     <div class="mode-bar">
@@ -408,45 +519,46 @@
     <!-- Main 2-Column Games Grid -->
     <div id="games-container" class="games-grid"></div>
 
-    <!-- Bottom Toolbar with Referral Button -->
-<div style="display: flex; align-items: center; justify-content: space-around; padding: 10px 16px; background: #0f172a; border-top: 1px solid #1e293b;">
-    
-    <!-- Referral / Share Button (Replaced Ads) -->
-    <button onclick="generateReferralLink()" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; border: none; padding: 10px 18px; border-radius: 22px; font-weight: bold; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 3px 10px rgba(245, 158, 11, 0.4);">
-        🎁 Refer & Earn
-    </button>
+    <!-- Bottom Arcade Navigation Bar -->
+    <div class="bottom-bar">
+        <button class="side-circle-btn" onclick="generateReferralLink()" title="Refer & Earn">
+            <span style="font-size: 16px;">🎁</span>
+            <span>SHARE</span>
+        </button>
 
-    <!-- Main Play Button -->
-    <button style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; padding: 12px 28px; border-radius: 25px; font-weight: 900; font-size: 15px; cursor: pointer; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);">
-        PLAY
-    </button>
+        <button class="play-main-btn" onclick="playRandomGame()">PLAY</button>
 
-    <!-- Settings Button -->
-    <button style="background: #1e293b; color: #94a3b8; border: none; width: 42px; height: 42px; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
-        ⚙️
-    </button>
-</div>
+        <button class="side-circle-btn gear-btn" onclick="openSettings()" title="Settings & Themes">
+            <span style="font-size: 20px;">⚙️</span>
+            <span>SETTINGS</span>
+        </button>
+    </div>
 
-<script>
-function generateReferralLink() {
-    // Generates a unique direct download link with a referral tracking code
-    const uniqueId = Math.random().toString(36).substring(2, 8);
-    const referralDownloadUrl = "https://stgames.online/ST-Games.apk?ref=" + uniqueId;
-    
-    if (navigator.share) {
-        navigator.share({
-            title: 'ST Games App',
-            text: 'Play your favorite offline games! Download ST Games app using my link:',
-            url: referralDownloadUrl,
-        }).catch(() => {});
-    } else {
-        // Fallback: Copy link directly to clipboard
-        navigator.clipboard.writeText(referralDownloadUrl);
-        alert("Referral Link Generated & Copied!\n\n" + referralDownloadUrl);
-    }
-}
-</script>
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="settings-modal">
+        <div class="settings-card">
+            <div class="settings-title">
+                <span>Settings & Themes</span>
+                <button onclick="closeSettings()" style="background:none; border:none; color:inherit; font-size:20px; cursor:pointer;">&times;</button>
+            </div>
+            
+            <p style="font-size: 13px; opacity: 0.8; margin-bottom: 8px;">Background Music (Low Volume):</p>
+            <div class="setting-toggle-row">
+                <span>🎵 Arcade BGM</span>
+                <input type="checkbox" id="music-toggle" onchange="toggleMusic(this)" style="width: 20px; height: 20px; cursor: pointer;">
+            </div>
 
+            <p style="font-size: 13px; opacity: 0.8; margin-bottom: 8px;">Visual Theme:</p>
+            <div class="theme-grid">
+                <div class="theme-option default" onclick="setTheme('')">Classic Blue</div>
+                <div class="theme-option gold" onclick="setTheme('theme-gold')">👑 Royal Gold</div>
+                <div class="theme-option black" onclick="setTheme('theme-black')">⚡ Deep Black</div>
+                <div class="theme-option neon" onclick="setTheme('theme-neon')">🌌 Neon Cyber</div>
+            </div>
+
+            <button class="close-settings" onclick="closeSettings()">Save & Close</button>
+        </div>
+    </div>
 
     <!-- Fullscreen Game Player -->
     <div id="player-modal" class="player-modal">
@@ -458,178 +570,63 @@ function generateReferralLink() {
     </div>
 
 <script>
-    // Base domain so APK always knows where to fetch games & logos
     const BASE_URL = "https://stgames.online/";
 
-    // Your exact 18 games list
     const GAMES_DATA = [
-      {
-        "id": "game-mw3654pa",
-        "title": "Wheel master",
-        "url": "game/Wheel master/index.html",
-        "logo": "logo/game-1793861007180-5455.jpg",
-        "categories": ["popular"],
-        "badge": "✨ NEW",
-        "bg": "linear-gradient(135deg, #6366f1, #4338ca)"
-      },
-      {
-        "id": "game-mw20ft73",
-        "title": "Rope Dash",
-        "url": "game/rope.html",
-        "logo": "logo/game-1793790309066-5381.jpg",
-        "categories": ["classic", "popular"],
-        "badge": "✨ NEW",
-        "bg": "linear-gradient(135deg, #ec4899, #be185d)"
-      },
-      {
-        "id": "game-mw1urk4j",
-        "title": "Space waves",
-        "url": "game/Spacewaces.html",
-        "logo": "logo/game-1793853613420-5437.jpg",
-        "categories": ["popular"],
-        "badge": "✨ NEW",
-        "bg": "linear-gradient(135deg, #3b82f6, #1d4ed8)"
-      },
-      {
-        "id": "game-mvzz9zor",
-        "title": "Crowd runners",
-        "url": "game/crowd runners/index.html",
-        "logo": "logo/game-1793676729637-5233.jpg",
-        "categories": ["classic"],
-        "badge": "✨ NEW",
-        "bg": "linear-gradient(135deg, #06b6d4, #0e7490)"
-      },
-      {
-        "id": "game-mvzyi81m",
-        "title": "Fight",
-        "url": "game/Fight/index.html",
-        "logo": "logo/game-1793676164188-5232.png",
-        "categories": ["popular"],
-        "badge": "✨ NEW",
-        "bg": "linear-gradient(135deg, #ef4444, #b91c1c)"
-      },
-      {
-        "id": "game-mvxqcsca",
-        "title": "Catch the thief",
-        "url": "game/thief/index.html",
-        "logo": "logo/game-1793531508927-5022.png",
-        "categories": ["classic", "popular"],
-        "badge": "✨ NEW",
-        "bg": "linear-gradient(135deg, #38bdf8, #0284c7)"
-      },
-      {
-        "id": "game-mvwetkz4",
-        "title": "Nuts and Bolts 🔩",
-        "url": "game/nuts.html",
-        "logo": "logo/game-1793451670491-4931.jpg",
-        "categories": ["classic"],
-        "badge": "✨ NEW",
-        "bg": "linear-gradient(135deg, #f59e0b, #b45309)"
-      },
-      {
-        "id": "game-mvwc6dia",
-        "title": "Toilet rush",
-        "url": "game/Toilet rush/index.html",
-        "logo": "logo/game-1793448451512-4909.jpg",
-        "categories": ["classic"],
-        "badge": "✨ NEW",
-        "bg": "linear-gradient(135deg, #a855f7, #7e22ce)"
-      },
-      {
-        "id": "game-mvv6lmgs",
-        "title": "Salazar Game",
-        "url": "game/salazar.html",
-        "logo": "logo/game-1793377379865-4884.png",
-        "categories": ["classic"],
-        "badge": "✨ NEW",
-        "bg": "linear-gradient(135deg, #10b981, #047857)"
-      },
-      {
-        "id": "custom-mvv0p7ge",
-        "title": "Merge Mania",
-        "url": "game/merge.html",
-        "logo": "logo/game-1793371364908-4872.png",
-        "categories": ["classic"],
-        "badge": "✨ NEW",
-        "bg": "linear-gradient(135deg, #facc15, #ca8a04)"
-      },
-      {
-        "id": "subway-runner",
-        "title": "Street Subway Runner",
-        "url": "game/subway/index.html",
-        "logo": "logo/subway.jpg",
-        "categories": ["single", "popular"],
-        "badge": "✨ HIT",
-        "bg": "linear-gradient(135deg, #f59e0b, #b45309)"
-      },
-      {
-        "id": "tic-tac-toe",
-        "title": "Pro Tic-Tac-Toe",
-        "url": "game/tictactoe/index.html",
-        "logo": "logo/tic-tac-toe.png",
-        "categories": ["sports", "single", "popular", "1v1"],
-        "badge": "TOP",
-        "bg": "linear-gradient(135deg, #14b8a6, #0f766e)"
-      },
-      {
-        "id": "snake",
-        "title": "Cyber Snake Retro",
-        "url": "game/snake/index.html",
-        "logo": "logo/snake.jpg",
-        "categories": ["classic", "single", "popular"],
-        "badge": "OLD",
-        "bg": "linear-gradient(135deg, #10b981, #047857)"
-      },
-      {
-        "id": "fruit game",
-        "title": "Fruit Arcade Pro",
-        "url": "game/fruit.html",
-        "logo": "logo/fruit.jpg",
-        "categories": ["classic", "single", "popular"],
-        "badge": "LIVE",
-        "bg": "linear-gradient(135deg, #ec4899, #8b5cf6)"
-      },
-      {
-        "id": "bird game",
-        "title": "Bird Action Mania",
-        "url": "game/clumsy.html",
-        "logo": "logo/bird.jpg",
-        "categories": ["classic", "single", "popular"],
-        "badge": "NEW",
-        "bg": "linear-gradient(135deg, #f43f5e, #fb923c)"
-      },
-      {
-        "id": "game-hub-battle",
-        "title": "Ninja Shadow Duel",
-        "url": "game/fight.html",
-        "logo": "logo/fight.jpg",
-        "categories": ["1v1", "popular"],
-        "badge": "1v1",
-        "bg": "linear-gradient(135deg, #ef4444, #7f1d1d)"
-      },
-      {
-        "id": "snake-ladder",
-        "title": "Monster Truck Stunts",
-        "url": "game/ladder/index.html",
-        "logo": "logo/ladder.jpg",
-        "categories": ["racing", "single", "popular"],
-        "badge": "HOT",
-        "bg": "linear-gradient(135deg, #f97316, #c2410c)"
-      },
-      {
-        "id": "typing-race",
-        "title": "Typing Race Championship",
-        "url": "game/typerace/index.html",
-        "logo": "logo/typerace.jpg",
-        "categories": ["racing", "single", "popular"],
-        "badge": "",
-        "bg": "linear-gradient(135deg, #64748b, #334105)"
-      }
+      { id: "game-mw3654pa", title: "Wheel master", url: "game/Wheel master/index.html", logo: "logo/game-1793861007180-5455.jpg", categories: ["popular"], badge: "✨ NEW", bg: "linear-gradient(135deg, #6366f1, #4338ca)" },
+      { id: "game-mw20ft73", title: "Rope Dash", url: "game/rope.html", logo: "logo/game-1793790309066-5381.jpg", categories: ["classic", "popular"], badge: "✨ NEW", bg: "linear-gradient(135deg, #ec4899, #be185d)" },
+      { id: "game-mw1urk4j", title: "Space waves", url: "game/Spacewaces.html", logo: "logo/game-1793853613420-5437.jpg", categories: ["popular"], badge: "✨ NEW", bg: "linear-gradient(135deg, #3b82f6, #1d4ed8)" },
+      { id: "game-mvzz9zor", title: "Crowd runners", url: "game/crowd runners/index.html", logo: "logo/game-1793676729637-5233.jpg", categories: ["classic"], badge: "✨ NEW", bg: "linear-gradient(135deg, #06b6d4, #0e7490)" },
+      { id: "game-mvzyi81m", title: "Fight", url: "game/Fight/index.html", logo: "logo/game-1793676164188-5232.png", categories: ["popular"], badge: "✨ NEW", bg: "linear-gradient(135deg, #ef4444, #b91c1c)" },
+      { id: "game-mvxqcsca", title: "Catch the thief", url: "game/thief/index.html", logo: "logo/game-1793531508927-5022.png", categories: ["classic", "popular"], badge: "✨ NEW", bg: "linear-gradient(135deg, #38bdf8, #0284c7)" },
+      { id: "game-mvwetkz4", title: "Nuts and Bolts 🔩", url: "game/nuts.html", logo: "logo/game-1793451670491-4931.jpg", categories: ["classic"], badge: "✨ NEW", bg: "linear-gradient(135deg, #f59e0b, #b45309)" },
+      { id: "game-mvwc6dia", title: "Toilet rush", url: "game/Toilet rush/index.html", logo: "logo/game-1793448451512-4909.jpg", categories: ["classic"], badge: "✨ NEW", bg: "linear-gradient(135deg, #a855f7, #7e22ce)" },
+      { id: "game-mvv6lmgs", title: "Salazar Game", url: "game/salazar.html", logo: "logo/game-1793377379865-4884.png", categories: ["classic"], badge: "✨ NEW", bg: "linear-gradient(135deg, #10b981, #047857)" },
+      { id: "custom-mvv0p7ge", title: "Merge Mania", url: "game/merge.html", logo: "logo/game-1793371364908-4872.png", categories: ["classic"], badge: "✨ NEW", bg: "linear-gradient(135deg, #facc15, #ca8a04)" },
+      { id: "subway-runner", title: "Street Subway Runner", url: "game/subway/index.html", logo: "logo/subway.jpg", categories: ["single", "popular"], badge: "✨ HIT", bg: "linear-gradient(135deg, #f59e0b, #b45309)" },
+      { id: "tic-tac-toe", title: "Pro Tic-Tac-Toe", url: "game/tictactoe/index.html", logo: "logo/tic-tac-toe.png", categories: ["sports", "single", "popular", "1v1"], badge: "TOP", bg: "linear-gradient(135deg, #14b8a6, #0f766e)" },
+      { id: "snake", title: "Cyber Snake Retro", url: "game/snake/index.html", logo: "logo/snake.jpg", categories: ["classic", "single", "popular"], badge: "OLD", bg: "linear-gradient(135deg, #10b981, #047857)" },
+      { id: "fruit game", title: "Fruit Arcade Pro", url: "game/fruit.html", logo: "logo/fruit.jpg", categories: ["classic", "single", "popular"], badge: "LIVE", bg: "linear-gradient(135deg, #ec4899, #8b5cf6)" },
+      { id: "bird game", title: "Bird Action Mania", url: "game/clumsy.html", logo: "logo/bird.jpg", categories: ["classic", "single", "popular"], badge: "NEW", bg: "linear-gradient(135deg, #f43f5e, #fb923c)" },
+      { id: "game-hub-battle", title: "Ninja Shadow Duel", url: "game/fight.html", logo: "logo/fight.jpg", categories: ["1v1", "popular"], badge: "1v1", bg: "linear-gradient(135deg, #ef4444, #7f1d1d)" },
+      { id: "snake-ladder", title: "Monster Truck Stunts", url: "game/ladder/index.html", logo: "logo/ladder.jpg", categories: ["racing", "single", "popular"], badge: "HOT", bg: "linear-gradient(135deg, #f97316, #c2410c)" },
+      { id: "typing-race", title: "Typing Race Championship", url: "game/typerace/index.html", logo: "logo/typerace.jpg", categories: ["racing", "single", "popular"], badge: "", bg: "linear-gradient(135deg, #64748b, #334105)" }
     ];
 
     let currentMode = 'online';
     let currentCategory = 'all';
     let savedGameIds = JSON.parse(localStorage.getItem('st_saved_offline_games') || '[]');
+
+    // Load saved theme & music settings
+    const savedTheme = localStorage.getItem('st_app_theme') || '';
+    if (savedTheme) document.getElementById('app-body').className = savedTheme;
+
+    const musicEnabled = localStorage.getItem('st_music_enabled') !== 'false'; // Default true
+    document.getElementById('music-toggle').checked = musicEnabled;
+
+    const bgMusic = document.getElementById('bg-music');
+    bgMusic.volume = 0.25; // Low pleasant background volume
+
+    // Auto-start music on first user interaction (browser policy compliance)
+    document.addEventListener('click', () => {
+        if (musicEnabled && bgMusic.paused) {
+            bgMusic.play().catch(() => {});
+        }
+    }, { once: true });
+
+    if (musicEnabled) {
+        bgMusic.play().catch(() => {});
+    }
+
+    function toggleMusic(checkbox) {
+        if (checkbox.checked) {
+            bgMusic.play().catch(() => {});
+            localStorage.setItem('st_music_enabled', 'true');
+        } else {
+            bgMusic.pause();
+            localStorage.setItem('st_music_enabled', 'false');
+        }
+    }
 
     function fullUrl(path) {
         if (path.startsWith('http')) return path;
@@ -640,7 +637,6 @@ function generateReferralLink() {
         document.getElementById('saved-count').innerText = savedGameIds.length;
     }
 
-    // Switch between Online and Offline Top Buttons
     function setAppMode(mode) {
         currentMode = mode;
         document.getElementById('btn-online').classList.toggle('active', mode === 'online');
@@ -648,7 +644,6 @@ function generateReferralLink() {
         renderGames();
     }
 
-    // Filter by Category Pills
     function setCategory(cat, btnElement) {
         currentCategory = cat;
         document.querySelectorAll('.cat-pill').forEach(btn => btn.classList.remove('active'));
@@ -656,39 +651,35 @@ function generateReferralLink() {
         renderGames();
     }
 
-    // Render Games Grid
     function renderGames() {
         const container = document.getElementById('games-container');
         container.innerHTML = '';
         updateSavedCounter();
 
-        // Check if player turned off net while in Online section
         if (currentMode === 'online' && !navigator.onLine) {
             container.innerHTML = `
                 <div class="empty-box">
                     <i class="fa-solid fa-wifi"></i>
                     <h3>No Internet Connection</h3>
-                    <p>Please connect to the internet to browse all online games, or switch to your Offline games!</p>
+                    <p>Connect to internet to browse online games, or switch to your Offline games!</p>
                     <button class="action-btn" onclick="setAppMode('offline')">PLAY OFFLINE GAMES (${savedGameIds.length})</button>
                 </div>
             `;
             return;
         }
 
-        // Filter games based on Mode (Online vs Offline) & Category
         const filtered = GAMES_DATA.filter(g => {
             const matchesMode = (currentMode === 'online') ? true : savedGameIds.includes(g.id);
             const matchesCat = (currentCategory === 'all') ? true : (g.categories && g.categories.includes(currentCategory));
             return matchesMode && matchesCat;
         });
 
-        // Empty state for Offline section if no games opened yet
         if (currentMode === 'offline' && filtered.length === 0) {
             container.innerHTML = `
                 <div class="empty-box">
                     <i class="fa-solid fa-cloud-arrow-down"></i>
                     <h3>No Offline Games Yet</h3>
-                    <p>Go to the <b>ONLINE</b> tab and tap any game! Once you open a game, it automatically downloads here for offline play.</p>
+                    <p>Go to the <b>ONLINE</b> tab and tap any game to download it for offline play!</p>
                     <button class="action-btn" onclick="setAppMode('online')">GO TO ONLINE TAB</button>
                 </div>
             `;
@@ -724,23 +715,20 @@ function generateReferralLink() {
         });
     }
 
-    // Open game & automatically save to Offline section
     async function openAndSaveGame(game) {
         const targetUrl = fullUrl(game.url);
         const logoUrl = fullUrl(game.logo);
 
         if (!navigator.onLine && !savedGameIds.includes(game.id)) {
-            alert("You are offline! Connect to the internet once to download " + game.title + ".");
+            alert("You are offline! Connect to internet once to download " + game.title + ".");
             return;
         }
 
-        // Automatically add to Offline list on first tap
         if (navigator.onLine && !savedGameIds.includes(game.id)) {
             savedGameIds.push(game.id);
             localStorage.setItem('st_saved_offline_games', JSON.stringify(savedGameIds));
             updateSavedCounter();
 
-            // Cache game HTML & Logo in browser Cache API
             if ('caches' in window) {
                 try {
                     const cache = await caches.open('stgames-apk-cache-v1');
@@ -751,7 +739,6 @@ function generateReferralLink() {
             renderGames();
         }
 
-        // Launch inside in-app fullscreen player so user never loses the top bar
         document.getElementById('playing-title').innerText = game.title;
         document.getElementById('game-frame').src = targetUrl;
         document.getElementById('player-modal').classList.add('open');
@@ -762,29 +749,83 @@ function generateReferralLink() {
         document.getElementById('player-modal').classList.remove('open');
     }
 
-    // Big green PLAY button launches a random available game
     function playRandomGame() {
         const pool = (currentMode === 'offline' || !navigator.onLine)
             ? GAMES_DATA.filter(g => savedGameIds.includes(g.id))
             : GAMES_DATA;
 
         if (pool.length === 0) {
-            alert("No offline games downloaded yet! Connect to the internet and tap any game first.");
+            alert("No offline games downloaded yet! Tap any online game first.");
             return;
         }
         const randomGame = pool[Math.floor(Math.random() * pool.length)];
         openAndSaveGame(randomGame);
     }
 
-    function clearSavedGames() {
-        if (confirm("Reset downloaded offline games list?")) {
-            savedGameIds = [];
-            localStorage.removeItem('st_saved_offline_games');
-            renderGames();
+    function generateReferralLink() {
+        const uniqueId = Math.random().toString(36).substring(2, 8);
+        const referralDownloadUrl = "https://stgames.online/ST-Games.apk?ref=" + uniqueId;
+        
+        if (navigator.share) {
+            navigator.share({
+                title: 'ST Games App',
+                text: 'Play offline arcade games! Download ST Games app using my link:',
+                url: referralDownloadUrl,
+            }).catch(() => {});
+        } else {
+            navigator.clipboard.writeText(referralDownloadUrl);
+            alert("Referral Link Generated & Copied!\n\n" + referralDownloadUrl);
         }
     }
 
-    // Live network detection
+    function openSettings() {
+        document.getElementById('settings-modal').classList.add('open');
+    }
+
+    function closeSettings() {
+        document.getElementById('settings-modal').classList.remove('open');
+    }
+
+    function setTheme(themeClassName) {
+        document.getElementById('app-body').className = themeClassName;
+        localStorage.setItem('st_app_theme', themeClassName);
+    }
+
+    // --- 6-HOUR OFFLINE NOTIFICATION SYSTEM ---
+    function initSmartNotifications() {
+        if (!("Notification" in window)) return;
+        
+        if (Notification.permission === "default") {
+            Notification.requestPermission();
+        }
+
+        const funnyMessages = [
+            "🚨 Bro your high scores are crying in ST Games! Come back before the Wi-Fi police arrives 😂",
+            "🎮 Your offline games are getting lonely! Jump back into ST Games and beat your record.",
+            "🔥 Boredom detected! Your favorite arcade games are waiting for you in ST Games.",
+            "⚡ Quick break? Your downloaded games in ST Games are ready to play instantly offline!",
+            "👑 The gaming throne is empty! Someone is about to steal your crown on ST Games 🏆"
+        ];
+
+        const lastNotifTime = localStorage.getItem('st_last_notif_time') || 0;
+        const now = Date.now();
+        const sixHours = 6 * 60 * 60 * 1000;
+
+        if (now - lastNotifTime > sixHours) {
+            if (Notification.permission === "granted") {
+                const randomMsg = funnyMessages[Math.floor(Math.random() * funnyMessages.length)];
+                new Notification("ST Games 🎮", {
+                    body: randomMsg,
+                    icon: "launchericon-192x192.png"
+                });
+                localStorage.setItem('st_last_notif_time', now);
+            }
+        }
+    }
+
+    setInterval(initSmartNotifications, 60 * 60 * 1000);
+    setTimeout(initSmartNotifications, 5000);
+
     function handleNetworkChange() {
         const dot = document.getElementById('net-dot');
         if (navigator.onLine) {
@@ -797,8 +838,6 @@ function generateReferralLink() {
 
     window.addEventListener('online', handleNetworkChange);
     window.addEventListener('offline', handleNetworkChange);
-
-    // Initialize on startup
     handleNetworkChange();
 </script>
 </body>
