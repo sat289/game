@@ -489,7 +489,7 @@
 </head>
 <body id="app-body">
 
-    <!-- Background Audio Element (Low Volume, Loops Automatically) -->
+    <!-- Background Audio Element using app.mp3 (Low Volume, Loops Automatically) -->
     <audio id="bg-music" loop preload="auto">
         <source src="app.mp3" type="audio/mpeg">
     </audio>
@@ -605,7 +605,7 @@
     document.getElementById('music-toggle').checked = musicEnabled;
 
     const bgMusic = document.getElementById('bg-music');
-    bgMusic.volume = 0.25; // Low pleasant background volume
+    bgMusic.volume = 0.2; // Low pleasant background volume
 
     // Auto-start music on first user interaction (browser policy compliance)
     document.addEventListener('click', () => {
@@ -742,6 +742,11 @@
         document.getElementById('playing-title').innerText = game.title;
         document.getElementById('game-frame').src = targetUrl;
         document.getElementById('player-modal').classList.add('open');
+        
+        // Ensure background music continues playing underneath the game iframe
+        if (musicEnabled && bgMusic.paused) {
+            bgMusic.play().catch(() => {});
+        }
     }
 
     function closeGame() {
