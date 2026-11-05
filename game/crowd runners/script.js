@@ -15,7 +15,6 @@ const upgradeCostEl = document.getElementById('upgrade-cost');
 
 const bossHud = document.getElementById('boss-hud');
 const bossTitleText = document.getElementById('boss-title-text');
-const bossHpText = document.getElementById('boss-hp-text');
 const bossBarFill = document.getElementById('boss-bar-fill');
 
 const modalOverlay = document.getElementById('modal-overlay');
@@ -47,7 +46,6 @@ let soundEnabled = true;
 let activeBattleGroup = null;
 let levelLength = 240;
 
-// Finale & Score Tracking State
 let isEndingFinale = false;
 let poppedBalloonsCount = 0;
 let reachedMultiplier = 1;
@@ -80,7 +78,6 @@ function playSound(type) {
     osc.start(now);
     osc.stop(now + 0.18);
   } else if (type === 'balloon') {
-    // Crisp Balloon Pop Sound
     osc.type = 'sine';
     osc.frequency.setValueAtTime(750, now);
     osc.frequency.exponentialRampToValueAtTime(140, now + 0.09);
@@ -198,7 +195,7 @@ function showGainPopup(text) {
   gainPopup.style.animation = 'floatUp 0.65s ease-out forwards';
 }
 
-// --- 4. CLEAR HD 3D AVATARS & BOSS MODELS (MINI-BOSS & MEGA-BOSS) ---
+// --- 4. CLEAR HD 3D AVATARS & BOSS MODELS ---
 const avatarGeos = {
   shadow: new THREE.CircleGeometry(0.34, 8),
   head: new THREE.SphereGeometry(0.32, 10, 10),
@@ -381,7 +378,7 @@ function createRealistic3DTree(typeIndex) {
   const tree = new THREE.Group();
 
   if (typeIndex === 0) {
-    // 1. Realistic Multi-Branch Oak Tree (Wood trunk, side branches & lush spherical canopy clusters)
+    // 1. Multi-Branch Oak Tree
     const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.75, 4.5, 7), treeMats.bark);
     trunk.position.y = 2.25;
     tree.add(trunk);
@@ -402,12 +399,12 @@ function createRealistic3DTree(typeIndex) {
       [-0.4, 4.9, -1.2, 1.6, treeMats.oakLeaf2]
     ];
     canopyOffsets.forEach(([cx, cy, cz, r, mat]) => {
-      const leaf Puff = new THREE.Mesh(new THREE.DodecahedronGeometry(r, 1), mat);
+      const leafPuff = new THREE.Mesh(new THREE.DodecahedronGeometry(r, 1), mat);
       leafPuff.position.set(cx, cy, cz);
       tree.add(leafPuff);
     });
   } else if (typeIndex === 1) {
-    // 2. Realistic 4-Tier Layered Forest Pine Tree
+    // 2. Layered Pine Tree
     const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.65, 3.5, 7), treeMats.bark);
     trunk.position.y = 1.75;
     tree.add(trunk);
@@ -421,7 +418,7 @@ function createRealistic3DTree(typeIndex) {
       tree.add(cone);
     }
   } else {
-    // 3. Attractive Pink Blossom Tree
+    // 3. Pink Blossom Tree
     const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.65, 4.2, 7), treeMats.bark);
     trunk.position.y = 2.1;
     tree.add(trunk);
@@ -445,7 +442,6 @@ function createForestSurroundings(totalLen) {
   while (envGroup.children.length > 0) envGroup.remove(envGroup.children[0]);
   animatedTrees.length = 0;
 
-  // Lush Green Grass Meadows along Left & Right sides of the Road
   [-1, 1].forEach(side => {
     const meadow = new THREE.Mesh(
       new THREE.BoxGeometry(55, 2, totalLen + 140),
@@ -455,10 +451,8 @@ function createForestSurroundings(totalLen) {
     envGroup.add(meadow);
   });
 
-  // Populate Realistic 3D Trees, Flower Bushes & Roadside Lanterns
   for (let z = 12; z > -totalLen - 90; z -= 14) {
     [-1, 1].forEach(side => {
-      // Near Row of 3D Trees
       const treeType = Math.abs(Math.floor(z * side)) % 3;
       const tree1 = createRealistic3DTree(treeType);
       const scale1 = 0.85 + Math.random() * 0.45;
@@ -468,7 +462,6 @@ function createForestSurroundings(totalLen) {
       envGroup.add(tree1);
       animatedTrees.push(tree1);
 
-      // Outer Background Forest Row
       if (Math.random() > 0.25) {
         const tree2 = createRealistic3DTree((treeType + 1) % 3);
         tree2.scale.setScalar(1.1 + Math.random() * 0.5);
@@ -478,7 +471,6 @@ function createForestSurroundings(totalLen) {
         animatedTrees.push(tree2);
       }
 
-      // Roadside Flowering Shrubs & Glowing Lanterns every 28 units
       if (Math.abs(z) % 28 === 0) {
         const bush = new THREE.Mesh(new THREE.DodecahedronGeometry(1.1, 1), treeMats.bush);
         bush.position.set(side * 9.5, 0.4, z);
@@ -490,7 +482,6 @@ function createForestSurroundings(totalLen) {
         bush.add(flower);
         envGroup.add(bush);
 
-        // Glowing Roadside Lamp Post
         const post = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 4.2, 6), treeMats.lanternPost);
         post.position.set(side * 8.3, 2.1, z + 6);
         const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.38, 8, 8), treeMats.lanternGlow);
@@ -502,7 +493,7 @@ function createForestSurroundings(totalLen) {
   }
 }
 
-// --- 6. LEVEL BUILDER: BOSS EVERY 3 & 5 LEVELS + END BALLOON TRAPS & SCORE STAIRS ---
+// --- 6. LEVEL BUILDER ---
 const levelGroup = new THREE.Group();
 scene.add(levelGroup);
 
@@ -528,7 +519,6 @@ function createTextBannerTexture(label, bgColor, borderColor = '#ffffff') {
   return new THREE.CanvasTexture(canvas);
 }
 
-// Single Clean Obstacle per Step
 function createSingleObstacle(stepIdx, z) {
   const type = stepIdx % 3;
   if (type === 0) {
@@ -562,7 +552,6 @@ function createSingleObstacle(stepIdx, z) {
   }
 }
 
-// Create 3D Floating Balloon Trap for Finale
 function createBalloonTrap(x, y, z, colorHex, bonusCoins) {
   const bGroup = new THREE.Group();
 
@@ -609,7 +598,6 @@ function buildLevel(lvl) {
   poppedBalloonsCount = 0;
   reachedMultiplier = 1;
 
-  // Boss Task Check: Mega-Boss every 5 levels, Mini-Boss every 3 levels!
   const isMegaBoss = (lvl % 5 === 0);
   const isMiniBoss = (!isMegaBoss && lvl % 3 === 0);
   const hasBossTask = isMegaBoss || isMiniBoss;
@@ -624,7 +612,6 @@ function buildLevel(lvl) {
   const TRACK_WIDTH = 15.4;
   const FINALE_LENGTH = 85;
 
-  // Main Road & Curbs
   const road = new THREE.Mesh(
     new THREE.BoxGeometry(TRACK_WIDTH, 2, levelLength + FINALE_LENGTH + 40),
     new THREE.MeshLambertMaterial({ color: 0xf8fafc })
@@ -639,7 +626,6 @@ function buildLevel(lvl) {
   rightCurb.position.set(TRACK_WIDTH / 2 + 0.25, -0.9, -(levelLength + FINALE_LENGTH) / 2 + 15);
   levelGroup.add(leftCurb, rightCurb);
 
-  // Track Steps (Gates, Single Obstacle, Enemy / Boss Task)
   for (let step = 1; step <= totalSteps; step++) {
     const baseZ = -step * STEP_SPACING + 30;
     const addValue = step % 2 === 0 ? 15 : 10;
@@ -665,7 +651,6 @@ function buildLevel(lvl) {
     }
   }
 
-  // --- END-OF-LEVEL SCORE STAIRS, BALLOON TRAPS & TREASURE CHEST ---
   const finishStartZ = -levelLength + 12;
   const stairColors = [0x38bdf8, 0x22c55e, 0x84cc16, 0xeab308, 0xf97316, 0xef4444, 0xec4899, 0xa855f7, 0x6366f1, 0xfacc15];
   const balloonColors = [0xef4444, 0xf59e0b, 0x10b981, 0xec4899, 0x8b5cf6];
@@ -675,7 +660,6 @@ function buildLevel(lvl) {
     const stepZ = finishStartZ - s * 7.0;
     const stepY = s * 0.55;
 
-    // Colored Multiplier Step Platform
     const platform = new THREE.Mesh(
       new THREE.BoxGeometry(TRACK_WIDTH - 0.6, 0.55, 6.8),
       new THREE.MeshLambertMaterial({ color: stairColors[s] })
@@ -683,7 +667,6 @@ function buildLevel(lvl) {
     platform.position.set(0, stepY + 0.27, stepZ);
     levelGroup.add(platform);
 
-    // Side Multiplier Sign Banner (x1, x2 ... x10)
     const signBanner = new THREE.Mesh(
       new THREE.PlaneGeometry(3.2, 1.6),
       new THREE.MeshBasicMaterial({
@@ -702,14 +685,12 @@ function buildLevel(lvl) {
       reached: false
     });
 
-    // Spawn 3 Colorful Balloon Traps on Each Step!
     [-3.2, 0, 3.2].forEach((bx, bIdx) => {
       const bColor = balloonColors[(s + bIdx) % balloonColors.length];
       balloonTraps.push(createBalloonTrap(bx, stepY + 0.55, stepZ, bColor, 15 + s * 5));
     });
   }
 
-  // Grand Golden Treasure Chest at the Top of x10 Stairs
   const chestGroup = new THREE.Group();
   const chestBase = new THREE.Mesh(
     new THREE.BoxGeometry(4.5, 2.4, 3.0),
@@ -842,7 +823,7 @@ function damageEnemyOrBoss(eg) {
   eg.count--;
   if (eg.isBoss) {
     eg.badge.textContent = `${eg.labelPrefix}: ${Math.max(0, eg.count)}`;
-    bossHpText.textContent = Math.max(0, eg.count);
+    bossTitleText.textContent = `${eg.labelPrefix} (${Math.max(0, eg.count)} HP)`;
     bossBarFill.style.width = `${Math.max(0, (eg.count / eg.maxCount) * 100)}%`;
     spawnParticles(eg.mesh.position, 'red', 3);
   } else {
@@ -867,7 +848,7 @@ function showEndLevelScoreModal() {
   coinAmountEl.textContent = coins;
 
   modalTitle.textContent = `🎉 Level ${currentLevel} Complete!`;
-  modalSubtitle.textContent = `अद्भुతమైన విజయం! స్కోర్ వివరాలు చూడండి:`;
+  modalSubtitle.textContent = `అద్భుతమైన విజయం! స్కోర్ వివరాలు చూడండి:`;
   scSurvivors.textContent = survivorsAtFinish;
   scBalloons.textContent = `${poppedBalloonsCount} (+${balloonBonus}$)`;
   scMult.textContent = `x${reachedMultiplier}`;
@@ -989,12 +970,10 @@ function animate() {
 
   updateParticles(dt);
 
-  // Gentle Wind Sway Animation on Realistic 3D Trees
   animatedTrees.forEach(tree => {
     tree.rotation.z = Math.sin(elapsed * tree.userData.speed + tree.userData.phase) * 0.045;
   });
 
-  // Floating Balloon Bobbing Animation
   balloonTraps.forEach(b => {
     if (!b.popped) {
       b.mesh.position.y = b.baseY + Math.sin(elapsed * 3.0 + b.phase) * 0.25;
@@ -1002,7 +981,6 @@ function animate() {
     }
   });
 
-  // Obstacle Animations
   obstacles.forEach(obs => {
     if (obs.modelType === 'crossSaw') obs.bladesGroup.rotation.y += 4.5 * dt;
     else if (obs.modelType === 'sawPillar') {
@@ -1029,12 +1007,10 @@ function animate() {
       }
     });
 
-    // --- STATE A: END-OF-LEVEL BALLOON TRAPS & SCORE STAIRS FINALE ---
     if (isEndingFinale) {
       playerCrowdGroup.position.x += (targetX - playerCrowdGroup.position.x) * Math.min(1, dt * 10);
       playerCrowdGroup.position.z -= 13.5 * dt;
 
-      // Pop Balloon Traps when avatars touch them!
       balloonTraps.forEach(b => {
         if (!b.popped && Math.abs(playerCrowdGroup.position.z - b.z) < 1.8) {
           if (Math.abs(playerCrowdGroup.position.x - b.x) < 2.6) {
@@ -1048,7 +1024,6 @@ function animate() {
         }
       });
 
-      // Climb Multiplier Stairs (x1 to x10)
       bonusStairs.forEach(st => {
         if (!st.reached && playerCrowdGroup.position.z <= st.z + 2.5) {
           st.reached = true;
@@ -1057,7 +1032,6 @@ function animate() {
           battleBanner.textContent = `🎈 SCORE MULTIPLIER: x${reachedMultiplier}! 🎈`;
           spawnParticles(playerCrowdGroup.position, 'confetti', 8);
 
-          // Leave avatars behind on each step to check how high your crowd score reaches!
           playerCount = Math.max(0, playerCount - st.cost);
           syncPlayerCrowdMeshes();
 
@@ -1069,9 +1043,7 @@ function animate() {
           }
         }
       });
-    }
-    // --- STATE B: BOSS TASK / CLASH BATTLE MODE ---
-    else if (activeBattleGroup) {
+    } else if (activeBattleGroup) {
       const eg = activeBattleGroup;
       playerCrowdGroup.position.x += (eg.x - playerCrowdGroup.position.x) * (dt * 6);
       playerCrowdGroup.position.z += ((eg.z + 2.2) - playerCrowdGroup.position.z) * (dt * 6);
@@ -1103,9 +1075,7 @@ function animate() {
           resumeBtn.textContent = 'Retry Level'; modalOverlay.classList.remove('hidden');
         }
       }
-    }
-    // --- STATE C: NORMAL RUNNING MODE ---
-    else if (isRunning) {
+    } else if (isRunning) {
       playerCrowdGroup.position.x += (targetX - playerCrowdGroup.position.x) * Math.min(1, dt * 10);
       playerCrowdGroup.position.z -= (15.0 + currentLevel * 0.15) * dt;
 
@@ -1142,7 +1112,7 @@ function animate() {
             battleBanner.textContent = eg.isBoss ? `${eg.labelPrefix} FIGHT!` : '⚔️ CLASH BATTLE! ⚔️';
             battleBanner.classList.remove('hidden');
             if (eg.isBoss) {
-              bossTitleText.innerHTML = `${eg.labelPrefix} (<span id="boss-hp-text">${eg.count}</span> HP)`;
+              bossTitleText.textContent = `${eg.labelPrefix} (${eg.count} HP)`;
               bossBarFill.style.width = '100%';
               bossHud.classList.remove('hidden');
             }
@@ -1159,7 +1129,6 @@ function animate() {
         modalOverlay.classList.remove('hidden');
       }
 
-      // Enter Balloon & Score Stairs Finale!
       if (playerCrowdGroup.position.z <= -levelLength + 14) {
         isEndingFinale = true;
         survivorsAtFinish = playerCount;
@@ -1170,7 +1139,6 @@ function animate() {
     }
   }
 
-  // Smooth Camera Tracking (Follows vertical stair climb too!)
   camera.position.set(0, playerCrowdGroup.position.y + 14.2, playerCrowdGroup.position.z + 19.5);
   camera.lookAt(0, playerCrowdGroup.position.y + 1.2, playerCrowdGroup.position.z - 16);
 
