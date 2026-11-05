@@ -432,9 +432,22 @@
             background: rgba(100,100,100,0.1);
             padding: 12px 16px;
             border-radius: 14px;
-            margin-bottom: 20px;
+            margin-bottom: 14px;
             font-weight: 800;
             font-size: 14px;
+        }
+
+        .notif-btn {
+            width: 100%;
+            background: #10b981;
+            color: #fff;
+            border: none;
+            padding: 11px;
+            border-radius: 14px;
+            font-weight: 900;
+            font-size: 13px;
+            cursor: pointer;
+            margin-bottom: 12px;
         }
 
         .close-settings {
@@ -489,10 +502,8 @@
 </head>
 <body id="app-body">
 
-    <!-- Background Audio Element using app.mp3 (Low Volume, Loops Automatically) -->
-    <audio id="bg-music" loop preload="auto">
-        <source src="app.mp3" type="audio/mpeg">
-    </audio>
+    <!-- Continuous Background Audio Element (stgames-apk/app.mp3) -->
+    <audio id="bg-music" src="app.mp3" loop preload="auto"></audio>
 
     <!-- Top Online / Offline Mode Bar -->
     <div class="mode-bar">
@@ -544,7 +555,7 @@
             
             <p style="font-size: 13px; opacity: 0.8; margin-bottom: 8px;">Background Music (Low Volume):</p>
             <div class="setting-toggle-row">
-                <span>🎵 Arcade BGM</span>
+                <span>🎵 Arcade BGM (app.mp3)</span>
                 <input type="checkbox" id="music-toggle" onchange="toggleMusic(this)" style="width: 20px; height: 20px; cursor: pointer;">
             </div>
 
@@ -556,6 +567,7 @@
                 <div class="theme-option neon" onclick="setTheme('theme-neon')">🌌 Neon Cyber</div>
             </div>
 
+            <button class="notif-btn" onclick="requestAndSendInstantNotification(true)">🔔 Enable / Test Notifications</button>
             <button class="close-settings" onclick="closeSettings()">Save & Close</button>
         </div>
     </div>
@@ -566,11 +578,17 @@
             <span id="playing-title" style="font-weight: 800; font-size: 14px;">Game</span>
             <button class="back-home-btn" onclick="closeGame()"><i class="fa-solid fa-xmark"></i> EXIT</button>
         </div>
-        <iframe id="game-frame" src=""></iframe>
+        <iframe id="game-frame" src="" allow="autoplay"></iframe>
     </div>
 
 <script>
     const BASE_URL = "https://stgames.online/";
+    const SONG_URL = "https://stgames.online/stgames-apk/app.mp3";
+
+    // Register Service Worker so Android notifications & offline caching work
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
 
     const GAMES_DATA = [
       { id: "game-mw3654pa", title: "Wheel master", url: "game/Wheel master/index.html", logo: "logo/game-1793861007180-5455.jpg", categories: ["popular"], badge: "✨ NEW", bg: "linear-gradient(135deg, #6366f1, #4338ca)" },
@@ -597,34 +615,73 @@
     let currentCategory = 'all';
     let savedGameIds = JSON.parse(localStorage.getItem('st_saved_offline_games') || '[]');
 
-    // Load saved theme & music settings
+    // Load saved theme
     const savedTheme = localStorage.getItem('st_app_theme') || '';
     if (savedTheme) document.getElementById('app-body').className = savedTheme;
 
-    const musicEnabled = localStorage.getItem('st_music_enabled') !== 'false'; // Default true
-    document.getElementById('music-toggle').checked = musicEnabled;
+    // --- CONTINUOUS BACKGROUND MUSIC SYSTEM (stgames-apk/app.mp3) ---
+    let musicEnabled = localStorage.getItem('st_music_enabled') !== 'false';
+    const musicToggle = document.getElementById('music-toggle');
+    musicToggle.checked = musicEnabled;
 
     const bgMusic = document.getElementById('bg-music');
-    bgMusic.volume = 0.2; // Low pleasant background volume
+    bgMusic.volume = 0.25; // Low pleasant volume
 
-    // Auto-start music on first user interaction (browser policy compliance)
-    document.addEventListener('click', () => {
-        if (musicEnabled && bgMusic.paused) {
+    // Fallback to full URL if relative path fails
+    bgMusic.addEventListener('error', () => {
+        if (bgMusic.src !== SONG_URL) {
+            bgMusic.src = SONG_URL;
+            if (musicEnabled) bgMusic.play().catch(() => {});
+        }
+    });
+
+    function ensureMusicPlaying() {
+        if (musicEnabled && bgMusic.paused && !document.hidden) {
             bgMusic.play().catch(() => {});
         }
-    }, { once: true });
+    }
 
-    if (musicEnabled) {
-        bgMusic.play().catch(() => {});
+    // If an iframe game tries to pause parent audio, resume it automatically
+    bgMusic.addEventListener('pause', () => {
+        if (musicEnabled && !document.hidden) {
+            setTimeout(ensureMusicPlaying, 150);
+        }
+    });
+
+    // Pause only when phone screen locks or app is minimized, resume on return
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            bgMusic.pause();
+        } else {
+            ensureMusicPlaying();
+        }
+    });
+
+    // Start music & check notification permission on first user touch/click
+    ['click', 'touchstart', 'pointerdown'].forEach(evt => {
+        document.addEventListener(evt, () => {
+            ensureMusicPlaying();
+            requestAndSendInstantNotification(false);
+        }, { once: true, passive: true });
+    });
+
+    ensureMusicPlaying();
+
+    // Cache app.mp3 for offline playback
+    if ('caches' in window && navigator.onLine) {
+        caches.open('stgames-apk-cache-v1').then(cache => {
+            cache.add('app.mp3').catch(() => {});
+            cache.add(SONG_URL).catch(() => {});
+        });
     }
 
     function toggleMusic(checkbox) {
-        if (checkbox.checked) {
+        musicEnabled = checkbox.checked;
+        localStorage.setItem('st_music_enabled', musicEnabled ? 'true' : 'false');
+        if (musicEnabled) {
             bgMusic.play().catch(() => {});
-            localStorage.setItem('st_music_enabled', 'true');
         } else {
             bgMusic.pause();
-            localStorage.setItem('st_music_enabled', 'false');
         }
     }
 
@@ -716,6 +773,9 @@
     }
 
     async function openAndSaveGame(game) {
+        // Ask for notification permission & trigger instant notification if needed
+        requestAndSendInstantNotification(false);
+
         const targetUrl = fullUrl(game.url);
         const logoUrl = fullUrl(game.logo);
 
@@ -739,19 +799,20 @@
             renderGames();
         }
 
+        const frame = document.getElementById('game-frame');
         document.getElementById('playing-title').innerText = game.title;
-        document.getElementById('game-frame').src = targetUrl;
+        frame.src = targetUrl;
         document.getElementById('player-modal').classList.add('open');
-        
-        // Ensure background music continues playing underneath the game iframe
-        if (musicEnabled && bgMusic.paused) {
-            bgMusic.play().catch(() => {});
-        }
+
+        // Keep app.mp3 playing when the game iframe loads
+        ensureMusicPlaying();
+        frame.onload = () => ensureMusicPlaying();
     }
 
     function closeGame() {
         document.getElementById('game-frame').src = '';
         document.getElementById('player-modal').classList.remove('open');
+        ensureMusicPlaying();
     }
 
     function playRandomGame() {
@@ -796,40 +857,83 @@
         localStorage.setItem('st_app_theme', themeClassName);
     }
 
-    // --- 6-HOUR OFFLINE NOTIFICATION SYSTEM ---
-    function initSmartNotifications() {
-        if (!("Notification" in window)) return;
-        
-        if (Notification.permission === "default") {
-            Notification.requestPermission();
+    // --- INSTANT + 6-HOUR RECURRING NOTIFICATION SYSTEM (ANDROID & PWA COMPATIBLE) ---
+    const funnyMessages = [
+        "🚨 Bro your high scores are crying in ST Games! Come back before the Wi-Fi police arrives 😂",
+        "🎮 Your offline games are getting lonely! Jump back into ST Games and beat your record.",
+        "🔥 Boredom detected! Your favorite arcade games are waiting for you in ST Games.",
+        "⚡ No internet? No problem! Your downloaded games in ST Games are ready offline!",
+        "👑 The gaming throne is empty! Someone is about to steal your crown on ST Games 🏆"
+    ];
+
+    const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
+
+    async function displayAppNotification(title, bodyText) {
+        if (!("Notification" in window) || Notification.permission !== "granted") return;
+
+        const options = {
+            body: bodyText,
+            icon: "launchericon-192x192.png",
+            badge: "launchericon-192x192.png",
+            vibrate: [200, 100, 200]
+        };
+
+        // Android Chrome/PWA requires ServiceWorkerRegistration.showNotification
+        if ('serviceWorker' in navigator) {
+            try {
+                const reg = await navigator.serviceWorker.getRegistration();
+                if (reg && reg.showNotification) {
+                    await reg.showNotification(title, options);
+                    return;
+                }
+            } catch (e) {}
         }
 
-        const funnyMessages = [
-            "🚨 Bro your high scores are crying in ST Games! Come back before the Wi-Fi police arrives 😂",
-            "🎮 Your offline games are getting lonely! Jump back into ST Games and beat your record.",
-            "🔥 Boredom detected! Your favorite arcade games are waiting for you in ST Games.",
-            "⚡ Quick break? Your downloaded games in ST Games are ready to play instantly offline!",
-            "👑 The gaming throne is empty! Someone is about to steal your crown on ST Games 🏆"
-        ];
+        // Fallback for standard browsers
+        try {
+            new Notification(title, options);
+        } catch (e) {}
+    }
 
-        const lastNotifTime = localStorage.getItem('st_last_notif_time') || 0;
-        const now = Date.now();
-        const sixHours = 6 * 60 * 60 * 1000;
+    function sendRandomFunnyNotification() {
+        const randomMsg = funnyMessages[Math.floor(Math.random() * funnyMessages.length)];
+        displayAppNotification("ST Games 🎮", randomMsg);
+        localStorage.setItem('st_last_notif_time', Date.now().toString());
+    }
 
-        if (now - lastNotifTime > sixHours) {
-            if (Notification.permission === "granted") {
-                const randomMsg = funnyMessages[Math.floor(Math.random() * funnyMessages.length)];
-                new Notification("ST Games 🎮", {
-                    body: randomMsg,
-                    icon: "launchericon-192x192.png"
-                });
-                localStorage.setItem('st_last_notif_time', now);
+    function requestAndSendInstantNotification(forceTest) {
+        if (!("Notification" in window)) return;
+
+        if (Notification.permission === "default") {
+            Notification.requestPermission().then(permission => {
+                if (permission === "granted") {
+                    sendRandomFunnyNotification();
+                }
+            });
+        } else if (Notification.permission === "granted") {
+            const lastNotifTime = parseInt(localStorage.getItem('st_last_notif_time') || '0', 10);
+            const now = Date.now();
+
+            // Send immediately if never sent before, if forced via Settings, or if 6 hours have elapsed
+            if (forceTest || lastNotifTime === 0 || (now - lastNotifTime >= SIX_HOURS_MS)) {
+                sendRandomFunnyNotification();
             }
         }
     }
 
-    setInterval(initSmartNotifications, 60 * 60 * 1000);
-    setTimeout(initSmartNotifications, 5000);
+    function checkSixHourNotificationLoop() {
+        if (!("Notification" in window) || Notification.permission !== "granted") return;
+        const lastNotifTime = parseInt(localStorage.getItem('st_last_notif_time') || '0', 10);
+        const now = Date.now();
+
+        if (lastNotifTime === 0 || (now - lastNotifTime >= SIX_HOURS_MS)) {
+            sendRandomFunnyNotification();
+        }
+    }
+
+    // Attempt on startup & run a background check every 5 minutes to catch the exact 6-hour mark
+    setTimeout(() => requestAndSendInstantNotification(false), 1500);
+    setInterval(checkSixHourNotificationLoop, 5 * 60 * 1000);
 
     function handleNetworkChange() {
         const dot = document.getElementById('net-dot');
