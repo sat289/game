@@ -3,281 +3,776 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ST Games - Arcade Launcher</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts: Fredoka & Inter for Arcade / Casual look -->
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
-    <!-- FontAwesome for Icons -->
+    <title>ST Games App</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body {
-            font-family: 'Fredoka', 'Inter', sans-serif;
-            background-color: #e0f2fe;
-            color: #1e293b;
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
-        /* Custom scrollbar hiding */
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
+
+        body {
+            background-color: #f0f9ff;
+            color: #1e293b;
+            padding-bottom: 110px;
+            overflow-x: hidden;
         }
-        .no-scrollbar {
-            -ms-overflow-style: none;
+
+        /* Online / Offline Top App Switcher */
+        .mode-bar {
+            background: #0f172a;
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 200;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+        }
+
+        .app-brand {
+            color: #fff;
+            font-weight: 900;
+            font-size: 16px;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 8px #22c55e;
+        }
+        .status-dot.offline {
+            background: #ef4444;
+            box-shadow: 0 0 8px #ef4444;
+        }
+
+        .mode-toggle {
+            display: flex;
+            background: #1e293b;
+            border-radius: 25px;
+            padding: 3px;
+            border: 1px solid #334155;
+        }
+
+        .mode-btn {
+            border: none;
+            background: transparent;
+            color: #94a3b8;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: 0.25s;
+        }
+
+        .mode-btn.active {
+            background: #3b82f6;
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.5);
+        }
+
+        /* Category Filter Bar (Matches Screenshot) */
+        .category-nav {
+            background: #d8f3fe;
+            margin: 12px 14px;
+            padding: 6px;
+            border-radius: 30px;
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
             scrollbar-width: none;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
         }
-        /* Arcade Button Glow */
-        .arcade-btn {
+        .category-nav::-webkit-scrollbar { display: none; }
+
+        .cat-pill {
+            border: 2px solid transparent;
+            background: transparent;
+            color: #2563eb;
+            padding: 7px 18px;
+            border-radius: 22px;
+            font-weight: 800;
+            font-size: 14px;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .cat-pill.active {
+            background: #93dbfb;
+            border-color: #0284c7;
+            color: #0369a1;
+            box-shadow: 0 2px 6px rgba(2, 132, 199, 0.15);
+        }
+
+        /* 2-Column Arcade Game Grid */
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+            padding: 4px 14px;
+        }
+
+        .game-card {
+            background: #fff;
+            border-radius: 22px;
+            padding: 6px;
+            box-shadow: 0 6px 14px rgba(148, 163, 184, 0.25);
+            border: 3px solid #e2e8f0;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.15s;
+            overflow: hidden;
+            aspect-ratio: 1 / 1.18;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .game-card:active {
+            transform: scale(0.96);
+        }
+
+        .card-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .card-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.05) 45%, rgba(0,0,0,0.4) 100%);
+            z-index: 1;
+        }
+
+        .card-header {
+            position: relative;
+            z-index: 2;
+            padding: 10px 10px 0;
+        }
+
+        .game-title {
+            color: #fff;
+            font-size: 14px;
+            font-weight: 900;
+            text-transform: uppercase;
+            line-height: 1.15;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .title-underline {
+            width: 28px;
+            height: 3.5px;
+            background: #fff;
+            border-radius: 2px;
+            margin-top: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+
+        .card-footer {
+            position: relative;
+            z-index: 2;
+            padding: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        /* NEW! Sticker Badge */
+        .game-badge {
+            background: #22c55e;
+            color: #fff;
+            font-weight: 900;
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 12px 12px 12px 4px;
+            border: 2px solid #fff;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.25);
+            text-transform: uppercase;
+        }
+
+        /* Saved Offline Status Icon */
+        .dl-indicator {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            background: rgba(15, 23, 42, 0.75);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            border: 1.5px solid rgba(255,255,255,0.4);
+            margin-left: auto;
+        }
+        .dl-indicator.saved {
+            background: #10b981;
+            border-color: #fff;
+        }
+
+        /* Offline Warning / Empty State Box */
+        .empty-box {
+            grid-column: 1 / -1;
+            background: #fff;
+            border-radius: 20px;
+            padding: 35px 20px;
+            text-align: center;
+            border: 3px dashed #cbd5e1;
+            margin: 15px 0;
+        }
+        .empty-box i {
+            font-size: 44px;
+            color: #3b82f6;
+            margin-bottom: 12px;
+        }
+        .empty-box h3 {
+            font-size: 18px;
+            margin-bottom: 6px;
+            color: #0f172a;
+        }
+        .empty-box p {
+            font-size: 14px;
+            color: #64748b;
+            margin-bottom: 18px;
+            line-height: 1.4;
+        }
+        .action-btn {
+            background: #22c55e;
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: 900;
+            font-size: 14px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.35);
+        }
+
+        /* Bottom Arcade Navigation Bar (Matches Screenshot) */
+        .bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 76px;
+            background: #bae6fd;
+            border-top: 3px solid #7dd3fc;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 22px;
+            z-index: 300;
+        }
+
+        .side-circle-btn {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            background: #e0f2fe;
+            border: 3px solid #0284c7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            position: relative;
+        }
+        .side-circle-btn:active { transform: scale(0.92); }
+
+        .ads-text {
+            font-weight: 900;
+            font-size: 15px;
+            color: #f59e0b;
+            text-shadow: 1px 1px 0 #78350f, -1px -1px 0 #78350f, 1px -1px 0 #78350f, -1px 1px 0 #78350f;
+        }
+        .ads-slash {
+            position: absolute;
+            width: 75%;
+            height: 4px;
+            background: #ef4444;
+            transform: rotate(-30deg);
+            border-radius: 2px;
+        }
+
+        .play-main-btn {
+            width: 175px;
+            height: 68px;
+            margin-top: -28px;
             background: linear-gradient(180deg, #4ade80 0%, #16a34a 100%);
-            box-shadow: 0 6px 0 #15803d, 0 10px 15px rgba(22, 163, 74, 0.4);
-            transition: all 0.1s ease;
+            border: 5px solid #e0f2fe;
+            outline: 3px solid #0284c7;
+            border-radius: 40px;
+            color: #fff;
+            font-size: 26px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-shadow: 0 2px 3px rgba(0,0,0,0.35);
+            box-shadow: 0 6px 0 #15803d, 0 10px 18px rgba(0,0,0,0.25);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .arcade-btn:active {
-            transform: translateY(4px);
-            box-shadow: 0 2px 0 #15803d, 0 5px 8px rgba(22, 163, 74, 0.4);
+        .play-main-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 3px 0 #15803d, 0 5px 10px rgba(0,0,0,0.2);
+        }
+
+        /* Fullscreen In-App Game Player Modal */
+        .player-modal {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            z-index: 999;
+            display: none;
+            flex-direction: column;
+        }
+        .player-modal.open { display: flex; }
+
+        .player-top-bar {
+            height: 46px;
+            background: #0f172a;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 14px;
+            color: #fff;
+            border-bottom: 1px solid #334155;
+        }
+        .back-home-btn {
+            background: #ef4444;
+            color: #fff;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 15px;
+            font-weight: 800;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        #game-frame {
+            flex: 1;
+            width: 100%;
+            border: none;
+            background: #000;
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col pb-28">
+<body>
 
-    <!-- Offline Status Banner -->
-    <div id="offline-banner" class="bg-red-500 text-white text-xs font-bold text-center py-1 px-4 hidden sticky top-0 z-50 shadow-md">
-        <i class="fa-solid fa-triangle-exclamation mr-1"></i> Offline Mode: Showing Downloaded Games Only
-    </div>
-
-    <!-- App Header & Mode Switcher -->
-    <header class="bg-white/80 backdrop-blur-md px-4 py-3 sticky top-0 z-40 border-b border-sky-100 shadow-sm">
-        <div class="flex items-center justify-between mb-3">
-            <div class="flex items-center space-x-2">
-                <div class="bg-gradient-to-tr from-sky-400 to-indigo-500 text-white p-2 rounded-xl shadow-md">
-                    <i class="fa-solid fa-gamepad text-lg"></i>
-                </div>
-                <div>
-                    <h1 class="text-lg font-bold text-sky-900 leading-tight">ST Games</h1>
-                    <p class="text-xs text-sky-600 font-semibold" id="connection-status-text">Online Cloud Hub</p>
-                </div>
-            </div>
-
-            <!-- Online / Offline App Mode Buttons -->
-            <div class="bg-sky-100 p-1 rounded-full flex items-center shadow-inner">
-                <button id="mode-online-btn" onclick="switchAppMode('online')" class="px-3 py-1 text-xs font-bold rounded-full bg-sky-500 text-white shadow-sm transition-all">
-                    Online
-                </button>
-                <button id="mode-offline-btn" onclick="switchAppMode('offline')" class="px-3 py-1 text-xs font-bold rounded-full text-sky-700 transition-all">
-                    Offline
-                </button>
-            </div>
+    <!-- Top Online / Offline Mode Bar -->
+    <div class="mode-bar">
+        <div class="app-brand">
+            <div id="net-dot" class="status-dot"></div>
+            <span>ST GAMES</span>
         </div>
-
-        <!-- Category Filter Pills -->
-        <div class="flex space-x-2 overflow-x-auto no-scrollbar pb-1">
-            <button onclick="filterCategory('All', this)" class="cat-pill px-5 py-2 rounded-full text-sm font-bold bg-sky-500 text-white shadow-md shadow-sky-200 whitespace-nowrap transition-all">All</button>
-            <button onclick="filterCategory('Casual', this)" class="cat-pill px-5 py-2 rounded-full text-sm font-bold bg-white text-sky-700 border-2 border-sky-100 whitespace-nowrap transition-all">Casual</button>
-            <button onclick="filterCategory('Antistress', this)" class="cat-pill px-5 py-2 rounded-full text-sm font-bold bg-white text-sky-700 border-2 border-sky-100 whitespace-nowrap transition-all">Antistress</button>
-            <button onclick="filterCategory('Challenge', this)" class="cat-pill px-5 py-2 rounded-full text-sm font-bold bg-white text-sky-700 border-2 border-sky-100 whitespace-nowrap transition-all">Challenge</button>
-        </div>
-    </header>
-
-    <!-- Main Game Cards Grid Container -->
-    <main class="flex-1 p-4 max-w-md mx-auto w-full">
-        <div id="game-grid" class="grid grid-cols-2 gap-4">
-            <!-- Dynamically populated game cards -->
-        </div>
-    </main>
-
-    <!-- Sticky Bottom Navigation Bar matching screenshot design -->
-    <nav class="fixed bottom-0 left-0 right-0 bg-sky-100/90 backdrop-blur-lg border-t border-sky-200 px-6 py-3 flex items-center justify-between z-40 max-w-md mx-auto shadow-2xl">
-        <!-- Left Ads / Reward Button -->
-        <button onclick="openAdsModal()" class="w-12 h-12 rounded-full bg-amber-400 border-2 border-white shadow-lg flex items-center justify-center text-amber-900 font-extrabold text-sm hover:scale-105 active:scale-95 transition-transform">
-            ADS
-        </button>
-
-        <!-- Center Prominent Green Play Button -->
-        <button onclick="launchRandomGame()" class="arcade-btn px-8 py-3 rounded-full text-white font-extrabold text-xl tracking-wider flex items-center justify-center space-x-2 border-2 border-green-300">
-            <span>PLAY</span>
-            <i class="fa-solid fa-play text-sm"></i>
-        </button>
-
-        <!-- Right Settings Gear Button -->
-        <button onclick="openSettingsModal()" class="w-12 h-12 rounded-full bg-sky-400 border-2 border-white shadow-lg flex items-center justify-center text-white text-lg hover:rotate-90 transition-transform duration-300">
-            <i class="fa-solid fa-gear"></i>
-        </button>
-    </nav>
-
-    <!-- Modal Notification / Game Launch Dialog -->
-    <div id="game-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center border-4 border-sky-300 animate-bounce-in">
-            <div id="modal-game-icon" class="w-20 h-20 mx-auto mb-3 rounded-2xl bg-sky-100 flex items-center justify-center text-3xl text-sky-500 shadow-inner">
-                🎮
-            </div>
-            <h3 id="modal-title" class="text-xl font-bold text-sky-900 mb-1">Game Title</h3>
-            <p id="modal-desc" class="text-xs text-slate-500 mb-5">Downloading game assets for offline playback...</p>
-            
-            <div class="flex space-x-3">
-                <button onclick="closeModal()" class="flex-1 py-3 bg-slate-200 font-bold text-slate-700 rounded-2xl active:scale-95 transition-all">Cancel</button>
-                <button id="modal-play-btn" onclick="executePlayGame()" class="flex-1 py-3 bg-green-500 font-bold text-white rounded-2xl shadow-lg shadow-green-200 active:scale-95 transition-all">Start Game</button>
-            </div>
+        <div class="mode-toggle">
+            <button id="btn-online" class="mode-btn active" onclick="setAppMode('online')">ONLINE</button>
+            <button id="btn-offline" class="mode-btn" onclick="setAppMode('offline')">OFFLINE (<span id="saved-count">0</span>)</button>
         </div>
     </div>
 
-    <!-- JavaScript Game Launcher Logic & Caching -->
-    <script>
-        // Game Catalog mimicking the requested screenshot layout & style
-        const gamesDatabase = [
-            { id: 'restroom', title: 'FIND RESTROOM', category: 'Casual', tag: 'NEW!', bg: 'bg-sky-50', border: 'border-sky-300', icon: '🏃‍♂️', url: '#' },
-            { id: 'parking', title: 'MARKED PARKING', category: 'Challenge', tag: '', bg: 'bg-emerald-50', border: 'border-emerald-300', icon: '🚗', url: '#' },
-            { id: 'shoot', title: 'SHOOT', category: 'Challenge', tag: '', bg: 'bg-lime-50', border: 'border-lime-300', icon: '🚀', url: '#' },
-            { id: 'thief', title: 'Catch The Thief', category: 'Casual', tag: '', bg: 'bg-cyan-50', border: 'border-cyan-300', icon: '🕵️‍♂️', url: '#' },
-            { id: 'fruit', title: 'FRUIT MERGE', category: 'Antistress', tag: '', bg: 'bg-amber-50', border: 'border-amber-300', icon: '🍉', url: '#' },
-            { id: 'dog', title: 'CRAZY DOG', category: 'Antistress', tag: '', bg: 'bg-yellow-50', border: 'border-yellow-300', icon: '🐶', url: '#' },
-            { id: 'bulb', title: 'LIGHT BULB', category: 'Challenge', tag: '', bg: 'bg-indigo-50', border: 'border-indigo-300', icon: '💡', url: '#' },
-            { id: 'glass', title: 'HAPPY GLASS', category: 'Casual', tag: '', bg: 'bg-orange-50', border: 'border-orange-300', icon: '🥛', url: '#' }
-        ];
+    <!-- Category Filter Pills -->
+    <div class="category-nav">
+        <button class="cat-pill active" onclick="setCategory('all', this)">All</button>
+        <button class="cat-pill" onclick="setCategory('popular', this)">Popular</button>
+        <button class="cat-pill" onclick="setCategory('classic', this)">Classic</button>
+        <button class="cat-pill" onclick="setCategory('single', this)">Single</button>
+        <button class="cat-pill" onclick="setCategory('racing', this)">Racing</button>
+        <button class="cat-pill" onclick="setCategory('1v1', this)">1v1 & Sports</button>
+    </div>
 
-        let currentCategory = 'All';
-        let currentAppMode = 'online';
-        let selectedGameToPlay = null;
-        let cachedGameIds = JSON.parse(localStorage.getItem('st_cached_games') || '[]');
+    <!-- Main 2-Column Games Grid -->
+    <div id="games-container" class="games-grid"></div>
 
-        // Initialize App
-        window.addEventListener('DOMContentLoaded', () => {
-            renderGames();
-            window.addEventListener('online', updateNetworkStatus);
-            window.addEventListener('offline', updateNetworkStatus);
-            updateNetworkStatus();
+    <!-- Bottom Arcade Bar -->
+    <div class="bottom-bar">
+        <button class="side-circle-btn" onclick="alert('No Ads Mode Enabled for ST Games APK!')">
+            <span class="ads-text">ADS</span>
+            <div class="ads-slash"></div>
+        </button>
+
+        <button class="play-main-btn" onclick="playRandomGame()">PLAY</button>
+
+        <button class="side-circle-btn" onclick="clearSavedGames()">
+            <i class="fa-solid fa-gear" style="font-size: 24px; color: #3b82f6;"></i>
+        </button>
+    </div>
+
+    <!-- Fullscreen Game Player -->
+    <div id="player-modal" class="player-modal">
+        <div class="player-top-bar">
+            <span id="playing-title" style="font-weight: 800; font-size: 14px;">Game</span>
+            <button class="back-home-btn" onclick="closeGame()"><i class="fa-solid fa-xmark"></i> EXIT</button>
+        </div>
+        <iframe id="game-frame" src=""></iframe>
+    </div>
+
+<script>
+    // Base domain so APK always knows where to fetch games & logos
+    const BASE_URL = "https://stgames.online/";
+
+    // Your exact 18 games list
+    const GAMES_DATA = [
+      {
+        "id": "game-mw3654pa",
+        "title": "Wheel master",
+        "url": "game/Wheel master/index.html",
+        "logo": "logo/game-1793861007180-5455.jpg",
+        "categories": ["popular"],
+        "badge": "✨ NEW",
+        "bg": "linear-gradient(135deg, #6366f1, #4338ca)"
+      },
+      {
+        "id": "game-mw20ft73",
+        "title": "Rope Dash",
+        "url": "game/rope.html",
+        "logo": "logo/game-1793790309066-5381.jpg",
+        "categories": ["classic", "popular"],
+        "badge": "✨ NEW",
+        "bg": "linear-gradient(135deg, #ec4899, #be185d)"
+      },
+      {
+        "id": "game-mw1urk4j",
+        "title": "Space waves",
+        "url": "game/Spacewaces.html",
+        "logo": "logo/game-1793853613420-5437.jpg",
+        "categories": ["popular"],
+        "badge": "✨ NEW",
+        "bg": "linear-gradient(135deg, #3b82f6, #1d4ed8)"
+      },
+      {
+        "id": "game-mvzz9zor",
+        "title": "Crowd runners",
+        "url": "game/crowd runners/index.html",
+        "logo": "logo/game-1793676729637-5233.jpg",
+        "categories": ["classic"],
+        "badge": "✨ NEW",
+        "bg": "linear-gradient(135deg, #06b6d4, #0e7490)"
+      },
+      {
+        "id": "game-mvzyi81m",
+        "title": "Fight",
+        "url": "game/Fight/index.html",
+        "logo": "logo/game-1793676164188-5232.png",
+        "categories": ["popular"],
+        "badge": "✨ NEW",
+        "bg": "linear-gradient(135deg, #ef4444, #b91c1c)"
+      },
+      {
+        "id": "game-mvxqcsca",
+        "title": "Catch the thief",
+        "url": "game/thief/index.html",
+        "logo": "logo/game-1793531508927-5022.png",
+        "categories": ["classic", "popular"],
+        "badge": "✨ NEW",
+        "bg": "linear-gradient(135deg, #38bdf8, #0284c7)"
+      },
+      {
+        "id": "game-mvwetkz4",
+        "title": "Nuts and Bolts 🔩",
+        "url": "game/nuts.html",
+        "logo": "logo/game-1793451670491-4931.jpg",
+        "categories": ["classic"],
+        "badge": "✨ NEW",
+        "bg": "linear-gradient(135deg, #f59e0b, #b45309)"
+      },
+      {
+        "id": "game-mvwc6dia",
+        "title": "Toilet rush",
+        "url": "game/Toilet rush/index.html",
+        "logo": "logo/game-1793448451512-4909.jpg",
+        "categories": ["classic"],
+        "badge": "✨ NEW",
+        "bg": "linear-gradient(135deg, #a855f7, #7e22ce)"
+      },
+      {
+        "id": "game-mvv6lmgs",
+        "title": "Salazar Game",
+        "url": "game/salazar.html",
+        "logo": "logo/game-1793377379865-4884.png",
+        "categories": ["classic"],
+        "badge": "✨ NEW",
+        "bg": "linear-gradient(135deg, #10b981, #047857)"
+      },
+      {
+        "id": "custom-mvv0p7ge",
+        "title": "Merge Mania",
+        "url": "game/merge.html",
+        "logo": "logo/game-1793371364908-4872.png",
+        "categories": ["classic"],
+        "badge": "✨ NEW",
+        "bg": "linear-gradient(135deg, #facc15, #ca8a04)"
+      },
+      {
+        "id": "subway-runner",
+        "title": "Street Subway Runner",
+        "url": "game/subway/index.html",
+        "logo": "logo/subway.jpg",
+        "categories": ["single", "popular"],
+        "badge": "✨ HIT",
+        "bg": "linear-gradient(135deg, #f59e0b, #b45309)"
+      },
+      {
+        "id": "tic-tac-toe",
+        "title": "Pro Tic-Tac-Toe",
+        "url": "game/tictactoe/index.html",
+        "logo": "logo/tic-tac-toe.png",
+        "categories": ["sports", "single", "popular", "1v1"],
+        "badge": "TOP",
+        "bg": "linear-gradient(135deg, #14b8a6, #0f766e)"
+      },
+      {
+        "id": "snake",
+        "title": "Cyber Snake Retro",
+        "url": "game/snake/index.html",
+        "logo": "logo/snake.jpg",
+        "categories": ["classic", "single", "popular"],
+        "badge": "OLD",
+        "bg": "linear-gradient(135deg, #10b981, #047857)"
+      },
+      {
+        "id": "fruit game",
+        "title": "Fruit Arcade Pro",
+        "url": "game/fruit.html",
+        "logo": "logo/fruit.jpg",
+        "categories": ["classic", "single", "popular"],
+        "badge": "LIVE",
+        "bg": "linear-gradient(135deg, #ec4899, #8b5cf6)"
+      },
+      {
+        "id": "bird game",
+        "title": "Bird Action Mania",
+        "url": "game/clumsy.html",
+        "logo": "logo/bird.jpg",
+        "categories": ["classic", "single", "popular"],
+        "badge": "NEW",
+        "bg": "linear-gradient(135deg, #f43f5e, #fb923c)"
+      },
+      {
+        "id": "game-hub-battle",
+        "title": "Ninja Shadow Duel",
+        "url": "game/fight.html",
+        "logo": "logo/fight.jpg",
+        "categories": ["1v1", "popular"],
+        "badge": "1v1",
+        "bg": "linear-gradient(135deg, #ef4444, #7f1d1d)"
+      },
+      {
+        "id": "snake-ladder",
+        "title": "Monster Truck Stunts",
+        "url": "game/ladder/index.html",
+        "logo": "logo/ladder.jpg",
+        "categories": ["racing", "single", "popular"],
+        "badge": "HOT",
+        "bg": "linear-gradient(135deg, #f97316, #c2410c)"
+      },
+      {
+        "id": "typing-race",
+        "title": "Typing Race Championship",
+        "url": "game/typerace/index.html",
+        "logo": "logo/typerace.jpg",
+        "categories": ["racing", "single", "popular"],
+        "badge": "",
+        "bg": "linear-gradient(135deg, #64748b, #334105)"
+      }
+    ];
+
+    let currentMode = 'online';
+    let currentCategory = 'all';
+    let savedGameIds = JSON.parse(localStorage.getItem('st_saved_offline_games') || '[]');
+
+    function fullUrl(path) {
+        if (path.startsWith('http')) return path;
+        return BASE_URL + encodeURI(path);
+    }
+
+    function updateSavedCounter() {
+        document.getElementById('saved-count').innerText = savedGameIds.length;
+    }
+
+    // Switch between Online and Offline Top Buttons
+    function setAppMode(mode) {
+        currentMode = mode;
+        document.getElementById('btn-online').classList.toggle('active', mode === 'online');
+        document.getElementById('btn-offline').classList.toggle('active', mode === 'offline');
+        renderGames();
+    }
+
+    // Filter by Category Pills
+    function setCategory(cat, btnElement) {
+        currentCategory = cat;
+        document.querySelectorAll('.cat-pill').forEach(btn => btn.classList.remove('active'));
+        btnElement.classList.add('active');
+        renderGames();
+    }
+
+    // Render Games Grid
+    function renderGames() {
+        const container = document.getElementById('games-container');
+        container.innerHTML = '';
+        updateSavedCounter();
+
+        // Check if player turned off net while in Online section
+        if (currentMode === 'online' && !navigator.onLine) {
+            container.innerHTML = `
+                <div class="empty-box">
+                    <i class="fa-solid fa-wifi"></i>
+                    <h3>No Internet Connection</h3>
+                    <p>Please connect to the internet to browse all online games, or switch to your Offline games!</p>
+                    <button class="action-btn" onclick="setAppMode('offline')">PLAY OFFLINE GAMES (${savedGameIds.length})</button>
+                </div>
+            `;
+            return;
+        }
+
+        // Filter games based on Mode (Online vs Offline) & Category
+        const filtered = GAMES_DATA.filter(g => {
+            const matchesMode = (currentMode === 'online') ? true : savedGameIds.includes(g.id);
+            const matchesCat = (currentCategory === 'all') ? true : (g.categories && g.categories.includes(currentCategory));
+            return matchesMode && matchesCat;
         });
 
-        function updateNetworkStatus() {
-            const banner = document.getElementById('offline-banner');
-            const statusText = document.getElementById('connection-status-text');
-            if (!navigator.onLine) {
-                banner.classList.remove('hidden');
-                statusText.innerText = "Offline Mode Active";
-                switchAppMode('offline');
-            } else {
-                banner.classList.add('hidden');
-                statusText.innerText = "Online Cloud Hub";
-            }
+        // Empty state for Offline section if no games opened yet
+        if (currentMode === 'offline' && filtered.length === 0) {
+            container.innerHTML = `
+                <div class="empty-box">
+                    <i class="fa-solid fa-cloud-arrow-down"></i>
+                    <h3>No Offline Games Yet</h3>
+                    <p>Go to the <b>ONLINE</b> tab and tap any game! Once you open a game, it automatically downloads here for offline play.</p>
+                    <button class="action-btn" onclick="setAppMode('online')">GO TO ONLINE TAB</button>
+                </div>
+            `;
+            return;
         }
 
-        function switchAppMode(mode) {
-            currentAppMode = mode;
-            const onlineBtn = document.getElementById('mode-online-btn');
-            const offlineBtn = document.getElementById('mode-offline-btn');
+        filtered.forEach(game => {
+            const isSaved = savedGameIds.includes(game.id);
+            const logoSrc = fullUrl(game.logo);
+            const badgeHtml = game.badge ? `<span class="game-badge">${game.badge.replace('✨ ', '')}</span>` : `<span></span>`;
+            const dlIcon = isSaved 
+                ? `<div class="dl-indicator saved" title="Available Offline"><i class="fa-solid fa-check"></i></div>`
+                : `<div class="dl-indicator" title="Tap to play & save offline"><i class="fa-solid fa-arrow-down"></i></div>`;
 
-            if (mode === 'online') {
-                onlineBtn.className = "px-3 py-1 text-xs font-bold rounded-full bg-sky-500 text-white shadow-sm transition-all";
-                offlineBtn.className = "px-3 py-1 text-xs font-bold rounded-full text-sky-700 transition-all";
-            } else {
-                offlineBtn.className = "px-3 py-1 text-xs font-bold rounded-full bg-sky-500 text-white shadow-sm transition-all";
-                onlineBtn.className = "px-3 py-1 text-xs font-bold rounded-full text-sky-700 transition-all";
-            }
-            renderGames();
-        }
+            const card = document.createElement('div');
+            card.className = 'game-card';
+            card.onclick = () => openAndSaveGame(game);
 
-        function filterCategory(category, btnElement) {
-            currentCategory = category;
-            document.querySelectorAll('.cat-pill').forEach(btn => {
-                btn.className = "cat-pill px-5 py-2 rounded-full text-sm font-bold bg-white text-sky-700 border-2 border-sky-100 whitespace-nowrap transition-all";
-            });
-            btnElement.className = "cat-pill px-5 py-2 rounded-full text-sm font-bold bg-sky-500 text-white shadow-md shadow-sky-200 whitespace-nowrap transition-all";
-            renderGames();
-        }
-
-        function renderGames() {
-            const grid = document.getElementById('game-grid');
-            grid.innerHTML = '';
-
-            let filtered = gamesDatabase.filter(game => {
-                let matchesCat = (currentCategory === 'All' || game.category === currentCategory);
-                let matchesMode = true;
-                if (currentAppMode === 'offline') {
-                    matchesMode = cachedGameIds.includes(game.id);
-                }
-                return matchesCat && matchesMode;
-            });
-
-            if (filtered.length === 0) {
-                grid.innerHTML = `
-                    <div class="col-span-2 text-center py-12">
-                        <div class="text-4xl mb-2">📦</div>
-                        <p class="text-sm font-bold text-sky-800">No games found here!</p>
-                        <p class="text-xs text-sky-600 mt-1">Switch to Online mode or download games first.</p>
+            card.innerHTML = `
+                <div class="card-inner" style="background: ${game.bg || '#334155'}; background-image: url('${logoSrc}'); background-size: cover; background-position: center;">
+                    <div class="card-overlay"></div>
+                    <div class="card-header">
+                        <div class="game-title">${game.title}</div>
+                        <div class="title-underline"></div>
                     </div>
-                `;
-                return;
-            }
-
-            filtered.forEach(game => {
-                let isDownloaded = cachedGameIds.includes(game.id);
-                grid.innerHTML += `
-                    <div onclick="promptPlayGame('${game.id}')" class="${game.bg} border-2 ${game.border} rounded-3xl p-3 shadow-md active:scale-95 transition-transform cursor-pointer relative flex flex-col justify-between h-44">
-                        ${game.tag ? `<span class="absolute top-3 left-3 bg-green-500 text-white font-extrabold text-[10px] px-2 py-0.5 rounded-full shadow">${game.tag}</span>` : ''}
-                        
-                        <!-- Game Icon Graphic Representation -->
-                        <div class="flex-1 flex items-center justify-center text-5xl my-2">
-                            ${game.icon}
-                        </div>
-
-                        <!-- Game Label & Offline Badge -->
-                        <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-2 border border-sky-100 flex items-center justify-between">
-                            <h2 class="text-xs font-bold text-sky-900 truncate">${game.title}</h2>
-                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${isDownloaded ? 'bg-green-100 text-green-700' : 'bg-sky-100 text-sky-700'}">
-                                ${isDownloaded ? '💾 Ready' : '🌐 Cloud'}
-                            </span>
-                        </div>
+                    <div class="card-footer">
+                        ${badgeHtml}
+                        ${dlIcon}
                     </div>
-                `;
-            });
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    // Open game & automatically save to Offline section
+    async function openAndSaveGame(game) {
+        const targetUrl = fullUrl(game.url);
+        const logoUrl = fullUrl(game.logo);
+
+        if (!navigator.onLine && !savedGameIds.includes(game.id)) {
+            alert("You are offline! Connect to the internet once to download " + game.title + ".");
+            return;
         }
 
-        function promptPlayGame(gameId) {
-            selectedGameToPlay = gamesDatabase.find(g => g.id === gameId);
-            const modal = document.getElementById('game-modal');
-            const titleEl = document.getElementById('modal-title');
-            const descEl = document.getElementById('modal-desc');
-            const iconEl = document.getElementById('modal-game-icon');
+        // Automatically add to Offline list on first tap
+        if (navigator.onLine && !savedGameIds.includes(game.id)) {
+            savedGameIds.push(game.id);
+            localStorage.setItem('st_saved_offline_games', JSON.stringify(savedGameIds));
+            updateSavedCounter();
 
-            titleEl.innerText = selectedGameToPlay.title;
-            iconEl.innerText = selectedGameToPlay.icon;
-
-            if (!cachedGameIds.includes(gameId)) {
-                descEl.innerText = "First-time launch: Downloading game assets for offline gameplay...";
-            } else {
-                descEl.innerText = "Game is cached locally. Launching instantly offline!";
+            // Cache game HTML & Logo in browser Cache API
+            if ('caches' in window) {
+                try {
+                    const cache = await caches.open('stgames-apk-cache-v1');
+                    cache.add(targetUrl).catch(() => {});
+                    cache.add(logoUrl).catch(() => {});
+                } catch (e) {}
             }
-
-            modal.classList.remove('hidden');
-        }
-
-        function closeModal() {
-            document.getElementById('game-modal').classList.add('hidden');
-            selectedGameToPlay = null;
-        }
-
-        function executePlayGame() {
-            if (selectedGameToPlay && !cachedGameIds.includes(selectedGameToPlay.id)) {
-                cachedGameIds.push(selectedGameToPlay.id);
-                localStorage.setItem('st_cached_games', JSON.stringify(cachedGameIds));
-            }
-            closeModal();
             renderGames();
         }
 
-        function launchRandomGame() {
-            if (gamesDatabase.length > 0) {
-                const randomGame = gamesDatabase[Math.floor(Math.random() * gamesDatabase.length)];
-                promptPlayGame(randomGame.id);
-            }
-        }
+        // Launch inside in-app fullscreen player so user never loses the top bar
+        document.getElementById('playing-title').innerText = game.title;
+        document.getElementById('game-frame').src = targetUrl;
+        document.getElementById('player-modal').classList.add('open');
+    }
 
-        function openAdsModal() {
-            alert("Reward Ad: Watch to unlock bonus coins & premium offline levels!");
-        }
+    function closeGame() {
+        document.getElementById('game-frame').src = '';
+        document.getElementById('player-modal').classList.remove('open');
+    }
 
-        function openSettingsModal() {
-            alert("ST Games Launcher v1.0.0\nBuilt for Offline-First Arcade Experience.");
+    // Big green PLAY button launches a random available game
+    function playRandomGame() {
+        const pool = (currentMode === 'offline' || !navigator.onLine)
+            ? GAMES_DATA.filter(g => savedGameIds.includes(g.id))
+            : GAMES_DATA;
+
+        if (pool.length === 0) {
+            alert("No offline games downloaded yet! Connect to the internet and tap any game first.");
+            return;
         }
-    </script>
+        const randomGame = pool[Math.floor(Math.random() * pool.length)];
+        openAndSaveGame(randomGame);
+    }
+
+    function clearSavedGames() {
+        if (confirm("Reset downloaded offline games list?")) {
+            savedGameIds = [];
+            localStorage.removeItem('st_saved_offline_games');
+            renderGames();
+        }
+    }
+
+    // Live network detection
+    function handleNetworkChange() {
+        const dot = document.getElementById('net-dot');
+        if (navigator.onLine) {
+            dot.classList.remove('offline');
+        } else {
+            dot.classList.add('offline');
+        }
+        renderGames();
+    }
+
+    window.addEventListener('online', handleNetworkChange);
+    window.addEventListener('offline', handleNetworkChange);
+
+    // Initialize on startup
+    handleNetworkChange();
+</script>
 </body>
 </html>
