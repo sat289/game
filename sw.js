@@ -1,115 +1,76 @@
+const CACHE_NAME = 'stgames-apk-v2';
 
-const CACHE_NAME = "st-games-v1";
-const APP_FILES = [
-  "./",
-  "./index.html",
-  "./games.json",
-  "./manifest.webmanifest",
-  "./logo/logo.jpg"
+// Core files & offline games from your games.json to cache on the phone
+const PRECACHE_ASSETS = [
+  '/',
+  '/index.html',
+  '/games.json',
+  '/manifest.webmanifest',
+  '/logo/logo.jpg',
+  '/logo/Insta.jpg',
+  '/logo/sub.jpg',
+  '/game/Wheel%20master/index.html',
+  '/game/rope.html',
+  '/game/Spacewaces.html',
+  '/game/thief/index.html',
+  '/game/nuts.html',
+  '/game/Toilet%20rush/index.html',
+  '/game/salazar.html',
+  '/game/merge.html',
+  '/game/subway/index.html',
+  '/game/tictactoe/index.html',
+  '/game/snake/index.html',
+  '/game/fruit.html',
+  '/game/clumsy.html',
+  '/game/fight.html',
+  '/game/ladder/index.html',
+  '/game/typerace/index.html'
 ];
 
-// Install and cache the app shell
-self.addEventListener("install", (event) => {
+self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(async (cache) => {
-      for (const file of APP_FILES) {
+      for (const asset of PRECACHE_ASSETS) {
         try {
-          await cache.add(file);
-        } catch (error) {
-          console.warn("Could not cache:", file, error);
-        }
+          await cache.add(asset);
+        } catch (_) {}
       }
     })
   );
-
   self.skipWaiting();
 });
 
-// Activate and remove old caches
-self.addEventListener("activate", (event) => {
+self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) =>
-      Promise.all(
-        cacheNames
-          .filter((name) => name !== CACHE_NAME)
-          .map((name) => caches.delete(name))
-      )
+    caches.keys().then((keys) =>
+      Promise.all(keys.map((key) => (key !== CACHE_NAME ? caches.delete(key) : null)))
     )
   );
-
   self.clients.claim();
 });
 
-// Fetch strategy
-self.addEventListener("fetch", (event) => {
-  const request = event.request;
-  const url = new URL(request.url);
+// Network-first when online (saves every game asset visited), fallback to Offline Cache when internet is OFF
+self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') return;
 
-  // Only handle requests from this website
-  if (url.origin !== self.location.origin) return;
-
-  // HTML pages: network first, then cache
-  if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) =>
-              cache.put(request, copy)
-            );
-          }
-          return response;
-        })
-        .catch(async () => {
-          return (
-            (await caches.match(request)) ||
-            (await caches.match("./index.html")) ||
-            Response.error()
-          );
-        })
-    );
+  const url = new URL(event.request.url);
+  if (url.hostname.includes('googlesyndication') || url.hostname.includes('googletagmanager')) {
     return;
   }
 
-  // Games catalogue: network first, cached version as fallback
-  if (url.pathname.endsWith("/games.json")) {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) =>
-              cache.put(request, copy)
-            );
-          }
-          return response;
-        })
-        .catch(async () => {
-          return (
-            (await caches.match(request)) ||
-            (await caches.match("./games.json")) ||
-            Response.error()
-          );
-        })
-    );
-    return;
-  }
-
-  // Other same-origin files: cache first, then network
   event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      if (cachedResponse) return cachedResponse;
-
-      return fetch(request).then((response) => {
-        if (response.ok && request.method === "GET") {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) =>
-            cache.put(request, copy)
-          );
+    fetch(event.request)
+      .then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const clone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         }
-        return response;
-      });
-    })
+        return networkResponse;
+      })
+      .catch(() => {
+        return caches.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
+          return cachedResponse || caches.match('/index.html');
+        });
+      })
   );
 });
