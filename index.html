@@ -331,6 +331,27 @@
 
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .install-app-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 26px;
+  border: 2px solid #00eaff;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #00c6ff, #0072ff);
+  color: white;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 0 15px #00c6ff88;
+  transition: 0.25s;
+}
+
+.install-app-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0 25px #00eaff;
+}
   </style>
 </head>
 
@@ -440,7 +461,9 @@
         </div>
       </div>
     </div>
-
+<button id="installAppBtn" class="install-app-btn">
+  📲 INSTALL ST GAMES
+</button>
     <!-- POKI CATEGORY FILTER PILLS -->
     <div class="cat-filter-row" role="region" aria-label="Game Categories">
       <button type="button" class="cat-btn active" onclick="filterCategory('all', this)">🎮 All Games</button>
@@ -1190,5 +1213,40 @@
       }
     });
   </script>
+  <script>
+let deferredInstallPrompt = null;
+
+const installBtn = document.getElementById("installAppBtn");
+
+window.addEventListener("beforeinstallprompt", (event) => {
+  event.preventDefault();
+  deferredInstallPrompt = event;
+});
+
+installBtn.addEventListener("click", async () => {
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+
+    const result = await deferredInstallPrompt.userChoice;
+
+    if (result.outcome === "accepted") {
+      installBtn.textContent = "✅ ST GAMES INSTALLED";
+    }
+
+    deferredInstallPrompt = null;
+  } else {
+    alert(
+      "To install ST GAMES:\n\n" +
+      "1. Open your browser menu (⋮).\n" +
+      "2. Select 'Install app' or 'Add to Home screen'.\n" +
+      "3. Follow the instructions."
+    );
+  }
+});
+
+window.addEventListener("appinstalled", () => {
+  installBtn.textContent = "✅ ST GAMES INSTALLED";
+});
+</script>
 </body>
 </html>
