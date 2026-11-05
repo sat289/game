@@ -84,31 +84,12 @@
   </style>
 </head>
 <body class="w-full h-full flex items-center justify-center bg-[#05020a] select-none overflow-hidden">
-  <!-- 16:9 Responsive Game Screen Frame -->
-  <div id="gameFrame16x9" class="relative flex overflow-hidden bg-[#090414] shadow-[0_0_50px_rgba(0,0,0,0.9)] border border-white/10" style="aspect-ratio: 16 / 9; width: min(100vw, calc(100vh * 16 / 9)); height: min(100vh, calc(100vw * 9 / 16));">
-
-  <!-- ==================== 0. MOBILE ROTATE TO HORIZONTAL OVERLAY ==================== -->
-  <div id="rotateDeviceOverlay" class="hidden fixed inset-0 z-[60] bg-[#070312]/98 flex flex-col items-center justify-center p-6 text-center">
-    <div class="w-24 h-24 rounded-2xl bg-purple-900/50 border-2 border-cyan-400 flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(34,211,238,0.4)]">
-      <svg class="w-14 h-14 text-cyan-300 rotate-phone-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-        <rect x="6" y="2" width="12" height="20" rx="2" ry="2"></rect>
-        <line x1="12" y1="18" x2="12.01" y2="18" stroke-width="2.5" stroke-linecap="round"></line>
-      </svg>
-    </div>
-    <h2 class="font-game font-black text-xl sm:text-2xl text-white tracking-wider uppercase mb-2">
-      ROTATE YOUR DEVICE
-    </h2>
-    <p class="font-hud font-bold text-base sm:text-lg text-cyan-300 max-w-xs mb-6">
-      Please rotate your mobile phone to <span class="text-white underline">horizontal (landscape)</span> mode to play Space Waves.
-    </p>
-    <button id="dismissRotateOverlayBtn" type="button" class="px-5 py-2.5 rounded-lg bg-purple-800/80 hover:bg-purple-700 border border-white/40 font-hud font-bold text-xs uppercase tracking-wider text-purple-100 transition">
-      Continue in Horizontal View ►
-    </button>
-  </div>
+  <!-- Auto-Rotated Landscape Fullscreen Game Frame (Sideways 90deg in Portrait like Image 2) -->
+  <div id="gameFrame16x9" class="fixed top-1/2 left-1/2 flex overflow-hidden bg-[#090414]" style="transform: translate(-50%, -50%); width: 100vw; height: 100vh;">
 
   <!-- ==================== 1. CLEAN LOADING PAGE (ONLY Logo, Website Name & Rotate Notice -> Continues Straight to Level) ==================== -->
-  <div id="loadingPage" class="fixed inset-0 z-50 flex flex-col items-center justify-center p-6 bg-[#070312]">
-    <canvas id="loadingBgCanvas" class="fixed inset-0 w-full h-full pointer-events-none z-0"></canvas>
+  <div id="loadingPage" class="absolute inset-0 z-50 flex flex-col items-center justify-center p-4 sm:p-6 bg-[#070312]">
+    <canvas id="loadingBgCanvas" class="absolute inset-0 w-full h-full pointer-events-none z-0"></canvas>
 
     <div class="relative z-10 flex flex-col items-center justify-center max-w-md w-full text-center">
       <!-- Logo (logo/logo) -->
@@ -137,11 +118,7 @@
         </div>
       </div>
 
-      <!-- Mobile Horizontal Notice -->
-      <div class="flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-purple-900/50 border border-cyan-400/40 text-cyan-200 font-hud font-bold text-xs sm:text-sm tracking-wide mb-5">
-        <span class="text-base">📱</span>
-        <span>Mobile Users: Rotate your phone to <strong>horizontal mode</strong> to play</span>
-      </div>
+
 
       <!-- Continue Button (also auto-continues at 100%) -->
       <button id="launchGameBtn" type="button" class="px-8 py-3 rounded-xl bg-gradient-to-r from-cyan-400 via-fuchsia-500 to-purple-600 hover:from-cyan-300 hover:to-purple-500 text-white font-black text-sm sm:text-base tracking-wider uppercase shadow-[0_0_25px_rgba(192,38,211,0.7)] transition transform hover:scale-105 active:scale-95">
@@ -437,38 +414,18 @@
       'use strict';
 
       // =========================================================================
-      // 0. MOBILE HORIZONTAL (LANDSCAPE) ORIENTATION CHECKER
+      // 0. AUTO-LANDSCAPE 90° ROTATION FOR PORTRAIT MOBILE (Matches Image 2)
       // =========================================================================
-      let userDismissedRotate = false;
-
-      function checkMobileOrientation() {
-        const overlay = document.getElementById('rotateDeviceOverlay');
-        if (!overlay) return;
-        const isTouchOrMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || window.innerWidth < 768;
-        const isPortrait = window.innerHeight > window.innerWidth;
-        if (isTouchOrMobile && isPortrait && !userDismissedRotate) {
-          overlay.classList.remove('hidden');
-        } else {
-          overlay.classList.add('hidden');
-        }
-      }
-
       function requestLandscapeLock() {
         try {
+          if (document.documentElement.requestFullscreen && window.innerWidth < 900) {
+            document.documentElement.requestFullscreen().catch(() => {});
+          }
           if (screen.orientation && typeof screen.orientation.lock === 'function') {
             screen.orientation.lock('landscape').catch(() => {});
           }
         } catch (err) {}
       }
-
-      window.addEventListener('resize', checkMobileOrientation);
-      window.addEventListener('orientationchange', checkMobileOrientation);
-
-      document.getElementById('dismissRotateOverlayBtn').addEventListener('click', () => {
-        userDismissedRotate = true;
-        requestLandscapeLock();
-        document.getElementById('rotateDeviceOverlay').classList.add('hidden');
-      });
 
       // =========================================================================
       // 1. SAFE TEMPORARY LOCALSTORAGE MANAGER (Levels History, Gems & Colours)
@@ -1048,24 +1005,31 @@
 
       function resizeGameCanvas() {
         const frame = document.getElementById('gameFrame16x9');
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
         if (frame) {
-          const vw = window.innerWidth;
-          const vh = window.innerHeight;
-          if (vw / vh > 16 / 9) {
-            frame.style.height = vh + 'px';
-            frame.style.width = Math.floor(vh * 16 / 9) + 'px';
+          if (vh > vw) {
+            // Portrait phone screen: rotate the entire game 90 degrees sideways to fill the screen like Image 2!
+            frame.style.width = vh + 'px';
+            frame.style.height = vw + 'px';
+            frame.style.transform = 'translate(-50%, -50%) rotate(90deg)';
           } else {
+            // Already landscape / PC screen
             frame.style.width = vw + 'px';
-            frame.style.height = Math.floor(vw * 9 / 16) + 'px';
+            frame.style.height = vh + 'px';
+            frame.style.transform = 'translate(-50%, -50%) rotate(0deg)';
           }
         }
         const container = document.getElementById('stageContainer');
         if (!container) return;
-        const rect = container.getBoundingClientRect();
-        gameCanvas.width = Math.max(320, Math.floor(rect.width));
-        gameCanvas.height = Math.max(180, Math.floor(rect.height));
+        // Use clientWidth / clientHeight (unrotated internal layout dimensions!)
+        const cw = container.clientWidth || Math.max(vw, vh);
+        const ch = container.clientHeight || Math.min(vw, vh);
+        gameCanvas.width = Math.max(320, Math.floor(cw));
+        gameCanvas.height = Math.max(180, Math.floor(ch));
         createHexagonPattern();
       }
+      window.addEventListener('orientationchange', () => setTimeout(resizeGameCanvas, 100));
       window.addEventListener('resize', resizeGameCanvas);
 
       // =========================================================================
@@ -1291,6 +1255,7 @@
         document.getElementById('levelIntroOverlay').classList.add('hidden');
         document.getElementById('inGameHud').classList.remove('hidden');
         document.getElementById('hudModeLabel').textContent = 'LEVEL ' + activeLevelNum;
+        document.getElementById('inGameHud').classList.remove('hidden');
         gameState = 'playing';
       }
 
@@ -1379,6 +1344,7 @@
         const reviveBox = document.getElementById('revivePromptBox');
         document.getElementById('crashGemCount').textContent = appData.gems;
 
+        document.getElementById('inGameHud').classList.add('hidden');
         crashOverlay.classList.remove('hidden');
 
         if (rec.isNewRecord && pct >= 5) {
@@ -2378,9 +2344,12 @@
 
       function renderLoadingBackground(t) {
         if (gameState !== 'loading') return;
-        if (loadingBgCanvas.width !== window.innerWidth || loadingBgCanvas.height !== window.innerHeight) {
-          loadingBgCanvas.width = window.innerWidth;
-          loadingBgCanvas.height = window.innerHeight;
+        const lp = document.getElementById('loadingPage');
+        const lw = (lp && lp.clientWidth) ? lp.clientWidth : window.innerWidth;
+        const lh = (lp && lp.clientHeight) ? lp.clientHeight : window.innerHeight;
+        if (loadingBgCanvas.width !== lw || loadingBgCanvas.height !== lh) {
+          loadingBgCanvas.width = lw;
+          loadingBgCanvas.height = lh;
         }
         const w = loadingBgCanvas.width;
         const h = loadingBgCanvas.height;
@@ -2402,7 +2371,6 @@
       }
 
       function initLoadingSequence() {
-        checkMobileOrientation();
         resizeGameCanvas();
         renderHomeLevelsAndStore();
 
