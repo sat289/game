@@ -3,809 +3,527 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#000000">
+  <meta name="theme-color" content="#f0f4f9">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <link rel="manifest" href="/stgames-apk/manifest.json">
+  <link rel="manifest" href="manifest.json">
   <link rel="icon" href="/launchericon-192x192.png">
-  <title>ST Games - Login</title>
+  <title>Sign in - ST Games</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <style>
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      user-select: none;
       -webkit-tap-highlight-color: transparent;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", arial, sans-serif;
     }
 
     html, body {
-      width: 100%;
-      height: 100%;
-      background-color: #000000;
-      color: #ffffff;
-      overflow-x: hidden;
-    }
-
-    /* Screen Containers */
-    .screen {
       min-height: 100dvh;
-      width: 100%;
-      max-width: 440px;
-      margin: 0 auto;
-      padding: 18px 24px 26px;
-      display: none;
+      background-color: #f0f4f9;
+      color: #1f1f1f;
+      display: flex;
       flex-direction: column;
       justify-content: space-between;
-      position: relative;
-      animation: fadeIn 0.2s ease-out;
     }
 
-    .screen.active {
-      display: flex;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Top Left Circular Back Button */
-    .top-bar {
-      display: flex;
-      align-items: center;
-      height: 48px;
-    }
-
-    .back-circle-btn {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      background-color: #212121;
-      border: 1px solid #2e2e2e;
-      color: #ffffff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      cursor: pointer;
-      transition: background 0.15s, transform 0.12s;
-    }
-
-    .back-circle-btn:active {
-      background-color: #333333;
-      transform: scale(0.93);
-    }
-
-    /* Center ST Logo & Title (Screen 1) */
-    .splash-center {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 14px;
-      text-align: center;
-    }
-
-    .st-knot-logo {
-      width: 76px;
-      height: 76px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .st-knot-logo.small {
-      width: 58px;
-      height: 58px;
-      margin: 4px auto 20px;
-    }
-
-    .splash-brand-title {
-      font-size: 33px;
-      font-weight: 700;
-      letter-spacing: -0.6px;
-      color: #ffffff;
-    }
-
-    /* Bottom Pill Buttons Stack (Screen 1) */
-    .bottom-stack {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+    /* Top App Back Bar */
+    .top-nav {
       width: 100%;
-      padding-bottom: 6px;
-    }
-
-    /* White Pill: "Continue with this account" */
-    .pill-white {
-      width: 100%;
-      min-height: 64px;
-      background-color: #ffffff;
-      color: #111111;
-      border: none;
-      border-radius: 999px;
-      padding: 10px 22px;
+      max-width: 450px;
+      margin: 0 auto;
+      padding: 14px 16px 0;
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 14px;
-      cursor: pointer;
-      transition: transform 0.12s, opacity 0.15s;
-      text-align: left;
     }
 
-    .pill-white:active {
-      transform: scale(0.98);
-      opacity: 0.92;
-    }
-
-    .avatar-badge-wrap {
-      position: relative;
-      width: 38px;
-      height: 38px;
-      flex-shrink: 0;
-    }
-
-    .avatar-circle-img,
-    .avatar-circle-initials {
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
-      object-fit: cover;
-      background-color: #78909c;
-      color: #ffffff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 14px;
-      text-transform: uppercase;
-    }
-
-    .mini-google-badge {
-      position: absolute;
-      bottom: -2px;
-      right: -2px;
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
+    .back-app-btn {
       background: #ffffff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.35);
-    }
-
-    .pill-white-text {
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .pill-white-title {
-      font-size: 15px;
-      font-weight: 600;
-      color: #111111;
-      line-height: 1.25;
-    }
-
-    .pill-white-sub {
-      font-size: 13px;
-      color: #5f6368;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    /* Dark Outlined Pill Buttons */
-    .pill-dark {
-      width: 100%;
-      height: 56px;
-      background-color: #000000;
-      color: #ffffff;
-      border: 1.5px solid #2e2e2e;
+      border: 1px solid #dadce0;
+      color: #1f1f1f;
       border-radius: 999px;
-      padding: 0 20px;
-      font-size: 16px;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      cursor: pointer;
-      transition: background 0.15s, border-color 0.15s, transform 0.12s;
-    }
-
-    .pill-dark:active {
-      transform: scale(0.98);
-      background-color: #1a1a1a;
-    }
-
-    /* Screen 2: Log in or sign up Form */
-    .form-center {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: 6px 0;
-    }
-
-    .form-title {
-      font-size: 28px;
-      font-weight: 700;
-      text-align: center;
-      color: #ffffff;
-      margin-bottom: 10px;
-      letter-spacing: -0.4px;
-    }
-
-    .form-subtitle {
-      font-size: 15px;
-      color: #b4b4b4;
-      text-align: center;
-      line-height: 1.45;
-      margin-bottom: 24px;
-      padding: 0 6px;
-    }
-
-    .field-wrap {
-      position: relative;
-      margin-bottom: 12px;
-    }
-
-    .dark-input {
-      width: 100%;
-      height: 56px;
-      background-color: #000000;
-      border: 1.5px solid #3c3c3c;
-      border-radius: 12px;
-      padding: 0 16px;
-      font-size: 16px;
-      color: #ffffff;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-
-    .dark-input::placeholder {
-      color: #8e8e8e;
-    }
-
-    .dark-input:focus {
-      border-color: #ffffff;
-    }
-
-    .pass-toggle-btn {
-      position: absolute;
-      right: 14px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      color: #8e8e8e;
-      font-size: 16px;
-      cursor: pointer;
-      padding: 6px;
-    }
-
-    .continue-btn {
-      width: 100%;
-      height: 54px;
-      border-radius: 999px;
-      border: none;
-      background-color: #212121;
-      color: #6e6e6e;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 6px;
-      transition: background 0.2s, color 0.2s, transform 0.12s;
-    }
-
-    .continue-btn.ready {
-      background-color: #ffffff;
-      color: #000000;
-    }
-
-    .continue-btn:active {
-      transform: scale(0.98);
-    }
-
-    .or-row {
-      display: flex;
-      align-items: center;
-      margin: 20px 0;
-      color: #8e8e8e;
-      font-size: 12px;
-      font-weight: 600;
-    }
-
-    .or-row::before,
-    .or-row::after {
-      content: "";
-      flex: 1;
-      border-top: 1px solid #262626;
-    }
-
-    .or-row span {
-      padding: 0 14px;
-    }
-
-    .alert-banner {
-      display: none;
-      padding: 11px 14px;
-      border-radius: 12px;
-      font-size: 13px;
-      margin-bottom: 14px;
-      text-align: center;
-    }
-
-    .alert-banner.error {
-      display: block;
-      background: rgba(239, 68, 68, 0.16);
-      border: 1px solid rgba(239, 68, 68, 0.45);
-      color: #fca5a5;
-    }
-
-    .alert-banner.success {
-      display: block;
-      background: rgba(34, 197, 94, 0.16);
-      border: 1px solid rgba(34, 197, 94, 0.45);
-      color: #86efac;
-    }
-
-    .terms-footer {
-      text-align: center;
-      font-size: 12px;
-      color: #8e8e8e;
-      padding-top: 14px;
-    }
-
-    .terms-footer a {
-      color: #d4d4d4;
-      text-decoration: underline;
-      margin: 0 4px;
-    }
-
-    /* =========================================================
-       MODAL 1: CENTER DIALOG "Choose an account" (IMAGE 2)
-       ========================================================= */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.72);
-      z-index: 1000;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-
-    .modal-overlay.open {
-      display: flex;
-    }
-
-    .center-chooser-card {
-      width: 100%;
-      max-width: 370px;
-      background-color: #28292c;
-      border-radius: 24px;
-      padding: 28px 20px 22px;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.85);
-      text-align: center;
-      animation: popScale 0.18s ease-out;
-    }
-
-    @keyframes popScale {
-      from { opacity: 0; transform: scale(0.94); }
-      to { opacity: 1; transform: scale(1); }
-    }
-
-    .white-squircle-logo {
-      width: 48px;
-      height: 48px;
-      border-radius: 13px;
-      background: #ffffff;
-      margin: 0 auto 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .chooser-heading {
-      font-size: 22px;
+      padding: 8px 16px;
+      font-size: 13.5px;
       font-weight: 500;
-      color: #e8eaed;
-      margin-bottom: 6px;
-    }
-
-    .chooser-sub {
-      font-size: 14px;
-      color: #9aa0a6;
-      margin-bottom: 20px;
-    }
-
-    .chooser-list {
-      display: flex;
-      flex-direction: column;
-      text-align: left;
-    }
-
-    .chooser-item {
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      gap: 14px;
-      padding: 12px 10px;
-      border-radius: 12px;
+      gap: 8px;
       cursor: pointer;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
       transition: background 0.15s;
     }
 
-    .chooser-item:active {
-      background: rgba(255, 255, 255, 0.08);
+    .back-app-btn:active {
+      background: #e8eaed;
     }
 
-    .chooser-avatar {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      object-fit: cover;
+    /* Main Google Card Container */
+    .page-wrap {
+      flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 600;
+      padding: 16px;
+    }
+
+    .google-card {
+      width: 100%;
+      max-width: 420px;
+      background: #ffffff;
+      border-radius: 28px;
+      padding: 36px 28px 32px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+    }
+
+    @media (max-width: 440px) {
+      .google-card {
+        padding: 28px 22px 26px;
+        border-radius: 24px;
+      }
+    }
+
+    /* Header Logo & Titles */
+    .card-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .logo-row {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .st-app-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      object-fit: cover;
+      border: 1px solid #e0e0e0;
+    }
+
+    .google-title {
+      font-size: 24px;
+      font-weight: 400;
+      color: #1f1f1f;
+      margin-bottom: 8px;
+    }
+
+    .google-subtitle {
       font-size: 15px;
-      color: #ffffff;
-      flex-shrink: 0;
-      text-transform: uppercase;
+      color: #444746;
     }
 
-    .chooser-info {
+    .google-subtitle strong {
+      color: #0b57d0;
+      font-weight: 500;
+    }
+
+    /* Official Google Sign-In Button */
+    .google-oauth-btn {
+      width: 100%;
+      height: 46px;
+      background-color: #ffffff;
+      border: 1px solid #747775;
+      border-radius: 999px;
       display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .chooser-name {
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
       font-size: 14.5px;
       font-weight: 500;
-      color: #e8eaed;
+      color: #1f1f1f;
+      cursor: pointer;
+      transition: background 0.15s, box-shadow 0.15s;
     }
 
-    .chooser-email {
-      font-size: 13px;
-      color: #9aa0a6;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    .google-oauth-btn:hover {
+      background-color: #f8fafd;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.12);
     }
 
-    /* =========================================================
-       MODAL 2: BOTTOM SHEET "Choose an account for ST Games" (IMAGE 3)
-       ========================================================= */
-    .sheet-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.6);
-      z-index: 1050;
-      display: none;
-      align-items: flex-end;
-      justify-content: center;
+    .google-oauth-btn:active {
+      background-color: #eef2f6;
     }
 
-    .sheet-overlay.open {
+    /* Divider */
+    .divider {
       display: flex;
+      align-items: center;
+      margin: 20px 0;
+      color: #5f6368;
+      font-size: 12.5px;
     }
 
-    .bottom-sheet-card {
+    .divider::before,
+    .divider::after {
+      content: "";
+      flex: 1;
+      border-top: 1px solid #e0e3e7;
+    }
+
+    .divider span {
+      padding: 0 12px;
+    }
+
+    /* Google Material Outlined Floating Input Fields */
+    .md-field {
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .md-input {
       width: 100%;
-      max-width: 440px;
-      background-color: #28292c;
-      border-radius: 28px 28px 0 0;
-      padding: 22px 20px 28px;
-      animation: slideUpSheet 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+      height: 54px;
+      padding: 16px 14px 4px;
+      font-size: 16px;
+      color: #1f1f1f;
+      background: #ffffff;
+      border: 1px solid #747775;
+      border-radius: 8px;
+      outline: none;
+      transition: border-color 0.15s, border-width 0.1s;
     }
 
-    @keyframes slideUpSheet {
-      from { transform: translateY(100%); }
-      to { transform: translateY(0); }
+    .md-input:focus {
+      border-color: #0b57d0;
+      border-width: 2px;
+      padding-left: 13px;
     }
 
-    .sheet-top-row {
+    .md-label {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: #ffffff;
+      padding: 0 4px;
+      font-size: 16px;
+      color: #444746;
+      pointer-events: none;
+      transition: 0.15s ease all;
+    }
+
+    .md-input:focus ~ .md-label,
+    .md-input:not(:placeholder-shown) ~ .md-label {
+      top: 0;
+      font-size: 12px;
+      color: #0b57d0;
+      font-weight: 500;
+    }
+
+    .md-input:not(:focus):not(:placeholder-shown) ~ .md-label {
+      color: #444746;
+    }
+
+    /* Show Password & Forgot Row */
+    .options-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 18px;
+      margin: -4px 0 22px;
+      font-size: 14px;
     }
 
-    .sheet-brand-pill {
-      display: flex;
+    .show-pass-label {
+      display: inline-flex;
       align-items: center;
-      gap: 12px;
-      font-size: 17px;
-      font-weight: 500;
-      color: #e8eaed;
-    }
-
-    .white-circle-logo {
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
-      background: #ffffff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .sheet-close-btn {
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      background: #3c4043;
-      border: none;
-      color: #e8eaed;
-      font-size: 15px;
+      gap: 10px;
+      color: #1f1f1f;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      user-select: none;
     }
 
-    .sheet-main-title {
-      font-size: 23px;
-      font-weight: 400;
-      color: #e8eaed;
-      line-height: 1.3;
-      margin-bottom: 18px;
-    }
-
-    .sheet-acct-box {
-      background: #1f2023;
-      border-radius: 16px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .sheet-acct-row {
-      background: #1b1c1f;
-      padding: 14px 16px;
-      display: flex;
-      align-items: center;
-      gap: 14px;
+    .show-pass-label input {
+      width: 18px;
+      height: 18px;
+      accent-color: #0b57d0;
       cursor: pointer;
     }
 
-    .sheet-acct-row:active {
-      background: #2c2d31;
-    }
-
-    .sheet-options-link {
-      display: inline-block;
-      margin-top: 20px;
-      color: #8ab4f8;
-      font-size: 14.5px;
-      font-weight: 500;
+    .text-link-btn {
       background: none;
       border: none;
+      color: #0b57d0;
+      font-size: 14px;
+      font-weight: 500;
       cursor: pointer;
-      padding: 4px 2px;
+      padding: 4px 6px;
+      border-radius: 6px;
+    }
+
+    .text-link-btn:hover {
+      background-color: rgba(11, 87, 208, 0.08);
+    }
+
+    /* Bottom Action Row (Create account + Next/Sign in) */
+    .card-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 8px;
+    }
+
+    .primary-blue-btn {
+      background-color: #0b57d0;
+      color: #ffffff;
+      border: none;
+      height: 40px;
+      padding: 0 24px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s, box-shadow 0.15s;
+    }
+
+    .primary-blue-btn:hover {
+      background-color: #0842a0;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    .primary-blue-btn:disabled {
+      background-color: #e0e3e7;
+      color: #8e918f;
+      cursor: default;
+      box-shadow: none;
+    }
+
+    /* Status Alert Box */
+    .alert-box {
+      display: none;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      align-items: center;
+      gap: 8px;
+      line-height: 1.4;
+    }
+
+    .alert-box.error {
+      display: flex;
+      background-color: #fce8e6;
+      color: #b3261e;
+      border: 1px solid #f9dedc;
+    }
+
+    .alert-box.success {
+      display: flex;
+      background-color: #e6f4ea;
+      color: #137333;
+      border: 1px solid #ceead6;
+    }
+
+    /* Logged-In Profile View */
+    .profile-box {
+      display: none;
+      text-align: center;
+    }
+
+    .profile-avatar-wrap {
+      width: 76px;
+      height: 76px;
+      margin: 0 auto 14px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2px solid #0b57d0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0b57d0;
+      color: #ffffff;
+      font-size: 28px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .profile-avatar-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .profile-name {
+      font-size: 20px;
+      font-weight: 500;
+      color: #1f1f1f;
+    }
+
+    .profile-email {
+      font-size: 14px;
+      color: #444746;
+      margin-top: 4px;
+      margin-bottom: 24px;
+    }
+
+    .profile-btn-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* Footer */
+    .google-footer {
+      width: 100%;
+      max-width: 420px;
+      margin: 0 auto;
+      padding: 12px 24px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: #444746;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 16px;
+    }
+
+    .footer-links a {
+      color: #444746;
+      text-decoration: none;
     }
   </style>
 </head>
 <body>
 
-  <!-- =========================================================
-       STYLISH "ST" KNOT EMBLEM SVG DEFINITIONS
-       ========================================================= -->
-  <svg width="0" height="0" style="position:absolute">
-    <defs>
-      <g id="st-emblem-light">
-        <path d="M50 8 L86 29 L86 71 L50 92 L14 71 L14 29 Z" fill="none" stroke="currentColor" stroke-width="6.5" stroke-linejoin="round"/>
-        <path d="M50 8 L50 32 M86 29 L65 41 M86 71 L65 59 M50 92 L50 68 M14 71 L35 59 M14 29 L35 41" stroke="currentColor" stroke-width="5.5" stroke-linecap="round"/>
-        <rect x="26" y="33" width="48" height="34" rx="9" fill="#000000" stroke="currentColor" stroke-width="5"/>
-        <text x="50" y="56.5" text-anchor="middle" fill="currentColor" font-size="20" font-weight="900" font-family="system-ui, -apple-system, sans-serif" letter-spacing="0.5">ST</text>
-      </g>
-      <g id="st-emblem-dark">
-        <path d="M50 8 L86 29 L86 71 L50 92 L14 71 L14 29 Z" fill="none" stroke="#000000" stroke-width="7" stroke-linejoin="round"/>
-        <path d="M50 8 L50 32 M86 29 L65 41 M86 71 L65 59 M50 92 L50 68 M14 71 L35 59 M14 29 L35 41" stroke="#000000" stroke-width="6" stroke-linecap="round"/>
-        <rect x="25" y="32" width="50" height="36" rx="9" fill="#ffffff" stroke="#000000" stroke-width="5.5"/>
-        <text x="50" y="56.5" text-anchor="middle" fill="#000000" font-size="20" font-weight="900" font-family="system-ui, -apple-system, sans-serif" letter-spacing="0.5">ST</text>
-      </g>
-    </defs>
-  </svg>
+  <!-- Top Back to App Bar -->
+  <nav class="top-nav">
+    <button type="button" class="back-app-btn" onclick="goToAppMainPage()">
+      <i class="fa-solid fa-arrow-left"></i>
+      <span>Back to ST Games</span>
+    </button>
+  </nav>
 
-  <!-- =========================================================
-       SCREEN 1: SPLASH SCREEN (IMAGE 1)
-       ========================================================= -->
-  <section id="screen-splash" class="screen active">
-    <div class="top-bar">
-      <button type="button" class="back-circle-btn" onclick="goToAppMainPage()" aria-label="Back to ST Games App">
-        <i class="fa-solid fa-arrow-left"></i>
-      </button>
-    </div>
+  <main class="page-wrap">
+    <div class="google-card">
 
-    <div class="splash-center">
-      <div class="st-knot-logo">
-        <svg viewBox="0 0 100 100" width="76" height="76" color="#ffffff">
-          <use href="#st-emblem-light"></use>
-        </svg>
-      </div>
-      <h1 class="splash-brand-title">ST Games</h1>
-    </div>
-
-    <div class="bottom-stack">
-      <!-- 1. White Pill: Shows the visitor's own saved account on their device (or triggers Google selector if new) -->
-      <button type="button" id="primary-saved-pill" class="pill-white" onclick="handlePrimaryPillClick()">
-        <div class="avatar-badge-wrap">
-          <img id="pill-avatar-img" src="" alt="" class="avatar-circle-img" style="display:none" referrerpolicy="no-referrer">
-          <div id="pill-avatar-initials" class="avatar-circle-initials"><i class="fa-solid fa-user" style="font-size:14px"></i></div>
-          <div class="mini-google-badge">
-            <svg width="11" height="11" viewBox="0 0 48 48">
+      <!-- ==========================================
+           VIEW 1: GOOGLE-STYLE SIGN IN / SIGN UP
+           ========================================== -->
+      <div id="auth-view">
+        <div class="card-header">
+          <div class="logo-row">
+            <!-- Google G SVG -->
+            <svg width="32" height="32" viewBox="0 0 48 48">
               <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
               <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
               <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
               <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
             </svg>
+            <img src="launchericon-192x192.png" onerror="this.onerror=null;this.src='/launchericon-192x192.png';" alt="ST Games" class="st-app-icon">
           </div>
-        </div>
-        <div class="pill-white-text">
-          <span class="pill-white-title">Continue with this account</span>
-          <span id="pill-account-email" class="pill-white-sub">Tap to choose your Google account</span>
-        </div>
-      </button>
-
-      <!-- 2. Dark Pill: Continue with Google -->
-      <button type="button" class="pill-dark" onclick="openCenterChooserModal()">
-        <svg width="20" height="20" viewBox="0 0 48 48">
-          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-        </svg>
-        <span>Continue with Google</span>
-      </button>
-
-      <!-- 3. Dark Pill: Log in another way -->
-      <button type="button" class="pill-dark" onclick="openFormAndBottomSheet()">
-        <span>Log in another way</span>
-      </button>
-    </div>
-  </section>
-
-  <!-- =========================================================
-       SCREEN 2: "Log in or sign up" WITH USERNAME & PASSWORD (IMAGE 4)
-       ========================================================= -->
-  <section id="screen-form" class="screen">
-    <div class="top-bar">
-      <button type="button" class="back-circle-btn" onclick="handleFormBack()" aria-label="Back">
-        <i class="fa-solid fa-arrow-left"></i>
-      </button>
-    </div>
-
-    <div class="form-center">
-      <div class="st-knot-logo small">
-        <svg viewBox="0 0 100 100" width="58" height="58" color="#ffffff">
-          <use href="#st-emblem-light"></use>
-        </svg>
-      </div>
-
-      <h2 class="form-title">Log in or sign up</h2>
-      <p class="form-subtitle">
-        You'll get cloud high scores, live multiplayer rooms, and can play offline games and more.
-      </p>
-
-      <div id="form-alert" class="alert-banner"></div>
-
-      <form id="user-pass-form" onsubmit="submitUsernamePassword(event)">
-        <div class="field-wrap">
-          <input type="text" id="login-username" class="dark-input" required placeholder="Email or Username" autocomplete="username" oninput="updateContinueBtnState()">
+          <h1 id="form-heading" class="google-title">Sign in</h1>
+          <p class="google-subtitle">to continue to <strong>ST Games</strong></p>
         </div>
 
-        <div class="field-wrap">
-          <input type="password" id="login-password" class="dark-input" style="padding-right: 46px;" required minlength="6" placeholder="Password" autocomplete="current-password" oninput="updateContinueBtnState()">
-          <button type="button" class="pass-toggle-btn" onclick="togglePassField()">
-            <i id="pass-eye-icon" class="fa-regular fa-eye"></i>
-          </button>
-        </div>
-
-        <button type="submit" id="form-continue-btn" class="continue-btn">Continue</button>
-      </form>
-
-      <div class="or-row"><span>OR</span></div>
-
-      <div style="display:flex;flex-direction:column;gap:12px;">
-        <button type="button" class="pill-dark" onclick="openCenterChooserModal()">
+        <!-- 1-Tap Google Account Chooser Button -->
+        <button type="button" class="google-oauth-btn" onclick="signInWithGoogleAccount()">
           <svg width="20" height="20" viewBox="0 0 48 48">
             <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
             <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
             <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
             <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
           </svg>
-          <span>Continue with Google</span>
+          <span>Sign in with Google</span>
         </button>
 
-        <button type="button" class="pill-dark" onclick="focusUsernameInput()">
-          <i class="fa-solid fa-phone" style="font-size:16px"></i>
-          <span>Continue with phone</span>
-        </button>
-      </div>
-    </div>
+        <div class="divider"><span>or use username &amp; password</span></div>
 
-    <div class="terms-footer">
-      <a href="javascript:void(0)" onclick="goToAppMainPage()">Back to App</a> •
-      <a href="javascript:void(0)">Terms of Use</a> •
-      <a href="javascript:void(0)">Privacy Policy</a>
-    </div>
-  </section>
-
-  <!-- =========================================================
-       MODAL 1: CENTER "Choose an account" DIALOG (IMAGE 2)
-       ========================================================= -->
-  <div id="center-chooser-modal" class="modal-overlay" onclick="if(event.target===this) closeCenterChooserModal()">
-    <div class="center-chooser-card">
-      <div class="white-squircle-logo">
-        <svg viewBox="0 0 100 100" width="32" height="32">
-          <use href="#st-emblem-dark"></use>
-        </svg>
-      </div>
-
-      <div class="chooser-heading">Choose an account</div>
-      <div class="chooser-sub">to continue to ST Games</div>
-
-      <!-- Dynamically populated with the current user's accounts on their device -->
-      <div id="center-accounts-list" class="chooser-list"></div>
-
-      <div class="chooser-item" onclick="triggerFirebaseGooglePopup()">
-        <div class="chooser-avatar" style="background:transparent;color:#e8eaed;font-size:18px;">
-          <i class="fa-solid fa-user-plus"></i>
+        <div id="alert-box" class="alert-box">
+          <i id="alert-icon" class="fa-solid fa-circle-exclamation"></i>
+          <span id="alert-text"></span>
         </div>
-        <div class="chooser-info">
-          <span class="chooser-name">Add another account</span>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- =========================================================
-       MODAL 2: BOTTOM SHEET "Choose an account for ST Games" (IMAGE 3)
-       ========================================================= -->
-  <div id="bottom-sheet-modal" class="sheet-overlay" onclick="if(event.target===this) closeBottomSheetModal()">
-    <div class="bottom-sheet-card">
-      <div class="sheet-top-row">
-        <div class="sheet-brand-pill">
-          <div class="white-circle-logo">
-            <svg viewBox="0 0 100 100" width="24" height="24">
-              <use href="#st-emblem-dark"></use>
-            </svg>
+        <!-- Google-Style Floating Label Form -->
+        <form id="google-login-form" onsubmit="handleFormSubmit(event)">
+          <!-- Optional Name field when creating a new account -->
+          <div id="name-field-wrap" class="md-field" style="display: none;">
+            <input type="text" id="display-name-input" class="md-input" placeholder=" ">
+            <label for="display-name-input" class="md-label">Your Name</label>
           </div>
-          <span>ST Games</span>
-        </div>
-        <button type="button" class="sheet-close-btn" onclick="closeBottomSheetModal()">✕</button>
+
+          <div class="md-field">
+            <input type="text" id="user-input" class="md-input" placeholder=" " required autocomplete="username">
+            <label for="user-input" class="md-label">Email or username</label>
+          </div>
+
+          <div class="md-field">
+            <input type="password" id="pass-input" class="md-input" placeholder=" " required minlength="6" autocomplete="current-password">
+            <label for="pass-input" class="md-label">Enter your password</label>
+          </div>
+
+          <div class="options-row">
+            <label class="show-pass-label">
+              <input type="checkbox" onchange="toggleShowPassword(this)">
+              <span>Show password</span>
+            </label>
+            <button type="button" class="text-link-btn" onclick="handleForgotPassword()">Forgot password?</button>
+          </div>
+
+          <div class="card-actions">
+            <button type="button" id="toggle-mode-btn" class="text-link-btn" onclick="toggleCreateMode()">
+              Create account
+            </button>
+            <button type="submit" id="submit-btn" class="primary-blue-btn">
+              Sign in
+            </button>
+          </div>
+        </form>
       </div>
 
-      <div class="sheet-main-title">Choose an account for<br>ST Games</div>
+      <!-- ==========================================
+           VIEW 2: SIGNED-IN ACCOUNT SUMMARY
+           ========================================== -->
+      <div id="profile-view" class="profile-box">
+        <div class="profile-avatar-wrap">
+          <img id="profile-img" src="" alt="Profile" style="display: none;" referrerpolicy="no-referrer">
+          <span id="profile-letter">U</span>
+        </div>
+        <div id="profile-name" class="profile-name">Player</div>
+        <div id="profile-email" class="profile-email">player@gmail.com</div>
 
-      <!-- Dynamically populated with the current user's accounts on their device -->
-      <div id="sheet-accounts-list" class="sheet-acct-box"></div>
+        <div class="profile-btn-stack">
+          <button type="button" class="primary-blue-btn" style="height: 44px; width: 100%;" onclick="goToAppMainPage()">
+            Continue to ST Games
+          </button>
+          <button type="button" class="google-oauth-btn" onclick="signInWithGoogleAccount()">
+            Switch Google Account
+          </button>
+          <button type="button" id="signout-btn" class="text-link-btn" style="color: #b3261e; margin-top: 6px;">
+            Sign out
+          </button>
+        </div>
+      </div>
 
-      <button type="button" class="sheet-options-link" onclick="closeBottomSheetModal(); triggerFirebaseGooglePopup();">
-        Sign-in options
-      </button>
     </div>
-  </div>
+  </main>
+
+  <footer class="google-footer">
+    <span>English (United States)</span>
+    <div class="footer-links">
+      <a href="javascript:void(0)" onclick="goToAppMainPage()">ST Games App</a>
+      <a href="javascript:void(0)">Privacy</a>
+      <a href="javascript:void(0)">Terms</a>
+    </div>
+  </footer>
 
   <!-- =========================================================
-       APP NAVIGATION & UI CONTROLLER
+       NAVIGATION & FORM UI HELPERS
        ========================================================= -->
   <script>
-    // Always returns to the APP main page (/stgames-apk/index.html), NEVER the website root
+    let isCreateAccountMode = false;
+
+    // Always return to the APP index (/stgames-apk/index.html), never the root website
     function goToAppMainPage() {
-      const currentPath = window.location.pathname;
-      if (currentPath.includes("/stgames-apk/")) {
+      const path = window.location.pathname;
+      if (path.includes("/stgames-apk/")) {
         window.location.replace("/stgames-apk/index.html");
       } else if (window.location.hostname.includes("stgames.online")) {
         window.location.replace("https://stgames.online/stgames-apk/index.html");
@@ -814,108 +532,57 @@
       }
     }
 
-    function openFormAndBottomSheet() {
-      document.getElementById("screen-splash").classList.remove("active");
-      document.getElementById("screen-form").classList.add("active");
-      if (window.hasDeviceAccounts && window.hasDeviceAccounts()) {
-        document.getElementById("bottom-sheet-modal").classList.add("open");
-      }
-      history.pushState({ view: "form" }, "", "#login-options");
-    }
-
-    function handleFormBack() {
-      const sheet = document.getElementById("bottom-sheet-modal");
-      if (sheet.classList.contains("open")) {
-        sheet.classList.remove("open");
-        return;
-      }
-      document.getElementById("screen-form").classList.remove("active");
-      document.getElementById("screen-splash").classList.add("active");
-    }
-
-    // Lock phone hardware back button so it always returns to the app main page
+    // Intercept hardware back button on Android so it always returns to the app
+    history.pushState({ page: "login" }, "", window.location.href);
     window.addEventListener("popstate", () => {
-      const centerModal = document.getElementById("center-chooser-modal");
-      const bottomSheet = document.getElementById("bottom-sheet-modal");
-      const formScreen = document.getElementById("screen-form");
-
-      if (centerModal.classList.contains("open")) {
-        centerModal.classList.remove("open");
-      } else if (bottomSheet.classList.contains("open")) {
-        bottomSheet.classList.remove("open");
-      } else if (formScreen.classList.contains("active")) {
-        formScreen.classList.remove("active");
-        document.getElementById("screen-splash").classList.add("active");
-      } else {
-        goToAppMainPage();
-      }
+      goToAppMainPage();
     });
 
-    function openCenterChooserModal() {
-      document.getElementById("bottom-sheet-modal").classList.remove("open");
-      if (window.hasDeviceAccounts && window.hasDeviceAccounts()) {
-        document.getElementById("center-chooser-modal").classList.add("open");
-      } else {
-        // If this user has no saved accounts yet, open their device's native Google Account Chooser directly
-        window.triggerFirebaseGooglePopup();
-      }
+    function toggleShowPassword(checkbox) {
+      const passInput = document.getElementById("pass-input");
+      passInput.type = checkbox.checked ? "text" : "password";
     }
 
-    function closeCenterChooserModal() {
-      document.getElementById("center-chooser-modal").classList.remove("open");
+    function toggleCreateMode() {
+      isCreateAccountMode = !isCreateAccountMode;
+      document.getElementById("form-heading").textContent = isCreateAccountMode ? "Create Account" : "Sign in";
+      document.getElementById("name-field-wrap").style.display = isCreateAccountMode ? "block" : "none";
+      document.getElementById("submit-btn").textContent = isCreateAccountMode ? "Create" : "Sign in";
+      document.getElementById("toggle-mode-btn").textContent = isCreateAccountMode ? "Sign in instead" : "Create account";
+      clearAlert();
     }
 
-    function closeBottomSheetModal() {
-      document.getElementById("bottom-sheet-modal").classList.remove("open");
+    function showAlert(message, type) {
+      const box = document.getElementById("alert-box");
+      const icon = document.getElementById("alert-icon");
+      const text = document.getElementById("alert-text");
+      box.className = "alert-box " + type;
+      icon.className = type === "error" ? "fa-solid fa-circle-exclamation" : "fa-solid fa-circle-check";
+      text.textContent = message;
     }
 
-    function updateContinueBtnState() {
-      const u = document.getElementById("login-username").value.trim();
-      const p = document.getElementById("login-password").value;
-      document.getElementById("form-continue-btn").classList.toggle("ready", u.length >= 2 && p.length >= 6);
-    }
-
-    function togglePassField() {
-      const passInput = document.getElementById("login-password");
-      const icon = document.getElementById("pass-eye-icon");
-      if (passInput.type === "password") {
-        passInput.type = "text";
-        icon.className = "fa-regular fa-eye-slash";
-      } else {
-        passInput.type = "password";
-        icon.className = "fa-regular fa-eye";
-      }
-    }
-
-    function focusUsernameInput() {
-      closeBottomSheetModal();
-      const input = document.getElementById("login-username");
-      input.placeholder = "Phone, Username, or Email";
-      input.focus();
-    }
-
-    function showFormAlert(msg, type) {
-      const el = document.getElementById("form-alert");
-      el.textContent = msg;
-      el.className = "alert-banner " + type;
+    function clearAlert() {
+      document.getElementById("alert-box").className = "alert-box";
     }
   </script>
 
   <!-- =========================================================
-       FIREBASE AUTH + DYNAMIC USER DEVICE ACCOUNT ENGINE
+       FIREBASE GOOGLE + USERNAME/PASSWORD AUTHENTICATION
        ========================================================= -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
     import {
       getAuth,
+      GoogleAuthProvider,
       signInWithPopup,
       signInWithRedirect,
       getRedirectResult,
-      GoogleAuthProvider,
       signInWithEmailAndPassword,
       createUserWithEmailAndPassword,
+      sendPasswordResetEmail,
       updateProfile,
-      onAuthStateChanged
+      onAuthStateChanged,
+      signOut
     } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -932,225 +599,160 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const googleProvider = new GoogleAuthProvider();
-    // Always prompt the visitor's own Google account picker on their phone
     googleProvider.setCustomParameters({ prompt: "select_account" });
 
-    const AVATAR_COLORS = ["#1a73e8", "#9334e6", "#0d9488", "#e11d48", "#d97706"];
-
-    // Reads ONLY the accounts logged in on THIS user's own device
-    function getSavedDeviceAccounts() {
-      try {
-        const stored = JSON.parse(localStorage.getItem("st_user_device_accounts") || "[]");
-        if (Array.isArray(stored)) return stored;
-      } catch (e) {}
-      return [];
+    // Converts plain usernames (e.g. "satish") into valid Firebase email format
+    function formatToEmail(userInput) {
+      const clean = userInput.trim();
+      if (clean.includes("@")) return clean;
+      return clean.toLowerCase().replace(/[^a-z0-9._-]/g, "") + "@stgames.online";
     }
 
-    window.hasDeviceAccounts = function() {
-      return getSavedDeviceAccounts().length > 0;
-    };
-
-    function getInitials(name) {
-      const clean = (name || "U").trim();
-      const parts = clean.split(/\s+/);
-      if (parts.length > 1) {
-        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-      }
-      return clean.slice(0, 2).toUpperCase();
-    }
-
-    function saveAccountToDevice(accountObj) {
-      const list = getSavedDeviceAccounts();
-      const filtered = list.filter(a => a.email.toLowerCase() !== accountObj.email.toLowerCase());
-      filtered.unshift(accountObj);
-      const updated = filtered.slice(0, 5);
-
-      localStorage.setItem("st_user_device_accounts", JSON.stringify(updated));
-      localStorage.setItem("gh_user_name", accountObj.name);
-      localStorage.setItem("gh_user_email", accountObj.email);
-      localStorage.setItem("gh_user_letter", accountObj.initials.charAt(0));
-      localStorage.setItem("gh_user_photo", accountObj.photo || "");
-
-      renderUserAccountsUI();
-    }
-
-    function renderUserAccountsUI() {
-      const accounts = getSavedDeviceAccounts();
-      const pillImg = document.getElementById("pill-avatar-img");
-      const pillInit = document.getElementById("pill-avatar-initials");
-      const pillEmail = document.getElementById("pill-account-email");
-
-      // 1. Update White Pill on Splash Screen with the visitor's own account
-      if (accounts.length > 0) {
-        const primary = accounts[0];
-        pillEmail.textContent = primary.email;
-        if (primary.photo) {
-          pillImg.src = primary.photo;
-          pillImg.style.display = "block";
-          pillInit.style.display = "none";
-        } else {
-          pillImg.style.display = "none";
-          pillInit.textContent = primary.initials || "U";
-          pillInit.style.display = "flex";
-        }
-      } else {
-        pillImg.style.display = "none";
-        pillInit.innerHTML = '<i class="fa-solid fa-user" style="font-size:14px"></i>';
-        pillInit.style.display = "flex";
-        pillEmail.textContent = "Tap to choose your Google account";
-      }
-
-      // 2. Populate Center Account Chooser Modal (Image 2)
-      const centerList = document.getElementById("center-accounts-list");
-      centerList.innerHTML = "";
-      accounts.forEach((acc, idx) => {
-        const row = document.createElement("div");
-        row.className = "chooser-item";
-        const avatarHtml = acc.photo
-          ? `<img src="${acc.photo}" class="chooser-avatar" referrerpolicy="no-referrer">`
-          : `<div class="chooser-avatar" style="background:${acc.color || '#1a73e8'}">${acc.initials}</div>`;
-        row.innerHTML = `
-          ${avatarHtml}
-          <div class="chooser-info">
-            <span class="chooser-name">${acc.name}</span>
-            <span class="chooser-email">${acc.email}</span>
-          </div>
-        `;
-        row.addEventListener("click", () => selectDeviceAccount(idx));
-        centerList.appendChild(row);
-      });
-
-      // 3. Populate Bottom Sheet Account Chooser (Image 3)
-      const sheetList = document.getElementById("sheet-accounts-list");
-      sheetList.innerHTML = "";
-      accounts.forEach((acc, idx) => {
-        const row = document.createElement("div");
-        row.className = "sheet-acct-row";
-        const avatarHtml = acc.photo
-          ? `<img src="${acc.photo}" class="chooser-avatar" referrerpolicy="no-referrer">`
-          : `<div class="chooser-avatar" style="background:${acc.color || '#1a73e8'}">${acc.initials}</div>`;
-        row.innerHTML = `
-          ${avatarHtml}
-          <div class="chooser-info">
-            <span class="chooser-name">${acc.name}</span>
-            <span class="chooser-email">${acc.email}</span>
-          </div>
-        `;
-        row.addEventListener("click", () => selectDeviceAccount(idx));
-        sheetList.appendChild(row);
-      });
-    }
-
-    // White pill click: logs in immediately if user has a saved account, otherwise opens Google account chooser
-    window.handlePrimaryPillClick = function() {
-      const accounts = getSavedDeviceAccounts();
-      if (accounts.length > 0) {
-        selectDeviceAccount(0);
-      } else {
-        window.triggerFirebaseGooglePopup();
-      }
-    };
-
-    window.selectDeviceAccount = function(index) {
-      const accounts = getSavedDeviceAccounts();
-      const chosen = accounts[index];
-      if (!chosen) {
-        window.triggerFirebaseGooglePopup();
-        return;
-      }
-      saveAccountToDevice(chosen);
-      window.goToAppMainPage();
-    };
-
-    // Opens the visitor's own Google accounts on their phone via Firebase Auth
-    window.triggerFirebaseGooglePopup = async function() {
-      closeCenterChooserModal();
-      closeBottomSheetModal();
-      try {
-        const result = await signInWithPopup(auth, googleProvider);
-        if (result && result.user) {
-          recordAuthenticatedFirebaseUser(result.user, true);
-        }
-      } catch (err) {
-        if (err.code === "auth/popup-blocked" || err.code === "auth/operation-not-supported-in-this-environment") {
-          signInWithRedirect(auth, googleProvider);
-        }
-      }
-    };
-
-    function recordAuthenticatedFirebaseUser(user, redirectToApp = false) {
+    function saveUserForAppHeader(user) {
       const rawEmail = user.email || "";
       const name = user.displayName || (rawEmail ? rawEmail.split("@")[0] : "Player");
+      const initial = name.charAt(0).toUpperCase();
       const displayEmail = rawEmail.endsWith("@stgames.online") ? "@" + name : rawEmail;
-      const color = AVATAR_COLORS[ name.length % AVATAR_COLORS.length ];
 
-      saveAccountToDevice({
-        name: name,
-        email: displayEmail || name,
-        initials: getInitials(name),
-        color: color,
-        photo: user.photoURL || ""
-      });
+      localStorage.setItem("gh_user_name", name);
+      localStorage.setItem("gh_user_email", displayEmail);
+      localStorage.setItem("gh_user_letter", initial);
+      localStorage.setItem("gh_user_photo", user.photoURL || "");
 
-      if (redirectToApp) {
-        window.goToAppMainPage();
+      // Update Signed-In Card UI
+      const profileImg = document.getElementById("profile-img");
+      const profileLetter = document.getElementById("profile-letter");
+      document.getElementById("profile-name").textContent = name;
+      document.getElementById("profile-email").textContent = displayEmail;
+
+      if (user.photoURL) {
+        profileImg.src = user.photoURL;
+        profileImg.style.display = "block";
+        profileLetter.style.display = "none";
+      } else {
+        profileImg.style.display = "none";
+        profileLetter.textContent = initial;
+        profileLetter.style.display = "block";
       }
     }
 
-    // Automatically sync if the user is already authenticated in Firebase on their browser/app
     onAuthStateChanged(auth, (user) => {
       if (user) {
-        recordAuthenticatedFirebaseUser(user, false);
+        saveUserForAppHeader(user);
+        document.getElementById("auth-view").style.display = "none";
+        document.getElementById("profile-view").style.display = "block";
+      } else {
+        localStorage.removeItem("gh_user_name");
+        localStorage.removeItem("gh_user_email");
+        localStorage.removeItem("gh_user_letter");
+        localStorage.removeItem("gh_user_photo");
+        document.getElementById("auth-view").style.display = "block";
+        document.getElementById("profile-view").style.display = "none";
       }
     });
 
     getRedirectResult(auth).then((res) => {
       if (res && res.user) {
-        recordAuthenticatedFirebaseUser(res.user, true);
+        saveUserForAppHeader(res.user);
+        window.goToAppMainPage();
       }
     }).catch(() => {});
 
-    // Username or Email + Password Form Submit
-    function formatUsernameToEmail(input) {
-      const clean = input.trim();
-      return clean.includes("@")
-        ? clean
-        : clean.toLowerCase().replace(/[^a-z0-9._-]/g, "") + "@stgames.online";
-    }
-
-    window.submitUsernamePassword = async function(event) {
-      event.preventDefault();
-      const rawUser = document.getElementById("login-username").value.trim();
-      const password = document.getElementById("login-password").value;
-      const email = formatUsernameToEmail(rawUser);
-      const displayUsername = rawUser.includes("@") ? rawUser.split("@")[0] : rawUser;
-      const btn = document.getElementById("form-continue-btn");
-
-      btn.disabled = true;
-      btn.textContent = "Please wait...";
-
+    // 1. Official Google Sign-In
+    window.signInWithGoogleAccount = async function() {
+      clearAlert();
       try {
-        let userCred;
-        try {
-          userCred = await signInWithEmailAndPassword(auth, email, password);
-        } catch (signInErr) {
-          if (signInErr.code === "auth/user-not-found" || signInErr.code === "auth/invalid-credential") {
-            userCred = await createUserWithEmailAndPassword(auth, email, password);
-            await updateProfile(userCred.user, { displayName: displayUsername });
-          } else {
-            throw signInErr;
-          }
+        const result = await signInWithPopup(auth, googleProvider);
+        if (result && result.user) {
+          saveUserForAppHeader(result.user);
+          window.goToAppMainPage();
         }
-        showFormAlert("Signed in! Returning to ST Games...", "success");
-        recordAuthenticatedFirebaseUser(userCred.user, true);
       } catch (err) {
-        showFormAlert("Invalid credentials or password does not match.", "error");
-        btn.disabled = false;
-        btn.textContent = "Continue";
+        if (err.code === "auth/popup-blocked" || err.code === "auth/operation-not-supported-in-this-environment") {
+          signInWithRedirect(auth, googleProvider);
+        } else if (err.code !== "auth/popup-closed-by-user") {
+          showAlert("Could not sign in with Google. Please use username and password.", "error");
+        }
       }
     };
 
-    renderUserAccountsUI();
+    // 2. Username/Email + Password Sign In or Create Account
+    window.handleFormSubmit = async function(event) {
+      event.preventDefault();
+      clearAlert();
+
+      const rawUser = document.getElementById("user-input").value.trim();
+      const password = document.getElementById("pass-input").value;
+      const customName = document.getElementById("display-name-input").value.trim();
+      const email = formatToEmail(rawUser);
+      const fallbackName = customName || (rawUser.includes("@") ? rawUser.split("@")[0] : rawUser);
+      const submitBtn = document.getElementById("submit-btn");
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Please wait...";
+
+      try {
+        if (isCreateAccountMode) {
+          const cred = await createUserWithEmailAndPassword(auth, email, password);
+          await updateProfile(cred.user, { displayName: fallbackName });
+          saveUserForAppHeader(cred.user);
+          showAlert("Account created! Opening ST Games...", "success");
+          setTimeout(() => window.goToAppMainPage(), 400);
+        } else {
+          try {
+            const cred = await signInWithEmailAndPassword(auth, email, password);
+            saveUserForAppHeader(cred.user);
+            showAlert("Signed in! Opening ST Games...", "success");
+            setTimeout(() => window.goToAppMainPage(), 350);
+          } catch (loginErr) {
+            // Auto-create account if username isn't registered yet
+            if (loginErr.code === "auth/user-not-found" || loginErr.code === "auth/invalid-credential") {
+              try {
+                const newCred = await createUserWithEmailAndPassword(auth, email, password);
+                await updateProfile(newCred.user, { displayName: fallbackName });
+                saveUserForAppHeader(newCred.user);
+                showAlert("Account created & signed in!", "success");
+                setTimeout(() => window.goToAppMainPage(), 400);
+                return;
+              } catch (createErr) {
+                throw loginErr;
+              }
+            }
+            throw loginErr;
+          }
+        }
+      } catch (err) {
+        let msg = "Wrong password or account already exists with a different password.";
+        if (err.code === "auth/weak-password") msg = "Use 6 characters or more for your password.";
+        if (err.code === "auth/invalid-email") msg = "Enter a valid email or username.";
+        showAlert(msg, "error");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = isCreateAccountMode ? "Create" : "Sign in";
+      }
+    };
+
+    // 3. Forgot Password
+    window.handleForgotPassword = async function() {
+      clearAlert();
+      const rawUser = document.getElementById("user-input").value.trim();
+      if (!rawUser || !rawUser.includes("@")) {
+        showAlert("Enter your email address in the box above first, then tap 'Forgot password?'.", "error");
+        return;
+      }
+      try {
+        await sendPasswordResetEmail(auth, rawUser);
+        showAlert("Password reset email sent! Check your inbox.", "success");
+      } catch (err) {
+        showAlert("Could not send reset email. Check the address and try again.", "error");
+      }
+    };
+
+    // 4. Sign Out
+    document.getElementById("signout-btn").addEventListener("click", async () => {
+      await signOut(auth);
+      showAlert("Signed out of your account.", "success");
+    });
   </script>
 </body>
 </html>
