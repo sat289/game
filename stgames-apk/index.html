@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
   <meta name="theme-color" content="#0f172a">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="ST GAMES">
   <meta name="description" content="ST GAMES - play online and downloaded offline arcade games">
   <meta name="color-scheme" content="light dark">
-  <link rel="manifest" href="/manifest.json">
+  <link rel="manifest" href="/stgames-apk/manifest.json">
   <link rel="icon" href="/launchericon-192x192.png">
   <title>ST GAMES</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -22,13 +22,22 @@
     *{box-sizing:border-box;margin:0;padding:0;user-select:none;-webkit-tap-highlight-color:transparent;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
     body{background:var(--bg-main);color:var(--text-main);padding-bottom:110px;overflow-x:hidden;transition:background .3s,color .3s}
     button{font:inherit}
-    .mode-bar{background:var(--brand-bar);padding:10px 15px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:200;box-shadow:0 2px 10px #0002}
+    .mode-bar{background:var(--brand-bar);padding:10px 12px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:200;box-shadow:0 2px 10px #0002}
     .app-brand{color:#fff;font-weight:900;font-size:16px;letter-spacing:.5px;display:flex;align-items:center;gap:8px}
     .status-dot{width:10px;height:10px;border-radius:50%;background:#22c55e;box-shadow:0 0 8px #22c55e}
     .status-dot.offline{background:#ef4444;box-shadow:0 0 8px #ef4444}
+    .header-right{display:flex;align-items:center;gap:8px}
     .mode-toggle{display:flex;background:#1e293b;border-radius:25px;padding:3px;border:1px solid #334155}
-    .mode-btn{border:0;background:transparent;color:#94a3b8;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:800;cursor:pointer}
+    .mode-btn{border:0;background:transparent;color:#94a3b8;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:800;cursor:pointer}
     .mode-btn.active{background:#3b82f6;color:#fff;box-shadow:0 2px 8px #3b82f680}
+    
+    /* Login / User Google Logo Button */
+    .login-Trigger-btn{background:#1e293b;color:#fff;border:1.5px solid #334155;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:800;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;transition:transform .15s,border-color .2s}
+    .login-Trigger-btn:active{transform:scale(.93)}
+    .login-Trigger-btn.logged-in-logo{padding:0;width:36px;height:36px;border-radius:50%;border:2px solid #fbbf24;overflow:hidden;background:linear-gradient(135deg,#f59e0b,#d97706);box-shadow:0 0 10px rgba(245,158,11,.4)}
+    #user-logo-img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:none}
+    #user-letter-avatar{font-size:15px;font-weight:900;color:#0f172a;display:none;text-transform:uppercase}
+
     .category-nav{background:#0284c71a;margin:12px 14px;padding:6px;border-radius:30px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
     .category-nav::-webkit-scrollbar{display:none}
     .cat-pill{border:2px solid transparent;background:transparent;color:inherit;opacity:.8;padding:7px 18px;border-radius:22px;font-weight:800;font-size:14px;white-space:nowrap;cursor:pointer}
@@ -75,17 +84,31 @@
     .back-home-btn{background:#ef4444;color:#fff;border:0;padding:6px 14px;border-radius:15px;font-weight:800;font-size:13px;cursor:pointer}
     #game-frame{flex:1;width:100%;border:0;background:#000}
     .small-note{font-size:12px;opacity:.72;line-height:1.4;margin:-3px 0 12px}
-    @media(max-width:360px){.app-brand{font-size:14px}.mode-btn{padding:6px 10px;font-size:12px}.bottom-bar{padding:0 14px}.play-main-btn{width:145px}}
+    @media(max-width:360px){.app-brand{font-size:14px}.mode-btn{padding:6px 9px;font-size:11px}.bottom-bar{padding:0 14px}.play-main-btn{width:145px}}
   </style>
 </head>
 <body id="app-body">
-  <audio id="bg-music" src="/stgames-apk/app.mp3" loop preload="none"></audio>
+  <!-- Background Music (Plays in Lobby and Inside All Games) -->
+  <audio id="bg-music" loop preload="auto">
+    <source src="/stgames-apk/app.mp3" type="audio/mpeg">
+    <source src="app.mp3" type="audio/mpeg">
+    <source src="https://stgames.online/stgames-apk/app.mp3" type="audio/mpeg">
+  </audio>
 
   <header class="mode-bar">
     <div class="app-brand"><div id="net-dot" class="status-dot"></div><span>ST GAMES</span></div>
-    <div class="mode-toggle">
-      <button id="btn-online" class="mode-btn active" onclick="setAppMode('online')">ONLINE</button>
-      <button id="btn-offline" class="mode-btn" onclick="setAppMode('offline')">OFFLINE (<span id="saved-count">0</span>)</button>
+    <div class="header-right">
+      <div class="mode-toggle">
+        <button id="btn-online" class="mode-btn active" onclick="setAppMode('online')">ONLINE</button>
+        <button id="btn-offline" class="mode-btn" onclick="setAppMode('offline')">OFFLINE (<span id="saved-count">0</span>)</button>
+      </div>
+      <!-- Login / Google Profile Logo Button (Shows ONLY Logo when Logged In) -->
+      <a href="/login.html" id="auth-profile-btn" class="login-Trigger-btn" title="Account">
+        <img id="user-logo-img" src="" alt="Profile" referrerpolicy="no-referrer">
+        <span id="user-letter-avatar">U</span>
+        <i id="login-default-icon" class="fa-solid fa-user"></i>
+        <span id="login-default-text">Login</span>
+      </a>
     </div>
   </header>
 
@@ -112,7 +135,7 @@
         <span id="settings-heading">Settings &amp; Themes</span>
         <button onclick="closeSettings()" aria-label="Close settings" style="background:none;border:0;color:inherit;font-size:24px;cursor:pointer">&times;</button>
       </div>
-      <p style="font-size:13px;opacity:.8;margin-bottom:8px">Background Music (Low Volume):</p>
+      <p style="font-size:13px;opacity:.8;margin-bottom:8px">Background Music (Plays in All Games):</p>
       <div class="setting-toggle-row">
         <span>🎵 Arcade BGM (app.mp3)</span>
         <input type="checkbox" id="music-toggle" onchange="toggleMusic(this)" style="width:20px;height:20px;cursor:pointer">
@@ -133,7 +156,10 @@
   <div id="player-modal" class="player-modal">
     <div class="player-top-bar">
       <span id="playing-title" style="font-weight:800;font-size:14px">Game</span>
-      <button class="back-home-btn" onclick="closeGame()"><i class="fa-solid fa-xmark"></i> EXIT</button>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button onclick="toggleInGameMusic()" id="ingame-music-btn" style="background:#1e293b;color:#fff;border:1px solid #475569;padding:5px 10px;border-radius:12px;font-size:12px;font-weight:800;cursor:pointer">🔊 Music</button>
+        <button class="back-home-btn" onclick="closeGame()"><i class="fa-solid fa-xmark"></i> EXIT</button>
+      </div>
     </div>
     <iframe id="game-frame" src="about:blank" title="ST GAMES player" allow="autoplay; fullscreen; gamepad" allowfullscreen></iframe>
   </div>
@@ -145,7 +171,8 @@ const BASE_URL = "https://stgames.online/";
 const CACHE_NAME = "stgames-apk-cache-v2";
 const SONG_URL = BASE_URL + "stgames-apk/app.mp3";
 
-const GAMES_DATA = [
+/* 1. ALL YOUR 18 ORIGINAL GAMES KEPT INTACT */
+const DEFAULT_GAMES_DATA = [
   {id:"game-mw3654pa",title:"Wheel master",url:"game/Wheel master/index.html",logo:"logo/game-1793861007180-5455.jpg",categories:["popular"],badge:"✨ NEW",bg:"linear-gradient(135deg,#6366f1,#4338ca)"},
   {id:"game-mw20ft73",title:"Rope Dash",url:"game/rope.html",logo:"logo/game-1793790309066-5381.jpg",categories:["classic","popular"],badge:"✨ NEW",bg:"linear-gradient(135deg,#ec4899,#be185d)"},
   {id:"game-mw1urk4j",title:"Space waves",url:"game/Spacewaces.html",logo:"logo/game-1793853613420-5437.jpg",categories:["popular"],badge:"✨ NEW",bg:"linear-gradient(135deg,#3b82f6,#1d4ed8)"},
@@ -166,10 +193,145 @@ const GAMES_DATA = [
   {id:"typing-race",title:"Typing Race Championship",url:"game/typerace/index.html",logo:"logo/typerace.jpg",categories:["racing","single","popular"],badge:"",bg:"linear-gradient(135deg,#64748b,#334155)"}
 ];
 
+let GAMES_DATA = [...DEFAULT_GAMES_DATA];
 let currentMode = "online";
 let currentCategory = "all";
 let savedGameIds = loadSavedGames();
 let swRegistration = null;
+window.currentActiveGameKey = "stgames_global";
+
+/* 2. AUTOMATIC FULLSCREEN TRIGGER (HIDES TOP BROWSER BAR) */
+function enterAppFullScreen(){
+  const elem = document.documentElement;
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    if (elem.requestFullscreen) {
+      elem.requestFullscreen({ navigationUI: "hide" }).catch(()=>{});
+    } else if (elem.webkitRequestFullscreen) {
+      elem.webkitRequestFullscreen();
+    }
+  }
+}
+
+// Automatically enter full screen & start music on first touch/click anywhere
+["click", "touchend", "pointerup"].forEach(evtName => {
+  document.addEventListener(evtName, () => {
+    enterAppFullScreen();
+    ensureMusicPlaying();
+  }, { passive: true });
+});
+
+/* 3. BACKGROUND MUSIC (app.mp3) IN LOBBY & ALL GAMES */
+const bgMusic = document.getElementById("bg-music");
+const musicToggle = document.getElementById("music-toggle");
+const ingameMusicBtn = document.getElementById("ingame-music-btn");
+let musicEnabled = localStorage.getItem("st_music_enabled") !== "false";
+musicToggle.checked = musicEnabled;
+bgMusic.volume = 0.28;
+
+function updateMusicUI(){
+  musicToggle.checked = musicEnabled;
+  if(ingameMusicBtn){
+    ingameMusicBtn.textContent = musicEnabled ? "🔊 Music" : "🔇 Muted";
+  }
+}
+updateMusicUI();
+
+function ensureMusicPlaying(){
+  if(musicEnabled && bgMusic.paused && !document.hidden){
+    bgMusic.play().catch(()=>{});
+  }
+}
+
+function toggleMusic(input){
+  musicEnabled = input.checked;
+  localStorage.setItem("st_music_enabled", String(musicEnabled));
+  updateMusicUI();
+  if(musicEnabled) ensureMusicPlaying();
+  else bgMusic.pause();
+}
+
+function toggleInGameMusic(){
+  musicEnabled = !musicEnabled;
+  localStorage.setItem("st_music_enabled", String(musicEnabled));
+  updateMusicUI();
+  if(musicEnabled) ensureMusicPlaying();
+  else bgMusic.pause();
+}
+
+// Keep music playing even when game iframe takes focus
+setInterval(() => {
+  if(musicEnabled && bgMusic.paused && !document.hidden){
+    bgMusic.play().catch(()=>{});
+  }
+}, 1500);
+
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden) bgMusic.pause();
+  else ensureMusicPlaying();
+});
+
+/* 4. AUTO-SYNC WITH MAIN PAGE games.json */
+function normalizeGameItem(item, index){
+  const rawCats = item.categories || item.category || ["popular"];
+  const categories = Array.isArray(rawCats)
+    ? rawCats.map(c => String(c).toLowerCase())
+    : [String(rawCats).toLowerCase()];
+
+  return {
+    id: item.id || ("game-json-" + index),
+    title: item.title || item.name || "Arcade Game",
+    url: item.url || item.link || item.path || "",
+    logo: item.logo || item.image || item.icon || item.thumbnail || "launchericon-192x192.png",
+    categories: categories,
+    badge: item.badge !== undefined ? item.badge : "✨ NEW",
+    bg: item.bg || "linear-gradient(135deg,#3b82f6,#1d4ed8)"
+  };
+}
+
+async function syncMainPageGamesJson(){
+  const urlsToTry = [
+    BASE_URL + "games.json",
+    "/games.json",
+    "games.json"
+  ];
+
+  for (const jsonUrl of urlsToTry) {
+    try {
+      const res = await fetch(jsonUrl, { cache: "no-store" });
+      if (!res.ok) continue;
+      const data = await res.json();
+      const rawList = Array.isArray(data) ? data : (Array.isArray(data.games) ? data.games : []);
+      if (!rawList.length) continue;
+
+      const normalizedFromJson = rawList.map(normalizeGameItem).filter(g => g.url);
+      
+      // Merge main page games.json with existing games so new games appear automatically
+      const mergedMap = new Map();
+      normalizedFromJson.forEach(g => mergedMap.set(g.url.toLowerCase(), g));
+      DEFAULT_GAMES_DATA.forEach(g => {
+        if (!mergedMap.has(g.url.toLowerCase())) {
+          mergedMap.set(g.url.toLowerCase(), g);
+        }
+      });
+
+      GAMES_DATA = Array.from(mergedMap.values());
+      localStorage.setItem("st_cached_games_json", JSON.stringify(GAMES_DATA));
+      renderGames();
+      return;
+    } catch (e) {
+      // Try next URL
+    }
+  }
+
+  // Offline fallback to last synced games.json
+  try {
+    const cached = JSON.parse(localStorage.getItem("st_cached_games_json") || "null");
+    if (Array.isArray(cached) && cached.length) {
+      GAMES_DATA = cached;
+      renderGames();
+    }
+  } catch (err) {}
+}
 
 function loadSavedGames(){
   try{
@@ -183,8 +345,6 @@ function fullUrl(path){
   return new URL(path.split("/").map((part,i)=>i===0?part:encodeURIComponent(part)).join("/"),BASE_URL).href;
 }
 
-/* Register the root-scoped service worker. Keep your existing caching/fetch
-   logic in sw.js; the notification click handler can be added there too. */
 async function registerAppServiceWorker(){
   if(!("serviceWorker" in navigator)) return null;
   try{
@@ -197,30 +357,6 @@ async function registerAppServiceWorker(){
   }
 }
 registerAppServiceWorker();
-
-const bgMusic = document.getElementById("bg-music");
-const musicToggle = document.getElementById("music-toggle");
-let musicEnabled = localStorage.getItem("st_music_enabled") !== "false";
-musicToggle.checked = musicEnabled;
-bgMusic.volume = 0.25;
-
-function ensureMusicPlaying(){
-  if(musicEnabled && bgMusic.paused && !document.hidden){
-    bgMusic.play().catch(()=>{});
-  }
-}
-function toggleMusic(input){
-  musicEnabled = input.checked;
-  localStorage.setItem("st_music_enabled",String(musicEnabled));
-  if(musicEnabled) ensureMusicPlaying();
-  else bgMusic.pause();
-}
-document.addEventListener("visibilitychange",()=>{
-  if(document.hidden) bgMusic.pause();
-  else ensureMusicPlaying();
-});
-document.addEventListener("pointerdown",ensureMusicPlaying,{once:true,passive:true});
-document.addEventListener("click",ensureMusicPlaying,{once:true,passive:true});
 
 function updateSavedCounter(){
   document.getElementById("saved-count").textContent = savedGameIds.length;
@@ -274,7 +410,6 @@ function renderGames(){
     artwork.addEventListener("error",()=>{
       card.querySelector(".card-inner").classList.add("image-missing");
       artwork.removeAttribute("src");
-      console.warn("Game artwork could not be loaded:",game.logo);
     },{once:true});
     card.querySelector(".game-title").textContent = game.title;
     card.addEventListener("click",()=>openAndSaveGame(game));
@@ -286,7 +421,7 @@ async function cacheGameFiles(game){
   if(!("caches" in window) || !navigator.onLine) return;
   try{
     const cache = await caches.open(CACHE_NAME);
-    const urls = [fullUrl(game.url),fullUrl(game.logo)];
+    const urls = [fullUrl(game.url),fullUrl(game.logo),SONG_URL];
     await Promise.allSettled(urls.map(url=>cache.add(url)));
   }catch(error){
     console.warn("Some game files could not be cached:",error);
@@ -294,13 +429,18 @@ async function cacheGameFiles(game){
 }
 
 async function openAndSaveGame(game){
+  enterAppFullScreen();
+  ensureMusicPlaying();
+
   if(!navigator.onLine && !savedGameIds.includes(game.id)){
     alert("You are offline. Connect to the internet once to open and cache "+game.title+".");
     return;
   }
 
+  window.currentActiveGameKey = String(game.id).replace(/[^a-zA-Z0-9_-]/g, "_");
+
   if(navigator.onLine){
-    await cacheGameFiles(game);
+    cacheGameFiles(game);
     if(!savedGameIds.includes(game.id)){
       savedGameIds.push(game.id);
       localStorage.setItem("st_saved_offline_games",JSON.stringify(savedGameIds));
@@ -311,16 +451,22 @@ async function openAndSaveGame(game){
   document.getElementById("playing-title").textContent = game.title;
   document.getElementById("player-modal").classList.add("open");
   frame.src = fullUrl(game.url);
-  ensureMusicPlaying();
+  frame.onload = () => {
+    ensureMusicPlaying();
+  };
   renderGames();
 }
+
 function closeGame(){
   const frame = document.getElementById("game-frame");
   frame.src = "about:blank";
   document.getElementById("player-modal").classList.remove("open");
   ensureMusicPlaying();
 }
+
 function playRandomGame(){
+  enterAppFullScreen();
+  ensureMusicPlaying();
   const pool = (currentMode==="offline" || !navigator.onLine)
     ? GAMES_DATA.filter(game=>savedGameIds.includes(game.id))
     : GAMES_DATA;
@@ -330,6 +476,7 @@ function playRandomGame(){
   }
   openAndSaveGame(pool[Math.floor(Math.random()*pool.length)]);
 }
+
 function generateReferralLink(){
   const referralUrl = BASE_URL;
   if(navigator.share){
@@ -349,8 +496,6 @@ function setTheme(themeClassName){
 const savedTheme = localStorage.getItem("st_app_theme") || "";
 document.getElementById("app-body").className = savedTheme;
 
-/* Notifications: permission is requested only after the user taps the
-   Enable/Test button. Android Chrome/PWA should use ServiceWorker.showNotification. */
 const notificationMessages = [
   "🎮 Your games are waiting! Come back to ST GAMES.",
   "🔥 Ready for another gaming challenge?",
@@ -401,7 +546,7 @@ async function enableNotifications(){
     });
 
     localStorage.setItem("st_notifications_enabled","true");
-    alert("Test notification sent! If it does not appear, check Android notification permission for Chrome or the installed ST GAMES app.");
+    alert("Test notification sent!");
   }catch(error){
     console.error("Notification error:",error);
     alert("Could not show notification: "+error.message);
@@ -416,7 +561,10 @@ function updateNetworkStatus(){
   dot.classList.toggle("offline",!navigator.onLine);
   renderGames();
 }
-window.addEventListener("online",updateNetworkStatus);
+window.addEventListener("online", () => {
+  updateNetworkStatus();
+  syncMainPageGamesJson();
+});
 window.addEventListener("offline",updateNetworkStatus);
 
 document.getElementById("settings-modal").addEventListener("click",event=>{
@@ -430,6 +578,116 @@ document.addEventListener("keydown",event=>{
 });
 
 updateNetworkStatus();
+syncMainPageGamesJson();
+</script>
+
+<!-- ================= FIREBASE LOGIN LOGO & CLOUD SCORE SYNC ================= -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+  import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBzLchy5M2fLne4c7Ghw1KNN8wVrlZdd8M",
+    authDomain: "friendsgame-872f5.firebaseapp.com",
+    databaseURL: "https://friendsgame-872f5-default-rtdb.firebaseio.com",
+    projectId: "friendsgame-872f5",
+    storageBucket: "friendsgame-872f5.firebasestorage.app",
+    messagingSenderId: "522534013233",
+    appId: "1:522534013233:web:f5faa6e6795023d0420810",
+    measurementId: "G-PW5H3G97QR"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getDatabase(app);
+
+  const authBtn = document.getElementById("auth-profile-btn");
+  const logoImg = document.getElementById("user-logo-img");
+  const letterAvatar = document.getElementById("user-letter-avatar");
+  const defaultIcon = document.getElementById("login-default-icon");
+  const defaultText = document.getElementById("login-default-text");
+
+  // Show ONLY Google Logo / Avatar (No Name Text) when Logged In
+  function renderHeaderLogo(photoURL, initialLetter, isLoggedIn) {
+    if (isLoggedIn) {
+      authBtn.classList.add("logged-in-logo");
+      defaultIcon.style.display = "none";
+      defaultText.style.display = "none";
+
+      if (photoURL) {
+        logoImg.src = photoURL;
+        logoImg.style.display = "block";
+        letterAvatar.style.display = "none";
+      } else {
+        logoImg.style.display = "none";
+        letterAvatar.textContent = initialLetter || "U";
+        letterAvatar.style.display = "block";
+      }
+    } else {
+      authBtn.classList.remove("logged-in-logo");
+      logoImg.style.display = "none";
+      letterAvatar.style.display = "none";
+      defaultIcon.style.display = "inline-block";
+      defaultText.style.display = "inline";
+    }
+  }
+
+  // Instant check from your main login.html localStorage keys
+  const cachedPhoto = localStorage.getItem("gh_user_photo");
+  const cachedLetter = localStorage.getItem("gh_user_letter");
+  if (cachedPhoto || cachedLetter) {
+    renderHeaderLogo(cachedPhoto, cachedLetter, true);
+  }
+
+  let currentUser = null;
+
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      currentUser = user;
+      const name = user.displayName || (user.email ? user.email.split("@")[0] : "U");
+      const letter = name.charAt(0).toUpperCase();
+      renderHeaderLogo(user.photoURL, letter, true);
+
+      // Sync high score with Firebase when logged in
+      const gameKey = window.currentActiveGameKey || "stgames_global";
+      const localHi = parseInt(localStorage.getItem(`${gameKey}_hi`) || "0", 10);
+      try {
+        const snapshot = await get(child(ref(db), `scores/${user.uid}/${gameKey}_high`));
+        if (snapshot.exists()) {
+          const cloudScore = parseInt(snapshot.val(), 10) || 0;
+          if (cloudScore > localHi) {
+            localStorage.setItem(`${gameKey}_hi`, cloudScore.toString());
+          } else if (localHi > cloudScore) {
+            set(ref(db, `scores/${user.uid}/${gameKey}_high`), localHi);
+          }
+        } else if (localHi > 0) {
+          set(ref(db, `scores/${user.uid}/${gameKey}_high`), localHi);
+        }
+      } catch (err) {
+        console.error("Firebase sync error:", err);
+      }
+    } else {
+      currentUser = null;
+      renderHeaderLogo("", "", false);
+    }
+  });
+
+  // Global helper: Saves to Firebase if logged in, LocalStorage if guest
+  window.submitScore = function(newScore) {
+    const val = parseInt(newScore, 10);
+    if (isNaN(val)) return;
+
+    const gameKey = window.currentActiveGameKey || "stgames_global";
+    const currentHighScore = parseInt(localStorage.getItem(`${gameKey}_hi`) || "0", 10);
+
+    if (val > currentHighScore) {
+      localStorage.setItem(`${gameKey}_hi`, val.toString());
+      if (currentUser) {
+        set(ref(db, `scores/${currentUser.uid}/${gameKey}_high`), val);
+      }
+    }
+  };
 </script>
 </body>
 </html>
