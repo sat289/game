@@ -1,0 +1,100 @@
+name: Build Native ST-Games APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-android-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build Native Offline WebView APK with Capacitor
+        run: |
+          mkdir native-app && cd native-app
+          npm init -y
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+          
+          # Initialize Capacitor with name ST-Games
+          npx cap init "ST-Games" "online.stgames.app" --web-dir="../stgames-apk"
+
+          cat << 'EOF' > capacitor.config.json
+          {
+            "appId": "online.stgames.app",
+            "appName": "ST-Games",
+            "webDir": "../stgames-apk",
+            "server": {
+              "cleartext": true
+            },
+            "android": {
+              "allowMixedContent": true
+            }
+          }
+          EOF
+
+          npx cap add android
+
+          # Configure Android MainActivity for media autoplay (app.mp3) and local file loading
+          MAIN_ACT="android/app/src/main/java/online/stgames/app/MainActivity.java"
+          cat << 'EOF' > "$MAIN_ACT"
+          package online.stgames.app;
+
+          import android.os.Bundle;
+          import android.webkit.WebSettings;
+          import com.getcapacitor.BridgeActivity;
+
+          public class MainActivity extends BridgeActivity {
+              @Override
+              public void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  if (this.bridge != null && this.bridge.getWebView() != null) {
+                      WebSettings settings = this.bridge.getWebView().getSettings();
+                      settings.setMediaPlaybackRequiresUserGesture(false);
+                      settings.setDomStorageEnabled(true);
+                      settings.setAllowFileAccess(true);
+                  }
+              }
+          }
+          EOF
+
+          # Copy custom icon if available
+          if [ -f "../stgames-apk/launchericon-512x512.png" ]; then
+            cp "../stgames-apk/launchericon-512x512.png" android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+            cp "../stgames-apk/launchericon-512x512.png" android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+          fi
+
+          # Generate signing keystore
+          keytool -genkey -v -keystore stgames.keystore -alias stgames -keyalg RSA -keysize 2048 -validity 10000 -storepass stgames123 -keypass stgames123 -dname "CN=ST-Games, OU=Game, O=ST-Games, L=Kakinada, S=AP, C=IN"
+
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease \
+            -Pandroid.injected.signing.store.file="$PWD/../stgames.keystore" \
+            -Pandroid.injected.signing.store.password=stgames123 \
+            -Pandroid.injected.signing.key.alias=stgames \
+            -Pandroid.injected.signing.key.password=stgames123
+
+      - name: Rename and Upload ST-Games APK
+        run: |
+          mkdir -p final-apk
+          cp native-app/android/app/build/outputs/apk/release/app-release.apk final-apk/ST-Games.apk
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ST-Games-APK
+          path: final-apk/ST-Games.apk
