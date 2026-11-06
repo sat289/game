@@ -3,108 +3,711 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-  <meta name="theme-color" content="#0f172a">
+  <meta name="theme-color" content="#dff2ff">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="ST GAMES">
   <meta name="description" content="ST GAMES - play online and downloaded offline arcade games">
   <meta name="color-scheme" content="light dark">
   <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="/launchericon-192x192.png">
+  <link rel="icon" href="/stgames-apk/launchericon-192x192.png">
   <title>ST GAMES</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    :root{--bg-main:#f0f9ff;--text-main:#1e293b;--brand-bar:#0f172a;--card-bg:#fff;--card-border:#e2e8f0;--footer-bg:#bae6fd;--footer-border:#7dd3fc}
-    body.theme-gold{--bg-main:#121212;--text-main:#fbbf24;--brand-bar:#1c1917;--card-bg:#1e1b18;--card-border:#78350f;--footer-bg:#292524;--footer-border:#b45309}
-    body.theme-black{--bg-main:#000;--text-main:#f8fafc;--brand-bar:#09090b;--card-bg:#18181b;--card-border:#27272a;--footer-bg:#09090b;--footer-border:#27272a}
-    body.theme-neon{--bg-main:#0f051d;--text-main:#e879f9;--brand-bar:#2e1065;--card-bg:#1e1b4b;--card-border:#7c3aed;--footer-bg:#3b0764;--footer-border:#9333ea}
-    *{box-sizing:border-box;margin:0;padding:0;user-select:none;-webkit-tap-highlight-color:transparent;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
-    body{background:var(--bg-main);color:var(--text-main);padding-bottom:110px;overflow-x:hidden;transition:background .3s,color .3s}
-    button{font:inherit}
-    .mode-bar{background:var(--brand-bar);padding:10px 12px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:200;box-shadow:0 2px 10px #0002}
-    .app-brand{color:#fff;font-weight:900;font-size:16px;letter-spacing:.5px;display:flex;align-items:center;gap:8px}
-    .status-dot{width:10px;height:10px;border-radius:50%;background:#22c55e;box-shadow:0 0 8px #22c55e}
-    .status-dot.offline{background:#ef4444;box-shadow:0 0 8px #ef4444}
-    .header-right{display:flex;align-items:center;gap:8px}
-    .mode-toggle{display:flex;background:#1e293b;border-radius:25px;padding:3px;border:1px solid #334155}
-    .mode-btn{border:0;background:transparent;color:#94a3b8;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:800;cursor:pointer}
-    .mode-btn.active{background:#3b82f6;color:#fff;box-shadow:0 2px 8px #3b82f680}
-    
-    /* Login / User Google Logo Button */
-    .login-Trigger-btn{background:#1e293b;color:#fff;border:1.5px solid #334155;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:800;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;transition:transform .15s,border-color .2s}
-    .login-Trigger-btn:active{transform:scale(.93)}
-    .login-Trigger-btn.logged-in-logo{padding:0;width:36px;height:36px;border-radius:50%;border:2px solid #fbbf24;overflow:hidden;background:linear-gradient(135deg,#f59e0b,#d97706);box-shadow:0 0 10px rgba(245,158,11,.4)}
-    #user-logo-img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:none}
-    #user-letter-avatar{font-size:15px;font-weight:900;color:#0f172a;display:none;text-transform:uppercase}
+    :root {
+      --bg-main: #eef8ff;
+      --text-main: #2c5882;
+      --brand-bar: #dff2ff;
+      --brand-border: #bce3ff;
+      --brand-text: #1e4b7a;
+      --pill-bar-bg: #d4efff;
+      --pill-bar-border: #bce3ff;
+      --pill-text: #3b6998;
+      --pill-active-bg: #87cefa;
+      --pill-active-border: #2b78a6;
+      --pill-active-text: #234e78;
+      --card-bg: #ffffff;
+      --card-border: #9ad4f5;
+      --footer-bg: #9ad8f8;
+      --footer-border: #ffffff;
+    }
+    body.theme-gold {
+      --bg-main: #121212;
+      --text-main: #fbbf24;
+      --brand-bar: #1c1917;
+      --brand-border: #78350f;
+      --brand-text: #fbbf24;
+      --pill-bar-bg: #292524;
+      --pill-bar-border: #78350f;
+      --pill-text: #d97706;
+      --pill-active-bg: #451a03;
+      --pill-active-border: #f59e0b;
+      --pill-active-text: #fde68a;
+      --card-bg: #1e1b18;
+      --card-border: #78350f;
+      --footer-bg: #292524;
+      --footer-border: #b45309;
+    }
+    body.theme-black {
+      --bg-main: #09090b;
+      --text-main: #f8fafc;
+      --brand-bar: #121215;
+      --brand-border: #27272a;
+      --brand-text: #f8fafc;
+      --pill-bar-bg: #18181b;
+      --pill-bar-border: #27272a;
+      --pill-text: #94a3b8;
+      --pill-active-bg: #27272a;
+      --pill-active-border: #60a5fa;
+      --pill-active-text: #ffffff;
+      --card-bg: #18181b;
+      --card-border: #27272a;
+      --footer-bg: #121215;
+      --footer-border: #27272a;
+    }
+    body.theme-neon {
+      --bg-main: #0f051d;
+      --text-main: #e879f9;
+      --brand-bar: #1e0b3b;
+      --brand-border: #6b21a8;
+      --brand-text: #f0abfc;
+      --pill-bar-bg: #2e1065;
+      --pill-bar-border: #7c3aed;
+      --pill-text: #c084fc;
+      --pill-active-bg: #4c1d95;
+      --pill-active-border: #e879f9;
+      --pill-active-text: #ffffff;
+      --card-bg: #1e1b4b;
+      --card-border: #7c3aed;
+      --footer-bg: #3b0764;
+      --footer-border: #9333ea;
+    }
 
-    .category-nav{background:#0284c71a;margin:12px 14px;padding:6px;border-radius:30px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
-    .category-nav::-webkit-scrollbar{display:none}
-    .cat-pill{border:2px solid transparent;background:transparent;color:inherit;opacity:.8;padding:7px 18px;border-radius:22px;font-weight:800;font-size:14px;white-space:nowrap;cursor:pointer}
-    .cat-pill.active{background:#3b82f6;border-color:#60a5fa;color:#fff;opacity:1;box-shadow:0 2px 6px #3b82f64d}
-    .games-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:4px 14px}
-    .game-card{background:var(--card-bg);border-radius:22px;padding:6px;box-shadow:0 6px 14px #0002;border:3px solid var(--card-border);cursor:pointer;transition:transform .15s;overflow:hidden;aspect-ratio:1/1.18;display:flex;flex-direction:column;min-width:0}
-    .game-card:active{transform:scale(.96)}
-    .card-inner{width:100%;height:100%;border-radius:16px;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;background-size:cover;background-position:center}
-    .card-artwork{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover;object-position:center;z-index:0;background:#1e293b;transition:transform .35s ease}
-    .game-card:active .card-artwork{transform:scale(1.025)}
-    .card-inner.image-missing .card-artwork{display:none}
-    .card-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.58) 0%,rgba(0,0,0,.04) 45%,rgba(0,0,0,.48) 100%);z-index:1;pointer-events:none}
-    .card-header{position:relative;z-index:2;padding:10px 10px 0}
-    .game-title{color:#fff;font-size:14px;font-weight:900;text-transform:uppercase;line-height:1.15;text-shadow:0 2px 4px #0009;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-    .title-underline{width:28px;height:3.5px;background:#fff;border-radius:2px;margin-top:4px}
-    .card-footer{position:relative;z-index:2;padding:8px;display:flex;justify-content:space-between;align-items:flex-end}
-    .game-badge{background:#22c55e;color:#fff;font-weight:900;font-size:12px;padding:4px 10px;border-radius:12px 12px 12px 4px;border:2px solid #fff;box-shadow:0 3px 6px #0004;text-transform:uppercase}
-    .dl-indicator{width:28px;height:28px;border-radius:8px;background:#0f172ac2;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;border:1.5px solid #ffffff66;margin-left:auto}
-    .dl-indicator.saved{background:#10b981;border-color:#fff}
-    .empty-box{grid-column:1/-1;background:var(--card-bg);border-radius:20px;padding:35px 20px;text-align:center;border:3px dashed var(--card-border);margin:15px 0}
-    .empty-box i{font-size:44px;color:#3b82f6;margin-bottom:12px}
-    .empty-box h3{font-size:18px;margin-bottom:6px}
-    .empty-box p{font-size:14px;opacity:.8;margin-bottom:18px;line-height:1.4}
-    .action-btn{background:#22c55e;color:#fff;border:0;padding:12px 24px;border-radius:25px;font-weight:900;font-size:14px;cursor:pointer}
-    .bottom-bar{position:fixed;bottom:0;left:0;right:0;height:76px;background:var(--footer-bg);border-top:3px solid var(--footer-border);display:flex;justify-content:space-between;align-items:center;padding:0 22px;z-index:300;transition:background .3s,border .3s}
-    .side-circle-btn{width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#fbbf24,#f59e0b);border:3px solid #fff;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 12px #f59e0b66;color:#fff;font-weight:900;font-size:10px}
-    .side-circle-btn:active{transform:scale(.92)}
-    .gear-btn{background:linear-gradient(135deg,#38bdf8,#0284c7)}
-    .play-main-btn{width:165px;height:62px;margin-top:-24px;background:linear-gradient(180deg,#4ade80,#16a34a);border:4px solid #fff;border-radius:35px;color:#fff;font-size:22px;font-weight:900;letter-spacing:2px;text-shadow:0 2px 3px #0006;box-shadow:0 6px 0 #15803d,0 10px 18px #0004;cursor:pointer;display:flex;align-items:center;justify-content:center}
-    .play-main-btn:active{transform:translateY(3px);box-shadow:0 3px 0 #15803d,0 5px 10px #0003}
-    .settings-modal{position:fixed;inset:0;background:#000b;z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
-    .settings-modal.open{display:flex}
-    .settings-card{background:var(--card-bg);color:var(--text-main);border:2px solid var(--card-border);border-radius:24px;width:100%;max-width:390px;max-height:90vh;overflow-y:auto;padding:24px;box-shadow:0 10px 30px #0008}
-    .settings-title{font-size:20px;font-weight:900;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
-    .theme-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
-    .theme-option{padding:12px 7px;border-radius:14px;border:2px solid #475569;font-weight:800;font-size:13px;cursor:pointer;text-align:center;color:#fff}
-    .theme-option.default{background:#0f172a}.theme-option.gold{background:#1c1917;border-color:#f59e0b;color:#f59e0b}.theme-option.black{background:#000;border-color:#52525b}.theme-option.neon{background:#2e1065;border-color:#d946ef;color:#e879f9}
-    .setting-toggle-row{display:flex;justify-content:space-between;align-items:center;background:#8080801a;padding:12px 16px;border-radius:14px;margin-bottom:14px;font-weight:800;font-size:14px;gap:10px}
-    .notif-btn{width:100%;background:#10b981;color:#fff;border:0;padding:12px;border-radius:14px;font-weight:900;font-size:14px;cursor:pointer;margin-bottom:12px}
-    .close-settings{width:100%;background:#3b82f6;color:#fff;border:0;padding:12px;border-radius:16px;font-weight:900;cursor:pointer}
-    .player-modal{position:fixed;inset:0;background:#000;z-index:999;display:none;flex-direction:column}
-    .player-modal.open{display:flex}
-    .player-top-bar{height:46px;min-height:46px;background:#0f172a;display:flex;align-items:center;justify-content:space-between;padding:0 14px;color:#fff;border-bottom:1px solid #334155}
-    .back-home-btn{background:#ef4444;color:#fff;border:0;padding:6px 14px;border-radius:15px;font-weight:800;font-size:13px;cursor:pointer}
-    #game-frame{flex:1;width:100%;border:0;background:#000}
-    .small-note{font-size:12px;opacity:.72;line-height:1.4;margin:-3px 0 12px}
-    @media(max-width:360px){.app-brand{font-size:14px}.mode-btn{padding:6px 9px;font-size:11px}.bottom-bar{padding:0 14px}.play-main-btn{width:145px}}
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+    body {
+      background: var(--bg-main);
+      color: var(--text-main);
+      padding-bottom: 112px;
+      overflow-x: hidden;
+      transition: background .3s, color .3s;
+    }
+    button {
+      font: inherit;
+    }
+
+    /* Top Header Bar (App Name + Online/Offline + Login) */
+    .mode-bar {
+      background: var(--brand-bar);
+      border-bottom: 2px solid var(--brand-border);
+      padding: 10px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      box-shadow: 0 2px 8px rgba(43, 120, 166, 0.08);
+    }
+    .app-brand {
+      color: var(--brand-text);
+      font-weight: 900;
+      font-size: 18px;
+      letter-spacing: 0.4px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 6px #22c55e;
+      flex-shrink: 0;
+    }
+    .status-dot.offline {
+      background: #ef4444;
+      box-shadow: 0 0 6px #ef4444;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    /* Online / Offline Pill Toggle - Matched to Screenshot Tab Style */
+    .mode-toggle {
+      display: flex;
+      align-items: center;
+      background: var(--pill-bar-bg);
+      border: 1.5px solid var(--pill-bar-border);
+      border-radius: 28px;
+      padding: 3px;
+      gap: 3px;
+    }
+    .mode-btn {
+      border: 2px solid transparent;
+      background: transparent;
+      color: var(--pill-text);
+      padding: 6px 13px;
+      border-radius: 22px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all .18s ease;
+    }
+    .mode-btn.active {
+      background: var(--pill-active-bg);
+      border-color: var(--pill-active-border);
+      color: var(--pill-active-text);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+    }
+
+    /* Login / User Profile Button - Matched to Screenshot Style */
+    .login-Trigger-btn {
+      background: var(--pill-active-bg);
+      color: var(--pill-active-text);
+      border: 2px solid var(--pill-active-border);
+      padding: 6px 13px;
+      border-radius: 22px;
+      font-size: 13px;
+      font-weight: 800;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+      transition: transform .15s, border-color .2s;
+    }
+    .login-Trigger-btn:active {
+      transform: scale(.93);
+    }
+    .login-Trigger-btn.logged-in-logo {
+      padding: 0;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 2.5px solid var(--pill-active-border);
+      overflow: hidden;
+      background: linear-gradient(135deg, #87cefa, #38bdf8);
+      box-shadow: 0 2px 6px rgba(43, 120, 166, 0.25);
+    }
+    #user-logo-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+      display: none;
+    }
+    #user-letter-avatar {
+      font-size: 16px;
+      font-weight: 900;
+      color: #1e4b7a;
+      display: none;
+      text-transform: uppercase;
+    }
+
+    /* Category Tabs Bar - Exact Match to Reference Image */
+    .category-nav {
+      background: var(--pill-bar-bg);
+      border: 1.5px solid var(--pill-bar-border);
+      margin: 10px 12px 12px;
+      padding: 5px 6px;
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .category-nav::-webkit-scrollbar {
+      display: none;
+    }
+    .cat-pill {
+      flex: 1 0 auto;
+      text-align: center;
+      border: 2px solid transparent;
+      background: transparent;
+      color: var(--pill-text);
+      padding: 7px 18px;
+      border-radius: 24px;
+      font-weight: 800;
+      font-size: 15px;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all .18s ease;
+    }
+    .cat-pill.active {
+      background: var(--pill-active-bg);
+      border-color: var(--pill-active-border);
+      color: var(--pill-active-text);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    }
+
+    /* Games Grid & Cards - Matched to Reference Image */
+    .games-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      padding: 2px 14px;
+    }
+    .game-card {
+      background: var(--card-bg);
+      border-radius: 24px;
+      padding: 5px;
+      box-shadow: 0 5px 12px rgba(43, 120, 166, 0.12);
+      border: 3px solid var(--card-border);
+      cursor: pointer;
+      transition: transform .15s;
+      overflow: hidden;
+      aspect-ratio: 1 / 1.18;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .game-card:active {
+      transform: scale(.96);
+    }
+    .card-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 18px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background-size: cover;
+      background-position: center;
+    }
+    .card-artwork {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+      object-position: center;
+      z-index: 0;
+      background: #bae6fd;
+      transition: transform .35s ease;
+    }
+    .game-card:active .card-artwork {
+      transform: scale(1.025);
+    }
+    .card-inner.image-missing .card-artwork {
+      display: none;
+    }
+    .card-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(0, 0, 0, .52) 0%, rgba(0, 0, 0, .02) 45%, rgba(0, 0, 0, .42) 100%);
+      z-index: 1;
+      pointer-events: none;
+    }
+    .card-header {
+      position: relative;
+      z-index: 2;
+      padding: 11px 11px 0;
+      text-align: left;
+    }
+    .game-title {
+      color: #fff;
+      font-size: 14.5px;
+      font-weight: 900;
+      text-transform: uppercase;
+      line-height: 1.15;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.65);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .title-underline {
+      width: 34px;
+      height: 3.5px;
+      background: #fff;
+      border-radius: 2px;
+      margin-top: 5px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    }
+    .card-footer {
+      position: relative;
+      z-index: 2;
+      padding: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .game-badge {
+      background: linear-gradient(180deg, #4ade80, #22c55e);
+      color: #fff;
+      font-weight: 900;
+      font-size: 13px;
+      padding: 4px 11px;
+      border-radius: 13px 13px 13px 5px;
+      border: 2.5px solid #fff;
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.28);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .dl-indicator {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(15, 23, 42, 0.72);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      border: 2px solid #fff;
+      margin-left: auto;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+    }
+    .dl-indicator.saved {
+      background: #22c55e;
+      border-color: #fff;
+    }
+
+    .empty-box {
+      grid-column: 1 / -1;
+      background: var(--card-bg);
+      border-radius: 22px;
+      padding: 35px 20px;
+      text-align: center;
+      border: 3px dashed var(--card-border);
+      margin: 15px 0;
+    }
+    .empty-box i {
+      font-size: 44px;
+      color: #3b82f6;
+      margin-bottom: 12px;
+    }
+    .empty-box h3 {
+      font-size: 18px;
+      margin-bottom: 6px;
+    }
+    .empty-box p {
+      font-size: 14px;
+      opacity: .8;
+      margin-bottom: 18px;
+      line-height: 1.4;
+    }
+    .action-btn {
+      background: #22c55e;
+      color: #fff;
+      border: 0;
+      padding: 12px 24px;
+      border-radius: 25px;
+      font-weight: 900;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    /* Bottom Bar - Matched to Reference Image */
+    .bottom-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 74px;
+      background: var(--footer-bg);
+      border-top: 3px solid var(--footer-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 20px;
+      z-index: 300;
+      box-shadow: 0 -4px 14px rgba(43, 120, 166, 0.15);
+      transition: background .3s, border .3s;
+    }
+    .side-circle-btn {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #fde047, #f59e0b);
+      border: 3px solid #fff;
+      outline: 2.5px solid #3b6998;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.22);
+      color: #fff;
+      font-weight: 900;
+      font-size: 9.5px;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    }
+    .side-circle-btn:active {
+      transform: scale(.92);
+    }
+    .gear-btn {
+      background: linear-gradient(180deg, #93c5fd, #3b82f6);
+    }
+    .play-main-btn {
+      width: 185px;
+      height: 64px;
+      margin-top: -26px;
+      background: linear-gradient(180deg, #86efac 0%, #22c55e 45%, #16a34a 100%);
+      border: 4px solid #fff;
+      outline: 3.5px solid #4a7aa8;
+      border-radius: 38px;
+      color: #fff;
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-shadow: 0 2px 0 #15803d, 0 3px 5px rgba(0, 0, 0, 0.35);
+      box-shadow: 0 6px 0 #15803d, 0 10px 18px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .play-main-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 3px 0 #15803d, 0 5px 10px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Modals & Toast */
+    .settings-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.72);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .settings-modal.open {
+      display: flex;
+    }
+    .settings-card {
+      background: var(--card-bg);
+      color: var(--text-main);
+      border: 3px solid var(--card-border);
+      border-radius: 24px;
+      width: 100%;
+      max-width: 390px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+    .settings-title {
+      font-size: 20px;
+      font-weight: 900;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .theme-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .theme-option {
+      padding: 12px 7px;
+      border-radius: 14px;
+      border: 2px solid #475569;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+      text-align: center;
+      color: #fff;
+    }
+    .theme-option.default {
+      background: #38bdf8;
+      border-color: #0284c7;
+      color: #0f172a;
+    }
+    .theme-option.gold {
+      background: #1c1917;
+      border-color: #f59e0b;
+      color: #f59e0b;
+    }
+    .theme-option.black {
+      background: #000;
+      border-color: #52525b;
+    }
+    .theme-option.neon {
+      background: #2e1065;
+      border-color: #d946ef;
+      color: #e879f9;
+    }
+    .setting-toggle-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(128, 128, 128, 0.12);
+      padding: 12px 16px;
+      border-radius: 14px;
+      margin-bottom: 14px;
+      font-weight: 800;
+      font-size: 14px;
+      gap: 10px;
+    }
+    .notif-btn {
+      width: 100%;
+      background: #10b981;
+      color: #fff;
+      border: 0;
+      padding: 12px;
+      border-radius: 14px;
+      font-weight: 900;
+      font-size: 14px;
+      cursor: pointer;
+      margin-bottom: 12px;
+    }
+    .close-settings {
+      width: 100%;
+      background: #3b82f6;
+      color: #fff;
+      border: 0;
+      padding: 12px;
+      border-radius: 16px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .player-modal {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      z-index: 999;
+      display: none;
+      flex-direction: column;
+    }
+    .player-modal.open {
+      display: flex;
+    }
+    .player-top-bar {
+      height: 46px;
+      min-height: 46px;
+      background: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      color: #fff;
+      border-bottom: 1px solid #334155;
+    }
+    .back-home-btn {
+      background: #ef4444;
+      color: #fff;
+      border: 0;
+      padding: 6px 14px;
+      border-radius: 15px;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    #game-frame {
+      flex: 1;
+      width: 100%;
+      border: 0;
+      background: #000;
+    }
+    .small-note {
+      font-size: 12px;
+      opacity: .75;
+      line-height: 1.4;
+      margin: -3px 0 12px;
+    }
+    .app-toast {
+      position: fixed;
+      bottom: 92px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #0f172a;
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 22px;
+      font-size: 13px;
+      font-weight: 800;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+      border: 2px solid #38bdf8;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .25s, transform .25s;
+      z-index: 2000;
+      text-align: center;
+      max-width: 90vw;
+    }
+    .app-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (max-width: 380px) {
+      .mode-bar {
+        padding: 8px 10px;
+      }
+      .app-brand {
+        font-size: 15.5px;
+      }
+      .mode-btn {
+        padding: 5px 10px;
+        font-size: 12px;
+      }
+      .login-Trigger-btn {
+        padding: 5px 10px;
+        font-size: 12px;
+      }
+      .cat-pill {
+        padding: 6px 14px;
+        font-size: 14px;
+      }
+      .bottom-bar {
+        padding: 0 14px;
+      }
+      .play-main-btn {
+        width: 155px;
+        font-size: 22px;
+      }
+    }
   </style>
 </head>
 <body id="app-body">
-  <!-- Background Music (Plays in Lobby and Inside All Games) -->
+  <!-- Background Music (Plays in Lobby only, pauses inside games) -->
   <audio id="bg-music" loop preload="auto">
-    <source src="app.mp3" type="audio/mpeg">
-    <source src="/stgames-apk/app.mp3" type="audio/mpeg">
     <source src="https://stgames.online/stgames-apk/app.mp3" type="audio/mpeg">
   </audio>
 
   <header class="mode-bar">
-    <div class="app-brand"><div id="net-dot" class="status-dot"></div><span>ST GAMES</span></div>
+    <div class="app-brand">
+      <div id="net-dot" class="status-dot"></div>
+      <span>ST GAMES</span>
+    </div>
     <div class="header-right">
       <div class="mode-toggle">
-        <button id="btn-online" class="mode-btn active" onclick="setAppMode('online')">ONLINE</button>
-        <button id="btn-offline" class="mode-btn" onclick="setAppMode('offline')">OFFLINE (<span id="saved-count">0</span>)</button>
+        <button id="btn-online" type="button" class="mode-btn active" onclick="setAppMode('online')">ONLINE</button>
+        <button id="btn-offline" type="button" class="mode-btn" onclick="setAppMode('offline')">OFFLINE (<span id="saved-count">0</span>)</button>
       </div>
-      <!-- Login / Google Profile Logo Button (Links to login.html in same folder) -->
-      <a href="login.html" id="auth-profile-btn" class="login-Trigger-btn" title="Account">
-        <img id="user-logo-img" src="" alt="Profile" referrerpolicy="no-referrer">
+      <!-- Login / Google Profile Logo Button -->
+      <a href="https://stgames.online/stgames-apk/login.html" id="auth-profile-btn" class="login-Trigger-btn" title="Account">
+        <img id="user-logo-img" src="https://stgames.online/stgames-apk/launchericon-192x192.png" alt="Profile" referrerpolicy="no-referrer">
         <span id="user-letter-avatar">U</span>
         <i id="login-default-icon" class="fa-solid fa-user"></i>
         <span id="login-default-text">Login</span>
@@ -113,43 +716,49 @@
   </header>
 
   <nav class="category-nav" aria-label="Game categories">
-    <button class="cat-pill active" onclick="setCategory('all',this)">All</button>
-    <button class="cat-pill" onclick="setCategory('popular',this)">Popular</button>
-    <button class="cat-pill" onclick="setCategory('classic',this)">Classic</button>
-    <button class="cat-pill" onclick="setCategory('single',this)">Single</button>
-    <button class="cat-pill" onclick="setCategory('racing',this)">Racing</button>
-    <button class="cat-pill" onclick="setCategory('1v1',this)">1v1 &amp; Sports</button>
+    <button type="button" class="cat-pill active" onclick="setCategory('all',this)">All</button>
+    <button type="button" class="cat-pill" onclick="setCategory('popular',this)">Popular</button>
+    <button type="button" class="cat-pill" onclick="setCategory('classic',this)">Classic</button>
+    <button type="button" class="cat-pill" onclick="setCategory('single',this)">Single</button>
+    <button type="button" class="cat-pill" onclick="setCategory('racing',this)">Racing</button>
+    <button type="button" class="cat-pill" onclick="setCategory('1v1',this)">1v1 &amp; Sports</button>
   </nav>
 
   <main id="games-container" class="games-grid"></main>
 
   <footer class="bottom-bar">
-    <button class="side-circle-btn" onclick="generateReferralLink()" title="Share ST GAMES"><span style="font-size:16px">🎁</span><span>SHARE</span></button>
-    <button class="play-main-btn" onclick="playRandomGame()">PLAY</button>
-    <button class="side-circle-btn gear-btn" onclick="openSettings()" title="Settings"><span style="font-size:20px">⚙️</span><span>SETTINGS</span></button>
+    <button type="button" class="side-circle-btn" onclick="generateReferralLink()" title="Share ST GAMES">
+      <span style="font-size:17px">🎁</span>
+      <span>SHARE</span>
+    </button>
+    <button type="button" class="play-main-btn" onclick="playRandomGame()">PLAY</button>
+    <button type="button" class="side-circle-btn gear-btn" onclick="openSettings()" title="Settings">
+      <span style="font-size:20px">⚙️</span>
+      <span>SETTINGS</span>
+    </button>
   </footer>
 
   <div id="settings-modal" class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-heading">
     <div class="settings-card">
       <div class="settings-title">
         <span id="settings-heading">Settings &amp; Themes</span>
-        <button onclick="closeSettings()" aria-label="Close settings" style="background:none;border:0;color:inherit;font-size:24px;cursor:pointer">&times;</button>
+        <button type="button" onclick="closeSettings()" aria-label="Close settings" style="background:none;border:0;color:inherit;font-size:24px;cursor:pointer">&times;</button>
       </div>
-      <p style="font-size:13px;opacity:.8;margin-bottom:8px">Background Music (Plays in All Games):</p>
+      <p style="font-size:13px;opacity:.8;margin-bottom:8px">Lobby Background Music:</p>
       <div class="setting-toggle-row">
         <span>🎵 Arcade BGM (app.mp3)</span>
         <input type="checkbox" id="music-toggle" onchange="toggleMusic(this)" style="width:20px;height:20px;cursor:pointer">
       </div>
       <p style="font-size:13px;opacity:.8;margin-bottom:8px">Visual Theme:</p>
       <div class="theme-grid">
-        <button class="theme-option default" onclick="setTheme('')">Classic Blue</button>
-        <button class="theme-option gold" onclick="setTheme('theme-gold')">👑 Royal Gold</button>
-        <button class="theme-option black" onclick="setTheme('theme-black')">⚡ Deep Black</button>
-        <button class="theme-option neon" onclick="setTheme('theme-neon')">🌌 Neon Cyber</button>
+        <button type="button" class="theme-option default" onclick="setTheme('')">Classic Sky</button>
+        <button type="button" class="theme-option gold" onclick="setTheme('theme-gold')">👑 Royal Gold</button>
+        <button type="button" class="theme-option black" onclick="setTheme('theme-black')">⚡ Deep Black</button>
+        <button type="button" class="theme-option neon" onclick="setTheme('theme-neon')">🌌 Neon Cyber</button>
       </div>
-      <p class="small-note">Notifications work when permission is allowed. For scheduled notifications while the app is closed, a push server is required.</p>
-      <button class="notif-btn" id="notification-button" onclick="enableNotifications()">🔔 Enable / Test Notifications</button>
-      <button class="close-settings" onclick="closeSettings()">Save &amp; Close</button>
+      <p class="small-note">Notifications display with your ST GAMES logo on Android.</p>
+      <button type="button" class="notif-btn" id="notification-button" onclick="enableNotifications()">🔔 Enable / Test Notifications</button>
+      <button type="button" class="close-settings" onclick="closeSettings()">Save &amp; Close</button>
     </div>
   </div>
 
@@ -157,12 +766,14 @@
     <div class="player-top-bar">
       <span id="playing-title" style="font-weight:800;font-size:14px">Game</span>
       <div style="display:flex;align-items:center;gap:8px">
-        <button onclick="toggleInGameMusic()" id="ingame-music-btn" style="background:#1e293b;color:#fff;border:1px solid #475569;padding:5px 10px;border-radius:12px;font-size:12px;font-weight:800;cursor:pointer">🔊 Music</button>
-        <button class="back-home-btn" onclick="closeGame()"><i class="fa-solid fa-xmark"></i> EXIT</button>
+        <button type="button" onclick="toggleInGameMusic()" id="ingame-music-btn" style="background:#1e293b;color:#fff;border:1px solid #475569;padding:5px 10px;border-radius:12px;font-size:12px;font-weight:800;cursor:pointer">🔇 Music Off</button>
+        <button type="button" class="back-home-btn" onclick="closeGame()"><i class="fa-solid fa-xmark"></i> EXIT</button>
       </div>
     </div>
     <iframe id="game-frame" src="about:blank" title="ST GAMES player" allow="autoplay; fullscreen; gamepad" allowfullscreen></iframe>
   </div>
+
+  <div id="app-toast" class="app-toast" role="status" aria-live="polite"></div>
 
 <script>
 "use strict";
@@ -170,24 +781,52 @@
 const BASE_URL = "https://stgames.online/";
 const CACHE_NAME = "stgames-apk-cache-v2";
 const SONG_URL = BASE_URL + "stgames-apk/app.mp3";
+const APP_ICON_URL = BASE_URL + "stgames-apk/launchericon-192x192.png";
+
+function safeGetStorage(key, fallback) {
+  try {
+    const val = localStorage.getItem(key);
+    return val !== null ? val : fallback;
+  } catch (e) {
+    return fallback;
+  }
+}
+
+function safeSetStorage(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch (e) {}
+}
+
+let toastTimer = null;
+function showToast(message) {
+  const toast = document.getElementById("app-toast");
+  if (!toast) return;
+  toast.textContent = message;
+  toast.classList.add("show");
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toast.classList.remove("show");
+  }, 2800);
+}
 
 /* 1. ALL YOUR 18 ORIGINAL GAMES KEPT INTACT */
 const DEFAULT_GAMES_DATA = [
-  {id:"game-mw3654pa",title:"Wheel master",url:"game/Wheel master/index.html",logo:"logo/game-1793861007180-5455.jpg",categories:["popular"],badge:"✨ NEW",bg:"linear-gradient(135deg,#6366f1,#4338ca)"},
-  {id:"game-mw20ft73",title:"Rope Dash",url:"game/rope.html",logo:"logo/game-1793790309066-5381.jpg",categories:["classic","popular"],badge:"✨ NEW",bg:"linear-gradient(135deg,#ec4899,#be185d)"},
-  {id:"game-mw1urk4j",title:"Space waves",url:"game/Spacewaces.html",logo:"logo/game-1793853613420-5437.jpg",categories:["popular"],badge:"✨ NEW",bg:"linear-gradient(135deg,#3b82f6,#1d4ed8)"},
-  {id:"game-mvzz9zor",title:"Crowd runners",url:"game/crowd runners/index.html",logo:"logo/game-1793676729637-5233.jpg",categories:["classic"],badge:"✨ NEW",bg:"linear-gradient(135deg,#06b6d4,#0e7490)"},
-  {id:"game-mvzyi81m",title:"Fight",url:"game/Fight/index.html",logo:"logo/game-1793676164188-5232.png",categories:["popular"],badge:"✨ NEW",bg:"linear-gradient(135deg,#ef4444,#b91c1c)"},
-  {id:"game-mvxqcsca",title:"Catch the thief",url:"game/thief/index.html",logo:"logo/game-1793531508927-5022.png",categories:["classic","popular"],badge:"✨ NEW",bg:"linear-gradient(135deg,#38bdf8,#0284c7)"},
-  {id:"game-mvwetkz4",title:"Nuts and Bolts 🔩",url:"game/nuts.html",logo:"logo/game-1793451670491-4931.jpg",categories:["classic"],badge:"✨ NEW",bg:"linear-gradient(135deg,#f59e0b,#b45309)"},
-  {id:"game-mvwc6dia",title:"Toilet rush",url:"game/Toilet rush/index.html",logo:"logo/game-1793448451512-4909.jpg",categories:["classic"],badge:"✨ NEW",bg:"linear-gradient(135deg,#a855f7,#7e22ce)"},
-  {id:"game-mvv6lmgs",title:"Salazar Game",url:"game/salazar.html",logo:"logo/game-1793377379865-4884.png",categories:["classic"],badge:"✨ NEW",bg:"linear-gradient(135deg,#10b981,#047857)"},
-  {id:"custom-mvv0p7ge",title:"Merge Mania",url:"game/merge.html",logo:"logo/game-1793371364908-4872.png",categories:["classic"],badge:"✨ NEW",bg:"linear-gradient(135deg,#facc15,#ca8a04)"},
+  {id:"game-mw3654pa",title:"Wheel master",url:"game/Wheel master/index.html",logo:"logo/game-1793861007180-5455.jpg",categories:["popular"],badge:"✨ NEW!",bg:"linear-gradient(135deg,#6366f1,#4338ca)"},
+  {id:"game-mw20ft73",title:"Rope Dash",url:"game/rope.html",logo:"logo/game-1793790309066-5381.jpg",categories:["classic","popular"],badge:"✨ NEW!",bg:"linear-gradient(135deg,#ec4899,#be185d)"},
+  {id:"game-mw1urk4j",title:"Space waves",url:"game/Spacewaces.html",logo:"logo/game-1793853613420-5437.jpg",categories:["popular"],badge:"✨ NEW!",bg:"linear-gradient(135deg,#3b82f6,#1d4ed8)"},
+  {id:"game-mvzz9zor",title:"Crowd runners",url:"game/crowd runners/index.html",logo:"logo/game-1793676729637-5233.jpg",categories:["classic"],badge:"✨ NEW!",bg:"linear-gradient(135deg,#06b6d4,#0e7490)"},
+  {id:"game-mvzyi81m",title:"Fight",url:"game/Fight/index.html",logo:"logo/game-1793676164188-5232.png",categories:["popular"],badge:"✨ NEW!",bg:"linear-gradient(135deg,#ef4444,#b91c1c)"},
+  {id:"game-mvxqcsca",title:"Catch the thief",url:"game/thief/index.html",logo:"logo/game-1793531508927-5022.png",categories:["classic","popular"],badge:"✨ NEW!",bg:"linear-gradient(135deg,#38bdf8,#0284c7)"},
+  {id:"game-mvwetkz4",title:"Nuts and Bolts 🔩",url:"game/nuts.html",logo:"logo/game-1793451670491-4931.jpg",categories:["classic"],badge:"✨ NEW!",bg:"linear-gradient(135deg,#f59e0b,#b45309)"},
+  {id:"game-mvwc6dia",title:"Toilet rush",url:"game/Toilet rush/index.html",logo:"logo/game-1793448451512-4909.jpg",categories:["classic"],badge:"✨ NEW!",bg:"linear-gradient(135deg,#a855f7,#7e22ce)"},
+  {id:"game-mvv6lmgs",title:"Salazar Game",url:"game/salazar.html",logo:"logo/game-1793377379865-4884.png",categories:["classic"],badge:"✨ NEW!",bg:"linear-gradient(135deg,#10b981,#047857)"},
+  {id:"custom-mvv0p7ge",title:"Merge Mania",url:"game/merge.html",logo:"logo/game-1793371364908-4872.png",categories:["classic"],badge:"✨ NEW!",bg:"linear-gradient(135deg,#facc15,#ca8a04)"},
   {id:"subway-runner",title:"Street Subway Runner",url:"game/subway/index.html",logo:"logo/subway.jpg",categories:["single","popular"],badge:"✨ HIT",bg:"linear-gradient(135deg,#f59e0b,#b45309)"},
   {id:"tic-tac-toe",title:"Pro Tic-Tac-Toe",url:"game/tictactoe/index.html",logo:"logo/tic-tac-toe.png",categories:["sports","single","popular","1v1"],badge:"TOP",bg:"linear-gradient(135deg,#14b8a6,#0f766e)"},
   {id:"snake",title:"Cyber Snake Retro",url:"game/snake/index.html",logo:"logo/snake.jpg",categories:["classic","single","popular"],badge:"OLD",bg:"linear-gradient(135deg,#10b981,#047857)"},
   {id:"fruit game",title:"Fruit Arcade Pro",url:"game/fruit.html",logo:"logo/fruit.jpg",categories:["classic","single","popular"],badge:"LIVE",bg:"linear-gradient(135deg,#ec4899,#8b5cf6)"},
-  {id:"bird game",title:"Bird Action Mania",url:"game/clumsy.html",logo:"logo/bird.jpg",categories:["classic","single","popular"],badge:"NEW",bg:"linear-gradient(135deg,#f43f5e,#fb923c)"},
+  {id:"bird game",title:"Bird Action Mania",url:"game/clumsy.html",logo:"logo/bird.jpg",categories:["classic","single","popular"],badge:"NEW!",bg:"linear-gradient(135deg,#f43f5e,#fb923c)"},
   {id:"game-hub-battle",title:"Ninja Shadow Duel",url:"game/fight.html",logo:"logo/fight.jpg",categories:["1v1","popular"],badge:"1v1",bg:"linear-gradient(135deg,#ef4444,#7f1d1d)"},
   {id:"snake-ladder",title:"Monster Truck Stunts",url:"game/ladder/index.html",logo:"logo/ladder.jpg",categories:["racing","single","popular"],badge:"HOT",bg:"linear-gradient(135deg,#f97316,#c2410c)"},
   {id:"typing-race",title:"Typing Race Championship",url:"game/typerace/index.html",logo:"logo/typerace.jpg",categories:["racing","single","popular"],badge:"",bg:"linear-gradient(135deg,#64748b,#334155)"}
@@ -198,79 +837,60 @@ let currentMode = "online";
 let currentCategory = "all";
 let savedGameIds = loadSavedGames();
 let swRegistration = null;
+let isGameCurrentlyPlaying = false;
 window.currentActiveGameKey = "stgames_global";
 
-/* 2. AUTOMATIC FULLSCREEN TRIGGER (HIDES TOP BROWSER BAR) */
-function enterAppFullScreen(){
-  const elem = document.documentElement;
-  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-    if (elem.requestFullscreen) {
-      elem.requestFullscreen({ navigationUI: "hide" }).catch(()=>{});
-    } else if (elem.webkitRequestFullscreen) {
-      elem.webkitRequestFullscreen();
-    }
-  }
-}
-
-// Automatically enter full screen & start music on first touch/click anywhere
-["click", "touchend", "pointerup"].forEach(evtName => {
-  document.addEventListener(evtName, () => {
-    enterAppFullScreen();
-    ensureMusicPlaying();
-  }, { passive: true });
-});
-
-/* 3. BACKGROUND MUSIC (app.mp3) IN LOBBY & ALL GAMES */
+/* 2. BACKGROUND MUSIC (Plays in Lobby, turns off when playing a game) */
 const bgMusic = document.getElementById("bg-music");
 const musicToggle = document.getElementById("music-toggle");
 const ingameMusicBtn = document.getElementById("ingame-music-btn");
-let musicEnabled = localStorage.getItem("st_music_enabled") !== "false";
+let musicEnabled = safeGetStorage("st_music_enabled", "true") !== "false";
 musicToggle.checked = musicEnabled;
 bgMusic.volume = 0.28;
 
 function updateMusicUI(){
   musicToggle.checked = musicEnabled;
   if(ingameMusicBtn){
-    ingameMusicBtn.textContent = musicEnabled ? "🔊 Music" : "🔇 Muted";
+    ingameMusicBtn.textContent = (!bgMusic.paused) ? "🔊 Music" : "🔇 Music Off";
   }
 }
 updateMusicUI();
 
 function ensureMusicPlaying(){
-  if(musicEnabled && bgMusic.paused && !document.hidden){
+  if(musicEnabled && !isGameCurrentlyPlaying && bgMusic.paused && !document.hidden){
     bgMusic.play().catch(()=>{});
   }
 }
 
+document.addEventListener("click", () => {
+  ensureMusicPlaying();
+}, { once: true, passive: true });
+
 function toggleMusic(input){
   musicEnabled = input.checked;
-  localStorage.setItem("st_music_enabled", String(musicEnabled));
+  safeSetStorage("st_music_enabled", String(musicEnabled));
   updateMusicUI();
   if(musicEnabled) ensureMusicPlaying();
   else bgMusic.pause();
 }
 
 function toggleInGameMusic(){
-  musicEnabled = !musicEnabled;
-  localStorage.setItem("st_music_enabled", String(musicEnabled));
-  updateMusicUI();
-  if(musicEnabled) ensureMusicPlaying();
-  else bgMusic.pause();
-}
-
-// Keep music playing even when game iframe takes focus
-setInterval(() => {
-  if(musicEnabled && bgMusic.paused && !document.hidden){
-    bgMusic.play().catch(()=>{});
+  if(bgMusic.paused){
+    bgMusic.play().then(()=>{
+      if(ingameMusicBtn) ingameMusicBtn.textContent = "🔊 Music";
+    }).catch(()=>{});
+  } else {
+    bgMusic.pause();
+    if(ingameMusicBtn) ingameMusicBtn.textContent = "🔇 Music Off";
   }
-}, 1500);
+}
 
 document.addEventListener("visibilitychange",()=>{
   if(document.hidden) bgMusic.pause();
-  else ensureMusicPlaying();
+  else if(!isGameCurrentlyPlaying) ensureMusicPlaying();
 });
 
-/* 4. AUTO-SYNC WITH MAIN PAGE games.json */
+/* 3. AUTO-SYNC WITH MAIN PAGE games.json */
 function normalizeGameItem(item, index){
   const rawCats = item.categories || item.category || ["popular"];
   const categories = Array.isArray(rawCats)
@@ -283,45 +903,37 @@ function normalizeGameItem(item, index){
     url: item.url || item.link || item.path || "",
     logo: item.logo || item.image || item.icon || item.thumbnail || "launchericon-192x192.png",
     categories: categories,
-    badge: item.badge !== undefined ? item.badge : "✨ NEW",
+    badge: item.badge !== undefined ? item.badge : "✨ NEW!",
     bg: item.bg || "linear-gradient(135deg,#3b82f6,#1d4ed8)"
   };
 }
 
 async function syncMainPageGamesJson(){
-  const urlsToTry = [
-    BASE_URL + "games.json",
-    "/games.json",
-    "games.json"
-  ];
-
-  for (const jsonUrl of urlsToTry) {
-    try {
-      const res = await fetch(jsonUrl, { cache: "no-store" });
-      if (!res.ok) continue;
+  const jsonUrl = BASE_URL + "games.json";
+  try {
+    const res = await fetch(jsonUrl, { cache: "no-store" });
+    if (res.ok) {
       const data = await res.json();
       const rawList = Array.isArray(data) ? data : (Array.isArray(data.games) ? data.games : []);
-      if (!rawList.length) continue;
-
-      const normalizedFromJson = rawList.map(normalizeGameItem).filter(g => g.url);
-      
-      const mergedMap = new Map();
-      normalizedFromJson.forEach(g => mergedMap.set(g.url.toLowerCase(), g));
-      DEFAULT_GAMES_DATA.forEach(g => {
-        if (!mergedMap.has(g.url.toLowerCase())) {
-          mergedMap.set(g.url.toLowerCase(), g);
-        }
-      });
-
-      GAMES_DATA = Array.from(mergedMap.values());
-      localStorage.setItem("st_cached_games_json", JSON.stringify(GAMES_DATA));
-      renderGames();
-      return;
-    } catch (e) {}
-  }
+      if (rawList.length) {
+        const normalizedFromJson = rawList.map(normalizeGameItem).filter(g => g.url);
+        const mergedMap = new Map();
+        normalizedFromJson.forEach(g => mergedMap.set(g.url.toLowerCase(), g));
+        DEFAULT_GAMES_DATA.forEach(g => {
+          if (!mergedMap.has(g.url.toLowerCase())) {
+            mergedMap.set(g.url.toLowerCase(), g);
+          }
+        });
+        GAMES_DATA = Array.from(mergedMap.values());
+        safeSetStorage("st_cached_games_json", JSON.stringify(GAMES_DATA));
+        renderGames();
+        return;
+      }
+    }
+  } catch (e) {}
 
   try {
-    const cached = JSON.parse(localStorage.getItem("st_cached_games_json") || "null");
+    const cached = JSON.parse(safeGetStorage("st_cached_games_json", "null"));
     if (Array.isArray(cached) && cached.length) {
       GAMES_DATA = cached;
       renderGames();
@@ -331,7 +943,7 @@ async function syncMainPageGamesJson(){
 
 function loadSavedGames(){
   try{
-    const value = JSON.parse(localStorage.getItem("st_saved_offline_games") || "[]");
+    const value = JSON.parse(safeGetStorage("st_saved_offline_games", "[]"));
     return Array.isArray(value) ? value : [];
   }catch(error){ return []; }
 }
@@ -341,7 +953,7 @@ function fullUrl(path){
   return new URL(path.split("/").map((part,i)=>i===0?part:encodeURIComponent(part)).join("/"),BASE_URL).href;
 }
 
-/* Service Worker Registered from Main Root Folder */
+/* Service Worker Registration */
 async function registerAppServiceWorker(){
   if(!("serviceWorker" in navigator)) return null;
   try{
@@ -349,7 +961,6 @@ async function registerAppServiceWorker(){
     swRegistration = await navigator.serviceWorker.ready;
     return swRegistration || registration;
   }catch(error){
-    console.error("Service worker registration failed:",error);
     return null;
   }
 }
@@ -376,7 +987,7 @@ function renderGames(){
   updateSavedCounter();
 
   if(currentMode==="online" && !navigator.onLine){
-    container.innerHTML = `<div class="empty-box"><i class="fa-solid fa-wifi"></i><h3>No Internet Connection</h3><p>Connect to the internet to browse online games, or switch to your downloaded offline games.</p><button class="action-btn" onclick="setAppMode('offline')">PLAY OFFLINE GAMES (${savedGameIds.length})</button></div>`;
+    container.innerHTML = `<div class="empty-box"><i class="fa-solid fa-wifi"></i><h3>No Internet Connection</h3><p>Connect to the internet to browse online games, or switch to your downloaded offline games.</p><button type="button" class="action-btn" onclick="setAppMode('offline')">PLAY OFFLINE GAMES (${savedGameIds.length})</button></div>`;
     return;
   }
 
@@ -387,7 +998,7 @@ function renderGames(){
   });
 
   if(currentMode==="offline" && filtered.length===0){
-    container.innerHTML = `<div class="empty-box"><i class="fa-solid fa-cloud-arrow-down"></i><h3>No Offline Games Yet</h3><p>Open the ONLINE tab and tap a game while connected to download its files for offline use.</p><button class="action-btn" onclick="setAppMode('online')">GO TO ONLINE TAB</button></div>`;
+    container.innerHTML = `<div class="empty-box"><i class="fa-solid fa-cloud-arrow-down"></i><h3>No Offline Games Yet</h3><p>Open the ONLINE tab and tap a game while connected to download its files for offline use.</p><button type="button" class="action-btn" onclick="setAppMode('online')">GO TO ONLINE TAB</button></div>`;
     return;
   }
 
@@ -420,17 +1031,19 @@ async function cacheGameFiles(game){
     const cache = await caches.open(CACHE_NAME);
     const urls = [fullUrl(game.url),fullUrl(game.logo),SONG_URL];
     await Promise.allSettled(urls.map(url=>cache.add(url)));
-  }catch(error){
-    console.warn("Some game files could not be cached:",error);
-  }
+  }catch(error){}
 }
 
 async function openAndSaveGame(game){
-  enterAppFullScreen();
-  ensureMusicPlaying();
+  // Stop lobby music immediately when user taps/plays a game
+  isGameCurrentlyPlaying = true;
+  bgMusic.pause();
+  updateMusicUI();
 
   if(!navigator.onLine && !savedGameIds.includes(game.id)){
-    alert("You are offline. Connect to the internet once to open and cache "+game.title+".");
+    showToast("You are offline. Connect once to cache " + game.title + ".");
+    isGameCurrentlyPlaying = false;
+    ensureMusicPlaying();
     return;
   }
 
@@ -440,7 +1053,7 @@ async function openAndSaveGame(game){
     cacheGameFiles(game);
     if(!savedGameIds.includes(game.id)){
       savedGameIds.push(game.id);
-      localStorage.setItem("st_saved_offline_games",JSON.stringify(savedGameIds));
+      safeSetStorage("st_saved_offline_games",JSON.stringify(savedGameIds));
     }
   }
 
@@ -448,9 +1061,6 @@ async function openAndSaveGame(game){
   document.getElementById("playing-title").textContent = game.title;
   document.getElementById("player-modal").classList.add("open");
   frame.src = fullUrl(game.url);
-  frame.onload = () => {
-    ensureMusicPlaying();
-  };
   renderGames();
 }
 
@@ -458,20 +1068,36 @@ function closeGame(){
   const frame = document.getElementById("game-frame");
   frame.src = "about:blank";
   document.getElementById("player-modal").classList.remove("open");
+  isGameCurrentlyPlaying = false;
   ensureMusicPlaying();
+  updateMusicUI();
 }
 
 function playRandomGame(){
-  enterAppFullScreen();
-  ensureMusicPlaying();
   const pool = (currentMode==="offline" || !navigator.onLine)
     ? GAMES_DATA.filter(game=>savedGameIds.includes(game.id))
     : GAMES_DATA;
   if(!pool.length){
-    alert("No offline games downloaded yet. Open a game from the ONLINE tab while connected.");
+    showToast("No offline games downloaded yet. Tap a game in ONLINE mode first.");
     return;
   }
   openAndSaveGame(pool[Math.floor(Math.random()*pool.length)]);
+}
+
+function copyTextFallback(text) {
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed";
+  ta.style.opacity = "0";
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand("copy");
+    showToast("ST GAMES link copied!");
+  } catch (err) {
+    showToast("Share link: " + text);
+  }
+  document.body.removeChild(ta);
 }
 
 function generateReferralLink(){
@@ -479,18 +1105,18 @@ function generateReferralLink(){
   if(navigator.share){
     navigator.share({title:"ST GAMES",text:"Play online and offline arcade games on ST GAMES!",url:referralUrl}).catch(()=>{});
   }else if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(referralUrl).then(()=>alert("ST GAMES link copied!")).catch(()=>prompt("Copy ST GAMES link:",referralUrl));
+    navigator.clipboard.writeText(referralUrl).then(()=>showToast("ST GAMES link copied!")).catch(()=>copyTextFallback(referralUrl));
   }else{
-    prompt("Copy ST GAMES link:",referralUrl);
+    copyTextFallback(referralUrl);
   }
 }
 function openSettings(){document.getElementById("settings-modal").classList.add("open");}
 function closeSettings(){document.getElementById("settings-modal").classList.remove("open");}
 function setTheme(themeClassName){
   document.getElementById("app-body").className = themeClassName;
-  localStorage.setItem("st_app_theme",themeClassName);
+  safeSetStorage("st_app_theme",themeClassName);
 }
-const savedTheme = localStorage.getItem("st_app_theme") || "";
+const savedTheme = safeGetStorage("st_app_theme", "");
 document.getElementById("app-body").className = savedTheme;
 
 const notificationMessages = [
@@ -505,11 +1131,11 @@ async function enableNotifications(){
   const button = document.getElementById("notification-button");
 
   if(!("Notification" in window)){
-    alert("This browser does not support web notifications.");
+    showToast("This browser does not support notifications.");
     return;
   }
   if(!("serviceWorker" in navigator)){
-    alert("This browser does not support service-worker notifications.");
+    showToast("Service worker notifications are not supported here.");
     return;
   }
 
@@ -522,7 +1148,7 @@ async function enableNotifications(){
       permission = await Notification.requestPermission();
     }
     if(permission !== "granted"){
-      alert("Notifications are blocked.");
+      showToast("Notification permission is blocked.");
       return;
     }
 
@@ -533,20 +1159,19 @@ async function enableNotifications(){
 
     const message = notificationMessages[Math.floor(Math.random()*notificationMessages.length)];
     await registration.showNotification("ST GAMES 🎮",{
-      body:message,
-      icon:"/launchericon-192x192.png",
-      badge:"/launchericon-192x192.png",
-      tag:"stgames-test",
-      renotify:true,
-      data:{url:"/"},
-      vibrate:[200,100,200]
+      body: message,
+      icon: APP_ICON_URL,
+      badge: APP_ICON_URL,
+      tag: "stgames-alert",
+      renotify: true,
+      data: { url: "/" },
+      vibrate: [200, 100, 200]
     });
 
-    localStorage.setItem("st_notifications_enabled","true");
-    alert("Test notification sent!");
+    safeSetStorage("st_notifications_enabled","true");
+    showToast("Notification sent with ST GAMES logo!");
   }catch(error){
-    console.error("Notification error:",error);
-    alert("Could not show notification: "+error.message);
+    showToast("Could not show notification: " + error.message);
   }finally{
     button.disabled = false;
     button.textContent = "🔔 Enable / Test Notifications";
@@ -629,8 +1254,12 @@ syncMainPageGamesJson();
     }
   }
 
-  const cachedPhoto = localStorage.getItem("gh_user_photo");
-  const cachedLetter = localStorage.getItem("gh_user_letter");
+  let cachedPhoto = null;
+  let cachedLetter = null;
+  try {
+    cachedPhoto = localStorage.getItem("gh_user_photo");
+    cachedLetter = localStorage.getItem("gh_user_letter");
+  } catch (e) {}
   if (cachedPhoto || cachedLetter) {
     renderHeaderLogo(cachedPhoto, cachedLetter, true);
   }
@@ -645,13 +1274,16 @@ syncMainPageGamesJson();
       renderHeaderLogo(user.photoURL, letter, true);
 
       const gameKey = window.currentActiveGameKey || "stgames_global";
-      const localHi = parseInt(localStorage.getItem(`${gameKey}_hi`) || "0", 10);
+      let localHi = 0;
+      try {
+        localHi = parseInt(localStorage.getItem(`${gameKey}_hi`) || "0", 10);
+      } catch (e) {}
       try {
         const snapshot = await get(child(ref(db), `scores/${user.uid}/${gameKey}_high`));
         if (snapshot.exists()) {
           const cloudScore = parseInt(snapshot.val(), 10) || 0;
           if (cloudScore > localHi) {
-            localStorage.setItem(`${gameKey}_hi`, cloudScore.toString());
+            try { localStorage.setItem(`${gameKey}_hi`, cloudScore.toString()); } catch (e) {}
           } else if (localHi > cloudScore) {
             set(ref(db, `scores/${user.uid}/${gameKey}_high`), localHi);
           }
@@ -672,10 +1304,13 @@ syncMainPageGamesJson();
     if (isNaN(val)) return;
 
     const gameKey = window.currentActiveGameKey || "stgames_global";
-    const currentHighScore = parseInt(localStorage.getItem(`${gameKey}_hi`) || "0", 10);
+    let currentHighScore = 0;
+    try {
+      currentHighScore = parseInt(localStorage.getItem(`${gameKey}_hi`) || "0", 10);
+    } catch (e) {}
 
     if (val > currentHighScore) {
-      localStorage.setItem(`${gameKey}_hi`, val.toString());
+      try { localStorage.setItem(`${gameKey}_hi`, val.toString()); } catch (e) {}
       if (currentUser) {
         set(ref(db, `scores/${currentUser.uid}/${gameKey}_high`), val);
       }
