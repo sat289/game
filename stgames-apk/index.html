@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="ST GAMES">
   <meta name="description" content="ST GAMES - play online and downloaded offline arcade games">
   <meta name="color-scheme" content="light dark">
-  <link rel="manifest" href="/stgames-apk/manifest.json">
+  <link rel="manifest" href="manifest.json">
   <link rel="icon" href="/launchericon-192x192.png">
   <title>ST GAMES</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -90,8 +90,8 @@
 <body id="app-body">
   <!-- Background Music (Plays in Lobby and Inside All Games) -->
   <audio id="bg-music" loop preload="auto">
-    <source src="/stgames-apk/app.mp3" type="audio/mpeg">
     <source src="app.mp3" type="audio/mpeg">
+    <source src="/stgames-apk/app.mp3" type="audio/mpeg">
     <source src="https://stgames.online/stgames-apk/app.mp3" type="audio/mpeg">
   </audio>
 
@@ -102,7 +102,7 @@
         <button id="btn-online" class="mode-btn active" onclick="setAppMode('online')">ONLINE</button>
         <button id="btn-offline" class="mode-btn" onclick="setAppMode('offline')">OFFLINE (<span id="saved-count">0</span>)</button>
       </div>
-      <!-- Login / Google Profile Logo Button (Shows ONLY Logo when Logged In) -->
+      <!-- Login / Google Profile Logo Button (Links to login.html in same folder) -->
       <a href="login.html" id="auth-profile-btn" class="login-Trigger-btn" title="Account">
         <img id="user-logo-img" src="" alt="Profile" referrerpolicy="no-referrer">
         <span id="user-letter-avatar">U</span>
@@ -305,7 +305,6 @@ async function syncMainPageGamesJson(){
 
       const normalizedFromJson = rawList.map(normalizeGameItem).filter(g => g.url);
       
-      // Merge main page games.json with existing games so new games appear automatically
       const mergedMap = new Map();
       normalizedFromJson.forEach(g => mergedMap.set(g.url.toLowerCase(), g));
       DEFAULT_GAMES_DATA.forEach(g => {
@@ -318,12 +317,9 @@ async function syncMainPageGamesJson(){
       localStorage.setItem("st_cached_games_json", JSON.stringify(GAMES_DATA));
       renderGames();
       return;
-    } catch (e) {
-      // Try next URL
-    }
+    } catch (e) {}
   }
 
-  // Offline fallback to last synced games.json
   try {
     const cached = JSON.parse(localStorage.getItem("st_cached_games_json") || "null");
     if (Array.isArray(cached) && cached.length) {
@@ -345,10 +341,11 @@ function fullUrl(path){
   return new URL(path.split("/").map((part,i)=>i===0?part:encodeURIComponent(part)).join("/"),BASE_URL).href;
 }
 
+/* Service Worker Registered from Main Root Folder */
 async function registerAppServiceWorker(){
   if(!("serviceWorker" in navigator)) return null;
   try{
-    const registration = await navigator.serviceWorker.register("/sw.js",{scope:"/"});
+    const registration = await navigator.serviceWorker.register("../sw.js",{scope:"/"});
     swRegistration = await navigator.serviceWorker.ready;
     return swRegistration || registration;
   }catch(error){
@@ -508,7 +505,7 @@ async function enableNotifications(){
   const button = document.getElementById("notification-button");
 
   if(!("Notification" in window)){
-    alert("This browser does not support web notifications. Install ST GAMES as a PWA using Chrome.");
+    alert("This browser does not support web notifications.");
     return;
   }
   if(!("serviceWorker" in navigator)){
@@ -525,13 +522,13 @@ async function enableNotifications(){
       permission = await Notification.requestPermission();
     }
     if(permission !== "granted"){
-      alert("Notifications are blocked. Allow notifications for stgames.online in Android or Chrome site settings.");
+      alert("Notifications are blocked.");
       return;
     }
 
     const registration = swRegistration || await navigator.serviceWorker.ready;
     if(!registration || typeof registration.showNotification !== "function"){
-      throw new Error("Service worker is not ready. Check that /sw.js exists and is registered at the website root.");
+      throw new Error("Service worker is not ready.");
     }
 
     const message = notificationMessages[Math.floor(Math.random()*notificationMessages.length)];
@@ -608,7 +605,6 @@ syncMainPageGamesJson();
   const defaultIcon = document.getElementById("login-default-icon");
   const defaultText = document.getElementById("login-default-text");
 
-  // Show ONLY Google Logo / Avatar (No Name Text) when Logged In
   function renderHeaderLogo(photoURL, initialLetter, isLoggedIn) {
     if (isLoggedIn) {
       authBtn.classList.add("logged-in-logo");
@@ -633,7 +629,6 @@ syncMainPageGamesJson();
     }
   }
 
-  // Instant check from your main login.html localStorage keys
   const cachedPhoto = localStorage.getItem("gh_user_photo");
   const cachedLetter = localStorage.getItem("gh_user_letter");
   if (cachedPhoto || cachedLetter) {
@@ -649,7 +644,6 @@ syncMainPageGamesJson();
       const letter = name.charAt(0).toUpperCase();
       renderHeaderLogo(user.photoURL, letter, true);
 
-      // Sync high score with Firebase when logged in
       const gameKey = window.currentActiveGameKey || "stgames_global";
       const localHi = parseInt(localStorage.getItem(`${gameKey}_hi`) || "0", 10);
       try {
@@ -673,7 +667,6 @@ syncMainPageGamesJson();
     }
   });
 
-  // Global helper: Saves to Firebase if logged in, LocalStorage if guest
   window.submitScore = function(newScore) {
     const val = parseInt(newScore, 10);
     if (isNaN(val)) return;
