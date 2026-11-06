@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Samose! - TFI Games</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: #121212;
+      color: #ffffff;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      overflow: hidden;
+    }
+
+    .app-wrapper {
+      width: 100%;
+      max-width: 450px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding: 10px 14px 16px;
+      gap: 12px;
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 2px;
+    }
+
+    .top-link {
+      color: #d1d5db;
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      background: none;
+      border: none;
+    }
+
+    .top-title {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+    }
+
+    .stage-container {
+      position: relative;
+      flex: 1;
+      width: 100%;
+      border-radius: 18px;
+      overflow: hidden;
+      background: linear-gradient(180deg, #fceabb 0%, #f8b500 100%);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      touch-action: manipulation;
+    }
+
+    .hud-box {
+      position: absolute;
+      top: 14px;
+      background: rgba(255, 250, 240, 0.92);
+      color: #1f2937;
+      padding: 8px 16px;
+      border-radius: 12px;
+      min-width: 82px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+      pointer-events: none;
+    }
+
+    .hud-left { left: 14px; }
+    .hud-right { right: 14px; }
+
+    .hud-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #78716c;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .hud-value {
+      font-size: 28px;
+      font-weight: 800;
+      line-height: 1.1;
+      margin-top: 2px;
+    }
+
+    .modal-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 340px;
+      background: rgba(24, 24, 22, 0.94);
+      backdrop-filter: blur(8px);
+      border-radius: 20px;
+      padding: 22px 20px;
+      text-align: center;
+      color: #fff;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+    }
+
+    .modal-title {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 14px;
+    }
+
+    .modal-img-wrap {
+      width: 155px;
+      height: 155px;
+      margin: 0 auto 16px;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #2f2f2f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 54px;
+    }
+
+    .modal-img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .modal-scores {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 18px;
+    }
+
+    .modal-score-label {
+      font-size: 13px;
+      color: #a8a29e;
+      margin-bottom: 4px;
+    }
+
+    .modal-score-val {
+      font-size: 32px;
+      font-weight: 800;
+    }
+
+    .play-again-btn {
+      width: 100%;
+      background: #95d5b2;
+      color: #081c15;
+      border: none;
+      padding: 14px;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .play-again-btn:active {
+      transform: scale(0.98);
+    }
+
+    .controls-bar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .ctrl-btn {
+      background: #1c1c1e;
+      color: #e5e7eb;
+      border: 1px solid #2d2d30;
+      padding: 13px 0;
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .ctrl-btn:active {
+      background: #2c2c30;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-wrapper">
+    <div class="top-bar">
+      <a href="index.html" class="top-link">TFI games</a>
+      <div class="top-title">Samose!</div>
+      <button class="top-link" id="expandBtn">Expand</button>
+    </div>
+
+    <div class="stage-container" id="stageContainer">
+      <canvas id="gameCanvas" width="400" height="600"></canvas>
+
+      <div class="hud-box hud-left">
+        <div class="hud-label">SAMOSAS</div>
+        <div class="hud-value" id="scoreVal">0</div>
+      </div>
+      <div class="hud-box hud-right">
+        <div class="hud-label">BEST</div>
+        <div class="hud-value" id="bestVal">0</div>
+      </div>
+
+      <div class="modal-overlay" id="gameOverModal">
+        <div class="modal-card">
+          <div class="modal-title">Caught by a flashman!</div>
+          <div class="modal-img-wrap" id="modalImgContainer">
+            <span>🥟</span>
+          </div>
+          <div class="modal-scores">
+            <div>
+              <div class="modal-score-label">Samosas</div>
+              <div class="modal-score-val" id="modalScore">0</div>
+            </div>
+            <div>
+              <div class="modal-score-label">Best</div>
+              <div class="modal-score-val" id="modalBest">0</div>
+            </div>
+          </div>
+          <button class="play-again-btn" id="playAgainBtn">Play again</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls-bar">
+      <button class="ctrl-btn" id="pauseBtn">Pause</button>
+      <button class="ctrl-btn" id="restartBtn">Restart</button>
+      <button class="ctrl-btn" id="soundBtn">Sound on</button>
+    </div>
+  </div>
+
+  <script>
+    const ASSETS = {
+      playerImg: 'assets/player.png',
+      samosaImg: 'assets/samosa.png',
+      flashmanImg: 'assets/flashman.png',
+      bgImg: 'assets/bg.jpg',
+      gameOverImg: 'assets/gameover.jpg',
+      samoseAudio: 'assets/samose_sfx.mp3',
+      bgmAudio: 'assets/bgm_memes.mp3',
+      gameOverAudio: 'assets/gameover_sfx.mp3'
+    };
+
+    const images = {};
+    function loadImg(key, src) {
+      const img = new Image();
+      img.src = src;
+      img.onload = () => { images[key] = img; };
+    }
+    loadImg('player', ASSETS.playerImg);
+    loadImg('samosa', ASSETS.samosaImg);
+    loadImg('flashman', ASSETS.flashmanImg);
+    loadImg('bg', ASSETS.bgImg);
+
+    const goImg = new Image();
+    goImg.src = ASSETS.gameOverImg;
+    goImg.onload = () => {
+      const wrap = document.getElementById('modalImgContainer');
+      wrap.innerHTML = '';
+      wrap.appendChild(goImg);
+    };
+
+    let soundEnabled = true;
+    const sfxSamose = new Audio(ASSETS.samoseAudio);
+    const bgmMemes = new Audio(ASSETS.bgmAudio);
+    const sfxGameOver = new Audio(ASSETS.gameOverAudio);
+    bgmMemes.loop = true;
+    bgmMemes.volume = 0.5;
+
+    function playCollectSound() {
+      if (!soundEnabled) return;
+      sfxSamose.currentTime = 0;
+      sfxSamose.play().catch(() => {});
+    }
+
+    function playGameOverSound() {
+      if (!soundEnabled) return;
+      sfxGameOver.currentTime = 0;
+      sfxGameOver.play().catch(() => {});
+    }
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const BEST_KEY = 'tfi_samosa_best';
+    let score = 0;
+    let bestScore = parseInt(localStorage.getItem(BEST_KEY)) || 0;
+    document.getElementById('bestVal').textContent = bestScore;
+
+    let isPaused = false;
+    let isGameOver = false;
+    let frameCount = 0;
+
+    const player = {
+      x: 95,
+      y: 220,
+      radius: 28,
+      vy: 0,
+      gravity: 0.32,      // Smooth, floating pull down
+      jump: -9.5,       // Powerful surge straight to the top layers
+      minY: 50,
+      maxY: 420
+    };
+
+    let samosas = [];
+    let hazards = [];
+
+    function flap() {
+      if (isGameOver || isPaused) return;
+      player.vy = player.jump;
+      if (soundEnabled && bgmMemes.paused) {
+        bgmMemes.play().catch(() => {});
+      }
+    }
+
+    // Touch or click anywhere on the screen to shoot to the top
+    document.body.addEventListener('pointerdown', (e) => {
+      // Ignore if tapping buttons outside the stage
+      if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A') return;
+      e.preventDefault();
+      flap();
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' || e.code === 'ArrowUp') {
+        e.preventDefault();
+        flap();
+      }
+    });
+
+    function spawnSamosaWave() {
+      const count = 3 + Math.floor(Math.random() * 2);
+      const startY = 130 + Math.random() * 220;
+      const slope = Math.random() > 0.5 ? -26 : 26;
+
+      for (let i = 0; i < count; i++) {
+        const yPos = Math.max(70, Math.min(390, startY + i * slope));
+        samosas.push({
+          x: canvas.width + 30 + i * 52,
+          y: yPos,
+          radius: 18,
+          speed: 3.1
+        });
+      }
+    }
+
+    function spawnFlashmanHazard() {
+      const yPos = 90 + Math.random() * 280;
+      hazards.push({
+        y: yPos,
+        height: 48,
+        state: 'warning',
+        timer: 65,
+        enemyX: canvas.width + 40,
+        speed: 9.5,
+        radius: 24
+      });
+    }
+
+    function resetGame() {
+      score = 0;
+      frameCount = 0;
+      isGameOver = false;
+      isPaused = false;
+      player.y = 220;
+      player.vy = 0;
+      samosas = [];
+      hazards = [];
+      document.getElementById('scoreVal').textContent = '0';
+      document.getElementById('pauseBtn').textContent = 'Pause';
+      document.getElementById('gameOverModal').classList.remove('active');
+      spawnSamosaWave();
+    }
+
+    function triggerGameOver() {
+      isGameOver = true;
+      bgmMemes.pause();
+      playGameOverSound();
+
+      if (score > bestScore) {
+        bestScore = score;
+        localStorage.setItem(BEST_KEY, bestScore);
+        document.getElementById('bestVal').textContent = bestScore;
+      }
+      document.getElementById('modalScore').textContent = score;
+      document.getElementById('modalBest').textContent = bestScore;
+      document.getElementById('gameOverModal').classList.add('active');
+    }
+
+    function update() {
+      if (isPaused || isGameOver) return;
+      frameCount++;
+
+      player.vy += player.gravity;
+      player.y += player.vy;
+
+      if (player.y < player.minY) { player.y = player.minY; player.vy = 0; }
+      if (player.y > player.maxY) { player.y = player.maxY; player.vy = 0; }
+
+      if (frameCount % 95 === 0) spawnSamosaWave();
+      if (frameCount % 170 === 0) spawnFlashmanHazard();
+
+      for (let i = samosas.length - 1; i >= 0; i--) {
+        const s = samosas[i];
+        s.x -= s.speed;
+
+        const dx = player.x - s.x;
+        const dy = player.y - s.y;
+        if (Math.hypot(dx, dy) < player.radius + s.radius) {
+          score++;
+          document.getElementById('scoreVal').textContent = score;
+          if (score > bestScore) {
+            bestScore = score;
+            localStorage.setItem(BEST_KEY, bestScore);
+            document.getElementById('bestVal').textContent = bestScore;
+          }
+          playCollectSound();
+          samosas.splice(i, 1);
+          continue;
+        }
+
+        if (s.x < -40) samosas.splice(i, 1);
+      }
+
+      for (let i = hazards.length - 1; i >= 0; i--) {
+        const h = hazards[i];
+        if (h.state === 'warning') {
+          h.timer--;
+          if (h.timer <= 0) h.state = 'charging';
+        } else if (h.state === 'charging') {
+          h.enemyX -= h.speed;
+
+          const dx = player.x - h.enemyX;
+          const dy = player.y - h.y;
+          if (Math.hypot(dx, dy) < player.radius + h.radius - 6) {
+            triggerGameOver();
+          }
+
+          if (h.enemyX < -60) hazards.splice(i, 1);
+        }
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (images.bg) {
+        ctx.drawImage(images.bg, 0, 0, canvas.width, canvas.height);
+      } else {
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        skyGrad.addColorStop(0, '#f9dfb9');
+        skyGrad.addColorStop(1, '#d9a76a');
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      hazards.forEach(h => {
+        if (h.state === 'warning') {
+          ctx.fillStyle = 'rgba(255, 245, 225, 0.45)';
+          ctx.fillRect(0, h.y - h.height / 2, canvas.width, h.height);
+
+          ctx.fillStyle = 'rgba(255, 250, 240, 0.92)';
+          ctx.beginPath();
+          ctx.roundRect(canvas.width - 48, h.y - 18, 36, 36, 8);
+          ctx.fill();
+
+          ctx.fillStyle = '#7c2d12';
+          ctx.font = 'bold 20px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('!', canvas.width - 30, h.y);
+        } else if (h.state === 'charging') {
+          if (images.flashman) {
+            ctx.drawImage(images.flashman, h.enemyX - 30, h.y - 30, 60, 60);
+          } else {
+            ctx.font = '40px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🏃‍♂️', h.enemyX, h.y);
+          }
+        }
+      });
+
+      samosas.forEach(s => {
+        if (images.samosa) {
+          ctx.drawImage(images.samosa, s.x - 20, s.y - 20, 40, 40);
+        } else {
+          ctx.font = '32px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('🥟', s.x, s.y);
+        }
+      });
+
+      if (images.player) {
+        ctx.drawImage(
+          images.player,
+          player.x - player.radius,
+          player.y - player.radius,
+          player.radius * 2,
+          player.radius * 2
+        );
+      } else {
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#3b82f6';
+        ctx.fill();
+      }
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    document.getElementById('pauseBtn').addEventListener('click', (e) => {
+      if (isGameOver) return;
+      isPaused = !isPaused;
+      e.target.textContent = isPaused ? 'Resume' : 'Pause';
+    });
+
+    document.getElementById('restartBtn').addEventListener('click', resetGame);
+    document.getElementById('playAgainBtn').addEventListener('click', resetGame);
+
+    document.getElementById('soundBtn').addEventListener('click', (e) => {
+      soundEnabled = !soundEnabled;
+      e.target.textContent = soundEnabled ? 'Sound on' : 'Sound off';
+      if (!soundEnabled) bgmMemes.pause();
+    });
+
+    document.getElementById('expandBtn').addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    });
+
+    spawnSamosaWave();
+    loop();
+  </script>
+</body>
+</html>
