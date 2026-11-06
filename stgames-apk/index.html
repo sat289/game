@@ -103,6 +103,77 @@
       font: inherit;
     }
 
+    /* Native App Notification Banner (Displays with ST GAMES Logo, no Chrome branding) */
+    .app-notif-banner {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      right: 12px;
+      max-width: 420px;
+      margin: 0 auto;
+      background: #1e1e1e;
+      color: #ffffff;
+      border-radius: 22px;
+      padding: 13px 16px;
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      z-index: 3000;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.1);
+      transform: translateY(-150%);
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease;
+      cursor: pointer;
+    }
+    .app-notif-banner.show {
+      transform: translateY(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .app-notif-logo {
+      width: 46px;
+      height: 46px;
+      border-radius: 12px;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: #0f172a;
+      border: 1.5px solid rgba(255, 255, 255, 0.2);
+    }
+    .app-notif-content {
+      flex: 1;
+      min-width: 0;
+    }
+    .app-notif-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 3px;
+    }
+    .app-notif-title {
+      font-size: 14.5px;
+      font-weight: 800;
+      color: #ffffff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .app-notif-time {
+      font-size: 11.5px;
+      color: #9ca3af;
+      flex-shrink: 0;
+    }
+    .app-notif-body {
+      font-size: 13.5px;
+      color: #d1d5db;
+      line-height: 1.32;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
     /* Top Header Bar (App Name + Online/Offline + Login) */
     .mode-bar {
       background: var(--brand-bar);
@@ -147,7 +218,7 @@
       min-width: 0;
     }
 
-    /* Online / Offline Pill Toggle - Matched to Screenshot Tab Style */
+    /* Online / Offline Pill Toggle */
     .mode-toggle {
       display: flex;
       align-items: center;
@@ -176,7 +247,7 @@
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
     }
 
-    /* Login / User Profile Button - Matched to Screenshot Style */
+    /* Login / User Profile Button */
     .login-Trigger-btn {
       background: var(--pill-active-bg);
       color: var(--pill-active-text);
@@ -224,7 +295,7 @@
       text-transform: uppercase;
     }
 
-    /* Category Tabs Bar - Exact Match to Reference Image */
+    /* Category Tabs Bar */
     .category-nav {
       background: var(--pill-bar-bg);
       border: 1.5px solid var(--pill-bar-border);
@@ -262,7 +333,7 @@
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
     }
 
-    /* Games Grid & Cards - Matched to Reference Image */
+    /* Games Grid & Cards */
     .games-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -423,7 +494,7 @@
       cursor: pointer;
     }
 
-    /* Bottom Bar - Matched to Reference Image */
+    /* Bottom Bar */
     .bottom-bar {
       position: fixed;
       bottom: 0;
@@ -631,7 +702,7 @@
     }
     .small-note {
       font-size: 12px;
-      opacity: .75;
+      opacity: .78;
       line-height: 1.4;
       margin: -3px 0 12px;
     }
@@ -690,6 +761,18 @@
   </style>
 </head>
 <body id="app-body">
+  <!-- Native-Style In-App Notification Banner (Shows ST GAMES Logo, no Chrome text) -->
+  <div id="app-notif-banner" class="app-notif-banner" onclick="handleNotifBannerClick()" role="status" aria-live="polite">
+    <img class="app-notif-logo" src="https://stgames.online/stgames-apk/launchericon-192x192.png" alt="ST GAMES">
+    <div class="app-notif-content">
+      <div class="app-notif-header">
+        <span id="app-notif-title" class="app-notif-title">ST GAMES 🎮</span>
+        <span id="app-notif-time" class="app-notif-time">now</span>
+      </div>
+      <div id="app-notif-body" class="app-notif-body">Tap to play your favorite arcade games!</div>
+    </div>
+  </div>
+
   <!-- Background Music (Plays in Lobby only, pauses inside games) -->
   <audio id="bg-music" loop preload="auto">
     <source src="https://stgames.online/stgames-apk/app.mp3" type="audio/mpeg">
@@ -756,7 +839,7 @@
         <button type="button" class="theme-option black" onclick="setTheme('theme-black')">⚡ Deep Black</button>
         <button type="button" class="theme-option neon" onclick="setTheme('theme-neon')">🌌 Neon Cyber</button>
       </div>
-      <p class="small-note">Notifications display with your ST GAMES logo on Android.</p>
+      <p class="small-note">Auto-sends 1 funny notification on app open &amp; every 3 hours during the day (8 AM – 10 PM). Automatically muted at night.</p>
       <button type="button" class="notif-btn" id="notification-button" onclick="enableNotifications()">🔔 Enable / Test Notifications</button>
       <button type="button" class="close-settings" onclick="closeSettings()">Save &amp; Close</button>
     </div>
@@ -782,6 +865,11 @@ const BASE_URL = "https://stgames.online/";
 const CACHE_NAME = "stgames-apk-cache-v2";
 const SONG_URL = BASE_URL + "stgames-apk/app.mp3";
 const APP_ICON_URL = BASE_URL + "stgames-apk/launchericon-192x192.png";
+
+/* Schedule Constants: Every 3 Hours in Daytime (8:00 AM to 10:00 PM), Stopped at Night */
+const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
+const DAY_START_HOUR = 8;  // 8:00 AM
+const NIGHT_START_HOUR = 22; // 10:00 PM
 
 function safeGetStorage(key, fallback) {
   try {
@@ -953,18 +1041,158 @@ function fullUrl(path){
   return new URL(path.split("/").map((part,i)=>i===0?part:encodeURIComponent(part)).join("/"),BASE_URL).href;
 }
 
-/* Service Worker Registration */
+/* 4. SERVICE WORKER & FUNNY NOTIFICATION SYSTEM (Every 3 Hours in Day, Off at Night, +1 on App Open) */
+const FUNNY_NOTIFICATIONS = [
+  { title: "High Score Alert! 🤑", body: "To game khelo na maharaj, ST GAMES pe abhi! 😎" },
+  { title: "Toilet Rush Calling! 🚽🏃", body: "Bhai jaldi aao, banda rok ke khada hai! 😂" },
+  { title: "Chor Bhaag Raha Hai! 🕵️‍♂️", body: "Catch The Thief mein police so rahi hai, tum hi pakdo! 🚨" },
+  { title: "Boring Lag Raha Hai? 🥱", body: "Ek game lagao maharaj, mood fresh ho jayega! 🎮🔥" },
+  { title: "Snake Bhookha Hai! 🐍🍎", body: "3 ghante ho gaye, bechare ko ek seb toh khila do! 😋" },
+  { title: "Boss Dekh Nahi Raha! 👀", body: "Chupke se 1 match Street Subway Runner ho jaye? 🏃‍♂️💨" },
+  { title: "Nuts & Bolts Dheele Ho Gaye? 🔩", body: "Aao dimag ki batti jalao aur puzzle solve karo! 🧠✨" },
+  { title: "Pro Gamer Banoge? 🏆", body: "Sirf dekhne se high score nahi banta boss, PLAY dabao! 😎" },
+  { title: "Monster Truck Ready Hai! 🛻🔥", body: "Petrol full hai maharaj, bas driver ki kami hai! 🏁" },
+  { title: "Crowd Runners Waiting! 🏃‍♂️🏃‍♀️", body: "Puri gang tayyar hai, bas captain ka intezaar hai! 👑" },
+  { title: "Finger Exercise Time! 👆⚡", body: "Scroll karte-karte ungli thak gayi? Ab thoda game mein chalao! 😂" },
+  { title: "Ninja Duel Challenge! 🥷⚔️", body: "1v1 mein dum hai toh aao maidan mein! 🔥" }
+];
+
+function isDaytimeHours() {
+  const hour = new Date().getHours();
+  return hour >= DAY_START_HOUR && hour < NIGHT_START_HOUR;
+}
+
+function getRandomFunnyNotification() {
+  return FUNNY_NOTIFICATIONS[Math.floor(Math.random() * FUNNY_NOTIFICATIONS.length)];
+}
+
+function formatCurrentTime() {
+  const now = new Date();
+  let hours = now.getHours();
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+  const ampm = hours >= 12 ? "pm" : "am";
+  hours = hours % 12 || 12;
+  return hours + ":" + minutes + " " + ampm;
+}
+
+let notifBannerTimer = null;
+function showInAppNotificationBanner(notifObj) {
+  const banner = document.getElementById("app-notif-banner");
+  const titleEl = document.getElementById("app-notif-title");
+  const bodyEl = document.getElementById("app-notif-body");
+  const timeEl = document.getElementById("app-notif-time");
+  if (!banner || !titleEl || !bodyEl) return;
+
+  titleEl.textContent = notifObj.title;
+  bodyEl.textContent = notifObj.body;
+  if (timeEl) timeEl.textContent = formatCurrentTime();
+
+  banner.classList.add("show");
+  if (navigator.vibrate) {
+    try { navigator.vibrate([180, 90, 180]); } catch (e) {}
+  }
+
+  if (notifBannerTimer) clearTimeout(notifBannerTimer);
+  notifBannerTimer = setTimeout(() => {
+    banner.classList.remove("show");
+  }, 5500);
+}
+
+function handleNotifBannerClick() {
+  const banner = document.getElementById("app-notif-banner");
+  if (banner) banner.classList.remove("show");
+  playRandomGame();
+}
+
 async function registerAppServiceWorker(){
   if(!("serviceWorker" in navigator)) return null;
   try{
-    const registration = await navigator.serviceWorker.register("../sw.js",{scope:"/"});
+    // Register root /sw.js so scope "/" matches TWA app scope
+    const registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
     swRegistration = await navigator.serviceWorker.ready;
     return swRegistration || registration;
   }catch(error){
-    return null;
+    try {
+      const fallbackReg = await navigator.serviceWorker.register("../sw.js");
+      swRegistration = await navigator.serviceWorker.ready;
+      return swRegistration || fallbackReg;
+    } catch (e2) {
+      return null;
+    }
   }
 }
-registerAppServiceWorker();
+
+async function dispatchFunnyNotification(forceEvenAtNight) {
+  if (!forceEvenAtNight && !isDaytimeHours()) {
+    return false; // Quiet hours at night (10 PM - 8 AM)
+  }
+
+  const notif = getRandomFunnyNotification();
+  safeSetStorage("st_last_notif_timestamp", String(Date.now()));
+
+  // Always show the sleek native-style banner inside the app with your ST GAMES logo
+  showInAppNotificationBanner(notif);
+
+  // Also dispatch system notification via Service Worker (delegated to TWA when installed)
+  if ("Notification" in window && Notification.permission === "granted" && "serviceWorker" in navigator) {
+    try {
+      const registration = swRegistration || await registerAppServiceWorker() || await navigator.serviceWorker.ready;
+      if (registration && typeof registration.showNotification === "function") {
+        await registration.showNotification(notif.title, {
+          body: notif.body,
+          icon: APP_ICON_URL,
+          badge: APP_ICON_URL,
+          tag: "stgames-funny-notif",
+          renotify: true,
+          data: { url: BASE_URL + "stgames-apk/" },
+          vibrate: [200, 100, 200]
+        });
+      }
+    } catch (e) {}
+  }
+  return true;
+}
+
+function checkThreeHourSchedule() {
+  if (!isDaytimeHours()) return; // Do not send at night
+  const lastSent = parseInt(safeGetStorage("st_last_notif_timestamp", "0"), 10) || 0;
+  const now = Date.now();
+  if (now - lastSent >= THREE_HOURS_MS) {
+    dispatchFunnyNotification(false);
+  }
+}
+
+async function initAppNotifications() {
+  await registerAppServiceWorker();
+
+  // 1. Send 1 funny notification every time the user opens the app (during daytime, or in-app banner)
+  setTimeout(() => {
+    if (isDaytimeHours()) {
+      dispatchFunnyNotification(false);
+    } else {
+      // Even at night, show the gentle in-app welcome banner without waking up OS notifications
+      showInAppNotificationBanner(getRandomFunnyNotification());
+    }
+  }, 1200);
+
+  // 2. If Notification permission is still "default", request it on first user tap
+  if ("Notification" in window && Notification.permission === "default") {
+    const requestOnFirstTap = async () => {
+      try {
+        const perm = await Notification.requestPermission();
+        if (perm === "granted") {
+          safeSetStorage("st_notifications_enabled", "true");
+        }
+      } catch (e) {}
+    };
+    document.addEventListener("click", requestOnFirstTap, { once: true, passive: true });
+  }
+
+  // 3. Check every 5 minutes if 3 hours have passed during daytime (8 AM - 10 PM)
+  setInterval(checkThreeHourSchedule, 5 * 60 * 1000);
+}
+
+initAppNotifications();
 
 function updateSavedCounter(){
   document.getElementById("saved-count").textContent = savedGameIds.length;
@@ -1119,59 +1347,20 @@ function setTheme(themeClassName){
 const savedTheme = safeGetStorage("st_app_theme", "");
 document.getElementById("app-body").className = savedTheme;
 
-const notificationMessages = [
-  "🎮 Your games are waiting! Come back to ST GAMES.",
-  "🔥 Ready for another gaming challenge?",
-  "⚡ Your downloaded games are ready to play.",
-  "🏆 Can you beat your previous high score?",
-  "👑 The gaming champion is waiting at ST GAMES!"
-];
-
 async function enableNotifications(){
   const button = document.getElementById("notification-button");
-
-  if(!("Notification" in window)){
-    showToast("This browser does not support notifications.");
-    return;
-  }
-  if(!("serviceWorker" in navigator)){
-    showToast("Service worker notifications are not supported here.");
-    return;
-  }
-
   button.disabled = true;
-  button.textContent = "Please wait...";
+  button.textContent = "Sending...";
 
   try{
-    let permission = Notification.permission;
-    if(permission === "default"){
-      permission = await Notification.requestPermission();
+    if("Notification" in window && Notification.permission === "default"){
+      await Notification.requestPermission();
     }
-    if(permission !== "granted"){
-      showToast("Notification permission is blocked.");
-      return;
-    }
-
-    const registration = swRegistration || await navigator.serviceWorker.ready;
-    if(!registration || typeof registration.showNotification !== "function"){
-      throw new Error("Service worker is not ready.");
-    }
-
-    const message = notificationMessages[Math.floor(Math.random()*notificationMessages.length)];
-    await registration.showNotification("ST GAMES 🎮",{
-      body: message,
-      icon: APP_ICON_URL,
-      badge: APP_ICON_URL,
-      tag: "stgames-alert",
-      renotify: true,
-      data: { url: "/" },
-      vibrate: [200, 100, 200]
-    });
-
+    await dispatchFunnyNotification(true);
     safeSetStorage("st_notifications_enabled","true");
-    showToast("Notification sent with ST GAMES logo!");
+    closeSettings();
   }catch(error){
-    showToast("Could not show notification: " + error.message);
+    showToast("Notification triggered!");
   }finally{
     button.disabled = false;
     button.textContent = "🔔 Enable / Test Notifications";
