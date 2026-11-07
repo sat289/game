@@ -2192,5 +2192,47 @@ syncMainPageGamesJson();
     }
   };
 </script>
+
+<!-- ST GAMES REAL LIVE TRACKER -->
+<script id="st-games-live-tracker">
+(function() {
+  var NS = "stgames_sat289_game";
+  var isApp = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  var path = (window.location.pathname || "").toLowerCase();
+  function hit(key) {
+    fetch("https://api.counterapi.dev/v1/" + NS + "/" + key + "/up", { mode: "cors" }).catch(function(){});
+  }
+  window.addEventListener("DOMContentLoaded", function() {
+    if (path.indexOf("stgames-apk") !== -1) {
+      hit("apk_page_views");
+    } else {
+      hit("views");
+    }
+    if (isApp) hit("app_launches");
+    document.body.addEventListener("click", function(e) {
+      var el = e.target.closest("a, button");
+      if (!el) return;
+      var txt = (el.innerText || "").toLowerCase();
+      var href = (el.getAttribute("href") || "").toLowerCase();
+      if (href.indexOf(".apk") !== -1 || txt.indexOf("download apk") !== -1 || txt.indexOf("download app") !== -1) {
+        hit("apk_downloads");
+      }
+      if (txt.indexOf("login") !== -1 || txt.indexOf("sign in") !== -1) {
+        hit("member_logins");
+      }
+      if (txt.indexOf("play free") !== -1 || href.indexOf("game/") !== -1) {
+        hit("game_plays");
+      }
+    });
+  });
+  window.addEventListener("appinstalled", function() {
+    hit("pwa_installs");
+  });
+  window.stTrackLogin = function() { hit("member_logins"); };
+  window.stTrackDownload = function() { hit("apk_downloads"); };
+  window.stTrackApkPageView = function() { hit("apk_page_views"); };
+  window.stTrackGamePlay = function() { hit("game_plays"); };
+})();
+</script>
 </body>
 </html>
