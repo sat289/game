@@ -3,901 +3,1214 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<meta name="theme-color" content="#0f172a">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#121212">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
 <title>Samose! - TFI Games</title>
 
 <style>
 * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    -webkit-user-select: none;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 html, body {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background: #0f172a;
-  font-family: Arial, sans-serif;
-  touch-action: none;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #121212;
+    color: white;
+    touch-action: manipulation;
 }
 
-#game {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
+body {
+    height: 100dvh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.app-wrapper {
+    width: 100%;
+    max-width: 450px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: max(10px, env(safe-area-inset-top)) 14px max(12px, env(safe-area-inset-bottom));
+    gap: 12px;
+}
+
+.top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 38px;
+}
+
+.top-link {
+    color: #d1d5db;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.top-title {
+    font-size: 23px;
+    font-weight: 900;
+}
+
+.stage-container {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    border-radius: 18px;
+    overflow: hidden;
+    background: #d9a76a;
+    box-shadow: 0 8px 24px rgba(0,0,0,.4);
 }
 
 canvas {
-  width: 100%;
-  height: 100%;
-  display: block;
-  touch-action: none;
+    width: 100%;
+    height: 100%;
+    display: block;
+    touch-action: none;
 }
 
-#hud {
-  position: absolute;
-  top: max(14px, env(safe-area-inset-top));
-  left: 12px;
-  z-index: 5;
-  color: white;
-  font-size: 17px;
-  font-weight: bold;
-  text-shadow: 0 2px 5px black;
-  pointer-events: none;
+.hud-box {
+    position: absolute;
+    top: 14px;
+    background: rgba(255,250,240,.94);
+    color: #1f2937;
+    padding: 8px 14px;
+    border-radius: 12px;
+    min-width: 82px;
+    pointer-events: none;
 }
 
-#controls {
-  position: absolute;
-  top: max(10px, env(safe-area-inset-top));
-  right: 10px;
-  display: flex;
-  gap: 6px;
-  z-index: 10;
+.hud-left { left: 12px; }
+.hud-right { right: 12px; }
+
+.hud-label {
+    font-size: 10px;
+    font-weight: 800;
+    color: #78716c;
+    letter-spacing: 1px;
 }
 
-.icon-btn {
-  width: 40px;
-  height: 40px;
-  border: 1px solid rgba(255,255,255,.4);
-  border-radius: 12px;
-  background: rgba(15,23,42,.82);
-  color: white;
-  font-size: 21px;
-  display: grid;
-  place-items: center;
+.hud-value {
+    font-size: 27px;
+    font-weight: 900;
+    margin-top: 3px;
 }
 
-#warning {
-  position: absolute;
-  top: 23%;
-  left: 50%;
-  transform: translateX(-50%);
-  display: none;
-  z-index: 7;
-  color: #ff2424;
-  font-size: clamp(23px, 6vw, 32px);
-  font-weight: 900;
-  text-shadow: 0 3px 6px black;
-  white-space: nowrap;
-  pointer-events: none;
+.modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,.65);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: .2s;
 }
 
-#warning.show {
-  display: block;
-  animation: pulse .35s infinite alternate;
-}
-
-@keyframes pulse {
-  from {
-    opacity: .65;
-    transform: translateX(-50%) scale(.96);
-  }
-  to {
+.modal-overlay.active {
     opacity: 1;
-    transform: translateX(-50%) scale(1.04);
-  }
+    visibility: visible;
+    pointer-events: auto;
 }
 
-#hint {
-  position: absolute;
-  bottom: max(18px, env(safe-area-inset-bottom));
-  left: 50%;
-  transform: translateX(-50%);
-  color: white;
-  font-size: 13px;
-  white-space: nowrap;
-  text-shadow: 0 2px 5px black;
-  pointer-events: none;
+.modal-card {
+    width: 100%;
+    max-width: 330px;
+    background: #181816;
+    border-radius: 20px;
+    padding: 22px;
+    text-align: center;
 }
 
-#message {
-  position: absolute;
-  inset: 0;
-  z-index: 20;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  text-align: center;
-  color: white;
-  background: rgba(0,0,0,.7);
+.modal-title {
+    font-size: 22px;
+    font-weight: 900;
+    margin-bottom: 14px;
 }
 
-#message.hidden {
-  display: none;
+.modal-img-wrap {
+    width: 140px;
+    height: 140px;
+    margin: auto auto 16px;
+    border-radius: 15px;
+    overflow: hidden;
+    background: #333;
 }
 
-#message h1 {
-  font-size: clamp(36px, 10vw, 58px);
-  color: #ffd34d;
-  margin-bottom: 14px;
-  text-shadow: 0 4px 0 #8b4513;
+.modal-img-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
-#message p {
-  font-size: 17px;
-  line-height: 1.5;
-  margin-bottom: 22px;
-  max-width: 340px;
+.modal-scores {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px;
 }
 
-.main-btn {
-  padding: 14px 35px;
-  border: 0;
-  border-radius: 14px;
-  background: #ff9f1c;
-  color: #241300;
-  font-size: 20px;
-  font-weight: 900;
-  box-shadow: 0 5px 0 #b85c00;
+.modal-score-label {
+    color: #a8a29e;
+    font-size: 13px;
+}
+
+.modal-score-val {
+    font-size: 32px;
+    font-weight: 900;
+}
+
+.play-again-btn {
+    width: 100%;
+    background: #95d5b2;
+    color: #081c15;
+    border: none;
+    padding: 14px;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.controls-bar {
+    display: grid;
+    grid-template-columns: repeat(3,1fr);
+    gap: 10px;
+}
+
+.ctrl-btn {
+    background: #1c1c1e;
+    color: #e5e7eb;
+    border: 1px solid #333;
+    padding: 13px 0;
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.ctrl-btn:active,
+.play-again-btn:active {
+    transform: scale(.97);
+}
+
+#startMessage {
+    position: absolute;
+    left: 50%;
+    top: 53%;
+    transform: translate(-50%,-50%);
+    background: rgba(20,20,20,.85);
+    padding: 14px 20px;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 800;
+    text-align: center;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+.stage-container.playing #startMessage {
+    display: none;
 }
 </style>
 </head>
 
 <body>
 
-<div id="game">
+<div class="app-wrapper">
 
-  <canvas id="canvas"></canvas>
+    <div class="top-bar">
+        <a href="index.html" class="top-link">← TFI games</a>
+        <div class="top-title">🥟 Samose!</div>
+        <button class="top-link" id="expandBtn">Expand</button>
+    </div>
 
-  <div id="hud">
-    Score: <span id="score">0</span>
-    &nbsp; 🥟 <span id="collected">0</span>
-  </div>
+    <div class="stage-container" id="stageContainer">
 
-  <div id="controls">
-    <button class="icon-btn" id="pauseBtn">Ⅱ</button>
-    <button class="icon-btn" id="restartBtn">↻</button>
-    <button class="icon-btn" id="soundBtn">🔊</button>
-    <button class="icon-btn" id="fullBtn">⛶</button>
-  </div>
+        <canvas id="gameCanvas" width="400" height="600"></canvas>
 
-  <div id="warning">⚠ FLASHMAN COMING!</div>
+        <div class="hud-box hud-left">
+            <div class="hud-label">SAMOSAS</div>
+            <div class="hud-value" id="scoreVal">0</div>
+        </div>
 
-  <div id="hint">
-    HOLD SCREEN TO FLY UP • RELEASE TO FALL
-  </div>
+        <div class="hud-box hud-right">
+            <div class="hud-label">BEST</div>
+            <div class="hud-value" id="bestVal">0</div>
+        </div>
 
-  <div id="message">
-    <h1 id="messageTitle">🥟 SAMOSE!</h1>
-    <p id="messageText">
-      Help Bunny collect samosas and escape Flashman!<br>
-      Hold your finger to fly up. Release to fall.
-    </p>
-    <button class="main-btn" id="startBtn">PLAY GAME</button>
-  </div>
+        <div id="startMessage">
+            TAP TO START AND FLY! 🐰
+        </div>
+
+        <div class="modal-overlay" id="gameOverModal">
+
+            <div class="modal-card">
+
+                <div class="modal-title">
+                    Caught by Flashman!
+                </div>
+
+                <div class="modal-img-wrap">
+                    <img src="assets/gameover.jpg"
+                         alt="Game over"
+                         onerror="this.style.display='none'">
+                </div>
+
+                <div class="modal-scores">
+
+                    <div>
+                        <div class="modal-score-label">Samosas</div>
+                        <div class="modal-score-val" id="modalScore">0</div>
+                    </div>
+
+                    <div>
+                        <div class="modal-score-label">Best</div>
+                        <div class="modal-score-val" id="modalBest">0</div>
+                    </div>
+
+                </div>
+
+                <button class="play-again-btn" id="playAgainBtn">
+                    PLAY AGAIN
+                </button>
+
+            </div>
+        </div>
+
+    </div>
+
+    <div class="controls-bar">
+        <button class="ctrl-btn" id="pauseBtn">Pause</button>
+        <button class="ctrl-btn" id="restartBtn">Restart</button>
+        <button class="ctrl-btn" id="soundBtn">Sound on</button>
+    </div>
 
 </div>
 
 <script>
-(() => {
-"use strict";
 
-/* =====================================
-   EXISTING IMAGE FILES
-===================================== */
+// ========================================
+// ASSETS CONFIGURATION
+// ========================================
 
 const ASSETS = {
-  bunny: "assets/bunny.png",
-  background: "assets/samosa.png",
-  samosa: "assets/samo.png",
-  gameover: "assets/gameover.jpg"
+
+    player: 'assets/bunny.png',
+
+    // Real samosa collectible
+    samosa: 'assets/samo.png',
+
+    // Full game background
+    background: 'assets/samosa.png',
+
+    gameOverImage: 'assets/gameover.jpg',
+
+    collectSound: 'assets/samose_sfx.mp3',
+
+    backgroundMusic: 'assets/bgm_samosa.mp3',
+
+    gameOverSound: 'assets/samo.mp3'
 };
 
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-
-const scoreEl = document.getElementById("score");
-const collectedEl = document.getElementById("collected");
-
-const message = document.getElementById("message");
-const messageTitle = document.getElementById("messageTitle");
-const messageText = document.getElementById("messageText");
-
-const warning = document.getElementById("warning");
-
-const startBtn = document.getElementById("startBtn");
-const pauseBtn = document.getElementById("pauseBtn");
-const restartBtn = document.getElementById("restartBtn");
-const soundBtn = document.getElementById("soundBtn");
-const fullBtn = document.getElementById("fullBtn");
-
-/* =====================================
-   LOAD IMAGES
-===================================== */
+// ========================================
+// IMAGE LOADING
+// ========================================
 
 const images = {};
 
-function loadImage(name, path) {
-  const img = new Image();
-  img.onload = () => console.log(name + " loaded");
-  img.onerror = () => console.error("Cannot load " + path);
-  img.src = path;
-  images[name] = img;
+function loadImage(key, source) {
+
+    const img = new Image();
+
+    img.onload = () => {
+        images[key] = img;
+    };
+
+    img.onerror = () => {
+        console.error('Image failed to load:', source);
+    };
+
+    img.src = source;
 }
 
-Object.entries(ASSETS).forEach(([name, path]) => {
-  loadImage(name, path);
-});
+loadImage('player', ASSETS.player);
+loadImage('samosa', ASSETS.samosa);
+loadImage('background', ASSETS.background);
 
-/* =====================================
-   AUDIO
-===================================== */
-
-const collectAudio = new Audio("assets/samose_sfx.mp3");
-const musicAudio = new Audio("assets/bgm_samosa.mp3");
-const flashmanAudio = new Audio("assets/samo.mp3");
-
-collectAudio.preload = "auto";
-musicAudio.preload = "auto";
-flashmanAudio.preload = "auto";
-
-collectAudio.volume = 0.8;
-musicAudio.volume = 0.35;
-musicAudio.loop = true;
-flashmanAudio.volume = 1;
+// ========================================
+// AUDIO
+// ========================================
 
 let soundEnabled = true;
 
-function playSound(audio) {
-  if (!soundEnabled) return;
+const collectAudio = new Audio(ASSETS.collectSound);
+const bgmAudio = new Audio(ASSETS.backgroundMusic);
+const gameOverAudio = new Audio(ASSETS.gameOverSound);
 
-  try {
+bgmAudio.loop = true;
+bgmAudio.volume = 0.45;
+
+function playAudio(audio) {
+
+    if (!soundEnabled) return;
+
     audio.currentTime = 0;
-    const promise = audio.play();
-    if (promise) promise.catch(() => {});
-  } catch (error) {}
+
+    audio.play().catch(() => {});
 }
 
-function stopSound(audio) {
-  try {
-    audio.pause();
-    audio.currentTime = 0;
-  } catch (error) {}
+function startMusic() {
+
+    if (soundEnabled && bgmAudio.paused) {
+        bgmAudio.play().catch(() => {});
+    }
 }
 
-/* =====================================
-   SCREEN
-===================================== */
+// ========================================
+// CANVAS
+// ========================================
 
-let W = 0;
-let H = 0;
-let DPR = 1;
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
 
-function resize() {
-  W = window.innerWidth;
-  H = window.innerHeight;
+const WIDTH = 400;
+const HEIGHT = 600;
 
-  DPR = Math.min(window.devicePixelRatio || 1, 2);
+const stage = document.getElementById('stageContainer');
 
-  canvas.width = Math.round(W * DPR);
-  canvas.height = Math.round(H * DPR);
+// ========================================
+// SCORE SYSTEM
+// ========================================
 
-  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-
-  if (bunny) {
-    bunny.x = W * 0.2;
-    bunny.y = Math.max(
-      bunny.height / 2,
-      Math.min(H - bunny.height / 2, bunny.y)
-    );
-  }
-}
-
-window.addEventListener("resize", resize);
-
-/* =====================================
-   SETTINGS
-===================================== */
-
-const SETTINGS = {
-  gravity: 0.38,
-
-  // Bunny speed increased
-  flyAcceleration: 1.05,
-  maxFlySpeed: 8.5,
-  maxFallSpeed: 7,
-
-  // First Flashman after 12 seconds
-  firstWaveDelay: 12,
-
-  // Later waves every 18 seconds
-  nextWaveDelay: 18,
-
-  // Maximum wave size
-  maximumFlashmen: 6,
-
-  flashmanSpeed: 3.3,
-
-  samosaSpeed: 3.2,
-  samosaInterval: 1.6
-};
-
-/* =====================================
-   GAME VARIABLES
-===================================== */
-
-let running = false;
-let paused = false;
-let gameOver = false;
-let holding = false;
+const BEST_KEY = 'tfi_samosa_best';
 
 let score = 0;
-let collected = 0;
+let bestScore = 0;
 
-let elapsed = 0;
-let nextWaveAt = SETTINGS.firstWaveDelay;
-let waveNumber = 0;
+try {
+    bestScore = Number(localStorage.getItem(BEST_KEY)) || 0;
+} catch (e) {}
 
-let warningTimer = 0;
+document.getElementById('bestVal').textContent = bestScore;
+
+// ========================================
+// GAME VARIABLES
+// ========================================
+
+let isPaused = false;
+let isGameOver = false;
+let gameStarted = false;
+
+let frameCount = 0;
 let samosaTimer = 0;
-let backgroundOffset = 0;
+let flashmanTimer = 0;
 
-let bunny = {
-  x: 0,
-  y: 0,
-  width: 58,
-  height: 58,
-  velocityY: 0
+const player = {
+
+    x: 95,
+
+    y: 280,
+
+    radius: 25,
+
+    vy: 0,
+
+    gravity: 0.34,
+
+    jump: -8.5
+
 };
 
 let samosas = [];
-let flashmans = [];
+let hazards = [];
 
-/* =====================================
-   RESET GAME
-===================================== */
+// ========================================
+// START AND FLY
+// ========================================
+
+function flap() {
+
+    if (isGameOver || isPaused) return;
+
+    gameStarted = true;
+
+    stage.classList.add('playing');
+
+    player.vy = player.jump;
+
+    startMusic();
+}
+
+// ========================================
+// SAMOSA SPAWNING
+// ========================================
+
+function spawnSamosaWave() {
+
+    const count = 3 + Math.floor(Math.random() * 2);
+
+    const startY = 100 + Math.random() * 350;
+
+    const slope = Math.random() > 0.5 ? -25 : 25;
+
+    for (let i = 0; i < count; i++) {
+
+        const y = Math.max(
+            35,
+            Math.min(565, startY + i * slope)
+        );
+
+        samosas.push({
+
+            x: WIDTH + 35 + i * 55,
+
+            y: y,
+
+            radius: 21,
+
+            speed: Math.min(3.1 + score * 0.025, 5.5),
+
+            rotation: Math.random() * Math.PI
+
+        });
+    }
+}
+
+// ========================================
+// FLASHMAN SPAWNING
+// ========================================
+
+function spawnFlashmanHazard() {
+
+    const y = 50 + Math.random() * 500;
+
+    hazards.push({
+
+        y: y,
+
+        state: 'warning',
+
+        timer: 65,
+
+        enemyX: WIDTH + 45,
+
+        speed: Math.min(8 + score * 0.04, 11),
+
+        radius: 25
+
+    });
+}
+
+// ========================================
+// RESET GAME
+// ========================================
 
 function resetGame() {
-  score = 0;
-  collected = 0;
 
-  elapsed = 0;
-  nextWaveAt = SETTINGS.firstWaveDelay;
-  waveNumber = 0;
+    score = 0;
 
-  warningTimer = 0;
-  samosaTimer = 0;
-  backgroundOffset = 0;
+    frameCount = 0;
 
-  bunny.x = W * 0.2;
-  bunny.y = H * 0.5;
-  bunny.velocityY = 0;
+    samosaTimer = 0;
 
-  samosas = [];
-  flashmans = [];
+    flashmanTimer = 0;
 
-  holding = false;
-  paused = false;
-  gameOver = false;
+    isPaused = false;
 
-  warning.classList.remove("show");
+    isGameOver = false;
 
-  updateHUD();
-  spawnSamosa();
+    gameStarted = false;
+
+    player.y = 280;
+
+    player.vy = 0;
+
+    samosas = [];
+
+    hazards = [];
+
+    document.getElementById('scoreVal').textContent = '0';
+
+    document.getElementById('pauseBtn').textContent = 'Pause';
+
+    document.getElementById('gameOverModal')
+        .classList.remove('active');
+
+    stage.classList.remove('playing');
+
+    bgmAudio.pause();
+
+    bgmAudio.currentTime = 0;
+
+    spawnSamosaWave();
+
+    draw();
 }
 
-/* =====================================
-   START GAME
-===================================== */
+// ========================================
+// GAME OVER ONLY WHEN FLASHMAN TOUCHES BUNNY
+// ========================================
 
-function startGame() {
-  stopSound(musicAudio);
-  stopSound(collectAudio);
-  stopSound(flashmanAudio);
+function triggerGameOver() {
 
-  resetGame();
+    if (isGameOver) return;
 
-  running = true;
+    isGameOver = true;
 
-  message.classList.add("hidden");
-  pauseBtn.textContent = "Ⅱ";
+    bgmAudio.pause();
 
-  playSound(musicAudio);
+    playAudio(gameOverAudio);
 
-  lastTime = performance.now();
-  requestAnimationFrame(loop);
+    if (score > bestScore) {
+
+        bestScore = score;
+
+        try {
+            localStorage.setItem(BEST_KEY, bestScore);
+        } catch (e) {}
+
+        document.getElementById('bestVal')
+            .textContent = bestScore;
+    }
+
+    document.getElementById('modalScore')
+        .textContent = score;
+
+    document.getElementById('modalBest')
+        .textContent = bestScore;
+
+    document.getElementById('gameOverModal')
+        .classList.add('active');
 }
 
-/* =====================================
-   SCORE
-===================================== */
+// ========================================
+// COLLISION
+// ========================================
 
-function updateHUD() {
-  scoreEl.textContent = score;
-  collectedEl.textContent = collected;
+function collision(x1, y1, r1, x2, y2, r2) {
+
+    const dx = x1 - x2;
+
+    const dy = y1 - y2;
+
+    return Math.hypot(dx, dy) < r1 + r2;
 }
 
-/* =====================================
-   BACKGROUND
-===================================== */
+// ========================================
+// UPDATE GAME
+// ========================================
+
+function update(delta) {
+
+    if (!gameStarted || isPaused || isGameOver) return;
+
+    const dt = Math.min(delta / 16.67, 2);
+
+    frameCount += dt;
+
+    // Bunny gravity and movement
+    player.vy += player.gravity * dt;
+
+    player.y += player.vy * dt;
+
+    // IMPORTANT:
+    // Bunny is allowed to reach the top and bottom.
+    // No boundary game over.
+    // Clamp position so the bunny stays visible.
+
+    const half = player.radius;
+
+    if (player.y < half) {
+
+        player.y = half;
+
+        player.vy = Math.max(0, player.vy);
+
+    }
+
+    if (player.y > HEIGHT - half) {
+
+        player.y = HEIGHT - half;
+
+        player.vy = Math.min(0, player.vy);
+
+    }
+
+    // Spawn samosas
+    samosaTimer += dt;
+
+    if (samosaTimer >= 95) {
+
+        samosaTimer = 0;
+
+        spawnSamosaWave();
+    }
+
+    // Spawn Flashman
+    flashmanTimer += dt;
+
+    if (flashmanTimer >= 170) {
+
+        flashmanTimer = 0;
+
+        spawnFlashmanHazard();
+    }
+
+    // ====================================
+    // SAMOSA COLLISION
+    // ====================================
+
+    for (let i = samosas.length - 1; i >= 0; i--) {
+
+        const s = samosas[i];
+
+        s.x -= s.speed * dt;
+
+        s.rotation += 0.015 * dt;
+
+        if (
+            collision(
+                player.x,
+                player.y,
+                player.radius - 7,
+                s.x,
+                s.y,
+                s.radius - 5
+            )
+        ) {
+
+            score++;
+
+            document.getElementById('scoreVal')
+                .textContent = score;
+
+            if (score > bestScore) {
+
+                bestScore = score;
+
+                try {
+                    localStorage.setItem(BEST_KEY, bestScore);
+                } catch (e) {}
+
+                document.getElementById('bestVal')
+                    .textContent = bestScore;
+            }
+
+            playAudio(collectAudio);
+
+            samosas.splice(i, 1);
+
+            continue;
+        }
+
+        if (s.x < -50) {
+
+            samosas.splice(i, 1);
+        }
+    }
+
+    // ====================================
+    // FLASHMAN COLLISION
+    // ====================================
+
+    for (let i = hazards.length - 1; i >= 0; i--) {
+
+        const h = hazards[i];
+
+        if (h.state === 'warning') {
+
+            h.timer -= dt;
+
+            if (h.timer <= 0) {
+
+                h.state = 'charging';
+            }
+
+        } else {
+
+            h.enemyX -= h.speed * dt;
+
+            // ONLY FLASHMAN CAN KILL THE BUNNY
+
+            if (
+                collision(
+                    player.x,
+                    player.y,
+                    player.radius,
+                    h.enemyX,
+                    h.y,
+                    h.radius
+                )
+            ) {
+
+                triggerGameOver();
+
+                return;
+            }
+
+            if (h.enemyX < -70) {
+
+                hazards.splice(i, 1);
+            }
+        }
+    }
+}
+
+// ========================================
+// DRAW FLASHMAN
+// ========================================
+
+function drawFlashmanAvatar(x, y) {
+
+    ctx.save();
+
+    ctx.translate(x, y);
+
+    // Red aura
+    ctx.fillStyle = 'rgba(239,68,68,.35)';
+
+    ctx.beginPath();
+
+    ctx.ellipse(
+        15, 0,
+        30, 19,
+        0,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+    // Body
+    ctx.fillStyle = '#1e293b';
+
+    ctx.beginPath();
+
+    ctx.roundRect(-16, -14, 28, 30, 6);
+
+    ctx.fill();
+
+    // Red jacket
+    ctx.fillStyle = '#ef4444';
+
+    ctx.fillRect(-6, -14, 8, 29);
+
+    // Face
+    ctx.fillStyle = '#fde68a';
+
+    ctx.beginPath();
+
+    ctx.arc(6, -17, 12, 0, Math.PI * 2);
+
+    ctx.fill();
+
+    // Sunglasses
+    ctx.fillStyle = '#0f172a';
+
+    ctx.beginPath();
+
+    ctx.roundRect(0, -22, 15, 6, 2);
+
+    ctx.fill();
+
+    // Running arms and legs
+    ctx.strokeStyle = '#ef4444';
+
+    ctx.lineWidth = 5;
+
+    ctx.lineCap = 'round';
+
+    ctx.beginPath();
+
+    ctx.moveTo(-6, 4);
+
+    ctx.lineTo(-20, 12);
+
+    ctx.moveTo(4, 14);
+
+    ctx.lineTo(18, 26);
+
+    ctx.stroke();
+
+    ctx.restore();
+}
+
+// ========================================
+// DRAW BACKGROUND IMAGE
+// ========================================
 
 function drawBackground() {
-  const img = images.background;
 
-  if (img && img.complete && img.naturalWidth > 0) {
-    const scale = Math.max(W / img.width, H / img.height);
+    if (images.background) {
 
-    const bw = img.width * scale;
-    const bh = img.height * scale;
+        ctx.drawImage(
+            images.background,
+            0,
+            0,
+            WIDTH,
+            HEIGHT
+        );
 
-    ctx.drawImage(
-      img,
-      (W - bw) / 2,
-      (H - bh) / 2,
-      bw,
-      bh
-    );
-  } else {
-    const gradient = ctx.createLinearGradient(0, 0, 0, H);
-    gradient.addColorStop(0, "#f9b34b");
-    gradient.addColorStop(1, "#b65b20");
+    } else {
 
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, W, H);
-  }
+        const gradient = ctx.createLinearGradient(
+            0, 0, 0, HEIGHT
+        );
+
+        gradient.addColorStop(0, '#f9dfb9');
+
+        gradient.addColorStop(1, '#d9a76a');
+
+        ctx.fillStyle = gradient;
+
+        ctx.fillRect(0, 0, WIDTH, HEIGHT);
+    }
 }
 
-/* =====================================
-   BUNNY
-===================================== */
+// ========================================
+// DRAW BUNNY
+// ========================================
 
-function drawBunny() {
-  const img = images.bunny;
+function drawPlayer() {
 
-  if (img && img.complete && img.naturalWidth > 0) {
-    ctx.drawImage(
-      img,
-      bunny.x - bunny.width / 2,
-      bunny.y - bunny.height / 2,
-      bunny.width,
-      bunny.height
-    );
-  } else {
-    ctx.font = "48px sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("🐰", bunny.x, bunny.y);
-  }
+    ctx.save();
+
+    if (images.player) {
+
+        ctx.drawImage(
+            images.player,
+            player.x - player.radius,
+            player.y - player.radius,
+            player.radius * 2,
+            player.radius * 2
+        );
+
+    } else {
+
+        ctx.fillStyle = '#3b82f6';
+
+        ctx.beginPath();
+
+        ctx.arc(
+            player.x,
+            player.y,
+            player.radius,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+        ctx.font = '28px sans-serif';
+
+        ctx.textAlign = 'center';
+
+        ctx.textBaseline = 'middle';
+
+        ctx.fillText('🐰', player.x, player.y);
+    }
+
+    ctx.restore();
 }
 
-function updateBunny(dt) {
-  if (holding) {
-    bunny.velocityY -= SETTINGS.flyAcceleration * dt;
-
-    bunny.velocityY = Math.max(
-      bunny.velocityY,
-      -SETTINGS.maxFlySpeed
-    );
-  } else {
-    bunny.velocityY += SETTINGS.gravity * dt;
-
-    bunny.velocityY = Math.min(
-      bunny.velocityY,
-      SETTINGS.maxFallSpeed
-    );
-  }
-
-  bunny.y += bunny.velocityY * dt;
-
-  // Bunny never dies at top or bottom.
-
-  const half = bunny.height / 2;
-
-  if (bunny.y < half) {
-    bunny.y = half;
-    bunny.velocityY = 0;
-  }
-
-  if (bunny.y > H - half) {
-    bunny.y = H - half;
-    bunny.velocityY = 0;
-  }
-}
-
-/* =====================================
-   SAMOSAS
-===================================== */
-
-function spawnSamosa() {
-  const margin = 75;
-
-  samosas.push({
-    x: W + 45,
-    y: margin + Math.random() * Math.max(20, H - margin * 2),
-    size: 40
-  });
-}
+// ========================================
+// DRAW REAL SAMOSA IMAGE
+// ========================================
 
 function drawSamosas() {
-  const img = images.samosa;
 
-  samosas.forEach(s => {
-    if (img && img.complete && img.naturalWidth > 0) {
-      ctx.drawImage(
-        img,
-        s.x - s.size / 2,
-        s.y - s.size / 2,
-        s.size,
-        s.size
-      );
-    } else {
-      ctx.font = "34px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText("🥟", s.x, s.y);
-    }
-  });
-}
+    samosas.forEach(s => {
 
-function updateSamosas(dt) {
-  samosaTimer += dt / 60;
+        ctx.save();
 
-  if (samosaTimer >= SETTINGS.samosaInterval) {
-    samosaTimer = 0;
-    spawnSamosa();
-  }
+        ctx.translate(s.x, s.y);
 
-  for (let i = samosas.length - 1; i >= 0; i--) {
-    const s = samosas[i];
+        ctx.rotate(s.rotation);
 
-    s.x -= SETTINGS.samosaSpeed * dt;
+        ctx.shadowColor = 'rgba(0,0,0,.35)';
 
-    const dx = bunny.x - s.x;
-    const dy = bunny.y - s.y;
+        ctx.shadowBlur = 9;
 
-    if (Math.hypot(dx, dy) < 38) {
-      samosas.splice(i, 1);
+        if (images.samosa) {
 
-      collected++;
-      score += 10;
+            const size = 46;
 
-      updateHUD();
+            ctx.drawImage(
+                images.samosa,
+                -size / 2,
+                -size / 2,
+                size,
+                size
+            );
 
-      // This is the samosa collection sound only.
-      playSound(collectAudio);
-      continue;
-    }
+        } else {
 
-    if (s.x < -60) {
-      samosas.splice(i, 1);
-    }
-  }
-}
+            ctx.font = '34px sans-serif';
 
-/* =====================================
-   FLASHMAN EMOJI
-===================================== */
+            ctx.textAlign = 'center';
 
-// No image file required.
-// The running-person emoji is Flashman.
+            ctx.textBaseline = 'middle';
 
-function drawFlashman(f) {
-  ctx.save();
+            ctx.fillText('🥟', 0, 0);
+        }
 
-  // Red warning circle behind Flashman
-  ctx.beginPath();
-  ctx.arc(f.x, f.y, 34, 0, Math.PI * 2);
-  ctx.fillStyle = "#e52b2b";
-  ctx.fill();
-
-  ctx.lineWidth = 3;
-  ctx.strokeStyle = "#700000";
-  ctx.stroke();
-
-  // Draw Flashman emoji
-  ctx.font = '58px "Noto Color Emoji", "Apple Color Emoji", sans-serif';
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillStyle = "white";
-  ctx.fillText("🏃", f.x, f.y + 1);
-
-  ctx.restore();
-}
-
-/* =====================================
-   FLASHMAN WAVES
-===================================== */
-
-function spawnFlashmanWave() {
-  waveNumber++;
-
-  const count = Math.min(
-    waveNumber,
-    SETTINGS.maximumFlashmen
-  );
-
-  const margin = 75;
-  const availableHeight = Math.max(60, H - margin * 2);
-
-  const newWave = [];
-
-  for (let i = 0; i < count; i++) {
-    let y;
-
-    if (count === 1) {
-      y = H * 0.5;
-    } else {
-      y = margin + (availableHeight * i / (count - 1));
-    }
-
-    newWave.push({
-      // Start at the right edge, already visible
-      x: W - 28,
-      y: y,
-      radius: 34,
-      speed: SETTINGS.flashmanSpeed + Math.min(waveNumber * 0.12, 1.5)
+        ctx.restore();
     });
-  }
-
-  // Add the complete wave before playing the sound.
-  flashmans.push(...newWave);
-
-  // Alert appears at the same time as Flashman.
-  warningTimer = 2.5;
-  warning.classList.add("show");
-
-  // Flashman dialogue only.
-  playSound(flashmanAudio);
-
-  console.log(
-    "Flashman wave " + waveNumber +
-    " appeared with " + count + " enemies"
-  );
 }
 
-function updateFlashmans(dt) {
-  elapsed += dt / 60;
+// ========================================
+// DRAW FLASHMAN WARNINGS AND ENEMY
+// ========================================
 
-  if (elapsed >= nextWaveAt) {
-    spawnFlashmanWave();
+function drawHazards() {
 
-    nextWaveAt = elapsed + SETTINGS.nextWaveDelay;
-  }
+    hazards.forEach(h => {
 
-  if (warningTimer > 0) {
-    warningTimer -= dt / 60;
+        if (h.state === 'warning') {
 
-    if (warningTimer <= 0) {
-      warningTimer = 0;
-      warning.classList.remove("show");
-    }
-  }
+            ctx.fillStyle = 'rgba(255,245,225,.4)';
 
-  for (let i = flashmans.length - 1; i >= 0; i--) {
-    const f = flashmans[i];
+            ctx.fillRect(
+                0,
+                h.y - 24,
+                WIDTH,
+                48
+            );
 
-    // Flashman always moves from right to left.
-    f.x -= f.speed * dt;
+            ctx.fillStyle = '#fffaf0';
 
-    if (f.x < -80) {
-      flashmans.splice(i, 1);
-    }
-  }
+            ctx.beginPath();
+
+            ctx.roundRect(
+                WIDTH - 48,
+                h.y - 18,
+                36,
+                36,
+                8
+            );
+
+            ctx.fill();
+
+            ctx.fillStyle = '#7c2d12';
+
+            ctx.font = 'bold 22px sans-serif';
+
+            ctx.textAlign = 'center';
+
+            ctx.textBaseline = 'middle';
+
+            ctx.fillText(
+                '!',
+                WIDTH - 30,
+                h.y
+            );
+
+        } else {
+
+            drawFlashmanAvatar(
+                h.enemyX,
+                h.y
+            );
+        }
+    });
 }
 
-/* =====================================
-   DRAW FLASHMEN
-===================================== */
-
-function drawFlashmans() {
-  flashmans.forEach(f => {
-    drawFlashman(f);
-  });
-}
-
-/* =====================================
-   COLLISION
-===================================== */
-
-function checkCollision() {
-  for (const f of flashmans) {
-    const dx = bunny.x - f.x;
-    const dy = bunny.y - f.y;
-
-    if (Math.hypot(dx, dy) < 48) {
-      endGame();
-      return;
-    }
-  }
-}
-
-/* =====================================
-   GAME OVER
-===================================== */
-
-function endGame() {
-  if (gameOver) return;
-
-  gameOver = true;
-  running = false;
-  holding = false;
-
-  stopSound(musicAudio);
-  stopSound(flashmanAudio);
-  stopSound(collectAudio);
-
-  warning.classList.remove("show");
-
-  messageTitle.textContent = "GAME OVER!";
-
-  messageText.textContent =
-    "Flashman caught Bunny! Your score: " + score;
-
-  startBtn.textContent = "PLAY AGAIN";
-
-  message.classList.remove("hidden");
-}
-
-/* =====================================
-   DRAW
-===================================== */
+// ========================================
+// DRAW GAME
+// ========================================
 
 function draw() {
-  drawBackground();
-  drawSamosas();
-  drawFlashmans();
-  drawBunny();
+
+    ctx.clearRect(0, 0, WIDTH, HEIGHT);
+
+    drawBackground();
+
+    drawHazards();
+
+    drawSamosas();
+
+    drawPlayer();
+
+    if (isPaused && !isGameOver) {
+
+        ctx.fillStyle = 'rgba(0,0,0,.55)';
+
+        ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+        ctx.fillStyle = '#ffffff';
+
+        ctx.font = 'bold 32px sans-serif';
+
+        ctx.textAlign = 'center';
+
+        ctx.fillText(
+            'PAUSED',
+            WIDTH / 2,
+            HEIGHT / 2
+        );
+    }
 }
 
-/* =====================================
-   UPDATE
-===================================== */
-
-function update(dt) {
-  if (!running || paused || gameOver) return;
-
-  backgroundOffset += 2 * dt;
-
-  updateBunny(dt);
-  updateSamosas(dt);
-  updateFlashmans(dt);
-
-  checkCollision();
-
-  updateHUD();
-}
-
-/* =====================================
-   MAIN LOOP
-===================================== */
+// ========================================
+// GAME LOOP
+// ========================================
 
 let lastTime = 0;
 
 function loop(timestamp) {
-  if (!running || paused) return;
 
-  let dt = (timestamp - lastTime) / 16.67;
+    const delta = lastTime
+        ? timestamp - lastTime
+        : 16.67;
 
-  lastTime = timestamp;
+    lastTime = timestamp;
 
-  dt = Math.min(dt, 2.5);
+    update(delta);
 
-  update(dt);
-  draw();
+    draw();
 
-  if (running && !paused) {
     requestAnimationFrame(loop);
-  }
 }
 
-/* =====================================
-   TOUCH CONTROLS
-===================================== */
+// ========================================
+// TOUCH CONTROL
+// ========================================
 
-function startHolding(e) {
-  if (!running || paused || gameOver) return;
+canvas.addEventListener('pointerdown', e => {
 
-  holding = true;
+    e.preventDefault();
 
-  if (e && e.pointerId !== undefined) {
-    try {
-      canvas.setPointerCapture(e.pointerId);
-    } catch (error) {}
-  }
-}
-
-function stopHolding() {
-  holding = false;
-}
-
-canvas.addEventListener("pointerdown", startHolding);
-window.addEventListener("pointerup", stopHolding);
-window.addEventListener("pointercancel", stopHolding);
-window.addEventListener("blur", stopHolding);
-
-/* =====================================
-   BUTTONS
-===================================== */
-
-startBtn.addEventListener("click", startGame);
-restartBtn.addEventListener("click", startGame);
-
-pauseBtn.addEventListener("click", () => {
-  if (!running || gameOver) return;
-
-  paused = !paused;
-  holding = false;
-
-  pauseBtn.textContent = paused ? "▶" : "Ⅱ";
-
-  if (paused) {
-    musicAudio.pause();
-  } else {
-    playSound(musicAudio);
-    lastTime = performance.now();
-    requestAnimationFrame(loop);
-  }
+    flap();
 });
 
-soundBtn.addEventListener("click", () => {
-  soundEnabled = !soundEnabled;
+// ========================================
+// KEYBOARD CONTROL
+// ========================================
 
-  soundBtn.textContent = soundEnabled ? "🔊" : "🔇";
+window.addEventListener('keydown', e => {
 
-  if (!soundEnabled) {
-    stopSound(musicAudio);
-    stopSound(collectAudio);
-    stopSound(flashmanAudio);
-  } else if (running && !paused) {
-    playSound(musicAudio);
-  }
-});
+    if (
+        e.code === 'Space' ||
+        e.code === 'ArrowUp'
+    ) {
 
-fullBtn.addEventListener("click", async () => {
-  try {
-    if (!document.fullscreenElement) {
-      await document.documentElement.requestFullscreen();
-    } else {
-      await document.exitFullscreen();
+        e.preventDefault();
+
+        flap();
     }
-  } catch (error) {
-    console.log("Fullscreen is unavailable in this environment.");
-  }
 });
 
-/* =====================================
-   INITIALIZE
-===================================== */
+// ========================================
+// PAUSE AND RESUME
+// ========================================
 
-resize();
+document.getElementById('pauseBtn')
+.addEventListener('click', () => {
 
-bunny.x = W * 0.2;
-bunny.y = H * 0.5;
+    if (isGameOver || !gameStarted) return;
 
-draw();
+    isPaused = !isPaused;
 
-})();
+    document.getElementById('pauseBtn')
+        .textContent = isPaused ? 'Resume' : 'Pause';
+
+    if (isPaused) {
+
+        bgmAudio.pause();
+
+    } else {
+
+        startMusic();
+    }
+});
+
+// ========================================
+// RESTART
+// ========================================
+
+document.getElementById('restartBtn')
+.addEventListener('click', resetGame);
+
+document.getElementById('playAgainBtn')
+.addEventListener('click', resetGame);
+
+// ========================================
+// SOUND BUTTON
+// ========================================
+
+document.getElementById('soundBtn')
+.addEventListener('click', e => {
+
+    soundEnabled = !soundEnabled;
+
+    e.target.textContent =
+        soundEnabled ? 'Sound on' : 'Sound off';
+
+    if (!soundEnabled) {
+
+        bgmAudio.pause();
+
+        collectAudio.pause();
+
+        gameOverAudio.pause();
+
+    } else if (gameStarted && !isPaused && !isGameOver) {
+
+        startMusic();
+    }
+});
+
+// ========================================
+// FULLSCREEN
+// ========================================
+
+document.getElementById('expandBtn')
+.addEventListener('click', async () => {
+
+    try {
+
+        if (!document.fullscreenElement) {
+
+            await document.documentElement.requestFullscreen();
+
+        } else {
+
+            await document.exitFullscreen();
+        }
+
+    } catch (error) {
+
+        console.log('Fullscreen unavailable:', error);
+    }
+});
+
+// ========================================
+// INITIALIZE
+// ========================================
+
+spawnSamosaWave();
+
+requestAnimationFrame(loop);
+
 </script>
 
 </body>
