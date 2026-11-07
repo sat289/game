@@ -13,6 +13,11 @@
     };
   </script>
 
+  <!-- Firebase SDKs (App, Realtime Database & Analytics) -->
+  <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-database-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-analytics-compat.js"></script>
+
   <!-- Chart.js for Real-Time Telemetry Charts -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
@@ -327,7 +332,7 @@
           <h1 class="brand-font text-base sm:text-lg font-bold uppercase theme-heading flex items-center gap-2">
             <i class="fa-solid fa-shield-halved text-[#0d9488] dark:text-[#32ffdc]"></i> Advanced Admin Studio
           </h1>
-          <p class="text-[11px] theme-subtext font-medium">Global sync, notice manager, game publisher &amp; live tracking analysis</p>
+          <p class="text-[11px] theme-subtext font-medium">Global sync, notice manager, game publisher &amp; Firebase live tracking</p>
         </div>
       </div>
 
@@ -345,7 +350,7 @@
         <i class="fa-solid fa-screwdriver-wrench"></i> Studio Manager
       </button>
       <button type="button" id="navBtn_tracking" onclick="switchAdminMainTab('tracking')" class="main-nav-tab">
-        <i class="fa-solid fa-chart-line"></i> Tracking Analysis
+        <i class="fa-solid fa-fire-flame-curved text-amber-500"></i> Tracking Analysis
         <span class="w-2 h-2 rounded-full bg-emerald-500 live-dot"></span>
       </button>
     </nav>
@@ -607,7 +612,7 @@
     </div>
 
     <!-- =====================================================================
-         TAB 2: TRACKING ANALYSIS (SEPARATE TAB FOR ALL LIVE TRACKINGS)
+         TAB 2: TRACKING ANALYSIS (FIREBASE REALTIME DB + ANALYTICS + GITHUB)
     ====================================================================== -->
     <div id="tabPanel_tracking" class="hidden">
       <section id="liveTrackingSection" class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
@@ -615,14 +620,14 @@
           <div>
             <div class="flex items-center gap-2 flex-wrap">
               <h2 class="brand-font text-base sm:text-lg font-bold theme-heading flex items-center gap-2">
-                <i class="fa-solid fa-chart-line text-teal-600 dark:text-[#32ffdc]"></i> Live Tracking Analysis
+                <i class="fa-solid fa-fire-flame-curved text-amber-500"></i> Firebase Live Tracking Analysis
               </h2>
               <span id="liveConnStatusBadge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-teal-500/15 theme-label border border-teal-500/30">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 live-dot"></span> Connecting...
+                <span class="w-2 h-2 rounded-full bg-emerald-500 live-dot"></span> Connecting to Firebase...
               </span>
             </div>
             <p class="text-[11px] theme-subtext mt-0.5 font-medium">
-              Real-time Website Views (<span class="code-font">index.html</span>), App Views (<span class="code-font">stgames-apk/index.html</span>), App Downloads, Member Logins &amp; Game Plays
+              Synced with Firebase Project <span class="code-font font-bold">friendsgame-872f5</span> (<span class="code-font">G-PW5H3G97QR</span>) + GitHub Traffic API
             </p>
           </div>
 
@@ -639,14 +644,14 @@
           </div>
         </div>
 
-        <!-- 1-CLICK TRACKER ACTIVATION BAR FOR BOTH index.html AND stgames-apk/index.html -->
+        <!-- 1-CLICK FIREBASE TRACKER ACTIVATION FOR index.html AND stgames-apk/index.html -->
         <div class="sub-panel p-3.5 rounded-2xl mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
             <div class="text-xs font-extrabold theme-heading flex items-center gap-1.5">
-              <i class="fa-solid fa-bolt text-amber-500"></i> 1-Click GitHub Tracker Activation
+              <i class="fa-solid fa-bolt text-amber-500"></i> 1-Click Firebase Tracker Activation on GitHub
             </div>
             <p class="text-[11px] theme-subtext font-medium">
-              Automatically injects real tracking into <span class="code-font">index.html</span> and <span class="code-font">stgames-apk/index.html</span> on your GitHub repository.
+              Injects your <span class="code-font">friendsgame-872f5</span> Firebase Realtime Database &amp; Analytics (<span class="code-font">G-PW5H3G97QR</span>) tracker directly into <span class="code-font">index.html</span> and <span class="code-font">stgames-apk/index.html</span>.
             </p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
@@ -659,7 +664,7 @@
           </div>
         </div>
 
-        <!-- 5 REAL KPI CARDS (INCLUDING APP VIEWS FOR stgames-apk/index.html) -->
+        <!-- 5 REAL KPI CARDS (SYNCED WITH FIREBASE RTDB + COUNTERAPI + GITHUB) -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
           <!-- 1. Website Views (index.html) -->
           <div class="kpi-card">
@@ -745,7 +750,7 @@
                   <i class="fa-solid fa-chart-column mr-1"></i> Real Website &amp; App Tracking Overview
                 </h3>
                 <p id="trafficChartNote" class="text-[10px] theme-subtext font-medium">
-                  Live comparison of Website Views (<span class="code-font">index.html</span>), App Views (<span class="code-font">stgames-apk/index.html</span>), Downloads &amp; Logins
+                  Live Firebase RTDB (<span class="code-font">friendsgame-872f5</span>) &amp; GitHub comparison of Website Views, <span class="code-font">stgames-apk</span> Views, Downloads &amp; Logins
                 </p>
               </div>
             </div>
@@ -769,15 +774,15 @@
           </div>
         </div>
 
-        <!-- REAL RECORDED EVENTS LOG TABLE -->
+        <!-- REAL RECORDED EVENTS LOG TABLE (SYNCED LIVE FROM FIREBASE stgames_telemetry/events) -->
         <div class="sub-panel p-4 rounded-2xl">
           <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
             <div>
               <h3 class="text-xs font-extrabold uppercase tracking-wider theme-heading">
-                <i class="fa-solid fa-list-ul mr-1"></i> Real Recorded Events (<span class="code-font">analytics.json</span>)
+                <i class="fa-solid fa-list-ul mr-1"></i> Real Recorded Events (Firebase <span class="code-font">friendsgame-872f5</span>)
               </h3>
               <p id="lastSyncTimestamp" class="text-[10px] theme-subtext font-medium">
-                Waiting for first sync...
+                Connecting to Firebase Realtime Database...
               </p>
             </div>
             <div class="flex flex-wrap items-center gap-1.5">
@@ -806,7 +811,7 @@
               <tbody id="realEventsTableBody" class="divide-y divide-teal-500/15 text-[11px]">
                 <tr>
                   <td colspan="5" class="py-6 text-center theme-subtext font-medium">
-                    No custom member events logged in <span class="code-font">analytics.json</span> yet. Live totals above are synced directly from the Cloud Counter &amp; GitHub API.
+                    Listening for live events from Firebase Realtime Database (<span class="code-font">friendsgame-872f5-default-rtdb.firebaseio.com</span>)...
                   </td>
                 </tr>
               </tbody>
@@ -829,6 +834,115 @@
   </div>
 
   <script>
+    /* ==========================================================
+       FIREBASE CONFIGURATION (friendsgame-872f5)
+    ========================================================== */
+    const ST_FIREBASE_CONFIG = {
+      apiKey: "AIzaSyBzLchy5M2fLne4c7Ghw1KNN8wVrlZdd8M",
+      authDomain: "friendsgame-872f5.firebaseapp.com",
+      databaseURL: "https://friendsgame-872f5-default-rtdb.firebaseio.com",
+      projectId: "friendsgame-872f5",
+      storageBucket: "friendsgame-872f5.firebasestorage.app",
+      messagingSenderId: "522534013233",
+      appId: "1:522534013233:web:f5faa6e6795023d0420810",
+      measurementId: "G-PW5H3G97QR"
+    };
+
+    let firebaseApp = null;
+    let firebaseDb = null;
+    let firebaseAnalytics = null;
+    let firebaseConnected = false;
+
+    function initFirebaseLiveSync() {
+      try {
+        if (typeof firebase !== 'undefined') {
+          if (!firebase.apps.length) {
+            firebaseApp = firebase.initializeApp(ST_FIREBASE_CONFIG);
+          } else {
+            firebaseApp = firebase.app();
+          }
+          if (typeof firebase.analytics === 'function') {
+            try { firebaseAnalytics = firebase.analytics(); } catch (_) {}
+          }
+          if (typeof firebase.database === 'function') {
+            firebaseDb = firebase.database();
+            const telemetryRef = firebaseDb.ref('stgames_telemetry');
+            telemetryRef.on('value', (snapshot) => {
+              firebaseConnected = true;
+              const data = snapshot.val() || {};
+              applyFirebaseSnapshot(data);
+            }, () => {
+              // Fallback to REST read if WebSocket rules block direct listener
+              fetchFirebaseRestSnapshot();
+            });
+          }
+        }
+      } catch (_) {}
+    }
+
+    function applyFirebaseSnapshot(data) {
+      if (!data || typeof data !== 'object') return;
+      const counters = data.counters || data;
+      if (typeof counters.views === 'number') {
+        realMetrics.fbViews = counters.views;
+      }
+      if (typeof counters.apk_page_views === 'number') {
+        realMetrics.fbApkPageViews = counters.apk_page_views;
+      }
+      if (typeof counters.apk_downloads === 'number') {
+        realMetrics.fbApkDownloads = counters.apk_downloads;
+      }
+      if (typeof counters.pwa_installs === 'number') {
+        realMetrics.fbPwaInstalls = counters.pwa_installs;
+      }
+      if (typeof counters.member_logins === 'number') {
+        realMetrics.fbMemberLogins = counters.member_logins;
+      }
+      if (typeof counters.app_launches === 'number') {
+        realMetrics.fbAppLaunches = counters.app_launches;
+      }
+      if (typeof counters.game_plays === 'number') {
+        realMetrics.fbGamePlays = counters.game_plays;
+      }
+
+      if (data.events && typeof data.events === 'object') {
+        const eventsArr = Object.values(data.events)
+          .filter(Boolean)
+          .sort((a, b) => (b.ts || 0) - (a.ts || 0))
+          .slice(0, 100);
+        if (eventsArr.length > 0) {
+          realMetrics.recordedEvents = eventsArr;
+        }
+      }
+
+      const nowStr = new Date().toLocaleTimeString();
+      const badge = document.getElementById('liveConnStatusBadge');
+      if (badge) {
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 live-dot"></span> Firebase Live (${nowStr})`;
+      }
+      const tsEl = document.getElementById('lastSyncTimestamp');
+      if (tsEl) {
+        tsEl.textContent = `Real-time Firebase RTDB connected (friendsgame-872f5) • Last update: ${nowStr}`;
+      }
+
+      renderRealTelemetryUI();
+    }
+
+    async function fetchFirebaseRestSnapshot() {
+      try {
+        const res = await fetch(`https://friendsgame-872f5-default-rtdb.firebaseio.com/stgames_telemetry.json?t=${Date.now()}`, {
+          cache: 'no-store'
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data) {
+            firebaseConnected = true;
+            applyFirebaseSnapshot(data);
+          }
+        }
+      } catch (_) {}
+    }
+
     /* ==========================================================
        SAFE STORAGE, TOASTS & CONFIRMATION DIALOGS
     ========================================================== */
@@ -937,7 +1051,6 @@
       document.getElementById('navBtn_tracking').classList.toggle('active-main-tab', !isStudio);
 
       if (!isStudio) {
-        // Re-render and resize charts cleanly when opening Tracking Analysis tab
         setTimeout(() => {
           updateRealCharts();
           fetchAllRealTelemetry(false);
@@ -1049,31 +1162,26 @@
     }
 
     /* ==========================================================
-       100% REAL TELEMETRY (INCLUDING APP VIEWS FOR stgames-apk/index.html)
-       Reads from:
-       1) Cloud CounterAPI (api.counterapi.dev/v1/stgames_<owner>_<repo>/...)
-          - views (Website index.html views)
-          - apk_page_views (App views on stgames-apk/index.html)
-          - apk_downloads
-          - pwa_installs
-          - member_logins
-          - app_launches
-          - game_plays
-       2) GitHub Traffic API (/repos/<owner>/<repo>/traffic/views)
-       3) GitHub Releases API (/repos/<owner>/<repo>/releases)
-       4) GitHub analytics.json (/repos/<owner>/<repo>/contents/analytics.json)
+       100% REAL TELEMETRY (FIREBASE + COUNTERAPI + GITHUB API)
     ========================================================== */
     let realMetrics = {
       views: 0,
+      fbViews: 0,
       apkPageViews: 0,
+      fbApkPageViews: 0,
       ghViews14d: 0,
       ghUniques14d: 0,
       apkDownloads: 0,
+      fbApkDownloads: 0,
       releaseApkDownloads: 0,
       pwaInstalls: 0,
+      fbPwaInstalls: 0,
       memberLogins: 0,
+      fbMemberLogins: 0,
       appLaunches: 0,
+      fbAppLaunches: 0,
       gamePlays: 0,
+      fbGamePlays: 0,
       repoStars: 0,
       trafficHistory: [],
       recordedEvents: []
@@ -1103,10 +1211,12 @@
       const spinner = document.getElementById('syncSpinnerIcon');
       const badge = document.getElementById('liveConnStatusBadge');
       if (spinner) spinner.classList.add('fa-spin');
-      if (badge) badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 live-dot"></span> Syncing Live API...`;
+      if (badge) badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 live-dot"></span> Syncing Firebase &amp; GitHub...`;
 
       try {
-        // 1. Fetch all real counters (including apk_page_views for stgames-apk/index.html) in parallel
+        // 1. Fetch Firebase REST snapshot + Cloud CounterAPI in parallel
+        await fetchFirebaseRestSnapshot();
+
         const [
           viewsCount,
           apkPageViewsCount,
@@ -1188,31 +1298,15 @@
           } catch (_) {}
         }
 
-        try {
-          const anaRes = await fetch(`https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/analytics.json?ref=${encodeURIComponent(c.branch)}&t=${Date.now()}`, {
-            cache: 'no-store',
-            headers: ghHeaders
-          });
-          if (anaRes.ok) {
-            const anaData = await anaRes.json();
-            if (anaData.content) {
-              const parsed = JSON.parse(base64ToUtf8(anaData.content));
-              if (Array.isArray(parsed.events)) {
-                realMetrics.recordedEvents = parsed.events;
-              }
-            }
-          }
-        } catch (_) {}
-
         renderRealTelemetryUI();
 
         const nowStr = new Date().toLocaleTimeString();
-        document.getElementById('lastSyncTimestamp').textContent = `Last live sync: ${nowStr} (Namespace: ${namespace})`;
+        document.getElementById('lastSyncTimestamp').textContent = `Firebase RTDB (friendsgame-872f5) + GitHub synced at ${nowStr}`;
         if (badge) {
-          badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 live-dot"></span> Live Synced (${nowStr})`;
+          badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 live-dot"></span> Firebase Synced (${nowStr})`;
         }
         if (manual) {
-          showToast('Live tracking data refreshed!', 'success');
+          showToast('Synced live data from Firebase (friendsgame-872f5) & GitHub!', 'success');
         }
       } catch (err) {
         if (badge) {
@@ -1224,26 +1318,46 @@
       }
     }
 
-    function renderRealTelemetryUI() {
-      const totalViewsCombined = Math.max(realMetrics.views, realMetrics.ghViews14d);
-      const totalApkCombined = realMetrics.apkDownloads + realMetrics.releaseApkDownloads;
-      const totalDownloadsCombined = totalApkCombined + realMetrics.pwaInstalls;
+    function getEffectiveMetrics() {
+      const webViews = Math.max(realMetrics.fbViews || 0, realMetrics.views || 0, realMetrics.ghViews14d || 0);
+      const apkViews = Math.max(realMetrics.fbApkPageViews || 0, realMetrics.apkPageViews || 0);
+      const apkDownloads = Math.max(realMetrics.fbApkDownloads || 0, realMetrics.apkDownloads || 0) + (realMetrics.releaseApkDownloads || 0);
+      const pwaInstalls = Math.max(realMetrics.fbPwaInstalls || 0, realMetrics.pwaInstalls || 0);
+      const totalDownloads = apkDownloads + pwaInstalls;
+      const memberLogins = Math.max(realMetrics.fbMemberLogins || 0, realMetrics.memberLogins || 0);
+      const appLaunches = Math.max(realMetrics.fbAppLaunches || 0, realMetrics.appLaunches || 0);
+      const gamePlays = Math.max(realMetrics.fbGamePlays || 0, realMetrics.gamePlays || 0);
 
-      document.getElementById('realTotalViews').textContent = totalViewsCombined.toLocaleString();
+      return {
+        webViews,
+        apkViews,
+        apkDownloads,
+        pwaInstalls,
+        totalDownloads,
+        memberLogins,
+        appLaunches,
+        gamePlays
+      };
+    }
+
+    function renderRealTelemetryUI() {
+      const m = getEffectiveMetrics();
+
+      document.getElementById('realTotalViews').textContent = m.webViews.toLocaleString();
       document.getElementById('realGhViews').textContent = realMetrics.ghViews14d.toLocaleString();
       document.getElementById('realGhUniques').textContent = realMetrics.ghUniques14d.toLocaleString();
 
-      document.getElementById('realApkPageViews').textContent = realMetrics.apkPageViews.toLocaleString();
+      document.getElementById('realApkPageViews').textContent = m.apkViews.toLocaleString();
 
-      document.getElementById('realTotalDownloads').textContent = totalDownloadsCombined.toLocaleString();
-      document.getElementById('realApkDownloads').textContent = totalApkCombined.toLocaleString();
-      document.getElementById('realPwaInstalls').textContent = realMetrics.pwaInstalls.toLocaleString();
+      document.getElementById('realTotalDownloads').textContent = m.totalDownloads.toLocaleString();
+      document.getElementById('realApkDownloads').textContent = m.apkDownloads.toLocaleString();
+      document.getElementById('realPwaInstalls').textContent = m.pwaInstalls.toLocaleString();
 
-      document.getElementById('realMemberLogins').textContent = realMetrics.memberLogins.toLocaleString();
-      document.getElementById('realAppLaunches').textContent = realMetrics.appLaunches.toLocaleString();
+      document.getElementById('realMemberLogins').textContent = m.memberLogins.toLocaleString();
+      document.getElementById('realAppLaunches').textContent = m.appLaunches.toLocaleString();
       document.getElementById('realLoggedMembersCount').textContent = realMetrics.recordedEvents.filter(e => e.type === 'login').length.toLocaleString();
 
-      document.getElementById('realGamePlays').textContent = realMetrics.gamePlays.toLocaleString();
+      document.getElementById('realGamePlays').textContent = m.gamePlays.toLocaleString();
       document.getElementById('realPublishedGamesCount').textContent = allGamesData.length.toLocaleString();
       document.getElementById('realRepoStars').textContent = realMetrics.repoStars.toLocaleString();
 
@@ -1264,6 +1378,7 @@
     function updateRealCharts() {
       if (typeof Chart === 'undefined') return;
       const { textColor, gridColor } = getChartColors();
+      const m = getEffectiveMetrics();
 
       const trafficCtx = document.getElementById('realTrafficChart');
       if (trafficCtx) {
@@ -1304,14 +1419,14 @@
             ]
           : [
               {
-                label: 'Live Cloud Counter Totals',
+                label: 'Firebase Live Totals (friendsgame-872f5)',
                 data: [
-                  realMetrics.views,
-                  realMetrics.apkPageViews,
-                  realMetrics.apkDownloads + realMetrics.releaseApkDownloads,
-                  realMetrics.pwaInstalls,
-                  realMetrics.memberLogins,
-                  realMetrics.gamePlays
+                  m.webViews,
+                  m.apkViews,
+                  m.apkDownloads,
+                  m.pwaInstalls,
+                  m.memberLogins,
+                  m.gamePlays
                 ],
                 backgroundColor: ['#0d9488', '#06b6d4', '#0284c7', '#10b981', '#d97706', '#9333ea'],
                 borderRadius: 8
@@ -1348,12 +1463,12 @@
       if (distCtx) {
         if (realDistChartInstance) realDistChartInstance.destroy();
         const values = [
-          Math.max(realMetrics.views, realMetrics.ghViews14d),
-          realMetrics.apkPageViews,
-          realMetrics.apkDownloads + realMetrics.releaseApkDownloads,
-          realMetrics.pwaInstalls,
-          realMetrics.memberLogins,
-          realMetrics.gamePlays
+          m.webViews,
+          m.apkViews,
+          m.apkDownloads,
+          m.pwaInstalls,
+          m.memberLogins,
+          m.gamePlays
         ];
         const sum = values.reduce((a, b) => a + b, 0);
 
@@ -1419,7 +1534,7 @@
         tbody.innerHTML = `
           <tr>
             <td colspan="5" class="py-6 text-center theme-subtext font-medium">
-              No custom events in <span class="code-font">analytics.json</span> matching this filter yet. Live totals above update automatically from your website &amp; <span class="code-font">stgames-apk/index.html</span> tracker.
+              No events recorded in Firebase (<span class="code-font">friendsgame-872f5</span>) matching this filter yet. Click <strong>Activate Tracker in index.html</strong> and <strong>Activate in stgames-apk/index.html</strong> above to start logging real visits, downloads, and logins.
             </td>
           </tr>`;
         return;
@@ -1437,29 +1552,30 @@
     }
 
     function exportRealTelemetryCSV() {
+      const m = getEffectiveMetrics();
       const rows = [
         ['Metric', 'Live Count'],
-        ['Website Views (index.html)', realMetrics.views],
-        ['App Views (stgames-apk/index.html)', realMetrics.apkPageViews],
+        ['Website Views (index.html)', m.webViews],
+        ['App Views (stgames-apk/index.html)', m.apkViews],
         ['GitHub Traffic Views (14d)', realMetrics.ghViews14d],
         ['GitHub Unique Visitors (14d)', realMetrics.ghUniques14d],
-        ['APK Downloads (Clicks + Releases)', realMetrics.apkDownloads + realMetrics.releaseApkDownloads],
-        ['PWA App Installs', realMetrics.pwaInstalls],
-        ['Member Logins', realMetrics.memberLogins],
-        ['Standalone App Launches', realMetrics.appLaunches],
-        ['Game Plays', realMetrics.gamePlays]
+        ['APK Downloads (Clicks + Releases)', m.apkDownloads],
+        ['PWA App Installs', m.pwaInstalls],
+        ['Member Logins', m.memberLogins],
+        ['Standalone App Launches', m.appLaunches],
+        ['Game Plays', m.gamePlays]
       ];
       const csvContent = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `stgames-real-telemetry-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.download = `stgames-firebase-telemetry-${new Date().toISOString().slice(0, 10)}.csv`;
       document.body.appendChild(a);
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-      showToast('Exported live telemetry CSV!', 'success');
+      showToast('Exported Firebase live telemetry CSV!', 'success');
     }
 
     function changeRefreshInterval() {
@@ -1476,50 +1592,90 @@
       }
     }
 
-    /* 1-CLICK TRACKER INJECTOR FOR index.html AND stgames-apk/index.html */
+    /* ==========================================================
+       1-CLICK FIREBASE + ANALYTICS TRACKER INJECTOR
+       For both index.html and stgames-apk/index.html
+    ========================================================== */
     function getWebsiteTrackerCode() {
       const c = getCreds();
       const ns = `stgames_${c.owner}_${c.repo}`.toLowerCase().replace(/[^a-z0-9_]/g, '_');
-      return `<!-- ST GAMES REAL LIVE TRACKER -->
-<script id="st-games-live-tracker">
-(function() {
-  var NS = "${ns}";
-  var isApp = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-  var path = (window.location.pathname || "").toLowerCase();
-  function hit(key) {
-    fetch("https://api.counterapi.dev/v1/" + NS + "/" + key + "/up", { mode: "cors" }).catch(function(){});
-  }
-  window.addEventListener("DOMContentLoaded", function() {
-    if (path.indexOf("stgames-apk") !== -1) {
-      hit("apk_page_views");
-    } else {
-      hit("views");
-    }
-    if (isApp) hit("app_launches");
-    document.body.addEventListener("click", function(e) {
-      var el = e.target.closest("a, button");
-      if (!el) return;
-      var txt = (el.innerText || "").toLowerCase();
-      var href = (el.getAttribute("href") || "").toLowerCase();
-      if (href.indexOf(".apk") !== -1 || txt.indexOf("download apk") !== -1 || txt.indexOf("download app") !== -1) {
-        hit("apk_downloads");
-      }
-      if (txt.indexOf("login") !== -1 || txt.indexOf("sign in") !== -1) {
-        hit("member_logins");
-      }
-      if (txt.indexOf("play free") !== -1 || href.indexOf("game/") !== -1) {
-        hit("game_plays");
-      }
+      return `<!-- ST GAMES REAL LIVE TRACKER (FIREBASE + ANALYTICS) -->
+<script type="module" id="st-games-live-tracker">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
+import { getDatabase, ref, runTransaction, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBzLchy5M2fLne4c7Ghw1KNN8wVrlZdd8M",
+  authDomain: "friendsgame-872f5.firebaseapp.com",
+  databaseURL: "https://friendsgame-872f5-default-rtdb.firebaseio.com",
+  projectId: "friendsgame-872f5",
+  storageBucket: "friendsgame-872f5.firebasestorage.app",
+  messagingSenderId: "522534013233",
+  appId: "1:522534013233:web:f5faa6e6795023d0420810",
+  measurementId: "G-PW5H3G97QR"
+};
+
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+const db = getDatabase(app);
+
+const NS = "${ns}";
+const isApp = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+const path = (window.location.pathname || "/").toLowerCase();
+
+function recordStEvent(counterKey, eventType, detailText, userLabel) {
+  try {
+    logEvent(analytics, counterKey, { page_path: path, detail: detailText || "" });
+  } catch (_) {}
+  try {
+    runTransaction(ref(db, "stgames_telemetry/counters/" + counterKey), (cur) => (cur || 0) + 1);
+    push(ref(db, "stgames_telemetry/events"), {
+      type: eventType,
+      user: userLabel || (localStorage.getItem("st_username") || "Visitor"),
+      mode: isApp ? "PWA / APK App" : "Web Browser",
+      detail: detailText || path,
+      time: new Date().toLocaleString(),
+      ts: Date.now()
     });
-  });
-  window.addEventListener("appinstalled", function() {
-    hit("pwa_installs");
-  });
-  window.stTrackLogin = function() { hit("member_logins"); };
-  window.stTrackDownload = function() { hit("apk_downloads"); };
-  window.stTrackApkPageView = function() { hit("apk_page_views"); };
-  window.stTrackGamePlay = function() { hit("game_plays"); };
-})();
+  } catch (_) {}
+  fetch("https://api.counterapi.dev/v1/" + NS + "/" + counterKey + "/up", { mode: "cors" }).catch(() => {});
+}
+
+if (path.indexOf("stgames-apk") !== -1) {
+  recordStEvent("apk_page_views", "apk_view", "stgames-apk/index.html", "App User");
+} else {
+  recordStEvent("views", "view", path || "/index.html", "Website Visitor");
+}
+
+if (isApp) {
+  recordStEvent("app_launches", "apk_view", "Standalone App Launch", "Installed App User");
+}
+
+document.addEventListener("click", (e) => {
+  const el = e.target.closest("a, button");
+  if (!el) return;
+  const txt = (el.innerText || "").trim().toLowerCase();
+  const href = (el.getAttribute("href") || "").toLowerCase();
+  if (href.indexOf(".apk") !== -1 || txt.indexOf("download apk") !== -1 || txt.indexOf("download app") !== -1) {
+    recordStEvent("apk_downloads", "download", href || txt, "APK Downloader");
+  }
+  if (txt.indexOf("login") !== -1 || txt.indexOf("sign in") !== -1) {
+    recordStEvent("member_logins", "login", "Member Sign-In", localStorage.getItem("st_username") || "Member");
+  }
+  if (txt.indexOf("play free") !== -1 || href.indexOf("game/") !== -1) {
+    recordStEvent("game_plays", "view", href || txt, "Player");
+  }
+});
+
+window.addEventListener("appinstalled", () => {
+  recordStEvent("pwa_installs", "download", "PWA Installed to Home Screen", "PWA Installer");
+});
+
+window.stTrackLogin = (username) => recordStEvent("member_logins", "login", "Verified Member Login", username || "Member");
+window.stTrackDownload = () => recordStEvent("apk_downloads", "download", "Direct APK Download", "APK Downloader");
+window.stTrackApkPageView = () => recordStEvent("apk_page_views", "apk_view", "stgames-apk/index.html", "App User");
+window.stTrackGamePlay = (gameName) => recordStEvent("game_plays", "view", gameName || "Game Play", "Player");
 <\/script>`;
     }
 
@@ -1548,15 +1704,15 @@
         const trackerScript = getWebsiteTrackerCode();
 
         if (html.includes('id="st-games-live-tracker"')) {
-          html = html.replace(/<!-- ST GAMES REAL LIVE TRACKER -->[\s\S]*?<\/script>/, trackerScript);
+          html = html.replace(/<!-- ST GAMES REAL LIVE TRACKER[\s\S]*?<\/script>/, trackerScript);
         } else if (html.includes('</body>')) {
           html = html.replace('</body>', `\n${trackerScript}\n</body>`);
         } else {
           html += `\n${trackerScript}\n`;
         }
 
-        await pushFileDirect(targetFilePath, html, `Activate ST Games real live tracker in ${targetFilePath}`);
-        showToast(`Live tracker activated in ${targetFilePath} on GitHub!`, 'success');
+        await pushFileDirect(targetFilePath, html, `Activate Firebase live tracker in ${targetFilePath}`);
+        showToast(`Firebase live tracker activated in ${targetFilePath} on GitHub!`, 'success');
       } catch (err) {
         showToast(`Tracker install error (${targetFilePath}): ` + err.message, 'error');
       } finally {
@@ -2110,6 +2266,7 @@
         document.getElementById('passwordModal').classList.add('hidden');
       }
 
+      initFirebaseLiveSync();
       renderRealTelemetryUI();
       loadAllGames();
       fetchAllRealTelemetry(false);
