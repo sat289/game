@@ -8,15 +8,16 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
 <title>Samose! - TFI Games</title>
 
 <style>
 * {
-  box-sizing: border-box;
   margin: 0;
   padding: 0;
-  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
   user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html, body {
@@ -34,37 +35,13 @@ html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #0f172a;
 }
 
 canvas {
-  display: block;
   width: 100%;
   height: 100%;
+  display: block;
   touch-action: none;
-}
-
-#controls {
-  position: absolute;
-  top: max(12px, env(safe-area-inset-top));
-  right: 12px;
-  display: flex;
-  gap: 8px;
-  z-index: 10;
-}
-
-.icon-btn {
-  width: 42px;
-  height: 42px;
-  border: 1px solid rgba(255,255,255,.35);
-  border-radius: 13px;
-  background: rgba(15,23,42,.72);
-  color: white;
-  font-size: 21px;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  backdrop-filter: blur(8px);
 }
 
 #hud {
@@ -75,7 +52,71 @@ canvas {
   color: white;
   font-size: 17px;
   font-weight: bold;
-  text-shadow: 0 2px 4px #000;
+  text-shadow: 0 2px 5px black;
+  pointer-events: none;
+}
+
+#controls {
+  position: absolute;
+  top: max(10px, env(safe-area-inset-top));
+  right: 10px;
+  display: flex;
+  gap: 6px;
+  z-index: 10;
+}
+
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(255,255,255,.4);
+  border-radius: 12px;
+  background: rgba(15,23,42,.82);
+  color: white;
+  font-size: 21px;
+  display: grid;
+  place-items: center;
+}
+
+#warning {
+  position: absolute;
+  top: 23%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: none;
+  z-index: 7;
+  color: #ff2424;
+  font-size: clamp(23px, 6vw, 32px);
+  font-weight: 900;
+  text-shadow: 0 3px 6px black;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+#warning.show {
+  display: block;
+  animation: pulse .35s infinite alternate;
+}
+
+@keyframes pulse {
+  from {
+    opacity: .65;
+    transform: translateX(-50%) scale(.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.04);
+  }
+}
+
+#hint {
+  position: absolute;
+  bottom: max(18px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  color: white;
+  font-size: 13px;
+  white-space: nowrap;
+  text-shadow: 0 2px 5px black;
   pointer-events: none;
 }
 
@@ -87,10 +128,10 @@ canvas {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 25px;
+  padding: 24px;
   text-align: center;
   color: white;
-  background: rgba(0,0,0,.62);
+  background: rgba(0,0,0,.7);
 }
 
 #message.hidden {
@@ -98,9 +139,9 @@ canvas {
 }
 
 #message h1 {
-  font-size: clamp(35px, 9vw, 58px);
-  color: #ffd54a;
-  margin-bottom: 12px;
+  font-size: clamp(36px, 10vw, 58px);
+  color: #ffd34d;
+  margin-bottom: 14px;
   text-shadow: 0 4px 0 #8b4513;
 }
 
@@ -112,32 +153,22 @@ canvas {
 }
 
 .main-btn {
+  padding: 14px 35px;
   border: 0;
-  border-radius: 15px;
+  border-radius: 14px;
   background: #ff9f1c;
   color: #241300;
   font-size: 20px;
   font-weight: 900;
-  padding: 14px 35px;
   box-shadow: 0 5px 0 #b85c00;
-}
-
-#hint {
-  position: absolute;
-  bottom: max(20px, env(safe-area-inset-bottom));
-  left: 50%;
-  transform: translateX(-50%);
-  color: white;
-  font-size: 13px;
-  text-shadow: 0 2px 4px black;
-  white-space: nowrap;
-  pointer-events: none;
 }
 </style>
 </head>
 
 <body>
+
 <div id="game">
+
   <canvas id="canvas"></canvas>
 
   <div id="hud">
@@ -146,13 +177,17 @@ canvas {
   </div>
 
   <div id="controls">
-    <button class="icon-btn" id="pauseBtn" aria-label="Pause">Ⅱ</button>
-    <button class="icon-btn" id="restartBtn" aria-label="Restart">↻</button>
-    <button class="icon-btn" id="soundBtn" aria-label="Sound">🔊</button>
-    <button class="icon-btn" id="fullBtn" aria-label="Fullscreen">⛶</button>
+    <button class="icon-btn" id="pauseBtn">Ⅱ</button>
+    <button class="icon-btn" id="restartBtn">↻</button>
+    <button class="icon-btn" id="soundBtn">🔊</button>
+    <button class="icon-btn" id="fullBtn">⛶</button>
   </div>
 
-  <div id="hint">HOLD SCREEN TO FLY UP • RELEASE TO FALL</div>
+  <div id="warning">⚠ FLASHMAN COMING!</div>
+
+  <div id="hint">
+    HOLD SCREEN TO FLY UP • RELEASE TO FALL
+  </div>
 
   <div id="message">
     <h1 id="messageTitle">🥟 SAMOSE!</h1>
@@ -162,25 +197,22 @@ canvas {
     </p>
     <button class="main-btn" id="startBtn">PLAY GAME</button>
   </div>
+
 </div>
 
 <script>
 (() => {
 "use strict";
 
-/* ===================================
-   EXISTING ASSET FILENAMES
-=================================== */
+/* =====================================
+   EXISTING IMAGE FILES
+===================================== */
 
 const ASSETS = {
   bunny: "assets/bunny.png",
   background: "assets/samosa.png",
   samosa: "assets/samo.png",
-  flashman: "assets/flashman.png",
-  gameover: "assets/gameover.jpg",
-  collectSound: "assets/samose_sfx.mp3",
-  music: "assets/bgm_samosa.mp3",
-  flashmanVoice: "assets/samo.mp3"
+  gameover: "assets/gameover.jpg"
 };
 
 const canvas = document.getElementById("canvas");
@@ -188,85 +220,133 @@ const ctx = canvas.getContext("2d");
 
 const scoreEl = document.getElementById("score");
 const collectedEl = document.getElementById("collected");
+
 const message = document.getElementById("message");
 const messageTitle = document.getElementById("messageTitle");
 const messageText = document.getElementById("messageText");
+
+const warning = document.getElementById("warning");
+
 const startBtn = document.getElementById("startBtn");
 const pauseBtn = document.getElementById("pauseBtn");
 const restartBtn = document.getElementById("restartBtn");
 const soundBtn = document.getElementById("soundBtn");
 const fullBtn = document.getElementById("fullBtn");
 
+/* =====================================
+   LOAD IMAGES
+===================================== */
+
 const images = {};
 
-function loadImage(name, src) {
+function loadImage(name, path) {
   const img = new Image();
-  img.src = src;
+  img.onload = () => console.log(name + " loaded");
+  img.onerror = () => console.error("Cannot load " + path);
+  img.src = path;
   images[name] = img;
 }
 
-Object.entries(ASSETS).forEach(([name, src]) => {
-  if (name === "collectSound" || name === "music" ||
-      name === "flashmanVoice") return;
-  loadImage(name, src);
+Object.entries(ASSETS).forEach(([name, path]) => {
+  loadImage(name, path);
 });
 
-/* ===================================
+/* =====================================
    AUDIO
-=================================== */
+===================================== */
 
-const collectAudio = new Audio(ASSETS.collectSound);
-const musicAudio = new Audio(ASSETS.music);
-const flashmanAudio = new Audio(ASSETS.flashmanVoice);
+const collectAudio = new Audio("assets/samose_sfx.mp3");
+const musicAudio = new Audio("assets/bgm_samosa.mp3");
+const flashmanAudio = new Audio("assets/samo.mp3");
 
-musicAudio.loop = true;
-musicAudio.volume = 0.35;
+collectAudio.preload = "auto";
+musicAudio.preload = "auto";
+flashmanAudio.preload = "auto";
+
 collectAudio.volume = 0.8;
+musicAudio.volume = 0.35;
+musicAudio.loop = true;
 flashmanAudio.volume = 1;
 
 let soundEnabled = true;
 
-function playAudio(audio, restart = true) {
+function playSound(audio) {
   if (!soundEnabled) return;
+
   try {
-    if (restart) audio.currentTime = 0;
-    const result = audio.play();
-    if (result && result.catch) result.catch(() => {});
-  } catch (e) {}
+    audio.currentTime = 0;
+    const promise = audio.play();
+    if (promise) promise.catch(() => {});
+  } catch (error) {}
 }
 
-function stopAudio(audio) {
+function stopSound(audio) {
   try {
     audio.pause();
     audio.currentTime = 0;
-  } catch (e) {}
+  } catch (error) {}
 }
 
-/* ===================================
-   SCREEN SIZE
-=================================== */
+/* =====================================
+   SCREEN
+===================================== */
 
 let W = 0;
 let H = 0;
-let dpr = 1;
+let DPR = 1;
 
 function resize() {
   W = window.innerWidth;
   H = window.innerHeight;
-  dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-  canvas.width = Math.round(W * dpr);
-  canvas.height = Math.round(H * dpr);
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
 
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  canvas.width = Math.round(W * DPR);
+  canvas.height = Math.round(H * DPR);
+
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+  if (bunny) {
+    bunny.x = W * 0.2;
+    bunny.y = Math.max(
+      bunny.height / 2,
+      Math.min(H - bunny.height / 2, bunny.y)
+    );
+  }
 }
 
 window.addEventListener("resize", resize);
-resize();
 
-/* ===================================
+/* =====================================
+   SETTINGS
+===================================== */
+
+const SETTINGS = {
+  gravity: 0.38,
+
+  // Bunny speed increased
+  flyAcceleration: 1.05,
+  maxFlySpeed: 8.5,
+  maxFallSpeed: 7,
+
+  // First Flashman after 12 seconds
+  firstWaveDelay: 12,
+
+  // Later waves every 18 seconds
+  nextWaveDelay: 18,
+
+  // Maximum wave size
+  maximumFlashmen: 6,
+
+  flashmanSpeed: 3.3,
+
+  samosaSpeed: 3.2,
+  samosaInterval: 1.6
+};
+
+/* =====================================
    GAME VARIABLES
-=================================== */
+===================================== */
 
 let running = false;
 let paused = false;
@@ -275,8 +355,14 @@ let holding = false;
 
 let score = 0;
 let collected = 0;
+
 let elapsed = 0;
-let lastTime = 0;
+let nextWaveAt = SETTINGS.firstWaveDelay;
+let waveNumber = 0;
+
+let warningTimer = 0;
+let samosaTimer = 0;
+let backgroundOffset = 0;
 
 let bunny = {
   x: 0,
@@ -289,131 +375,103 @@ let bunny = {
 let samosas = [];
 let flashmans = [];
 
-let samosaTimer = 0;
-let flashmanTimer = 0;
-let nextFlashmanWave = 1;
-
-let backgroundOffset = 0;
-let warningTextTimer = 0;
-
-/* ===================================
-   GAME SETTINGS
-=================================== */
-
-const SETTINGS = {
-  gravity: 0.34,
-
-  // Increased bunny flying speed
-  flyAcceleration: 0.82,
-  maxFlySpeed: 7.2,
-
-  // Falling speed
-  maxFallSpeed: 6.5,
-
-  // First Flashman appears after this time
-  firstFlashmanTime: 12,
-
-  // Time between later waves
-  waveInterval: 17,
-
-  // Samosa generation
-  samosaInterval: 1.5,
-
-  // Flashman movement speed
-  flashmanSpeed: 3.2
-};
-
-/* ===================================
+/* =====================================
    RESET GAME
-=================================== */
+===================================== */
 
 function resetGame() {
   score = 0;
   collected = 0;
-  elapsed = 0;
 
-  bunny.x = W * 0.20;
-  bunny.y = H * 0.48;
+  elapsed = 0;
+  nextWaveAt = SETTINGS.firstWaveDelay;
+  waveNumber = 0;
+
+  warningTimer = 0;
+  samosaTimer = 0;
+  backgroundOffset = 0;
+
+  bunny.x = W * 0.2;
+  bunny.y = H * 0.5;
   bunny.velocityY = 0;
 
   samosas = [];
   flashmans = [];
 
-  samosaTimer = 0;
-  flashmanTimer = 0;
-  nextFlashmanWave = 1;
-
-  backgroundOffset = 0;
-  warningTextTimer = 0;
-
   holding = false;
-  gameOver = false;
   paused = false;
+  gameOver = false;
+
+  warning.classList.remove("show");
 
   updateHUD();
   spawnSamosa();
 }
 
-/* ===================================
+/* =====================================
    START GAME
-=================================== */
+===================================== */
 
 function startGame() {
+  stopSound(musicAudio);
+  stopSound(collectAudio);
+  stopSound(flashmanAudio);
+
   resetGame();
 
   running = true;
-  lastTime = performance.now();
 
   message.classList.add("hidden");
   pauseBtn.textContent = "Ⅱ";
 
-  playAudio(musicAudio, false);
+  playSound(musicAudio);
 
+  lastTime = performance.now();
   requestAnimationFrame(loop);
 }
 
-/* ===================================
-   HUD
-=================================== */
+/* =====================================
+   SCORE
+===================================== */
 
 function updateHUD() {
   scoreEl.textContent = score;
   collectedEl.textContent = collected;
 }
 
-/* ===================================
+/* =====================================
    BACKGROUND
-=================================== */
+===================================== */
 
 function drawBackground() {
-  const bg = images.background;
+  const img = images.background;
 
-  if (bg && bg.complete && bg.naturalWidth > 0) {
-    const scale = Math.max(W / bg.width, H / bg.height);
-    const bw = bg.width * scale;
-    const bh = bg.height * scale;
+  if (img && img.complete && img.naturalWidth > 0) {
+    const scale = Math.max(W / img.width, H / img.height);
 
-    ctx.drawImage(bg, (W - bw) / 2, (H - bh) / 2, bw, bh);
+    const bw = img.width * scale;
+    const bh = img.height * scale;
+
+    ctx.drawImage(
+      img,
+      (W - bw) / 2,
+      (H - bh) / 2,
+      bw,
+      bh
+    );
   } else {
     const gradient = ctx.createLinearGradient(0, 0, 0, H);
     gradient.addColorStop(0, "#f9b34b");
     gradient.addColorStop(1, "#b65b20");
+
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, W, H);
   }
-
-  ctx.fillStyle = "rgba(255,255,255,0.12)";
-  for (let i = 0; i < 5; i++) {
-    const x = ((i * 180 - backgroundOffset * 0.25) % (W + 180) + W + 180) % (W + 180);
-    ctx.beginPath();
-    ctx.arc(x, H * 0.2 + (i % 3) * 90, 18 + i * 4, 0, Math.PI * 2);
-    ctx.fill();
-  }
 }
 
-/* ===================================
+/* =====================================
    BUNNY
-=================================== */
+===================================== */
 
 function drawBunny() {
   const img = images.bunny;
@@ -427,7 +485,7 @@ function drawBunny() {
       bunny.height
     );
   } else {
-    ctx.font = "48px Arial";
+    ctx.font = "48px sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText("🐰", bunny.x, bunny.y);
@@ -438,46 +496,47 @@ function updateBunny(dt) {
   if (holding) {
     bunny.velocityY -= SETTINGS.flyAcceleration * dt;
 
-    if (bunny.velocityY < -SETTINGS.maxFlySpeed) {
-      bunny.velocityY = -SETTINGS.maxFlySpeed;
-    }
+    bunny.velocityY = Math.max(
+      bunny.velocityY,
+      -SETTINGS.maxFlySpeed
+    );
   } else {
     bunny.velocityY += SETTINGS.gravity * dt;
 
-    if (bunny.velocityY > SETTINGS.maxFallSpeed) {
-      bunny.velocityY = SETTINGS.maxFallSpeed;
-    }
+    bunny.velocityY = Math.min(
+      bunny.velocityY,
+      SETTINGS.maxFallSpeed
+    );
   }
 
   bunny.y += bunny.velocityY * dt;
 
-  // Bunny cannot die at top or bottom.
-  // It stays inside the playable screen.
+  // Bunny never dies at top or bottom.
+
   const half = bunny.height / 2;
 
   if (bunny.y < half) {
     bunny.y = half;
-    if (bunny.velocityY < 0) bunny.velocityY = 0;
+    bunny.velocityY = 0;
   }
 
   if (bunny.y > H - half) {
     bunny.y = H - half;
-    if (bunny.velocityY > 0) bunny.velocityY = 0;
+    bunny.velocityY = 0;
   }
 }
 
-/* ===================================
-   SAMOSA COLLECTIBLES
-=================================== */
+/* =====================================
+   SAMOSAS
+===================================== */
 
 function spawnSamosa() {
   const margin = 75;
 
   samosas.push({
-    x: W + 40,
+    x: W + 45,
     y: margin + Math.random() * Math.max(20, H - margin * 2),
-    size: 38,
-    collected: false
+    size: 40
   });
 }
 
@@ -494,7 +553,7 @@ function drawSamosas() {
         s.size
       );
     } else {
-      ctx.font = "34px Arial";
+      ctx.font = "34px sans-serif";
       ctx.textAlign = "center";
       ctx.fillText("🥟", s.x, s.y);
     }
@@ -509,150 +568,173 @@ function updateSamosas(dt) {
     spawnSamosa();
   }
 
-  samosas.forEach(s => {
-    s.x -= 3.2 * dt;
+  for (let i = samosas.length - 1; i >= 0; i--) {
+    const s = samosas[i];
+
+    s.x -= SETTINGS.samosaSpeed * dt;
 
     const dx = bunny.x - s.x;
     const dy = bunny.y - s.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
 
-    if (!s.collected && distance < 38) {
-      s.collected = true;
+    if (Math.hypot(dx, dy) < 38) {
+      samosas.splice(i, 1);
+
       collected++;
       score += 10;
-      updateHUD();
-      playAudio(collectAudio);
-    }
-  });
 
-  samosas = samosas.filter(s => !s.collected && s.x > -60);
+      updateHUD();
+
+      // This is the samosa collection sound only.
+      playSound(collectAudio);
+      continue;
+    }
+
+    if (s.x < -60) {
+      samosas.splice(i, 1);
+    }
+  }
 }
 
-/* ===================================
+/* =====================================
+   FLASHMAN EMOJI
+===================================== */
+
+// No image file required.
+// The running-person emoji is Flashman.
+
+function drawFlashman(f) {
+  ctx.save();
+
+  // Red warning circle behind Flashman
+  ctx.beginPath();
+  ctx.arc(f.x, f.y, 34, 0, Math.PI * 2);
+  ctx.fillStyle = "#e52b2b";
+  ctx.fill();
+
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = "#700000";
+  ctx.stroke();
+
+  // Draw Flashman emoji
+  ctx.font = '58px "Noto Color Emoji", "Apple Color Emoji", sans-serif';
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "white";
+  ctx.fillText("🏃", f.x, f.y + 1);
+
+  ctx.restore();
+}
+
+/* =====================================
    FLASHMAN WAVES
-=================================== */
-
-/*
-  Wave 1 = one Flashman
-  Wave 2 = two Flashmans together
-  Wave 3 = three Flashmans together
-  Wave 4 = four Flashmans together
-  And so on.
-
-  All Flashmans in a wave appear at the
-  same time, with different vertical positions.
-*/
+===================================== */
 
 function spawnFlashmanWave() {
-  const count = nextFlashmanWave;
+  waveNumber++;
 
-  flashmans = [];
+  const count = Math.min(
+    waveNumber,
+    SETTINGS.maximumFlashmen
+  );
+
+  const margin = 75;
+  const availableHeight = Math.max(60, H - margin * 2);
+
+  const newWave = [];
 
   for (let i = 0; i < count; i++) {
-    const margin = 75;
-    const availableHeight = Math.max(50, H - margin * 2);
-
     let y;
 
     if (count === 1) {
-      y = margin + Math.random() * availableHeight;
+      y = H * 0.5;
     } else {
-      y = margin + (availableHeight / (count - 1)) * i;
-      y += (Math.random() - 0.5) * 35;
+      y = margin + (availableHeight * i / (count - 1));
     }
 
-    flashmans.push({
-      x: W + 80 + i * 48,
-      y: Math.max(margin, Math.min(H - margin, y)),
-      width: 66,
-      height: 66,
-      speed: SETTINGS.flashmanSpeed + Math.min(nextFlashmanWave * 0.15, 2)
+    newWave.push({
+      // Start at the right edge, already visible
+      x: W - 28,
+      y: y,
+      radius: 34,
+      speed: SETTINGS.flashmanSpeed + Math.min(waveNumber * 0.12, 1.5)
     });
   }
 
-  // Play Flashman dialogue immediately when the wave appears.
-  playAudio(flashmanAudio);
+  // Add the complete wave before playing the sound.
+  flashmans.push(...newWave);
 
-  warningTextTimer = 2.3;
+  // Alert appears at the same time as Flashman.
+  warningTimer = 2.5;
+  warning.classList.add("show");
 
-  nextFlashmanWave++;
+  // Flashman dialogue only.
+  playSound(flashmanAudio);
+
+  console.log(
+    "Flashman wave " + waveNumber +
+    " appeared with " + count + " enemies"
+  );
 }
 
 function updateFlashmans(dt) {
   elapsed += dt / 60;
 
-  if (elapsed >= SETTINGS.firstFlashmanTime &&
-      flashmans.length === 0 &&
-      nextFlashmanWave === 1) {
+  if (elapsed >= nextWaveAt) {
     spawnFlashmanWave();
+
+    nextWaveAt = elapsed + SETTINGS.nextWaveDelay;
   }
 
-  flashmanTimer += dt / 60;
+  if (warningTimer > 0) {
+    warningTimer -= dt / 60;
 
-  if (nextFlashmanWave > 1 &&
-      flashmanTimer >= SETTINGS.waveInterval) {
-    flashmanTimer = 0;
-    spawnFlashmanWave();
+    if (warningTimer <= 0) {
+      warningTimer = 0;
+      warning.classList.remove("show");
+    }
   }
 
-  flashmans.forEach(f => {
+  for (let i = flashmans.length - 1; i >= 0; i--) {
+    const f = flashmans[i];
+
+    // Flashman always moves from right to left.
     f.x -= f.speed * dt;
-  });
 
-  flashmans = flashmans.filter(f => f.x > -100);
-
-  if (warningTextTimer > 0) {
-    warningTextTimer -= dt / 60;
+    if (f.x < -80) {
+      flashmans.splice(i, 1);
+    }
   }
 }
 
-/* ===================================
-   DRAW FLASHMAN AVATAR
-=================================== */
+/* =====================================
+   DRAW FLASHMEN
+===================================== */
 
 function drawFlashmans() {
-  const img = images.flashman;
-
   flashmans.forEach(f => {
-    if (img && img.complete && img.naturalWidth > 0) {
-      ctx.drawImage(
-        img,
-        f.x - f.width / 2,
-        f.y - f.height / 2,
-        f.width,
-        f.height
-      );
-    } else {
-      // Fallback until flashman.png is uploaded
-      ctx.font = "53px Arial";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("👹", f.x, f.y);
-    }
+    drawFlashman(f);
   });
 }
 
-/* ===================================
+/* =====================================
    COLLISION
-=================================== */
+===================================== */
 
-function checkFlashmanCollision() {
+function checkCollision() {
   for (const f of flashmans) {
     const dx = bunny.x - f.x;
     const dy = bunny.y - f.y;
 
-    const distance = Math.sqrt(dx * dx + dy * dy);
-
-    if (distance < 48) {
+    if (Math.hypot(dx, dy) < 48) {
       endGame();
       return;
     }
   }
 }
 
-/* ===================================
+/* =====================================
    GAME OVER
-=================================== */
+===================================== */
 
 function endGame() {
   if (gameOver) return;
@@ -661,76 +743,62 @@ function endGame() {
   running = false;
   holding = false;
 
-  stopAudio(musicAudio);
-  stopAudio(flashmanAudio);
+  stopSound(musicAudio);
+  stopSound(flashmanAudio);
+  stopSound(collectAudio);
+
+  warning.classList.remove("show");
 
   messageTitle.textContent = "GAME OVER!";
+
   messageText.textContent =
     "Flashman caught Bunny! Your score: " + score;
 
   startBtn.textContent = "PLAY AGAIN";
+
   message.classList.remove("hidden");
 }
 
-/* ===================================
-   WARNING TEXT
-=================================== */
-
-function drawWarning() {
-  if (warningTextTimer > 0) {
-    ctx.save();
-
-    ctx.textAlign = "center";
-    ctx.font = "bold 27px Arial";
-    ctx.fillStyle = "#ff2222";
-    ctx.shadowColor = "black";
-    ctx.shadowBlur = 8;
-
-    ctx.fillText("⚠ FLASHMAN!", W / 2, H * 0.22);
-
-    ctx.restore();
-  }
-}
-
-/* ===================================
-   UPDATE AND DRAW
-=================================== */
-
-function update(dt) {
-  if (!running || paused || gameOver) return;
-
-  backgroundOffset += 2.2 * dt;
-  score += Math.floor(dt * 0.08);
-
-  updateBunny(dt);
-  updateSamosas(dt);
-  updateFlashmans(dt);
-  checkFlashmanCollision();
-
-  updateHUD();
-}
+/* =====================================
+   DRAW
+===================================== */
 
 function draw() {
   drawBackground();
   drawSamosas();
   drawFlashmans();
   drawBunny();
-  drawWarning();
 }
 
-/* ===================================
-   MAIN GAME LOOP
-=================================== */
+/* =====================================
+   UPDATE
+===================================== */
+
+function update(dt) {
+  if (!running || paused || gameOver) return;
+
+  backgroundOffset += 2 * dt;
+
+  updateBunny(dt);
+  updateSamosas(dt);
+  updateFlashmans(dt);
+
+  checkCollision();
+
+  updateHUD();
+}
+
+/* =====================================
+   MAIN LOOP
+===================================== */
+
+let lastTime = 0;
 
 function loop(timestamp) {
-  if (!running) return;
-
-  if (paused) {
-    draw();
-    return;
-  }
+  if (!running || paused) return;
 
   let dt = (timestamp - lastTime) / 16.67;
+
   lastTime = timestamp;
 
   dt = Math.min(dt, 2.5);
@@ -743,11 +811,11 @@ function loop(timestamp) {
   }
 }
 
-/* ===================================
-   HOLD TO FLY
-=================================== */
+/* =====================================
+   TOUCH CONTROLS
+===================================== */
 
-function beginHolding(e) {
+function startHolding(e) {
   if (!running || paused || gameOver) return;
 
   holding = true;
@@ -755,7 +823,7 @@ function beginHolding(e) {
   if (e && e.pointerId !== undefined) {
     try {
       canvas.setPointerCapture(e.pointerId);
-    } catch (err) {}
+    } catch (error) {}
   }
 }
 
@@ -763,16 +831,17 @@ function stopHolding() {
   holding = false;
 }
 
-canvas.addEventListener("pointerdown", beginHolding);
+canvas.addEventListener("pointerdown", startHolding);
 window.addEventListener("pointerup", stopHolding);
 window.addEventListener("pointercancel", stopHolding);
 window.addEventListener("blur", stopHolding);
 
-/* ===================================
+/* =====================================
    BUTTONS
-=================================== */
+===================================== */
 
 startBtn.addEventListener("click", startGame);
+restartBtn.addEventListener("click", startGame);
 
 pauseBtn.addEventListener("click", () => {
   if (!running || gameOver) return;
@@ -785,24 +854,23 @@ pauseBtn.addEventListener("click", () => {
   if (paused) {
     musicAudio.pause();
   } else {
-    playAudio(musicAudio, false);
+    playSound(musicAudio);
     lastTime = performance.now();
     requestAnimationFrame(loop);
   }
 });
 
-restartBtn.addEventListener("click", startGame);
-
 soundBtn.addEventListener("click", () => {
   soundEnabled = !soundEnabled;
+
   soundBtn.textContent = soundEnabled ? "🔊" : "🔇";
 
   if (!soundEnabled) {
-    musicAudio.pause();
-    collectAudio.pause();
-    flashmanAudio.pause();
+    stopSound(musicAudio);
+    stopSound(collectAudio);
+    stopSound(flashmanAudio);
   } else if (running && !paused) {
-    playAudio(musicAudio, false);
+    playSound(musicAudio);
   }
 });
 
@@ -813,23 +881,24 @@ fullBtn.addEventListener("click", async () => {
     } else {
       await document.exitFullscreen();
     }
-  } catch (e) {
-    console.log("Fullscreen is not available in this browser.");
+  } catch (error) {
+    console.log("Fullscreen is unavailable in this environment.");
   }
 });
 
-/* ===================================
-   INITIAL SCREEN
-=================================== */
+/* =====================================
+   INITIALIZE
+===================================== */
 
-function initialDraw() {
-  resetGame();
-  draw();
-}
+resize();
 
-initialDraw();
+bunny.x = W * 0.2;
+bunny.y = H * 0.5;
+
+draw();
 
 })();
 </script>
+
 </body>
 </html>
