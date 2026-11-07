@@ -427,36 +427,61 @@
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
+      gap: 5px;
     }
     .game-badge {
       background: linear-gradient(180deg, #4ade80, #22c55e);
       color: #fff;
       font-weight: 900;
-      font-size: 13px;
-      padding: 4px 11px;
+      font-size: 12.5px;
+      padding: 4px 10px;
       border-radius: 13px 13px 13px 5px;
       border: 2.5px solid #fff;
       box-shadow: 0 3px 6px rgba(0, 0, 0, 0.28);
       text-transform: uppercase;
       letter-spacing: 0.3px;
     }
+    .card-actions-right {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-left: auto;
+    }
     .dl-indicator {
       width: 28px;
       height: 28px;
       border-radius: 50%;
-      background: rgba(15, 23, 42, 0.72);
+      background: rgba(15, 23, 42, 0.78);
       color: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 13px;
+      font-size: 12.5px;
       border: 2px solid #fff;
-      margin-left: auto;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
     }
     .dl-indicator.saved {
       background: #22c55e;
       border-color: #fff;
+    }
+    /* Card Offline Delete Button */
+    .card-del-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #ef4444;
+      color: #ffffff;
+      border: 2px solid #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11.5px;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+      transition: transform 0.12s;
+    }
+    .card-del-btn:active {
+      transform: scale(0.88);
     }
 
     .empty-box {
@@ -494,7 +519,7 @@
       cursor: pointer;
     }
 
-    /* Bottom Bar */
+    /* Bottom Bar with Download Button at Marked Spot */
     .bottom-bar {
       position: fixed;
       bottom: 0;
@@ -506,14 +531,21 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0 20px;
+      padding: 0 14px;
+      gap: 8px;
       z-index: 300;
       box-shadow: 0 -4px 14px rgba(43, 120, 166, 0.15);
       transition: background .3s, border .3s;
     }
+    .bottom-left-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
     .side-circle-btn {
-      width: 54px;
-      height: 54px;
+      position: relative;
+      width: 52px;
+      height: 52px;
       border-radius: 50%;
       background: linear-gradient(180deg, #fde047, #f59e0b);
       border: 3px solid #fff;
@@ -526,25 +558,44 @@
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.22);
       color: #fff;
       font-weight: 900;
-      font-size: 9.5px;
+      font-size: 8.5px;
       text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+      flex-shrink: 0;
     }
     .side-circle-btn:active {
       transform: scale(.92);
+    }
+    .download-hub-btn {
+      background: linear-gradient(180deg, #38bdf8, #0284c7);
+    }
+    .dl-percent-badge {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background: #22c55e;
+      color: #ffffff;
+      font-size: 9px;
+      font-weight: 900;
+      padding: 2px 5px;
+      border-radius: 10px;
+      border: 2px solid #ffffff;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      line-height: 1;
     }
     .gear-btn {
       background: linear-gradient(180deg, #93c5fd, #3b82f6);
     }
     .play-main-btn {
-      width: 185px;
-      height: 64px;
-      margin-top: -26px;
+      flex: 1;
+      max-width: 170px;
+      height: 62px;
+      margin-top: -24px;
       background: linear-gradient(180deg, #86efac 0%, #22c55e 45%, #16a34a 100%);
       border: 4px solid #fff;
       outline: 3.5px solid #4a7aa8;
       border-radius: 38px;
       color: #fff;
-      font-size: 26px;
+      font-size: 24px;
       font-weight: 900;
       letter-spacing: 2px;
       text-shadow: 0 2px 0 #15803d, 0 3px 5px rgba(0, 0, 0, 0.35);
@@ -559,7 +610,243 @@
       box-shadow: 0 3px 0 #15803d, 0 5px 10px rgba(0, 0, 0, 0.25);
     }
 
-    /* Modals & Toast */
+    /* First-Time Play Downloading 1% -> 100% Overlay Modal */
+    .dl-anim-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(9, 13, 24, 0.88);
+      backdrop-filter: blur(8px);
+      z-index: 2500;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 22px;
+    }
+    .dl-anim-modal.open {
+      display: flex;
+    }
+    .dl-anim-card {
+      width: 100%;
+      max-width: 340px;
+      background: linear-gradient(180deg, #1e293b, #0f172a);
+      border: 3px solid #38bdf8;
+      border-radius: 28px;
+      padding: 26px 22px;
+      text-align: center;
+      color: #ffffff;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.7), 0 0 25px rgba(56, 189, 248, 0.25);
+      animation: popIn .22s ease-out;
+    }
+    @keyframes popIn {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .dl-anim-thumb {
+      width: 88px;
+      height: 88px;
+      border-radius: 22px;
+      object-fit: cover;
+      border: 3px solid #ffffff;
+      margin: 0 auto 12px;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.45);
+      background: #334155;
+    }
+    .dl-anim-game-title {
+      font-size: 18px;
+      font-weight: 900;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+      color: #f8fafc;
+    }
+    .dl-anim-status {
+      font-size: 13px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin-bottom: 16px;
+    }
+    .dl-anim-percent-big {
+      font-size: 42px;
+      font-weight: 900;
+      color: #4ade80;
+      line-height: 1;
+      margin-bottom: 14px;
+      text-shadow: 0 2px 12px rgba(74, 222, 128, 0.45);
+    }
+    .dl-progress-track {
+      width: 100%;
+      height: 18px;
+      background: #090d16;
+      border-radius: 999px;
+      border: 2px solid #334155;
+      overflow: hidden;
+      padding: 2px;
+    }
+    .dl-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #38bdf8, #22c55e);
+      border-radius: 999px;
+      transition: width 0.08s linear;
+    }
+
+    /* Downloads Manager Modal */
+    .downloads-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.72);
+      z-index: 1200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+    }
+    .downloads-modal.open {
+      display: flex;
+    }
+    .downloads-card {
+      background: var(--card-bg);
+      color: var(--text-main);
+      border: 3px solid var(--card-border);
+      border-radius: 26px;
+      width: 100%;
+      max-width: 400px;
+      max-height: 86vh;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      box-shadow: 0 14px 35px rgba(0, 0, 0, 0.55);
+    }
+    .dl-summary-box {
+      background: rgba(56, 189, 248, 0.12);
+      border: 2px solid var(--card-border);
+      border-radius: 18px;
+      padding: 14px;
+      margin-bottom: 14px;
+      text-align: center;
+    }
+    .dl-summary-numbers {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 900;
+      font-size: 15px;
+      margin-bottom: 8px;
+    }
+    .dl-summary-pct {
+      font-size: 20px;
+      color: #16a34a;
+      font-weight: 900;
+    }
+    .dl-summary-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .dl-all-btn {
+      flex: 1;
+      background: linear-gradient(180deg, #4ade80, #16a34a);
+      color: #ffffff;
+      border: 0;
+      padding: 10px 10px;
+      border-radius: 12px;
+      font-weight: 900;
+      font-size: 12.5px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(22, 163, 74, 0.25);
+    }
+    .dl-all-btn:disabled {
+      opacity: 0.55;
+      cursor: default;
+    }
+    .dl-clear-all-btn {
+      background: #ef4444;
+      color: #ffffff;
+      border: 0;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-weight: 900;
+      font-size: 12.5px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .dl-clear-all-btn:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+    .dl-games-list {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-right: 2px;
+      margin-bottom: 14px;
+    }
+    .dl-game-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(128, 128, 128, 0.08);
+      border: 1.5px solid var(--card-border);
+      border-radius: 14px;
+      padding: 8px 10px;
+    }
+    .dl-game-row img {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      object-fit: cover;
+      background: #1e293b;
+      flex-shrink: 0;
+    }
+    .dl-game-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .dl-game-name {
+      font-size: 13.5px;
+      font-weight: 900;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .dl-game-sub {
+      font-size: 11.5px;
+      font-weight: 800;
+      opacity: 0.85;
+    }
+    .dl-row-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .dl-row-btn {
+      border: 0;
+      padding: 7px 11px;
+      border-radius: 10px;
+      font-size: 11.5px;
+      font-weight: 900;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .dl-row-btn.done {
+      background: #22c55e;
+      color: #ffffff;
+    }
+    .dl-row-btn.get {
+      background: #3b82f6;
+      color: #ffffff;
+    }
+    .dl-row-btn.delete {
+      background: #ef4444;
+      color: #ffffff;
+      padding: 7px 9px;
+    }
+
+    /* Settings & Player Modals */
     .settings-modal {
       position: fixed;
       inset: 0;
@@ -751,11 +1038,15 @@
         font-size: 14px;
       }
       .bottom-bar {
-        padding: 0 14px;
+        padding: 0 10px;
+      }
+      .side-circle-btn {
+        width: 48px;
+        height: 48px;
       }
       .play-main-btn {
-        width: 155px;
-        font-size: 22px;
+        max-width: 145px;
+        font-size: 21px;
       }
     }
   </style>
@@ -770,6 +1061,51 @@
         <span id="app-notif-time" class="app-notif-time">now</span>
       </div>
       <div id="app-notif-body" class="app-notif-body">Tap to play your favorite arcade games!</div>
+    </div>
+  </div>
+
+  <!-- First-Time Play Downloading 1% -> 100% Overlay Modal -->
+  <div id="first-download-modal" class="dl-anim-modal" role="dialog" aria-modal="true">
+    <div class="dl-anim-card">
+      <img id="dl-anim-img" class="dl-anim-thumb" src="/stgames-apk/launchericon-192x192.png" alt="Game">
+      <div id="dl-anim-title" class="dl-anim-game-title">GAME TITLE</div>
+      <div id="dl-anim-status" class="dl-anim-status">Downloading Game for Offline Play...</div>
+      <div id="dl-anim-pct" class="dl-anim-percent-big">1%</div>
+      <div class="dl-progress-track">
+        <div id="dl-anim-bar" class="dl-progress-fill"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Downloads Manager Modal (Opened by Tapping SAVED Button in Bottom Bar) -->
+  <div id="downloads-modal" class="downloads-modal" role="dialog" aria-modal="true">
+    <div class="downloads-card">
+      <div class="settings-title">
+        <span>📥 Offline Downloads</span>
+        <button type="button" onclick="closeDownloadsModal()" style="background:none;border:0;color:inherit;font-size:24px;cursor:pointer">&times;</button>
+      </div>
+
+      <div class="dl-summary-box">
+        <div class="dl-summary-numbers">
+          <span id="dl-manager-count">0 / 18 Games Saved</span>
+          <span id="dl-manager-pct" class="dl-summary-pct">0%</span>
+        </div>
+        <div class="dl-progress-track" style="height:14px;">
+          <div id="dl-manager-bar" class="dl-progress-fill" style="width:0%"></div>
+        </div>
+        <div class="dl-summary-actions">
+          <button type="button" id="dl-all-games-btn" class="dl-all-btn" onclick="downloadAllRemainingGames()">
+            ⬇️ Download All
+          </button>
+          <button type="button" id="dl-clear-all-btn" class="dl-clear-all-btn" onclick="clearAllOfflineGames()" title="Delete All Offline Games">
+            <i class="fa-solid fa-trash-can"></i> Delete All
+          </button>
+        </div>
+      </div>
+
+      <div id="dl-games-list" class="dl-games-list"></div>
+
+      <button type="button" class="close-settings" onclick="closeDownloadsModal()">Close</button>
     </div>
   </div>
 
@@ -810,13 +1146,23 @@
   <main id="games-container" class="games-grid"></main>
 
   <footer class="bottom-bar">
-    <button type="button" class="side-circle-btn" onclick="generateReferralLink()" title="Share ST GAMES">
-      <span style="font-size:17px">🎁</span>
-      <span>SHARE</span>
-    </button>
+    <div class="bottom-left-group">
+      <button type="button" class="side-circle-btn" onclick="generateReferralLink()" title="Share ST GAMES">
+        <span style="font-size:16px">🎁</span>
+        <span>SHARE</span>
+      </button>
+      <!-- DOWNLOAD STATUS & DELETE MANAGER BUTTON AT MARKED PLACE -->
+      <button type="button" class="side-circle-btn download-hub-btn" onclick="openDownloadsModal()" title="Offline Downloads & Delete">
+        <span id="bottom-dl-badge" class="dl-percent-badge">0%</span>
+        <i class="fa-solid fa-cloud-arrow-down" style="font-size:15px;margin-bottom:1px"></i>
+        <span>SAVED</span>
+      </button>
+    </div>
+
     <button type="button" class="play-main-btn" onclick="playRandomGame()">PLAY</button>
+
     <button type="button" class="side-circle-btn gear-btn" onclick="openSettings()" title="Settings">
-      <span style="font-size:20px">⚙️</span>
+      <span style="font-size:19px">⚙️</span>
       <span>SETTINGS</span>
     </button>
   </footer>
@@ -947,7 +1293,7 @@ function cleanUrlKey(url) {
   }
 }
 
-/* Strictly deduplicates games by ID, URL, and Title so no game ever shows twice */
+/* Strictly deduplicates games by ID, URL, and Title */
 function deduplicateGamesList(rawList) {
   const seenIds = new Set();
   const seenUrls = new Set();
@@ -973,7 +1319,6 @@ function deduplicateGamesList(rawList) {
   return uniqueList;
 }
 
-/* Load last synced games.json immediately on boot so Offline mode never reverts to old deleted games */
 function loadInitialGamesList() {
   try {
     const cached = JSON.parse(safeGetStorage("st_cached_games_json", "null"));
@@ -990,9 +1335,9 @@ let currentCategory = "all";
 let savedGameIds = loadSavedGames();
 let swRegistration = null;
 let isGameCurrentlyPlaying = false;
+let isDownloadingNow = false;
 window.currentActiveGameKey = "stgames_global";
 
-/* Clean deleted games from savedGameIds so OFFLINE count & list match games.json */
 function cleanSavedGameIds() {
   const validIds = new Set(GAMES_DATA.map(g => g.id));
   savedGameIds = Array.from(new Set(savedGameIds)).filter(id => validIds.has(id));
@@ -1000,7 +1345,7 @@ function cleanSavedGameIds() {
 }
 cleanSavedGameIds();
 
-/* BACKGROUND MUSIC (Plays in Lobby, turns off when playing a game) */
+/* BACKGROUND MUSIC */
 const bgMusic = document.getElementById("bg-music");
 const musicToggle = document.getElementById("music-toggle");
 const ingameMusicBtn = document.getElementById("ingame-music-btn");
@@ -1071,30 +1416,212 @@ async function cacheGameFiles(game){
   }catch(error){}
 }
 
-/* Auto-caches newly added games in the background while online so they work immediately in Offline mode */
-async function syncOfflineCacheWithGamesList() {
-  cleanSavedGameIds();
+/* DELETE SINGLE GAME FROM OFFLINE STORAGE & CACHE */
+async function deleteOfflineGame(game, event) {
+  if (event) {
+    event.stopPropagation();
+    event.preventDefault();
+  }
+
+  savedGameIds = savedGameIds.filter(id => id !== game.id);
+  safeSetStorage("st_saved_offline_games", JSON.stringify(savedGameIds));
+
+  if ("caches" in window) {
+    try {
+      const cache = await caches.open(CACHE_NAME);
+      await cache.delete(fullUrl(game.url));
+    } catch (e) {}
+  }
+
+  updateSavedCounter();
   renderGames();
-
-  if (!navigator.onLine) return;
-
-  let updated = false;
-  for (const game of GAMES_DATA) {
-    await cacheGameFiles(game);
-    if (!savedGameIds.includes(game.id)) {
-      savedGameIds.push(game.id);
-      updated = true;
-    }
-  }
-  if (updated) {
-    safeSetStorage("st_saved_offline_games", JSON.stringify(savedGameIds));
-    renderGames();
-  }
+  renderDownloadsManagerList();
+  showToast("🗑️ Deleted " + game.title + " from Offline!");
 }
 
-/* Syncs strictly with games.json (Does NOT append old deleted games!) */
+/* DELETE ALL OFFLINE GAMES */
+async function clearAllOfflineGames() {
+  if (!savedGameIds.length) return;
+  savedGameIds = [];
+  safeSetStorage("st_saved_offline_games", "[]");
+
+  if ("caches" in window) {
+    try {
+      await caches.delete(CACHE_NAME);
+    } catch (e) {}
+  }
+
+  updateSavedCounter();
+  renderGames();
+  renderDownloadsManagerList();
+  showToast("🗑️ All offline games deleted!");
+}
+
+/* DOWNLOAD BY OPENING GAME ANIMATION (1% -> 5% -> 10% ... -> 100%) */
+function runFirstTimeDownloadAnimation(game, onComplete) {
+  if (isDownloadingNow) return;
+  isDownloadingNow = true;
+
+  const modal = document.getElementById("first-download-modal");
+  const thumb = document.getElementById("dl-anim-img");
+  const title = document.getElementById("dl-anim-title");
+  const status = document.getElementById("dl-anim-status");
+  const pctText = document.getElementById("dl-anim-pct");
+  const bar = document.getElementById("dl-anim-bar");
+
+  thumb.src = fullUrl(game.logo);
+  thumb.onerror = () => { thumb.src = APP_ICON_URL; };
+  title.textContent = game.title;
+  status.textContent = "Downloading Game for Offline Play...";
+  pctText.textContent = "1%";
+  bar.style.width = "1%";
+  modal.classList.add("open");
+
+  const cachePromise = cacheGameFiles(game);
+  let currentPct = 1;
+
+  const interval = setInterval(async () => {
+    const step = currentPct < 15 ? 2 : (currentPct < 85 ? 4 : 3);
+    currentPct = Math.min(100, currentPct + step);
+
+    pctText.textContent = currentPct + "%";
+    bar.style.width = currentPct + "%";
+
+    if (currentPct >= 100) {
+      clearInterval(interval);
+      status.textContent = "Download Complete! 100% ✅";
+      await cachePromise;
+
+      if (!savedGameIds.includes(game.id)) {
+        savedGameIds.push(game.id);
+        safeSetStorage("st_saved_offline_games", JSON.stringify(savedGameIds));
+      }
+      updateSavedCounter();
+      renderGames();
+      renderDownloadsManagerList();
+
+      setTimeout(() => {
+        modal.classList.remove("open");
+        isDownloadingNow = false;
+        if (typeof onComplete === "function") onComplete();
+      }, 360);
+    }
+  }, 40);
+}
+
+/* DOWNLOADS MANAGER POPUP */
+function openDownloadsModal() {
+  renderDownloadsManagerList();
+  document.getElementById("downloads-modal").classList.add("open");
+  history.pushState({ modal: "downloads" }, "", "#downloads");
+}
+
+function closeDownloadsModal() {
+  document.getElementById("downloads-modal").classList.remove("open");
+  if (window.location.hash === "#downloads") history.back();
+}
+
+function renderDownloadsManagerList() {
+  const total = GAMES_DATA.length || 1;
+  const validIds = new Set(GAMES_DATA.map(g => g.id));
+  const downloadedCount = savedGameIds.filter(id => validIds.has(id)).length;
+  const overallPct = Math.round((downloadedCount / total) * 100);
+
+  const countEl = document.getElementById("dl-manager-count");
+  const pctEl = document.getElementById("dl-manager-pct");
+  const barEl = document.getElementById("dl-manager-bar");
+  const allBtn = document.getElementById("dl-all-games-btn");
+  const clearBtn = document.getElementById("dl-clear-all-btn");
+  const listEl = document.getElementById("dl-games-list");
+
+  if (countEl) countEl.textContent = `${downloadedCount} / ${GAMES_DATA.length} Games Saved`;
+  if (pctEl) pctEl.textContent = `${overallPct}%`;
+  if (barEl) barEl.style.width = `${overallPct}%`;
+
+  if (allBtn) {
+    if (downloadedCount >= GAMES_DATA.length) {
+      allBtn.textContent = "✅ All Downloaded (100%)";
+      allBtn.disabled = true;
+    } else {
+      allBtn.textContent = `⬇️ Download All (${GAMES_DATA.length - downloadedCount})`;
+      allBtn.disabled = false;
+    }
+  }
+
+  if (clearBtn) {
+    clearBtn.disabled = downloadedCount === 0;
+  }
+
+  if (!listEl) return;
+  listEl.innerHTML = "";
+
+  GAMES_DATA.forEach(game => {
+    const isSaved = savedGameIds.includes(game.id);
+    const row = document.createElement("div");
+    row.className = "dl-game-row";
+    row.innerHTML = `
+      <img src="${fullUrl(game.logo)}" alt="${game.title}" onerror="this.src='${APP_ICON_URL}'">
+      <div class="dl-game-info">
+        <div class="dl-game-name">${game.title}</div>
+        <div class="dl-game-sub" style="color:${isSaved ? '#16a34a' : '#ef4444'}">
+          ${isSaved ? '100% Downloaded • Offline Ready' : '0% • Tap game to download'}
+        </div>
+      </div>
+      <div class="dl-row-actions">
+        <button type="button" class="dl-row-btn ${isSaved ? 'done' : 'get'} play-or-dl-btn">
+          ${isSaved ? '▶ PLAY' : '⬇️ OPEN'}
+        </button>
+        ${isSaved ? `<button type="button" class="dl-row-btn delete del-single-btn" title="Delete from Offline"><i class="fa-solid fa-trash-can"></i></button>` : ''}
+      </div>
+    `;
+
+    row.querySelector(".play-or-dl-btn").addEventListener("click", () => {
+      closeDownloadsModal();
+      openAndSaveGame(game);
+    });
+
+    const delBtn = row.querySelector(".del-single-btn");
+    if (delBtn) {
+      delBtn.addEventListener("click", (e) => {
+        deleteOfflineGame(game, e);
+      });
+    }
+
+    listEl.appendChild(row);
+  });
+}
+
+async function downloadAllRemainingGames() {
+  if (!navigator.onLine) {
+    showToast("Connect to the internet to download games.");
+    return;
+  }
+  const remaining = GAMES_DATA.filter(g => !savedGameIds.includes(g.id));
+  if (!remaining.length) return;
+
+  const allBtn = document.getElementById("dl-all-games-btn");
+  if (allBtn) allBtn.disabled = true;
+
+  for (let i = 0; i < remaining.length; i++) {
+    const g = remaining[i];
+    if (allBtn) {
+      const stepPct = Math.round(((i + 1) / remaining.length) * 100);
+      allBtn.textContent = `⏳ ${stepPct}% (${g.title})...`;
+    }
+    await cacheGameFiles(g);
+    if (!savedGameIds.includes(g.id)) {
+      savedGameIds.push(g.id);
+      safeSetStorage("st_saved_offline_games", JSON.stringify(savedGameIds));
+    }
+    updateSavedCounter();
+    renderDownloadsManagerList();
+  }
+  renderGames();
+  showToast("100% All Games Downloaded! 🎉");
+}
+
+/* Syncs strictly with games.json without auto-marking games as downloaded */
 async function syncMainPageGamesJson(){
-  // When offline, strictly use the last saved games.json in localStorage (do not let SW return stale cache)
   if (!navigator.onLine) {
     GAMES_DATA = loadInitialGamesList();
     cleanSavedGameIds();
@@ -1102,7 +1629,6 @@ async function syncMainPageGamesJson(){
     return;
   }
 
-  // Cache-busting timestamp ensures fresh games.json when you add or delete a game
   const freshUrl = BASE_URL + "games.json?t=" + Date.now();
   try {
     const res = await fetch(freshUrl, { cache: "no-store" });
@@ -1110,10 +1636,10 @@ async function syncMainPageGamesJson(){
       const data = await res.json();
       const rawList = Array.isArray(data) ? data : (Array.isArray(data.games) ? data.games : []);
       if (rawList.length > 0) {
-        // Use ONLY the deduplicated list from games.json so deleted games disappear completely
         GAMES_DATA = deduplicateGamesList(rawList);
         safeSetStorage("st_cached_games_json", JSON.stringify(GAMES_DATA));
-        await syncOfflineCacheWithGamesList();
+        cleanSavedGameIds();
+        renderGames();
         return;
       }
     }
@@ -1276,6 +1802,11 @@ function updateSavedCounter(){
   const validIds = new Set(GAMES_DATA.map(g => g.id));
   const activeSavedCount = savedGameIds.filter(id => validIds.has(id)).length;
   document.getElementById("saved-count").textContent = activeSavedCount;
+
+  const total = GAMES_DATA.length || 1;
+  const pct = Math.round((activeSavedCount / total) * 100);
+  const badgeEl = document.getElementById("bottom-dl-badge");
+  if (badgeEl) badgeEl.textContent = pct + "%";
 }
 
 function setAppMode(mode){
@@ -1309,7 +1840,7 @@ function renderGames(){
   });
 
   if(currentMode==="offline" && filtered.length===0){
-    container.innerHTML = `<div class="empty-box"><i class="fa-solid fa-cloud-arrow-down"></i><h3>No Offline Games Yet</h3><p>Open the ONLINE tab while connected to automatically save games for offline play.</p><button type="button" class="action-btn" onclick="setAppMode('online')">GO TO ONLINE TAB</button></div>`;
+    container.innerHTML = `<div class="empty-box"><i class="fa-solid fa-cloud-arrow-down"></i><h3>No Offline Games Downloaded</h3><p>Open any game in the ONLINE tab to download it (1%–100%) for offline play.</p><button type="button" class="action-btn" onclick="setAppMode('online')">GO TO ONLINE TAB</button></div>`;
     return;
   }
 
@@ -1317,53 +1848,89 @@ function renderGames(){
     const isSaved = savedGameIds.includes(game.id);
     const badge = game.badge ? `<span class="game-badge">${game.badge.replace("✨ ","")}</span>` : "<span></span>";
     const downloadIcon = isSaved
-      ? `<div class="dl-indicator saved" title="Saved offline"><i class="fa-solid fa-check"></i></div>`
-      : `<div class="dl-indicator" title="Tap to open and cache"><i class="fa-solid fa-arrow-down"></i></div>`;
+      ? `<div class="dl-indicator saved" title="100% Downloaded"><i class="fa-solid fa-check"></i></div>`
+      : `<div class="dl-indicator" title="Tap game to download (1%-100%)"><i class="fa-solid fa-arrow-down"></i></div>`;
+
+    const deleteBtnHtml = isSaved
+      ? `<span role="button" tabindex="0" class="card-del-btn" title="Delete from Offline"><i class="fa-solid fa-trash-can"></i></span>`
+      : ``;
+
     const card = document.createElement("button");
     card.type = "button";
     card.className = "game-card";
     card.setAttribute("aria-label","Open "+game.title);
-    card.innerHTML = `<div class="card-inner" style="background:${game.bg}"><img class="card-artwork" alt="${game.title} game artwork" loading="lazy" decoding="async"><div class="card-overlay"></div><div class="card-header"><div class="game-title"></div><div class="title-underline"></div></div><div class="card-footer">${badge}${downloadIcon}</div></div>`;
+    card.innerHTML = `
+      <div class="card-inner" style="background:${game.bg}">
+        <img class="card-artwork" alt="${game.title} game artwork" loading="lazy" decoding="async">
+        <div class="card-overlay"></div>
+        <div class="card-header">
+          <div class="game-title"></div>
+          <div class="title-underline"></div>
+        </div>
+        <div class="card-footer">
+          ${badge}
+          <div class="card-actions-right">
+            ${deleteBtnHtml}
+            ${downloadIcon}
+          </div>
+        </div>
+      </div>`;
+
     const artwork = card.querySelector(".card-artwork");
     artwork.src = fullUrl(game.logo);
     artwork.addEventListener("error",()=>{
       card.querySelector(".card-inner").classList.add("image-missing");
       artwork.removeAttribute("src");
     },{once:true});
+
     card.querySelector(".game-title").textContent = game.title;
+
+    // Delete button on card removes game from offline storage without opening the game
+    const delBtn = card.querySelector(".card-del-btn");
+    if (delBtn) {
+      delBtn.addEventListener("click", (e) => {
+        deleteOfflineGame(game, e);
+      });
+    }
+
     card.addEventListener("click",()=>openAndSaveGame(game));
     container.appendChild(card);
   });
 }
 
-async function openAndSaveGame(game){
+function launchGameIframeNow(game) {
   isGameCurrentlyPlaying = true;
   bgMusic.pause();
   updateMusicUI();
 
-  if(!navigator.onLine && !savedGameIds.includes(game.id)){
-    showToast("You are offline. Connect once to cache " + game.title + ".");
-    isGameCurrentlyPlaying = false;
-    ensureMusicPlaying();
-    return;
-  }
-
   window.currentActiveGameKey = String(game.id).replace(/[^a-zA-Z0-9_-]/g, "_");
-
-  if(navigator.onLine){
-    cacheGameFiles(game);
-    if(!savedGameIds.includes(game.id)){
-      savedGameIds.push(game.id);
-      safeSetStorage("st_saved_offline_games",JSON.stringify(savedGameIds));
-    }
-  }
-
   const frame = document.getElementById("game-frame");
   document.getElementById("playing-title").textContent = game.title;
   document.getElementById("player-modal").classList.add("open");
   history.pushState({ modal: "game" }, "", "#play");
   frame.src = fullUrl(game.url);
-  renderGames();
+}
+
+async function openAndSaveGame(game){
+  const isAlreadyDownloaded = savedGameIds.includes(game.id);
+
+  if(!navigator.onLine && !isAlreadyDownloaded){
+    showToast("You are offline! Connect once to open & download " + game.title + ".");
+    return;
+  }
+
+  // Download by opening game: runs 1% -> 100% animation when not yet saved offline
+  if (!isAlreadyDownloaded && navigator.onLine) {
+    runFirstTimeDownloadAnimation(game, () => {
+      launchGameIframeNow(game);
+    });
+    return;
+  }
+
+  if (navigator.onLine) {
+    cacheGameFiles(game);
+  }
+  launchGameIframeNow(game);
 }
 
 function closeGame(fromPopState = false){
@@ -1381,8 +1948,11 @@ function closeGame(fromPopState = false){
 window.addEventListener("popstate", () => {
   const playerModal = document.getElementById("player-modal");
   const settingsModal = document.getElementById("settings-modal");
+  const downloadsModal = document.getElementById("downloads-modal");
   if (playerModal && playerModal.classList.contains("open")) {
     closeGame(true);
+  } else if (downloadsModal && downloadsModal.classList.contains("open")) {
+    document.getElementById("downloads-modal").classList.remove("open");
   } else if (settingsModal && settingsModal.classList.contains("open")) {
     closeSettings();
   }
@@ -1458,7 +2028,6 @@ function updateNetworkStatus(){
   const dot = document.getElementById("net-dot");
   dot.classList.toggle("offline",!navigator.onLine);
   if (!navigator.onLine) {
-    // Automatically reload the latest cached games.json list when switching offline
     GAMES_DATA = loadInitialGamesList();
     cleanSavedGameIds();
   }
@@ -1474,9 +2043,13 @@ window.addEventListener("offline", updateNetworkStatus);
 document.getElementById("settings-modal").addEventListener("click",event=>{
   if(event.target.id==="settings-modal") closeSettings();
 });
+document.getElementById("downloads-modal").addEventListener("click",event=>{
+  if(event.target.id==="downloads-modal") closeDownloadsModal();
+});
 document.addEventListener("keydown",event=>{
   if(event.key==="Escape"){
     closeSettings();
+    closeDownloadsModal();
     closeGame();
   }
 });
