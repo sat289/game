@@ -5,11 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ST Games - Advanced Admin Studio</title>
 
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tailwind CSS with explicit class-based dark mode so White Theme fonts always stay dark and visible -->
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class'
+    };
+  </script>
+
+  <!-- Chart.js for Real-Time Telemetry Charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
   <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -21,105 +29,250 @@
       --poki-bg-dark: #07222d;
     }
 
+    /* LIGHT / WHITE THEME (DEFAULT) - HIGH CONTRAST DARK FONTS */
     body {
       font-family: 'Inter', sans-serif;
       background: linear-gradient(135deg, #4ef2e2 0%, #17c3b2 50%, #0d9488 100%);
       background-attachment: fixed;
       overflow-x: hidden;
-      transition: background 0.5s ease, color 0.35s ease;
+      transition: background 0.4s ease, color 0.3s ease;
       position: relative;
-      padding-bottom: 24px;
-      color: #0f172a;
+      padding-bottom: 32px;
+      color: #0f172a !important;
     }
 
+    /* DARK THEME */
     body.dark-theme {
       background: linear-gradient(135deg, #092c35 0%, #061820 50%, #040e14 100%);
-      color: #f8fafc;
+      color: #f8fafc !important;
     }
 
     .brand-font { font-family: 'Fredoka', sans-serif; }
     .code-font { font-family: 'JetBrains Mono', monospace; }
 
+    /* Cards in White Theme vs Dark Theme */
     .feature-hub {
-      border: 1px solid rgba(50, 255, 220, 0.3);
-      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(13, 148, 136, 0.35);
+      background: rgba(255, 255, 255, 0.96);
+      color: #0f172a;
       backdrop-filter: blur(16px);
-      box-shadow: 0 10px 28px rgba(7, 34, 45, 0.15), 0 0 20px rgba(50, 255, 220, 0.1);
+      box-shadow: 0 10px 28px rgba(7, 34, 45, 0.14);
     }
 
     body.dark-theme .feature-hub {
-      background: rgba(8, 22, 30, 0.94) !important;
-      color: #eaf7ff;
+      background: rgba(8, 22, 30, 0.95) !important;
+      color: #f8fafc !important;
       border-color: rgba(50, 255, 220, 0.3);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45), 0 0 20px rgba(50, 255, 220, 0.08);
+    }
+
+    /* Explicit Typography Contrast Rules so White Theme never has invisible text */
+    .theme-heading {
+      color: #07222d !important;
+    }
+    body.dark-theme .theme-heading {
+      color: #32ffdc !important;
+    }
+
+    .theme-text {
+      color: #0f172a !important;
+    }
+    body.dark-theme .theme-text {
+      color: #f8fafc !important;
+    }
+
+    .theme-subtext {
+      color: #334155 !important;
+    }
+    body.dark-theme .theme-subtext {
+      color: #94a3b8 !important;
+    }
+
+    .theme-label {
+      color: #0f766e !important;
+    }
+    body.dark-theme .theme-label {
+      color: #2dd4bf !important;
+    }
+
+    .kpi-card {
+      border: 1px solid rgba(13, 148, 136, 0.3);
+      background: #f0fdfa;
+      color: #0f172a;
+      border-radius: 16px;
+      padding: 14px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .kpi-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(13, 148, 136, 0.16);
+    }
+    body.dark-theme .kpi-card {
+      background: rgba(6, 24, 32, 0.92);
+      color: #f8fafc;
+      border-color: rgba(50, 255, 220, 0.25);
+    }
+
+    .sub-panel {
+      background: #f8fafc;
+      border: 1px solid rgba(13, 148, 136, 0.28);
+      color: #0f172a;
+    }
+    body.dark-theme .sub-panel {
+      background: rgba(6, 20, 28, 0.85);
+      border-color: rgba(50, 255, 220, 0.25);
+      color: #f8fafc;
     }
 
     .neon-input {
       width: 100%;
-      border: 1px solid rgba(13, 148, 136, 0.35);
-      background: rgba(240, 253, 250, 0.92);
-      color: #0f172a;
+      border: 1px solid rgba(13, 148, 136, 0.45);
+      background: #ffffff;
+      color: #0f172a !important;
       border-radius: 12px;
       padding: 10px 12px;
       font-size: 12px;
       font-weight: 600;
       outline: none;
     }
-
+    .neon-input::placeholder {
+      color: #64748b;
+    }
     .neon-input:focus {
-      border-color: #17c3b2;
-      box-shadow: 0 0 0 3px rgba(50, 255, 220, 0.25);
+      border-color: #0d9488;
+      box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.22);
     }
 
     body.dark-theme .neon-input {
       background: #061820;
-      color: #f8fafc;
-      border-color: rgba(50, 255, 220, 0.3);
+      color: #f8fafc !important;
+      border-color: rgba(50, 255, 220, 0.35);
+    }
+    body.dark-theme .neon-input::placeholder {
+      color: #64748b;
     }
 
     .code-textarea {
-      width: 100%; min-height: 320px;
-      background: #040e14; color: #32ffdc;
-      border: 1px solid rgba(50, 255, 220, 0.3);
-      border-radius: 14px; padding: 14px;
-      font-size: 12px; line-height: 1.55; outline: none; resize: vertical;
+      width: 100%;
+      min-height: 300px;
+      background: #040e14;
+      color: #32ffdc !important;
+      border: 1px solid rgba(50, 255, 220, 0.35);
+      border-radius: 14px;
+      padding: 14px;
+      font-size: 12px;
+      line-height: 1.55;
+      outline: none;
+      resize: vertical;
     }
 
     .neon-action {
       border: 1px solid rgba(50, 255, 220, 0.5);
-      border-radius: 12px; padding: 10px 16px;
+      border-radius: 12px;
+      padding: 10px 16px;
       background: linear-gradient(120deg, #0d9488, #0f766e);
-      color: white; font-size: 12px; font-weight: 800;
-      box-shadow: 0 0 16px rgba(50, 255, 220, 0.2);
-      transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      color: #ffffff !important;
+      font-size: 12px;
+      font-weight: 800;
+      box-shadow: 0 4px 14px rgba(13, 148, 136, 0.3);
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
       cursor: pointer;
     }
-    .neon-action:hover:not(:disabled) { box-shadow: 0 0 24px rgba(50, 255, 220, 0.4); transform: translateY(-1px); }
-    .neon-action:disabled { opacity: 0.6; cursor: not-allowed; }
+    .neon-action:hover:not(:disabled) {
+      box-shadow: 0 0 22px rgba(50, 255, 220, 0.45);
+      transform: translateY(-1px);
+    }
+    .neon-action:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
 
     .chip-btn {
-      font-size: 11px; font-weight: 700; padding: 6px 10px; border-radius: 10px;
-      border: 1px solid rgba(13, 148, 136, 0.3); background: rgba(50, 255, 220, 0.1); color: #0d9488;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 11px;
+      border-radius: 10px;
+      border: 1px solid rgba(13, 148, 136, 0.4);
+      background: rgba(13, 148, 136, 0.12);
+      color: #0f766e !important;
       cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
     }
-    body.dark-theme .chip-btn { color: #32ffdc; background: rgba(50, 255, 220, 0.12); }
+    .chip-btn:hover {
+      background: rgba(13, 148, 136, 0.22);
+    }
+    .chip-btn.active-tab {
+      background: #0d9488 !important;
+      color: #ffffff !important;
+      border-color: #0d9488 !important;
+    }
+    body.dark-theme .chip-btn {
+      color: #32ffdc !important;
+      background: rgba(50, 255, 220, 0.12);
+      border-color: rgba(50, 255, 220, 0.3);
+    }
+    body.dark-theme .chip-btn.active-tab {
+      background: #17c3b2 !important;
+      color: #040e14 !important;
+      border-color: #32ffdc !important;
+    }
+
+    @keyframes pulseDot {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.35); opacity: 0.55; }
+    }
+    .live-dot {
+      animation: pulseDot 1.8s infinite ease-in-out;
+    }
   </style>
 </head>
 
 <body class="min-h-screen flex flex-col justify-between">
 
-  <!-- PASSWORD GATE -->
-  <div id="passwordModal" class="fixed inset-0 z-[99999] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toastContainer" class="fixed top-4 right-4 z-[100001] flex flex-col gap-2 max-w-sm w-full pointer-events-none px-3 sm:px-0"></div>
+
+  <!-- CONFIRMATION MODAL -->
+  <div id="confirmModal" class="fixed inset-0 z-[100000] hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="feature-hub max-w-sm w-full p-5 rounded-2xl border border-teal-500/50 shadow-2xl">
+      <div class="flex items-center gap-2.5 mb-2">
+        <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center text-base font-bold">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <h3 id="confirmModalTitle" class="brand-font text-base font-bold theme-heading">Confirm Action</h3>
+      </div>
+      <p id="confirmModalMessage" class="text-xs theme-subtext mb-4 leading-relaxed"></p>
+      <div class="flex items-center justify-end gap-2">
+        <button type="button" onclick="closeConfirmModal(false)" class="chip-btn">Cancel</button>
+        <button type="button" onclick="closeConfirmModal(true)" class="neon-action !bg-gradient-to-r !from-rose-600 !to-red-600 !py-2 !px-4">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STRICT PASSWORD GATE (NO PASSCODE SHOWN ON SCREEN) -->
+  <div id="passwordModal" class="fixed inset-0 z-[99999] bg-slate-950/92 backdrop-blur-md flex items-center justify-center p-4">
     <div class="feature-hub max-w-sm w-full p-6 rounded-3xl text-center shadow-2xl border border-[#32ffdc]/50">
       <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-gradient-to-tr from-teal-500 to-cyan-400 text-slate-950 flex items-center justify-center text-2xl font-black shadow-lg">
         <i class="fa-solid fa-lock"></i>
       </div>
-      <h2 class="brand-font text-lg font-bold text-[#07222d] dark:text-[#32ffdc] mb-1">Admin Studio Access</h2>
-      <p class="text-[11px] text-slate-500 mb-4">Enter security passcode</p>
-      
-      <div class="relative flex items-center mb-4">
+      <h2 class="brand-font text-lg font-bold theme-heading mb-1">Admin Studio Access</h2>
+      <p class="text-[11px] theme-subtext mb-4">Enter your security passcode to unlock console</p>
+
+      <div class="relative flex items-center mb-3">
         <input id="passcodeInput" type="password" class="neon-input pr-12 text-center text-lg tracking-widest font-mono" placeholder="•••••••" autofocus onkeydown="if(event.key==='Enter') verifyAdminPassword()">
         <button type="button" onclick="togglePasscodeVisibility()" class="absolute right-3 text-lg" title="Toggle visibility">🙈</button>
       </div>
+
+      <p id="passcodeErrorMsg" class="hidden text-xs font-bold text-rose-600 dark:text-rose-400 mb-3">
+        <i class="fa-solid fa-circle-exclamation mr-1"></i> Incorrect passcode. Access denied.
+      </p>
 
       <button type="button" onclick="verifyAdminPassword()" class="neon-action w-full py-2.5">
         <i class="fa-solid fa-key mr-1"></i> Unlock Admin Console
@@ -127,88 +280,288 @@
     </div>
   </div>
 
-  <main class="max-w-4xl w-full mx-auto px-3.5 sm:px-6 pt-4 pb-12 relative z-10">
-    <header class="feature-hub rounded-2xl p-4 mb-5 flex items-center justify-between">
+  <main class="max-w-5xl w-full mx-auto px-3.5 sm:px-6 pt-4 pb-12 relative z-10">
+    <!-- HEADER -->
+    <header class="feature-hub rounded-2xl p-4 mb-5 flex flex-wrap items-center justify-between gap-3">
       <div class="flex items-center gap-3">
-        <a href="index.html" class="w-10 h-10 rounded-xl bg-[#07222d] flex items-center justify-center text-[#32ffdc] hover:scale-105 transition shadow">
+        <a href="https://stgames.online" target="_blank" rel="noopener noreferrer" title="Open stgames.online" class="w-10 h-10 rounded-xl bg-[#07222d] flex items-center justify-center text-[#32ffdc] hover:scale-105 transition shadow">
           <i class="fa-solid fa-arrow-left"></i>
         </a>
         <div>
-          <h1 class="brand-font text-base sm:text-lg font-bold uppercase text-[#07222d] dark:text-white flex items-center gap-2">
-            <i class="fa-solid fa-shield-halved text-[#17c3b2]"></i> Advanced Admin Studio
+          <h1 class="brand-font text-base sm:text-lg font-bold uppercase theme-heading flex items-center gap-2">
+            <i class="fa-solid fa-shield-halved text-[#0d9488] dark:text-[#32ffdc]"></i> Advanced Admin Studio
           </h1>
-          <p class="text-[11px] text-slate-500">Global sync, notice manager &amp; game publisher</p>
+          <p class="text-[11px] theme-subtext font-medium">Global sync, live tracking, notice manager &amp; game publisher</p>
         </div>
       </div>
-      <button onclick="toggleTheme()" class="w-9 h-9 rounded-xl border border-[#17c3b2]/40 flex items-center justify-center text-lg">🌓</button>
+
+      <div class="flex items-center gap-2">
+        <button type="button" onclick="lockAdminConsole()" class="chip-btn" title="Lock Admin Studio">
+          <i class="fa-solid fa-lock"></i> Lock
+        </button>
+        <button type="button" onclick="toggleTheme()" id="themeToggleBtn" class="w-9 h-9 rounded-xl border border-teal-600/40 flex items-center justify-center text-lg bg-teal-500/10" title="Switch White / Dark Theme">🌓</button>
+      </div>
     </header>
 
-    <!-- VISUAL TOKEN REFERENCE CARD (PLACED ABOVE SECTION 1) -->
+    <!-- VISUAL TOKEN REFERENCE CARD -->
     <section class="feature-hub rounded-2xl p-4 mb-5 text-center">
-      <h3 class="brand-font text-xs font-bold uppercase text-teal-600 dark:text-[#32ffdc] mb-2 flex items-center justify-center gap-1.5">
+      <h3 class="brand-font text-xs font-bold uppercase theme-label mb-2 flex items-center justify-center gap-1.5">
         <i class="fa-regular fa-image"></i> Reference Token Card
       </h3>
       <div class="max-w-md mx-auto rounded-xl overflow-hidden border border-teal-500/30 shadow-md bg-white dark:bg-slate-900 p-2">
-        <img src="logo/4833_2.jpg" alt="Token Reference Card" class="w-full h-auto rounded-lg object-contain">
+        <img id="tokenRefImg" src="https://stgames.online/logo/4833_2.jpg" alt="Token Reference Card" class="w-full h-auto max-h-48 rounded-lg object-contain">
       </div>
-      <p class="text-[10px] text-slate-500 mt-2">View your token details above to enter them into Section 1 below.</p>
+      <p class="text-[10px] theme-subtext mt-2 font-medium">View your token details above to enter them into Section 1 below.</p>
     </section>
 
-    <!-- GITHUB CONFIGURATION -->
+    <!-- SECTION 1: GITHUB CONFIGURATION -->
     <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
-      <h2 class="brand-font text-base font-bold text-[#07222d] dark:text-[#32ffdc] mb-3">1. GitHub Credentials</h2>
+      <h2 class="brand-font text-base font-bold theme-heading mb-3">1. GitHub Credentials</h2>
 
       <div class="grid sm:grid-cols-4 gap-3 mb-3">
-        <div><label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1">Username</label><input id="ghOwner" class="neon-input" value="sat289"></div>
-        <div><label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1">Repository</label><input id="ghRepo" class="neon-input" value="game"></div>
-        <div><label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1">Branch</label><input id="ghBranch" class="neon-input" value="main"></div>
         <div>
-          <label class="block text-[10px] font-extrabold uppercase text-teal-600 mb-1">Personal Token</label>
+          <label class="block text-[10px] font-extrabold uppercase theme-label mb-1">Username</label>
+          <input id="ghOwner" class="neon-input" value="sat289">
+        </div>
+        <div>
+          <label class="block text-[10px] font-extrabold uppercase theme-label mb-1">Repository</label>
+          <input id="ghRepo" class="neon-input" value="game">
+        </div>
+        <div>
+          <label class="block text-[10px] font-extrabold uppercase theme-label mb-1">Branch</label>
+          <input id="ghBranch" class="neon-input" value="main">
+        </div>
+        <div>
+          <label class="block text-[10px] font-extrabold uppercase theme-label mb-1">Personal Token</label>
           <div class="relative flex items-center">
             <input id="ghToken" type="password" class="neon-input pr-10" placeholder="Paste token here">
-            <button type="button" onclick="toggleTokenVisibility()" class="absolute right-3 text-sm text-slate-500" title="Toggle visibility">🙈</button>
+            <button type="button" onclick="toggleTokenVisibility()" class="absolute right-3 text-sm theme-subtext" title="Toggle visibility">🙈</button>
           </div>
         </div>
       </div>
-      <button type="button" onclick="saveGitHubCreds()" class="neon-action"><i class="fa-solid fa-floppy-disk mr-1"></i> Save Credentials</button>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <button type="button" onclick="saveGitHubCreds()" class="neon-action">
+          <i class="fa-solid fa-floppy-disk mr-1"></i> Save Credentials
+        </button>
+        <span id="credSaveStatus" class="text-xs font-bold theme-label"></span>
+      </div>
     </section>
 
-    <!-- NOTICE MANAGER -->
+    <!-- =====================================================================
+         SECTION 2: REAL LIVE TRACKING (WEBSITE VIEWS, APP DOWNLOADS & LOGINS)
+    ====================================================================== -->
+    <section id="liveTrackingSection" class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
+      <div class="flex flex-wrap items-center justify-between gap-3 pb-3 mb-4 border-b border-teal-500/25">
+        <div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <h2 class="brand-font text-base font-bold theme-heading flex items-center gap-2">
+              <i class="fa-solid fa-chart-line text-teal-600 dark:text-[#32ffdc]"></i> 2. Live Website, App Downloads &amp; Logins Tracker
+            </h2>
+            <span id="liveConnStatusBadge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-teal-500/15 theme-label border border-teal-500/30">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 live-dot"></span> Connecting...
+            </span>
+          </div>
+          <p class="text-[11px] theme-subtext mt-0.5 font-medium">
+            Fetches real counts from Cloud Counter API (<span class="code-font">stgames_sat289_game</span>), GitHub Traffic API, Releases &amp; <span class="code-font">analytics.json</span>
+          </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <select id="autoRefreshSelect" onchange="changeRefreshInterval()" class="neon-input !w-auto !py-1.5 !px-2.5 text-[11px]">
+            <option value="15000">🔄 Auto-Refresh: 15s</option>
+            <option value="30000">🔄 Auto-Refresh: 30s</option>
+            <option value="60000">🔄 Auto-Refresh: 60s</option>
+            <option value="0">⏸️ Auto-Refresh: Off</option>
+          </select>
+          <button type="button" onclick="fetchAllRealTelemetry(true)" class="chip-btn">
+            <i id="syncSpinnerIcon" class="fa-solid fa-rotate"></i> Refresh Live Data
+          </button>
+          <button type="button" onclick="autoInstallTrackerOnGitHub()" id="installTrackerBtn" class="neon-action !py-1.5 !px-3 !text-[11px]">
+            <i class="fa-solid fa-bolt"></i> Activate Tracker in index.html
+          </button>
+        </div>
+      </div>
+
+      <!-- 4 REAL KPI CARDS -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+        <!-- 1. Website Views -->
+        <div class="kpi-card">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider theme-label">Website Views</span>
+            <span class="w-7 h-7 rounded-lg bg-teal-500/15 theme-label flex items-center justify-center">
+              <i class="fa-solid fa-eye"></i>
+            </span>
+          </div>
+          <div id="realTotalViews" class="text-2xl sm:text-3xl font-black theme-text code-font">0</div>
+          <div class="mt-2 pt-2 border-t border-teal-500/20 flex items-center justify-between text-[10px] theme-subtext font-semibold">
+            <span>GitHub 14d Views: <strong id="realGhViews" class="theme-text">0</strong></span>
+            <span>Uniques: <strong id="realGhUniques" class="theme-text">0</strong></span>
+          </div>
+        </div>
+
+        <!-- 2. App Downloads (APK + PWA) -->
+        <div class="kpi-card">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider theme-label">App Downloads</span>
+            <span class="w-7 h-7 rounded-lg bg-teal-500/15 theme-label flex items-center justify-center">
+              <i class="fa-brands fa-android text-base"></i>
+            </span>
+          </div>
+          <div id="realTotalDownloads" class="text-2xl sm:text-3xl font-black theme-text code-font">0</div>
+          <div class="mt-2 pt-2 border-t border-teal-500/20 flex items-center justify-between text-[10px] theme-subtext font-semibold">
+            <span>APK Clicks/Rel: <strong id="realApkDownloads" class="theme-text">0</strong></span>
+            <span>PWA Installs: <strong id="realPwaInstalls" class="theme-text">0</strong></span>
+          </div>
+        </div>
+
+        <!-- 3. Member Logins -->
+        <div class="kpi-card">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider theme-label">Member Logins</span>
+            <span class="w-7 h-7 rounded-lg bg-teal-500/15 theme-label flex items-center justify-center">
+              <i class="fa-solid fa-user-check"></i>
+            </span>
+          </div>
+          <div id="realMemberLogins" class="text-2xl sm:text-3xl font-black theme-text code-font">0</div>
+          <div class="mt-2 pt-2 border-t border-teal-500/20 flex items-center justify-between text-[10px] theme-subtext font-semibold">
+            <span>App Opens: <strong id="realAppLaunches" class="theme-text">0</strong></span>
+            <span>Logged Events: <strong id="realLoggedMembersCount" class="theme-text">0</strong></span>
+          </div>
+        </div>
+
+        <!-- 4. Game Plays & Repo Status -->
+        <div class="kpi-card">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider theme-label">Game Plays</span>
+            <span class="w-7 h-7 rounded-lg bg-teal-500/15 theme-label flex items-center justify-center">
+              <i class="fa-solid fa-gamepad"></i>
+            </span>
+          </div>
+          <div id="realGamePlays" class="text-2xl sm:text-3xl font-black theme-text code-font">0</div>
+          <div class="mt-2 pt-2 border-t border-teal-500/20 flex items-center justify-between text-[10px] theme-subtext font-semibold">
+            <span>Published Games: <strong id="realPublishedGamesCount" class="theme-text">0</strong></span>
+            <span>Repo Stars: <strong id="realRepoStars" class="theme-text">0</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHARTS ROW: GITHUB 14-DAY TRAFFIC CHART & LIVE COUNTER BREAKDOWN -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+        <div class="lg:col-span-2 sub-panel p-4 rounded-2xl">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <div>
+              <h3 class="text-xs font-extrabold uppercase tracking-wider theme-heading">
+                <i class="fa-solid fa-chart-column mr-1"></i> Real Traffic &amp; Event History
+              </h3>
+              <p id="trafficChartNote" class="text-[10px] theme-subtext font-medium">
+                Displays daily GitHub repository traffic (when Token is saved) and live counter totals.
+              </p>
+            </div>
+          </div>
+          <div class="relative h-60">
+            <canvas id="realTrafficChart"></canvas>
+          </div>
+        </div>
+
+        <div class="sub-panel p-4 rounded-2xl flex flex-col justify-between">
+          <div>
+            <h3 class="text-xs font-extrabold uppercase tracking-wider theme-heading mb-1">
+              <i class="fa-solid fa-chart-pie mr-1"></i> Live Metrics Distribution
+            </h3>
+            <p class="text-[10px] theme-subtext font-medium mb-2">
+              Real ratio of Views, APK/PWA Downloads, Logins &amp; Game Plays
+            </p>
+          </div>
+          <div class="relative h-52">
+            <canvas id="realDistributionChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- REAL EVENT LOG TABLE (FROM analytics.json ON GITHUB) -->
+      <div class="sub-panel p-4 rounded-2xl">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <div>
+            <h3 class="text-xs font-extrabold uppercase tracking-wider theme-heading">
+              <i class="fa-solid fa-list-ul mr-1"></i> Real Recorded Events (<span class="code-font">analytics.json</span>)
+            </h3>
+            <p id="lastSyncTimestamp" class="text-[10px] theme-subtext font-medium">
+              Waiting for first sync...
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center gap-1.5">
+            <button type="button" onclick="filterRealEvents('all')" id="evFilter_all" class="chip-btn active-tab !py-1 !px-2.5 !text-[10px]">All</button>
+            <button type="button" onclick="filterRealEvents('login')" id="evFilter_login" class="chip-btn !py-1 !px-2.5 !text-[10px]">Logins</button>
+            <button type="button" onclick="filterRealEvents('download')" id="evFilter_download" class="chip-btn !py-1 !px-2.5 !text-[10px]">App Downloads</button>
+            <button type="button" onclick="filterRealEvents('view')" id="evFilter_view" class="chip-btn !py-1 !px-2.5 !text-[10px]">Views / Plays</button>
+            <button type="button" onclick="exportRealTelemetryCSV()" class="chip-btn !py-1 !px-2.5 !text-[10px]">
+              <i class="fa-solid fa-file-csv"></i> Export CSV
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto max-h-64 overflow-y-auto rounded-xl border border-teal-500/25">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead class="bg-teal-500/15 text-[10px] uppercase font-extrabold theme-heading sticky top-0 backdrop-blur-md">
+              <tr>
+                <th class="py-2.5 px-3">Type</th>
+                <th class="py-2.5 px-3">User / Detail</th>
+                <th class="py-2.5 px-3">Device / Mode</th>
+                <th class="py-2.5 px-3">Page / Action</th>
+                <th class="py-2.5 px-3 text-right">Timestamp</th>
+              </tr>
+            </thead>
+            <tbody id="realEventsTableBody" class="divide-y divide-teal-500/15 text-[11px]">
+              <tr>
+                <td colspan="5" class="py-6 text-center theme-subtext font-medium">
+                  No custom member events logged in <span class="code-font">analytics.json</span> yet. Live totals above are synced directly from the Cloud Counter &amp; GitHub API.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3: NOTICE MANAGER -->
     <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
-      <h2 class="brand-font text-base font-bold text-[#07222d] dark:text-[#32ffdc] mb-3">2. Announcement Notice Manager</h2>
+      <h2 class="brand-font text-base font-bold theme-heading mb-3">3. Announcement Notice Manager</h2>
       <textarea id="noticeInput" class="neon-input font-semibold mb-3" rows="2">📢 NOTICE: Welcome to ST GAMES — Enjoy playing and check back for new games and updates!</textarea>
-      <button type="button" onclick="publishNotice()" class="neon-action !bg-gradient-to-r !from-amber-600 !to-orange-600"><i class="fa-solid fa-paper-plane mr-1"></i> Update Notice on All Phones</button>
+      <button type="button" onclick="publishNotice()" class="neon-action !bg-gradient-to-r !from-amber-600 !to-orange-600">
+        <i class="fa-solid fa-paper-plane mr-1"></i> Update Notice on All Phones
+      </button>
     </section>
 
-    <!-- ADD GAME PUBLISHER -->
+    <!-- SECTION 4: ADD GAME PUBLISHER -->
     <section class="feature-hub rounded-2xl p-5 mb-5">
-      <h2 class="brand-font text-base font-bold text-[#07222d] dark:text-[#32ffdc] mb-3">3. Add &amp; Publish Game to All Phones</h2>
+      <h2 class="brand-font text-base font-bold theme-heading mb-3">4. Add &amp; Publish Game to All Phones</h2>
       <form id="addGameForm" onsubmit="handleAddGame(event)" class="space-y-3">
         <div class="grid sm:grid-cols-2 gap-3">
           <div>
-            <label class="block text-[11px] font-bold text-teal-600 mb-1">Game Title *</label>
+            <label class="block text-[11px] font-bold theme-label mb-1">Game Title *</label>
             <input id="gameTitle" required class="neon-input" placeholder="e.g., Salazar Alchemy" />
           </div>
           <div>
-            <label class="block text-[11px] font-bold text-teal-600 mb-1">Game URL Path *</label>
+            <label class="block text-[11px] font-bold theme-label mb-1">Game URL Path *</label>
             <input id="gamePath" required class="neon-input" placeholder="e.g., game/salazar.html" />
           </div>
         </div>
 
         <div class="grid sm:grid-cols-2 gap-3">
           <div>
-            <label class="block text-[11px] font-bold text-teal-600 mb-1">Upload Logo Image</label>
+            <label class="block text-[11px] font-bold theme-label mb-1">Upload Logo Image</label>
             <input id="logoFile" type="file" accept="image/*" class="neon-input text-[10px]">
           </div>
           <div>
-            <label class="block text-[11px] font-bold text-teal-600 mb-1">Upload Game HTML File (Optional)</label>
+            <label class="block text-[11px] font-bold theme-label mb-1">Upload Game HTML File (Optional)</label>
             <input id="gameHtmlFile" type="file" accept=".html,.htm" class="neon-input text-[10px]">
           </div>
         </div>
 
         <div class="grid sm:grid-cols-2 gap-3">
           <div>
-            <label class="block text-[11px] font-bold text-teal-600 mb-1">Category</label>
+            <label class="block text-[11px] font-bold theme-label mb-1">Category</label>
             <select id="gameCategory" class="neon-input">
               <option value="popular">Popular / Hot</option>
               <option value="1v1">1v1 Battle</option>
@@ -218,7 +571,7 @@
             </select>
           </div>
           <div>
-            <label class="block text-[11px] font-bold text-teal-600 mb-1">Bento Box Size</label>
+            <label class="block text-[11px] font-bold theme-label mb-1">Bento Box Size</label>
             <select id="gameSize" class="neon-input">
               <option value="normal">Normal Square</option>
               <option value="large">Large Bento Box (2x2)</option>
@@ -227,7 +580,7 @@
         </div>
 
         <div class="flex items-center justify-between pt-2 gap-3">
-          <span id="publishGameStatus" class="text-xs font-bold text-teal-600 dark:text-[#32ffdc]"></span>
+          <span id="publishGameStatus" class="text-xs font-bold theme-label"></span>
           <button id="publishGameBtn" type="submit" class="neon-action !bg-gradient-to-r !from-emerald-600 !to-teal-600">
             <i class="fa-solid fa-cloud-arrow-up mr-1"></i> Publish Game to All Phones
           </button>
@@ -238,75 +591,67 @@
     <!-- PUBLISHED GAMES LIST -->
     <section class="feature-hub rounded-2xl p-5 mb-5">
       <div class="flex items-center justify-between mb-3">
-        <h2 class="brand-font text-base font-bold text-[#07222d] dark:text-[#32ffdc]">Published Games (<span id="statCustom">0</span>)</h2>
-        <button onclick="wipeAllCustomGames()" class="text-xs font-bold text-rose-500 hover:underline">Clear All</button>
+        <h2 class="brand-font text-base font-bold theme-heading">Published Games (<span id="statCustom">0</span>)</h2>
+        <button type="button" onclick="wipeAllCustomGames()" class="text-xs font-bold text-rose-600 dark:text-rose-400 hover:underline">Clear All</button>
       </div>
       <div id="customGamesContainer" class="space-y-2">
-        <div class="text-xs opacity-60 py-4 text-center">No custom games published yet.</div>
+        <div class="text-xs theme-subtext py-4 text-center font-medium">No custom games published yet.</div>
       </div>
     </section>
 
-    <!-- SECTION 4: ALL GAMES MANAGEMENT -->
+    <!-- SECTION 5: ALL GAMES MANAGEMENT -->
     <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
-
       <div class="flex items-center justify-between mb-3">
         <div>
-          <h2 class="brand-font text-base font-bold text-[#07222d] dark:text-[#32ffdc]">
-            <i class="fa-solid fa-gamepad"></i> 4. All Games Management
+          <h2 class="brand-font text-base font-bold theme-heading">
+            <i class="fa-solid fa-gamepad"></i> 5. All Games Management
           </h2>
-          <p class="text-[10px] text-slate-500 mt-1">
+          <p class="text-[10px] theme-subtext mt-1 font-medium">
             Edit, reposition and customize every game.
           </p>
         </div>
 
-        <button onclick="loadAllGames()" class="chip-btn">
+        <button type="button" onclick="loadAllGames()" class="chip-btn">
           <i class="fa-solid fa-rotate"></i> Refresh
         </button>
       </div>
 
       <div class="grid grid-cols-2 gap-2 mb-3">
-        <div class="p-3 rounded-xl bg-teal-500/10 text-center">
-          <div class="text-2xl font-black text-teal-600" id="allGamesCount">0</div>
-          <div class="text-[10px] font-bold">TOTAL GAMES</div>
+        <div class="p-3 rounded-xl bg-teal-500/15 text-center border border-teal-500/25">
+          <div class="text-2xl font-black theme-heading" id="allGamesCount">0</div>
+          <div class="text-[10px] font-extrabold theme-text">TOTAL GAMES</div>
         </div>
-        <div class="p-3 rounded-xl bg-cyan-500/10 text-center">
-          <div class="text-2xl font-black text-cyan-600" id="editedGamesCount">0</div>
-          <div class="text-[10px] font-bold">EDITED GAMES</div>
+        <div class="p-3 rounded-xl bg-cyan-500/15 text-center border border-cyan-500/25">
+          <div class="text-2xl font-black theme-heading" id="editedGamesCount">0</div>
+          <div class="text-[10px] font-extrabold theme-text">EDITED GAMES</div>
         </div>
       </div>
 
-      <input id="gameSearch"
-        class="neon-input mb-3"
-        placeholder="🔎 Search all games..."
-        oninput="filterAllGames()">
+      <input id="gameSearch" class="neon-input mb-3" placeholder="🔎 Search all games..." oninput="filterAllGames()">
 
-      <div id="allGamesStatus"
-        class="text-xs text-center text-slate-500 py-2">
+      <div id="allGamesStatus" class="text-xs text-center theme-subtext font-medium py-2">
         Press Refresh to load games from GitHub.
       </div>
 
       <div id="allGamesList" class="space-y-2"></div>
 
-      <div id="gameEditPanel"
-        class="hidden mt-4 p-4 rounded-2xl border border-teal-500/40 bg-teal-500/5">
-
-        <h3 class="font-black text-sm text-teal-700 dark:text-[#32ffdc] mb-3">
+      <div id="gameEditPanel" class="hidden mt-4 p-4 rounded-2xl border border-teal-500/40 sub-panel">
+        <h3 class="font-black text-sm theme-heading mb-3">
           <i class="fa-solid fa-pen-to-square"></i> EDIT GAME
         </h3>
 
         <input type="hidden" id="editGameIndex">
 
-        <label class="block text-xs font-bold mb-1">Game Name</label>
+        <label class="block text-xs font-bold theme-label mb-1">Game Name</label>
         <input id="editGameTitle" class="neon-input mb-3">
 
-        <label class="block text-xs font-bold mb-1">Game URL</label>
+        <label class="block text-xs font-bold theme-label mb-1">Game URL</label>
         <input id="editGameUrl" class="neon-input mb-3">
 
-        <label class="block text-xs font-bold mb-1">Change Game Logo</label>
-        <input id="editGameLogo" type="file"
-          accept="image/*" class="neon-input mb-3">
+        <label class="block text-xs font-bold theme-label mb-1">Change Game Logo</label>
+        <input id="editGameLogo" type="file" accept="image/*" class="neon-input mb-3">
 
-        <label class="block text-xs font-bold mb-1">Category</label>
+        <label class="block text-xs font-bold theme-label mb-1">Category</label>
         <select id="editGameCategory" class="neon-input mb-3">
           <option value="popular">Popular / Hot</option>
           <option value="1v1">1v1 Battle</option>
@@ -315,65 +660,72 @@
           <option value="sports">Sports</option>
         </select>
 
-        <label class="block text-xs font-bold mb-1">Position around Popular Games</label>
+        <label class="block text-xs font-bold theme-label mb-1">Position around Popular Games</label>
         <select id="editGamePosition" class="neon-input mb-3">
           <option value="before-popular">Before Popular Games</option>
           <option value="popular">Inside Popular Games</option>
           <option value="after-popular">After Popular Games</option>
         </select>
 
-        <label class="block text-xs font-bold mb-1">Game Card Size</label>
+        <label class="block text-xs font-bold theme-label mb-1">Game Card Size</label>
         <select id="editGameSize" class="neon-input mb-3">
           <option value="normal">Normal</option>
           <option value="large">Large Bento (2x2)</option>
         </select>
 
-        <label class="block text-xs font-bold mb-1">Logo Display Size</label>
+        <label class="block text-xs font-bold theme-label mb-1">Logo Display Size</label>
         <select id="editLogoSize" class="neon-input mb-4">
           <option value="small">Small Logo</option>
           <option value="large">Large Logo</option>
         </select>
 
         <div class="flex flex-wrap gap-2">
-          <button onclick="saveGameEdit()" class="neon-action flex-1">
+          <button type="button" onclick="saveGameEdit()" class="neon-action flex-1">
             <i class="fa-solid fa-cloud-arrow-up"></i> Save to GitHub
           </button>
-
-          <button onclick="closeGameEditor()"
-            class="chip-btn">Cancel</button>
+          <button type="button" onclick="closeGameEditor()" class="chip-btn">Cancel</button>
         </div>
-
       </div>
     </section>
 
-    <!-- SECTION 5: DIRECT GITHUB CODE EDITOR & LIVE PREVIEW -->
+    <!-- SECTION 6: DIRECT GITHUB CODE EDITOR & LIVE PREVIEW -->
     <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
       <div class="flex flex-wrap items-center justify-between mb-3 pb-2 border-b border-teal-500/25 gap-2">
-        <h2 class="brand-font text-base font-bold text-[#07222d] dark:text-[#32ffdc]"><i class="fa-solid fa-code text-teal-500"></i> 5. Direct GitHub Code Editor</h2>
+        <h2 class="brand-font text-base font-bold theme-heading">
+          <i class="fa-solid fa-code text-teal-600 dark:text-[#32ffdc]"></i> 6. Direct GitHub Code Editor
+        </h2>
         <div class="flex items-center flex-wrap gap-2">
-          <button type="button" onclick="openLivePreview()" class="chip-btn !bg-teal-500/20"><i class="fa-solid fa-eye mr-1"></i> Live Preview</button>
-          <button type="button" onclick="browseRepoDirectory('')" class="chip-btn"><i class="fa-solid fa-folder-tree mr-1"></i> Browse Files</button>
+          <button type="button" onclick="openLivePreview()" class="chip-btn">
+            <i class="fa-solid fa-eye mr-1"></i> Live Preview
+          </button>
+          <button type="button" onclick="browseRepoDirectory('')" class="chip-btn">
+            <i class="fa-solid fa-folder-tree mr-1"></i> Browse Files
+          </button>
         </div>
       </div>
 
-      <div id="repoBrowserPanel" class="hidden mb-3 p-3 rounded-xl border border-teal-500/30 bg-slate-100 dark:bg-slate-950">
-        <div class="flex items-center justify-between text-xs font-extrabold text-teal-700 dark:text-teal-300 mb-2">
+      <div id="repoBrowserPanel" class="hidden mb-3 p-3 rounded-xl border border-teal-500/30 sub-panel">
+        <div class="flex items-center justify-between text-xs font-extrabold theme-label mb-2">
           <span id="browserCurrentDir" class="code-font">/root</span>
-          <button type="button" onclick="document.getElementById('repoBrowserPanel').classList.add('hidden')" class="text-rose-500 font-bold">Close ✕</button>
+          <button type="button" onclick="document.getElementById('repoBrowserPanel').classList.add('hidden')" class="text-rose-600 dark:text-rose-400 font-bold">Close ✕</button>
         </div>
         <div id="repoFilesList" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto"></div>
       </div>
 
       <div class="grid sm:grid-cols-[1fr_auto] gap-2.5 mb-3">
         <input id="ghFilePath" class="neon-input code-font" placeholder="File path (e.g., index.html or games.json)" value="index.html">
-        <button type="button" onclick="fetchFileFromGitHub()" class="neon-action"><i class="fa-solid fa-cloud-arrow-down mr-1"></i> Load File</button>
+        <button type="button" onclick="fetchFileFromGitHub()" class="neon-action">
+          <i class="fa-solid fa-cloud-arrow-down mr-1"></i> Load File
+        </button>
       </div>
 
       <textarea id="ghCodeEditor" class="code-textarea code-font mb-3" spellcheck="false" placeholder="Load a file to edit or create new code here..."></textarea>
 
       <div class="grid sm:grid-cols-[1fr_auto] gap-2.5 items-center">
         <input id="ghCommitMsg" class="neon-input" placeholder="Commit message (e.g., Update file)">
-        <button type="button" onclick="pushFileToGitHub()" class="neon-action !bg-gradient-to-r !from-teal-600 !to-cyan-600"><i class="fa-solid fa-cloud-arrow-up mr-1"></i> Commit &amp; Push</button>
+        <button type="button" onclick="pushFileToGitHub()" class="neon-action !bg-gradient-to-r !from-teal-600 !to-cyan-600">
+          <i class="fa-solid fa-cloud-arrow-up mr-1"></i> Commit &amp; Push
+        </button>
       </div>
     </section>
   </main>
@@ -384,23 +736,132 @@
       <div class="flex items-center gap-2 text-xs font-extrabold text-[#32ffdc]">
         <i class="fa-solid fa-display"></i><span>Live Sandbox Preview</span>
       </div>
-      <button onclick="closeLivePreview()" class="px-3 py-1 rounded-lg bg-rose-500/20 text-rose-300 text-xs font-bold hover:bg-rose-500/30">Close Preview ✕</button>
+      <button type="button" onclick="closeLivePreview()" class="px-3 py-1 rounded-lg bg-rose-500/20 text-rose-300 text-xs font-bold hover:bg-rose-500/30">Close Preview ✕</button>
     </div>
     <iframe id="previewFrame" class="w-full flex-1 bg-white rounded-b-2xl border border-[#32ffdc]/40" sandbox="allow-scripts allow-same-origin"></iframe>
   </div>
 
   <script>
-    function verifyAdminPassword() {
-      if (document.getElementById('passcodeInput').value.trim() === '2010143') {
-        document.getElementById('passwordModal').classList.add('hidden');
-        localStorage.setItem('st_admin_unlocked', 'true');
-        renderCustomGames();
-        loadAllGames();
-      } else {
-        alert('Incorrect passcode');
-        document.getElementById('passcodeInput').value = '';
+    /* ==========================================================
+       SAFE STORAGE, TOASTS & CONFIRMATION DIALOGS
+    ========================================================== */
+    const FALLBACK_LOGO_SVG = "data:image/svg+xml;utf8," + encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+        <rect width="120" height="120" rx="24" fill="#07222d"/>
+        <circle cx="60" cy="60" r="42" fill="#0d9488" opacity="0.25"/>
+        <text x="50%" y="52%" dominant-baseline="middle" text-anchor="middle" fill="#32ffdc" font-family="sans-serif" font-weight="900" font-size="26">ST</text>
+        <text x="50%" y="74%" dominant-baseline="middle" text-anchor="middle" fill="#eaf7ff" font-family="sans-serif" font-weight="700" font-size="11">GAMES</text>
+      </svg>`
+    );
+
+    const FALLBACK_TOKEN_CARD_SVG = "data:image/svg+xml;utf8," + encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="200" viewBox="0 0 600 200">
+        <rect width="600" height="200" rx="16" fill="#07222d" stroke="#17c3b2" stroke-width="2"/>
+        <text x="300" y="85" text-anchor="middle" fill="#32ffdc" font-family="sans-serif" font-weight="700" font-size="18">ST GAMES • GITHUB TOKEN REFERENCE</text>
+        <text x="300" y="120" text-anchor="middle" fill="#cbd5e1" font-family="monospace" font-size="13">Owner: sat289 | Repo: game | Branch: main</text>
+      </svg>`
+    );
+
+    function safeGetStorage(key, fallback = null) {
+      try {
+        const val = localStorage.getItem(key);
+        return val !== null ? val : fallback;
+      } catch (_) {
+        return fallback;
       }
     }
+
+    function safeSetStorage(key, value) {
+      try {
+        localStorage.setItem(key, value);
+      } catch (_) {}
+    }
+
+    function escapeGameText(value) {
+      return String(value ?? '').replace(/[&<>"']/g, ch => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      })[ch]);
+    }
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
+      const colors = {
+        success: 'border-emerald-500 bg-slate-900 text-emerald-300',
+        error: 'border-rose-500 bg-slate-900 text-rose-300',
+        info: 'border-cyan-500 bg-slate-900 text-cyan-300',
+        warn: 'border-amber-500 bg-slate-900 text-amber-300'
+      };
+      const icons = {
+        success: 'fa-circle-check text-emerald-400',
+        error: 'fa-circle-xmark text-rose-400',
+        info: 'fa-circle-info text-cyan-400',
+        warn: 'fa-triangle-exclamation text-amber-400'
+      };
+      const el = document.createElement('div');
+      el.className = `pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-xl border shadow-xl text-xs font-bold transition-all duration-300 ${colors[type] || colors.info}`;
+      el.innerHTML = `<i class="fa-solid ${icons[type] || icons.info} text-sm shrink-0"></i><span class="flex-1">${escapeGameText(message)}</span>`;
+      container.appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(-6px)';
+        setTimeout(() => el.remove(), 280);
+      }, 3500);
+    }
+
+    let pendingConfirmResolver = null;
+    function askConfirm(title, message) {
+      return new Promise((resolve) => {
+        pendingConfirmResolver = resolve;
+        document.getElementById('confirmModalTitle').textContent = title || 'Confirm Action';
+        document.getElementById('confirmModalMessage').textContent = message || 'Are you sure?';
+        document.getElementById('confirmModal').classList.remove('hidden');
+      });
+    }
+
+    function closeConfirmModal(confirmed) {
+      document.getElementById('confirmModal').classList.add('hidden');
+      if (pendingConfirmResolver) {
+        const fn = pendingConfirmResolver;
+        pendingConfirmResolver = null;
+        fn(Boolean(confirmed));
+      }
+    }
+
+    function resolveLogoUrl(rawLogo) {
+      const str = String(rawLogo || '').trim();
+      if (!str) return FALLBACK_LOGO_SVG;
+      if (str.startsWith('data:') || str.startsWith('http://') || str.startsWith('https://')) return str;
+      return `https://stgames.online/${str.replace(/^\/+/, '')}`;
+    }
+
+    /* ==========================================================
+       STRICT PASSWORD GATE (NO PASSCODE SHOWN ON SCREEN)
+    ========================================================== */
+    function verifyAdminPassword() {
+      const inputEl = document.getElementById('passcodeInput');
+      const errEl = document.getElementById('passcodeErrorMsg');
+      if (inputEl.value.trim() === '2010143') {
+        errEl.classList.add('hidden');
+        document.getElementById('passwordModal').classList.add('hidden');
+        safeSetStorage('st_admin_unlocked', 'true');
+        showToast('Admin Studio unlocked!', 'success');
+        loadAllGames();
+        fetchAllRealTelemetry(false);
+      } else {
+        errEl.classList.remove('hidden');
+        inputEl.value = '';
+        inputEl.focus();
+      }
+    }
+
+    function lockAdminConsole() {
+      safeSetStorage('st_admin_unlocked', 'false');
+      document.getElementById('passcodeInput').value = '';
+      document.getElementById('passcodeErrorMsg').classList.add('hidden');
+      document.getElementById('passwordModal').classList.remove('hidden');
+    }
+
     function togglePasscodeVisibility() {
       const i = document.getElementById('passcodeInput');
       i.type = i.type === 'password' ? 'text' : 'password';
@@ -418,19 +879,41 @@
       }
     }
 
+    /* ==========================================================
+       THEME SWITCHER (FIXES WHITE THEME FONT CONTRAST)
+    ========================================================== */
+    function applyTheme(isDark) {
+      document.body.classList.toggle('dark-theme', isDark);
+      document.documentElement.classList.toggle('dark', isDark);
+      safeSetStorage('st_theme', isDark ? 'dark' : 'light');
+      updateChartThemeColors();
+    }
+
+    function toggleTheme() {
+      const isDark = !document.body.classList.contains('dark-theme');
+      applyTheme(isDark);
+    }
+
+    /* ==========================================================
+       GITHUB CREDENTIALS & HELPERS
+    ========================================================== */
     function getCreds() {
       return {
-        owner: document.getElementById('ghOwner').value.trim(),
-        repo: document.getElementById('ghRepo').value.trim(),
+        owner: document.getElementById('ghOwner').value.trim() || 'sat289',
+        repo: document.getElementById('ghRepo').value.trim() || 'game',
         branch: document.getElementById('ghBranch').value.trim() || 'main',
         token: document.getElementById('ghToken').value.trim()
       };
     }
 
     function saveGitHubCreds() {
-      localStorage.setItem('st_github_config', JSON.stringify(getCreds()));
-      alert('GitHub credentials saved securely on this device!');
+      const c = getCreds();
+      safeSetStorage('st_github_config', JSON.stringify(c));
+      const status = document.getElementById('credSaveStatus');
+      if (status) status.textContent = '✅ Saved!';
+      showToast('GitHub credentials saved!', 'success');
       loadAllGames();
+      fetchAllRealTelemetry(true);
     }
 
     function encodeRepoPath(path) {
@@ -455,14 +938,487 @@
       return new TextDecoder('utf-8').decode(bytes);
     }
 
+    /* ==========================================================
+       SECTION 2: 100% REAL TELEMETRY (NO FAKE NUMBERS)
+       Reads from:
+       1) Cloud CounterAPI (api.counterapi.dev/v1/stgames_<owner>_<repo>/...)
+       2) GitHub Traffic API (/repos/<owner>/<repo>/traffic/views)
+       3) GitHub Releases API (/repos/<owner>/<repo>/releases)
+       4) GitHub analytics.json (/repos/<owner>/<repo>/contents/analytics.json)
+    ========================================================== */
+    let realMetrics = {
+      views: 0,
+      ghViews14d: 0,
+      ghUniques14d: 0,
+      apkDownloads: 0,
+      releaseApkDownloads: 0,
+      pwaInstalls: 0,
+      memberLogins: 0,
+      appLaunches: 0,
+      gamePlays: 0,
+      repoStars: 0,
+      trafficHistory: [], // Array of { date, count, uniques } from GitHub API
+      recordedEvents: []  // Array of real events from analytics.json
+    };
+
+    let realTrafficChartInstance = null;
+    let realDistChartInstance = null;
+    let currentEventFilter = 'all';
+    let autoRefreshTimer = null;
+
+    async function readCounterApiValue(namespace, key) {
+      try {
+        const res = await fetch(`https://api.counterapi.dev/v1/${encodeURIComponent(namespace)}/${encodeURIComponent(key)}`, {
+          cache: 'no-store'
+        });
+        if (!res.ok) return 0;
+        const data = await res.json();
+        return typeof data.count === 'number' ? data.count : 0;
+      } catch (_) {
+        return 0;
+      }
+    }
+
+    async function fetchAllRealTelemetry(manual = false) {
+      const c = getCreds();
+      const namespace = `stgames_${c.owner}_${c.repo}`.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+      const spinner = document.getElementById('syncSpinnerIcon');
+      const badge = document.getElementById('liveConnStatusBadge');
+      if (spinner) spinner.classList.add('fa-spin');
+      if (badge) badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 live-dot"></span> Syncing Live API...`;
+
+      try {
+        // 1. Fetch real live counters from CounterAPI in parallel
+        const [viewsCount, apkCount, pwaCount, loginsCount, launchesCount, playsCount] = await Promise.all([
+          readCounterApiValue(namespace, 'views'),
+          readCounterApiValue(namespace, 'apk_downloads'),
+          readCounterApiValue(namespace, 'pwa_installs'),
+          readCounterApiValue(namespace, 'member_logins'),
+          readCounterApiValue(namespace, 'app_launches'),
+          readCounterApiValue(namespace, 'game_plays')
+        ]);
+
+        realMetrics.views = viewsCount;
+        realMetrics.apkDownloads = apkCount;
+        realMetrics.pwaInstalls = pwaCount;
+        realMetrics.memberLogins = loginsCount;
+        realMetrics.appLaunches = launchesCount;
+        realMetrics.gamePlays = playsCount;
+
+        // 2. Fetch Public & Authenticated GitHub Repo Telemetry
+        const ghHeaders = { 'Accept': 'application/vnd.github+json' };
+        if (c.token) ghHeaders['Authorization'] = `Bearer ${c.token}`;
+
+        // 2a. Repo metadata (stars)
+        try {
+          const repoRes = await fetch(`https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}`, {
+            cache: 'no-store',
+            headers: ghHeaders
+          });
+          if (repoRes.ok) {
+            const repoData = await repoRes.json();
+            realMetrics.repoStars = repoData.stargazers_count || 0;
+          }
+        } catch (_) {}
+
+        // 2b. GitHub Releases (.apk download_count)
+        try {
+          const relRes = await fetch(`https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/releases`, {
+            cache: 'no-store',
+            headers: ghHeaders
+          });
+          if (relRes.ok) {
+            const releases = await relRes.json();
+            let relDlTotal = 0;
+            if (Array.isArray(releases)) {
+              releases.forEach(r => {
+                (r.assets || []).forEach(a => {
+                  relDlTotal += (a.download_count || 0);
+                });
+              });
+            }
+            realMetrics.releaseApkDownloads = relDlTotal;
+          }
+        } catch (_) {}
+
+        // 2c. GitHub 14-Day Traffic Views (Requires Personal Token with push access)
+        if (c.token) {
+          try {
+            const trafficRes = await fetch(`https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/traffic/views`, {
+              cache: 'no-store',
+              headers: ghHeaders
+            });
+            if (trafficRes.ok) {
+              const trafficData = await trafficRes.json();
+              realMetrics.ghViews14d = trafficData.count || 0;
+              realMetrics.ghUniques14d = trafficData.uniques || 0;
+              if (Array.isArray(trafficData.views)) {
+                realMetrics.trafficHistory = trafficData.views.map(v => ({
+                  date: String(v.timestamp || '').slice(5, 10),
+                  count: v.count || 0,
+                  uniques: v.uniques || 0
+                }));
+              }
+            }
+          } catch (_) {}
+        }
+
+        // 2d. Fetch analytics.json from repo if present
+        try {
+          const anaRes = await fetch(`https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/analytics.json?ref=${encodeURIComponent(c.branch)}&t=${Date.now()}`, {
+            cache: 'no-store',
+            headers: ghHeaders
+          });
+          if (anaRes.ok) {
+            const anaData = await anaRes.json();
+            if (anaData.content) {
+              const parsed = JSON.parse(base64ToUtf8(anaData.content));
+              if (Array.isArray(parsed.events)) {
+                realMetrics.recordedEvents = parsed.events;
+              }
+            }
+          }
+        } catch (_) {}
+
+        renderRealTelemetryUI();
+
+        const nowStr = new Date().toLocaleTimeString();
+        document.getElementById('lastSyncTimestamp').textContent = `Last live sync: ${nowStr} (Namespace: ${namespace})`;
+        if (badge) {
+          badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 live-dot"></span> Live Synced (${nowStr})`;
+        }
+        if (manual) {
+          showToast('Live tracking data refreshed from Cloud Counter & GitHub!', 'success');
+        }
+      } catch (err) {
+        if (badge) {
+          badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500"></span> Sync Error`;
+        }
+        if (manual) showToast('Error syncing telemetry: ' + err.message, 'error');
+      } finally {
+        if (spinner) spinner.classList.remove('fa-spin');
+      }
+    }
+
+    function renderRealTelemetryUI() {
+      const totalViewsCombined = Math.max(realMetrics.views, realMetrics.ghViews14d);
+      const totalApkCombined = realMetrics.apkDownloads + realMetrics.releaseApkDownloads;
+      const totalDownloadsCombined = totalApkCombined + realMetrics.pwaInstalls;
+
+      document.getElementById('realTotalViews').textContent = totalViewsCombined.toLocaleString();
+      document.getElementById('realGhViews').textContent = realMetrics.ghViews14d.toLocaleString();
+      document.getElementById('realGhUniques').textContent = realMetrics.ghUniques14d.toLocaleString();
+
+      document.getElementById('realTotalDownloads').textContent = totalDownloadsCombined.toLocaleString();
+      document.getElementById('realApkDownloads').textContent = totalApkCombined.toLocaleString();
+      document.getElementById('realPwaInstalls').textContent = realMetrics.pwaInstalls.toLocaleString();
+
+      document.getElementById('realMemberLogins').textContent = realMetrics.memberLogins.toLocaleString();
+      document.getElementById('realAppLaunches').textContent = realMetrics.appLaunches.toLocaleString();
+      document.getElementById('realLoggedMembersCount').textContent = realMetrics.recordedEvents.filter(e => e.type === 'login').length.toLocaleString();
+
+      document.getElementById('realGamePlays').textContent = realMetrics.gamePlays.toLocaleString();
+      document.getElementById('realPublishedGamesCount').textContent = allGamesData.length.toLocaleString();
+      document.getElementById('realRepoStars').textContent = realMetrics.repoStars.toLocaleString();
+
+      updateRealCharts();
+      renderRealEventsTable();
+    }
+
+    function getChartColors() {
+      const isDark = document.body.classList.contains('dark-theme');
+      return {
+        textColor: isDark ? '#cbd5e1' : '#1e293b',
+        gridColor: isDark ? 'rgba(148, 163, 184, 0.14)' : 'rgba(15, 23, 42, 0.1)'
+      };
+    }
+
+    function updateRealCharts() {
+      if (typeof Chart === 'undefined') return;
+      const { textColor, gridColor } = getChartColors();
+
+      // 1. Traffic & Counter Bar/Line Chart
+      const trafficCtx = document.getElementById('realTrafficChart');
+      if (trafficCtx) {
+        if (realTrafficChartInstance) realTrafficChartInstance.destroy();
+
+        const hasGhHistory = realMetrics.trafficHistory && realMetrics.trafficHistory.length > 0;
+        const labels = hasGhHistory
+          ? realMetrics.trafficHistory.map(item => item.date)
+          : ['Website Views', 'APK Downloads', 'PWA Installs', 'Member Logins', 'App Opens', 'Game Plays'];
+
+        const datasets = hasGhHistory
+          ? [
+              {
+                label: 'Daily GitHub Traffic Views',
+                data: realMetrics.trafficHistory.map(item => item.count),
+                borderColor: '#0d9488',
+                backgroundColor: 'rgba(13, 148, 136, 0.25)',
+                fill: true,
+                tension: 0.3,
+                borderWidth: 2
+              },
+              {
+                label: 'Unique Visitors',
+                data: realMetrics.trafficHistory.map(item => item.uniques),
+                borderColor: '#0284c7',
+                backgroundColor: 'rgba(2, 132, 199, 0.2)',
+                fill: true,
+                tension: 0.3,
+                borderWidth: 2
+              }
+            ]
+          : [
+              {
+                label: 'Live Cloud Counter Totals',
+                data: [
+                  realMetrics.views,
+                  realMetrics.apkDownloads + realMetrics.releaseApkDownloads,
+                  realMetrics.pwaInstalls,
+                  realMetrics.memberLogins,
+                  realMetrics.appLaunches,
+                  realMetrics.gamePlays
+                ],
+                backgroundColor: ['#0d9488', '#0891b2', '#10b981', '#d97706', '#6366f1', '#9333ea'],
+                borderRadius: 8
+              }
+            ];
+
+        realTrafficChartInstance = new Chart(trafficCtx, {
+          type: hasGhHistory ? 'line' : 'bar',
+          data: { labels, datasets },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                labels: { color: textColor, font: { family: 'Inter', size: 11, weight: '700' } }
+              }
+            },
+            scales: {
+              x: {
+                ticks: { color: textColor, font: { size: 10, weight: '600' } },
+                grid: { color: gridColor }
+              },
+              y: {
+                beginAtZero: true,
+                ticks: { color: textColor, font: { size: 10, weight: '600' }, precision: 0 },
+                grid: { color: gridColor }
+              }
+            }
+          }
+        });
+      }
+
+      // 2. Distribution Doughnut Chart
+      const distCtx = document.getElementById('realDistributionChart');
+      if (distCtx) {
+        if (realDistChartInstance) realDistChartInstance.destroy();
+        const values = [
+          Math.max(realMetrics.views, realMetrics.ghViews14d),
+          realMetrics.apkDownloads + realMetrics.releaseApkDownloads,
+          realMetrics.pwaInstalls,
+          realMetrics.memberLogins,
+          realMetrics.gamePlays
+        ];
+        const sum = values.reduce((a, b) => a + b, 0);
+
+        realDistChartInstance = new Chart(distCtx, {
+          type: 'doughnut',
+          data: {
+            labels: ['Website Views', 'APK Downloads', 'PWA Installs', 'Member Logins', 'Game Plays'],
+            datasets: [{
+              data: sum > 0 ? values : [1, 1, 1, 1, 1],
+              backgroundColor: sum > 0
+                ? ['#0d9488', '#0891b2', '#10b981', '#d97706', '#9333ea']
+                : ['#94a3b8', '#cbd5e1', '#e2e8f0', '#94a3b8', '#cbd5e1'],
+              borderWidth: 2
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '64%',
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: { color: textColor, font: { family: 'Inter', size: 10, weight: '700' }, boxWidth: 10, padding: 6 }
+              }
+            }
+          }
+        });
+      }
+    }
+
+    function updateChartThemeColors() {
+      updateRealCharts();
+    }
+
+    function filterRealEvents(type) {
+      currentEventFilter = type;
+      ['all', 'login', 'download', 'view'].forEach(t => {
+        const btn = document.getElementById(`evFilter_${t}`);
+        if (btn) btn.classList.toggle('active-tab', t === type);
+      });
+      renderRealEventsTable();
+    }
+
+    function renderRealEventsTable() {
+      const tbody = document.getElementById('realEventsTableBody');
+      if (!tbody) return;
+
+      const filtered = (realMetrics.recordedEvents || []).filter(ev => {
+        if (currentEventFilter === 'all') return true;
+        return ev.type === currentEventFilter;
+      });
+
+      if (!filtered.length) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" class="py-6 text-center theme-subtext font-medium">
+              No custom events in <span class="code-font">analytics.json</span> matching this filter yet. Live totals above update automatically from your website tracker.
+            </td>
+          </tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(ev => `
+        <tr class="hover:bg-teal-500/10 transition">
+          <td class="py-2 px-3 font-extrabold uppercase theme-label">${escapeGameText(ev.type || 'event')}</td>
+          <td class="py-2 px-3 font-bold theme-text">${escapeGameText(ev.user || 'Visitor')}</td>
+          <td class="py-2 px-3 theme-subtext font-medium">${escapeGameText(ev.mode || 'Browser')}</td>
+          <td class="py-2 px-3 theme-text font-semibold">${escapeGameText(ev.detail || '/')}</td>
+          <td class="py-2 px-3 text-right theme-subtext code-font">${escapeGameText(ev.time || '')}</td>
+        </tr>
+      `).join('');
+    }
+
+    function exportRealTelemetryCSV() {
+      const rows = [
+        ['Metric', 'Live Count'],
+        ['Website Views (CounterAPI)', realMetrics.views],
+        ['GitHub Traffic Views (14d)', realMetrics.ghViews14d],
+        ['GitHub Unique Visitors (14d)', realMetrics.ghUniques14d],
+        ['APK Downloads (Clicks + Releases)', realMetrics.apkDownloads + realMetrics.releaseApkDownloads],
+        ['PWA App Installs', realMetrics.pwaInstalls],
+        ['Member Logins', realMetrics.memberLogins],
+        ['Standalone App Launches', realMetrics.appLaunches],
+        ['Game Plays', realMetrics.gamePlays]
+      ];
+      const csvContent = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `stgames-real-telemetry-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showToast('Exported live telemetry CSV!', 'success');
+    }
+
+    function changeRefreshInterval() {
+      const ms = Number(document.getElementById('autoRefreshSelect').value);
+      if (autoRefreshTimer) {
+        clearInterval(autoRefreshTimer);
+        autoRefreshTimer = null;
+      }
+      if (ms > 0) {
+        autoRefreshTimer = setInterval(() => fetchAllRealTelemetry(false), ms);
+        showToast(`Auto-refresh set to ${ms / 1000}s`, 'info');
+      } else {
+        showToast('Auto-refresh paused', 'warn');
+      }
+    }
+
+    /* 1-CLICK TRACKER INJECTOR INTO index.html ON GITHUB */
+    function getWebsiteTrackerCode() {
+      const c = getCreds();
+      const ns = `stgames_${c.owner}_${c.repo}`.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+      return `<!-- ST GAMES REAL LIVE TRACKER -->
+<script id="st-games-live-tracker">
+(function() {
+  var NS = "${ns}";
+  var isApp = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  function hit(key) {
+    fetch("https://api.counterapi.dev/v1/" + NS + "/" + key + "/up", { mode: "cors" }).catch(function(){});
+  }
+  window.addEventListener("DOMContentLoaded", function() {
+    hit("views");
+    if (isApp) hit("app_launches");
+    document.body.addEventListener("click", function(e) {
+      var el = e.target.closest("a, button");
+      if (!el) return;
+      var txt = (el.innerText || "").toLowerCase();
+      var href = (el.getAttribute("href") || "").toLowerCase();
+      if (href.indexOf(".apk") !== -1 || txt.indexOf("download apk") !== -1 || txt.indexOf("download app") !== -1) {
+        hit("apk_downloads");
+      }
+      if (txt.indexOf("login") !== -1 || txt.indexOf("sign in") !== -1) {
+        hit("member_logins");
+      }
+      if (txt.indexOf("play free") !== -1 || href.indexOf("game/") !== -1) {
+        hit("game_plays");
+      }
+    });
+  });
+  window.addEventListener("appinstalled", function() {
+    hit("pwa_installs");
+  });
+  window.stTrackLogin = function() { hit("member_logins"); };
+  window.stTrackDownload = function() { hit("apk_downloads"); };
+  window.stTrackGamePlay = function() { hit("game_plays"); };
+})();
+<\/script>`;
+    }
+
+    async function autoInstallTrackerOnGitHub() {
+      const c = getCreds();
+      if (!c.token) {
+        showToast('Enter and save your GitHub Personal Token in Section 1 first!', 'warn');
+        document.getElementById('ghToken').focus();
+        return;
+      }
+      const btn = document.getElementById('installTrackerBtn');
+      btn.disabled = true;
+      try {
+        const res = await fetch(`https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/index.html?ref=${encodeURIComponent(c.branch)}&t=${Date.now()}`, {
+          cache: 'no-store',
+          headers: { 'Authorization': `Bearer ${c.token}`, 'Accept': 'application/vnd.github+json' }
+        });
+        if (!res.ok) throw new Error('Could not fetch index.html from GitHub.');
+        const data = await res.json();
+        let html = base64ToUtf8(data.content);
+        const trackerScript = getWebsiteTrackerCode();
+
+        if (html.includes('id="st-games-live-tracker"')) {
+          html = html.replace(/<!-- ST GAMES REAL LIVE TRACKER -->[\s\S]*?<\/script>/, trackerScript);
+        } else if (html.includes('</body>')) {
+          html = html.replace('</body>', `\n${trackerScript}\n</body>`);
+        } else {
+          html += `\n${trackerScript}\n`;
+        }
+
+        await pushFileDirect('index.html', html, 'Activate ST Games real live tracker in index.html');
+        showToast('Live tracker activated in index.html on stgames.online!', 'success');
+      } catch (err) {
+        showToast('Tracker install error: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    /* ==========================================================
+       EXISTING SECTIONS 3, 4, 5, 6 (NOTICE, GAMES, CODE EDITOR)
+    ========================================================== */
     function safeSaveLocalGames(list) {
       try {
-        // Avoid storing huge base64 strings in localStorage so it never throws QuotaExceededError
         const slimList = list.map(g => ({
           ...g,
           logo: (g.logo && g.logo.startsWith('data:')) ? 'logo/game.jpg' : g.logo
         }));
-        localStorage.setItem('st_custom_games', JSON.stringify(slimList));
+        safeSetStorage('st_custom_games', JSON.stringify(slimList));
       } catch (_) {}
     }
 
@@ -491,7 +1447,7 @@
       const apiUrl = `https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/${cleanPath}`;
       let sha = null;
 
-      const checkRes = await fetch(`${apiUrl}?ref=${encodeURIComponent(c.branch)}&t=${Date.now()}`, {
+      const checkRes = await fetch(`https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/${cleanPath}?ref=${encodeURIComponent(c.branch)}&t=${Date.now()}`, {
         cache: 'no-store',
         headers: {
           'Authorization': `Bearer ${c.token}`,
@@ -536,7 +1492,7 @@
       const api = `https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/${cleanPath}`;
 
       let sha = null;
-      const checkRes = await fetch(`${api}?ref=${encodeURIComponent(c.branch)}&t=${Date.now()}`, {
+      const checkRes = await fetch(`https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/${cleanPath}?ref=${encodeURIComponent(c.branch)}&t=${Date.now()}`, {
         cache: 'no-store',
         headers: {
           'Authorization': `Bearer ${c.token}`,
@@ -569,38 +1525,43 @@
 
     async function fetchGamesListFromGitHub() {
       const c = getCreds();
-      if (!c.token) return JSON.parse(localStorage.getItem('st_custom_games') || '[]');
-      const api = `https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/games.json?ref=${encodeURIComponent(c.branch)}&t=${Date.now()}`;
-      const res = await fetch(api, {
-        cache: 'no-store',
-        headers: {
-          'Authorization': `Bearer ${c.token}`,
-          'Accept': 'application/vnd.github+json'
+      const headers = { 'Accept': 'application/vnd.github+json' };
+      if (c.token) headers['Authorization'] = `Bearer ${c.token}`;
+
+      try {
+        const api = `https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/games.json?ref=${encodeURIComponent(c.branch)}&t=${Date.now()}`;
+        const res = await fetch(api, { cache: 'no-store', headers });
+        if (res.ok) {
+          const d = await res.json();
+          if (d.content) {
+            const parsed = JSON.parse(base64ToUtf8(d.content));
+            if (Array.isArray(parsed)) return parsed;
+          }
         }
-      });
-      if (res.ok) {
-        const d = await res.json();
-        if (d.content) {
-          const parsed = JSON.parse(base64ToUtf8(d.content));
+      } catch (_) {}
+
+      try {
+        const rawRes = await fetch(`https://raw.githubusercontent.com/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/${encodeURIComponent(c.branch)}/games.json?t=${Date.now()}`, { cache: 'no-store' });
+        if (rawRes.ok) {
+          const parsed = await rawRes.json();
           if (Array.isArray(parsed)) return parsed;
         }
+      } catch (_) {}
+
+      try {
+        return JSON.parse(safeGetStorage('st_custom_games', '[]'));
+      } catch (_) {
+        return [];
       }
-      // Fallback to raw fetch if games.json is large
-      const rawRes = await fetch(`games.json?t=${Date.now()}`, { cache: 'no-store' });
-      if (rawRes.ok) {
-        const parsed = await rawRes.json();
-        if (Array.isArray(parsed)) return parsed;
-      }
-      return JSON.parse(localStorage.getItem('st_custom_games') || '[]');
     }
 
     async function publishNotice() {
       const txt = document.getElementById('noticeInput').value.trim();
       try {
         await pushFileDirect('notice.txt', txt, 'Update website notice');
-        alert('Notice updated across all phones!');
+        showToast('Notice updated across all phones!', 'success');
       } catch (err) {
-        alert('Error updating notice: ' + err.message);
+        showToast('Error updating notice: ' + err.message, 'error');
       }
     }
 
@@ -617,7 +1578,7 @@
 
       const c = getCreds();
       if (!c.token) {
-        alert('Please enter and save your GitHub Personal Token in Section 1 first!');
+        showToast('Please enter and save your GitHub Personal Token in Section 1 first!', 'warn');
         return;
       }
 
@@ -625,17 +1586,14 @@
       statusEl.textContent = '⏳ Publishing game to GitHub...';
 
       try {
-        // 1. Save credentials automatically
-        localStorage.setItem('st_github_config', JSON.stringify(c));
+        safeSetStorage('st_github_config', JSON.stringify(c));
 
-        // 2. If user selected a Game HTML file, upload it to `url` path on GitHub
         if (htmlFile) {
           statusEl.textContent = `⏳ Uploading ${url}...`;
           const htmlContent = await readFileAsText(htmlFile);
           await pushFileDirect(url, htmlContent, `Upload game file ${url}`);
         }
 
-        // 3. If user selected a Logo file, upload it to `logo/` folder on GitHub
         let logoPath = 'logo/game.jpg';
         if (logoFile) {
           statusEl.textContent = '⏳ Uploading game logo...';
@@ -645,7 +1603,6 @@
           await pushImageDirect(logoPath, logoDataUrl, `Upload logo for ${title}`);
         }
 
-        // 4. Load current games.json from GitHub
         statusEl.textContent = '⏳ Updating games.json...';
         let currentGames = [];
         try {
@@ -665,58 +1622,59 @@
           badge: '✨ NEW'
         };
 
-        // Add newest game to the top of games.json
         currentGames.unshift(newGame);
-
-        // 5. Push updated games.json to GitHub
         await pushFileDirect('games.json', JSON.stringify(currentGames, null, 2), `Add game "${title}" globally`);
 
-        // 6. Safely update local storage & UI
         safeSaveLocalGames(currentGames);
         allGamesData = currentGames;
         document.getElementById('addGameForm').reset();
         renderCustomGames();
         filterAllGames();
         document.getElementById('allGamesCount').textContent = allGamesData.length;
+        document.getElementById('realPublishedGamesCount').textContent = allGamesData.length;
 
         statusEl.textContent = '✅ Published to all phones!';
-        alert(`"${title}" has been published to GitHub and your website!`);
+        showToast(`"${title}" has been published to GitHub and your website!`, 'success');
       } catch (err) {
         statusEl.textContent = '❌ Publish failed';
-        alert('GitHub publish error: ' + err.message);
+        showToast('GitHub publish error: ' + err.message, 'error');
       } finally {
         btn.disabled = false;
       }
     }
 
+    let allGamesData = [];
+    let editedGamesTotal = 0;
+
     function renderCustomGames() {
       const list = allGamesData.length
         ? allGamesData
-        : JSON.parse(localStorage.getItem('st_custom_games') || '[]');
+        : JSON.parse(safeGetStorage('st_custom_games', '[]'));
       document.getElementById('statCustom').textContent = list.length;
       const container = document.getElementById('customGamesContainer');
       if (!list.length) {
-        container.innerHTML = '<div class="text-xs opacity-60 py-4 text-center">No custom games published yet.</div>';
+        container.innerHTML = '<div class="text-xs theme-subtext py-4 text-center font-medium">No custom games published yet.</div>';
         return;
       }
       container.innerHTML = list.map(g => `
-        <div class="flex items-center justify-between p-3 rounded-xl border border-teal-500/20 bg-teal-500/5 gap-3">
+        <div class="flex items-center justify-between p-3 rounded-xl border border-teal-500/25 sub-panel gap-3">
           <div class="flex items-center gap-3 min-w-0">
             <div class="w-10 h-10 rounded-lg overflow-hidden bg-slate-800 shrink-0">
-              <img src="${escapeGameText(g.logo || 'logo/game.jpg')}" class="w-full h-full object-cover" onerror="this.src='logo/game.jpg'">
+              <img src="${escapeGameText(resolveLogoUrl(g.logo))}" alt="${escapeGameText(g.title || 'Game')}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src=FALLBACK_LOGO_SVG;">
             </div>
             <div class="min-w-0">
-              <div class="font-extrabold text-sm truncate">${escapeGameText(g.title || 'Untitled')}</div>
-              <div class="text-[10px] text-slate-500 truncate">${escapeGameText(g.url || '')} · Size: ${escapeGameText(g.size || 'normal')}</div>
+              <div class="font-extrabold text-sm theme-text truncate">${escapeGameText(g.title || 'Untitled')}</div>
+              <div class="text-[10px] theme-subtext font-medium truncate">${escapeGameText(g.url || '')} · Size: ${escapeGameText(g.size || 'normal')}</div>
             </div>
           </div>
-          <button onclick="removeGame('${escapeGameText(g.id)}')" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-rose-500 hover:bg-rose-500/10">Delete</button>
+          <button type="button" onclick="removeGame('${escapeGameText(g.id)}')" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10">Delete</button>
         </div>
       `).join('');
     }
 
     async function removeGame(id) {
-      if (!confirm('Remove this game from all phones?')) return;
+      const ok = await askConfirm('Remove Game', 'Remove this game from all phones?');
+      if (!ok) return;
       try {
         let list = allGamesData.length ? [...allGamesData] : await fetchGamesListFromGitHub();
         list = list.filter(g => g.id !== id);
@@ -726,13 +1684,16 @@
         renderCustomGames();
         filterAllGames();
         document.getElementById('allGamesCount').textContent = allGamesData.length;
+        document.getElementById('realPublishedGamesCount').textContent = allGamesData.length;
+        showToast('Game removed!', 'success');
       } catch (err) {
-        alert('Delete failed: ' + err.message);
+        showToast('Delete failed: ' + err.message, 'error');
       }
     }
 
     async function wipeAllCustomGames() {
-      if (!confirm('Clear all games in games.json?')) return;
+      const ok = await askConfirm('Clear All Games', 'Clear all games in games.json?');
+      if (!ok) return;
       try {
         await pushFileDirect('games.json', JSON.stringify([], null, 2), 'Wipe all games');
         allGamesData = [];
@@ -740,53 +1701,40 @@
         renderCustomGames();
         filterAllGames();
         document.getElementById('allGamesCount').textContent = '0';
+        document.getElementById('realPublishedGamesCount').textContent = '0';
+        showToast('All games cleared from games.json!', 'success');
       } catch (err) {
-        alert('Failed to clear games: ' + err.message);
+        showToast('Failed to clear games: ' + err.message, 'error');
       }
     }
 
-    /* ==========================================
-       ALL GAMES MANAGEMENT STUDIO
-    ========================================== */
-
-    let allGamesData = [];
-    let editedGamesTotal = 0;
-
     async function loadAllGames() {
-      const c = getCreds();
       const status = document.getElementById("allGamesStatus");
-
-      if (!c.token) {
-        if (status) status.textContent = "Enter and save your GitHub token in Section 1 first.";
-        return;
-      }
-
-      if (status) status.textContent = "Loading all games from GitHub...";
+      if (status) status.textContent = "Loading games from GitHub...";
 
       try {
         allGamesData = await fetchGamesListFromGitHub();
-
-        if (!Array.isArray(allGamesData)) {
-          allGamesData = [];
-        }
+        if (!Array.isArray(allGamesData)) allGamesData = [];
 
         safeSaveLocalGames(allGamesData);
-        editedGamesTotal = 0;
-
         document.getElementById("allGamesCount").textContent = allGamesData.length;
-        document.getElementById("editedGamesCount").textContent = "0";
-        if (status) status.textContent = "Successfully loaded all games.";
+        document.getElementById("realPublishedGamesCount").textContent = allGamesData.length;
+        document.getElementById("editedGamesCount").textContent = String(editedGamesTotal);
+        if (status) {
+          status.textContent = allGamesData.length
+            ? `Loaded ${allGamesData.length} games from repository.`
+            : "No games found in games.json yet. Enter your GitHub Token in Section 1 or publish a game above.";
+        }
 
         renderCustomGames();
         filterAllGames();
-
       } catch (err) {
         if (status) status.textContent = "Error: " + err.message;
       }
     }
 
     function filterAllGames() {
-      const search = document.getElementById("gameSearch").value.toLowerCase();
+      const search = (document.getElementById("gameSearch")?.value || "").toLowerCase();
       const container = document.getElementById("allGamesList");
 
       const filtered = allGamesData
@@ -797,29 +1745,23 @@
         );
 
       if (!filtered.length) {
-        container.innerHTML = '<div class="text-center text-xs text-slate-500 py-5">No games found.</div>';
+        container.innerHTML = '<div class="text-center text-xs theme-subtext py-5 font-medium">No games found.</div>';
         return;
       }
 
       container.innerHTML = filtered.map(({ game, index }) => `
-        <div class="flex items-center gap-3 p-3 rounded-xl border border-teal-500/25 bg-white/50 dark:bg-slate-900/60">
-          <img src="${escapeGameText(game.logo || 'logo/game.jpg')}" onerror="this.src='logo/game.jpg'" class="w-12 h-12 rounded-xl object-cover bg-slate-800 shrink-0">
+        <div class="flex items-center gap-3 p-3 rounded-xl border border-teal-500/25 sub-panel">
+          <img src="${escapeGameText(resolveLogoUrl(game.logo))}" alt="${escapeGameText(game.title || 'Game')}" onerror="this.onerror=null;this.src=FALLBACK_LOGO_SVG;" class="w-12 h-12 rounded-xl object-cover bg-slate-800 shrink-0">
           <div class="flex-1 min-w-0">
-            <div class="font-extrabold text-sm truncate">${escapeGameText(game.title || 'Untitled Game')}</div>
-            <div class="text-[10px] text-slate-500 truncate">${escapeGameText(game.url || '')}</div>
-            <div class="text-[10px] font-bold text-teal-600 mt-1">
+            <div class="font-extrabold text-sm theme-text truncate">${escapeGameText(game.title || 'Untitled Game')}</div>
+            <div class="text-[10px] theme-subtext font-medium truncate">${escapeGameText(game.url || '')}</div>
+            <div class="text-[10px] font-bold theme-label mt-1">
               ${escapeGameText(game.position || 'popular')} · ${escapeGameText(game.size || 'normal')}
             </div>
           </div>
-          <button onclick="editGame(${index})" class="chip-btn"><i class="fa-solid fa-pen"></i></button>
+          <button type="button" onclick="editGame(${index})" class="chip-btn"><i class="fa-solid fa-pen"></i></button>
         </div>
       `).join("");
-    }
-
-    function escapeGameText(value) {
-      return String(value).replace(/[&<>"']/g, ch => ({
-        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
-      })[ch]);
     }
 
     function editGame(index) {
@@ -850,7 +1792,7 @@
     async function saveGameEdit() {
       const index = Number(document.getElementById("editGameIndex").value);
       if (!Number.isInteger(index) || !allGamesData[index]) {
-        alert("Invalid game selected.");
+        showToast("Invalid game selected.", "error");
         return;
       }
 
@@ -859,7 +1801,7 @@
       const url = document.getElementById("editGameUrl").value.trim().replace(/^\/+/, '');
 
       if (!title || !url) {
-        alert("Game name and URL are required.");
+        showToast("Game name and URL are required.", "warn");
         return;
       }
 
@@ -881,28 +1823,25 @@
           }
           const safeName = logoFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
           const logoPath = `logo/game-${Date.now()}-${safeName}`;
-
           const logoData = await readFileAsDataURL(logoFile);
           await pushImageDirect(logoPath, logoData, "Update game logo");
           game.logo = logoPath;
         }
 
         allGamesData[index] = game;
-
         await pushFileDirect("games.json", JSON.stringify(allGamesData, null, 2), `Edit game: ${title}`);
         safeSaveLocalGames(allGamesData);
 
         editedGamesTotal++;
         document.getElementById("editedGamesCount").textContent = editedGamesTotal;
-        document.getElementById("allGamesStatus").textContent = "Game updated successfully on GitHub!";
+        document.getElementById("allGamesStatus").textContent = "Game updated on GitHub!";
 
         closeGameEditor();
         renderCustomGames();
         filterAllGames();
-        alert("Game updated successfully!");
-
+        showToast("Game updated on GitHub!", "success");
       } catch (err) {
-        alert("Update failed: " + err.message);
+        showToast("Update failed: " + err.message, "error");
       }
     }
 
@@ -911,50 +1850,61 @@
       const c = getCreds();
       const panel = document.getElementById('repoBrowserPanel');
       panel.classList.remove('hidden');
+      document.getElementById('browserCurrentDir').textContent = '/' + (path || 'root');
       const list = document.getElementById('repoFilesList');
-      list.innerHTML = '<div class="text-xs text-slate-500 p-2">Loading repository files...</div>';
-      
+      list.innerHTML = '<div class="text-xs theme-subtext p-2">Loading repository files...</div>';
+
       try {
         const cleanPath = encodeRepoPath(path);
+        const headers = { 'Accept': 'application/vnd.github+json' };
+        if (c.token) headers['Authorization'] = `Bearer ${c.token}`;
+
         const res = await fetch(`https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/${cleanPath}?ref=${encodeURIComponent(c.branch)}&t=${Date.now()}`, {
           cache: 'no-store',
-          headers: { 'Authorization': `Bearer ${c.token}`, 'Accept': 'application/vnd.github+json' }
+          headers
         });
         const data = await res.json();
         if (Array.isArray(data)) {
           list.innerHTML = data.map(i => `
-            <button type="button" onclick="${i.type === 'dir' ? `browseRepoDirectory('${i.path}')` : `quickLoad('${i.path}')`}" class="flex items-center gap-2 p-2.5 rounded-lg text-xs font-bold text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900 border border-teal-500/30 hover:border-teal-400 shadow-sm truncate text-left">
-              <i class="${i.type==='dir'?'fa-solid fa-folder text-amber-400':'fa-regular fa-file-code text-teal-400'} shrink-0 text-sm"></i>
-              <span class="truncate">${i.name}</span>
+            <button type="button" onclick="${i.type === 'dir' ? `browseRepoDirectory('${escapeGameText(i.path)}')` : `quickLoad('${escapeGameText(i.path)}')`}" class="flex items-center gap-2 p-2.5 rounded-lg text-xs font-bold theme-text sub-panel hover:border-teal-500 shadow-sm truncate text-left">
+              <i class="${i.type === 'dir' ? 'fa-solid fa-folder text-amber-500' : 'fa-regular fa-file-code text-teal-600 dark:text-teal-400'} shrink-0 text-sm"></i>
+              <span class="truncate">${escapeGameText(i.name)}</span>
             </button>
           `).join('');
         } else {
-          list.innerHTML = '<span class="text-xs text-rose-500 p-2">Failed to load directory. Check token permissions.</span>';
+          list.innerHTML = '<span class="text-xs text-rose-600 p-2 font-bold">Failed to load directory. Check token permissions.</span>';
         }
       } catch (err) {
-        list.innerHTML = `<span class="text-xs text-rose-500 p-2">Error: ${err.message}</span>`;
+        list.innerHTML = `<span class="text-xs text-rose-600 p-2 font-bold">Error: ${escapeGameText(err.message)}</span>`;
       }
     }
 
-    function quickLoad(p) { 
-      document.getElementById('ghFilePath').value = p; 
-      fetchFileFromGitHub(); 
-      document.getElementById('repoBrowserPanel').classList.add('hidden'); 
+    function quickLoad(p) {
+      document.getElementById('ghFilePath').value = p;
+      fetchFileFromGitHub();
+      document.getElementById('repoBrowserPanel').classList.add('hidden');
     }
 
     async function fetchFileFromGitHub() {
       const c = getCreds();
       const path = encodeRepoPath(document.getElementById('ghFilePath').value.trim());
-      const res = await fetch(`https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/${path}?ref=${encodeURIComponent(c.branch)}&t=${Date.now()}`, {
-        cache: 'no-store',
-        headers: { 'Authorization': `Bearer ${c.token}`, 'Accept': 'application/vnd.github+json' }
-      });
-      const d = await res.json();
-      if (res.ok) {
-        document.getElementById('ghCodeEditor').value = base64ToUtf8(d.content);
-        alert('File loaded successfully!');
-      } else {
-        alert('Error loading file: ' + d.message);
+      const headers = { 'Accept': 'application/vnd.github+json' };
+      if (c.token) headers['Authorization'] = `Bearer ${c.token}`;
+
+      try {
+        const res = await fetch(`https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/${path}?ref=${encodeURIComponent(c.branch)}&t=${Date.now()}`, {
+          cache: 'no-store',
+          headers
+        });
+        const d = await res.json();
+        if (res.ok && d.content) {
+          document.getElementById('ghCodeEditor').value = base64ToUtf8(d.content);
+          showToast('File loaded!', 'success');
+        } else {
+          showToast('Error loading file: ' + (d.message || 'Not found'), 'error');
+        }
+      } catch (err) {
+        showToast('Error loading file: ' + err.message, 'error');
       }
     }
 
@@ -964,9 +1914,9 @@
       const msg = document.getElementById('ghCommitMsg').value.trim() || 'Update file via Admin Studio';
       try {
         await pushFileDirect(path, code, msg);
-        alert('Committed and pushed successfully!');
+        showToast('Committed and pushed to GitHub!', 'success');
       } catch (err) {
-        alert('Push failed: ' + err.message);
+        showToast('Push failed: ' + err.message, 'error');
       }
     }
 
@@ -981,25 +1931,37 @@
       document.getElementById('previewModal').classList.add('hidden');
     }
 
-    function toggleTheme() {
-      const isDark = !document.body.classList.contains('dark-theme');
-      document.body.classList.toggle('dark-theme', isDark);
-      localStorage.setItem('st_theme', isDark ? 'dark' : 'light');
-    }
-
     window.addEventListener('DOMContentLoaded', () => {
-      if (localStorage.getItem('st_theme') === 'dark') document.body.classList.add('dark-theme');
-      const s = JSON.parse(localStorage.getItem('st_github_config') || '{}');
-      if (s.owner) document.getElementById('ghOwner').value = s.owner;
-      if (s.repo) document.getElementById('ghRepo').value = s.repo;
-      if (s.branch) document.getElementById('ghBranch').value = s.branch;
-      if (s.token) document.getElementById('ghToken').value = s.token;
-
-      if (localStorage.getItem('st_admin_unlocked') === 'true') {
-        document.getElementById('passwordModal').classList.add('hidden');
-        renderCustomGames();
-        loadAllGames();
+      const refImg = document.getElementById('tokenRefImg');
+      if (refImg) {
+        refImg.onerror = function() {
+          this.onerror = null;
+          this.src = FALLBACK_TOKEN_CARD_SVG;
+        };
       }
+
+      // Apply saved theme (defaults to White/Light theme with high-contrast dark fonts)
+      const isDark = safeGetStorage('st_theme') === 'dark';
+      applyTheme(isDark);
+
+      try {
+        const s = JSON.parse(safeGetStorage('st_github_config', '{}'));
+        if (s.owner) document.getElementById('ghOwner').value = s.owner;
+        if (s.repo) document.getElementById('ghRepo').value = s.repo;
+        if (s.branch) document.getElementById('ghBranch').value = s.branch;
+        if (s.token) document.getElementById('ghToken').value = s.token;
+      } catch (_) {}
+
+      // Only unlock if user has previously entered the right password in this browser
+      if (safeGetStorage('st_admin_unlocked') === 'true') {
+        document.getElementById('passwordModal').classList.add('hidden');
+      }
+
+      renderRealTelemetryUI();
+      loadAllGames();
+      fetchAllRealTelemetry(false);
+
+      autoRefreshTimer = setInterval(() => fetchAllRealTelemetry(false), 15000);
     });
   </script>
 </body>
