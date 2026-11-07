@@ -103,7 +103,7 @@
       font: inherit;
     }
 
-    /* Native App Notification Banner (Displays with ST GAMES Logo, no Chrome branding) */
+    /* Native App Notification Banner */
     .app-notif-banner {
       position: fixed;
       top: 12px;
@@ -174,7 +174,7 @@
       overflow: hidden;
     }
 
-    /* Top Header Bar (App Name + Online/Offline + Login) */
+    /* Top Header Bar */
     .mode-bar {
       background: var(--brand-bar);
       border-bottom: 2px solid var(--brand-border);
@@ -761,7 +761,7 @@
   </style>
 </head>
 <body id="app-body">
-  <!-- Native-Style In-App Notification Banner (Shows ST GAMES Logo, no Chrome text) -->
+  <!-- Native-Style In-App Notification Banner -->
   <div id="app-notif-banner" class="app-notif-banner" onclick="handleNotifBannerClick()" role="status" aria-live="polite">
     <img class="app-notif-logo" src="https://stgames.online/stgames-apk/launchericon-192x192.png" alt="ST GAMES">
     <div class="app-notif-content">
@@ -789,7 +789,7 @@
         <button id="btn-offline" type="button" class="mode-btn" onclick="setAppMode('offline')">OFFLINE (<span id="saved-count">0</span>)</button>
       </div>
       <!-- Login / Google Profile Logo Button -->
-      <a href="https://stgames.online/stgames-apk/login.html" id="auth-profile-btn" class="login-Trigger-btn" title="Account">
+      <a href="login.html" id="auth-profile-btn" class="login-Trigger-btn" title="Account">
         <img id="user-logo-img" src="https://stgames.online/stgames-apk/launchericon-192x192.png" alt="Profile" referrerpolicy="no-referrer">
         <span id="user-letter-avatar">U</span>
         <i id="login-default-icon" class="fa-solid fa-user"></i>
@@ -862,14 +862,13 @@
 "use strict";
 
 const BASE_URL = "https://stgames.online/";
-const CACHE_NAME = "stgames-apk-cache-v2";
+const CACHE_NAME = "stgames-apk-cache-v3";
 const SONG_URL = BASE_URL + "stgames-apk/app.mp3";
 const APP_ICON_URL = BASE_URL + "stgames-apk/launchericon-192x192.png";
 
-/* Schedule Constants: Every 3 Hours in Daytime (8:00 AM to 10:00 PM), Stopped at Night */
 const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
-const DAY_START_HOUR = 8;  // 8:00 AM
-const NIGHT_START_HOUR = 22; // 10:00 PM
+const DAY_START_HOUR = 8;
+const NIGHT_START_HOUR = 22;
 
 function safeGetStorage(key, fallback) {
   try {
@@ -898,9 +897,8 @@ function showToast(message) {
   }, 2800);
 }
 
-/* 1. ALL YOUR 18 ORIGINAL GAMES KEPT INTACT */
-const DEFAULT_GAMES_DATA = [
-  {id:"game-mw3654pa",title:"Wheel master",url:"game/Wheel master/index.html",logo:"logo/game-1793861007180-5455.jpg",categories:["popular"],badge:"✨ NEW!",bg:"linear-gradient(135deg,#6366f1,#4338ca)"},
+/* Fallback list ONLY used if games.json has never been fetched before */
+const FALLBACK_GAMES_DATA = [
   {id:"game-mw20ft73",title:"Rope Dash",url:"game/rope.html",logo:"logo/game-1793790309066-5381.jpg",categories:["classic","popular"],badge:"✨ NEW!",bg:"linear-gradient(135deg,#ec4899,#be185d)"},
   {id:"game-mw1urk4j",title:"Space waves",url:"game/Spacewaces.html",logo:"logo/game-1793853613420-5437.jpg",categories:["popular"],badge:"✨ NEW!",bg:"linear-gradient(135deg,#3b82f6,#1d4ed8)"},
   {id:"game-mvzz9zor",title:"Crowd runners",url:"game/crowd runners/index.html",logo:"logo/game-1793676729637-5233.jpg",categories:["classic"],badge:"✨ NEW!",bg:"linear-gradient(135deg,#06b6d4,#0e7490)"},
@@ -920,7 +918,73 @@ const DEFAULT_GAMES_DATA = [
   {id:"typing-race",title:"Typing Race Championship",url:"game/typerace/index.html",logo:"logo/typerace.jpg",categories:["racing","single","popular"],badge:"",bg:"linear-gradient(135deg,#64748b,#334155)"}
 ];
 
-let GAMES_DATA = [...DEFAULT_GAMES_DATA];
+function normalizeGameItem(item, index){
+  const rawCats = item.categories || item.category || ["popular"];
+  const categories = Array.isArray(rawCats)
+    ? rawCats.map(c => String(c).toLowerCase())
+    : [String(rawCats).toLowerCase()];
+
+  return {
+    id: String(item.id || ("game-json-" + index)).trim(),
+    title: String(item.title || item.name || "Arcade Game").trim(),
+    url: String(item.url || item.link || item.path || "").trim(),
+    logo: String(item.logo || item.image || item.icon || item.thumbnail || "launchericon-192x192.png").trim(),
+    categories: categories,
+    badge: item.badge !== undefined ? item.badge : "✨ NEW!",
+    bg: item.bg || "linear-gradient(135deg,#3b82f6,#1d4ed8)"
+  };
+}
+
+function cleanUrlKey(url) {
+  try {
+    return decodeURIComponent(String(url || ""))
+      .replace(/^https?:\/\/[^/]+\//i, "")
+      .replace(/^\/+/, "")
+      .trim()
+      .toLowerCase();
+  } catch (e) {
+    return String(url || "").trim().toLowerCase();
+  }
+}
+
+/* Strictly deduplicates games by ID, URL, and Title so no game ever shows twice */
+function deduplicateGamesList(rawList) {
+  const seenIds = new Set();
+  const seenUrls = new Set();
+  const seenTitles = new Set();
+  const uniqueList = [];
+
+  for (let i = 0; i < rawList.length; i++) {
+    const g = normalizeGameItem(rawList[i], i);
+    if (!g.url) continue;
+
+    const idKey = g.id.toLowerCase();
+    const urlKey = cleanUrlKey(g.url);
+    const titleKey = g.title.toLowerCase();
+
+    if (seenIds.has(idKey) || seenUrls.has(urlKey) || seenTitles.has(titleKey)) {
+      continue;
+    }
+    seenIds.add(idKey);
+    seenUrls.add(urlKey);
+    seenTitles.add(titleKey);
+    uniqueList.push(g);
+  }
+  return uniqueList;
+}
+
+/* Load last synced games.json immediately on boot so Offline mode never reverts to old deleted games */
+function loadInitialGamesList() {
+  try {
+    const cached = JSON.parse(safeGetStorage("st_cached_games_json", "null"));
+    if (Array.isArray(cached) && cached.length > 0) {
+      return deduplicateGamesList(cached);
+    }
+  } catch (e) {}
+  return deduplicateGamesList(FALLBACK_GAMES_DATA);
+}
+
+let GAMES_DATA = loadInitialGamesList();
 let currentMode = "online";
 let currentCategory = "all";
 let savedGameIds = loadSavedGames();
@@ -928,7 +992,15 @@ let swRegistration = null;
 let isGameCurrentlyPlaying = false;
 window.currentActiveGameKey = "stgames_global";
 
-/* 2. BACKGROUND MUSIC (Plays in Lobby, turns off when playing a game) */
+/* Clean deleted games from savedGameIds so OFFLINE count & list match games.json */
+function cleanSavedGameIds() {
+  const validIds = new Set(GAMES_DATA.map(g => g.id));
+  savedGameIds = Array.from(new Set(savedGameIds)).filter(id => validIds.has(id));
+  safeSetStorage("st_saved_offline_games", JSON.stringify(savedGameIds));
+}
+cleanSavedGameIds();
+
+/* BACKGROUND MUSIC (Plays in Lobby, turns off when playing a game) */
 const bgMusic = document.getElementById("bg-music");
 const musicToggle = document.getElementById("music-toggle");
 const ingameMusicBtn = document.getElementById("ingame-music-btn");
@@ -978,57 +1050,6 @@ document.addEventListener("visibilitychange",()=>{
   else if(!isGameCurrentlyPlaying) ensureMusicPlaying();
 });
 
-/* 3. AUTO-SYNC WITH MAIN PAGE games.json */
-function normalizeGameItem(item, index){
-  const rawCats = item.categories || item.category || ["popular"];
-  const categories = Array.isArray(rawCats)
-    ? rawCats.map(c => String(c).toLowerCase())
-    : [String(rawCats).toLowerCase()];
-
-  return {
-    id: item.id || ("game-json-" + index),
-    title: item.title || item.name || "Arcade Game",
-    url: item.url || item.link || item.path || "",
-    logo: item.logo || item.image || item.icon || item.thumbnail || "launchericon-192x192.png",
-    categories: categories,
-    badge: item.badge !== undefined ? item.badge : "✨ NEW!",
-    bg: item.bg || "linear-gradient(135deg,#3b82f6,#1d4ed8)"
-  };
-}
-
-async function syncMainPageGamesJson(){
-  const jsonUrl = BASE_URL + "games.json";
-  try {
-    const res = await fetch(jsonUrl, { cache: "no-store" });
-    if (res.ok) {
-      const data = await res.json();
-      const rawList = Array.isArray(data) ? data : (Array.isArray(data.games) ? data.games : []);
-      if (rawList.length) {
-        const normalizedFromJson = rawList.map(normalizeGameItem).filter(g => g.url);
-        const mergedMap = new Map();
-        normalizedFromJson.forEach(g => mergedMap.set(g.url.toLowerCase(), g));
-        DEFAULT_GAMES_DATA.forEach(g => {
-          if (!mergedMap.has(g.url.toLowerCase())) {
-            mergedMap.set(g.url.toLowerCase(), g);
-          }
-        });
-        GAMES_DATA = Array.from(mergedMap.values());
-        safeSetStorage("st_cached_games_json", JSON.stringify(GAMES_DATA));
-        renderGames();
-        return;
-      }
-    }
-  } catch (e) {}
-
-  try {
-    const cached = JSON.parse(safeGetStorage("st_cached_games_json", "null"));
-    if (Array.isArray(cached) && cached.length) {
-      GAMES_DATA = cached;
-      renderGames();
-    }
-  } catch (err) {}
-}
-
 function loadSavedGames(){
   try{
     const value = JSON.parse(safeGetStorage("st_saved_offline_games", "[]"));
@@ -1041,7 +1062,69 @@ function fullUrl(path){
   return new URL(path.split("/").map((part,i)=>i===0?part:encodeURIComponent(part)).join("/"),BASE_URL).href;
 }
 
-/* 4. SERVICE WORKER & FUNNY NOTIFICATION SYSTEM (Every 3 Hours in Day, Off at Night, +1 on App Open) */
+async function cacheGameFiles(game){
+  if(!("caches" in window) || !navigator.onLine) return;
+  try{
+    const cache = await caches.open(CACHE_NAME);
+    const urls = [fullUrl(game.url), fullUrl(game.logo)];
+    await Promise.allSettled(urls.map(url => cache.add(url)));
+  }catch(error){}
+}
+
+/* Auto-caches newly added games in the background while online so they work immediately in Offline mode */
+async function syncOfflineCacheWithGamesList() {
+  cleanSavedGameIds();
+  renderGames();
+
+  if (!navigator.onLine) return;
+
+  let updated = false;
+  for (const game of GAMES_DATA) {
+    await cacheGameFiles(game);
+    if (!savedGameIds.includes(game.id)) {
+      savedGameIds.push(game.id);
+      updated = true;
+    }
+  }
+  if (updated) {
+    safeSetStorage("st_saved_offline_games", JSON.stringify(savedGameIds));
+    renderGames();
+  }
+}
+
+/* Syncs strictly with games.json (Does NOT append old deleted games!) */
+async function syncMainPageGamesJson(){
+  // When offline, strictly use the last saved games.json in localStorage (do not let SW return stale cache)
+  if (!navigator.onLine) {
+    GAMES_DATA = loadInitialGamesList();
+    cleanSavedGameIds();
+    renderGames();
+    return;
+  }
+
+  // Cache-busting timestamp ensures fresh games.json when you add or delete a game
+  const freshUrl = BASE_URL + "games.json?t=" + Date.now();
+  try {
+    const res = await fetch(freshUrl, { cache: "no-store" });
+    if (res.ok) {
+      const data = await res.json();
+      const rawList = Array.isArray(data) ? data : (Array.isArray(data.games) ? data.games : []);
+      if (rawList.length > 0) {
+        // Use ONLY the deduplicated list from games.json so deleted games disappear completely
+        GAMES_DATA = deduplicateGamesList(rawList);
+        safeSetStorage("st_cached_games_json", JSON.stringify(GAMES_DATA));
+        await syncOfflineCacheWithGamesList();
+        return;
+      }
+    }
+  } catch (e) {}
+
+  GAMES_DATA = loadInitialGamesList();
+  cleanSavedGameIds();
+  renderGames();
+}
+
+/* SERVICE WORKER & FUNNY NOTIFICATION SYSTEM */
 const FUNNY_NOTIFICATIONS = [
   { title: "High Score Kottali Mama! 🤑", body: "Mari late enduku maharaja, ST GAMES open chesi kummey! 😎" },
   { title: "Toilet Rush Pilustondi! 🚽🏃", body: "Arey babu jaldi ra, papam vaadu aapukoleka chastunnadu! 😂" },
@@ -1049,7 +1132,7 @@ const FUNNY_NOTIFICATIONS = [
   { title: "Full Bore Koduthunda? 🥱", body: "Oka chinna game veyyi boss, mind full fresh ayipoddi! 🎮🔥" },
   { title: "Paamu Ki Aakali Vestondi! 🐍🍎", body: "3 gantalu ayyindi bro, Cyber Snake ki kaneesam oka apple anna pettu! 😋" },
   { title: "Evaru Choodatledu Le! 👀", body: "Silent ga oka Street Subway Runner match eseddhama? 🏃‍♂️💨" },
-  { title: "Brain Ki Paniara Leda? 🔩", body: "Nuts & Bolts puzzle solve chesi nee talent chupinchu mama! 🧠✨" },
+  { title: "Brain Ki Pani Leda? 🔩", body: "Nuts & Bolts puzzle solve chesi nee talent chupinchu mama! 🧠✨" },
   { title: "Pro Gamer Anukuntunnava? 🏆", body: "Choosthu kurchunte High Score raadhu boss, PLAY nokku! 😎" },
   { title: "Monster Truck Ready Ga Undi! 🛻🔥", body: "Petrol full ga undi maharaja, nuvve driver seat ekkali! 🏁" },
   { title: "Gang Antha Waiting Ikkada! 🏃‍♂️🏃‍♀️", body: "Crowd Runners lo mana batch ready, leader kosam waiting! 👑" },
@@ -1109,7 +1192,6 @@ function handleNotifBannerClick() {
 async function registerAppServiceWorker(){
   if(!("serviceWorker" in navigator)) return null;
   try{
-    // Register root /sw.js so scope "/" matches TWA app scope
     const registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
     swRegistration = await navigator.serviceWorker.ready;
     return swRegistration || registration;
@@ -1126,16 +1208,13 @@ async function registerAppServiceWorker(){
 
 async function dispatchFunnyNotification(forceEvenAtNight) {
   if (!forceEvenAtNight && !isDaytimeHours()) {
-    return false; // Quiet hours at night (10 PM - 8 AM)
+    return false;
   }
 
   const notif = getRandomFunnyNotification();
   safeSetStorage("st_last_notif_timestamp", String(Date.now()));
-
-  // Always show the sleek native-style banner inside the app with your ST GAMES logo
   showInAppNotificationBanner(notif);
 
-  // Also dispatch system notification via Service Worker (delegated to TWA when installed)
   if ("Notification" in window && Notification.permission === "granted" && "serviceWorker" in navigator) {
     try {
       const registration = swRegistration || await registerAppServiceWorker() || await navigator.serviceWorker.ready;
@@ -1157,7 +1236,7 @@ async function dispatchFunnyNotification(forceEvenAtNight) {
 }
 
 function checkThreeHourSchedule() {
-  if (!isDaytimeHours()) return; // Do not send at night
+  if (!isDaytimeHours()) return;
   const lastSent = parseInt(safeGetStorage("st_last_notif_timestamp", "0"), 10) || 0;
   const now = Date.now();
   if (now - lastSent >= THREE_HOURS_MS) {
@@ -1168,17 +1247,14 @@ function checkThreeHourSchedule() {
 async function initAppNotifications() {
   await registerAppServiceWorker();
 
-  // 1. Send 1 funny notification every time the user opens the app (during daytime, or in-app banner)
   setTimeout(() => {
     if (isDaytimeHours()) {
       dispatchFunnyNotification(false);
     } else {
-      // Even at night, show the gentle in-app welcome banner without waking up OS notifications
       showInAppNotificationBanner(getRandomFunnyNotification());
     }
   }, 1200);
 
-  // 2. If Notification permission is still "default", request it on first user tap
   if ("Notification" in window && Notification.permission === "default") {
     const requestOnFirstTap = async () => {
       try {
@@ -1191,27 +1267,31 @@ async function initAppNotifications() {
     document.addEventListener("click", requestOnFirstTap, { once: true, passive: true });
   }
 
-  // 3. Check every 5 minutes if 3 hours have passed during daytime (8 AM - 10 PM)
   setInterval(checkThreeHourSchedule, 5 * 60 * 1000);
 }
 
 initAppNotifications();
 
 function updateSavedCounter(){
-  document.getElementById("saved-count").textContent = savedGameIds.length;
+  const validIds = new Set(GAMES_DATA.map(g => g.id));
+  const activeSavedCount = savedGameIds.filter(id => validIds.has(id)).length;
+  document.getElementById("saved-count").textContent = activeSavedCount;
 }
+
 function setAppMode(mode){
   currentMode = mode;
   document.getElementById("btn-online").classList.toggle("active",mode==="online");
   document.getElementById("btn-offline").classList.toggle("active",mode==="offline");
   renderGames();
 }
+
 function setCategory(category,button){
   currentCategory = category;
   document.querySelectorAll(".cat-pill").forEach(item=>item.classList.remove("active"));
   button.classList.add("active");
   renderGames();
 }
+
 function renderGames(){
   const container = document.getElementById("games-container");
   container.innerHTML = "";
@@ -1229,7 +1309,7 @@ function renderGames(){
   });
 
   if(currentMode==="offline" && filtered.length===0){
-    container.innerHTML = `<div class="empty-box"><i class="fa-solid fa-cloud-arrow-down"></i><h3>No Offline Games Yet</h3><p>Open the ONLINE tab and tap a game while connected to download its files for offline use.</p><button type="button" class="action-btn" onclick="setAppMode('online')">GO TO ONLINE TAB</button></div>`;
+    container.innerHTML = `<div class="empty-box"><i class="fa-solid fa-cloud-arrow-down"></i><h3>No Offline Games Yet</h3><p>Open the ONLINE tab while connected to automatically save games for offline play.</p><button type="button" class="action-btn" onclick="setAppMode('online')">GO TO ONLINE TAB</button></div>`;
     return;
   }
 
@@ -1256,17 +1336,7 @@ function renderGames(){
   });
 }
 
-async function cacheGameFiles(game){
-  if(!("caches" in window) || !navigator.onLine) return;
-  try{
-    const cache = await caches.open(CACHE_NAME);
-    const urls = [fullUrl(game.url),fullUrl(game.logo),SONG_URL];
-    await Promise.allSettled(urls.map(url=>cache.add(url)));
-  }catch(error){}
-}
-
 async function openAndSaveGame(game){
-  // Stop lobby music immediately when user taps/plays a game
   isGameCurrentlyPlaying = true;
   bgMusic.pause();
   updateMusicUI();
@@ -1291,18 +1361,32 @@ async function openAndSaveGame(game){
   const frame = document.getElementById("game-frame");
   document.getElementById("playing-title").textContent = game.title;
   document.getElementById("player-modal").classList.add("open");
+  history.pushState({ modal: "game" }, "", "#play");
   frame.src = fullUrl(game.url);
   renderGames();
 }
 
-function closeGame(){
+function closeGame(fromPopState = false){
   const frame = document.getElementById("game-frame");
   frame.src = "about:blank";
   document.getElementById("player-modal").classList.remove("open");
   isGameCurrentlyPlaying = false;
   ensureMusicPlaying();
   updateMusicUI();
+  if(!fromPopState && window.location.hash === "#play"){
+    history.back();
+  }
 }
+
+window.addEventListener("popstate", () => {
+  const playerModal = document.getElementById("player-modal");
+  const settingsModal = document.getElementById("settings-modal");
+  if (playerModal && playerModal.classList.contains("open")) {
+    closeGame(true);
+  } else if (settingsModal && settingsModal.classList.contains("open")) {
+    closeSettings();
+  }
+});
 
 function playRandomGame(){
   const pool = (currentMode==="offline" || !navigator.onLine)
@@ -1373,13 +1457,19 @@ async function enableNotifications(){
 function updateNetworkStatus(){
   const dot = document.getElementById("net-dot");
   dot.classList.toggle("offline",!navigator.onLine);
+  if (!navigator.onLine) {
+    // Automatically reload the latest cached games.json list when switching offline
+    GAMES_DATA = loadInitialGamesList();
+    cleanSavedGameIds();
+  }
   renderGames();
 }
+
 window.addEventListener("online", () => {
   updateNetworkStatus();
   syncMainPageGamesJson();
 });
-window.addEventListener("offline",updateNetworkStatus);
+window.addEventListener("offline", updateNetworkStatus);
 
 document.getElementById("settings-modal").addEventListener("click",event=>{
   if(event.target.id==="settings-modal") closeSettings();
@@ -1446,6 +1536,16 @@ syncMainPageGamesJson();
     }
   }
 
+  if (logoImg) {
+    logoImg.addEventListener("error", function() {
+      this.style.display = "none";
+      if (letterAvatar) {
+        letterAvatar.textContent = localStorage.getItem("gh_user_letter") || "U";
+        letterAvatar.style.display = "block";
+      }
+    });
+  }
+
   let cachedPhoto = null;
   let cachedLetter = null;
   try {
@@ -1463,6 +1563,10 @@ syncMainPageGamesJson();
       currentUser = user;
       const name = user.displayName || (user.email ? user.email.split("@")[0] : "U");
       const letter = name.charAt(0).toUpperCase();
+      try {
+        localStorage.setItem("gh_user_letter", letter);
+        if (user.photoURL) localStorage.setItem("gh_user_photo", user.photoURL);
+      } catch (e) {}
       renderHeaderLogo(user.photoURL, letter, true);
 
       const gameKey = window.currentActiveGameKey || "stgames_global";
@@ -1488,6 +1592,12 @@ syncMainPageGamesJson();
     } else {
       currentUser = null;
       renderHeaderLogo("", "", false);
+    }
+  });
+
+  window.addEventListener("message", (event) => {
+    if (event.data && event.data.type === "SUBMIT_SCORE") {
+      window.submitScore(event.data.score);
     }
   });
 
