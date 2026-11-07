@@ -224,6 +224,42 @@
       border-color: #32ffdc !important;
     }
 
+    /* Main Top Navigation Tab Bar */
+    .main-nav-tab {
+      flex: 1;
+      padding: 11px 16px;
+      border-radius: 14px;
+      font-size: 13px;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+      color: #334155 !important;
+      background: transparent;
+    }
+    .main-nav-tab:hover {
+      background: rgba(13, 148, 136, 0.1);
+    }
+    .main-nav-tab.active-main-tab {
+      background: linear-gradient(120deg, #0d9488, #0f766e) !important;
+      color: #ffffff !important;
+      border-color: rgba(50, 255, 220, 0.5);
+      box-shadow: 0 4px 16px rgba(13, 148, 136, 0.3);
+    }
+    body.dark-theme .main-nav-tab {
+      color: #cbd5e1 !important;
+    }
+    body.dark-theme .main-nav-tab.active-main-tab {
+      background: linear-gradient(120deg, #17c3b2, #0d9488) !important;
+      color: #040e14 !important;
+      border-color: #32ffdc;
+      box-shadow: 0 0 18px rgba(50, 255, 220, 0.28);
+    }
+
     @keyframes pulseDot {
       0%, 100% { transform: scale(1); opacity: 1; }
       50% { transform: scale(1.35); opacity: 0.55; }
@@ -263,7 +299,7 @@
         <i class="fa-solid fa-lock"></i>
       </div>
       <h2 class="brand-font text-lg font-bold theme-heading mb-1">Admin Studio Access</h2>
-      <p class="text-[11px] theme-subtext mb-4">Enter your security passcode to unlock console</p>
+      <p class="text-[11px] theme-subtext mb-4">Enter security passcode</p>
 
       <div class="relative flex items-center mb-3">
         <input id="passcodeInput" type="password" class="neon-input pr-12 text-center text-lg tracking-widest font-mono" placeholder="•••••••" autofocus onkeydown="if(event.key==='Enter') verifyAdminPassword()">
@@ -282,7 +318,7 @@
 
   <main class="max-w-5xl w-full mx-auto px-3.5 sm:px-6 pt-4 pb-12 relative z-10">
     <!-- HEADER -->
-    <header class="feature-hub rounded-2xl p-4 mb-5 flex flex-wrap items-center justify-between gap-3">
+    <header class="feature-hub rounded-2xl p-4 mb-4 flex flex-wrap items-center justify-between gap-3">
       <div class="flex items-center gap-3">
         <a href="https://stgames.online" target="_blank" rel="noopener noreferrer" title="Open stgames.online" class="w-10 h-10 rounded-xl bg-[#07222d] flex items-center justify-center text-[#32ffdc] hover:scale-105 transition shadow">
           <i class="fa-solid fa-arrow-left"></i>
@@ -291,7 +327,7 @@
           <h1 class="brand-font text-base sm:text-lg font-bold uppercase theme-heading flex items-center gap-2">
             <i class="fa-solid fa-shield-halved text-[#0d9488] dark:text-[#32ffdc]"></i> Advanced Admin Studio
           </h1>
-          <p class="text-[11px] theme-subtext font-medium">Global sync, live tracking, notice manager &amp; game publisher</p>
+          <p class="text-[11px] theme-subtext font-medium">Global sync, notice manager, game publisher &amp; live tracking analysis</p>
         </div>
       </div>
 
@@ -303,431 +339,482 @@
       </div>
     </header>
 
-    <!-- VISUAL TOKEN REFERENCE CARD -->
-    <section class="feature-hub rounded-2xl p-4 mb-5 text-center">
-      <h3 class="brand-font text-xs font-bold uppercase theme-label mb-2 flex items-center justify-center gap-1.5">
-        <i class="fa-regular fa-image"></i> Reference Token Card
-      </h3>
-      <div class="max-w-md mx-auto rounded-xl overflow-hidden border border-teal-500/30 shadow-md bg-white dark:bg-slate-900 p-2">
-        <img id="tokenRefImg" src="https://stgames.online/logo/4833_2.jpg" alt="Token Reference Card" class="w-full h-auto max-h-48 rounded-lg object-contain">
-      </div>
-      <p class="text-[10px] theme-subtext mt-2 font-medium">View your token details above to enter them into Section 1 below.</p>
-    </section>
-
-    <!-- SECTION 1: GITHUB CONFIGURATION -->
-    <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
-      <h2 class="brand-font text-base font-bold theme-heading mb-3">1. GitHub Credentials</h2>
-
-      <div class="grid sm:grid-cols-4 gap-3 mb-3">
-        <div>
-          <label class="block text-[10px] font-extrabold uppercase theme-label mb-1">Username</label>
-          <input id="ghOwner" class="neon-input" value="sat289">
-        </div>
-        <div>
-          <label class="block text-[10px] font-extrabold uppercase theme-label mb-1">Repository</label>
-          <input id="ghRepo" class="neon-input" value="game">
-        </div>
-        <div>
-          <label class="block text-[10px] font-extrabold uppercase theme-label mb-1">Branch</label>
-          <input id="ghBranch" class="neon-input" value="main">
-        </div>
-        <div>
-          <label class="block text-[10px] font-extrabold uppercase theme-label mb-1">Personal Token</label>
-          <div class="relative flex items-center">
-            <input id="ghToken" type="password" class="neon-input pr-10" placeholder="Paste token here">
-            <button type="button" onclick="toggleTokenVisibility()" class="absolute right-3 text-sm theme-subtext" title="Toggle visibility">🙈</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="flex flex-wrap items-center gap-2">
-        <button type="button" onclick="saveGitHubCreds()" class="neon-action">
-          <i class="fa-solid fa-floppy-disk mr-1"></i> Save Credentials
-        </button>
-        <span id="credSaveStatus" class="text-xs font-bold theme-label"></span>
-      </div>
-    </section>
+    <!-- TOP NAVIGATION TABS: STUDIO MANAGER vs TRACKING ANALYSIS -->
+    <nav class="feature-hub rounded-2xl p-2 mb-5 flex flex-wrap items-center gap-2">
+      <button type="button" id="navBtn_studio" onclick="switchAdminMainTab('studio')" class="main-nav-tab active-main-tab">
+        <i class="fa-solid fa-screwdriver-wrench"></i> Studio Manager
+      </button>
+      <button type="button" id="navBtn_tracking" onclick="switchAdminMainTab('tracking')" class="main-nav-tab">
+        <i class="fa-solid fa-chart-line"></i> Tracking Analysis
+        <span class="w-2 h-2 rounded-full bg-emerald-500 live-dot"></span>
+      </button>
+    </nav>
 
     <!-- =====================================================================
-         SECTION 2: REAL LIVE TRACKING (WEBSITE VIEWS, APP DOWNLOADS & LOGINS)
+         TAB 1: STUDIO MANAGER (CREDENTIALS, NOTICE, GAMES & CODE EDITOR)
     ====================================================================== -->
-    <section id="liveTrackingSection" class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
-      <div class="flex flex-wrap items-center justify-between gap-3 pb-3 mb-4 border-b border-teal-500/25">
-        <div>
-          <div class="flex items-center gap-2 flex-wrap">
-            <h2 class="brand-font text-base font-bold theme-heading flex items-center gap-2">
-              <i class="fa-solid fa-chart-line text-teal-600 dark:text-[#32ffdc]"></i> 2. Live Website, App Downloads &amp; Logins Tracker
-            </h2>
-            <span id="liveConnStatusBadge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-teal-500/15 theme-label border border-teal-500/30">
-              <span class="w-2 h-2 rounded-full bg-emerald-500 live-dot"></span> Connecting...
-            </span>
+    <div id="tabPanel_studio">
+
+      <!-- VISUAL TOKEN REFERENCE CARD (PLACED ABOVE SECTION 1) -->
+      <section class="feature-hub rounded-2xl p-4 mb-5 text-center">
+        <h3 class="brand-font text-xs font-bold uppercase theme-label mb-2 flex items-center justify-center gap-1.5">
+          <i class="fa-regular fa-image"></i> Reference Token Card
+        </h3>
+        <div class="max-w-md mx-auto rounded-xl overflow-hidden border border-teal-500/30 shadow-md bg-white dark:bg-slate-900 p-2">
+          <img id="tokenRefImg" src="https://stgames.online/logo/4833_2.jpg" alt="Token Reference Card" class="w-full h-auto max-h-48 rounded-lg object-contain">
+        </div>
+        <p class="text-[10px] theme-subtext mt-2 font-medium">View your token details above to enter them into Section 1 below.</p>
+      </section>
+
+      <!-- SECTION 1: GITHUB CONFIGURATION -->
+      <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
+        <h2 class="brand-font text-base font-bold theme-heading mb-3">1. GitHub Credentials</h2>
+
+        <div class="grid sm:grid-cols-4 gap-3 mb-3">
+          <div>
+            <label class="block text-[10px] font-extrabold uppercase theme-label mb-1">Username</label>
+            <input id="ghOwner" class="neon-input" value="sat289">
           </div>
-          <p class="text-[11px] theme-subtext mt-0.5 font-medium">
-            Fetches real counts from Cloud Counter API (<span class="code-font">stgames_sat289_game</span>), GitHub Traffic API, Releases &amp; <span class="code-font">analytics.json</span>
-          </p>
+          <div>
+            <label class="block text-[10px] font-extrabold uppercase theme-label mb-1">Repository</label>
+            <input id="ghRepo" class="neon-input" value="game">
+          </div>
+          <div>
+            <label class="block text-[10px] font-extrabold uppercase theme-label mb-1">Branch</label>
+            <input id="ghBranch" class="neon-input" value="main">
+          </div>
+          <div>
+            <label class="block text-[10px] font-extrabold uppercase theme-label mb-1">Personal Token</label>
+            <div class="relative flex items-center">
+              <input id="ghToken" type="password" class="neon-input pr-10" placeholder="Paste token here">
+              <button type="button" onclick="toggleTokenVisibility()" class="absolute right-3 text-sm theme-subtext" title="Toggle visibility">🙈</button>
+            </div>
+          </div>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-          <select id="autoRefreshSelect" onchange="changeRefreshInterval()" class="neon-input !w-auto !py-1.5 !px-2.5 text-[11px]">
-            <option value="15000">🔄 Auto-Refresh: 15s</option>
-            <option value="30000">🔄 Auto-Refresh: 30s</option>
-            <option value="60000">🔄 Auto-Refresh: 60s</option>
-            <option value="0">⏸️ Auto-Refresh: Off</option>
-          </select>
-          <button type="button" onclick="fetchAllRealTelemetry(true)" class="chip-btn">
-            <i id="syncSpinnerIcon" class="fa-solid fa-rotate"></i> Refresh Live Data
+          <button type="button" onclick="saveGitHubCreds()" class="neon-action">
+            <i class="fa-solid fa-floppy-disk mr-1"></i> Save Credentials
           </button>
-          <button type="button" onclick="autoInstallTrackerOnGitHub()" id="installTrackerBtn" class="neon-action !py-1.5 !px-3 !text-[11px]">
-            <i class="fa-solid fa-bolt"></i> Activate Tracker in index.html
-          </button>
+          <span id="credSaveStatus" class="text-xs font-bold theme-label"></span>
         </div>
-      </div>
+      </section>
 
-      <!-- 4 REAL KPI CARDS -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-        <!-- 1. Website Views -->
-        <div class="kpi-card">
-          <div class="flex items-center justify-between mb-1">
-            <span class="text-[10px] font-extrabold uppercase tracking-wider theme-label">Website Views</span>
-            <span class="w-7 h-7 rounded-lg bg-teal-500/15 theme-label flex items-center justify-center">
-              <i class="fa-solid fa-eye"></i>
-            </span>
-          </div>
-          <div id="realTotalViews" class="text-2xl sm:text-3xl font-black theme-text code-font">0</div>
-          <div class="mt-2 pt-2 border-t border-teal-500/20 flex items-center justify-between text-[10px] theme-subtext font-semibold">
-            <span>GitHub 14d Views: <strong id="realGhViews" class="theme-text">0</strong></span>
-            <span>Uniques: <strong id="realGhUniques" class="theme-text">0</strong></span>
-          </div>
-        </div>
+      <!-- SECTION 2: NOTICE MANAGER -->
+      <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
+        <h2 class="brand-font text-base font-bold theme-heading mb-3">2. Announcement Notice Manager</h2>
+        <textarea id="noticeInput" class="neon-input font-semibold mb-3" rows="2">📢 NOTICE: Welcome to ST GAMES — Enjoy playing and check back for new games and updates!</textarea>
+        <button type="button" onclick="publishNotice()" class="neon-action !bg-gradient-to-r !from-amber-600 !to-orange-600">
+          <i class="fa-solid fa-paper-plane mr-1"></i> Update Notice on All Phones
+        </button>
+      </section>
 
-        <!-- 2. App Downloads (APK + PWA) -->
-        <div class="kpi-card">
-          <div class="flex items-center justify-between mb-1">
-            <span class="text-[10px] font-extrabold uppercase tracking-wider theme-label">App Downloads</span>
-            <span class="w-7 h-7 rounded-lg bg-teal-500/15 theme-label flex items-center justify-center">
-              <i class="fa-brands fa-android text-base"></i>
-            </span>
-          </div>
-          <div id="realTotalDownloads" class="text-2xl sm:text-3xl font-black theme-text code-font">0</div>
-          <div class="mt-2 pt-2 border-t border-teal-500/20 flex items-center justify-between text-[10px] theme-subtext font-semibold">
-            <span>APK Clicks/Rel: <strong id="realApkDownloads" class="theme-text">0</strong></span>
-            <span>PWA Installs: <strong id="realPwaInstalls" class="theme-text">0</strong></span>
-          </div>
-        </div>
-
-        <!-- 3. Member Logins -->
-        <div class="kpi-card">
-          <div class="flex items-center justify-between mb-1">
-            <span class="text-[10px] font-extrabold uppercase tracking-wider theme-label">Member Logins</span>
-            <span class="w-7 h-7 rounded-lg bg-teal-500/15 theme-label flex items-center justify-center">
-              <i class="fa-solid fa-user-check"></i>
-            </span>
-          </div>
-          <div id="realMemberLogins" class="text-2xl sm:text-3xl font-black theme-text code-font">0</div>
-          <div class="mt-2 pt-2 border-t border-teal-500/20 flex items-center justify-between text-[10px] theme-subtext font-semibold">
-            <span>App Opens: <strong id="realAppLaunches" class="theme-text">0</strong></span>
-            <span>Logged Events: <strong id="realLoggedMembersCount" class="theme-text">0</strong></span>
-          </div>
-        </div>
-
-        <!-- 4. Game Plays & Repo Status -->
-        <div class="kpi-card">
-          <div class="flex items-center justify-between mb-1">
-            <span class="text-[10px] font-extrabold uppercase tracking-wider theme-label">Game Plays</span>
-            <span class="w-7 h-7 rounded-lg bg-teal-500/15 theme-label flex items-center justify-center">
-              <i class="fa-solid fa-gamepad"></i>
-            </span>
-          </div>
-          <div id="realGamePlays" class="text-2xl sm:text-3xl font-black theme-text code-font">0</div>
-          <div class="mt-2 pt-2 border-t border-teal-500/20 flex items-center justify-between text-[10px] theme-subtext font-semibold">
-            <span>Published Games: <strong id="realPublishedGamesCount" class="theme-text">0</strong></span>
-            <span>Repo Stars: <strong id="realRepoStars" class="theme-text">0</strong></span>
-          </div>
-        </div>
-      </div>
-
-      <!-- CHARTS ROW: GITHUB 14-DAY TRAFFIC CHART & LIVE COUNTER BREAKDOWN -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-        <div class="lg:col-span-2 sub-panel p-4 rounded-2xl">
-          <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+      <!-- SECTION 3: ADD GAME PUBLISHER -->
+      <section class="feature-hub rounded-2xl p-5 mb-5">
+        <h2 class="brand-font text-base font-bold theme-heading mb-3">3. Add &amp; Publish Game to All Phones</h2>
+        <form id="addGameForm" onsubmit="handleAddGame(event)" class="space-y-3">
+          <div class="grid sm:grid-cols-2 gap-3">
             <div>
-              <h3 class="text-xs font-extrabold uppercase tracking-wider theme-heading">
-                <i class="fa-solid fa-chart-column mr-1"></i> Real Traffic &amp; Event History
-              </h3>
-              <p id="trafficChartNote" class="text-[10px] theme-subtext font-medium">
-                Displays daily GitHub repository traffic (when Token is saved) and live counter totals.
-              </p>
+              <label class="block text-[11px] font-bold theme-label mb-1">Game Title *</label>
+              <input id="gameTitle" required class="neon-input" placeholder="e.g., Salazar Alchemy" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold theme-label mb-1">Game URL Path *</label>
+              <input id="gamePath" required class="neon-input" placeholder="e.g., game/salazar.html" />
             </div>
           </div>
-          <div class="relative h-60">
-            <canvas id="realTrafficChart"></canvas>
+
+          <div class="grid sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[11px] font-bold theme-label mb-1">Upload Logo Image</label>
+              <input id="logoFile" type="file" accept="image/*" class="neon-input text-[10px]">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold theme-label mb-1">Upload Game HTML File (Optional)</label>
+              <input id="gameHtmlFile" type="file" accept=".html,.htm" class="neon-input text-[10px]">
+            </div>
+          </div>
+
+          <div class="grid sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[11px] font-bold theme-label mb-1">Category</label>
+              <select id="gameCategory" class="neon-input">
+                <option value="popular">Popular / Hot</option>
+                <option value="1v1">1v1 Battle</option>
+                <option value="classic">Classic</option>
+                <option value="racing">Racing</option>
+                <option value="sports">Sports</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold theme-label mb-1">Bento Box Size</label>
+              <select id="gameSize" class="neon-input">
+                <option value="normal">Normal Square</option>
+                <option value="large">Large Bento Box (2x2)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between pt-2 gap-3">
+            <span id="publishGameStatus" class="text-xs font-bold theme-label"></span>
+            <button id="publishGameBtn" type="submit" class="neon-action !bg-gradient-to-r !from-emerald-600 !to-teal-600">
+              <i class="fa-solid fa-cloud-arrow-up mr-1"></i> Publish Game to All Phones
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- PUBLISHED GAMES LIST -->
+      <section class="feature-hub rounded-2xl p-5 mb-5">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="brand-font text-base font-bold theme-heading">Published Games (<span id="statCustom">0</span>)</h2>
+          <button type="button" onclick="wipeAllCustomGames()" class="text-xs font-bold text-rose-600 dark:text-rose-400 hover:underline">Clear All</button>
+        </div>
+        <div id="customGamesContainer" class="space-y-2">
+          <div class="text-xs theme-subtext py-4 text-center font-medium">No custom games published yet.</div>
+        </div>
+      </section>
+
+      <!-- SECTION 4: ALL GAMES MANAGEMENT -->
+      <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <h2 class="brand-font text-base font-bold theme-heading">
+              <i class="fa-solid fa-gamepad"></i> 4. All Games Management
+            </h2>
+            <p class="text-[10px] theme-subtext mt-1 font-medium">
+              Edit, reposition and customize every game.
+            </p>
+          </div>
+
+          <button type="button" onclick="loadAllGames()" class="chip-btn">
+            <i class="fa-solid fa-rotate"></i> Refresh
+          </button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 mb-3">
+          <div class="p-3 rounded-xl bg-teal-500/15 text-center border border-teal-500/25">
+            <div class="text-2xl font-black theme-heading" id="allGamesCount">0</div>
+            <div class="text-[10px] font-extrabold theme-text">TOTAL GAMES</div>
+          </div>
+          <div class="p-3 rounded-xl bg-cyan-500/15 text-center border border-cyan-500/25">
+            <div class="text-2xl font-black theme-heading" id="editedGamesCount">0</div>
+            <div class="text-[10px] font-extrabold theme-text">EDITED GAMES</div>
           </div>
         </div>
 
-        <div class="sub-panel p-4 rounded-2xl flex flex-col justify-between">
-          <div>
-            <h3 class="text-xs font-extrabold uppercase tracking-wider theme-heading mb-1">
-              <i class="fa-solid fa-chart-pie mr-1"></i> Live Metrics Distribution
-            </h3>
-            <p class="text-[10px] theme-subtext font-medium mb-2">
-              Real ratio of Views, APK/PWA Downloads, Logins &amp; Game Plays
-            </p>
-          </div>
-          <div class="relative h-52">
-            <canvas id="realDistributionChart"></canvas>
+        <input id="gameSearch" class="neon-input mb-3" placeholder="🔎 Search all games..." oninput="filterAllGames()">
+
+        <div id="allGamesStatus" class="text-xs text-center theme-subtext font-medium py-2">
+          Press Refresh to load games from GitHub.
+        </div>
+
+        <div id="allGamesList" class="space-y-2"></div>
+
+        <div id="gameEditPanel" class="hidden mt-4 p-4 rounded-2xl border border-teal-500/40 sub-panel">
+          <h3 class="font-black text-sm theme-heading mb-3">
+            <i class="fa-solid fa-pen-to-square"></i> EDIT GAME
+          </h3>
+
+          <input type="hidden" id="editGameIndex">
+
+          <label class="block text-xs font-bold theme-label mb-1">Game Name</label>
+          <input id="editGameTitle" class="neon-input mb-3">
+
+          <label class="block text-xs font-bold theme-label mb-1">Game URL</label>
+          <input id="editGameUrl" class="neon-input mb-3">
+
+          <label class="block text-xs font-bold theme-label mb-1">Change Game Logo</label>
+          <input id="editGameLogo" type="file" accept="image/*" class="neon-input mb-3">
+
+          <label class="block text-xs font-bold theme-label mb-1">Category</label>
+          <select id="editGameCategory" class="neon-input mb-3">
+            <option value="popular">Popular / Hot</option>
+            <option value="1v1">1v1 Battle</option>
+            <option value="classic">Classic</option>
+            <option value="racing">Racing</option>
+            <option value="sports">Sports</option>
+          </select>
+
+          <label class="block text-xs font-bold theme-label mb-1">Position around Popular Games</label>
+          <select id="editGamePosition" class="neon-input mb-3">
+            <option value="before-popular">Before Popular Games</option>
+            <option value="popular">Inside Popular Games</option>
+            <option value="after-popular">After Popular Games</option>
+          </select>
+
+          <label class="block text-xs font-bold theme-label mb-1">Game Card Size</label>
+          <select id="editGameSize" class="neon-input mb-3">
+            <option value="normal">Normal</option>
+            <option value="large">Large Bento (2x2)</option>
+          </select>
+
+          <label class="block text-xs font-bold theme-label mb-1">Logo Display Size</label>
+          <select id="editLogoSize" class="neon-input mb-4">
+            <option value="small">Small Logo</option>
+            <option value="large">Large Logo</option>
+          </select>
+
+          <div class="flex flex-wrap gap-2">
+            <button type="button" onclick="saveGameEdit()" class="neon-action flex-1">
+              <i class="fa-solid fa-cloud-arrow-up"></i> Save to GitHub
+            </button>
+            <button type="button" onclick="closeGameEditor()" class="chip-btn">Cancel</button>
           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- REAL EVENT LOG TABLE (FROM analytics.json ON GITHUB) -->
-      <div class="sub-panel p-4 rounded-2xl">
-        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-          <div>
-            <h3 class="text-xs font-extrabold uppercase tracking-wider theme-heading">
-              <i class="fa-solid fa-list-ul mr-1"></i> Real Recorded Events (<span class="code-font">analytics.json</span>)
-            </h3>
-            <p id="lastSyncTimestamp" class="text-[10px] theme-subtext font-medium">
-              Waiting for first sync...
-            </p>
-          </div>
-          <div class="flex flex-wrap items-center gap-1.5">
-            <button type="button" onclick="filterRealEvents('all')" id="evFilter_all" class="chip-btn active-tab !py-1 !px-2.5 !text-[10px]">All</button>
-            <button type="button" onclick="filterRealEvents('login')" id="evFilter_login" class="chip-btn !py-1 !px-2.5 !text-[10px]">Logins</button>
-            <button type="button" onclick="filterRealEvents('download')" id="evFilter_download" class="chip-btn !py-1 !px-2.5 !text-[10px]">App Downloads</button>
-            <button type="button" onclick="filterRealEvents('view')" id="evFilter_view" class="chip-btn !py-1 !px-2.5 !text-[10px]">Views / Plays</button>
-            <button type="button" onclick="exportRealTelemetryCSV()" class="chip-btn !py-1 !px-2.5 !text-[10px]">
-              <i class="fa-solid fa-file-csv"></i> Export CSV
+      <!-- SECTION 5: DIRECT GITHUB CODE EDITOR & LIVE PREVIEW -->
+      <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
+        <div class="flex flex-wrap items-center justify-between mb-3 pb-2 border-b border-teal-500/25 gap-2">
+          <h2 class="brand-font text-base font-bold theme-heading">
+            <i class="fa-solid fa-code text-teal-600 dark:text-[#32ffdc]"></i> 5. Direct GitHub Code Editor
+          </h2>
+          <div class="flex items-center flex-wrap gap-2">
+            <button type="button" onclick="openLivePreview()" class="chip-btn">
+              <i class="fa-solid fa-eye mr-1"></i> Live Preview
+            </button>
+            <button type="button" onclick="browseRepoDirectory('')" class="chip-btn">
+              <i class="fa-solid fa-folder-tree mr-1"></i> Browse Files
             </button>
           </div>
         </div>
 
-        <div class="overflow-x-auto max-h-64 overflow-y-auto rounded-xl border border-teal-500/25">
-          <table class="w-full text-left border-collapse text-xs">
-            <thead class="bg-teal-500/15 text-[10px] uppercase font-extrabold theme-heading sticky top-0 backdrop-blur-md">
-              <tr>
-                <th class="py-2.5 px-3">Type</th>
-                <th class="py-2.5 px-3">User / Detail</th>
-                <th class="py-2.5 px-3">Device / Mode</th>
-                <th class="py-2.5 px-3">Page / Action</th>
-                <th class="py-2.5 px-3 text-right">Timestamp</th>
-              </tr>
-            </thead>
-            <tbody id="realEventsTableBody" class="divide-y divide-teal-500/15 text-[11px]">
-              <tr>
-                <td colspan="5" class="py-6 text-center theme-subtext font-medium">
-                  No custom member events logged in <span class="code-font">analytics.json</span> yet. Live totals above are synced directly from the Cloud Counter &amp; GitHub API.
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- SECTION 3: NOTICE MANAGER -->
-    <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
-      <h2 class="brand-font text-base font-bold theme-heading mb-3">3. Announcement Notice Manager</h2>
-      <textarea id="noticeInput" class="neon-input font-semibold mb-3" rows="2">📢 NOTICE: Welcome to ST GAMES — Enjoy playing and check back for new games and updates!</textarea>
-      <button type="button" onclick="publishNotice()" class="neon-action !bg-gradient-to-r !from-amber-600 !to-orange-600">
-        <i class="fa-solid fa-paper-plane mr-1"></i> Update Notice on All Phones
-      </button>
-    </section>
-
-    <!-- SECTION 4: ADD GAME PUBLISHER -->
-    <section class="feature-hub rounded-2xl p-5 mb-5">
-      <h2 class="brand-font text-base font-bold theme-heading mb-3">4. Add &amp; Publish Game to All Phones</h2>
-      <form id="addGameForm" onsubmit="handleAddGame(event)" class="space-y-3">
-        <div class="grid sm:grid-cols-2 gap-3">
-          <div>
-            <label class="block text-[11px] font-bold theme-label mb-1">Game Title *</label>
-            <input id="gameTitle" required class="neon-input" placeholder="e.g., Salazar Alchemy" />
+        <div id="repoBrowserPanel" class="hidden mb-3 p-3 rounded-xl border border-teal-500/30 sub-panel">
+          <div class="flex items-center justify-between text-xs font-extrabold theme-label mb-2">
+            <span id="browserCurrentDir" class="code-font">/root</span>
+            <button type="button" onclick="document.getElementById('repoBrowserPanel').classList.add('hidden')" class="text-rose-600 dark:text-rose-400 font-bold">Close ✕</button>
           </div>
-          <div>
-            <label class="block text-[11px] font-bold theme-label mb-1">Game URL Path *</label>
-            <input id="gamePath" required class="neon-input" placeholder="e.g., game/salazar.html" />
-          </div>
+          <div id="repoFilesList" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto"></div>
         </div>
 
-        <div class="grid sm:grid-cols-2 gap-3">
-          <div>
-            <label class="block text-[11px] font-bold theme-label mb-1">Upload Logo Image</label>
-            <input id="logoFile" type="file" accept="image/*" class="neon-input text-[10px]">
-          </div>
-          <div>
-            <label class="block text-[11px] font-bold theme-label mb-1">Upload Game HTML File (Optional)</label>
-            <input id="gameHtmlFile" type="file" accept=".html,.htm" class="neon-input text-[10px]">
-          </div>
+        <div class="grid sm:grid-cols-[1fr_auto] gap-2.5 mb-3">
+          <input id="ghFilePath" class="neon-input code-font" placeholder="File path (e.g., index.html or stgames-apk/index.html)" value="index.html">
+          <button type="button" onclick="fetchFileFromGitHub()" class="neon-action">
+            <i class="fa-solid fa-cloud-arrow-down mr-1"></i> Load File
+          </button>
         </div>
 
-        <div class="grid sm:grid-cols-2 gap-3">
+        <textarea id="ghCodeEditor" class="code-textarea code-font mb-3" spellcheck="false" placeholder="Load a file to edit or create new code here..."></textarea>
+
+        <div class="grid sm:grid-cols-[1fr_auto] gap-2.5 items-center">
+          <input id="ghCommitMsg" class="neon-input" placeholder="Commit message (e.g., Update file)">
+          <button type="button" onclick="pushFileToGitHub()" class="neon-action !bg-gradient-to-r !from-teal-600 !to-cyan-600">
+            <i class="fa-solid fa-cloud-arrow-up mr-1"></i> Commit &amp; Push
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <!-- =====================================================================
+         TAB 2: TRACKING ANALYSIS (SEPARATE TAB FOR ALL LIVE TRACKINGS)
+    ====================================================================== -->
+    <div id="tabPanel_tracking" class="hidden">
+      <section id="liveTrackingSection" class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
+        <div class="flex flex-wrap items-center justify-between gap-3 pb-3 mb-4 border-b border-teal-500/25">
           <div>
-            <label class="block text-[11px] font-bold theme-label mb-1">Category</label>
-            <select id="gameCategory" class="neon-input">
-              <option value="popular">Popular / Hot</option>
-              <option value="1v1">1v1 Battle</option>
-              <option value="classic">Classic</option>
-              <option value="racing">Racing</option>
-              <option value="sports">Sports</option>
+            <div class="flex items-center gap-2 flex-wrap">
+              <h2 class="brand-font text-base sm:text-lg font-bold theme-heading flex items-center gap-2">
+                <i class="fa-solid fa-chart-line text-teal-600 dark:text-[#32ffdc]"></i> Live Tracking Analysis
+              </h2>
+              <span id="liveConnStatusBadge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-teal-500/15 theme-label border border-teal-500/30">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 live-dot"></span> Connecting...
+              </span>
+            </div>
+            <p class="text-[11px] theme-subtext mt-0.5 font-medium">
+              Real-time Website Views (<span class="code-font">index.html</span>), App Views (<span class="code-font">stgames-apk/index.html</span>), App Downloads, Member Logins &amp; Game Plays
+            </p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <select id="autoRefreshSelect" onchange="changeRefreshInterval()" class="neon-input !w-auto !py-1.5 !px-2.5 text-[11px]">
+              <option value="15000">🔄 Auto-Refresh: 15s</option>
+              <option value="30000">🔄 Auto-Refresh: 30s</option>
+              <option value="60000">🔄 Auto-Refresh: 60s</option>
+              <option value="0">⏸️ Auto-Refresh: Off</option>
             </select>
+            <button type="button" onclick="fetchAllRealTelemetry(true)" class="chip-btn">
+              <i id="syncSpinnerIcon" class="fa-solid fa-rotate"></i> Refresh Live Data
+            </button>
           </div>
+        </div>
+
+        <!-- 1-CLICK TRACKER ACTIVATION BAR FOR BOTH index.html AND stgames-apk/index.html -->
+        <div class="sub-panel p-3.5 rounded-2xl mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <label class="block text-[11px] font-bold theme-label mb-1">Bento Box Size</label>
-            <select id="gameSize" class="neon-input">
-              <option value="normal">Normal Square</option>
-              <option value="large">Large Bento Box (2x2)</option>
-            </select>
+            <div class="text-xs font-extrabold theme-heading flex items-center gap-1.5">
+              <i class="fa-solid fa-bolt text-amber-500"></i> 1-Click GitHub Tracker Activation
+            </div>
+            <p class="text-[11px] theme-subtext font-medium">
+              Automatically injects real tracking into <span class="code-font">index.html</span> and <span class="code-font">stgames-apk/index.html</span> on your GitHub repository.
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" id="installTrackerBtn" onclick="autoInstallTrackerOnFile('index.html')" class="neon-action !py-2 !px-3 !text-[11px]">
+              <i class="fa-solid fa-globe"></i> Activate Tracker in index.html
+            </button>
+            <button type="button" id="installApkTrackerBtn" onclick="autoInstallTrackerOnFile('stgames-apk/index.html')" class="neon-action !py-2 !px-3 !text-[11px] !bg-gradient-to-r !from-cyan-600 !to-teal-600">
+              <i class="fa-brands fa-android"></i> Activate in stgames-apk/index.html
+            </button>
           </div>
         </div>
 
-        <div class="flex items-center justify-between pt-2 gap-3">
-          <span id="publishGameStatus" class="text-xs font-bold theme-label"></span>
-          <button id="publishGameBtn" type="submit" class="neon-action !bg-gradient-to-r !from-emerald-600 !to-teal-600">
-            <i class="fa-solid fa-cloud-arrow-up mr-1"></i> Publish Game to All Phones
-          </button>
+        <!-- 5 REAL KPI CARDS (INCLUDING APP VIEWS FOR stgames-apk/index.html) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
+          <!-- 1. Website Views (index.html) -->
+          <div class="kpi-card">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[10px] font-extrabold uppercase tracking-wider theme-label">Website Views</span>
+              <span class="w-7 h-7 rounded-lg bg-teal-500/15 theme-label flex items-center justify-center">
+                <i class="fa-solid fa-globe"></i>
+              </span>
+            </div>
+            <div id="realTotalViews" class="text-2xl font-black theme-text code-font">0</div>
+            <div class="mt-2 pt-2 border-t border-teal-500/20 flex items-center justify-between text-[10px] theme-subtext font-semibold">
+              <span>14d GH: <strong id="realGhViews" class="theme-text">0</strong></span>
+              <span>Uniques: <strong id="realGhUniques" class="theme-text">0</strong></span>
+            </div>
+          </div>
+
+          <!-- 2. App Views (stgames-apk/index.html) -->
+          <div class="kpi-card">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[10px] font-extrabold uppercase tracking-wider theme-label">App Views (APK Page)</span>
+              <span class="w-7 h-7 rounded-lg bg-cyan-500/15 theme-label flex items-center justify-center">
+                <i class="fa-solid fa-mobile-screen"></i>
+              </span>
+            </div>
+            <div id="realApkPageViews" class="text-2xl font-black theme-text code-font">0</div>
+            <div class="mt-2 pt-2 border-t border-teal-500/20 flex items-center justify-between text-[10px] theme-subtext font-semibold">
+              <span class="code-font truncate">stgames-apk/index.html</span>
+            </div>
+          </div>
+
+          <!-- 3. App Downloads (APK + PWA) -->
+          <div class="kpi-card">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[10px] font-extrabold uppercase tracking-wider theme-label">App Downloads</span>
+              <span class="w-7 h-7 rounded-lg bg-teal-500/15 theme-label flex items-center justify-center">
+                <i class="fa-brands fa-android text-base"></i>
+              </span>
+            </div>
+            <div id="realTotalDownloads" class="text-2xl font-black theme-text code-font">0</div>
+            <div class="mt-2 pt-2 border-t border-teal-500/20 flex items-center justify-between text-[10px] theme-subtext font-semibold">
+              <span>APK: <strong id="realApkDownloads" class="theme-text">0</strong></span>
+              <span>PWA: <strong id="realPwaInstalls" class="theme-text">0</strong></span>
+            </div>
+          </div>
+
+          <!-- 4. Member Logins -->
+          <div class="kpi-card">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[10px] font-extrabold uppercase tracking-wider theme-label">Member Logins</span>
+              <span class="w-7 h-7 rounded-lg bg-teal-500/15 theme-label flex items-center justify-center">
+                <i class="fa-solid fa-user-check"></i>
+              </span>
+            </div>
+            <div id="realMemberLogins" class="text-2xl font-black theme-text code-font">0</div>
+            <div class="mt-2 pt-2 border-t border-teal-500/20 flex items-center justify-between text-[10px] theme-subtext font-semibold">
+              <span>Standalone: <strong id="realAppLaunches" class="theme-text">0</strong></span>
+              <span>Logs: <strong id="realLoggedMembersCount" class="theme-text">0</strong></span>
+            </div>
+          </div>
+
+          <!-- 5. Game Plays -->
+          <div class="kpi-card">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[10px] font-extrabold uppercase tracking-wider theme-label">Game Plays</span>
+              <span class="w-7 h-7 rounded-lg bg-teal-500/15 theme-label flex items-center justify-center">
+                <i class="fa-solid fa-gamepad"></i>
+              </span>
+            </div>
+            <div id="realGamePlays" class="text-2xl font-black theme-text code-font">0</div>
+            <div class="mt-2 pt-2 border-t border-teal-500/20 flex items-center justify-between text-[10px] theme-subtext font-semibold">
+              <span>Games: <strong id="realPublishedGamesCount" class="theme-text">0</strong></span>
+              <span>Stars: <strong id="realRepoStars" class="theme-text">0</strong></span>
+            </div>
+          </div>
         </div>
-      </form>
-    </section>
 
-    <!-- PUBLISHED GAMES LIST -->
-    <section class="feature-hub rounded-2xl p-5 mb-5">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="brand-font text-base font-bold theme-heading">Published Games (<span id="statCustom">0</span>)</h2>
-        <button type="button" onclick="wipeAllCustomGames()" class="text-xs font-bold text-rose-600 dark:text-rose-400 hover:underline">Clear All</button>
-      </div>
-      <div id="customGamesContainer" class="space-y-2">
-        <div class="text-xs theme-subtext py-4 text-center font-medium">No custom games published yet.</div>
-      </div>
-    </section>
+        <!-- CHARTS ROW: TRAFFIC HISTORY & DISTRIBUTION -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+          <div class="lg:col-span-2 sub-panel p-4 rounded-2xl">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+              <div>
+                <h3 class="text-xs font-extrabold uppercase tracking-wider theme-heading">
+                  <i class="fa-solid fa-chart-column mr-1"></i> Real Website &amp; App Tracking Overview
+                </h3>
+                <p id="trafficChartNote" class="text-[10px] theme-subtext font-medium">
+                  Live comparison of Website Views (<span class="code-font">index.html</span>), App Views (<span class="code-font">stgames-apk/index.html</span>), Downloads &amp; Logins
+                </p>
+              </div>
+            </div>
+            <div class="relative h-64">
+              <canvas id="realTrafficChart"></canvas>
+            </div>
+          </div>
 
-    <!-- SECTION 5: ALL GAMES MANAGEMENT -->
-    <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
-      <div class="flex items-center justify-between mb-3">
-        <div>
-          <h2 class="brand-font text-base font-bold theme-heading">
-            <i class="fa-solid fa-gamepad"></i> 5. All Games Management
-          </h2>
-          <p class="text-[10px] theme-subtext mt-1 font-medium">
-            Edit, reposition and customize every game.
-          </p>
+          <div class="sub-panel p-4 rounded-2xl flex flex-col justify-between">
+            <div>
+              <h3 class="text-xs font-extrabold uppercase tracking-wider theme-heading mb-1">
+                <i class="fa-solid fa-chart-pie mr-1"></i> Traffic &amp; App Share
+              </h3>
+              <p class="text-[10px] theme-subtext font-medium mb-2">
+                Share of Website Views, <span class="code-font">stgames-apk</span> Views, Downloads &amp; Logins
+              </p>
+            </div>
+            <div class="relative h-56">
+              <canvas id="realDistributionChart"></canvas>
+            </div>
+          </div>
         </div>
 
-        <button type="button" onclick="loadAllGames()" class="chip-btn">
-          <i class="fa-solid fa-rotate"></i> Refresh
-        </button>
-      </div>
+        <!-- REAL RECORDED EVENTS LOG TABLE -->
+        <div class="sub-panel p-4 rounded-2xl">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <div>
+              <h3 class="text-xs font-extrabold uppercase tracking-wider theme-heading">
+                <i class="fa-solid fa-list-ul mr-1"></i> Real Recorded Events (<span class="code-font">analytics.json</span>)
+              </h3>
+              <p id="lastSyncTimestamp" class="text-[10px] theme-subtext font-medium">
+                Waiting for first sync...
+              </p>
+            </div>
+            <div class="flex flex-wrap items-center gap-1.5">
+              <button type="button" onclick="filterRealEvents('all')" id="evFilter_all" class="chip-btn active-tab !py-1 !px-2.5 !text-[10px]">All</button>
+              <button type="button" onclick="filterRealEvents('apk_view')" id="evFilter_apk_view" class="chip-btn !py-1 !px-2.5 !text-[10px]">App Views (stgames-apk)</button>
+              <button type="button" onclick="filterRealEvents('login')" id="evFilter_login" class="chip-btn !py-1 !px-2.5 !text-[10px]">Logins</button>
+              <button type="button" onclick="filterRealEvents('download')" id="evFilter_download" class="chip-btn !py-1 !px-2.5 !text-[10px]">App Downloads</button>
+              <button type="button" onclick="filterRealEvents('view')" id="evFilter_view" class="chip-btn !py-1 !px-2.5 !text-[10px]">Views / Plays</button>
+              <button type="button" onclick="exportRealTelemetryCSV()" class="chip-btn !py-1 !px-2.5 !text-[10px]">
+                <i class="fa-solid fa-file-csv"></i> Export CSV
+              </button>
+            </div>
+          </div>
 
-      <div class="grid grid-cols-2 gap-2 mb-3">
-        <div class="p-3 rounded-xl bg-teal-500/15 text-center border border-teal-500/25">
-          <div class="text-2xl font-black theme-heading" id="allGamesCount">0</div>
-          <div class="text-[10px] font-extrabold theme-text">TOTAL GAMES</div>
+          <div class="overflow-x-auto max-h-64 overflow-y-auto rounded-xl border border-teal-500/25">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead class="bg-teal-500/15 text-[10px] uppercase font-extrabold theme-heading sticky top-0 backdrop-blur-md">
+                <tr>
+                  <th class="py-2.5 px-3">Type</th>
+                  <th class="py-2.5 px-3">User / Detail</th>
+                  <th class="py-2.5 px-3">Device / Mode</th>
+                  <th class="py-2.5 px-3">Page / Action</th>
+                  <th class="py-2.5 px-3 text-right">Timestamp</th>
+                </tr>
+              </thead>
+              <tbody id="realEventsTableBody" class="divide-y divide-teal-500/15 text-[11px]">
+                <tr>
+                  <td colspan="5" class="py-6 text-center theme-subtext font-medium">
+                    No custom member events logged in <span class="code-font">analytics.json</span> yet. Live totals above are synced directly from the Cloud Counter &amp; GitHub API.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-        <div class="p-3 rounded-xl bg-cyan-500/15 text-center border border-cyan-500/25">
-          <div class="text-2xl font-black theme-heading" id="editedGamesCount">0</div>
-          <div class="text-[10px] font-extrabold theme-text">EDITED GAMES</div>
-        </div>
-      </div>
-
-      <input id="gameSearch" class="neon-input mb-3" placeholder="🔎 Search all games..." oninput="filterAllGames()">
-
-      <div id="allGamesStatus" class="text-xs text-center theme-subtext font-medium py-2">
-        Press Refresh to load games from GitHub.
-      </div>
-
-      <div id="allGamesList" class="space-y-2"></div>
-
-      <div id="gameEditPanel" class="hidden mt-4 p-4 rounded-2xl border border-teal-500/40 sub-panel">
-        <h3 class="font-black text-sm theme-heading mb-3">
-          <i class="fa-solid fa-pen-to-square"></i> EDIT GAME
-        </h3>
-
-        <input type="hidden" id="editGameIndex">
-
-        <label class="block text-xs font-bold theme-label mb-1">Game Name</label>
-        <input id="editGameTitle" class="neon-input mb-3">
-
-        <label class="block text-xs font-bold theme-label mb-1">Game URL</label>
-        <input id="editGameUrl" class="neon-input mb-3">
-
-        <label class="block text-xs font-bold theme-label mb-1">Change Game Logo</label>
-        <input id="editGameLogo" type="file" accept="image/*" class="neon-input mb-3">
-
-        <label class="block text-xs font-bold theme-label mb-1">Category</label>
-        <select id="editGameCategory" class="neon-input mb-3">
-          <option value="popular">Popular / Hot</option>
-          <option value="1v1">1v1 Battle</option>
-          <option value="classic">Classic</option>
-          <option value="racing">Racing</option>
-          <option value="sports">Sports</option>
-        </select>
-
-        <label class="block text-xs font-bold theme-label mb-1">Position around Popular Games</label>
-        <select id="editGamePosition" class="neon-input mb-3">
-          <option value="before-popular">Before Popular Games</option>
-          <option value="popular">Inside Popular Games</option>
-          <option value="after-popular">After Popular Games</option>
-        </select>
-
-        <label class="block text-xs font-bold theme-label mb-1">Game Card Size</label>
-        <select id="editGameSize" class="neon-input mb-3">
-          <option value="normal">Normal</option>
-          <option value="large">Large Bento (2x2)</option>
-        </select>
-
-        <label class="block text-xs font-bold theme-label mb-1">Logo Display Size</label>
-        <select id="editLogoSize" class="neon-input mb-4">
-          <option value="small">Small Logo</option>
-          <option value="large">Large Logo</option>
-        </select>
-
-        <div class="flex flex-wrap gap-2">
-          <button type="button" onclick="saveGameEdit()" class="neon-action flex-1">
-            <i class="fa-solid fa-cloud-arrow-up"></i> Save to GitHub
-          </button>
-          <button type="button" onclick="closeGameEditor()" class="chip-btn">Cancel</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- SECTION 6: DIRECT GITHUB CODE EDITOR & LIVE PREVIEW -->
-    <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
-      <div class="flex flex-wrap items-center justify-between mb-3 pb-2 border-b border-teal-500/25 gap-2">
-        <h2 class="brand-font text-base font-bold theme-heading">
-          <i class="fa-solid fa-code text-teal-600 dark:text-[#32ffdc]"></i> 6. Direct GitHub Code Editor
-        </h2>
-        <div class="flex items-center flex-wrap gap-2">
-          <button type="button" onclick="openLivePreview()" class="chip-btn">
-            <i class="fa-solid fa-eye mr-1"></i> Live Preview
-          </button>
-          <button type="button" onclick="browseRepoDirectory('')" class="chip-btn">
-            <i class="fa-solid fa-folder-tree mr-1"></i> Browse Files
-          </button>
-        </div>
-      </div>
-
-      <div id="repoBrowserPanel" class="hidden mb-3 p-3 rounded-xl border border-teal-500/30 sub-panel">
-        <div class="flex items-center justify-between text-xs font-extrabold theme-label mb-2">
-          <span id="browserCurrentDir" class="code-font">/root</span>
-          <button type="button" onclick="document.getElementById('repoBrowserPanel').classList.add('hidden')" class="text-rose-600 dark:text-rose-400 font-bold">Close ✕</button>
-        </div>
-        <div id="repoFilesList" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto"></div>
-      </div>
-
-      <div class="grid sm:grid-cols-[1fr_auto] gap-2.5 mb-3">
-        <input id="ghFilePath" class="neon-input code-font" placeholder="File path (e.g., index.html or games.json)" value="index.html">
-        <button type="button" onclick="fetchFileFromGitHub()" class="neon-action">
-          <i class="fa-solid fa-cloud-arrow-down mr-1"></i> Load File
-        </button>
-      </div>
-
-      <textarea id="ghCodeEditor" class="code-textarea code-font mb-3" spellcheck="false" placeholder="Load a file to edit or create new code here..."></textarea>
-
-      <div class="grid sm:grid-cols-[1fr_auto] gap-2.5 items-center">
-        <input id="ghCommitMsg" class="neon-input" placeholder="Commit message (e.g., Update file)">
-        <button type="button" onclick="pushFileToGitHub()" class="neon-action !bg-gradient-to-r !from-teal-600 !to-cyan-600">
-          <i class="fa-solid fa-cloud-arrow-up mr-1"></i> Commit &amp; Push
-        </button>
-      </div>
-    </section>
+      </section>
+    </div>
   </main>
 
   <!-- LIVE CODE PREVIEW MODAL -->
@@ -836,6 +923,29 @@
     }
 
     /* ==========================================================
+       TOP NAVIGATION TAB SWITCHER (STUDIO MANAGER vs TRACKING ANALYSIS)
+    ========================================================== */
+    let currentMainTab = 'studio';
+
+    function switchAdminMainTab(tabName) {
+      currentMainTab = tabName;
+      const isStudio = tabName === 'studio';
+      document.getElementById('tabPanel_studio').classList.toggle('hidden', !isStudio);
+      document.getElementById('tabPanel_tracking').classList.toggle('hidden', isStudio);
+
+      document.getElementById('navBtn_studio').classList.toggle('active-main-tab', isStudio);
+      document.getElementById('navBtn_tracking').classList.toggle('active-main-tab', !isStudio);
+
+      if (!isStudio) {
+        // Re-render and resize charts cleanly when opening Tracking Analysis tab
+        setTimeout(() => {
+          updateRealCharts();
+          fetchAllRealTelemetry(false);
+        }, 60);
+      }
+    }
+
+    /* ==========================================================
        STRICT PASSWORD GATE (NO PASSCODE SHOWN ON SCREEN)
     ========================================================== */
     function verifyAdminPassword() {
@@ -939,15 +1049,23 @@
     }
 
     /* ==========================================================
-       SECTION 2: 100% REAL TELEMETRY (NO FAKE NUMBERS)
+       100% REAL TELEMETRY (INCLUDING APP VIEWS FOR stgames-apk/index.html)
        Reads from:
        1) Cloud CounterAPI (api.counterapi.dev/v1/stgames_<owner>_<repo>/...)
+          - views (Website index.html views)
+          - apk_page_views (App views on stgames-apk/index.html)
+          - apk_downloads
+          - pwa_installs
+          - member_logins
+          - app_launches
+          - game_plays
        2) GitHub Traffic API (/repos/<owner>/<repo>/traffic/views)
        3) GitHub Releases API (/repos/<owner>/<repo>/releases)
        4) GitHub analytics.json (/repos/<owner>/<repo>/contents/analytics.json)
     ========================================================== */
     let realMetrics = {
       views: 0,
+      apkPageViews: 0,
       ghViews14d: 0,
       ghUniques14d: 0,
       apkDownloads: 0,
@@ -957,8 +1075,8 @@
       appLaunches: 0,
       gamePlays: 0,
       repoStars: 0,
-      trafficHistory: [], // Array of { date, count, uniques } from GitHub API
-      recordedEvents: []  // Array of real events from analytics.json
+      trafficHistory: [],
+      recordedEvents: []
     };
 
     let realTrafficChartInstance = null;
@@ -988,9 +1106,18 @@
       if (badge) badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 live-dot"></span> Syncing Live API...`;
 
       try {
-        // 1. Fetch real live counters from CounterAPI in parallel
-        const [viewsCount, apkCount, pwaCount, loginsCount, launchesCount, playsCount] = await Promise.all([
+        // 1. Fetch all real counters (including apk_page_views for stgames-apk/index.html) in parallel
+        const [
+          viewsCount,
+          apkPageViewsCount,
+          apkCount,
+          pwaCount,
+          loginsCount,
+          launchesCount,
+          playsCount
+        ] = await Promise.all([
           readCounterApiValue(namespace, 'views'),
+          readCounterApiValue(namespace, 'apk_page_views'),
           readCounterApiValue(namespace, 'apk_downloads'),
           readCounterApiValue(namespace, 'pwa_installs'),
           readCounterApiValue(namespace, 'member_logins'),
@@ -999,6 +1126,7 @@
         ]);
 
         realMetrics.views = viewsCount;
+        realMetrics.apkPageViews = apkPageViewsCount;
         realMetrics.apkDownloads = apkCount;
         realMetrics.pwaInstalls = pwaCount;
         realMetrics.memberLogins = loginsCount;
@@ -1009,7 +1137,6 @@
         const ghHeaders = { 'Accept': 'application/vnd.github+json' };
         if (c.token) ghHeaders['Authorization'] = `Bearer ${c.token}`;
 
-        // 2a. Repo metadata (stars)
         try {
           const repoRes = await fetch(`https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}`, {
             cache: 'no-store',
@@ -1021,7 +1148,6 @@
           }
         } catch (_) {}
 
-        // 2b. GitHub Releases (.apk download_count)
         try {
           const relRes = await fetch(`https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/releases`, {
             cache: 'no-store',
@@ -1041,7 +1167,6 @@
           }
         } catch (_) {}
 
-        // 2c. GitHub 14-Day Traffic Views (Requires Personal Token with push access)
         if (c.token) {
           try {
             const trafficRes = await fetch(`https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/traffic/views`, {
@@ -1063,7 +1188,6 @@
           } catch (_) {}
         }
 
-        // 2d. Fetch analytics.json from repo if present
         try {
           const anaRes = await fetch(`https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/analytics.json?ref=${encodeURIComponent(c.branch)}&t=${Date.now()}`, {
             cache: 'no-store',
@@ -1088,7 +1212,7 @@
           badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 live-dot"></span> Live Synced (${nowStr})`;
         }
         if (manual) {
-          showToast('Live tracking data refreshed from Cloud Counter & GitHub!', 'success');
+          showToast('Live tracking data refreshed!', 'success');
         }
       } catch (err) {
         if (badge) {
@@ -1109,6 +1233,8 @@
       document.getElementById('realGhViews').textContent = realMetrics.ghViews14d.toLocaleString();
       document.getElementById('realGhUniques').textContent = realMetrics.ghUniques14d.toLocaleString();
 
+      document.getElementById('realApkPageViews').textContent = realMetrics.apkPageViews.toLocaleString();
+
       document.getElementById('realTotalDownloads').textContent = totalDownloadsCombined.toLocaleString();
       document.getElementById('realApkDownloads').textContent = totalApkCombined.toLocaleString();
       document.getElementById('realPwaInstalls').textContent = realMetrics.pwaInstalls.toLocaleString();
@@ -1121,7 +1247,9 @@
       document.getElementById('realPublishedGamesCount').textContent = allGamesData.length.toLocaleString();
       document.getElementById('realRepoStars').textContent = realMetrics.repoStars.toLocaleString();
 
-      updateRealCharts();
+      if (currentMainTab === 'tracking') {
+        updateRealCharts();
+      }
       renderRealEventsTable();
     }
 
@@ -1137,7 +1265,6 @@
       if (typeof Chart === 'undefined') return;
       const { textColor, gridColor } = getChartColors();
 
-      // 1. Traffic & Counter Bar/Line Chart
       const trafficCtx = document.getElementById('realTrafficChart');
       if (trafficCtx) {
         if (realTrafficChartInstance) realTrafficChartInstance.destroy();
@@ -1145,7 +1272,14 @@
         const hasGhHistory = realMetrics.trafficHistory && realMetrics.trafficHistory.length > 0;
         const labels = hasGhHistory
           ? realMetrics.trafficHistory.map(item => item.date)
-          : ['Website Views', 'APK Downloads', 'PWA Installs', 'Member Logins', 'App Opens', 'Game Plays'];
+          : [
+              'Website Views (index.html)',
+              'App Views (stgames-apk)',
+              'APK Downloads',
+              'PWA Installs',
+              'Member Logins',
+              'Game Plays'
+            ];
 
         const datasets = hasGhHistory
           ? [
@@ -1173,13 +1307,13 @@
                 label: 'Live Cloud Counter Totals',
                 data: [
                   realMetrics.views,
+                  realMetrics.apkPageViews,
                   realMetrics.apkDownloads + realMetrics.releaseApkDownloads,
                   realMetrics.pwaInstalls,
                   realMetrics.memberLogins,
-                  realMetrics.appLaunches,
                   realMetrics.gamePlays
                 ],
-                backgroundColor: ['#0d9488', '#0891b2', '#10b981', '#d97706', '#6366f1', '#9333ea'],
+                backgroundColor: ['#0d9488', '#06b6d4', '#0284c7', '#10b981', '#d97706', '#9333ea'],
                 borderRadius: 8
               }
             ];
@@ -1210,12 +1344,12 @@
         });
       }
 
-      // 2. Distribution Doughnut Chart
       const distCtx = document.getElementById('realDistributionChart');
       if (distCtx) {
         if (realDistChartInstance) realDistChartInstance.destroy();
         const values = [
           Math.max(realMetrics.views, realMetrics.ghViews14d),
+          realMetrics.apkPageViews,
           realMetrics.apkDownloads + realMetrics.releaseApkDownloads,
           realMetrics.pwaInstalls,
           realMetrics.memberLogins,
@@ -1226,12 +1360,19 @@
         realDistChartInstance = new Chart(distCtx, {
           type: 'doughnut',
           data: {
-            labels: ['Website Views', 'APK Downloads', 'PWA Installs', 'Member Logins', 'Game Plays'],
+            labels: [
+              'Website Views',
+              'App Views (stgames-apk)',
+              'APK Downloads',
+              'PWA Installs',
+              'Member Logins',
+              'Game Plays'
+            ],
             datasets: [{
-              data: sum > 0 ? values : [1, 1, 1, 1, 1],
+              data: sum > 0 ? values : [1, 1, 1, 1, 1, 1],
               backgroundColor: sum > 0
-                ? ['#0d9488', '#0891b2', '#10b981', '#d97706', '#9333ea']
-                : ['#94a3b8', '#cbd5e1', '#e2e8f0', '#94a3b8', '#cbd5e1'],
+                ? ['#0d9488', '#06b6d4', '#0284c7', '#10b981', '#d97706', '#9333ea']
+                : ['#94a3b8', '#cbd5e1', '#e2e8f0', '#94a3b8', '#cbd5e1', '#e2e8f0'],
               borderWidth: 2
             }]
           },
@@ -1251,12 +1392,14 @@
     }
 
     function updateChartThemeColors() {
-      updateRealCharts();
+      if (currentMainTab === 'tracking') {
+        updateRealCharts();
+      }
     }
 
     function filterRealEvents(type) {
       currentEventFilter = type;
-      ['all', 'login', 'download', 'view'].forEach(t => {
+      ['all', 'apk_view', 'login', 'download', 'view'].forEach(t => {
         const btn = document.getElementById(`evFilter_${t}`);
         if (btn) btn.classList.toggle('active-tab', t === type);
       });
@@ -1276,7 +1419,7 @@
         tbody.innerHTML = `
           <tr>
             <td colspan="5" class="py-6 text-center theme-subtext font-medium">
-              No custom events in <span class="code-font">analytics.json</span> matching this filter yet. Live totals above update automatically from your website tracker.
+              No custom events in <span class="code-font">analytics.json</span> matching this filter yet. Live totals above update automatically from your website &amp; <span class="code-font">stgames-apk/index.html</span> tracker.
             </td>
           </tr>`;
         return;
@@ -1296,7 +1439,8 @@
     function exportRealTelemetryCSV() {
       const rows = [
         ['Metric', 'Live Count'],
-        ['Website Views (CounterAPI)', realMetrics.views],
+        ['Website Views (index.html)', realMetrics.views],
+        ['App Views (stgames-apk/index.html)', realMetrics.apkPageViews],
         ['GitHub Traffic Views (14d)', realMetrics.ghViews14d],
         ['GitHub Unique Visitors (14d)', realMetrics.ghUniques14d],
         ['APK Downloads (Clicks + Releases)', realMetrics.apkDownloads + realMetrics.releaseApkDownloads],
@@ -1332,7 +1476,7 @@
       }
     }
 
-    /* 1-CLICK TRACKER INJECTOR INTO index.html ON GITHUB */
+    /* 1-CLICK TRACKER INJECTOR FOR index.html AND stgames-apk/index.html */
     function getWebsiteTrackerCode() {
       const c = getCreds();
       const ns = `stgames_${c.owner}_${c.repo}`.toLowerCase().replace(/[^a-z0-9_]/g, '_');
@@ -1341,11 +1485,16 @@
 (function() {
   var NS = "${ns}";
   var isApp = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  var path = (window.location.pathname || "").toLowerCase();
   function hit(key) {
     fetch("https://api.counterapi.dev/v1/" + NS + "/" + key + "/up", { mode: "cors" }).catch(function(){});
   }
   window.addEventListener("DOMContentLoaded", function() {
-    hit("views");
+    if (path.indexOf("stgames-apk") !== -1) {
+      hit("apk_page_views");
+    } else {
+      hit("views");
+    }
     if (isApp) hit("app_launches");
     document.body.addEventListener("click", function(e) {
       var el = e.target.closest("a, button");
@@ -1368,26 +1517,32 @@
   });
   window.stTrackLogin = function() { hit("member_logins"); };
   window.stTrackDownload = function() { hit("apk_downloads"); };
+  window.stTrackApkPageView = function() { hit("apk_page_views"); };
   window.stTrackGamePlay = function() { hit("game_plays"); };
 })();
 <\/script>`;
     }
 
-    async function autoInstallTrackerOnGitHub() {
+    async function autoInstallTrackerOnFile(targetFilePath) {
       const c = getCreds();
       if (!c.token) {
-        showToast('Enter and save your GitHub Personal Token in Section 1 first!', 'warn');
+        showToast('Enter and save your GitHub Personal Token in Studio Manager -> Section 1 first!', 'warn');
+        switchAdminMainTab('studio');
         document.getElementById('ghToken').focus();
         return;
       }
-      const btn = document.getElementById('installTrackerBtn');
-      btn.disabled = true;
+
+      const cleanTarget = encodeRepoPath(targetFilePath);
+      const isApkFile = targetFilePath.includes('stgames-apk');
+      const btn = document.getElementById(isApkFile ? 'installApkTrackerBtn' : 'installTrackerBtn');
+      if (btn) btn.disabled = true;
+
       try {
-        const res = await fetch(`https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/index.html?ref=${encodeURIComponent(c.branch)}&t=${Date.now()}`, {
+        const res = await fetch(`https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/${cleanTarget}?ref=${encodeURIComponent(c.branch)}&t=${Date.now()}`, {
           cache: 'no-store',
           headers: { 'Authorization': `Bearer ${c.token}`, 'Accept': 'application/vnd.github+json' }
         });
-        if (!res.ok) throw new Error('Could not fetch index.html from GitHub.');
+        if (!res.ok) throw new Error(`Could not fetch ${targetFilePath} from GitHub.`);
         const data = await res.json();
         let html = base64ToUtf8(data.content);
         const trackerScript = getWebsiteTrackerCode();
@@ -1400,17 +1555,17 @@
           html += `\n${trackerScript}\n`;
         }
 
-        await pushFileDirect('index.html', html, 'Activate ST Games real live tracker in index.html');
-        showToast('Live tracker activated in index.html on stgames.online!', 'success');
+        await pushFileDirect(targetFilePath, html, `Activate ST Games real live tracker in ${targetFilePath}`);
+        showToast(`Live tracker activated in ${targetFilePath} on GitHub!`, 'success');
       } catch (err) {
-        showToast('Tracker install error: ' + err.message, 'error');
+        showToast(`Tracker install error (${targetFilePath}): ` + err.message, 'error');
       } finally {
-        btn.disabled = false;
+        if (btn) btn.disabled = false;
       }
     }
 
     /* ==========================================================
-       EXISTING SECTIONS 3, 4, 5, 6 (NOTICE, GAMES, CODE EDITOR)
+       STUDIO MANAGER SECTIONS (NOTICE, GAMES, CODE EDITOR)
     ========================================================== */
     function safeSaveLocalGames(list) {
       try {
@@ -1940,7 +2095,6 @@
         };
       }
 
-      // Apply saved theme (defaults to White/Light theme with high-contrast dark fonts)
       const isDark = safeGetStorage('st_theme') === 'dark';
       applyTheme(isDark);
 
@@ -1952,7 +2106,6 @@
         if (s.token) document.getElementById('ghToken').value = s.token;
       } catch (_) {}
 
-      // Only unlock if user has previously entered the right password in this browser
       if (safeGetStorage('st_admin_unlocked') === 'true') {
         document.getElementById('passwordModal').classList.add('hidden');
       }
