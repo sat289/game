@@ -3,17 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Happy Glass - Liquid Flow 50 Levels</title>
+    <title>Happy Glass 3D - 50 Levels</title>
     <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         body {
             margin: 0;
             padding: 0;
-            background: #eef2f5;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #e2e8f0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
+            height: 100dvh;
             overflow: hidden;
             touch-action: none;
             user-select: none;
@@ -21,15 +27,16 @@
 
         #game-container {
             width: 100%;
-            max-width: 400px;
-            height: 100vh;
-            max-height: 700px;
+            max-width: 420px;
+            height: 100%;
+            max-height: 740px;
             background: #ffffff;
             position: relative;
-            box-shadow: 0 12px 35px rgba(0,0,0,0.18);
-            border-radius: 16px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+            border-radius: 18px;
             overflow: hidden;
-            border: 2px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
         }
 
         .screen {
@@ -41,6 +48,7 @@
             display: flex;
             flex-direction: column;
             background: #ffffff;
+            z-index: 20;
         }
 
         .hidden {
@@ -49,18 +57,17 @@
 
         /* Level Select Screen */
         #level-select-screen {
-            padding: 20px;
-            box-sizing: border-box;
-            background: #ffffff;
+            padding: 18px;
+            background: linear-gradient(180deg, #f0f9ff 0%, #ffffff 100%);
         }
 
         .header-title {
             text-align: center;
-            color: #00acc1;
-            font-size: 28px;
+            color: #0284c7;
+            font-size: 26px;
             font-weight: 900;
-            margin: 15px 0 20px 0;
-            letter-spacing: 2px;
+            margin: 10px 0 16px 0;
+            letter-spacing: 1.5px;
         }
 
         .levels-grid {
@@ -68,25 +75,28 @@
             grid-template-columns: repeat(5, 1fr);
             gap: 12px;
             overflow-y: auto;
-            max-height: 550px;
-            padding: 8px;
+            flex: 1;
+            padding: 8px 4px 20px 4px;
             justify-items: center;
+            align-content: start;
         }
 
         .level-btn {
-            width: 52px;
-            height: 52px;
+            width: 54px;
+            height: 54px;
             border-radius: 50%;
-            background: linear-gradient(145deg, #ffd54f, #ffb300);
-            border: none;
+            background: linear-gradient(145deg, #fbbf24, #f59e0b);
+            border: 2px solid #ffffff;
             color: #fff;
             font-size: 18px;
-            font-weight: bold;
+            font-weight: 800;
             cursor: pointer;
-            box-shadow: 0 4px 8px rgba(255, 179, 0, 0.35);
+            box-shadow: 0 4px 10px rgba(245, 158, 11, 0.35);
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
+            position: relative;
         }
 
         .level-btn:active {
@@ -107,16 +117,18 @@
                 linear-gradient(to right, #f1f5f9 1px, transparent 1px),
                 linear-gradient(to bottom, #f1f5f9 1px, transparent 1px);
             background-size: 20px 20px;
+            z-index: 10;
         }
 
         .top-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 18px;
-            background: rgba(255,255,255,0.94);
-            z-index: 10;
-            border-bottom: 1px solid #f1f5f9;
+            padding: 12px 14px;
+            background: rgba(255,255,255,0.95);
+            border-bottom: 2px solid #f1f5f9;
+            height: 64px;
+            flex-shrink: 0;
         }
 
         .icon-btn {
@@ -131,20 +143,27 @@
             align-items: center;
             justify-content: center;
             box-shadow: 0 2px 5px rgba(0,0,0,0.06);
+            padding: 0;
         }
 
         .icon-btn:active {
-            transform: scale(0.92);
+            transform: scale(0.9);
         }
 
         .level-indicator {
-            font-weight: 800;
-            color: #334155;
-            font-size: 18px;
+            font-weight: 900;
+            color: #1e293b;
+            font-size: 17px;
+            white-space: nowrap;
+        }
+
+        .meter-wrapper {
+            position: relative;
+            width: 130px;
         }
 
         .meter-container {
-            width: 140px;
+            width: 100%;
             height: 14px;
             background: #e2e8f0;
             border-radius: 10px;
@@ -159,10 +178,26 @@
             transition: width 0.05s linear;
         }
 
+        .star-markers {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: #f59e0b;
+            padding: 0 12px;
+            margin-top: 2px;
+        }
+
+        .canvas-wrapper {
+            flex: 1;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
         canvas {
             display: block;
             width: 100%;
-            height: calc(100% - 65px);
+            height: 100%;
             cursor: crosshair;
         }
 
@@ -173,7 +208,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(15, 23, 42, 0.55);
+            background: rgba(15, 23, 42, 0.6);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -183,12 +218,12 @@
 
         .modal-content {
             background: white;
-            padding: 28px;
-            border-radius: 20px;
+            padding: 26px;
+            border-radius: 22px;
             text-align: center;
-            width: 260px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            width: 270px;
+            box-shadow: 0 20px 45px rgba(0,0,0,0.35);
+            animation: popIn 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         @keyframes popIn {
@@ -203,21 +238,28 @@
         }
 
         .stars {
-            font-size: 32px;
+            font-size: 34px;
             margin-bottom: 12px;
+            letter-spacing: 4px;
         }
 
         .modal-btn {
             background: linear-gradient(135deg, #22c55e, #16a34a);
             color: white;
             border: none;
-            padding: 13px 24px;
+            padding: 13px 20px;
             font-size: 16px;
-            font-weight: bold;
+            font-weight: 800;
             border-radius: 12px;
             cursor: pointer;
             width: 100%;
             box-shadow: 0 4px 12px rgba(34, 197, 94, 0.35);
+            margin-top: 6px;
+        }
+
+        .modal-btn.retry {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
         }
     </style>
 </head>
@@ -225,48 +267,76 @@
 
 <div id="game-container">
     <!-- Level Select Screen -->
-    <div id="level-select-screen" class="screen">
-        <div class="header-title">LEVELS</div>
+    <div id="level-select-screen" class="screen hidden">
+        <div class="header-title">SELECT LEVEL (1-50)</div>
         <div class="levels-grid" id="levels-grid"></div>
     </div>
 
-    <!-- Gameplay Screen -->
-    <div id="game-screen" class="screen hidden">
+    <!-- Gameplay Screen (Visible immediately on load!) -->
+    <div id="game-screen" class="screen">
         <div class="top-bar">
-            <button class="icon-btn" onclick="returnToLevels()">🏠</button>
+            <button class="icon-btn" onclick="returnToLevels()" title="Levels">🏠</button>
             <div class="level-indicator" id="current-level-text">LEVEL 1</div>
-            <div class="meter-container">
-                <div id="ink-fill"></div>
+            <div class="meter-wrapper">
+                <div class="meter-container">
+                    <div id="ink-fill"></div>
+                </div>
+                <div class="star-markers">
+                    <span>★</span><span>★★</span><span>★★★</span>
+                </div>
             </div>
-            <button class="icon-btn" onclick="restartLevel()">🔄</button>
+            <button class="icon-btn" onclick="toggleHint()" title="Hint">💡</button>
+            <button class="icon-btn" onclick="restartLevel()" title="Restart">🔄</button>
         </div>
-        <canvas id="gameCanvas" width="400" height="635"></canvas>
+        <div class="canvas-wrapper">
+            <canvas id="gameCanvas" width="400" height="620"></canvas>
+        </div>
     </div>
 
-    <!-- Victory Modal -->
+    <!-- Victory / Try Again Modal -->
     <div id="victory-modal" class="modal hidden">
         <div class="modal-content">
-            <h2>Happy Glass!</h2>
-            <div class="stars">⭐⭐⭐</div>
-            <p style="color:#64748b; margin: 0 0 18px 0;">Level Completed!</p>
-            <button class="modal-btn" onclick="nextLevel()">NEXT LEVEL ▶</button>
+            <h2 id="modal-title">Happy Glass!</h2>
+            <div class="stars" id="modal-stars">⭐⭐⭐</div>
+            <p id="modal-desc" style="color:#64748b; margin: 0 0 14px 0;">Level Completed!</p>
+            <button class="modal-btn" id="modal-primary-btn" onclick="nextLevel()">NEXT LEVEL ▶</button>
         </div>
     </div>
 </div>
 
 <script>
     // ==========================================
-    // 1. SYNTHESIZED SOUND ENGINE (Web Audio API)
+    // 1. CROSS-BROWSER ROUNDED RECT HELPER
+    // ==========================================
+    function drawRoundedBox(context, x, y, w, h, r) {
+        r = Math.min(r, w / 2, h / 2);
+        context.beginPath();
+        context.moveTo(x + r, y);
+        context.lineTo(x + w - r, y);
+        context.quadraticCurveTo(x + w, y, x + w, y + r);
+        context.lineTo(x + w, y + h - r);
+        context.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        context.lineTo(x + r, y + h);
+        context.quadraticCurveTo(x, y + h, x, y + h - r);
+        context.lineTo(x, y + r);
+        context.quadraticCurveTo(x, y, x + r, y);
+        context.closePath();
+    }
+
+    // ==========================================
+    // 2. WEB AUDIO SYNTHESIZER (NO EXTERNAL FILES)
     // ==========================================
     let audioCtx = null;
 
     function initAudio() {
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
+        try {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        } catch (e) {}
     }
 
     function playSound(type) {
@@ -279,7 +349,7 @@
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.type = 'triangle';
-                osc.frequency.setValueAtTime(180 + Math.random() * 60, now);
+                osc.frequency.setValueAtTime(190 + Math.random() * 60, now);
                 gain.gain.setValueAtTime(0.02, now);
                 gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
                 osc.connect(gain);
@@ -290,9 +360,9 @@
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.type = 'sine';
-                const f = 320 + (glass.filled * 3.2) + Math.random() * 80;
+                const f = 330 + (glass.filled * 3.5) + Math.random() * 70;
                 osc.frequency.setValueAtTime(f, now);
-                gain.gain.setValueAtTime(0.015, now);
+                gain.gain.setValueAtTime(0.018, now);
                 gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
@@ -316,40 +386,42 @@
     }
 
     // ==========================================
-    // 2. METABALL LIQUID SHADER BUFFER
+    // 3. GAME STATE & 50-LEVEL INITIALIZATION
     // ==========================================
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // Offscreen canvas used to blend fluid particles into a continuous liquid stream
     const fluidCanvas = document.createElement('canvas');
     fluidCanvas.width = 400;
-    fluidCanvas.height = 635;
+    fluidCanvas.height = 620;
     const fluidCtx = fluidCanvas.getContext('2d');
 
     let currentLevel = 1;
-    let unlockedLevel = 1;
+    let unlockedLevel = parseInt(localStorage.getItem('happyGlassUnlocked') || '1', 10);
     let gameState = 'drawing';
     let ink = 100;
+    let showHint = false;
 
     let lines = [];
     let currentLine = null;
     let isDrawing = false;
 
-    let pipe = {};
-    let glass = {};
+    // Default valid objects so canvas NEVER renders blank
+    let pipe = { x: 60, y: 70, w: 38, h: 32 };
+    let glass = { x: 265, y: 440, w: 68, h: 88, taper: 9, filled: 0, walls: [] };
     let obstacles = [];
     let particles = [];
-    let spawnTimer = 0;
+    let splashes = [];
     let totalSpawned = 0;
-    const MAX_WATER_PARTICLES = 260;
+    let emptyFrames = 0;
+    const MAX_WATER_PARTICLES = 270;
     let waveTime = 0;
 
-    // Build 50 Level Buttons
+    // Generate 50 Level Buttons
     const gridContainer = document.getElementById('levels-grid');
     for (let i = 1; i <= 50; i++) {
         const btn = document.createElement('button');
-        btn.className = 'level-btn' + (i > 1 ? ' locked' : '');
+        btn.className = 'level-btn' + (i > unlockedLevel ? ' locked' : '');
         btn.id = `lvl-btn-${i}`;
         btn.innerText = i;
         btn.onclick = () => {
@@ -377,6 +449,10 @@
         updateLevelButtons();
     }
 
+    function toggleHint() {
+        showHint = !showHint;
+    }
+
     function startLevel(lvl) {
         currentLevel = lvl;
         document.getElementById('current-level-text').innerText = `LEVEL ${lvl}`;
@@ -388,50 +464,62 @@
     }
 
     function restartLevel() {
+        document.getElementById('victory-modal').classList.add('hidden');
         resetLevelState();
     }
 
     function resetLevelState() {
         gameState = 'drawing';
         ink = 100;
+        showHint = false;
         document.getElementById('ink-fill').style.width = '100%';
         lines = [];
         particles = [];
-        spawnTimer = 0;
+        splashes = [];
         totalSpawned = 0;
+        emptyFrames = 0;
         glass.filled = 0;
     }
 
     function setupLevelData(lvl) {
+        obstacles = [];
+
         if (lvl === 1) {
-            pipe = { x: 55, y: 95, w: 38, h: 30, angle: 0 };
-            glass = { x: 270, y: 455, w: 68, h: 88, taper: 9, filled: 0 };
-            obstacles = [];
+            pipe = { x: 65, y: 65, w: 38, h: 32 };
+            glass = { x: 265, y: 440, w: 70, h: 90, taper: 9, filled: 0 };
         } else {
-            let pipeX = 45 + ((lvl * 37) % 260);
-            pipe = { x: pipeX, y: 75, w: 38, h: 30 };
+            let pipeX = 45 + ((lvl * 37) % 250);
+            pipe = { x: pipeX, y: 55, w: 38, h: 32 };
 
-            let glassX = 260 - ((lvl * 53) % 200);
-            if (Math.abs(glassX - pipeX) < 65) {
-                glassX = (pipeX + 130) % 270 + 35;
+            let glassX = 260 - ((lvl * 53) % 190);
+            if (Math.abs(glassX - pipeX) < 70) {
+                glassX = (pipeX + 135) % 260 + 35;
             }
-            let glassY = 460 - ((lvl * 11) % 70);
-            glass = { x: glassX, y: glassY, w: 68, h: 88, taper: 9, filled: 0 };
+            let glassY = 445 - ((lvl * 11) % 75);
+            glass = { x: glassX, y: glassY, w: 70, h: 90, taper: 9, filled: 0 };
 
-            obstacles = [];
             let count = Math.min(Math.floor(lvl / 3) + 1, 4);
             for (let i = 0; i < count; i++) {
-                let ox = 50 + ((lvl * 43 + i * 85) % 240);
-                let oy = 185 + ((lvl * 29 + i * 70) % 190);
+                let ox = 45 + ((lvl * 43 + i * 85) % 235);
+                let oy = 175 + ((lvl * 29 + i * 68) % 185);
                 let ow = 60 + ((lvl + i * 17) % 45);
                 let oh = 16;
-                if (Math.abs(oy - glass.y) > 40) {
+                if (Math.abs(oy - glass.y) > 45 && Math.abs(oy - (pipe.y + pipe.h)) > 40) {
                     obstacles.push({ x: ox, y: oy, w: ow, h: oh });
                 }
             }
         }
 
-        // Solid glass side walls & bottom so water only enters from top rim
+        // Solid platform stand underneath the glass
+        obstacles.push({
+            x: glass.x - 14,
+            y: glass.y + glass.h + 2,
+            w: glass.w + 28,
+            h: 16,
+            isStand: true
+        });
+
+        // Solid glass side walls & bottom so water NEVER leaks through the sides
         glass.walls = [
             { x1: glass.x, y1: glass.y, x2: glass.x + glass.taper, y2: glass.y + glass.h },
             { x1: glass.x + glass.w, y1: glass.y, x2: glass.x + glass.w - glass.taper, y2: glass.y + glass.h },
@@ -440,7 +528,7 @@
     }
 
     // ==========================================
-    // 3. SMOOTH DRAWING & FLUID FLOW PHYSICS
+    // 4. TOUCH & MOUSE DRAWING + STREAM PHYSICS
     // ==========================================
     function getCanvasCoords(e) {
         const rect = canvas.getBoundingClientRect();
@@ -485,12 +573,11 @@
             lines.push(currentLine);
         }
         currentLine = null;
-        if (gameState === 'drawing') {
+        if (gameState === 'drawing' && lines.length > 0) {
             gameState = 'running';
         }
     }
 
-    // Smooth non-bouncy slide collision against lines & walls
     function resolveSegmentSlide(p, x1, y1, x2, y2, radius) {
         const dx = x2 - x1;
         const dy = y2 - y1;
@@ -510,34 +597,41 @@
             const nx = distX / dist;
             const ny = distY / dist;
 
-            // Project particle strictly onto the surface so it glides as a stream
             p.x = cx + nx * radius;
             p.y = cy + ny * radius;
 
-            // Remove normal velocity component (inelastic slide = 0 bounce!)
             const vn = p.vx * nx + p.vy * ny;
             if (vn < 0) {
                 p.vx -= vn * nx;
                 p.vy -= vn * ny;
-                // Slight tangential acceleration to keep stream flowing smoothly
-                p.vx *= 0.992;
-                p.vy *= 0.992;
+                p.vx *= 0.994;
+                p.vy *= 0.994;
             }
         }
     }
 
     function updateFluidPhysics() {
-        waveTime += 0.14;
+        waveTime += 0.15;
+
+        // Update tiny surface splash droplets inside the glass
+        for (let i = splashes.length - 1; i >= 0; i--) {
+            let s = splashes[i];
+            s.x += s.vx;
+            s.y += s.vy;
+            s.vy += 0.25;
+            s.life--;
+            if (s.life <= 0) splashes.splice(i, 1);
+        }
+
         if (gameState !== 'running') return;
 
-        // Spawn continuous tight stream of water particles from pipe nozzle
         if (totalSpawned < MAX_WATER_PARTICLES) {
             for (let k = 0; k < 2; k++) {
                 particles.push({
-                    x: pipe.x + pipe.w / 2 + (Math.random() - 0.5) * 3,
+                    x: pipe.x + pipe.w / 2 + (Math.random() - 0.5) * 2.5,
                     y: pipe.y + pipe.h - 2 + (k * 2.5),
-                    vx: (Math.random() - 0.5) * 0.15,
-                    vy: 2.2,
+                    vx: (Math.random() - 0.5) * 0.12,
+                    vy: 2.3,
                     collected: false,
                     active: true
                 });
@@ -546,43 +640,57 @@
             if (totalSpawned % 6 === 0) playSound('pour');
         }
 
+        let activeCount = 0;
         const subSteps = 4;
         for (let step = 0; step < subSteps; step++) {
             for (let i = 0; i < particles.length; i++) {
                 const p = particles[i];
                 if (!p.active || p.collected) continue;
+                if (step === 0) activeCount++;
 
-                p.vy += 0.18 / subSteps;
+                p.vy += 0.19 / subSteps;
                 p.x += p.vx / subSteps;
                 p.y += p.vy / subSteps;
 
-                // Check entry through open top of glass
                 const waterSurfaceY = (glass.y + glass.h - 10) - ((glass.h - 26) * (glass.filled / 100));
+
+                // Check entry strictly through open top rim of glass
                 if (
                     p.x > glass.x + 7 &&
                     p.x < glass.x + glass.w - 7 &&
-                    p.y >= glass.y + 4 &&
+                    p.y >= glass.y + 3 &&
                     p.y <= glass.y + glass.h - 6
                 ) {
-                    // Once particle hits the liquid surface inside the glass, merge into glass pool
                     if (p.y >= waterSurfaceY - 4) {
                         p.collected = true;
-                        glass.filled = Math.min(100, glass.filled + 0.55);
+                        glass.filled = Math.min(100, glass.filled + 0.58);
+
+                        // Spawn tiny splash droplet inside glass
+                        if (Math.random() < 0.35 && glass.filled < 96) {
+                            splashes.push({
+                                x: p.x,
+                                y: waterSurfaceY,
+                                vx: (Math.random() - 0.5) * 2.2,
+                                vy: -1.5 - Math.random() * 1.5,
+                                life: 14
+                            });
+                        }
+
                         if (glass.filled >= 100) {
-                            setTimeout(triggerWin, 300);
+                            setTimeout(triggerWin, 250);
                         }
                         continue;
                     }
                 }
 
-                // Slide along user-drawn lines
+                // Slide smoothly along user lines
                 for (let line of lines) {
                     for (let j = 0; j < line.length - 1; j++) {
                         resolveSegmentSlide(p, line[j].x, line[j].y, line[j + 1].x, line[j + 1].y, 6.5);
                     }
                 }
 
-                // Slide along solid glass exterior walls
+                // Slide/deflect off solid glass exterior walls
                 for (let w of glass.walls) {
                     resolveSegmentSlide(p, w.x1, w.y1, w.x2, w.y2, 5.5);
                 }
@@ -599,12 +707,11 @@
                 }
             }
 
-            // Cohesive stream interaction: pull nearby stream particles together so they don't separate into balls
+            // Stream cohesion so water stays connected like a ribbon
             if (step === 0) {
                 for (let i = 0; i < particles.length; i++) {
                     const p1 = particles[i];
                     if (!p1.active || p1.collected) continue;
-                    // Check neighbors in spawn order (creates surface tension along the stream)
                     for (let j = Math.max(0, i - 4); j < Math.min(particles.length, i + 4); j++) {
                         if (i === j) continue;
                         const p2 = particles[j];
@@ -612,18 +719,20 @@
                         const dx = p2.x - p1.x;
                         const dy = p2.y - p1.y;
                         const d = Math.hypot(dx, dy);
-                        if (d > 2 && d < 22) {
-                            // Gentle cohesion + velocity smoothing
-                            p1.vx = p1.vx * 0.92 + p2.vx * 0.08;
-                            p1.vy = p1.vy * 0.92 + p2.vy * 0.08;
-                        } else if (d > 0.01 && d <= 5) {
-                            // Gentle pressure separation
-                            const push = (5 - d) * 0.08;
-                            p1.x -= (dx / d) * push;
-                            p1.y -= (dy / d) * push;
+                        if (d > 2 && d < 24) {
+                            p1.vx = p1.vx * 0.9 + p2.vx * 0.1;
+                            p1.vy = p1.vy * 0.9 + p2.vy * 0.1;
                         }
                     }
                 }
+            }
+        }
+
+        // Check if water ran out before filling the glass
+        if (totalSpawned >= MAX_WATER_PARTICLES && activeCount === 0 && glass.filled < 100) {
+            emptyFrames++;
+            if (emptyFrames > 40) {
+                triggerTryAgain();
             }
         }
     }
@@ -632,9 +741,36 @@
         if (gameState === 'won') return;
         gameState = 'won';
         playSound('win');
+
         if (currentLevel === unlockedLevel && unlockedLevel < 50) {
             unlockedLevel++;
+            localStorage.setItem('happyGlassUnlocked', unlockedLevel.toString());
         }
+
+        const starsCount = ink >= 55 ? 3 : (ink >= 25 ? 2 : 1);
+        document.getElementById('modal-title').innerText = 'Happy Glass!';
+        document.getElementById('modal-stars').innerText = '⭐'.repeat(starsCount);
+        document.getElementById('modal-desc').innerText = `Level ${currentLevel} Completed!`;
+        const btn = document.getElementById('modal-primary-btn');
+        btn.innerText = 'NEXT LEVEL ▶';
+        btn.className = 'modal-btn';
+        btn.onclick = nextLevel;
+
+        document.getElementById('victory-modal').classList.remove('hidden');
+    }
+
+    function triggerTryAgain() {
+        if (gameState === 'won' || gameState === 'lost') return;
+        gameState = 'lost';
+
+        document.getElementById('modal-title').innerText = 'Still Thirsty!';
+        document.getElementById('modal-stars').innerText = '💧';
+        document.getElementById('modal-desc').innerText = 'Not enough water reached the glass.';
+        const btn = document.getElementById('modal-primary-btn');
+        btn.innerText = 'TRY AGAIN 🔄';
+        btn.className = 'modal-btn retry';
+        btn.onclick = restartLevel;
+
         document.getElementById('victory-modal').classList.remove('hidden');
     }
 
@@ -644,22 +780,23 @@
     }
 
     // ==========================================
-    // 4. CONTINUOUS WATER & 3D GLASS RENDERER
+    // 5. CONTINUOUS FLUID & 3D CRYSTAL GLASS
     // ==========================================
     function renderMetaballWaterStream() {
         fluidCtx.clearRect(0, 0, fluidCanvas.width, fluidCanvas.height);
 
-        // 1. Draw connected liquid ribbons between consecutive stream particles
         fluidCtx.lineCap = 'round';
         fluidCtx.lineJoin = 'round';
+
+        // Outer continuous water ribbon
         for (let i = 0; i < particles.length - 1; i++) {
             const p1 = particles[i];
             const p2 = particles[i + 1];
             if (!p1.active || p1.collected || !p2.active || p2.collected) continue;
             const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
-            if (dist < 32) {
-                fluidCtx.strokeStyle = '#0ea5e9';
-                fluidCtx.lineWidth = 13;
+            if (dist < 36) {
+                fluidCtx.strokeStyle = '#0284c7';
+                fluidCtx.lineWidth = 14;
                 fluidCtx.beginPath();
                 fluidCtx.moveTo(p1.x, p1.y);
                 fluidCtx.lineTo(p2.x, p2.y);
@@ -667,36 +804,35 @@
             }
         }
 
-        // 2. Draw soft overlapping fluid blobs
+        // Overlapping metaball nodes
         for (let i = 0; i < particles.length; i++) {
             const p = particles[i];
             if (!p.active || p.collected) continue;
             fluidCtx.fillStyle = '#0ea5e9';
             fluidCtx.beginPath();
-            fluidCtx.arc(p.x, p.y, 7.5, 0, Math.PI * 2);
+            fluidCtx.arc(p.x, p.y, 7.2, 0, Math.PI * 2);
             fluidCtx.fill();
         }
 
-        // 3. Draw inner bright glossy liquid core along the stream
+        // Inner glossy cyan stream core + white highlight
         for (let i = 0; i < particles.length - 1; i++) {
             const p1 = particles[i];
             const p2 = particles[i + 1];
             if (!p1.active || p1.collected || !p2.active || p2.collected) continue;
             const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
-            if (dist < 32) {
+            if (dist < 36) {
                 fluidCtx.strokeStyle = '#38bdf8';
-                fluidCtx.lineWidth = 7;
+                fluidCtx.lineWidth = 8;
                 fluidCtx.beginPath();
                 fluidCtx.moveTo(p1.x, p1.y);
                 fluidCtx.lineTo(p2.x, p2.y);
                 fluidCtx.stroke();
 
-                // White specular liquid shine
-                fluidCtx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
+                fluidCtx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
                 fluidCtx.lineWidth = 2.2;
                 fluidCtx.beginPath();
-                fluidCtx.moveTo(p1.x - 1.5, p1.y - 1.5);
-                fluidCtx.lineTo(p2.x - 1.5, p2.y - 1.5);
+                fluidCtx.moveTo(p1.x - 1.8, p1.y - 1.8);
+                fluidCtx.lineTo(p2.x - 1.8, p2.y - 1.8);
                 fluidCtx.stroke();
             }
         }
@@ -711,27 +847,21 @@
         const gh = glass.h;
         const taper = glass.taper;
 
-        // 1. Soft drop shadow underneath the glass base
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.12)';
-        ctx.beginPath();
-        ctx.ellipse(gx + gw / 2, gy + gh + 2, (gw - taper) / 2 + 4, 5, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        // 2. Back rim of the 3D tumbler
-        ctx.strokeStyle = 'rgba(148, 163, 184, 0.55)';
+        // Back elliptical rim
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.6)';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.ellipse(gx + gw / 2, gy, gw / 2, 5, 0, Math.PI, 0, false);
+        ctx.ellipse(gx + gw / 2, gy, gw / 2, 5.5, 0, Math.PI, 0, false);
         ctx.stroke();
 
-        // 3. Water pooled inside the glass (clipped to interior)
+        // Pooled water inside the glass
         if (glass.filled > 0) {
             ctx.save();
             ctx.beginPath();
-            ctx.moveTo(gx + 4, gy + 2);
+            ctx.moveTo(gx + 3, gy + 2);
             ctx.lineTo(gx + taper + 3, gy + gh - 9);
             ctx.lineTo(gx + gw - taper - 3, gy + gh - 9);
-            ctx.lineTo(gx + gw - 4, gy + 2);
+            ctx.lineTo(gx + gw - 3, gy + 2);
             ctx.closePath();
             ctx.clip();
 
@@ -741,40 +871,48 @@
 
             const liqGrad = ctx.createLinearGradient(gx, surfaceY, gx, gy + gh);
             liqGrad.addColorStop(0, '#38bdf8');
-            liqGrad.addColorStop(0.4, '#0ea5e9');
+            liqGrad.addColorStop(0.45, '#0ea5e9');
             liqGrad.addColorStop(1, '#0284c7');
             ctx.fillStyle = liqGrad;
 
             ctx.beginPath();
             ctx.moveTo(gx, gy + gh);
             for (let x = gx; x <= gx + gw; x += 3) {
-                const wave = Math.sin(x * 0.09 + waveTime) * (glass.filled < 100 ? 2.2 : 1.0);
+                const wave = Math.sin(x * 0.09 + waveTime) * (glass.filled < 100 ? 2.4 : 1.0);
                 ctx.lineTo(x, surfaceY + wave);
             }
             ctx.lineTo(gx + gw, gy + gh);
             ctx.closePath();
             ctx.fill();
 
-            // Meniscus surface glow ring
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+            // Meniscus surface highlight
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.88)';
             ctx.lineWidth = 2.5;
             ctx.beginPath();
             for (let x = gx; x <= gx + gw; x += 3) {
-                const wave = Math.sin(x * 0.09 + waveTime) * (glass.filled < 100 ? 2.2 : 1.0);
+                const wave = Math.sin(x * 0.09 + waveTime) * (glass.filled < 100 ? 2.4 : 1.0);
                 if (x === gx) ctx.moveTo(x, surfaceY + wave);
                 else ctx.lineTo(x, surfaceY + wave);
             }
             ctx.stroke();
+
+            // Splash droplets inside glass
+            ctx.fillStyle = '#38bdf8';
+            for (let s of splashes) {
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, 2.8, 0, Math.PI * 2);
+                ctx.fill();
+            }
             ctx.restore();
         }
 
-        // 4. Translucent 3D Crystal Glass Body
+        // 3D Crystal Glass Body Gradient
         const bodyGrad = ctx.createLinearGradient(gx, gy, gx + gw, gy);
-        bodyGrad.addColorStop(0, 'rgba(226, 232, 240, 0.65)');
-        bodyGrad.addColorStop(0.18, 'rgba(255, 255, 255, 0.35)');
+        bodyGrad.addColorStop(0, 'rgba(203, 213, 225, 0.65)');
+        bodyGrad.addColorStop(0.2, 'rgba(255, 255, 255, 0.38)');
         bodyGrad.addColorStop(0.5, 'rgba(241, 245, 249, 0.12)');
-        bodyGrad.addColorStop(0.82, 'rgba(226, 232, 240, 0.3)');
-        bodyGrad.addColorStop(1, 'rgba(148, 163, 184, 0.65)');
+        bodyGrad.addColorStop(0.8, 'rgba(226, 232, 240, 0.32)');
+        bodyGrad.addColorStop(1, 'rgba(148, 163, 184, 0.68)');
 
         ctx.fillStyle = bodyGrad;
         ctx.beginPath();
@@ -785,9 +923,9 @@
         ctx.closePath();
         ctx.fill();
 
-        // 5. Heavy Solid Crystal Bottom Base block
+        // Heavy Crystal Base Cushion
         const baseGrad = ctx.createLinearGradient(gx + taper, gy + gh - 10, gx + gw - taper, gy + gh);
-        baseGrad.addColorStop(0, 'rgba(203, 213, 225, 0.85)');
+        baseGrad.addColorStop(0, 'rgba(148, 163, 184, 0.85)');
         baseGrad.addColorStop(0.5, 'rgba(248, 250, 252, 0.95)');
         baseGrad.addColorStop(1, 'rgba(148, 163, 184, 0.85)');
         ctx.fillStyle = baseGrad;
@@ -799,20 +937,20 @@
         ctx.closePath();
         ctx.fill();
 
-        // 6. Dashed Fill Target Line near the top of the glass
+        // Dashed Target Fill Line
         const fillLineY = gy + 18;
         ctx.save();
-        ctx.setLineDash([4, 4]);
-        ctx.strokeStyle = 'rgba(100, 116, 139, 0.55)';
-        ctx.lineWidth = 1.6;
+        ctx.setLineDash([5, 4]);
+        ctx.strokeStyle = 'rgba(71, 85, 105, 0.6)';
+        ctx.lineWidth = 1.8;
         ctx.beginPath();
         ctx.moveTo(gx + 4, fillLineY);
         ctx.lineTo(gx + gw - 4, fillLineY);
         ctx.stroke();
         ctx.restore();
 
-        // 7. Glossy 3D Vertical Specular Highlights
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+        // Vertical 3D Specular Glass Reflections
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.92)';
         ctx.lineWidth = 3.5;
         ctx.lineCap = 'round';
         ctx.beginPath();
@@ -820,15 +958,15 @@
         ctx.lineTo(gx + taper + 5, gy + gh - 15);
         ctx.stroke();
 
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(gx + gw - 7, gy + 12);
         ctx.lineTo(gx + gw - taper - 5, gy + gh - 16);
         ctx.stroke();
 
-        // 8. Crisp Outer Glass Walls Outline
-        ctx.strokeStyle = '#94a3b8';
+        // Crisp Outer Glass Contour
+        ctx.strokeStyle = '#64748b';
         ctx.lineWidth = 3.5;
         ctx.lineJoin = 'round';
         ctx.beginPath();
@@ -838,16 +976,16 @@
         ctx.lineTo(gx + gw, gy);
         ctx.stroke();
 
-        // Front top rim highlight curve
-        ctx.strokeStyle = '#cbd5e1';
+        // Front Rim Highlight
+        ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 2.5;
         ctx.beginPath();
-        ctx.ellipse(gx + gw / 2, gy, gw / 2, 5, 0, 0, Math.PI, false);
+        ctx.ellipse(gx + gw / 2, gy, gw / 2, 5.5, 0, 0, Math.PI, false);
         ctx.stroke();
 
-        // 9. Cute Happy Glass Character Face
+        // Cute Expressive Face
         const fx = gx + gw / 2;
-        const fy = gy + gh / 2 + 4;
+        const fy = gy + gh / 2 + 5;
 
         // Rosy Cheeks
         ctx.fillStyle = 'rgba(244, 114, 182, 0.45)';
@@ -863,7 +1001,7 @@
         ctx.arc(fx + 10, fy - 4, 3.6, 0, Math.PI * 2);
         ctx.fill();
 
-        // Cute white eye shine dots
+        // Eye Sparkles
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
         ctx.arc(fx - 11.2, fy - 5.2, 1.3, 0, Math.PI * 2);
@@ -876,18 +1014,15 @@
         ctx.lineCap = 'round';
         ctx.beginPath();
         if (glass.filled >= 95) {
-            // Big open joyful mouth
             ctx.fillStyle = '#ef4444';
             ctx.arc(fx, fy + 2, 6.5, 0, Math.PI, false);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
         } else if (glass.filled > 10) {
-            // Happy smile while filling
             ctx.arc(fx, fy + 1, 5.5, 0.15 * Math.PI, 0.85 * Math.PI, false);
             ctx.stroke();
         } else {
-            // Sad thirsty mouth before water arrives
             ctx.arc(fx, fy + 8, 5, 1.15 * Math.PI, 1.85 * Math.PI, false);
             ctx.stroke();
         }
@@ -896,7 +1031,25 @@
     function drawScene() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // 1. Render Continuous Liquid Water Flow
+        // Optional Hint Guide Curve
+        if (showHint && gameState === 'drawing') {
+            ctx.save();
+            ctx.setLineDash([6, 6]);
+            ctx.strokeStyle = 'rgba(14, 165, 233, 0.55)';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(pipe.x + pipe.w / 2 - 10, pipe.y + pipe.h + 15);
+            ctx.quadraticCurveTo(
+                (pipe.x + glass.x) / 2,
+                glass.y - 20,
+                glass.x + glass.w / 2,
+                glass.y - 5
+            );
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // 1. Render Continuous Liquid Stream
         renderMetaballWaterStream();
 
         // 2. Draw 3D Pipe Spout
@@ -906,30 +1059,33 @@
         pGrad.addColorStop(1, '#475569');
         ctx.fillStyle = pGrad;
         ctx.fillRect(pipe.x, pipe.y, pipe.w, pipe.h);
-        
-        // Pipe flange collar
-        ctx.fillStyle = '#475569';
-        ctx.beginPath();
-        ctx.roundRect(pipe.x - 4, pipe.y + pipe.h - 8, pipe.w + 8, 8, 3);
+
+        // Pipe Flange Nozzle (Universal drawRoundedBox instead of roundRect)
+        ctx.fillStyle = '#334155';
+        drawRoundedBox(ctx, pipe.x - 4, pipe.y + pipe.h - 8, pipe.w + 8, 8, 3);
         ctx.fill();
 
-        // 3. Draw Obstacles
+        // 3. Draw Obstacles & Glass Stand
         obstacles.forEach(obs => {
             const oGrad = ctx.createLinearGradient(obs.x, obs.y, obs.x, obs.y + obs.h);
-            oGrad.addColorStop(0, '#475569');
-            oGrad.addColorStop(1, '#1e293b');
+            if (obs.isStand) {
+                oGrad.addColorStop(0, '#0ea5e9');
+                oGrad.addColorStop(1, '#0369a1');
+            } else {
+                oGrad.addColorStop(0, '#475569');
+                oGrad.addColorStop(1, '#1e293b');
+            }
             ctx.fillStyle = oGrad;
-            ctx.beginPath();
-            ctx.roundRect(obs.x, obs.y, obs.w, obs.h, 4);
+            drawRoundedBox(ctx, obs.x, obs.y, obs.w, obs.h, 4);
             ctx.fill();
         });
 
-        // 4. Draw 3D Glass
+        // 4. Draw 3D Crystal Glass
         draw3DGlass();
 
         // 5. Draw User Pencil Lines
         ctx.strokeStyle = '#1e293b';
-        ctx.lineWidth = 6;
+        ctx.lineWidth = 6.5;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
 
@@ -959,6 +1115,8 @@
         requestAnimationFrame(loop);
     }
 
+    // Initialize Level 1 IMMEDIATELY before starting the loop so the screen is never blank!
+    startLevel(1);
     loop();
 </script>
 
