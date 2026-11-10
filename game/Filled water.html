@@ -116,7 +116,7 @@
             cursor: not-allowed;
         }
 
-        /* Exact Win Screen Overlay (like the video) */
+        /* Exact Win Screen Overlay */
         #win-overlay {
             position: absolute;
             top: 0;
@@ -250,7 +250,6 @@
             const now = audioCtx.currentTime;
 
             if (type === 'pencil') {
-                // Crisp pencil graphite drawing sound
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.type = 'triangle';
@@ -263,19 +262,18 @@
                 osc.stop(now + 0.028);
             } 
             else if (type === 'water') {
-                // Flowing water bubble sound
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.type = 'sine';
-                const f = 340 + (glass.filled * 3.8) + Math.random() * 90;
+                const f = 320 + (glass.filled * 3.6) + Math.random() * 80;
                 osc.frequency.setValueAtTime(f, now);
-                osc.frequency.exponentialRampToValueAtTime(f * 1.25, now + 0.055);
+                osc.frequency.exponentialRampToValueAtTime(f * 1.22, now + 0.065);
                 gain.gain.setValueAtTime(0.02, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.055);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.065);
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
                 osc.start(now);
-                osc.stop(now + 0.055);
+                osc.stop(now + 0.065);
             } 
             else if (type === 'click') {
                 const osc = audioCtx.createOscillator();
@@ -290,7 +288,6 @@
                 osc.stop(now + 0.05);
             }
             else if (type === 'win') {
-                // Happy Glass Victory Fanfare
                 const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
                 notes.forEach((freq, idx) => {
                     const osc = audioCtx.createOscillator();
@@ -332,19 +329,20 @@
 
     let dispenser = { x: 40, y: 120, dir: 'down' };
     let glass = { x: 280, y: 470, w: 82, h: 98, taper: 12, filled: 0, walls: [] };
-    let shapes = []; // polygons/rectangles for teal obstacles
-    let allSegments = []; // collision edges
+    let shapes = [];
+    let allSegments = [];
     let hintCurve = null;
 
     let waterParticles = [];
     let celebrationStars = [];
     let totalSpawned = 0;
+    let spawnTick = 0;
     let dryFrames = 0;
-    const MAX_WATER = 250;
+    const MAX_WATER = 260;
     let waveTick = 0;
 
     // =====================================================
-    // 3. EXACT 50 LEVELS GENERATOR (Level 1, 2, 3 match video!)
+    // 3. EXACT 50 LEVELS GENERATOR
     // =====================================================
     function loadLevel(lvl) {
         currentLevel = lvl;
@@ -357,17 +355,16 @@
         waterParticles = [];
         celebrationStars = [];
         totalSpawned = 0;
+        spawnTick = 0;
         dryFrames = 0;
         shapes = [];
         allSegments = [];
         document.getElementById('win-overlay').classList.add('hidden');
 
         if (lvl === 1) {
-            // EXACT LEVEL 1 FROM VIDEO
             dispenser = { x: 40, y: 125, dir: 'down' };
             glass = { x: 280, y: 465, w: 84, h: 98, taper: 13, filled: 0 };
 
-            // Top left teal bar, middle teal bar, bottom glass stand bar
             addRectObstacle(6, 400, 122, 12);
             addRectObstacle(140, 455, 122, 12);
             addRectObstacle(264, 563, 122, 12);
@@ -375,11 +372,9 @@
             hintCurve = { x1: 68, y1: 210, cx: 185, cy: 340, x2: 310, y2: 480 };
         } 
         else if (lvl === 2) {
-            // EXACT LEVEL 2 FROM VIDEO
             dispenser = { x: 35, y: 125, dir: 'down' };
             glass = { x: 298, y: 465, w: 84, h: 98, taper: 13, filled: 0 };
 
-            // Left slanted teal polygon block
             addPolyObstacle([
                 { x: 12, y: 345 },
                 { x: 106, y: 385 },
@@ -387,7 +382,6 @@
                 { x: 12, y: 522 }
             ]);
 
-            // Middle slanted teal polygon block
             addPolyObstacle([
                 { x: 192, y: 408 },
                 { x: 286, y: 446 },
@@ -395,27 +389,21 @@
                 { x: 192, y: 575 }
             ]);
 
-            // Glass base platform
             addRectObstacle(286, 563, 114, 12);
 
             hintCurve = { x1: 42, y1: 235, cx: 190, cy: 365, x2: 325, y2: 480 };
         } 
         else if (lvl === 3) {
-            // EXACT LEVEL 3 FROM VIDEO (Horizontal side pipe!)
             dispenser = { x: 0, y: 180, dir: 'right' };
             glass = { x: 210, y: 488, w: 84, h: 98, taper: 13, filled: 0 };
 
-            // Left vertical block under side pipe
             addRectObstacle(0, 246, 68, 178);
-            // Middle vertical block next to glass
             addRectObstacle(132, 475, 70, 111);
-            // Full width bottom floor bar
             addRectObstacle(0, 586, 400, 34);
 
             hintCurve = { x1: 75, y1: 230, cx: 185, cy: 340, x2: 255, y2: 495 };
         } 
         else {
-            // PROCEDURAL LEVELS 4 TO 50 IN THE EXACT SAME STYLE
             const isSidePipe = (lvl % 4 === 0);
             if (isSidePipe) {
                 dispenser = { x: 0, y: 140 + ((lvl * 19) % 80), dir: 'right' };
@@ -432,17 +420,14 @@
             let gy = 455 + ((lvl * 13) % 45);
             glass = { x: gx, y: gy, w: 84, h: 98, taper: 13, filled: 0 };
 
-            // Glass support platform
             addRectObstacle(gx - 16, gy + 98, 116, 14);
 
-            // Add 2 to 3 stylized teal blocks/ramps
             let numBlocks = 2 + (lvl % 2);
             for (let i = 0; i < numBlocks; i++) {
                 let bx = 25 + ((lvl * 53 + i * 115) % 230);
                 let by = 265 + i * 95 + ((lvl * 17) % 35);
                 if (Math.abs(by - gy) > 55 && Math.abs(bx - gx) > 45) {
                     if ((lvl + i) % 2 === 0) {
-                        // Slanted teal block like Level 2
                         addPolyObstacle([
                             { x: bx, y: by },
                             { x: bx + 85, y: by + 32 },
@@ -450,7 +435,6 @@
                             { x: bx, y: by + 110 }
                         ]);
                     } else {
-                        // Flat teal bar like Level 1
                         addRectObstacle(bx, by, 110, 14);
                     }
                 }
@@ -468,7 +452,6 @@
             };
         }
 
-        // Register solid glass walls so water NEVER enters from the sides
         const gx = glass.x, gy = glass.y, gw = glass.w, gh = glass.h, tp = glass.taper;
         glass.walls = [
             { x1: gx, y1: gy, x2: gx + tp, y2: gy + gh },
@@ -510,21 +493,17 @@
         initAudio();
         const pt = getPos(e);
 
-        // Check Top UI Buttons (Home, Restart, Hint)
         if (pt.y < 75) {
-            // Home Button (x: 22..62, y: 18..58)
             if (Math.hypot(pt.x - 42, pt.y - 38) <= 22) {
                 playSound('click');
                 openLevelMenu();
                 return;
             }
-            // Restart Button (x: 68..108, y: 18..58)
             if (Math.hypot(pt.x - 88, pt.y - 38) <= 22) {
                 playSound('click');
                 loadLevel(currentLevel);
                 return;
             }
-            // Hint Button (x: 296..374, y: 20..54)
             if (pt.x >= 295 && pt.x <= 378 && pt.y >= 18 && pt.y <= 58) {
                 playSound('click');
                 showHint = !showHint;
@@ -578,7 +557,7 @@
     }
 
     // =====================================================
-    // 5. CONTINUOUS FLUID STREAM PHYSICS
+    // 5. SLOWER, SMOOTH FLUID STREAM PHYSICS
     // =====================================================
     function slideParticleOnSegment(p, x1, y1, x2, y2, radius) {
         const dx = x2 - x1;
@@ -606,16 +585,16 @@
             if (vn < 0) {
                 p.vx -= vn * nx;
                 p.vy -= vn * ny;
-                p.vx *= 0.995;
-                p.vy *= 0.995;
+                // Gentle surface drag so water glides at a calmer, realistic speed
+                p.vx *= 0.986;
+                p.vy *= 0.986;
             }
         }
     }
 
     function updateGame() {
-        waveTick += 0.15;
+        waveTick += 0.10; // Slower wave sloshing inside glass
 
-        // Update Celebration Gold Stars
         for (let i = celebrationStars.length - 1; i >= 0; i--) {
             let s = celebrationStars[i];
             s.x += s.vx;
@@ -628,32 +607,30 @@
 
         if (gameState !== 'pouring') return;
 
-        // Spawn continuous water stream from dispenser
+        // Slower, steady water spawn rate (1 particle per frame)
+        spawnTick++;
         if (totalSpawned < MAX_WATER) {
-            for (let k = 0; k < 2; k++) {
-                if (dispenser.dir === 'down') {
-                    waterParticles.push({
-                        x: dispenser.x + 28 + (Math.random() - 0.5) * 3,
-                        y: dispenser.y + 62 + k * 2.5,
-                        vx: (Math.random() - 0.5) * 0.12,
-                        vy: 2.4,
-                        active: true,
-                        collected: false
-                    });
-                } else {
-                    // Horizontal side pipe (like Level 3)
-                    waterParticles.push({
-                        x: dispenser.x + 62 + k * 2.5,
-                        y: dispenser.y + 28 + (Math.random() - 0.5) * 3,
-                        vx: 3.4,
-                        vy: (Math.random() - 0.5) * 0.12,
-                        active: true,
-                        collected: false
-                    });
-                }
-                totalSpawned++;
+            if (dispenser.dir === 'down') {
+                waterParticles.push({
+                    x: dispenser.x + 28 + (Math.random() - 0.5) * 2.5,
+                    y: dispenser.y + 62,
+                    vx: (Math.random() - 0.5) * 0.08,
+                    vy: 1.35, // Reduced initial downward pour speed
+                    active: true,
+                    collected: false
+                });
+            } else {
+                waterParticles.push({
+                    x: dispenser.x + 62,
+                    y: dispenser.y + 28 + (Math.random() - 0.5) * 2.5,
+                    vx: 2.15, // Reduced initial side-pipe pour speed
+                    vy: (Math.random() - 0.5) * 0.08,
+                    active: true,
+                    collected: false
+                });
             }
-            if (totalSpawned % 7 === 0) playSound('water');
+            totalSpawned++;
+            if (totalSpawned % 9 === 0) playSound('water');
         }
 
         let activeCount = 0;
@@ -665,11 +642,18 @@
                 if (!p.active || p.collected) continue;
                 if (step === 0) activeCount++;
 
-                p.vy += 0.19 / subSteps;
+                // Reduced gravity & velocity cap for smooth, unhurried water flow
+                p.vy += 0.105 / subSteps;
+                const speed = Math.hypot(p.vx, p.vy);
+                if (speed > 4.2) {
+                    p.vx = (p.vx / speed) * 4.2;
+                    p.vy = (p.vy / speed) * 4.2;
+                }
+
                 p.x += p.vx / subSteps;
                 p.y += p.vy / subSteps;
 
-                const gx = glass.x, gy = glass.y, gw = glass.w, gh = glass.h, tp = glass.taper;
+                const gx = glass.x, gy = glass.y, gw = glass.w, gh = glass.h;
                 const fillTopY = (gy + gh - 8) - ((gh - 24) * (glass.filled / 100));
 
                 // Check if water enters inside the open top of the glass
@@ -722,7 +706,7 @@
                 for (let i = 0; i < waterParticles.length; i++) {
                     const p1 = waterParticles[i];
                     if (!p1.active || p1.collected) continue;
-                    for (let j = Math.max(0, i - 4); j < Math.min(waterParticles.length, i + 4); j++) {
+                    for (let j = Math.max(0, i - 5); j < Math.min(waterParticles.length, i + 5); j++) {
                         if (i === j) continue;
                         const p2 = waterParticles[j];
                         if (!p2.active || p2.collected) continue;
@@ -730,8 +714,8 @@
                         const dy = p2.y - p1.y;
                         const d = Math.hypot(dx, dy);
                         if (d > 2 && d < 24) {
-                            p1.vx = p1.vx * 0.9 + p2.vx * 0.1;
-                            p1.vy = p1.vy * 0.9 + p2.vy * 0.1;
+                            p1.vx = p1.vx * 0.88 + p2.vx * 0.12;
+                            p1.vy = p1.vy * 0.88 + p2.vy * 0.12;
                         }
                     }
                 }
@@ -741,7 +725,7 @@
         // Check if water finished without filling
         if (totalSpawned >= MAX_WATER && activeCount === 0 && glass.filled < 100) {
             dryFrames++;
-            if (dryFrames > 40) {
+            if (dryFrames > 45) {
                 triggerRetry();
             }
         }
@@ -757,7 +741,6 @@
             localStorage.setItem('happyGlassExact50', unlockedLevel.toString());
         }
 
-        // Burst gold stars around the glass (just like 00:08 & 00:18 in video!)
         for (let i = 0; i < 28; i++) {
             celebrationStars.push({
                 x: glass.x + glass.w / 2 + (Math.random() - 0.5) * 40,
@@ -831,7 +814,7 @@
         ctx.arc(42, 38, 16, 0, Math.PI * 2);
         ctx.stroke();
 
-        // Cute Yellow/Orange House Icon inside Home Button
+        // House Icon
         ctx.fillStyle = '#fde047';
         ctx.strokeStyle = '#1e293b';
         ctx.lineWidth = 1.4;
@@ -872,7 +855,7 @@
         ctx.closePath();
         ctx.fill();
 
-        // 3. Green HINT Pill Button (top right)
+        // 3. Green HINT Pill Button
         ctx.fillStyle = '#a3e635';
         ctx.strokeStyle = '#1e293b';
         ctx.lineWidth = 2;
@@ -881,7 +864,6 @@
         ctx.fill();
         ctx.stroke();
 
-        // Lightbulb + "HINT" text
         ctx.fillStyle = '#fde047';
         ctx.beginPath();
         ctx.arc(313, 37, 6, 0, Math.PI * 2);
@@ -899,28 +881,24 @@
         ctx.textAlign = 'center';
         ctx.fillText(`LEVEL ${currentLevel}`, 200, 68);
 
-        // 5. Percentage Text + Green Ink Bar with Red Divider Lines
+        // 5. Percentage Text + Green Ink Bar
         ctx.fillStyle = '#1e293b';
         ctx.font = 'bold 15px Arial';
         ctx.textAlign = 'right';
         ctx.fillText(`${Math.round(inkPercent)} %`, 110, 92);
 
         const barX = 116, barY = 77, barW = 166, barH = 18;
-        // Grey background bar
         ctx.fillStyle = '#78716c';
         ctx.fillRect(barX, barY, barW, barH);
 
-        // Lime green fill
         const fillW = barW * (inkPercent / 100);
         ctx.fillStyle = '#84cc16';
         ctx.fillRect(barX, barY, fillW, barH);
 
-        // Outer black frame
         ctx.strokeStyle = '#1e293b';
         ctx.lineWidth = 1.8;
         ctx.strokeRect(barX, barY, barW, barH);
 
-        // Two red star threshold lines inside the bar
         ctx.strokeStyle = '#ef4444';
         ctx.lineWidth = 2;
         [barX + barW * 0.33, barX + barW * 0.66].forEach(lx => {
@@ -930,7 +908,7 @@
             ctx.stroke();
         });
 
-        // 6. Three Star Icons right of the bar
+        // 6. Three Star Icons
         const s1 = inkPercent > 10;
         const s2 = inkPercent > 33;
         const s3 = inkPercent > 66;
@@ -965,7 +943,6 @@
 
         if (dispenser.dir === 'down') {
             const x = dispenser.x, y = dispenser.y;
-            // Pre-pour cyan water droplet peeking under spout (like 00:02 in video)
             if (gameState === 'drawing') {
                 ctx.fillStyle = '#00d8ff';
                 ctx.beginPath();
@@ -973,7 +950,6 @@
                 ctx.fill();
             }
 
-            // Main square block
             let g1 = ctx.createLinearGradient(x + 8, y, x + 48, y);
             g1.addColorStop(0, '#9ca3af');
             g1.addColorStop(0.5, '#d1d5db');
@@ -982,12 +958,10 @@
             ctx.fillRect(x + 8, y, 40, 44);
             ctx.strokeRect(x + 8, y, 40, 44);
 
-            // Wide bottom lip
             ctx.fillStyle = g1;
             ctx.fillRect(x, y + 44, 56, 15);
             ctx.strokeRect(x, y + 44, 56, 15);
 
-            // White Down Arrow inside block
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
             ctx.moveTo(x + 24, y + 10);
@@ -1000,7 +974,6 @@
             ctx.closePath();
             ctx.fill();
         } else {
-            // Horizontal right-facing dispenser (Level 3 in video!)
             const x = dispenser.x, y = dispenser.y;
             let g1 = ctx.createLinearGradient(x, y + 8, x, y + 48);
             g1.addColorStop(0, '#9ca3af');
@@ -1013,7 +986,6 @@
             ctx.fillRect(x + 44, y, 15, 56);
             ctx.strokeRect(x + 44, y, 15, 56);
 
-            // White Right Arrow
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
             ctx.moveTo(x + 10, y + 24);
@@ -1030,7 +1002,7 @@
     }
 
     function drawTealObstacles() {
-        ctx.fillStyle = '#439798'; // Exact teal shade from video
+        ctx.fillStyle = '#439798';
         ctx.strokeStyle = '#1e293b';
         ctx.lineWidth = 1.6;
 
@@ -1051,7 +1023,7 @@
         wCtx.lineCap = 'round';
         wCtx.lineJoin = 'round';
 
-        // 1. Outer bright blue outline (exact two-tone water look from video)
+        // 1. Outer bright blue outline
         for (let i = 0; i < waterParticles.length - 1; i++) {
             const p1 = waterParticles[i];
             const p2 = waterParticles[i + 1];
@@ -1075,7 +1047,7 @@
             wCtx.fill();
         }
 
-        // 2. Inner bright cyan core (#00e5ff)
+        // 2. Inner bright cyan core
         for (let i = 0; i < waterParticles.length - 1; i++) {
             const p1 = waterParticles[i];
             const p2 = waterParticles[i + 1];
@@ -1106,7 +1078,6 @@
         const gx = glass.x, gy = glass.y, gw = glass.w, gh = glass.h, tp = glass.taper;
         const wallThick = 9;
 
-        // 1. Interior background
         ctx.fillStyle = 'rgba(241, 245, 249, 0.7)';
         ctx.beginPath();
         ctx.moveTo(gx + wallThick, gy);
@@ -1116,7 +1087,6 @@
         ctx.closePath();
         ctx.fill();
 
-        // 2. Pooled Cyan Water Inside Glass
         if (glass.filled > 0) {
             ctx.save();
             ctx.beginPath();
@@ -1138,7 +1108,7 @@
             ctx.beginPath();
             ctx.moveTo(gx, gy + gh);
             for (let x = gx; x <= gx + gw; x += 4) {
-                const wave = Math.sin(x * 0.08 + waveTick) * (glass.filled < 100 ? 4.5 : 1.5);
+                const wave = Math.sin(x * 0.08 + waveTick) * (glass.filled < 100 ? 4.0 : 1.5);
                 ctx.lineTo(x, topY + wave);
             }
             ctx.lineTo(gx + gw, gy + gh);
@@ -1148,21 +1118,17 @@
             ctx.restore();
         }
 
-        // 3. Thick Grey U-Shaped Glass Rim & Base (Exact match to video!)
         ctx.fillStyle = '#c4c9ce';
         ctx.strokeStyle = '#1e293b';
         ctx.lineWidth = 1.6;
         ctx.lineJoin = 'round';
 
         ctx.beginPath();
-        // Outer contour
         ctx.moveTo(gx, gy);
         ctx.lineTo(gx + tp, gy + gh);
         ctx.lineTo(gx + gw - tp, gy + gh);
         ctx.lineTo(gx + gw, gy);
-        // Right top rim inward
         ctx.lineTo(gx + gw - wallThick, gy);
-        // Inner contour
         ctx.lineTo(gx + gw - tp - 6, gy + gh - 9);
         ctx.lineTo(gx + tp + 6, gy + gh - 9);
         ctx.lineTo(gx + wallThick, gy);
@@ -1170,7 +1136,6 @@
         ctx.fill();
         ctx.stroke();
 
-        // 4. Dashed Fill Line across top of glass
         ctx.save();
         ctx.setLineDash([5, 4]);
         ctx.strokeStyle = '#334155';
@@ -1181,11 +1146,9 @@
         ctx.stroke();
         ctx.restore();
 
-        // 5. Exact Expressive Cartoon Face from Video
         const fx = gx + gw / 2;
         const fy = gy + gh / 2 + 2;
 
-        // Large Oval Cartoon Eyes (White with black outline & pupil)
         [-10, 10].forEach(offsetX => {
             ctx.fillStyle = '#ffffff';
             ctx.strokeStyle = '#1e293b';
@@ -1195,19 +1158,16 @@
             ctx.fill();
             ctx.stroke();
 
-            // Black pupil
             ctx.fillStyle = '#1e293b';
             ctx.beginPath();
             ctx.arc(fx + offsetX, fy - 4, 2.8, 0, Math.PI * 2);
             ctx.fill();
 
-            // White eye highlight
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
             ctx.arc(fx + offsetX - 1, fy - 5.2, 1, 0, Math.PI * 2);
             ctx.fill();
 
-            // Arched Eyebrow
             ctx.strokeStyle = '#1e293b';
             ctx.lineWidth = 1.6;
             ctx.beginPath();
@@ -1215,18 +1175,15 @@
             ctx.stroke();
         });
 
-        // Mouth Expression (matches video states!)
         ctx.strokeStyle = '#1e293b';
         ctx.lineWidth = 1.8;
         ctx.beginPath();
         if (gameState === 'pouring' && glass.filled < 95) {
-            // Surprised 'O' mouth while pouring (00:02 - 00:07 in video)
             ctx.fillStyle = '#ffffff';
             ctx.ellipse(fx, fy + 11, 4.2, 5.5, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
         } else {
-            // Happy smile when idle or full (00:00 & 00:08 in video)
             ctx.arc(fx, fy + 6, 7, 0.15 * Math.PI, 0.85 * Math.PI);
             ctx.stroke();
         }
@@ -1234,7 +1191,6 @@
 
     function drawYellowPencil(x, y) {
         ctx.save();
-        // Tilt pencil at 30 degrees just like the video
         ctx.translate(x, y);
         ctx.rotate(28 * Math.PI / 180);
 
@@ -1242,7 +1198,6 @@
         const h = 115;
         const tipH = 26;
 
-        // 1. Sharp Graphite Tip + Wooden Cone
         ctx.fillStyle = '#fef3c7';
         ctx.strokeStyle = '#1e293b';
         ctx.lineWidth = 1.8;
@@ -1254,7 +1209,6 @@
         ctx.fill();
         ctx.stroke();
 
-        // Dark graphite point at (0,0)
         ctx.fillStyle = '#1e293b';
         ctx.beginPath();
         ctx.moveTo(0, 0);
@@ -1263,17 +1217,14 @@
         ctx.closePath();
         ctx.fill();
 
-        // 2. Yellow Striped Pencil Barrel
         ctx.fillStyle = '#facc15';
         ctx.fillRect(-w / 2, -tipH - h, w, h);
         ctx.strokeRect(-w / 2, -tipH - h, w, h);
 
-        // Darker gold center stripe
         ctx.fillStyle = '#eab308';
         ctx.fillRect(-w / 6, -tipH - h, w / 3, h);
         ctx.strokeRect(-w / 6, -tipH - h, w / 3, h);
 
-        // Flat top cap
         ctx.fillStyle = '#fde047';
         ctx.fillRect(-w / 2, -tipH - h - 5, w, 5);
         ctx.strokeRect(-w / 2, -tipH - h - 5, w, 5);
@@ -1294,7 +1245,6 @@
     function render() {
         drawGridBackground();
 
-        // Optional Hint Curve
         if (showHint && hintCurve) {
             ctx.save();
             ctx.setLineDash([7, 6]);
@@ -1307,19 +1257,11 @@
             ctx.restore();
         }
 
-        // 1. Continuous Liquid Water Stream
         drawContinuousLiquidStream();
-
-        // 2. Teal Obstacles
         drawTealObstacles();
-
-        // 3. Dispenser Pipe
         drawDispenserPipe();
-
-        // 4. Glass with Face
         drawExactGlass();
 
-        // 5. User Drawn Black Pencil Lines
         ctx.strokeStyle = '#0f172a';
         ctx.lineWidth = 6.5;
         ctx.lineCap = 'round';
@@ -1344,15 +1286,11 @@
             ctx.stroke();
         }
 
-        // 6. Animated Yellow Pencil following your finger/mouse!
         if (pencilPos.visible) {
             drawYellowPencil(pencilPos.x, pencilPos.y);
         }
 
-        // 7. Gold Star Burst on Win
         drawCelebrationStars();
-
-        // 8. Top HUD Bar
         drawTopHUD();
     }
 
@@ -1391,7 +1329,6 @@
         requestAnimationFrame(mainLoop);
     }
 
-    // Start Level 1 immediately
     loadLevel(1);
     mainLoop();
 </script>
