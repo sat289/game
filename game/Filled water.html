@@ -265,15 +265,15 @@
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.type = 'sine';
-                const f = 320 + (glass.filled * 3.6) + Math.random() * 80;
+                const f = 330 + (glass.filled * 3.7) + Math.random() * 85;
                 osc.frequency.setValueAtTime(f, now);
-                osc.frequency.exponentialRampToValueAtTime(f * 1.22, now + 0.065);
+                osc.frequency.exponentialRampToValueAtTime(f * 1.24, now + 0.06);
                 gain.gain.setValueAtTime(0.02, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.065);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
                 osc.start(now);
-                osc.stop(now + 0.065);
+                osc.stop(now + 0.06);
             } 
             else if (type === 'click') {
                 const osc = audioCtx.createOscillator();
@@ -557,7 +557,7 @@
     }
 
     // =====================================================
-    // 5. SLOWER, SMOOTH FLUID STREAM PHYSICS
+    // 5. BALANCED MEDIUM-SPEED FLUID STREAM PHYSICS
     // =====================================================
     function slideParticleOnSegment(p, x1, y1, x2, y2, radius) {
         const dx = x2 - x1;
@@ -585,15 +585,15 @@
             if (vn < 0) {
                 p.vx -= vn * nx;
                 p.vy -= vn * ny;
-                // Gentle surface drag so water glides at a calmer, realistic speed
-                p.vx *= 0.986;
-                p.vy *= 0.986;
+                // Balanced medium surface friction (not too slow, not too fast)
+                p.vx *= 0.991;
+                p.vy *= 0.991;
             }
         }
     }
 
     function updateGame() {
-        waveTick += 0.10; // Slower wave sloshing inside glass
+        waveTick += 0.125; // Medium wave motion inside glass
 
         for (let i = celebrationStars.length - 1; i >= 0; i--) {
             let s = celebrationStars[i];
@@ -607,30 +607,34 @@
 
         if (gameState !== 'pouring') return;
 
-        // Slower, steady water spawn rate (1 particle per frame)
+        // Medium spawn rate (alternates 1 and 2 particles per frame = 1.5 avg)
         spawnTick++;
         if (totalSpawned < MAX_WATER) {
-            if (dispenser.dir === 'down') {
-                waterParticles.push({
-                    x: dispenser.x + 28 + (Math.random() - 0.5) * 2.5,
-                    y: dispenser.y + 62,
-                    vx: (Math.random() - 0.5) * 0.08,
-                    vy: 1.35, // Reduced initial downward pour speed
-                    active: true,
-                    collected: false
-                });
-            } else {
-                waterParticles.push({
-                    x: dispenser.x + 62,
-                    y: dispenser.y + 28 + (Math.random() - 0.5) * 2.5,
-                    vx: 2.15, // Reduced initial side-pipe pour speed
-                    vy: (Math.random() - 0.5) * 0.08,
-                    active: true,
-                    collected: false
-                });
+            const countThisFrame = (spawnTick % 2 === 0) ? 2 : 1;
+            for (let k = 0; k < countThisFrame; k++) {
+                if (totalSpawned >= MAX_WATER) break;
+                if (dispenser.dir === 'down') {
+                    waterParticles.push({
+                        x: dispenser.x + 28 + (Math.random() - 0.5) * 2.8,
+                        y: dispenser.y + 62 + k * 2,
+                        vx: (Math.random() - 0.5) * 0.10,
+                        vy: 1.85, // Balanced medium downward pour velocity
+                        active: true,
+                        collected: false
+                    });
+                } else {
+                    waterParticles.push({
+                        x: dispenser.x + 62 + k * 2,
+                        y: dispenser.y + 28 + (Math.random() - 0.5) * 2.8,
+                        vx: 2.75, // Balanced medium side-pipe pour velocity
+                        vy: (Math.random() - 0.5) * 0.10,
+                        active: true,
+                        collected: false
+                    });
+                }
+                totalSpawned++;
             }
-            totalSpawned++;
-            if (totalSpawned % 9 === 0) playSound('water');
+            if (spawnTick % 5 === 0) playSound('water');
         }
 
         let activeCount = 0;
@@ -642,12 +646,12 @@
                 if (!p.active || p.collected) continue;
                 if (step === 0) activeCount++;
 
-                // Reduced gravity & velocity cap for smooth, unhurried water flow
-                p.vy += 0.105 / subSteps;
+                // Balanced medium gravity (0.145) & medium max speed cap (5.8)
+                p.vy += 0.145 / subSteps;
                 const speed = Math.hypot(p.vx, p.vy);
-                if (speed > 4.2) {
-                    p.vx = (p.vx / speed) * 4.2;
-                    p.vy = (p.vy / speed) * 4.2;
+                if (speed > 5.8) {
+                    p.vx = (p.vx / speed) * 5.8;
+                    p.vy = (p.vy / speed) * 5.8;
                 }
 
                 p.x += p.vx / subSteps;
@@ -714,8 +718,8 @@
                         const dy = p2.y - p1.y;
                         const d = Math.hypot(dx, dy);
                         if (d > 2 && d < 24) {
-                            p1.vx = p1.vx * 0.88 + p2.vx * 0.12;
-                            p1.vy = p1.vy * 0.88 + p2.vy * 0.12;
+                            p1.vx = p1.vx * 0.89 + p2.vx * 0.11;
+                            p1.vy = p1.vy * 0.89 + p2.vy * 0.11;
                         }
                     }
                 }
@@ -725,7 +729,7 @@
         // Check if water finished without filling
         if (totalSpawned >= MAX_WATER && activeCount === 0 && glass.filled < 100) {
             dryFrames++;
-            if (dryFrames > 45) {
+            if (dryFrames > 42) {
                 triggerRetry();
             }
         }
@@ -1108,7 +1112,7 @@
             ctx.beginPath();
             ctx.moveTo(gx, gy + gh);
             for (let x = gx; x <= gx + gw; x += 4) {
-                const wave = Math.sin(x * 0.08 + waveTick) * (glass.filled < 100 ? 4.0 : 1.5);
+                const wave = Math.sin(x * 0.08 + waveTick) * (glass.filled < 100 ? 4.2 : 1.5);
                 ctx.lineTo(x, topY + wave);
             }
             ctx.lineTo(gx + gw, gy + gh);
