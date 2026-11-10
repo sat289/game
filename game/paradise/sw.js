@@ -1,6 +1,0 @@
-const CACHE="st-paradise-v2";
-const SHELL=["./","./index.html","./style.css","./game.js","./manifest.json","./README.txt"];
-const ENGINE="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
-self.addEventListener("install",e=>e.waitUntil((async()=>{const c=await caches.open(CACHE);await c.addAll(SHELL);try{const r=await fetch(ENGINE,{mode:"cors",cache:"reload"});if(r.ok)await c.put(ENGINE,r)}catch(err){console.warn("Three.js will be cached during first successful online launch.")}await self.skipWaiting()})()));
-self.addEventListener("activate",e=>e.waitUntil((async()=>{for(const k of await caches.keys())if(k.startsWith("st-paradise-")&&k!==CACHE)await caches.delete(k);await self.clients.claim()})()));
-self.addEventListener("fetch",e=>{const req=e.request;if(req.method!=="GET")return;const url=new URL(req.url);if(url.origin!==location.origin&&!url.href.startsWith("https://cdn.jsdelivr.net/"))return;e.respondWith((async()=>{const cache=await caches.open(CACHE),hit=await cache.match(req);if(hit)return hit;try{const res=await fetch(req);if(res.ok&&(url.origin===location.origin||url.href===ENGINE))await cache.put(req,res.clone());return res}catch(err){return hit||new Response("This item is not cached yet. Open the game online once to download it.",{status:503,headers:{"Content-Type":"text/plain"}})}})())});
