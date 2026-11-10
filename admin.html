@@ -252,6 +252,30 @@
   <!-- TOAST NOTIFICATION CONTAINER -->
   <div id="toastContainer" class="fixed top-4 right-4 z-[100001] flex flex-col gap-2 max-w-sm w-full pointer-events-none px-3 sm:px-0"></div>
 
+  <!-- MILESTONE COMPLETED CELEBRATION & SMS/EMAIL MODAL -->
+  <div id="milestoneModal" class="fixed inset-0 z-[100002] hidden bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="feature-hub max-w-md w-full p-6 rounded-3xl border-2 border-emerald-400 shadow-2xl text-center">
+      <div class="w-16 h-16 mx-auto mb-3 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 flex items-center justify-center text-3xl font-black shadow-lg">
+        <i class="fa-solid fa-bell"></i>
+      </div>
+      <h3 class="brand-font text-lg font-bold theme-heading mb-1">🎉 Target Milestone Completed!</h3>
+      <p id="milestoneModalText" class="text-xs theme-text font-semibold mb-4 leading-relaxed"></p>
+      <div class="sub-panel p-3 rounded-xl text-left text-[11px] space-y-1.5 mb-4">
+        <div><strong>📧 Email Status:</strong> <span id="modalEmailStatus" class="theme-label font-bold">Sent to satishkommana630@gmail.com</span></div>
+        <div><strong>📱 SMS Status:</strong> <span id="modalSmsStatus" class="theme-label font-bold">Dispatched to +91 9281267188</span></div>
+      </div>
+      <div class="flex flex-wrap items-center justify-center gap-2">
+        <a id="modalDirectSmsBtn" href="#" class="neon-action !bg-gradient-to-r !from-amber-600 !to-orange-600 !py-2 !px-4">
+          <i class="fa-solid fa-comment-sms"></i> Send SMS via Phone App
+        </a>
+        <a id="modalDirectWaBtn" href="#" target="_blank" rel="noopener noreferrer" class="neon-action !bg-gradient-to-r !from-emerald-600 !to-green-600 !py-2 !px-4">
+          <i class="fa-brands fa-whatsapp"></i> WhatsApp Alert
+        </a>
+        <button type="button" onclick="document.getElementById('milestoneModal').classList.add('hidden')" class="chip-btn !py-2 !px-4">Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- CONFIRMATION MODAL -->
   <div id="confirmModal" class="fixed inset-0 z-[100000] hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="feature-hub max-w-sm w-full p-5 rounded-2xl border border-teal-500/50 shadow-2xl">
@@ -304,7 +328,7 @@
           <h1 class="brand-font text-base sm:text-lg font-bold uppercase theme-heading flex items-center gap-2">
             <i class="fa-solid fa-shield-halved text-[#0d9488] dark:text-[#32ffdc]"></i> Advanced Admin Studio
           </h1>
-          <p class="text-[11px] theme-subtext font-medium">Global sync, notice manager, game publisher &amp; Firebase live tracking</p>
+          <p class="text-[11px] theme-subtext font-medium">Global sync, notice manager, game publisher, live tracking &amp; milestone SMS/Email alerts</p>
         </div>
       </div>
 
@@ -322,7 +346,7 @@
         <i class="fa-solid fa-screwdriver-wrench"></i> Studio Manager
       </button>
       <button type="button" id="navBtn_tracking" onclick="switchAdminMainTab('tracking')" class="main-nav-tab">
-        <i class="fa-solid fa-fire-flame-curved text-amber-500"></i> Tracking Analysis
+        <i class="fa-solid fa-fire-flame-curved text-amber-500"></i> Tracking &amp; Auto Alerts
         <span class="w-2 h-2 rounded-full bg-emerald-500 live-dot"></span>
       </button>
     </nav>
@@ -592,7 +616,7 @@
     </div>
 
     <!-- =====================================================================
-         TAB 2: TRACKING ANALYSIS (FIREBASE REALTIME DB + ANALYTICS + GITHUB)
+         TAB 2: TRACKING ANALYSIS & MILESTONE AUTO SMS/EMAIL ALERTS
     ====================================================================== -->
     <div id="tabPanel_tracking" class="hidden">
       <section id="liveTrackingSection" class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
@@ -611,18 +635,24 @@
             </p>
           </div>
 
-          <div class="flex flex-wrap items-center gap-2">
-            <button type="button" onclick="sendTestTelemetryEvent()" class="chip-btn" title="Send a real test event to Firebase RTDB">
-              <i class="fa-solid fa-vial-circle-check"></i> Send Test Event
+          <div class="flex flex-wrap items-center gap-1.5">
+            <button type="button" onclick="sendTestTelemetryEvent('views')" class="chip-btn" title="Simulate +1 Website View">
+              <i class="fa-solid fa-globe"></i> +1 View
+            </button>
+            <button type="button" onclick="sendTestTelemetryEvent('apk_page_views')" class="chip-btn" title="Simulate +1 App View">
+              <i class="fa-solid fa-mobile-screen"></i> +1 App View
+            </button>
+            <button type="button" onclick="sendTestTelemetryEvent('member_logins')" class="chip-btn" title="Simulate +1 Member Login">
+              <i class="fa-solid fa-user-check"></i> +1 Login
             </button>
             <select id="autoRefreshSelect" onchange="changeRefreshInterval()" class="neon-input !w-auto !py-1.5 !px-2.5 text-[11px]">
-              <option value="15000">🔄 Auto-Refresh: 15s</option>
-              <option value="30000">🔄 Auto-Refresh: 30s</option>
-              <option value="60000">🔄 Auto-Refresh: 60s</option>
-              <option value="0">⏸️ Auto-Refresh: Off</option>
+              <option value="15000">🔄 Auto: 15s</option>
+              <option value="30000">🔄 Auto: 30s</option>
+              <option value="60000">🔄 Auto: 60s</option>
+              <option value="0">⏸️ Off</option>
             </select>
             <button type="button" onclick="fetchAllRealTelemetry(true)" class="chip-btn">
-              <i id="syncSpinnerIcon" class="fa-solid fa-rotate"></i> Refresh Live Data
+              <i id="syncSpinnerIcon" class="fa-solid fa-rotate"></i> Refresh
             </button>
           </div>
         </div>
@@ -631,10 +661,10 @@
         <div class="sub-panel p-3.5 rounded-2xl mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
             <div class="text-xs font-extrabold theme-heading flex items-center gap-1.5">
-              <i class="fa-solid fa-bolt text-amber-500"></i> 1-Click Crash-Proof Firebase Tracker Activation on GitHub
+              <i class="fa-solid fa-bolt text-amber-500"></i> 1-Click Full Tracker Activation (App Views + Logins + Milestone Auto-Alerts)
             </div>
             <p class="text-[11px] theme-subtext font-medium">
-              Injects your isolated <span class="code-font">friendsgame-872f5</span> Firebase RTDB + REST Keepalive tracker directly into <span class="code-font">index.html</span> and <span class="code-font">stgames-apk/index.html</span>.
+              Click both buttons below to update <span class="code-font">index.html</span> and <span class="code-font">stgames-apk/index.html</span> so App Views, Member Logins, and Milestone SMS/Email triggers work on all phones.
             </p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
@@ -644,6 +674,106 @@
             <button type="button" id="installApkTrackerBtn" onclick="autoInstallTrackerOnFile('stgames-apk/index.html')" class="neon-action !py-2 !px-3 !text-[11px] !bg-gradient-to-r !from-cyan-600 !to-teal-600">
               <i class="fa-brands fa-android"></i> Activate in stgames-apk/index.html
             </button>
+          </div>
+        </div>
+
+        <!-- =================================================================
+             MILESTONE AUTO EMAIL & SMS ALERT MANAGER (DEFAULT 10, EDITABLE)
+        ================================================================== -->
+        <div class="sub-panel p-4 rounded-2xl mb-5 border-2 border-teal-500/40">
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-3 mb-3 border-b border-teal-500/20">
+            <div>
+              <h3 class="brand-font text-sm sm:text-base font-bold theme-heading flex items-center gap-2">
+                <i class="fa-solid fa-bell text-amber-500"></i> Automatic Milestone SMS &amp; Email Alert Studio
+              </h3>
+              <p class="text-[11px] theme-subtext font-medium">
+                Sends an automatic Email &amp; SMS alert <strong>only after</strong> your target Views and Member Logins are completed.
+              </p>
+            </div>
+            <span id="milestoneStatusBadge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold bg-amber-500/15 text-amber-600 dark:text-amber-300 border border-amber-500/30">
+              ⏳ Waiting for Milestone Completion
+            </span>
+          </div>
+
+          <!-- LIVE PROGRESS BARS FOR VIEWS & LOGINS TARGET -->
+          <div class="grid sm:grid-cols-2 gap-3 mb-4">
+            <div class="p-3 rounded-xl bg-teal-500/10 border border-teal-500/25">
+              <div class="flex items-center justify-between text-xs font-extrabold mb-1.5">
+                <span class="theme-heading"><i class="fa-solid fa-globe mr-1"></i> Website Views Progress</span>
+                <span id="viewsMilestoneProgressText" class="code-font theme-label">0 / 10</span>
+              </div>
+              <div class="w-full h-2.5 rounded-full bg-slate-300 dark:bg-slate-800 overflow-hidden">
+                <div id="viewsMilestoneBar" class="h-full bg-gradient-to-r from-teal-500 to-emerald-400 transition-all duration-300" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <div class="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/25">
+              <div class="flex items-center justify-between text-xs font-extrabold mb-1.5">
+                <span class="theme-heading"><i class="fa-solid fa-user-check mr-1"></i> Member Logins Progress</span>
+                <span id="loginsMilestoneProgressText" class="code-font theme-label">0 / 10</span>
+              </div>
+              <div class="w-full h-2.5 rounded-full bg-slate-300 dark:bg-slate-800 overflow-hidden">
+                <div id="loginsMilestoneBar" class="h-full bg-gradient-to-r from-cyan-500 to-teal-400 transition-all duration-300" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- EDITABLE MILESTONE INPUTS -->
+          <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+            <div>
+              <label class="block text-[10px] font-extrabold uppercase theme-label mb-1">Alert Email Address</label>
+              <input id="alertEmailInput" type="email" class="neon-input" value="satishkommana630@gmail.com" placeholder="satishkommana630@gmail.com">
+            </div>
+            <div>
+              <label class="block text-[10px] font-extrabold uppercase theme-label mb-1">Alert Mobile Number (SMS)</label>
+              <input id="alertPhoneInput" type="tel" class="neon-input code-font" value="9281267188" placeholder="9281267188">
+            </div>
+            <div>
+              <label class="block text-[10px] font-extrabold uppercase theme-label mb-1">Target Views to Complete</label>
+              <input id="alertTargetViews" type="number" min="1" class="neon-input code-font" value="10" placeholder="e.g., 10 or 100">
+            </div>
+            <div>
+              <label class="block text-[10px] font-extrabold uppercase theme-label mb-1">Target Logins to Complete</label>
+              <input id="alertTargetLogins" type="number" min="1" class="neon-input code-font" value="10" placeholder="e.g., 10 or 100">
+            </div>
+          </div>
+
+          <div class="grid sm:grid-cols-2 gap-3 mb-3">
+            <div>
+              <label class="block text-[10px] font-extrabold uppercase theme-label mb-1">When Should Alert Come?</label>
+              <select id="alertConditionMode" class="neon-input">
+                <option value="both">Only after BOTH Target Views AND Target Logins complete</option>
+                <option value="either">As soon as EITHER Target Views OR Target Logins completes</option>
+                <option value="logins_only">Only after Target Member Logins completes</option>
+                <option value="views_only">Only after Target Website Views completes</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] font-extrabold uppercase theme-label mb-1">Fast2SMS API Key (Optional for Direct Indian SMS)</label>
+              <input id="alertFast2SmsKey" type="password" class="neon-input" placeholder="Optional Fast2SMS key for background +91 SMS">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="block text-[10px] font-extrabold uppercase theme-label mb-1">
+              Custom Completion Message (Supports <span class="code-font">{views}</span>, <span class="code-font">{logins}</span>, <span class="code-font">{apk_views}</span>, <span class="code-font">{target_views}</span>, <span class="code-font">{target_logins}</span>)
+            </label>
+            <textarea id="alertCustomMessage" rows="2" class="neon-input font-semibold">🎉 Milestone Complete! ST Games has completed {logins} Member Logins and {views} Website Views (App Views: {apk_views})! Target of {target_logins} logins & {target_views} views achieved.</textarea>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+            <div class="flex flex-wrap items-center gap-2">
+              <button type="button" onclick="saveMilestoneAlertSettings()" class="neon-action">
+                <i class="fa-solid fa-floppy-disk"></i> Save Milestone Alert Settings
+              </button>
+              <button type="button" onclick="resetMilestoneLock()" class="chip-btn" title="Re-arm the alert so it can fire again for the current target">
+                <i class="fa-solid fa-rotate-left"></i> Reset Completion Lock
+              </button>
+              <button type="button" onclick="verifyFormSubmitEmail()" class="chip-btn" title="One-time email activation for satishkommana630@gmail.com">
+                <i class="fa-solid fa-envelope-circle-check"></i> Verify Email Service
+              </button>
+            </div>
+            <span id="milestoneLastSentInfo" class="text-[11px] font-bold theme-subtext"></span>
           </div>
         </div>
 
@@ -664,17 +794,17 @@
             </div>
           </div>
 
-          <!-- 2. App Views (stgames-apk/index.html) -->
+          <!-- 2. App Views (stgames-apk/index.html & WebView/PWA) -->
           <div class="kpi-card">
             <div class="flex items-center justify-between mb-1">
-              <span class="text-[10px] font-extrabold uppercase tracking-wider theme-label">App Views (APK Page)</span>
+              <span class="text-[10px] font-extrabold uppercase tracking-wider theme-label">App Views (APK / App)</span>
               <span class="w-7 h-7 rounded-lg bg-cyan-500/15 theme-label flex items-center justify-center">
                 <i class="fa-solid fa-mobile-screen"></i>
               </span>
             </div>
             <div id="realApkPageViews" class="text-2xl font-black theme-text code-font">0</div>
             <div class="mt-2 pt-2 border-t border-teal-500/20 flex items-center justify-between text-[10px] theme-subtext font-semibold">
-              <span class="code-font truncate">stgames-apk/index.html</span>
+              <span>APK Page + WebView Launches</span>
             </div>
           </div>
 
@@ -703,7 +833,7 @@
             </div>
             <div id="realMemberLogins" class="text-2xl font-black theme-text code-font">0</div>
             <div class="mt-2 pt-2 border-t border-teal-500/20 flex items-center justify-between text-[10px] theme-subtext font-semibold">
-              <span>Standalone: <strong id="realAppLaunches" class="theme-text">0</strong></span>
+              <span>App Sessions: <strong id="realAppLaunches" class="theme-text">0</strong></span>
               <span>Logs: <strong id="realLoggedMembersCount" class="theme-text">0</strong></span>
             </div>
           </div>
@@ -733,7 +863,7 @@
                   <i class="fa-solid fa-chart-column mr-1"></i> Real Website &amp; App Tracking Overview
                 </h3>
                 <p id="trafficChartNote" class="text-[10px] theme-subtext font-medium">
-                  Live Firebase RTDB (<span class="code-font">friendsgame-872f5</span>) &amp; GitHub comparison of Website Views, <span class="code-font">stgames-apk</span> Views, Downloads &amp; Logins
+                  Live Firebase RTDB (<span class="code-font">friendsgame-872f5</span>) &amp; GitHub comparison of Website Views, App Views, Downloads &amp; Member Logins
                 </p>
               </div>
             </div>
@@ -748,7 +878,7 @@
                 <i class="fa-solid fa-chart-pie mr-1"></i> Traffic &amp; App Share
               </h3>
               <p class="text-[10px] theme-subtext font-medium mb-2">
-                Share of Website Views, <span class="code-font">stgames-apk</span> Views, Downloads &amp; Logins
+                Share of Website Views, App Views, Downloads &amp; Member Logins
               </p>
             </div>
             <div class="relative h-56">
@@ -770,7 +900,7 @@
             </div>
             <div class="flex flex-wrap items-center gap-1.5">
               <button type="button" onclick="filterRealEvents('all')" id="evFilter_all" class="chip-btn active-tab !py-1 !px-2.5 !text-[10px]">All</button>
-              <button type="button" onclick="filterRealEvents('apk_view')" id="evFilter_apk_view" class="chip-btn !py-1 !px-2.5 !text-[10px]">App Views (stgames-apk)</button>
+              <button type="button" onclick="filterRealEvents('apk_view')" id="evFilter_apk_view" class="chip-btn !py-1 !px-2.5 !text-[10px]">App Views</button>
               <button type="button" onclick="filterRealEvents('login')" id="evFilter_login" class="chip-btn !py-1 !px-2.5 !text-[10px]">Logins</button>
               <button type="button" onclick="filterRealEvents('download')" id="evFilter_download" class="chip-btn !py-1 !px-2.5 !text-[10px]">App Downloads</button>
               <button type="button" onclick="filterRealEvents('view')" id="evFilter_view" class="chip-btn !py-1 !px-2.5 !text-[10px]">Views / Plays</button>
@@ -837,6 +967,334 @@
     let firebaseAnalytics = null;
     let firebaseConnected = false;
 
+    /* ==========================================================
+       MILESTONE ALERT CONFIGURATION STATE (DEFAULT 10 LOGINS & VIEWS)
+    ========================================================== */
+    let milestoneConfig = {
+      email: "satishkommana630@gmail.com",
+      phone: "9281267188",
+      targetViews: 10,
+      targetLogins: 10,
+      conditionMode: "both",
+      customMessage: "🎉 Milestone Complete! ST Games has completed {logins} Member Logins and {views} Website Views (App Views: {apk_views})! Target of {target_logins} logins & {target_views} views achieved.",
+      fast2smsKey: "",
+      completedSignature: "",
+      lastSentAt: ""
+    };
+
+    let milestoneDispatchInProgress = false;
+
+    function getMilestoneSignature(cfg) {
+      return `mode_${cfg.conditionMode}_v_${cfg.targetViews}_l_${cfg.targetLogins}`;
+    }
+
+    function loadMilestoneSettingsFromLocal() {
+      try {
+        const saved = JSON.parse(safeGetStorage('st_milestone_config', '{}'));
+        if (saved && typeof saved === 'object') {
+          milestoneConfig = { ...milestoneConfig, ...saved };
+        }
+      } catch (_) {}
+      syncMilestoneInputsToUI();
+    }
+
+    function syncMilestoneInputsToUI() {
+      const emailEl = document.getElementById('alertEmailInput');
+      const phoneEl = document.getElementById('alertPhoneInput');
+      const viewsEl = document.getElementById('alertTargetViews');
+      const loginsEl = document.getElementById('alertTargetLogins');
+      const modeEl = document.getElementById('alertConditionMode');
+      const msgEl = document.getElementById('alertCustomMessage');
+      const smsKeyEl = document.getElementById('alertFast2SmsKey');
+      const lastSentEl = document.getElementById('milestoneLastSentInfo');
+
+      if (emailEl) emailEl.value = milestoneConfig.email || 'satishkommana630@gmail.com';
+      if (phoneEl) phoneEl.value = milestoneConfig.phone || '9281267188';
+      if (viewsEl) viewsEl.value = Number(milestoneConfig.targetViews) || 10;
+      if (loginsEl) loginsEl.value = Number(milestoneConfig.targetLogins) || 10;
+      if (modeEl) modeEl.value = milestoneConfig.conditionMode || 'both';
+      if (msgEl) msgEl.value = milestoneConfig.customMessage || '';
+      if (smsKeyEl) smsKeyEl.value = milestoneConfig.fast2smsKey || '';
+      if (lastSentEl) {
+        lastSentEl.textContent = milestoneConfig.lastSentAt
+          ? `Last alert sent: ${milestoneConfig.lastSentAt}`
+          : 'No milestone alert sent for this target yet.';
+      }
+    }
+
+    async function saveMilestoneAlertSettings() {
+      const newTargetViews = Math.max(1, Number(document.getElementById('alertTargetViews').value) || 10);
+      const newTargetLogins = Math.max(1, Number(document.getElementById('alertTargetLogins').value) || 10);
+      const newMode = document.getElementById('alertConditionMode').value || 'both';
+
+      const prevSig = getMilestoneSignature(milestoneConfig);
+
+      milestoneConfig.email = (document.getElementById('alertEmailInput').value || '').trim() || 'satishkommana630@gmail.com';
+      milestoneConfig.phone = (document.getElementById('alertPhoneInput').value || '').trim() || '9281267188';
+      milestoneConfig.targetViews = newTargetViews;
+      milestoneConfig.targetLogins = newTargetLogins;
+      milestoneConfig.conditionMode = newMode;
+      milestoneConfig.customMessage = (document.getElementById('alertCustomMessage').value || '').trim();
+      milestoneConfig.fast2smsKey = (document.getElementById('alertFast2SmsKey').value || '').trim();
+
+      const nextSig = getMilestoneSignature(milestoneConfig);
+      if (prevSig !== nextSig) {
+        // Target changed (e.g., from 10 to 100), so unlock completion for the new target
+        milestoneConfig.completedSignature = "";
+      }
+
+      safeSetStorage('st_milestone_config', JSON.stringify(milestoneConfig));
+
+      try {
+        if (firebaseDb) {
+          await firebaseDb.ref('stgames_telemetry/alert_config').set(milestoneConfig);
+        } else {
+          await fetch(`${FB_DB_URL}/stgames_telemetry/alert_config.json`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(milestoneConfig)
+          });
+        }
+        showToast(`Milestone alert saved! Will trigger after ${newTargetViews} Views & ${newTargetLogins} Logins.`, 'success');
+      } catch (err) {
+        showToast('Saved locally (Firebase sync error: ' + err.message + ')', 'warn');
+      }
+
+      evaluateMilestoneProgressAndTrigger();
+    }
+
+    async function resetMilestoneLock() {
+      milestoneConfig.completedSignature = "";
+      milestoneConfig.lastSentAt = "";
+      safeSetStorage('st_milestone_config', JSON.stringify(milestoneConfig));
+      syncMilestoneInputsToUI();
+
+      try {
+        if (firebaseDb) {
+          await firebaseDb.ref('stgames_telemetry/alert_config').update({
+            completedSignature: "",
+            lastSentAt: ""
+          });
+        } else {
+          await fetch(`${FB_DB_URL}/stgames_telemetry/alert_config.json`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ completedSignature: "", lastSentAt: "" })
+          });
+        }
+      } catch (_) {}
+
+      showToast('Milestone lock reset! Evaluating current counts...', 'info');
+      evaluateMilestoneProgressAndTrigger();
+    }
+
+    function formatMilestoneMessage(m) {
+      const raw = milestoneConfig.customMessage ||
+        "🎉 Milestone Complete! ST Games has completed {logins} Member Logins and {views} Website Views (App Views: {apk_views})!";
+      return raw
+        .replace(/\{views\}/gi, m.webViews)
+        .replace(/\{logins\}/gi, m.memberLogins)
+        .replace(/\{apk_views\}/gi, m.apkViews)
+        .replace(/\{downloads\}/gi, m.totalDownloads)
+        .replace(/\{target_views\}/gi, milestoneConfig.targetViews)
+        .replace(/\{target_logins\}/gi, milestoneConfig.targetLogins);
+    }
+
+    function isMilestoneTargetCompleted(m) {
+      const tv = Math.max(1, Number(milestoneConfig.targetViews) || 10);
+      const tl = Math.max(1, Number(milestoneConfig.targetLogins) || 10);
+      const mode = milestoneConfig.conditionMode || 'both';
+
+      if (mode === 'both') return m.webViews >= tv && m.memberLogins >= tl;
+      if (mode === 'either') return m.webViews >= tv || m.memberLogins >= tl;
+      if (mode === 'logins_only') return m.memberLogins >= tl;
+      if (mode === 'views_only') return m.webViews >= tv;
+      return m.webViews >= tv && m.memberLogins >= tl;
+    }
+
+    async function evaluateMilestoneProgressAndTrigger() {
+      const m = getEffectiveMetrics();
+      const tv = Math.max(1, Number(milestoneConfig.targetViews) || 10);
+      const tl = Math.max(1, Number(milestoneConfig.targetLogins) || 10);
+
+      const viewsPct = Math.min(100, Math.round((m.webViews / tv) * 100));
+      const loginsPct = Math.min(100, Math.round((m.memberLogins / tl) * 100));
+
+      const vText = document.getElementById('viewsMilestoneProgressText');
+      const lText = document.getElementById('loginsMilestoneProgressText');
+      const vBar = document.getElementById('viewsMilestoneBar');
+      const lBar = document.getElementById('loginsMilestoneBar');
+      const badge = document.getElementById('milestoneStatusBadge');
+
+      if (vText) vText.textContent = `${m.webViews} /${tv} (${viewsPct}%)`;
+      if (lText) lText.textContent = `${m.memberLogins} / ${tl} (${loginsPct}%)`;
+      if (vBar) vBar.style.width = `${viewsPct}%`;
+      if (lBar) lBar.style.width = `${loginsPct}%`;
+
+      const currentSig = getMilestoneSignature(milestoneConfig);
+      const isCompleted = isMilestoneTargetCompleted(m);
+
+      if (!isCompleted) {
+        if (badge) {
+          badge.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold bg-amber-500/15 text-amber-600 dark:text-amber-300 border border-amber-500/30';
+          badge.innerHTML = `⏳ In Progress (Needs ${tv} Views &amp; ${tl} Logins)`;
+        }
+        return;
+      }
+
+      if (milestoneConfig.completedSignature === currentSig) {
+        if (badge) {
+          badge.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30';
+          badge.innerHTML = `✅ Completed &amp; Alert Dispatched (${tv} Views / ${tl} Logins)`;
+        }
+        return;
+      }
+
+      if (milestoneDispatchInProgress) return;
+      milestoneDispatchInProgress = true;
+
+      try {
+        const sentTime = new Date().toLocaleString();
+        milestoneConfig.completedSignature = currentSig;
+        milestoneConfig.lastSentAt = sentTime;
+        safeSetStorage('st_milestone_config', JSON.stringify(milestoneConfig));
+        syncMilestoneInputsToUI();
+
+        if (firebaseDb) {
+          await firebaseDb.ref('stgames_telemetry/alert_config').update({
+            completedSignature: currentSig,
+            lastSentAt: sentTime
+          });
+        } else {
+          await fetch(`${FB_DB_URL}/stgames_telemetry/alert_config.json`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ completedSignature: currentSig, lastSentAt: sentTime })
+          });
+        }
+
+        await dispatchMilestoneEmailAndSms(m);
+
+        if (badge) {
+          badge.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30';
+          badge.innerHTML = `✅ Completed &amp; Alert Dispatched (${tv} Views / ${tl} Logins)`;
+        }
+      } finally {
+        milestoneDispatchInProgress = false;
+      }
+    }
+
+    async function dispatchMilestoneEmailAndSms(m) {
+      const finalMsg = formatMilestoneMessage(m);
+      const emailAddr = (milestoneConfig.email || 'satishkommana630@gmail.com').trim();
+      const rawPhone = (milestoneConfig.phone || '9281267188').replace(/\D/g, '');
+      const phoneWithCountry = rawPhone.length === 10 ? `+91${rawPhone}` : `+${rawPhone}`;
+
+      let emailStatusText = `Sent to ${emailAddr}`;
+      let smsStatusText = `Ready for ${phoneWithCountry}`;
+
+      // 1. AUTOMATIC EMAIL VIA FORMSUBMIT AJAX API
+      try {
+        const emailRes = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(emailAddr)}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            _subject: `🎉 ST Games Milestone Completed (${m.memberLogins} Logins & ${m.webViews} Views)`,
+            _template: 'table',
+            Milestone_Message: finalMsg,
+            Website_Views: m.webViews,
+            App_Views: m.apkViews,
+            Member_Logins: m.memberLogins,
+            App_Downloads: m.totalDownloads,
+            Game_Plays: m.gamePlays,
+            Phone_Alert_Number: phoneWithCountry,
+            Completed_At: new Date().toLocaleString()
+          })
+        });
+        if (emailRes.ok) {
+          emailStatusText = `✅ Dispatched automatically to ${emailAddr}`;
+        } else {
+          emailStatusText = `⚠️ Check ${emailAddr} inbox to confirm FormSubmit activation`;
+        }
+      } catch (_) {
+        emailStatusText = `⚠️ Network blocked automatic email; use Verify Email button`;
+      }
+
+      // 2. AUTOMATIC SMS DISPATCH (FAST2SMS FOR INDIA + TEXTBELT FALLBACK)
+      if (milestoneConfig.fast2smsKey) {
+        try {
+          const smsNumber = rawPhone.slice(-10);
+          const f2sUrl = `https://www.fast2sms.com/dev/bulkV2?authorization=${encodeURIComponent(milestoneConfig.fast2smsKey)}&route=q&message=${encodeURIComponent(finalMsg)}&language=english&flash=0&numbers=${encodeURIComponent(smsNumber)}`;
+          const f2sRes = await fetch(f2sUrl);
+          if (f2sRes.ok) {
+            smsStatusText = `✅ Sent via Fast2SMS to ${phoneWithCountry}`;
+          }
+        } catch (_) {}
+      } else {
+        try {
+          const tbRes = await fetch('https://textbelt.com/text', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              phone: phoneWithCountry,
+              message: finalMsg,
+              key: 'textbelt'
+            })
+          });
+          const tbData = await tbRes.json().catch(() => ({}));
+          if (tbData && tbData.success) {
+            smsStatusText = `✅ Dispatched via SMS Gateway to ${phoneWithCountry}`;
+          } else {
+            smsStatusText = `📲 Click 'Send SMS via Phone App' below for ${phoneWithCountry}`;
+          }
+        } catch (_) {
+          smsStatusText = `📲 Click 'Send SMS via Phone App' below for ${phoneWithCountry}`;
+        }
+      }
+
+      // 3. SHOW CELEBRATION MODAL & NATIVE SMS / WHATSAPP LINKS
+      const modal = document.getElementById('milestoneModal');
+      const modalText = document.getElementById('milestoneModalText');
+      const modalEmail = document.getElementById('modalEmailStatus');
+      const modalSms = document.getElementById('modalSmsStatus');
+      const smsBtn = document.getElementById('modalDirectSmsBtn');
+      const waBtn = document.getElementById('modalDirectWaBtn');
+
+      if (modalText) modalText.textContent = finalMsg;
+      if (modalEmail) modalEmail.textContent = emailStatusText;
+      if (modalSms) modalSms.textContent = smsStatusText;
+      if (smsBtn) smsBtn.href = `sms:${phoneWithCountry}?body=${encodeURIComponent(finalMsg)}`;
+      if (waBtn) waBtn.href = `https://wa.me/${ phoneWithCountry.replace('+', '') }?text=${encodeURIComponent(finalMsg)}`;
+      if (modal) modal.classList.remove('hidden');
+
+      showToast(`🎉 Milestone Completed! Email & SMS triggered for ${emailAddr} /${phoneWithCountry}`, 'success');
+    }
+
+    async function verifyFormSubmitEmail() {
+      const emailAddr = (document.getElementById('alertEmailInput').value || 'satishkommana630@gmail.com').trim();
+      try {
+        showToast(`Sending verification email to ${emailAddr}...`, 'info');
+        await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(emailAddr)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({
+            _subject: 'ST Games Admin Studio - Email Alert Verification',
+            Message: 'Your automatic milestone email alerts for ST Games are now active!',
+            Target_Phone: document.getElementById('alertPhoneInput').value || '9281267188'
+          })
+        });
+        showToast(`Check ${emailAddr} (Inbox/Spam) and click 'Activate' if this is your first time!`, 'success');
+      } catch (err) {
+        showToast('Verification request error: ' + err.message, 'error');
+      }
+    }
+
+    /* ==========================================================
+       FIREBASE REALTIME SYNC INITIALIZATION
+    ========================================================== */
     function initFirebaseLiveSync() {
       try {
         if (typeof firebase !== 'undefined') {
@@ -878,6 +1336,12 @@
       if (typeof counters.app_launches === 'number') realMetrics.fbAppLaunches = counters.app_launches;
       if (typeof counters.game_plays === 'number') realMetrics.fbGamePlays = counters.game_plays;
 
+      if (data.alert_config && typeof data.alert_config === 'object') {
+        milestoneConfig = { ...milestoneConfig, ...data.alert_config };
+        safeSetStorage('st_milestone_config', JSON.stringify(milestoneConfig));
+        syncMilestoneInputsToUI();
+      }
+
       if (data.events && typeof data.events === 'object') {
         const eventsArr = Object.values(data.events)
           .filter(Boolean)
@@ -912,27 +1376,35 @@
       } catch (_) {}
     }
 
-    async function sendTestTelemetryEvent() {
+    async function sendTestTelemetryEvent(counterKey = 'views') {
       const now = new Date();
+      const typeMap = {
+        views: { type: 'view', user: 'Website Visitor', detail: 'Website View (/index.html)' },
+        apk_page_views: { type: 'apk_view', user: 'App User', detail: 'App View (stgames-apk / WebView)' },
+        member_logins: { type: 'login', user: 'Member Login', detail: 'Verified Member Sign-In' }
+      };
+      const meta = typeMap[counterKey] || typeMap.views;
+
       const testEvent = {
-        type: 'view',
-        user: 'Admin Studio Test',
-        mode: 'Admin Verification',
-        detail: 'Firebase Live Connection Verified',
+        type: meta.type,
+        user: meta.user,
+        mode: counterKey === 'apk_page_views' ? 'PWA / APK App' : 'Admin Verification',
+        detail: meta.detail,
         time: now.toLocaleString(),
         ts: Date.now()
       };
 
       try {
         if (firebaseDb) {
-          await firebaseDb.ref('stgames_telemetry/counters/views').transaction(cur => (cur || 0) + 1);
+          await firebaseDb.ref(`stgames_telemetry/counters/${counterKey}`).transaction(cur => (cur || 0) + 1);
           await firebaseDb.ref('stgames_telemetry/events').push(testEvent);
         } else {
-          const currentViews = (realMetrics.fbViews || 0) + 1;
-          await fetch(`${FB_DB_URL}/stgames_telemetry/counters/views.json`, {
+          const curRes = await fetch(`${FB_DB_URL}/stgames_telemetry/counters/${counterKey}.json`);
+          const curVal = (await curRes.json()) || 0;
+          await fetch(`${FB_DB_URL}/stgames_telemetry/counters/${counterKey}.json`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(currentViews)
+            body: JSON.stringify(Number(curVal) + 1)
           });
           await fetch(`${FB_DB_URL}/stgames_telemetry/events.json`, {
             method: 'POST',
@@ -941,7 +1413,7 @@
           });
         }
         await fetchFirebaseRestSnapshot();
-        showToast('Test event written to Firebase Realtime Database!', 'success');
+        showToast(`Recorded +1 ${counterKey.replace(/_/g, ' ')} in Firebase!`, 'success');
       } catch (err) {
         showToast('Firebase write failed (check RTDB Rules): ' + err.message, 'error');
       }
@@ -1390,13 +1862,39 @@
     }
 
     function getEffectiveMetrics() {
-      const webViews = Math.max(realMetrics.fbViews || 0, realMetrics.views || 0, realMetrics.ghViews14d || 0);
-      const apkViews = Math.max(realMetrics.fbApkPageViews || 0, realMetrics.apkPageViews || 0);
+      const events = realMetrics.recordedEvents || [];
+      const eventLoginsCount = events.filter(e => e.type === 'login').length;
+      const eventApkViewsCount = events.filter(e => e.type === 'apk_view').length;
+      const eventWebViewsCount = events.filter(e => e.type === 'view').length;
+
+      const webViews = Math.max(
+        realMetrics.fbViews || 0,
+        realMetrics.views || 0,
+        realMetrics.ghViews14d || 0,
+        eventWebViewsCount
+      );
+
+      const appLaunches = Math.max(realMetrics.fbAppLaunches || 0, realMetrics.appLaunches || 0);
+
+      // App Views combines stgames-apk views, WebView/PWA app launches, and recorded apk_view events
+      const apkViews = Math.max(
+        realMetrics.fbApkPageViews || 0,
+        realMetrics.apkPageViews || 0,
+        appLaunches,
+        eventApkViewsCount
+      );
+
       const apkDownloads = Math.max(realMetrics.fbApkDownloads || 0, realMetrics.apkDownloads || 0) + (realMetrics.releaseApkDownloads || 0);
       const pwaInstalls = Math.max(realMetrics.fbPwaInstalls || 0, realMetrics.pwaInstalls || 0);
       const totalDownloads = apkDownloads + pwaInstalls;
-      const memberLogins = Math.max(realMetrics.fbMemberLogins || 0, realMetrics.memberLogins || 0);
-      const appLaunches = Math.max(realMetrics.fbAppLaunches || 0, realMetrics.appLaunches || 0);
+
+      // Member Logins combines Firebase counter, CounterAPI, and recorded login events
+      const memberLogins = Math.max(
+        realMetrics.fbMemberLogins || 0,
+        realMetrics.memberLogins || 0,
+        eventLoginsCount
+      );
+
       const gamePlays = Math.max(realMetrics.fbGamePlays || 0, realMetrics.gamePlays || 0);
 
       return {
@@ -1432,6 +1930,8 @@
       document.getElementById('realPublishedGamesCount').textContent = allGamesData.length.toLocaleString();
       document.getElementById('realRepoStars').textContent = realMetrics.repoStars.toLocaleString();
 
+      evaluateMilestoneProgressAndTrigger();
+
       if (currentMainTab === 'tracking') {
         updateRealCharts();
       }
@@ -1459,8 +1959,8 @@
         const labels = hasGhHistory
           ? realMetrics.trafficHistory.map(item => item.date)
           : [
-              'Website Views (index.html)',
-              'App Views (stgames-apk)',
+              'Website Views',
+              'App Views (APK/App)',
               'APK Downloads',
               'PWA Installs',
               'Member Logins',
@@ -1548,7 +2048,7 @@
           data: {
             labels: [
               'Website Views',
-              'App Views (stgames-apk)',
+              'App Views (APK/App)',
               'APK Downloads',
               'PWA Installs',
               'Member Logins',
@@ -1605,7 +2105,7 @@
         tbody.innerHTML = `
           <tr>
             <td colspan="5" class="py-6 text-center theme-subtext font-medium">
-              No events recorded in Firebase (<span class="code-font">friendsgame-872f5</span>) matching this filter yet. Click <strong>Send Test Event</strong> or <strong>Activate Tracker in index.html</strong> above to start logging real visits, downloads, and logins.
+              No events recorded in Firebase (<span class="code-font">friendsgame-872f5</span>) matching this filter yet. Use the <strong>+1 View / +1 App View / +1 Login</strong> buttons above or click <strong>Activate Tracker in index.html</strong>.
             </td>
           </tr>`;
         return;
@@ -1627,7 +2127,7 @@
       const rows = [
         ['Metric', 'Live Count'],
         ['Website Views (index.html)', m.webViews],
-        ['App Views (stgames-apk/index.html)', m.apkViews],
+        ['App Views (stgames-apk & WebView)', m.apkViews],
         ['GitHub Traffic Views (14d)', realMetrics.ghViews14d],
         ['GitHub Unique Visitors (14d)', realMetrics.ghUniques14d],
         ['APK Downloads (Clicks + Releases)', m.apkDownloads],
@@ -1664,8 +2164,10 @@
     }
 
     /* ==========================================================
-       CRASH-PROOF 1-CLICK FIREBASE + KEEPALIVE TRACKER INJECTOR
-       Uses isolated app name ('stGamesTrackerApp') + REST keepalive
+       CRASH-PROOF 1-CLICK FIREBASE + MILESTONE TRACKER INJECTOR
+       Detects App Views (stgames-apk + WebViews + PWA),
+       Member Logins (Forms + LocalStorage + Buttons),
+       and Triggers Milestone Email/SMS Automatically!
     ========================================================== */
     function getWebsiteTrackerCode() {
       const c = getCreds();
@@ -1674,7 +2176,7 @@
 <script type="module" id="st-games-live-tracker">
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
-import { getDatabase, ref, runTransaction, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getDatabase, ref, runTransaction, push, get, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBzLchy5M2fLne4c7Ghw1KNN8wVrlZdd8M",
@@ -1703,13 +2205,85 @@ try {
   if (app) analytics = getAnalytics(app);
 } catch (_) {}
 
-const isApp = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+const ua = navigator.userAgent || "";
+const isWebView = /; wv\\)|WebIntoApp|Android.*Version\\/[0-9.]+/i.test(ua) || Boolean(window.Android);
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+const isApp = isWebView || isStandalone || location.search.includes("mode=app") || location.hash.includes("apk");
 const path = (window.location.pathname || "/").toLowerCase();
+
+function getSavedUsername() {
+  const keys = ["st_username", "st_user", "username", "user", "player_name", "member_name", "displayName"];
+  for (const k of keys) {
+    const val = localStorage.getItem(k);
+    if (val && val.trim() && val !== "null" && val !== "undefined") return val.trim().slice(0, 40);
+  }
+  return "";
+}
+
+async function checkAndFireMilestoneFromSite() {
+  if (!db) return;
+  try {
+    const snap = await get(ref(db, "stgames_telemetry"));
+    if (!snap.exists()) return;
+    const data = snap.val() || {};
+    const counters = data.counters || {};
+    const cfg = data.alert_config || {
+      email: "satishkommana630@gmail.com",
+      phone: "9281267188",
+      targetViews: 10,
+      targetLogins: 10,
+      conditionMode: "both",
+      customMessage: "🎉 Milestone Complete! ST Games has completed {logins} Member Logins and {views} Website Views!"
+    };
+
+    const views = Number(counters.views) || 0;
+    const logins = Number(counters.member_logins) || 0;
+    const apkViews = Math.max(Number(counters.apk_page_views) || 0, Number(counters.app_launches) || 0);
+    const tv = Math.max(1, Number(cfg.targetViews) || 10);
+    const tl = Math.max(1, Number(cfg.targetLogins) || 10);
+    const mode = cfg.conditionMode || "both";
+    const sig = "mode_" + mode + "_v_" + tv + "_l_" + tl;
+
+    let done = false;
+    if (mode === "both") done = views >= tv && logins >= tl;
+    else if (mode === "either") done = views >= tv || logins >= tl;
+    else if (mode === "logins_only") done = logins >= tl;
+    else if (mode === "views_only") done = views >= tv;
+
+    if (!done || cfg.completedSignature === sig) return;
+
+    await update(ref(db, "stgames_telemetry/alert_config"), {
+      completedSignature: sig,
+      lastSentAt: new Date().toLocaleString()
+    });
+
+    const msg = (cfg.customMessage || "🎉 Milestone Complete! ST Games reached {logins} Logins and {views} Views!")
+      .replace(/\\{views\\}/gi, views)
+      .replace(/\\{logins\\}/gi, logins)
+      .replace(/\\{apk_views\\}/gi, apkViews)
+      .replace(/\\{target_views\\}/gi, tv)
+      .replace(/\\{target_logins\\}/gi, tl);
+
+    fetch("https://formsubmit.co/ajax/" + encodeURIComponent(cfg.email || "satishkommana630@gmail.com"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify({
+        _subject: "🎉 ST Games Milestone Completed (" + logins + " Logins & " + views + " Views)",
+        Milestone_Alert: msg,
+        Website_Views: views,
+        Member_Logins: logins,
+        App_Views: apkViews,
+        Mobile_Number: cfg.phone || "9281267188"
+      }),
+      keepalive: true
+    }).catch(() => {});
+  } catch (_) {}
+}
 
 function recordStEvent(counterKey, eventType, detailText, userLabel) {
   const payload = {
     type: eventType,
-    user: userLabel || (localStorage.getItem("st_username") || "Visitor"),
+    user: userLabel || getSavedUsername() || "Visitor",
     mode: isApp ? "PWA / APK App" : "Web Browser",
     detail: detailText || path,
     time: new Date().toLocaleString(),
@@ -1722,8 +2296,10 @@ function recordStEvent(counterKey, eventType, detailText, userLabel) {
 
   if (db) {
     try {
-      runTransaction(ref(db, "stgames_telemetry/counters/" + counterKey), (cur) => (cur || 0) + 1);
-      push(ref(db, "stgames_telemetry/events"), payload);
+      runTransaction(ref(db, "stgames_telemetry/counters/" + counterKey), (cur) => (cur || 0) + 1)
+        .then(() => checkAndFireMilestoneFromSite())
+        .catch(() => {});
+      push(ref(db, "stgames_telemetry/events"), payload).catch(() => {});
     } catch (_) {}
   } else {
     fetch(DB_URL + "/stgames_telemetry/events.json", {
@@ -1737,41 +2313,69 @@ function recordStEvent(counterKey, eventType, detailText, userLabel) {
   fetch("https://api.counterapi.dev/v1/" + NS + "/" + counterKey + "/up", { mode: "cors", keepalive: true }).catch(() => {});
 }
 
-if (path.indexOf("stgames-apk") !== -1) {
-  recordStEvent("apk_page_views", "apk_view", "stgames-apk/index.html", "App User");
+// 1. Track Website Views vs App Views (stgames-apk / WebView / Standalone PWA)
+if (path.indexOf("stgames-apk") !== -1 || isApp) {
+  recordStEvent("apk_page_views", "apk_view", path.indexOf("stgames-apk") !== -1 ? "stgames-apk/index.html" : "App / WebView Session", getSavedUsername() || "App User");
 } else {
-  recordStEvent("views", "view", path || "/index.html", "Website Visitor");
+  recordStEvent("views", "view", path || "/index.html", getSavedUsername() || "Website Visitor");
 }
 
 if (isApp) {
-  recordStEvent("app_launches", "apk_view", "Standalone App Launch", "Installed App User");
+  recordStEvent("app_launches", "apk_view", "Standalone / APK App Launch", getSavedUsername() || "Installed App User");
 }
 
+// 2. Auto-track existing logged-in session once per browser session
+const initialUser = getSavedUsername();
+if (initialUser && !sessionStorage.getItem("st_login_tracked_" + initialUser)) {
+  sessionStorage.setItem("st_login_tracked_" + initialUser, "1");
+  recordStEvent("member_logins", "login", "Active Member Session", initialUser);
+}
+
+// 3. Track Clicks (APK Downloads, Member Sign-In Buttons, and Game Plays)
 document.addEventListener("click", (e) => {
   const el = e.target.closest("a, button, [onclick]");
   if (!el) return;
-  const txt = (el.innerText || el.getAttribute("title") || "").trim().toLowerCase();
+  const txt = (el.innerText || el.value || el.getAttribute("title") || "").trim().toLowerCase();
   const href = (el.getAttribute("href") || el.getAttribute("onclick") || "").toLowerCase();
 
   if (href.indexOf(".apk") !== -1 || txt.indexOf("download apk") !== -1 || txt.indexOf("download app") !== -1 || txt.indexOf("install app") !== -1) {
-    recordStEvent("apk_downloads", "download", href || txt, "APK Downloader");
+    recordStEvent("apk_downloads", "download", href || txt, getSavedUsername() || "APK Downloader");
   }
-  if (txt.indexOf("login") !== -1 || txt.indexOf("sign in") !== -1) {
-    recordStEvent("member_logins", "login", "Member Sign-In", localStorage.getItem("st_username") || "Member");
+  if (txt.indexOf("login") !== -1 || txt.indexOf("sign in") !== -1 || txt.indexOf("log in") !== -1 || href.indexOf("login") !== -1) {
+    setTimeout(() => {
+      recordStEvent("member_logins", "login", "Member Sign-In Click", getSavedUsername() || "Member");
+    }, 300);
   }
   if (txt.indexOf("play") !== -1 || href.indexOf("game/") !== -1 || href.indexOf("games/") !== -1) {
-    recordStEvent("game_plays", "view", href || txt, "Player");
+    recordStEvent("game_plays", "view", href || txt, getSavedUsername() || "Player");
   }
 }, true);
 
+// 4. Track Login Form Submissions
+document.addEventListener("submit", (e) => {
+  const form = e.target;
+  if (!form) return;
+  const formHtml = (form.innerHTML || "").toLowerCase();
+  if (formHtml.indexOf("password") !== -1 || formHtml.indexOf("login") !== -1 || formHtml.indexOf("user") !== -1) {
+    const userInp = form.querySelector('input[type="text"], input[type="email"], input[name*="user" i], input[id*="user" i]');
+    const uName = (userInp && userInp.value ? userInp.value.trim() : "") || getSavedUsername() || "Member";
+    recordStEvent("member_logins", "login", "Login Form Submitted", uName);
+  }
+}, true);
+
+// 5. Track PWA Installation
 window.addEventListener("appinstalled", () => {
-  recordStEvent("pwa_installs", "download", "PWA Installed to Home Screen", "PWA Installer");
+  recordStEvent("pwa_installs", "download", "PWA Installed to Home Screen", getSavedUsername() || "PWA Installer");
 });
 
-window.stTrackLogin = (username) => recordStEvent("member_logins", "login", "Verified Member Login", username || "Member");
-window.stTrackDownload = () => recordStEvent("apk_downloads", "download", "Direct APK Download", "APK Downloader");
-window.stTrackApkPageView = () => recordStEvent("apk_page_views", "apk_view", "stgames-apk/index.html", "App User");
-window.stTrackGamePlay = (gameName) => recordStEvent("game_plays", "view", gameName || "Game Play", "Player");
+// 6. Global Helper Hooks for Custom Scripts
+window.stTrackLogin = (username) => {
+  if (username) localStorage.setItem("st_username", username);
+  recordStEvent("member_logins", "login", "Verified Member Login", username || getSavedUsername() || "Member");
+};
+window.stTrackDownload = () => recordStEvent("apk_downloads", "download", "Direct APK Download", getSavedUsername() || "APK Downloader");
+window.stTrackApkPageView = () => recordStEvent("apk_page_views", "apk_view", "stgames-apk/index.html", getSavedUsername() || "App User");
+window.stTrackGamePlay = (gameName) => recordStEvent("game_plays", "view", gameName || "Game Play", getSavedUsername() || "Player");
 <\/script>`;
     }
 
@@ -2356,6 +2960,7 @@ window.stTrackGamePlay = (gameName) => recordStEvent("game_plays", "view", gameN
         document.getElementById('passwordModal').classList.add('hidden');
       }
 
+      loadMilestoneSettingsFromLocal();
       initFirebaseLiveSync();
       renderRealTelemetryUI();
       verifyGitHubConnection(false);
