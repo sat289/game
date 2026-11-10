@@ -2193,46 +2193,210 @@ syncMainPageGamesJson();
   };
 </script>
 
-<!-- ST GAMES REAL LIVE TRACKER -->
-<script id="st-games-live-tracker">
-(function() {
-  var NS = "stgames_sat289_game";
-  var isApp = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-  var path = (window.location.pathname || "").toLowerCase();
-  function hit(key) {
-    fetch("https://api.counterapi.dev/v1/" + NS + "/" + key + "/up", { mode: "cors" }).catch(function(){});
+<!-- ST GAMES REAL LIVE TRACKER (FIREBASE + ANALYTICS) -->
+<script type="module" id="st-games-live-tracker">
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
+import { getDatabase, ref, runTransaction, push, get, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBzLchy5M2fLne4c7Ghw1KNN8wVrlZdd8M",
+  authDomain: "friendsgame-872f5.firebaseapp.com",
+  databaseURL: "https://friendsgame-872f5-default-rtdb.firebaseio.com",
+  projectId: "friendsgame-872f5",
+  storageBucket: "friendsgame-872f5.firebasestorage.app",
+  messagingSenderId: "522534013233",
+  appId: "1:522534013233:web:f5faa6e6795023d0420810",
+  measurementId: "G-PW5H3G97QR"
+};
+
+const DB_URL = "https://friendsgame-872f5-default-rtdb.firebaseio.com";
+const NS = "stgames_sat289_game";
+let app = null;
+let analytics = null;
+let db = null;
+
+try {
+  const existing = getApps().find(a => a.name === "stGamesTrackerApp");
+  app = existing || initializeApp(firebaseConfig, "stGamesTrackerApp");
+  db = getDatabase(app);
+} catch (_) {}
+
+try {
+  if (app) analytics = getAnalytics(app);
+} catch (_) {}
+
+const ua = navigator.userAgent || "";
+const isWebView = /; wv\)|WebIntoApp|Android.*Version\/[0-9.]+/i.test(ua) || Boolean(window.Android);
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+const isApp = isWebView || isStandalone || location.search.includes("mode=app") || location.hash.includes("apk");
+const path = (window.location.pathname || "/").toLowerCase();
+
+function getSavedUsername() {
+  const keys = ["st_username", "st_user", "username", "user", "player_name", "member_name", "displayName"];
+  for (const k of keys) {
+    const val = localStorage.getItem(k);
+    if (val && val.trim() && val !== "null" && val !== "undefined") return val.trim().slice(0, 40);
   }
-  window.addEventListener("DOMContentLoaded", function() {
-    if (path.indexOf("stgames-apk") !== -1) {
-      hit("apk_page_views");
-    } else {
-      hit("views");
-    }
-    if (isApp) hit("app_launches");
-    document.body.addEventListener("click", function(e) {
-      var el = e.target.closest("a, button");
-      if (!el) return;
-      var txt = (el.innerText || "").toLowerCase();
-      var href = (el.getAttribute("href") || "").toLowerCase();
-      if (href.indexOf(".apk") !== -1 || txt.indexOf("download apk") !== -1 || txt.indexOf("download app") !== -1) {
-        hit("apk_downloads");
-      }
-      if (txt.indexOf("login") !== -1 || txt.indexOf("sign in") !== -1) {
-        hit("member_logins");
-      }
-      if (txt.indexOf("play free") !== -1 || href.indexOf("game/") !== -1) {
-        hit("game_plays");
-      }
+  return "";
+}
+
+async function checkAndFireMilestoneFromSite() {
+  if (!db) return;
+  try {
+    const snap = await get(ref(db, "stgames_telemetry"));
+    if (!snap.exists()) return;
+    const data = snap.val() || {};
+    const counters = data.counters || {};
+    const cfg = data.alert_config || {
+      email: "satishkommana630@gmail.com",
+      phone: "9281267188",
+      targetViews: 10,
+      targetLogins: 10,
+      conditionMode: "both",
+      customMessage: "🎉 Milestone Complete! ST Games has completed {logins} Member Logins and {views} Website Views!"
+    };
+
+    const views = Number(counters.views) || 0;
+    const logins = Number(counters.member_logins) || 0;
+    const apkViews = Math.max(Number(counters.apk_page_views) || 0, Number(counters.app_launches) || 0);
+    const tv = Math.max(1, Number(cfg.targetViews) || 10);
+    const tl = Math.max(1, Number(cfg.targetLogins) || 10);
+    const mode = cfg.conditionMode || "both";
+    const sig = "mode_" + mode + "_v_" + tv + "_l_" + tl;
+
+    let done = false;
+    if (mode === "both") done = views >= tv && logins >= tl;
+    else if (mode === "either") done = views >= tv || logins >= tl;
+    else if (mode === "logins_only") done = logins >= tl;
+    else if (mode === "views_only") done = views >= tv;
+
+    if (!done || cfg.completedSignature === sig) return;
+
+    await update(ref(db, "stgames_telemetry/alert_config"), {
+      completedSignature: sig,
+      lastSentAt: new Date().toLocaleString()
     });
-  });
-  window.addEventListener("appinstalled", function() {
-    hit("pwa_installs");
-  });
-  window.stTrackLogin = function() { hit("member_logins"); };
-  window.stTrackDownload = function() { hit("apk_downloads"); };
-  window.stTrackApkPageView = function() { hit("apk_page_views"); };
-  window.stTrackGamePlay = function() { hit("game_plays"); };
-})();
+
+    const msg = (cfg.customMessage || "🎉 Milestone Complete! ST Games reached {logins} Logins and {views} Views!")
+      .replace(/\{views\}/gi, views)
+      .replace(/\{logins\}/gi, logins)
+      .replace(/\{apk_views\}/gi, apkViews)
+      .replace(/\{target_views\}/gi, tv)
+      .replace(/\{target_logins\}/gi, tl);
+
+    fetch("https://formsubmit.co/ajax/" + encodeURIComponent(cfg.email || "satishkommana630@gmail.com"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify({
+        _subject: "🎉 ST Games Milestone Completed (" + logins + " Logins & " + views + " Views)",
+        Milestone_Alert: msg,
+        Website_Views: views,
+        Member_Logins: logins,
+        App_Views: apkViews,
+        Mobile_Number: cfg.phone || "9281267188"
+      }),
+      keepalive: true
+    }).catch(() => {});
+  } catch (_) {}
+}
+
+function recordStEvent(counterKey, eventType, detailText, userLabel) {
+  const payload = {
+    type: eventType,
+    user: userLabel || getSavedUsername() || "Visitor",
+    mode: isApp ? "PWA / APK App" : "Web Browser",
+    detail: detailText || path,
+    time: new Date().toLocaleString(),
+    ts: Date.now()
+  };
+
+  try {
+    if (analytics) logEvent(analytics, counterKey, { page_path: path, detail: detailText || "" });
+  } catch (_) {}
+
+  if (db) {
+    try {
+      runTransaction(ref(db, "stgames_telemetry/counters/" + counterKey), (cur) => (cur || 0) + 1)
+        .then(() => checkAndFireMilestoneFromSite())
+        .catch(() => {});
+      push(ref(db, "stgames_telemetry/events"), payload).catch(() => {});
+    } catch (_) {}
+  } else {
+    fetch(DB_URL + "/stgames_telemetry/events.json", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      keepalive: true
+    }).catch(() => {});
+  }
+
+  fetch("https://api.counterapi.dev/v1/" + NS + "/" + counterKey + "/up", { mode: "cors", keepalive: true }).catch(() => {});
+}
+
+// 1. Track Website Views vs App Views (stgames-apk / WebView / Standalone PWA)
+if (path.indexOf("stgames-apk") !== -1 || isApp) {
+  recordStEvent("apk_page_views", "apk_view", path.indexOf("stgames-apk") !== -1 ? "stgames-apk/index.html" : "App / WebView Session", getSavedUsername() || "App User");
+} else {
+  recordStEvent("views", "view", path || "/index.html", getSavedUsername() || "Website Visitor");
+}
+
+if (isApp) {
+  recordStEvent("app_launches", "apk_view", "Standalone / APK App Launch", getSavedUsername() || "Installed App User");
+}
+
+// 2. Auto-track existing logged-in session once per browser session
+const initialUser = getSavedUsername();
+if (initialUser && !sessionStorage.getItem("st_login_tracked_" + initialUser)) {
+  sessionStorage.setItem("st_login_tracked_" + initialUser, "1");
+  recordStEvent("member_logins", "login", "Active Member Session", initialUser);
+}
+
+// 3. Track Clicks (APK Downloads, Member Sign-In Buttons, and Game Plays)
+document.addEventListener("click", (e) => {
+  const el = e.target.closest("a, button, [onclick]");
+  if (!el) return;
+  const txt = (el.innerText || el.value || el.getAttribute("title") || "").trim().toLowerCase();
+  const href = (el.getAttribute("href") || el.getAttribute("onclick") || "").toLowerCase();
+
+  if (href.indexOf(".apk") !== -1 || txt.indexOf("download apk") !== -1 || txt.indexOf("download app") !== -1 || txt.indexOf("install app") !== -1) {
+    recordStEvent("apk_downloads", "download", href || txt, getSavedUsername() || "APK Downloader");
+  }
+  if (txt.indexOf("login") !== -1 || txt.indexOf("sign in") !== -1 || txt.indexOf("log in") !== -1 || href.indexOf("login") !== -1) {
+    setTimeout(() => {
+      recordStEvent("member_logins", "login", "Member Sign-In Click", getSavedUsername() || "Member");
+    }, 300);
+  }
+  if (txt.indexOf("play") !== -1 || href.indexOf("game/") !== -1 || href.indexOf("games/") !== -1) {
+    recordStEvent("game_plays", "view", href || txt, getSavedUsername() || "Player");
+  }
+}, true);
+
+// 4. Track Login Form Submissions
+document.addEventListener("submit", (e) => {
+  const form = e.target;
+  if (!form) return;
+  const formHtml = (form.innerHTML || "").toLowerCase();
+  if (formHtml.indexOf("password") !== -1 || formHtml.indexOf("login") !== -1 || formHtml.indexOf("user") !== -1) {
+    const userInp = form.querySelector('input[type="text"], input[type="email"], input[name*="user" i], input[id*="user" i]');
+    const uName = (userInp && userInp.value ? userInp.value.trim() : "") || getSavedUsername() || "Member";
+    recordStEvent("member_logins", "login", "Login Form Submitted", uName);
+  }
+}, true);
+
+// 5. Track PWA Installation
+window.addEventListener("appinstalled", () => {
+  recordStEvent("pwa_installs", "download", "PWA Installed to Home Screen", getSavedUsername() || "PWA Installer");
+});
+
+// 6. Global Helper Hooks for Custom Scripts
+window.stTrackLogin = (username) => {
+  if (username) localStorage.setItem("st_username", username);
+  recordStEvent("member_logins", "login", "Verified Member Login", username || getSavedUsername() || "Member");
+};
+window.stTrackDownload = () => recordStEvent("apk_downloads", "download", "Direct APK Download", getSavedUsername() || "APK Downloader");
+window.stTrackApkPageView = () => recordStEvent("apk_page_views", "apk_view", "stgames-apk/index.html", getSavedUsername() || "App User");
+window.stTrackGamePlay = (gameName) => recordStEvent("game_plays", "view", gameName || "Game Play", getSavedUsername() || "Player");
 </script>
 </body>
 </html>
