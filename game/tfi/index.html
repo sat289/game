@@ -2,264 +2,433 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#dff2ff">
   <title>TFI Games Hub</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     :root {
-      --bg: #f0f4f8;
+      --bg-main: #eef8ff;
+      --text-main: #2c5882;
+      --brand-bar: #dff2ff;
+      --brand-border: #bce3ff;
+      --brand-text: #1e4b7a;
+      --pill-bar-bg: #d4efff;
+      --pill-bar-border: #bce3ff;
+      --pill-text: #3b6998;
+      --pill-active-bg: #87cefa;
+      --pill-active-border: #2b78a6;
+      --pill-active-text: #234e78;
       --card-bg: #ffffff;
-      --card-border: #e2e8f0;
-      --primary: #3b82f6;
-      --primary-gradient: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
-      --text: #1e293b;
-      --text-muted: #64748b;
-      --badge-new: #10b981;
+      --card-border: #9ad4f5;
+      --footer-bg: #9ad8f8;
+      --footer-border: #ffffff;
+    }
+    body.theme-gold {
+      --bg-main: #121212;
+      --text-main: #fbbf24;
+      --brand-bar: #1c1917;
+      --brand-border: #78350f;
+      --brand-text: #fbbf24;
+      --pill-bar-bg: #292524;
+      --pill-bar-border: #78350f;
+      --pill-text: #d97706;
+      --pill-active-bg: #451a03;
+      --pill-active-border: #f59e0b;
+      --pill-active-text: #fde68a;
+      --card-bg: #1e1b18;
+      --card-border: #78350f;
+      --footer-bg: #292524;
+      --footer-border: #b45309;
+    }
+    body.theme-black {
+      --bg-main: #09090b;
+      --text-main: #f8fafc;
+      --brand-bar: #121215;
+      --brand-border: #27272a;
+      --brand-text: #f8fafc;
+      --pill-bar-bg: #18181b;
+      --pill-bar-border: #27272a;
+      --pill-text: #94a3b8;
+      --pill-active-bg: #27272a;
+      --pill-active-border: #60a5fa;
+      --pill-active-text: #ffffff;
+      --card-bg: #18181b;
+      --card-border: #27272a;
+      --footer-bg: #121215;
+      --footer-border: #27272a;
+    }
+    body.theme-neon {
+      --bg-main: #0f051d;
+      --text-main: #e879f9;
+      --brand-bar: #1e0b3b;
+      --brand-border: #6b21a8;
+      --brand-text: #f0abfc;
+      --pill-bar-bg: #2e1065;
+      --pill-bar-border: #7c3aed;
+      --pill-text: #c084fc;
+      --pill-active-bg: #4c1d95;
+      --pill-active-border: #e879f9;
+      --pill-active-text: #ffffff;
+      --card-bg: #1e1b4b;
+      --card-border: #7c3aed;
+      --footer-bg: #3b0764;
+      --footer-border: #9333ea;
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     }
 
     body {
-      background-color: var(--bg);
-      color: var(--text);
+      background: var(--bg-main);
+      color: var(--text-main);
       min-height: 100vh;
+      padding-bottom: 40px;
+      overflow-x: hidden;
+      transition: background .3s, color .3s;
+    }
+
+    button, input {
+      font: inherit;
+    }
+
+    /* ST GAMES Style Top Header Bar */
+    .mode-bar {
+      background: var(--brand-bar);
+      border-bottom: 2px solid var(--brand-border);
+      padding: 10px 14px;
       display: flex;
-      flex-direction: column;
+      justify-content: space-between;
       align-items: center;
-      padding: 16px;
+      gap: 8px;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      box-shadow: 0 2px 8px rgba(43, 120, 166, 0.08);
+    }
+
+    .app-brand {
+      color: var(--brand-text);
+      font-weight: 900;
+      font-size: 18px;
+      letter-spacing: 0.4px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      white-space: nowrap;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 6px #22c55e;
+      flex-shrink: 0;
+    }
+
+    .theme-cycle-btn {
+      background: var(--pill-active-bg);
+      color: var(--pill-active-text);
+      border: 2px solid var(--pill-active-border);
+      padding: 6px 12px;
+      border-radius: 22px;
+      font-size: 12.5px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+      transition: transform .15s;
+    }
+    .theme-cycle-btn:active {
+      transform: scale(.93);
     }
 
     .container {
       width: 100%;
-      max-width: 480px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      padding-bottom: 30px;
+      max-width: 520px;
+      margin: 0 auto;
     }
 
-    /* Top Header */
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 4px 0;
+    /* Search Box Styled to Match App Theme */
+    .search-wrap {
+      padding: 12px 12px 2px;
     }
-
-    .brand {
-      font-size: 20px;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-      color: var(--text);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .brand span {
-      color: var(--primary);
-    }
-
-    /* Search Bar */
     .search-box {
       position: relative;
       width: 100%;
     }
-
     .search-box input {
       width: 100%;
-      padding: 12px 16px 12px 42px;
-      background: #ffffff;
-      border: 1px solid var(--card-border);
-      border-radius: 14px;
-      font-size: 15px;
-      color: var(--text);
+      padding: 11px 16px 11px 42px;
+      background: var(--card-bg);
+      border: 2px solid var(--card-border);
+      border-radius: 26px;
+      font-size: 14.5px;
+      font-weight: 700;
+      color: var(--text-main);
       outline: none;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.03);
-      transition: border-color 0.15s;
+      box-shadow: 0 3px 8px rgba(43, 120, 166, 0.08);
+      transition: border-color 0.2s;
     }
-
+    .search-box input::placeholder {
+      color: var(--pill-text);
+      opacity: 0.75;
+    }
     .search-box input:focus {
-      border-color: var(--primary);
+      border-color: var(--pill-active-border);
     }
-
     .search-box svg {
       position: absolute;
-      left: 14px;
+      left: 15px;
       top: 50%;
       transform: translateY(-50%);
       width: 18px;
       height: 18px;
-      fill: var(--text-muted);
+      fill: var(--pill-text);
     }
 
-    /* Category Filter Pills */
-    .filters {
+    /* ST GAMES Style Category Pill Bar */
+    .category-nav {
+      background: var(--pill-bar-bg);
+      border: 1.5px solid var(--pill-bar-border);
+      margin: 10px 12px 12px;
+      padding: 5px 6px;
+      border-radius: 30px;
       display: flex;
-      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
       overflow-x: auto;
-      padding-bottom: 4px;
       scrollbar-width: none;
     }
-
-    .filters::-webkit-scrollbar {
+    .category-nav::-webkit-scrollbar {
       display: none;
     }
-
     .filter-btn {
-      background: #ffffff;
-      border: 1px solid var(--card-border);
-      color: var(--text-muted);
-      padding: 8px 16px;
-      border-radius: 999px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
+      flex: 1 0 auto;
+      text-align: center;
+      border: 2px solid transparent;
+      background: transparent;
+      color: var(--pill-text);
+      padding: 7px 16px;
+      border-radius: 24px;
+      font-weight: 800;
+      font-size: 14px;
       white-space: nowrap;
-      transition: all 0.15s ease;
+      cursor: pointer;
+      transition: all .18s ease;
     }
-
     .filter-btn.active {
-      background: var(--primary);
-      border-color: var(--primary);
-      color: #ffffff;
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      background: var(--pill-active-bg);
+      border-color: var(--pill-active-border);
+      color: var(--pill-active-text);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
     }
 
-    /* Games Logo Grid */
+    /* ST GAMES Style 2-Column Games Grid & Cards */
     .games-grid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 14px;
+      padding: 2px 14px;
     }
 
     .game-card {
       background: var(--card-bg);
-      border: 2px solid var(--card-border);
-      border-radius: 20px;
+      border-radius: 24px;
+      padding: 5px;
+      box-shadow: 0 5px 12px rgba(43, 120, 166, 0.12);
+      border: 3px solid var(--card-border);
+      cursor: pointer;
+      transition: transform .15s;
+      overflow: hidden;
+      aspect-ratio: 1 / 1.18;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
       text-decoration: none;
+    }
+    .game-card:active {
+      transform: scale(.96);
+    }
+
+    .card-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 18px;
+      position: relative;
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      position: relative;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.04);
-      transition: transform 0.15s ease, border-color 0.15s ease;
+      justify-content: space-between;
+      background: linear-gradient(135deg, #38bdf8, #1d4ed8);
     }
 
-    .game-card:active {
-      transform: scale(0.97);
-    }
-
-    .game-card:hover {
-      border-color: var(--primary);
-    }
-
-    .game-thumb {
+    .card-artwork {
+      position: absolute;
+      inset: 0;
       width: 100%;
-      aspect-ratio: 1 / 1;
-      background: #e2e8f0;
-      position: relative;
-      overflow: hidden;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+      object-position: center;
+      z-index: 0;
+      transition: transform .35s ease;
+    }
+    .game-card:active .card-artwork {
+      transform: scale(1.03);
+    }
+
+    .card-emoji-fallback {
+      position: absolute;
+      inset: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 48px;
+      font-size: 56px;
+      z-index: 0;
+      filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.28));
     }
 
-    .game-thumb img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    /* Badges on Thumb */
-    .badge-new {
+    .card-overlay {
       position: absolute;
-      bottom: 8px;
-      left: 8px;
-      background: var(--badge-new);
-      color: #ffffff;
-      font-size: 11px;
-      font-weight: 800;
-      padding: 3px 10px;
-      border-radius: 8px;
-      letter-spacing: 0.5px;
-      box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+      inset: 0;
+      background: linear-gradient(180deg, rgba(0, 0, 0, .55) 0%, rgba(0, 0, 0, .05) 45%, rgba(0, 0, 0, .48) 100%);
+      z-index: 1;
+      pointer-events: none;
     }
 
-    .badge-score {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      background: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(4px);
-      color: #ffffff;
-      font-size: 11px;
-      font-weight: 700;
-      padding: 3px 8px;
-      border-radius: 8px;
-    }
-
-    .game-info {
-      padding: 10px 12px;
-      background: #ffffff;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
+    .card-header {
+      position: relative;
+      z-index: 2;
+      padding: 11px 11px 0;
+      text-align: left;
     }
 
     .game-title {
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--text);
-      white-space: nowrap;
+      color: #fff;
+      font-size: 14.5px;
+      font-weight: 900;
+      text-transform: uppercase;
+      line-height: 1.15;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.65);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
       overflow: hidden;
-      text-overflow: ellipsis;
     }
 
-    .game-category {
-      font-size: 11px;
-      color: var(--text-muted);
+    .title-underline {
+      width: 34px;
+      height: 3.5px;
+      background: #fff;
+      border-radius: 2px;
+      margin-top: 5px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    }
+
+    .game-category-tag {
+      display: inline-block;
+      margin-top: 6px;
+      font-size: 10px;
+      font-weight: 800;
       text-transform: uppercase;
-      font-weight: 600;
-      letter-spacing: 0.5px;
+      color: #e0f2fe;
+      background: rgba(15, 23, 42, 0.55);
+      padding: 2px 7px;
+      border-radius: 8px;
+      letter-spacing: 0.4px;
+    }
+
+    .card-footer {
+      position: relative;
+      z-index: 2;
+      padding: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 5px;
+    }
+
+    .badge-new {
+      background: linear-gradient(180deg, #4ade80, #22c55e);
+      color: #fff;
+      font-weight: 900;
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 13px 13px 13px 5px;
+      border: 2.5px solid #fff;
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.28);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .badge-score {
+      background: rgba(15, 23, 42, 0.82);
+      color: #fff;
+      font-size: 11.5px;
+      font-weight: 900;
+      padding: 4px 9px;
+      border-radius: 14px;
+      border: 2px solid #fff;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+      margin-left: auto;
     }
 
     .empty-state {
-      grid-column: span 2;
+      grid-column: 1 / -1;
+      background: var(--card-bg);
+      border-radius: 22px;
+      padding: 35px 20px;
       text-align: center;
-      padding: 40px 20px;
-      color: var(--text-muted);
+      border: 3px dashed var(--card-border);
+      margin: 15px 14px;
+      font-weight: 800;
       font-size: 14px;
       display: none;
     }
   </style>
 </head>
-<body>
+<body id="tfi-body">
+
+  <!-- Top App Bar (Matches ST GAMES Theme) -->
+  <header class="mode-bar">
+    <div class="app-brand">
+      <div class="status-dot"></div>
+      <span>🎮 TFI GAMES</span>
+    </div>
+    <button type="button" class="theme-cycle-btn" id="themeBtn" onclick="cycleAppTheme()">
+      <i class="fa-solid fa-palette"></i>
+      <span>Theme</span>
+    </button>
+  </header>
 
   <div class="container">
-    <!-- Header -->
-    <header>
-      <div class="brand">🎮 TFI <span>GAMES</span></div>
-    </header>
-
     <!-- Search Bar -->
-    <div class="search-box">
-      <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-      <input type="text" id="searchInput" placeholder="Search games...">
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+        <input type="text" id="searchInput" placeholder="Search games...">
+      </div>
     </div>
 
     <!-- Category Filters -->
-    <div class="filters">
-      <button class="filter-btn active" data-category="all">All</button>
-      <button class="filter-btn" data-category="popular">Popular</button>
-      <button class="filter-btn" data-category="arcade">Arcade</button>
-      <button class="filter-btn" data-category="puzzle">Puzzle</button>
-    </div>
+    <nav class="category-nav" aria-label="Game categories">
+      <button type="button" class="filter-btn active" data-category="all">All</button>
+      <button type="button" class="filter-btn" data-category="popular">Popular</button>
+      <button type="button" class="filter-btn" data-category="arcade">Arcade</button>
+      <button type="button" class="filter-btn" data-category="trending📈">Trending📈</button>
+      <button type="button" class="filter-btn" data-category="puzzle">Puzzle</button>
+    </nav>
 
     <!-- Games Grid -->
     <div class="games-grid" id="gamesGrid"></div>
@@ -269,6 +438,7 @@
   <script>
     // ==========================================
     // ADD OR MANAGE YOUR GAMES HERE
+    // (Fixed missing comma between "naa anveshana!" and "paradise!" that stopped games from showing)
     // ==========================================
     const games = [
       {
@@ -279,7 +449,8 @@
         url: "samosa.html",
         emoji: "🥟",
         thumb: "assets/gameover.jpg", // e.g. "assets/samosa_thumb.png"
-        scoreKey: "tfi_samosa_best"
+        scoreKey: "tfi_samosa_best",
+        bg: "linear-gradient(135deg, #f59e0b, #b45309)"
       },
       {
         title: "naa anveshana!",
@@ -289,8 +460,9 @@
         url: "naa.html",
         emoji: "🤣",
         thumb: "",
-        scoreKey: "tfi_siva_best"
-      }
+        scoreKey: "tfi_siva_best",
+        bg: "linear-gradient(135deg, #3b82f6, #1d4ed8)"
+      },
       {
         title: "paradise!",
         category: "trending📈",
@@ -299,10 +471,38 @@
         url: "paradise/index.html",
         emoji: "🤣",
         thumb: "assets/paradise.png",
-        scoreKey: "tfi_siva_best"
-    }
+        scoreKey: "tfi_paradise_best",
+        bg: "linear-gradient(135deg, #10b981, #047857)"
+      }
       // Add more games here following the same structure!
     ];
+
+    function safeGetStorage(key, fallback) {
+      try {
+        const val = localStorage.getItem(key);
+        return val !== null ? val : fallback;
+      } catch (e) {
+        return fallback;
+      }
+    }
+
+    function safeSetStorage(key, value) {
+      try {
+        localStorage.setItem(key, value);
+      } catch (e) {}
+    }
+
+    // Automatically syncs with ST GAMES theme (Classic Sky, Royal Gold, Deep Black, Neon Cyber)
+    const THEMES = ["", "theme-gold", "theme-black", "theme-neon"];
+    let currentTheme = safeGetStorage("st_app_theme", "");
+    document.body.className = currentTheme;
+
+    function cycleAppTheme() {
+      const idx = THEMES.indexOf(currentTheme);
+      currentTheme = THEMES[(idx + 1) % THEMES.length];
+      document.body.className = currentTheme;
+      safeSetStorage("st_app_theme", currentTheme);
+    }
 
     const grid = document.getElementById("gamesGrid");
     const searchInput = document.getElementById("searchInput");
@@ -314,12 +514,13 @@
 
     function renderGames() {
       grid.innerHTML = "";
-      
+
       const filtered = games.filter(game => {
-        const matchesCategory = currentCategory === "all" || 
-          (currentCategory === "popular" && game.isPopular) || 
+        const matchesCategory =
+          currentCategory === "all" ||
+          (currentCategory === "popular" && game.isPopular) ||
           game.category === currentCategory;
-        
+
         const matchesSearch = game.title.toLowerCase().includes(searchQuery.toLowerCase());
         return matchesCategory && matchesSearch;
       });
@@ -332,26 +533,40 @@
       }
 
       filtered.forEach(game => {
-        const bestScore = localStorage.getItem(game.scoreKey) || 0;
+        const bestScore = safeGetStorage(game.scoreKey, "0") || 0;
         const card = document.createElement("a");
         card.href = game.url;
         card.className = "game-card";
 
-        const thumbContent = game.thumb 
-          ? `<img src="${game.thumb}" alt="${game.title}">` 
-          : game.emoji;
+        const cardBg = game.bg || "linear-gradient(135deg, #38bdf8, #0284c7)";
 
         card.innerHTML = `
-          <div class="game-thumb">
-            ${thumbContent}
-            ${game.isNew ? '<div class="badge-new">NEW</div>' : ''}
-            <div class="badge-score">🏆 ${bestScore}</div>
-          </div>
-          <div class="game-info">
-            <div class="game-title">${game.title}</div>
-            <div class="game-category">${game.category}</div>
+          <div class="card-inner" style="background: ${cardBg}">
+            <div class="card-emoji-fallback">${game.emoji || "🎮"}</div>
+            ${game.thumb ? `<img class="card-artwork" src="${game.thumb}" alt="${game.title}">` : ""}
+            <div class="card-overlay"></div>
+            <div class="card-header">
+              <div class="game-title"></div>
+              <div class="title-underline"></div>
+              <span class="game-category-tag"></span>
+            </div>
+            <div class="card-footer">
+              ${game.isNew ? '<span class="badge-new">NEW!</span>' : '<span></span>'}
+              <span class="badge-score">🏆 ${bestScore}</span>
+            </div>
           </div>
         `;
+
+        card.querySelector(".game-title").textContent = game.title;
+        card.querySelector(".game-category-tag").textContent = game.category;
+
+        const imgEl = card.querySelector(".card-artwork");
+        if (imgEl) {
+          imgEl.addEventListener("error", () => {
+            imgEl.style.display = "none";
+          }, { once: true });
+        }
+
         grid.appendChild(card);
       });
     }
@@ -375,6 +590,5 @@
     // Initial load
     renderGames();
   </script>
-
 </body>
 </html>
