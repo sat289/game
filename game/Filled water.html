@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Happy Glass - Exact 50 Levels Game</title>
+    <title>Happy Glass Deluxe - 50 Levels</title>
     <style>
         * {
             box-sizing: border-box;
@@ -14,7 +14,7 @@
         body {
             margin: 0;
             padding: 0;
-            background: #1e293b;
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
             font-family: 'Arial Rounded MT Bold', 'Helvetica Rounded', Arial, sans-serif;
             display: flex;
             justify-content: center;
@@ -33,7 +33,8 @@
             background: #ffffff;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 15px 45px rgba(0,0,0,0.45);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 0 3px #334155;
+            border-radius: 14px;
         }
 
         canvas {
@@ -41,6 +42,10 @@
             width: 100%;
             height: 100%;
             cursor: crosshair;
+        }
+
+        .hidden {
+            display: none !important;
         }
 
         /* Level Selection Overlay */
@@ -57,21 +62,47 @@
             background-size: 22px 22px;
             display: flex;
             flex-direction: column;
-            padding: 20px;
+            padding: 18px;
             z-index: 50;
+            animation: fadeIn 0.25s ease-out;
         }
 
-        .hidden {
-            display: none !important;
+        .menu-top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
         }
 
         .menu-header {
-            text-align: center;
-            font-size: 26px;
+            font-size: 22px;
             font-weight: 900;
-            color: #334155;
-            margin: 15px 0 20px 0;
-            letter-spacing: 2px;
+            color: #1e293b;
+            letter-spacing: 1px;
+        }
+
+        .menu-close-btn, .menu-exit-btn {
+            padding: 8px 14px;
+            border-radius: 12px;
+            font-weight: 900;
+            font-size: 14px;
+            cursor: pointer;
+            border: 2px solid #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .menu-close-btn {
+            background: #38bdf8;
+            color: #fff;
+            box-shadow: 0 3px 0 #0284c7;
+        }
+
+        .menu-exit-btn {
+            background: #ef4444;
+            color: #fff;
+            box-shadow: 0 3px 0 #b91c1c;
         }
 
         .levels-grid {
@@ -89,7 +120,7 @@
             width: 54px;
             height: 54px;
             border-radius: 14px;
-            background: #84cc16;
+            background: linear-gradient(180deg, #a3e635 0%, #65a30d 100%);
             border: 2.5px solid #1e293b;
             color: #fff;
             font-size: 19px;
@@ -99,13 +130,14 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            box-shadow: 0 4px 0 #4d7c0f;
+            box-shadow: 0 4px 0 #3f6212;
             transition: transform 0.1s;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
         }
 
         .lvl-item:active {
             transform: translateY(3px);
-            box-shadow: 0 1px 0 #4d7c0f;
+            box-shadow: 0 1px 0 #3f6212;
         }
 
         .lvl-item.locked {
@@ -114,22 +146,46 @@
             border-color: #94a3b8;
             box-shadow: 0 4px 0 #cbd5e1;
             cursor: not-allowed;
+            text-shadow: none;
         }
 
-        /* Exact Win Screen Overlay */
+        /* Win / Retry Overlay */
         #win-overlay {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(255, 255, 255, 0.72);
+            background: rgba(255, 255, 255, 0.78);
+            backdrop-filter: blur(2px);
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            gap: 16px;
+            gap: 20px;
             z-index: 30;
             animation: fadeIn 0.35s ease-out;
+        }
+
+        .win-banner {
+            font-size: 32px;
+            font-weight: 900;
+            color: #0284c7;
+            text-shadow: 0 3px 0 #e0f2fe, 0 4px 10px rgba(0,0,0,0.15);
+            letter-spacing: 1px;
+            animation: popBounce 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .win-buttons-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        @keyframes popBounce {
+            0% { transform: scale(0.3); opacity: 0; }
+            80% { transform: scale(1.08); }
+            100% { transform: scale(1); opacity: 1; }
         }
 
         @keyframes fadeIn {
@@ -142,8 +198,8 @@
             height: 54px;
             border-radius: 50%;
             background: #ffffff;
-            border: 2px solid #64748b;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            border: 2.5px solid #1e293b;
+            box-shadow: 0 4px 0 #64748b;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -166,12 +222,12 @@
         }
 
         .next-pill-btn {
-            height: 50px;
-            padding: 0 26px;
-            border-radius: 25px;
-            background: #84cc16;
+            height: 52px;
+            padding: 0 28px;
+            border-radius: 26px;
+            background: linear-gradient(180deg, #a3e635 0%, #65a30d 100%);
             border: 2.5px solid #1e293b;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.18), inset 0 2px 0 rgba(255,255,255,0.4);
+            box-shadow: 0 4px 0 #3f6212, inset 0 2px 0 rgba(255,255,255,0.45);
             color: #1e293b;
             font-size: 20px;
             font-weight: 900;
@@ -184,7 +240,85 @@
         }
 
         .next-pill-btn:active, .grid-circle-btn:active {
-            transform: scale(0.93);
+            transform: translateY(3px);
+        }
+
+        /* Exit Confirmation Modal & Goodbye Screen */
+        #exit-modal, #goodbye-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .exit-card {
+            background: #ffffff;
+            width: 85%;
+            max-width: 310px;
+            border-radius: 22px;
+            border: 3px solid #1e293b;
+            padding: 24px 20px;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+            animation: popBounce 0.3s ease-out;
+        }
+
+        .exit-icon-big {
+            font-size: 46px;
+            margin-bottom: 8px;
+        }
+
+        .exit-title {
+            font-size: 22px;
+            font-weight: 900;
+            color: #1e293b;
+            margin: 0 0 8px 0;
+        }
+
+        .exit-sub {
+            font-size: 14px;
+            color: #64748b;
+            margin: 0 0 20px 0;
+            line-height: 1.4;
+        }
+
+        .exit-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-yes, .btn-no {
+            flex: 1;
+            padding: 12px 0;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 900;
+            border: 2.5px solid #1e293b;
+            cursor: pointer;
+        }
+
+        .btn-yes {
+            background: #ef4444;
+            color: #ffffff;
+            box-shadow: 0 4px 0 #991b1b;
+        }
+
+        .btn-no {
+            background: #84cc16;
+            color: #1e293b;
+            box-shadow: 0 4px 0 #3f6212;
+        }
+
+        .btn-yes:active, .btn-no:active {
+            transform: translateY(3px);
         }
 
         @keyframes slideLeft {
@@ -203,32 +337,62 @@
 <div id="game-wrapper">
     <canvas id="gameCanvas" width="400" height="720"></canvas>
 
-    <!-- Exact Video Win Overlay -->
+    <!-- Win / Retry Overlay -->
     <div id="win-overlay" class="hidden">
-        <div class="grid-circle-btn" onclick="openLevelMenu()" title="Levels">
-            <div class="grid-icon">
-                <span></span><span></span>
-                <span></span><span></span>
+        <div class="win-banner" id="win-banner-text">AWESOME! 🎉</div>
+        <div class="win-buttons-row">
+            <div class="grid-circle-btn" onclick="openLevelMenu()" title="Levels">
+                <div class="grid-icon">
+                    <span></span><span></span>
+                    <span></span><span></span>
+                </div>
             </div>
+            <button class="next-pill-btn" id="overlay-action-btn" onclick="handleNextButton()">
+                <span id="overlay-btn-text">NEXT</span>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="white" stroke="#1e293b" stroke-width="2.5">
+                    <path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
         </div>
-        <button class="next-pill-btn" id="overlay-action-btn" onclick="handleNextButton()">
-            <span id="overlay-btn-text">NEXT</span>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="white" stroke="#1e293b" stroke-width="2">
-                <path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-        </button>
     </div>
 
     <!-- 50 Levels Menu -->
     <div id="level-menu" class="hidden">
-        <div class="menu-header">SELECT LEVEL (1 - 50)</div>
+        <div class="menu-top-bar">
+            <button class="menu-close-btn" onclick="closeLevelMenu()">▶ PLAY</button>
+            <div class="menu-header">50 LEVELS</div>
+            <button class="menu-exit-btn" onclick="openExitModal()">🚪 EXIT</button>
+        </div>
         <div class="levels-grid" id="levels-grid"></div>
+    </div>
+
+    <!-- Exit Confirmation Dialog -->
+    <div id="exit-modal" class="hidden">
+        <div class="exit-card">
+            <div class="exit-icon-big">🚪</div>
+            <h3 class="exit-title">EXIT GAME?</h3>
+            <p class="exit-sub">మీరు గేమ్ నుండి బయటకు వెళ్లాలనుకుంటున్నారా?<br>(మీ లెవెల్స్ సేవ్ చేయబడ్డాయి)</p>
+            <div class="exit-actions">
+                <button class="btn-no" onclick="closeExitModal()">NO (ఆడతాను)</button>
+                <button class="btn-yes" onclick="confirmExitGame()">YES (EXIT)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Goodbye Screen after Exit -->
+    <div id="goodbye-screen" class="hidden">
+        <div class="exit-card">
+            <div class="exit-icon-big">🥳🥛</div>
+            <h3 class="exit-title">THANK YOU!</h3>
+            <p class="exit-sub">హ్యాపీ గ్లాస్ గేమ్ ఆడినందుకు ధన్యవాదాలు! మళ్ళీ ఆడటానికి క్రింది బటన్ నొక్కండి.</p>
+            <button class="btn-no" style="width:100%; padding:14px;" onclick="resumeFromExit()">▶ PLAY AGAIN</button>
+        </div>
     </div>
 </div>
 
 <script>
     // =====================================================
-    // 1. REALISTIC SOUND EFFECTS (Web Audio API)
+    // 1. ENHANCED SOUND EFFECTS (Web Audio API)
     // =====================================================
     let audioCtx = null;
 
@@ -253,34 +417,50 @@
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.type = 'triangle';
-                osc.frequency.setValueAtTime(220 + Math.random() * 110, now);
-                gain.gain.setValueAtTime(0.025, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.028);
+                osc.frequency.setValueAtTime(240 + Math.random() * 120, now);
+                gain.gain.setValueAtTime(0.028, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
                 osc.start(now);
-                osc.stop(now + 0.028);
+                osc.stop(now + 0.03);
             } 
             else if (type === 'water') {
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.type = 'sine';
-                const f = 330 + (glass.filled * 3.7) + Math.random() * 85;
+                const f = 320 + (glass.filled * 3.8) + Math.random() * 90;
                 osc.frequency.setValueAtTime(f, now);
-                osc.frequency.exponentialRampToValueAtTime(f * 1.24, now + 0.06);
-                gain.gain.setValueAtTime(0.02, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+                osc.frequency.exponentialRampToValueAtTime(f * 1.28, now + 0.065);
+                gain.gain.setValueAtTime(0.022, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.065);
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
                 osc.start(now);
-                osc.stop(now + 0.06);
-            } 
+                osc.stop(now + 0.065);
+            }
+            else if (type === 'splash') {
+                // Pop droplet sound when entering glass
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                const base = 480 + (glass.filled * 4.2);
+                osc.frequency.setValueAtTime(base, now);
+                osc.frequency.exponentialRampToValueAtTime(base * 1.45, now + 0.05);
+                gain.gain.setValueAtTime(0.03, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.05);
+            }
             else if (type === 'click') {
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(600, now);
-                gain.gain.setValueAtTime(0.06, now);
+                osc.frequency.setValueAtTime(620, now);
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.05);
+                gain.gain.setValueAtTime(0.07, now);
                 gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
@@ -288,25 +468,40 @@
                 osc.stop(now + 0.05);
             }
             else if (type === 'win') {
-                const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+                const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98];
                 notes.forEach((freq, idx) => {
                     const osc = audioCtx.createOscillator();
                     const gain = audioCtx.createGain();
                     osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(freq, now + idx * 0.075);
-                    gain.gain.setValueAtTime(0.11, now + idx * 0.075);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.075 + 0.45);
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.07);
+                    gain.gain.setValueAtTime(0.12, now + idx * 0.07);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.07 + 0.5);
                     osc.connect(gain);
                     gain.connect(audioCtx.destination);
-                    osc.start(now + idx * 0.075);
-                    osc.stop(now + idx * 0.075 + 0.45);
+                    osc.start(now + idx * 0.07);
+                    osc.stop(now + idx * 0.07 + 0.5);
+                });
+            }
+            else if (type === 'lose') {
+                const notes = [380, 320, 260];
+                notes.forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+                    gain.gain.setValueAtTime(0.05, now + idx * 0.12);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.25);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now + idx * 0.12);
+                    osc.stop(now + idx * 0.12 + 0.25);
                 });
             }
         } catch (e) {}
     }
 
     // =====================================================
-    // 2. CANVAS & FLUID LAYER SETUP
+    // 2. CANVAS, PARTICLES & ANIMATION STATE
     // =====================================================
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
@@ -318,7 +513,7 @@
 
     let currentLevel = 1;
     let unlockedLevel = parseInt(localStorage.getItem('happyGlassExact50') || '1', 10);
-    let gameState = 'drawing'; // 'drawing', 'pouring', 'won', 'lost'
+    let gameState = 'drawing'; // 'drawing', 'pouring', 'won', 'lost', 'paused'
     let inkPercent = 100;
     let showHint = false;
 
@@ -327,14 +522,22 @@
     let isDrawing = false;
     let pencilPos = { x: 0, y: 0, visible: false };
 
-    let dispenser = { x: 40, y: 120, dir: 'down' };
-    let glass = { x: 280, y: 470, w: 82, h: 98, taper: 12, filled: 0, walls: [] };
+    let dispenser = { x: 40, y: 120, dir: 'down', scale: 1 };
+    let glass = { 
+        x: 280, y: 470, w: 82, h: 98, taper: 12, filled: 0, 
+        walls: [], bounceScale: 1, blinkTimer: 0 
+    };
     let shapes = [];
     let allSegments = [];
     let hintCurve = null;
 
     let waterParticles = [];
+    let splashDrops = [];
+    let glassBubbles = [];
+    let pencilSparks = [];
     let celebrationStars = [];
+    let confettiPieces = [];
+
     let totalSpawned = 0;
     let spawnTick = 0;
     let dryFrames = 0;
@@ -342,7 +545,7 @@
     let waveTick = 0;
 
     // =====================================================
-    // 3. EXACT 50 LEVELS GENERATOR
+    // 3. 50 LEVELS GENERATOR
     // =====================================================
     function loadLevel(lvl) {
         currentLevel = lvl;
@@ -353,7 +556,11 @@
         currentLine = null;
         pencilPos.visible = false;
         waterParticles = [];
+        splashDrops = [];
+        glassBubbles = [];
+        pencilSparks = [];
         celebrationStars = [];
+        confettiPieces = [];
         totalSpawned = 0;
         spawnTick = 0;
         dryFrames = 0;
@@ -362,8 +569,8 @@
         document.getElementById('win-overlay').classList.add('hidden');
 
         if (lvl === 1) {
-            dispenser = { x: 40, y: 125, dir: 'down' };
-            glass = { x: 280, y: 465, w: 84, h: 98, taper: 13, filled: 0 };
+            dispenser = { x: 40, y: 125, dir: 'down', scale: 1 };
+            glass = { x: 280, y: 465, w: 84, h: 98, taper: 13, filled: 0, bounceScale: 1, blinkTimer: 0 };
 
             addRectObstacle(6, 400, 122, 12);
             addRectObstacle(140, 455, 122, 12);
@@ -372,8 +579,8 @@
             hintCurve = { x1: 68, y1: 210, cx: 185, cy: 340, x2: 310, y2: 480 };
         } 
         else if (lvl === 2) {
-            dispenser = { x: 35, y: 125, dir: 'down' };
-            glass = { x: 298, y: 465, w: 84, h: 98, taper: 13, filled: 0 };
+            dispenser = { x: 35, y: 125, dir: 'down', scale: 1 };
+            glass = { x: 298, y: 465, w: 84, h: 98, taper: 13, filled: 0, bounceScale: 1, blinkTimer: 0 };
 
             addPolyObstacle([
                 { x: 12, y: 345 },
@@ -394,8 +601,8 @@
             hintCurve = { x1: 42, y1: 235, cx: 190, cy: 365, x2: 325, y2: 480 };
         } 
         else if (lvl === 3) {
-            dispenser = { x: 0, y: 180, dir: 'right' };
-            glass = { x: 210, y: 488, w: 84, h: 98, taper: 13, filled: 0 };
+            dispenser = { x: 0, y: 180, dir: 'right', scale: 1 };
+            glass = { x: 210, y: 488, w: 84, h: 98, taper: 13, filled: 0, bounceScale: 1, blinkTimer: 0 };
 
             addRectObstacle(0, 246, 68, 178);
             addRectObstacle(132, 475, 70, 111);
@@ -406,11 +613,11 @@
         else {
             const isSidePipe = (lvl % 4 === 0);
             if (isSidePipe) {
-                dispenser = { x: 0, y: 140 + ((lvl * 19) % 80), dir: 'right' };
+                dispenser = { x: 0, y: 140 + ((lvl * 19) % 80), dir: 'right', scale: 1 };
                 addRectObstacle(0, dispenser.y + 66, 65, 150);
             } else {
                 let dx = 35 + ((lvl * 47) % 240);
-                dispenser = { x: dx, y: 120, dir: 'down' };
+                dispenser = { x: dx, y: 120, dir: 'down', scale: 1 };
             }
 
             let gx = isSidePipe ? (220 + (lvl * 23) % 85) : (265 - ((lvl * 61) % 210));
@@ -418,7 +625,7 @@
                 gx = (dispenser.x + 150) % 270 + 30;
             }
             let gy = 455 + ((lvl * 13) % 45);
-            glass = { x: gx, y: gy, w: 84, h: 98, taper: 13, filled: 0 };
+            glass = { x: gx, y: gy, w: 84, h: 98, taper: 13, filled: 0, bounceScale: 1, blinkTimer: 0 };
 
             addRectObstacle(gx - 16, gy + 98, 116, 14);
 
@@ -479,7 +686,7 @@
     }
 
     // =====================================================
-    // 4. TOUCH / MOUSE INPUT & TOP BAR BUTTONS
+    // 4. TOUCH / MOUSE INPUT & HUD BUTTONS (INCLUDING EXIT!)
     // =====================================================
     function getPos(e) {
         const rect = canvas.getBoundingClientRect();
@@ -493,20 +700,30 @@
         initAudio();
         const pt = getPos(e);
 
+        // Top Bar Buttons Check
         if (pt.y < 75) {
-            if (Math.hypot(pt.x - 42, pt.y - 38) <= 22) {
+            // 1. Home Button (x: 34, y: 38)
+            if (Math.hypot(pt.x - 34, pt.y - 38) <= 21) {
                 playSound('click');
                 openLevelMenu();
                 return;
             }
-            if (Math.hypot(pt.x - 88, pt.y - 38) <= 22) {
+            // 2. Restart Button (x: 78, y: 38)
+            if (Math.hypot(pt.x - 78, pt.y - 38) <= 21) {
                 playSound('click');
                 loadLevel(currentLevel);
                 return;
             }
-            if (pt.x >= 295 && pt.x <= 378 && pt.y >= 18 && pt.y <= 58) {
+            // 3. Green HINT Button (x: 256..330, y: 20..54)
+            if (pt.x >= 254 && pt.x <= 332 && pt.y >= 18 && pt.y <= 56) {
                 playSound('click');
                 showHint = !showHint;
+                return;
+            }
+            // 4. Red EXIT Sign Button (x: 364, y: 38)
+            if (Math.hypot(pt.x - 364, pt.y - 38) <= 22) {
+                playSound('click');
+                openExitModal();
                 return;
             }
             return;
@@ -533,6 +750,19 @@
             inkPercent = Math.max(0, inkPercent - dist * 0.14);
             playSound('pencil');
 
+            // Spawn animated pencil sparks while drawing!
+            for (let s = 0; s < 2; s++) {
+                pencilSparks.push({
+                    x: pt.x,
+                    y: pt.y,
+                    vx: (Math.random() - 0.5) * 3.5,
+                    vy: -1 - Math.random() * 2.5,
+                    size: 2 + Math.random() * 2.5,
+                    color: Math.random() > 0.4 ? '#facc15' : '#334155',
+                    life: 16
+                });
+            }
+
             if (inkPercent <= 0) {
                 finishStroke();
             }
@@ -557,7 +787,7 @@
     }
 
     // =====================================================
-    // 5. BALANCED MEDIUM-SPEED FLUID STREAM PHYSICS
+    // 5. MEDIUM-SPEED FLUID STREAM & VISUAL FX UPDATES
     // =====================================================
     function slideParticleOnSegment(p, x1, y1, x2, y2, radius) {
         const dx = x2 - x1;
@@ -585,7 +815,6 @@
             if (vn < 0) {
                 p.vx -= vn * nx;
                 p.vy -= vn * ny;
-                // Balanced medium surface friction (not too slow, not too fast)
                 p.vx *= 0.991;
                 p.vy *= 0.991;
             }
@@ -593,24 +822,73 @@
     }
 
     function updateGame() {
-        waveTick += 0.125; // Medium wave motion inside glass
+        if (gameState === 'paused') return;
 
+        waveTick += 0.125;
+        glass.blinkTimer++;
+
+        // Smoothly recover glass bounce animation
+        glass.bounceScale += (1 - glass.bounceScale) * 0.18;
+        dispenser.scale += (1 - dispenser.scale) * 0.2;
+
+        // Update Pencil Sparks
+        for (let i = pencilSparks.length - 1; i >= 0; i--) {
+            let sp = pencilSparks[i];
+            sp.x += sp.vx;
+            sp.y += sp.vy;
+            sp.vy += 0.18;
+            sp.life--;
+            if (sp.life <= 0) pencilSparks.splice(i, 1);
+        }
+
+        // Update Water Splash Droplets
+        for (let i = splashDrops.length - 1; i >= 0; i--) {
+            let sd = splashDrops[i];
+            sd.x += sd.vx;
+            sd.y += sd.vy;
+            sd.vy += 0.22;
+            sd.life--;
+            if (sd.life <= 0) splashDrops.splice(i, 1);
+        }
+
+        // Update Rising Air Bubbles inside Glass
+        for (let i = glassBubbles.length - 1; i >= 0; i--) {
+            let b = glassBubbles[i];
+            b.y -= b.speed;
+            b.x += Math.sin(waveTick + i) * 0.3;
+            b.life--;
+            if (b.life <= 0) glassBubbles.splice(i, 1);
+        }
+
+        // Update Celebration Gold Stars
         for (let i = celebrationStars.length - 1; i >= 0; i--) {
             let s = celebrationStars[i];
             s.x += s.vx;
             s.y += s.vy;
-            s.vy += 0.18;
+            s.vy += 0.16;
             s.rot += s.vRot;
             s.life--;
             if (s.life <= 0) celebrationStars.splice(i, 1);
         }
 
+        // Update Colorful Confetti Ribbons
+        for (let i = confettiPieces.length - 1; i >= 0; i--) {
+            let c = confettiPieces[i];
+            c.x += c.vx;
+            c.y += c.vy;
+            c.vy += 0.12;
+            c.rot += c.vRot;
+            c.life--;
+            if (c.life <= 0) confettiPieces.splice(i, 1);
+        }
+
         if (gameState !== 'pouring') return;
 
-        // Medium spawn rate (alternates 1 and 2 particles per frame = 1.5 avg)
+        // Balanced Medium Spawn Rate
         spawnTick++;
         if (totalSpawned < MAX_WATER) {
             const countThisFrame = (spawnTick % 2 === 0) ? 2 : 1;
+            dispenser.scale = 1.04; // Subtle pipe pulse animation while pouring
             for (let k = 0; k < countThisFrame; k++) {
                 if (totalSpawned >= MAX_WATER) break;
                 if (dispenser.dir === 'down') {
@@ -618,7 +896,7 @@
                         x: dispenser.x + 28 + (Math.random() - 0.5) * 2.8,
                         y: dispenser.y + 62 + k * 2,
                         vx: (Math.random() - 0.5) * 0.10,
-                        vy: 1.85, // Balanced medium downward pour velocity
+                        vy: 1.85,
                         active: true,
                         collected: false
                     });
@@ -626,7 +904,7 @@
                     waterParticles.push({
                         x: dispenser.x + 62 + k * 2,
                         y: dispenser.y + 28 + (Math.random() - 0.5) * 2.8,
-                        vx: 2.75, // Balanced medium side-pipe pour velocity
+                        vx: 2.75,
                         vy: (Math.random() - 0.5) * 0.10,
                         active: true,
                         collected: false
@@ -646,7 +924,6 @@
                 if (!p.active || p.collected) continue;
                 if (step === 0) activeCount++;
 
-                // Balanced medium gravity (0.145) & medium max speed cap (5.8)
                 p.vy += 0.145 / subSteps;
                 const speed = Math.hypot(p.vx, p.vy);
                 if (speed > 5.8) {
@@ -670,6 +947,29 @@
                     if (p.y >= fillTopY - 5) {
                         p.collected = true;
                         glass.filled = Math.min(100, glass.filled + 0.62);
+                        glass.bounceScale = 1.035; // Cute squash/stretch bounce!
+
+                        // Spawn splash droplets & rising bubbles inside glass
+                        if (Math.random() < 0.45) {
+                            splashDrops.push({
+                                x: p.x,
+                                y: fillTopY,
+                                vx: (Math.random() - 0.5) * 2.8,
+                                vy: -1.5 - Math.random() * 2,
+                                r: 2 + Math.random() * 2,
+                                life: 14
+                            });
+                        }
+                        if (Math.random() < 0.35 && glass.filled > 15) {
+                            glassBubbles.push({
+                                x: gx + 18 + Math.random() * (gw - 36),
+                                y: gy + gh - 14,
+                                r: 1.8 + Math.random() * 2.2,
+                                speed: 0.8 + Math.random() * 0.8,
+                                life: Math.floor((glass.filled / 100) * 35)
+                            });
+                        }
+                        if (Math.random() < 0.25) playSound('splash');
 
                         if (glass.filled >= 100 && gameState === 'pouring') {
                             triggerVictory();
@@ -745,28 +1045,51 @@
             localStorage.setItem('happyGlassExact50', unlockedLevel.toString());
         }
 
-        for (let i = 0; i < 28; i++) {
+        // 1. Burst Gold Stars around the Glass
+        for (let i = 0; i < 30; i++) {
             celebrationStars.push({
                 x: glass.x + glass.w / 2 + (Math.random() - 0.5) * 40,
                 y: glass.y + glass.h / 2,
-                vx: (Math.random() - 0.5) * 8,
-                vy: -3 - Math.random() * 6,
-                size: 7 + Math.random() * 7,
+                vx: (Math.random() - 0.5) * 9,
+                vy: -3.5 - Math.random() * 6.5,
+                size: 7 + Math.random() * 8,
                 rot: Math.random() * Math.PI,
-                vRot: (Math.random() - 0.5) * 0.2,
-                life: 55
+                vRot: (Math.random() - 0.5) * 0.22,
+                life: 65
+            });
+        }
+
+        // 2. Burst Colorful Party Confetti across the screen!
+        const colors = ['#f43f5e', '#84cc16', '#38bdf8', '#facc15', '#a855f7', '#fb923c'];
+        for (let i = 0; i < 45; i++) {
+            confettiPieces.push({
+                x: 200 + (Math.random() - 0.5) * 220,
+                y: 260 + (Math.random() - 0.5) * 100,
+                vx: (Math.random() - 0.5) * 7,
+                vy: -4 - Math.random() * 5,
+                w: 6 + Math.random() * 5,
+                h: 10 + Math.random() * 6,
+                color: colors[i % colors.length],
+                rot: Math.random() * Math.PI,
+                vRot: (Math.random() - 0.5) * 0.25,
+                life: 80
             });
         }
 
         setTimeout(() => {
+            document.getElementById('win-banner-text').innerText = `LEVEL ${currentLevel} COMPLETE! 🎉`;
+            document.getElementById('win-banner-text').style.color = '#0284c7';
             document.getElementById('overlay-btn-text').innerText = 'NEXT';
             document.getElementById('win-overlay').classList.remove('hidden');
-        }, 850);
+        }, 900);
     }
 
     function triggerRetry() {
         if (gameState === 'won' || gameState === 'lost') return;
         gameState = 'lost';
+        playSound('lose');
+        document.getElementById('win-banner-text').innerText = 'TRY AGAIN! 💧';
+        document.getElementById('win-banner-text').style.color = '#ef4444';
         document.getElementById('overlay-btn-text').innerText = 'RETRY';
         document.getElementById('win-overlay').classList.remove('hidden');
     }
@@ -782,7 +1105,7 @@
     }
 
     // =====================================================
-    // 6. EXACT VIDEO VISUAL RENDERING
+    // 6. RICH ANIMATED VISUAL RENDERING
     // =====================================================
     function drawGridBackground() {
         ctx.fillStyle = '#ffffff';
@@ -806,86 +1129,107 @@
     }
 
     function drawTopHUD() {
-        // 1. Home Circle Button (x: 42, y: 38)
+        // 1. Home Circle Button (x: 34, y: 38)
         ctx.fillStyle = '#ffffff';
         ctx.strokeStyle = '#64748b';
         ctx.lineWidth = 1.5;
         ctx.beginPath();
-        ctx.arc(42, 38, 19, 0, Math.PI * 2);
+        ctx.arc(34, 38, 19, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
         ctx.beginPath();
-        ctx.arc(42, 38, 16, 0, Math.PI * 2);
+        ctx.arc(34, 38, 16, 0, Math.PI * 2);
         ctx.stroke();
 
         // House Icon
         ctx.fillStyle = '#fde047';
         ctx.strokeStyle = '#1e293b';
         ctx.lineWidth = 1.4;
-        ctx.fillRect(35, 37, 14, 10);
-        ctx.strokeRect(35, 37, 14, 10);
+        ctx.fillRect(27, 37, 14, 10);
+        ctx.strokeRect(27, 37, 14, 10);
         ctx.fillStyle = '#fb923c';
         ctx.beginPath();
-        ctx.moveTo(32, 38);
-        ctx.lineTo(42, 29);
-        ctx.lineTo(52, 38);
+        ctx.moveTo(24, 38);
+        ctx.lineTo(34, 29);
+        ctx.lineTo(44, 38);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
-        // 2. Restart Circle Button (x: 88, y: 38)
+        // 2. Restart Circle Button (x: 78, y: 38)
         ctx.fillStyle = '#ffffff';
         ctx.strokeStyle = '#64748b';
         ctx.lineWidth = 1.5;
         ctx.beginPath();
-        ctx.arc(88, 38, 19, 0, Math.PI * 2);
+        ctx.arc(78, 38, 19, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
         ctx.beginPath();
-        ctx.arc(88, 38, 16, 0, Math.PI * 2);
+        ctx.arc(78, 38, 16, 0, Math.PI * 2);
         ctx.stroke();
 
         // Orange Circular Refresh Arrow
         ctx.strokeStyle = '#f59e0b';
         ctx.lineWidth = 3.2;
         ctx.beginPath();
-        ctx.arc(88, 38, 7.5, 0.3 * Math.PI, 1.85 * Math.PI);
+        ctx.arc(78, 38, 7.5, 0.3 * Math.PI, 1.85 * Math.PI);
         ctx.stroke();
         ctx.fillStyle = '#f59e0b';
         ctx.beginPath();
-        ctx.moveTo(95, 31);
-        ctx.lineTo(98, 38);
-        ctx.lineTo(90, 37);
+        ctx.moveTo(85, 31);
+        ctx.lineTo(88, 38);
+        ctx.lineTo(80, 37);
         ctx.closePath();
         ctx.fill();
 
-        // 3. Green HINT Pill Button
+        // 3. Green HINT Pill Button (x: 256..330)
         ctx.fillStyle = '#a3e635';
         ctx.strokeStyle = '#1e293b';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.roundRect(298, 22, 76, 30, 15);
+        ctx.roundRect(256, 23, 74, 30, 15);
         ctx.fill();
         ctx.stroke();
 
         ctx.fillStyle = '#fde047';
         ctx.beginPath();
-        ctx.arc(313, 37, 6, 0, Math.PI * 2);
+        ctx.arc(271, 38, 6, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
 
         ctx.fillStyle = '#1e293b';
         ctx.font = 'bold 13px Arial';
         ctx.textAlign = 'left';
-        ctx.fillText('HINT', 324, 42);
+        ctx.fillText('HINT', 281, 43);
 
-        // 4. Center "LEVEL X" Title
+        // 4. Red EXIT Sign Circle Button (x: 364, y: 38)
+        ctx.fillStyle = '#ef4444';
+        ctx.strokeStyle = '#1e293b';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(364, 38, 19, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Door / Exit Arrow Sign inside button
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(356, 30, 10, 16);
+        ctx.beginPath();
+        ctx.moveTo(363, 38);
+        ctx.lineTo(374, 38);
+        ctx.moveTo(370, 34);
+        ctx.lineTo(374, 38);
+        ctx.lineTo(370, 42);
+        ctx.stroke();
+
+        // 5. Center "LEVEL X" Title
         ctx.fillStyle = '#334155';
         ctx.font = 'bold 17px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText(`LEVEL ${currentLevel}`, 200, 68);
+        ctx.fillText(`LEVEL ${currentLevel}`, 175, 44);
 
-        // 5. Percentage Text + Green Ink Bar
+        // 6. Percentage Text + Green Ink Bar
         ctx.fillStyle = '#1e293b';
         ctx.font = 'bold 15px Arial';
         ctx.textAlign = 'right';
@@ -912,7 +1256,7 @@
             ctx.stroke();
         });
 
-        // 6. Three Star Icons
+        // 7. Three Star Icons
         const s1 = inkPercent > 10;
         const s2 = inkPercent > 33;
         const s3 = inkPercent > 66;
@@ -947,16 +1291,22 @@
 
         if (dispenser.dir === 'down') {
             const x = dispenser.x, y = dispenser.y;
+            ctx.translate(x + 28, y + 30);
+            ctx.scale(dispenser.scale, 2 - dispenser.scale);
+            ctx.translate(-(x + 28), -(y + 30));
+
             if (gameState === 'drawing') {
+                // Animated pulsing water drop before pouring
+                const pulse = Math.sin(waveTick * 1.5) * 1.5;
                 ctx.fillStyle = '#00d8ff';
                 ctx.beginPath();
-                ctx.arc(x + 28, y + 60, 8, 0, Math.PI);
+                ctx.arc(x + 28, y + 60, 7.5 + pulse, 0, Math.PI);
                 ctx.fill();
             }
 
             let g1 = ctx.createLinearGradient(x + 8, y, x + 48, y);
             g1.addColorStop(0, '#9ca3af');
-            g1.addColorStop(0.5, '#d1d5db');
+            g1.addColorStop(0.5, '#e5e7eb');
             g1.addColorStop(1, '#6b7280');
             ctx.fillStyle = g1;
             ctx.fillRect(x + 8, y, 40, 44);
@@ -981,7 +1331,7 @@
             const x = dispenser.x, y = dispenser.y;
             let g1 = ctx.createLinearGradient(x, y + 8, x, y + 48);
             g1.addColorStop(0, '#9ca3af');
-            g1.addColorStop(0.5, '#d1d5db');
+            g1.addColorStop(0.5, '#e5e7eb');
             g1.addColorStop(1, '#6b7280');
             ctx.fillStyle = g1;
             ctx.fillRect(x, y + 8, 44, 40);
@@ -1006,11 +1356,17 @@
     }
 
     function drawTealObstacles() {
-        ctx.fillStyle = '#439798';
-        ctx.strokeStyle = '#1e293b';
-        ctx.lineWidth = 1.6;
-
         shapes.forEach(pts => {
+            ctx.save();
+            // Subtle drop shadow for 3D depth
+            ctx.shadowColor = 'rgba(15, 23, 42, 0.12)';
+            ctx.shadowBlur = 6;
+            ctx.shadowOffsetY = 3;
+
+            ctx.fillStyle = '#439798';
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 1.8;
+
             ctx.beginPath();
             ctx.moveTo(pts[0].x, pts[0].y);
             for (let i = 1; i < pts.length; i++) {
@@ -1019,6 +1375,7 @@
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
+            ctx.restore();
         });
     }
 
@@ -1064,6 +1421,14 @@
                 wCtx.moveTo(p1.x, p1.y);
                 wCtx.lineTo(p2.x, p2.y);
                 wCtx.stroke();
+
+                // Glossy white water reflection line
+                wCtx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
+                wCtx.lineWidth = 2.5;
+                wCtx.beginPath();
+                wCtx.moveTo(p1.x - 2, p1.y - 2);
+                wCtx.lineTo(p2.x - 2, p2.y - 2);
+                wCtx.stroke();
             }
         }
 
@@ -1082,7 +1447,16 @@
         const gx = glass.x, gy = glass.y, gw = glass.w, gh = glass.h, tp = glass.taper;
         const wallThick = 9;
 
-        ctx.fillStyle = 'rgba(241, 245, 249, 0.7)';
+        ctx.save();
+        // Squash & stretch bounce around the bottom center of the glass
+        const pivotX = gx + gw / 2;
+        const pivotY = gy + gh;
+        ctx.translate(pivotX, pivotY);
+        ctx.scale(glass.bounceScale, 2 - glass.bounceScale);
+        ctx.translate(-pivotX, -pivotY);
+
+        // 1. Interior background
+        ctx.fillStyle = 'rgba(241, 245, 249, 0.72)';
         ctx.beginPath();
         ctx.moveTo(gx + wallThick, gy);
         ctx.lineTo(gx + tp + 6, gy + gh - 9);
@@ -1091,6 +1465,7 @@
         ctx.closePath();
         ctx.fill();
 
+        // 2. Pooled Cyan Water + Bubbles + Splashes Inside Glass
         if (glass.filled > 0) {
             ctx.save();
             ctx.beginPath();
@@ -1119,9 +1494,32 @@
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
+
+            // Draw Rising Bubbles inside the pooled water
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+            ctx.lineWidth = 1.2;
+            glassBubbles.forEach(b => {
+                if (b.y > topY + 3) {
+                    ctx.beginPath();
+                    ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                }
+            });
+
+            // Draw Splash Droplets above the water surface
+            ctx.fillStyle = '#00d8ff';
+            splashDrops.forEach(sd => {
+                ctx.beginPath();
+                ctx.arc(sd.x, sd.y, sd.r, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
             ctx.restore();
         }
 
+        // 3. Thick Grey U-Shaped Glass Rim & Base
         ctx.fillStyle = '#c4c9ce';
         ctx.strokeStyle = '#1e293b';
         ctx.lineWidth = 1.6;
@@ -1140,9 +1538,19 @@
         ctx.fill();
         ctx.stroke();
 
+        // Glossy vertical shine on left glass wall
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+        ctx.lineWidth = 2.5;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(gx + 5, gy + 10);
+        ctx.lineTo(gx + tp + 3, gy + gh - 14);
+        ctx.stroke();
+
+        // 4. Dashed Fill Line across top of glass
         ctx.save();
         ctx.setLineDash([5, 4]);
-        ctx.strokeStyle = '#334155';
+        ctx.strokeStyle = glass.filled >= 100 ? '#16a34a' : '#334155';
         ctx.lineWidth = 1.8;
         ctx.beginPath();
         ctx.moveTo(gx + wallThick + 2, gy + 16);
@@ -1150,28 +1558,50 @@
         ctx.stroke();
         ctx.restore();
 
+        // 5. Animated Cartoon Face with Blinking Eyes & Rosy Cheeks!
         const fx = gx + gw / 2;
         const fy = gy + gh / 2 + 2;
+        const isBlinking = (glass.blinkTimer % 170) > 162;
+
+        // Cute pink blush cheeks when happy or filling
+        if (glass.filled > 25) {
+            ctx.fillStyle = 'rgba(244, 114, 182, 0.45)';
+            ctx.beginPath();
+            ctx.ellipse(fx - 17, fy + 3, 4.5, 2.8, 0, 0, Math.PI * 2);
+            ctx.ellipse(fx + 17, fy + 3, 4.5, 2.8, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
 
         [-10, 10].forEach(offsetX => {
-            ctx.fillStyle = '#ffffff';
-            ctx.strokeStyle = '#1e293b';
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.ellipse(fx + offsetX, fy - 6, 5.5, 7.5, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
+            if (isBlinking) {
+                // Closed blinking eyelid line
+                ctx.strokeStyle = '#1e293b';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(fx + offsetX - 5, fy - 5);
+                ctx.lineTo(fx + offsetX + 5, fy - 5);
+                ctx.stroke();
+            } else {
+                ctx.fillStyle = '#ffffff';
+                ctx.strokeStyle = '#1e293b';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.ellipse(fx + offsetX, fy - 6, 5.5, 7.5, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
 
-            ctx.fillStyle = '#1e293b';
-            ctx.beginPath();
-            ctx.arc(fx + offsetX, fy - 4, 2.8, 0, Math.PI * 2);
-            ctx.fill();
+                ctx.fillStyle = '#1e293b';
+                ctx.beginPath();
+                ctx.arc(fx + offsetX, fy - 4, 2.8, 0, Math.PI * 2);
+                ctx.fill();
 
-            ctx.fillStyle = '#ffffff';
-            ctx.beginPath();
-            ctx.arc(fx + offsetX - 1, fy - 5.2, 1, 0, Math.PI * 2);
-            ctx.fill();
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(fx + offsetX - 1, fy - 5.2, 1.1, 0, Math.PI * 2);
+                ctx.fill();
+            }
 
+            // Arched Eyebrow
             ctx.strokeStyle = '#1e293b';
             ctx.lineWidth = 1.6;
             ctx.beginPath();
@@ -1187,10 +1617,16 @@
             ctx.ellipse(fx, fy + 11, 4.2, 5.5, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
+        } else if (gameState === 'lost') {
+            // Sad mouth on retry
+            ctx.arc(fx, fy + 13, 6, 1.15 * Math.PI, 1.85 * Math.PI);
+            ctx.stroke();
         } else {
-            ctx.arc(fx, fy + 6, 7, 0.15 * Math.PI, 0.85 * Math.PI);
+            ctx.arc(fx, fy + 6, 7.5, 0.15 * Math.PI, 0.85 * Math.PI);
             ctx.stroke();
         }
+
+        ctx.restore();
     }
 
     function drawYellowPencil(x, y) {
@@ -1229,19 +1665,39 @@
         ctx.fillRect(-w / 6, -tipH - h, w / 3, h);
         ctx.strokeRect(-w / 6, -tipH - h, w / 3, h);
 
-        ctx.fillStyle = '#fde047';
-        ctx.fillRect(-w / 2, -tipH - h - 5, w, 5);
-        ctx.strokeRect(-w / 2, -tipH - h - 5, w, 5);
+        // Pink eraser top cap
+        ctx.fillStyle = '#f472b6';
+        ctx.fillRect(-w / 2, -tipH - h - 9, w, 9);
+        ctx.strokeRect(-w / 2, -tipH - h - 9, w, 9);
 
         ctx.restore();
     }
 
-    function drawCelebrationStars() {
+    function drawParticleEffects() {
+        // 1. Pencil Graphite & Gold Sparks
+        pencilSparks.forEach(sp => {
+            ctx.fillStyle = sp.color;
+            ctx.beginPath();
+            ctx.arc(sp.x, sp.y, sp.size, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        // 2. Gold Celebration Stars
         celebrationStars.forEach(s => {
             ctx.save();
             ctx.translate(s.x, s.y);
             ctx.rotate(s.rot);
             drawMiniStar(0, 0, s.size, true);
+            ctx.restore();
+        });
+
+        // 3. Party Confetti Pieces
+        confettiPieces.forEach(c => {
+            ctx.save();
+            ctx.translate(c.x, c.y);
+            ctx.rotate(c.rot);
+            ctx.fillStyle = c.color;
+            ctx.fillRect(-c.w / 2, -c.h / 2, c.w, c.h);
             ctx.restore();
         });
     }
@@ -1266,6 +1722,7 @@
         drawDispenserPipe();
         drawExactGlass();
 
+        // User Drawn Black Pencil Lines
         ctx.strokeStyle = '#0f172a';
         ctx.lineWidth = 6.5;
         ctx.lineCap = 'round';
@@ -1290,16 +1747,17 @@
             ctx.stroke();
         }
 
+        drawParticleEffects();
+
         if (pencilPos.visible) {
             drawYellowPencil(pencilPos.x, pencilPos.y);
         }
 
-        drawCelebrationStars();
         drawTopHUD();
     }
 
     // =====================================================
-    // 7. 50 LEVELS MENU MANAGEMENT
+    // 7. 50 LEVELS MENU & EXIT MODAL FUNCTIONS
     // =====================================================
     const gridEl = document.getElementById('levels-grid');
     for (let i = 1; i <= 50; i++) {
@@ -1325,6 +1783,44 @@
         }
         document.getElementById('win-overlay').classList.add('hidden');
         document.getElementById('level-menu').classList.remove('hidden');
+    }
+
+    function closeLevelMenu() {
+        playSound('click');
+        document.getElementById('level-menu').classList.add('hidden');
+    }
+
+    let previousGameState = 'drawing';
+
+    function openExitModal() {
+        if (gameState !== 'paused') {
+            previousGameState = gameState;
+            gameState = 'paused';
+        }
+        document.getElementById('exit-modal').classList.remove('hidden');
+    }
+
+    function closeExitModal() {
+        playSound('click');
+        document.getElementById('exit-modal').classList.add('hidden');
+        gameState = previousGameState;
+    }
+
+    function confirmExitGame() {
+        playSound('click');
+        document.getElementById('exit-modal').classList.add('hidden');
+        document.getElementById('level-menu').classList.add('hidden');
+        document.getElementById('win-overlay').classList.add('hidden');
+        document.getElementById('goodbye-screen').classList.remove('hidden');
+        try {
+            window.close();
+        } catch (e) {}
+    }
+
+    function resumeFromExit() {
+        playSound('click');
+        document.getElementById('goodbye-screen').classList.add('hidden');
+        loadLevel(currentLevel);
     }
 
     function mainLoop() {
