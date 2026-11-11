@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="te">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -366,25 +366,25 @@
         <div class="levels-grid" id="levels-grid"></div>
     </div>
 
-    <!-- Exit Confirmation Dialog -->
+    <!-- Exit Confirmation Dialog (100% English) -->
     <div id="exit-modal" class="hidden">
         <div class="exit-card">
             <div class="exit-icon-big">🚪</div>
             <h3 class="exit-title">EXIT GAME?</h3>
-            <p class="exit-sub">మీరు గేమ్ నుండి బయటకు వెళ్లాలనుకుంటున్నారా?<br>(మీ లెవెల్స్ సేవ్ చేయబడ్డాయి)</p>
+            <p class="exit-sub">Are you sure you want to quit the game?<br>(Your level progress is saved)</p>
             <div class="exit-actions">
-                <button class="btn-no" onclick="closeExitModal()">NO (ఆడతాను)</button>
-                <button class="btn-yes" onclick="confirmExitGame()">YES (EXIT)</button>
+                <button class="btn-no" onclick="closeExitModal()">NO, STAY</button>
+                <button class="btn-yes" onclick="confirmExitGame()">YES, EXIT</button>
             </div>
         </div>
     </div>
 
-    <!-- Goodbye Screen after Exit -->
+    <!-- Goodbye Screen after Exit (100% English) -->
     <div id="goodbye-screen" class="hidden">
         <div class="exit-card">
             <div class="exit-icon-big">🥳🥛</div>
             <h3 class="exit-title">THANK YOU!</h3>
-            <p class="exit-sub">హ్యాపీ గ్లాస్ గేమ్ ఆడినందుకు ధన్యవాదాలు! మళ్ళీ ఆడటానికి క్రింది బటన్ నొక్కండి.</p>
+            <p class="exit-sub">Thanks for playing Happy Glass! Click the button below anytime to play again.</p>
             <button class="btn-no" style="width:100%; padding:14px;" onclick="resumeFromExit()">▶ PLAY AGAIN</button>
         </div>
     </div>
@@ -440,7 +440,6 @@
                 osc.stop(now + 0.065);
             }
             else if (type === 'splash') {
-                // Pop droplet sound when entering glass
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.type = 'sine';
@@ -686,7 +685,7 @@
     }
 
     // =====================================================
-    // 4. TOUCH / MOUSE INPUT & HUD BUTTONS (INCLUDING EXIT!)
+    // 4. TOUCH / MOUSE INPUT & HUD BUTTONS
     // =====================================================
     function getPos(e) {
         const rect = canvas.getBoundingClientRect();
@@ -750,7 +749,6 @@
             inkPercent = Math.max(0, inkPercent - dist * 0.14);
             playSound('pencil');
 
-            // Spawn animated pencil sparks while drawing!
             for (let s = 0; s < 2; s++) {
                 pencilSparks.push({
                     x: pt.x,
@@ -787,7 +785,7 @@
     }
 
     // =====================================================
-    // 5. MEDIUM-SPEED FLUID STREAM & VISUAL FX UPDATES
+    // 5. FASTER, LIVELY FLUID STREAM PHYSICS
     // =====================================================
     function slideParticleOnSegment(p, x1, y1, x2, y2, radius) {
         const dx = x2 - x1;
@@ -815,8 +813,9 @@
             if (vn < 0) {
                 p.vx -= vn * nx;
                 p.vy -= vn * ny;
-                p.vx *= 0.991;
-                p.vy *= 0.991;
+                // Low surface friction so water glides briskly along the line
+                p.vx *= 0.996;
+                p.vy *= 0.996;
             }
         }
     }
@@ -824,10 +823,9 @@
     function updateGame() {
         if (gameState === 'paused') return;
 
-        waveTick += 0.125;
+        waveTick += 0.15;
         glass.blinkTimer++;
 
-        // Smoothly recover glass bounce animation
         glass.bounceScale += (1 - glass.bounceScale) * 0.18;
         dispenser.scale += (1 - dispenser.scale) * 0.2;
 
@@ -884,35 +882,34 @@
 
         if (gameState !== 'pouring') return;
 
-        // Balanced Medium Spawn Rate
+        // Increased Spawn Rate & Initial Pour Velocity (2 particles every frame)
         spawnTick++;
         if (totalSpawned < MAX_WATER) {
-            const countThisFrame = (spawnTick % 2 === 0) ? 2 : 1;
-            dispenser.scale = 1.04; // Subtle pipe pulse animation while pouring
-            for (let k = 0; k < countThisFrame; k++) {
+            dispenser.scale = 1.045;
+            for (let k = 0; k < 2; k++) {
                 if (totalSpawned >= MAX_WATER) break;
                 if (dispenser.dir === 'down') {
                     waterParticles.push({
                         x: dispenser.x + 28 + (Math.random() - 0.5) * 2.8,
-                        y: dispenser.y + 62 + k * 2,
-                        vx: (Math.random() - 0.5) * 0.10,
-                        vy: 1.85,
+                        y: dispenser.y + 62 + k * 2.4,
+                        vx: (Math.random() - 0.5) * 0.12,
+                        vy: 2.35, // Faster initial downward pour speed
                         active: true,
                         collected: false
                     });
                 } else {
                     waterParticles.push({
-                        x: dispenser.x + 62 + k * 2,
+                        x: dispenser.x + 62 + k * 2.4,
                         y: dispenser.y + 28 + (Math.random() - 0.5) * 2.8,
-                        vx: 2.75,
-                        vy: (Math.random() - 0.5) * 0.10,
+                        vx: 3.45, // Faster initial side-pipe pour speed
+                        vy: (Math.random() - 0.5) * 0.12,
                         active: true,
                         collected: false
                     });
                 }
                 totalSpawned++;
             }
-            if (spawnTick % 5 === 0) playSound('water');
+            if (spawnTick % 4 === 0) playSound('water');
         }
 
         let activeCount = 0;
@@ -924,11 +921,12 @@
                 if (!p.active || p.collected) continue;
                 if (step === 0) activeCount++;
 
-                p.vy += 0.145 / subSteps;
+                // Increased gravity (0.195) & higher max speed cap (7.6) for brisk water flow
+                p.vy += 0.195 / subSteps;
                 const speed = Math.hypot(p.vx, p.vy);
-                if (speed > 5.8) {
-                    p.vx = (p.vx / speed) * 5.8;
-                    p.vy = (p.vy / speed) * 5.8;
+                if (speed > 7.6) {
+                    p.vx = (p.vx / speed) * 7.6;
+                    p.vy = (p.vy / speed) * 7.6;
                 }
 
                 p.x += p.vx / subSteps;
@@ -946,16 +944,15 @@
                 ) {
                     if (p.y >= fillTopY - 5) {
                         p.collected = true;
-                        glass.filled = Math.min(100, glass.filled + 0.62);
-                        glass.bounceScale = 1.035; // Cute squash/stretch bounce!
+                        glass.filled = Math.min(100, glass.filled + 0.65);
+                        glass.bounceScale = 1.035;
 
-                        // Spawn splash droplets & rising bubbles inside glass
                         if (Math.random() < 0.45) {
                             splashDrops.push({
                                 x: p.x,
                                 y: fillTopY,
-                                vx: (Math.random() - 0.5) * 2.8,
-                                vy: -1.5 - Math.random() * 2,
+                                vx: (Math.random() - 0.5) * 3.0,
+                                vy: -1.8 - Math.random() * 2.2,
                                 r: 2 + Math.random() * 2,
                                 life: 14
                             });
@@ -965,7 +962,7 @@
                                 x: gx + 18 + Math.random() * (gw - 36),
                                 y: gy + gh - 14,
                                 r: 1.8 + Math.random() * 2.2,
-                                speed: 0.8 + Math.random() * 0.8,
+                                speed: 1.0 + Math.random() * 0.9,
                                 life: Math.floor((glass.filled / 100) * 35)
                             });
                         }
@@ -1017,9 +1014,9 @@
                         const dx = p2.x - p1.x;
                         const dy = p2.y - p1.y;
                         const d = Math.hypot(dx, dy);
-                        if (d > 2 && d < 24) {
-                            p1.vx = p1.vx * 0.89 + p2.vx * 0.11;
-                            p1.vy = p1.vy * 0.89 + p2.vy * 0.11;
+                        if (d > 2 && d < 26) {
+                            p1.vx = p1.vx * 0.90 + p2.vx * 0.10;
+                            p1.vy = p1.vy * 0.90 + p2.vy * 0.10;
                         }
                     }
                 }
@@ -1029,7 +1026,7 @@
         // Check if water finished without filling
         if (totalSpawned >= MAX_WATER && activeCount === 0 && glass.filled < 100) {
             dryFrames++;
-            if (dryFrames > 42) {
+            if (dryFrames > 38) {
                 triggerRetry();
             }
         }
@@ -1081,7 +1078,7 @@
             document.getElementById('win-banner-text').style.color = '#0284c7';
             document.getElementById('overlay-btn-text').innerText = 'NEXT';
             document.getElementById('win-overlay').classList.remove('hidden');
-        }, 900);
+        }, 850);
     }
 
     function triggerRetry() {
@@ -1296,7 +1293,6 @@
             ctx.translate(-(x + 28), -(y + 30));
 
             if (gameState === 'drawing') {
-                // Animated pulsing water drop before pouring
                 const pulse = Math.sin(waveTick * 1.5) * 1.5;
                 ctx.fillStyle = '#00d8ff';
                 ctx.beginPath();
@@ -1358,7 +1354,6 @@
     function drawTealObstacles() {
         shapes.forEach(pts => {
             ctx.save();
-            // Subtle drop shadow for 3D depth
             ctx.shadowColor = 'rgba(15, 23, 42, 0.12)';
             ctx.shadowBlur = 6;
             ctx.shadowOffsetY = 3;
@@ -1390,7 +1385,7 @@
             const p2 = waterParticles[i + 1];
             if (!p1.active || p1.collected || !p2.active || p2.collected) continue;
             const d = Math.hypot(p2.x - p1.x, p2.y - p1.y);
-            if (d < 38) {
+            if (d < 44) {
                 wCtx.strokeStyle = '#0099ff';
                 wCtx.lineWidth = 17;
                 wCtx.beginPath();
@@ -1414,7 +1409,7 @@
             const p2 = waterParticles[i + 1];
             if (!p1.active || p1.collected || !p2.active || p2.collected) continue;
             const d = Math.hypot(p2.x - p1.x, p2.y - p1.y);
-            if (d < 38) {
+            if (d < 44) {
                 wCtx.strokeStyle = '#18ffff';
                 wCtx.lineWidth = 11;
                 wCtx.beginPath();
@@ -1422,7 +1417,6 @@
                 wCtx.lineTo(p2.x, p2.y);
                 wCtx.stroke();
 
-                // Glossy white water reflection line
                 wCtx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
                 wCtx.lineWidth = 2.5;
                 wCtx.beginPath();
@@ -1448,7 +1442,6 @@
         const wallThick = 9;
 
         ctx.save();
-        // Squash & stretch bounce around the bottom center of the glass
         const pivotX = gx + gw / 2;
         const pivotY = gy + gh;
         ctx.translate(pivotX, pivotY);
@@ -1495,7 +1488,6 @@
             ctx.fill();
             ctx.stroke();
 
-            // Draw Rising Bubbles inside the pooled water
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
             ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
             ctx.lineWidth = 1.2;
@@ -1508,7 +1500,6 @@
                 }
             });
 
-            // Draw Splash Droplets above the water surface
             ctx.fillStyle = '#00d8ff';
             splashDrops.forEach(sd => {
                 ctx.beginPath();
@@ -1538,7 +1529,6 @@
         ctx.fill();
         ctx.stroke();
 
-        // Glossy vertical shine on left glass wall
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
         ctx.lineWidth = 2.5;
         ctx.lineCap = 'round';
@@ -1558,12 +1548,11 @@
         ctx.stroke();
         ctx.restore();
 
-        // 5. Animated Cartoon Face with Blinking Eyes & Rosy Cheeks!
+        // 5. Animated Cartoon Face with Blinking Eyes & Rosy Cheeks
         const fx = gx + gw / 2;
         const fy = gy + gh / 2 + 2;
         const isBlinking = (glass.blinkTimer % 170) > 162;
 
-        // Cute pink blush cheeks when happy or filling
         if (glass.filled > 25) {
             ctx.fillStyle = 'rgba(244, 114, 182, 0.45)';
             ctx.beginPath();
@@ -1574,7 +1563,6 @@
 
         [-10, 10].forEach(offsetX => {
             if (isBlinking) {
-                // Closed blinking eyelid line
                 ctx.strokeStyle = '#1e293b';
                 ctx.lineWidth = 2;
                 ctx.beginPath();
@@ -1601,7 +1589,6 @@
                 ctx.fill();
             }
 
-            // Arched Eyebrow
             ctx.strokeStyle = '#1e293b';
             ctx.lineWidth = 1.6;
             ctx.beginPath();
@@ -1618,7 +1605,6 @@
             ctx.fill();
             ctx.stroke();
         } else if (gameState === 'lost') {
-            // Sad mouth on retry
             ctx.arc(fx, fy + 13, 6, 1.15 * Math.PI, 1.85 * Math.PI);
             ctx.stroke();
         } else {
@@ -1665,7 +1651,6 @@
         ctx.fillRect(-w / 6, -tipH - h, w / 3, h);
         ctx.strokeRect(-w / 6, -tipH - h, w / 3, h);
 
-        // Pink eraser top cap
         ctx.fillStyle = '#f472b6';
         ctx.fillRect(-w / 2, -tipH - h - 9, w, 9);
         ctx.strokeRect(-w / 2, -tipH - h - 9, w, 9);
@@ -1674,7 +1659,6 @@
     }
 
     function drawParticleEffects() {
-        // 1. Pencil Graphite & Gold Sparks
         pencilSparks.forEach(sp => {
             ctx.fillStyle = sp.color;
             ctx.beginPath();
@@ -1682,7 +1666,6 @@
             ctx.fill();
         });
 
-        // 2. Gold Celebration Stars
         celebrationStars.forEach(s => {
             ctx.save();
             ctx.translate(s.x, s.y);
@@ -1691,7 +1674,6 @@
             ctx.restore();
         });
 
-        // 3. Party Confetti Pieces
         confettiPieces.forEach(c => {
             ctx.save();
             ctx.translate(c.x, c.y);
