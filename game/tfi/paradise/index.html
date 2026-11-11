@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ST GAMES – THE PARADISE</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="assets/images/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Clean Top Bar: Level, Villagers, Passes on left; ONLY Pause, Levels, Sound on on right -->
+    <header class="video-hud-bar">
+      <div class="hud-left-group">
+        <div class="hud-stat">Level <span id="hudLevel" class="val">1</span></div>
+        <div class="hud-stat">Villagers <span id="hudVillagers" class="val">6/6</span></div>
+        <div class="hud-stat">Passes <span id="hudPasses" class="val">0</span></div>
+      </div>
+      <div class="hud-right-group">
+        <button id="pauseBtn" type="button" class="sound-pill-btn" onclick="togglePauseBtn()">Pause</button>
+        <button type="button" class="sound-pill-btn" onclick="openMenuDrawer('levels')">Levels</button>
+        <button id="soundToggleBtn" type="button" class="sound-pill-btn" onclick="toggleSoundBtn()">Sound on</button>
+      </div>
+    </header>
+
+    <!-- Maximized Full-Screen Notebook Map -->
+    <div class="stage-wrapper">
+      <canvas id="gameCanvas"></canvas>
+
+      <!-- Video-Exact Level Complete Modal -->
+      <div id="winModal" class="video-modal-backdrop">
+        <div class="video-modal-card">
+          <div class="video-modal-title">Oka dagad occhi mottham Jaathilo josh tecchindu, aat!</div>
+          <div id="winPassesText" class="video-modal-sub">Passes used: 3</div>
+          <div class="video-modal-actions" style="margin-top:16px;">
+            <button type="button" class="btn-coral" onclick="nextLevelBtn()">Next level</button>
+            <button type="button" class="btn-outline-follow" onclick="openMenuDrawer('about')">&#120143; Follow</button>
+          </div>
+          <div class="promo-banner-box">
+            <span>NEW FROM TFI GAMES</span>
+            <span style="color:#cbd5e1;">ST GAMES &bull; THE PARADISE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Video-Exact Game Over Modal -->
+      <div id="loseModal" class="video-modal-backdrop">
+        <div class="video-modal-card">
+          <div id="loseTitleText" class="video-modal-title">They reached the baby</div>
+          <div id="loseSubText" class="video-modal-sub">Too slow. Pass sooner and keep the chain moving toward The Paradise.</div>
+          <div id="loseLevelText" class="video-modal-meta">Level 1</div>
+          <div class="video-modal-actions">
+            <button type="button" class="btn-coral" onclick="retryLevelBtn()">Try again</button>
+            <button type="button" class="btn-outline-follow" onclick="openMenuDrawer('about')">&#120143; Follow</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Levels / Settings / Audio Guide Drawer -->
+  <div id="menuDrawer" class="drawer-modal">
+    <div class="drawer-box">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div>
+          <div style="font-size:0.78rem;color:#f2645a;font-weight:800;letter-spacing:0.08em;">ST GAMES</div>
+          <h2 style="font-size:1.35rem;font-weight:800;">THE PARADISE</h2>
+        </div>
+        <button type="button" class="ctrl-chip" onclick="closeMenuDrawer()">Close &#10005;</button>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <button id="tab-levels" type="button" class="ctrl-chip active" onclick="switchDrawerTab('levels')">LEVELS</button>
+        <button id="tab-settings" type="button" class="ctrl-chip" onclick="switchDrawerTab('settings')">SETTINGS</button>
+        <button id="tab-about" type="button" class="ctrl-chip" onclick="switchDrawerTab('about')">AUDIO FILES</button>
+      </div>
+
+      <div id="pane-levels">
+        <p style="color:#94a3b8;font-size:0.9rem;margin-bottom:12px;">Your current level is saved automatically in localStorage:</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;">
+          <button type="button" class="ctrl-chip" onclick="selectCampaignLevel(0)">Level 1: Outskirts</button>
+          <button type="button" class="ctrl-chip" onclick="selectCampaignLevel(1)">Level 2: Crossroad</button>
+          <button type="button" class="ctrl-chip" onclick="selectCampaignLevel(2)">Level 3: Siege</button>
+          <button type="button" class="ctrl-chip" onclick="selectCampaignLevel(3)">Level 4: Blockade</button>
+          <button type="button" class="ctrl-chip" onclick="selectCampaignLevel(4)">Level 5: Storm</button>
+          <button type="button" class="ctrl-chip" onclick="selectCampaignLevel(5)">Level 6: Frontier</button>
+          <button type="button" class="ctrl-chip" onclick="selectCampaignLevel(6)">Level 7: Garrison</button>
+          <button type="button" class="ctrl-chip" onclick="selectCampaignLevel(7)">Level 8: Monsoon</button>
+        </div>
+      </div>
+
+      <div id="pane-settings" style="display:none;">
+        <div style="margin-bottom:12px;">
+          <label style="display:block;font-size:0.9rem;margin-bottom:4px;">Music Volume</label>
+          <input id="musicVolSlider" type="range" min="0" max="100" value="22" style="width:100%;" oninput="updateVolumeSliders()">
+        </div>
+        <div style="margin-bottom:12px;">
+          <label style="display:block;font-size:0.9rem;margin-bottom:4px;">SFX Volume</label>
+          <input id="sfxVolSlider" type="range" min="0" max="100" value="90" style="width:100%;" oninput="updateVolumeSliders()">
+        </div>
+      </div>
+
+      <div id="pane-about" style="display:none;font-size:0.88rem;line-height:1.55;color:#cbd5e1;">
+        <p><strong>Replaceable Audio Filenames (in <code>assets/audio/</code>):</strong></p>
+        <ul style="margin-top:8px;padding-left:18px;">
+          <li><code>start-dialogue.mp3</code> &ndash; Level start dialogue (<em>"Charitra eppudu open ayithadi ante..."</em>)</li>
+          <li><code>paradise-bgm.mp3</code> &ndash; Main background song (<em>"Ee desham... Dhoom Dhoom Dama Dama"</em>)</li>
+          <li><code>level-clear.mp3</code> &ndash; Level complete victory song (<em>"Yesinagula katta meeda..."</em>)</li>
+          <li><code>gameover.mp3</code> &ndash; Game over sound when police reach the baby</li>
+          <li><code>pass.mp3</code> &ndash; Baby pass whoosh/catch sound</li>
+          <li><code>danger-alert.mp3</code> &ndash; Police arrival alert at 3 seconds</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="dialogue.js"></script>
+  <script src="audio.js"></script>
+  <script src="characters.js"></script>
+  <script src="missions.js"></script>
+  <script src="controls.js"></script>
+  <script src="game.js"></script>
+  <script>
+// UI Wiring for Pause, Levels, Sound, and Modals
+function toggleSoundBtn() {
+  const on = window.paradiseAudio.toggleSound();
+  const btn = document.getElementById('soundToggleBtn');
+  if (btn) btn.textContent = on ? 'Sound on' : 'Sound off';
+}
+
+function nextLevelBtn() {
+  if (!window.paradiseGame) return;
+  window.paradiseGame.loadLevel(window.paradiseGame.currentLevelIndex + 1);
+  if (window.paradiseAudio && window.paradiseAudio.soundOn) {
+    window.paradiseAudio.playLevelStartAudio();
+  }
+}
+
+function retryLevelBtn() {
+  if (!window.paradiseGame) return;
+  window.paradiseGame.loadLevel(window.paradiseGame.currentLevelIndex);
+  if (window.paradiseAudio && window.paradiseAudio.soundOn) {
+    window.paradiseAudio.playLevelStartAudio();
+  }
+}
+
+function togglePauseBtn() {
+  if (!window.paradiseGame) return;
+  window.paradiseGame.paused = !window.paradiseGame.paused;
+  const btn = document.getElementById('pauseBtn');
+  if (btn) btn.textContent = window.paradiseGame.paused ? 'Resume' : 'Pause';
+}
+
+function openMenuDrawer(tabName) {
+  const drawer = document.getElementById('menuDrawer');
+  if (drawer) drawer.classList.add('active');
+  switchDrawerTab(tabName || 'levels');
+}
+
+function closeMenuDrawer() {
+  const drawer = document.getElementById('menuDrawer');
+  if (drawer) drawer.classList.remove('active');
+}
+
+function switchDrawerTab(tab) {
+  ['levels', 'settings', 'about'].forEach((t) => {
+    const pane = document.getElementById('pane-' + t);
+    const btn = document.getElementById('tab-' + t);
+    if (pane) pane.style.display = t === tab ? 'block' : 'none';
+    if (btn) btn.classList.toggle('active', t === tab);
+  });
+}
+
+function selectCampaignLevel(idx) {
+  if (window.paradiseGame) {
+    window.paradiseGame.loadLevel(idx);
+    if (window.paradiseAudio && window.paradiseAudio.soundOn) {
+      window.paradiseAudio.playLevelStartAudio();
+    }
+  }
+  closeMenuDrawer();
+}
+
+function updateVolumeSliders() {
+  const mSlider = document.getElementById('musicVolSlider');
+  const sSlider = document.getElementById('sfxVolSlider');
+  if (window.paradiseAudio && mSlider && sSlider) {
+    window.paradiseAudio.setVolumes(Number(mSlider.value) / 100, Number(sSlider.value) / 100);
+  }
+}
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
