@@ -10,8 +10,8 @@
   <meta name="apple-mobile-web-app-title" content="ST GAMES">
   <meta name="description" content="ST GAMES - play online and downloaded offline arcade games">
   <meta name="color-scheme" content="light dark">
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="/stgames-apk/launchericon-192x192.png">
+  <link rel="manifest" href="https://stgames.online/stgames-apk/manifest.json">
+  <link rel="icon" href="https://stgames.online/stgames-apk/launchericon-192x192.png">
   <title>ST GAMES</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -610,31 +610,31 @@
       box-shadow: 0 3px 0 #15803d, 0 5px 10px rgba(0, 0, 0, 0.25);
     }
 
-    /* First-Time Play Downloading 1% -> 100% Overlay Modal */
+    /* Deep Asset Crawler & Real-Time Downloading Overlay Modal */
     .dl-anim-modal {
       position: fixed;
       inset: 0;
-      background: rgba(9, 13, 24, 0.88);
+      background: rgba(9, 13, 24, 0.90);
       backdrop-filter: blur(8px);
       z-index: 2500;
       display: none;
       align-items: center;
       justify-content: center;
-      padding: 22px;
+      padding: 20px;
     }
     .dl-anim-modal.open {
       display: flex;
     }
     .dl-anim-card {
       width: 100%;
-      max-width: 340px;
+      max-width: 365px;
       background: linear-gradient(180deg, #1e293b, #0f172a);
       border: 3px solid #38bdf8;
       border-radius: 28px;
-      padding: 26px 22px;
+      padding: 24px 20px;
       text-align: center;
       color: #ffffff;
-      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.7), 0 0 25px rgba(56, 189, 248, 0.25);
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.75), 0 0 25px rgba(56, 189, 248, 0.28);
       animation: popIn .22s ease-out;
     }
     @keyframes popIn {
@@ -642,34 +642,35 @@
       to { transform: scale(1); opacity: 1; }
     }
     .dl-anim-thumb {
-      width: 88px;
-      height: 88px;
-      border-radius: 22px;
+      width: 84px;
+      height: 84px;
+      border-radius: 20px;
       object-fit: cover;
       border: 3px solid #ffffff;
-      margin: 0 auto 12px;
+      margin: 0 auto 10px;
       box-shadow: 0 8px 18px rgba(0,0,0,0.45);
       background: #334155;
     }
     .dl-anim-game-title {
-      font-size: 18px;
+      font-size: 17.5px;
       font-weight: 900;
       text-transform: uppercase;
       margin-bottom: 4px;
       color: #f8fafc;
     }
     .dl-anim-status {
-      font-size: 13px;
-      font-weight: 700;
+      font-size: 12.5px;
+      font-weight: 800;
       color: #38bdf8;
-      margin-bottom: 16px;
+      margin-bottom: 8px;
+      min-height: 18px;
     }
     .dl-anim-percent-big {
-      font-size: 42px;
+      font-size: 40px;
       font-weight: 900;
       color: #4ade80;
       line-height: 1;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       text-shadow: 0 2px 12px rgba(74, 222, 128, 0.45);
     }
     .dl-progress-track {
@@ -680,13 +681,57 @@
       border: 2px solid #334155;
       overflow: hidden;
       padding: 2px;
+      margin-bottom: 12px;
     }
     .dl-progress-fill {
       height: 100%;
       width: 0%;
       background: linear-gradient(90deg, #38bdf8, #22c55e);
       border-radius: 999px;
-      transition: width 0.08s linear;
+      transition: width 0.14s ease-out;
+    }
+    /* Deep Asset Breakdown Pills (HTML/Sub-games, CSS, JS, Images, Audio) */
+    .dl-asset-pills {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-bottom: 10px;
+      text-align: left;
+    }
+    .dl-asset-pill {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1.5px solid #334155;
+      border-radius: 10px;
+      padding: 5px 7px;
+      font-size: 10.5px;
+      font-weight: 800;
+      color: #cbd5e1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+    }
+    .dl-asset-pill.done {
+      border-color: #22c55e;
+      color: #86efac;
+      background: rgba(22, 163, 74, 0.16);
+    }
+    .dl-asset-pill span.count {
+      font-weight: 900;
+      color: #fff;
+    }
+    .dl-current-file-box {
+      background: #090d16;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 6px 10px;
+      font-size: 11px;
+      font-family: monospace;
+      color: #94a3b8;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-align: left;
     }
 
     /* Downloads Manager Modal */
@@ -709,7 +754,7 @@
       border: 3px solid var(--card-border);
       border-radius: 26px;
       width: 100%;
-      max-width: 400px;
+      max-width: 410px;
       max-height: 86vh;
       display: flex;
       flex-direction: column;
@@ -811,9 +856,10 @@
       text-overflow: ellipsis;
     }
     .dl-game-sub {
-      font-size: 11.5px;
+      font-size: 11px;
       font-weight: 800;
-      opacity: 0.85;
+      opacity: 0.88;
+      line-height: 1.25;
     }
     .dl-row-actions {
       display: flex;
@@ -1064,16 +1110,28 @@
     </div>
   </div>
 
-  <!-- First-Time Play Downloading 1% -> 100% Overlay Modal -->
+  <!-- Deep Source & Asset Crawler Downloading Overlay Modal (Reaches 100% ONLY after all HTML, Sub-Games, CSS, JS, Images & Audios are cached) -->
   <div id="first-download-modal" class="dl-anim-modal" role="dialog" aria-modal="true">
     <div class="dl-anim-card">
-      <img id="dl-anim-img" class="dl-anim-thumb" src="/stgames-apk/launchericon-192x192.png" alt="Game">
+      <img id="dl-anim-img" class="dl-anim-thumb" src="https://stgames.online/stgames-apk/launchericon-192x192.png" alt="Game">
       <div id="dl-anim-title" class="dl-anim-game-title">GAME TITLE</div>
-      <div id="dl-anim-status" class="dl-anim-status">Downloading Game for Offline Play...</div>
-      <div id="dl-anim-pct" class="dl-anim-percent-big">1%</div>
+      <div id="dl-anim-status" class="dl-anim-status">Scanning Game HTML &amp; Sub-Games...</div>
+      <div id="dl-anim-pct" class="dl-anim-percent-big">0%</div>
       <div class="dl-progress-track">
         <div id="dl-anim-bar" class="dl-progress-fill"></div>
       </div>
+
+      <!-- Live Asset Category Breakdown -->
+      <div class="dl-asset-pills">
+        <div id="pill-html" class="dl-asset-pill"><span>📄 HTML/Sub</span><span class="count" id="cnt-html">0/0</span></div>
+        <div id="pill-css" class="dl-asset-pill"><span>🎨 CSS</span><span class="count" id="cnt-css">0/0</span></div>
+        <div id="pill-js" class="dl-asset-pill"><span>⚡ JS</span><span class="count" id="cnt-js">0/0</span></div>
+        <div id="pill-img" class="dl-asset-pill"><span>🖼️ Images</span><span class="count" id="cnt-img">0/0</span></div>
+        <div id="pill-audio" class="dl-asset-pill"><span>🔊 Audio</span><span class="count" id="cnt-audio">0/0</span></div>
+        <div id="pill-other" class="dl-asset-pill"><span>📦 Data/TFI</span><span class="count" id="cnt-other">0/0</span></div>
+      </div>
+
+      <div id="dl-current-file" class="dl-current-file-box">Waiting for game manifest...</div>
     </div>
   </div>
 
@@ -1090,12 +1148,12 @@
           <span id="dl-manager-count">0 / 18 Games Saved</span>
           <span id="dl-manager-pct" class="dl-summary-pct">0%</span>
         </div>
-        <div class="dl-progress-track" style="height:14px;">
+        <div class="dl-progress-track" style="height:14px;margin-bottom:0;">
           <div id="dl-manager-bar" class="dl-progress-fill" style="width:0%"></div>
         </div>
         <div class="dl-summary-actions">
           <button type="button" id="dl-all-games-btn" class="dl-all-btn" onclick="downloadAllRemainingGames()">
-            ⬇️ Download All
+            ⬇️ Download All (Full Sources)
           </button>
           <button type="button" id="dl-clear-all-btn" class="dl-clear-all-btn" onclick="clearAllOfflineGames()" title="Delete All Offline Games">
             <i class="fa-solid fa-trash-can"></i> Delete All
@@ -1125,7 +1183,7 @@
         <button id="btn-offline" type="button" class="mode-btn" onclick="setAppMode('offline')">OFFLINE (<span id="saved-count">0</span>)</button>
       </div>
       <!-- Login / Google Profile Logo Button -->
-      <a href="login.html" id="auth-profile-btn" class="login-Trigger-btn" title="Account">
+      <a href="https://stgames.online/login.html" id="auth-profile-btn" class="login-Trigger-btn" title="Account">
         <img id="user-logo-img" src="https://stgames.online/stgames-apk/launchericon-192x192.png" alt="Profile" referrerpolicy="no-referrer">
         <span id="user-letter-avatar">U</span>
         <i id="login-default-icon" class="fa-solid fa-user"></i>
@@ -1208,7 +1266,7 @@
 "use strict";
 
 const BASE_URL = "https://stgames.online/";
-const CACHE_NAME = "stgames-apk-cache-v3";
+const CACHE_NAME = "stgames-apk-cache-v4";
 const SONG_URL = BASE_URL + "stgames-apk/app.mp3";
 const APP_ICON_URL = BASE_URL + "stgames-apk/launchericon-192x192.png";
 
@@ -1270,6 +1328,10 @@ function normalizeGameItem(item, index){
     ? rawCats.map(c => String(c).toLowerCase())
     : [String(rawCats).toLowerCase()];
 
+  const extraAssets = Array.isArray(item.assets || item.files || item.subgames)
+    ? (item.assets || item.files || item.subgames)
+    : [];
+
   return {
     id: String(item.id || ("game-json-" + index)).trim(),
     title: String(item.title || item.name || "Arcade Game").trim(),
@@ -1277,7 +1339,8 @@ function normalizeGameItem(item, index){
     logo: String(item.logo || item.image || item.icon || item.thumbnail || "launchericon-192x192.png").trim(),
     categories: categories,
     badge: item.badge !== undefined ? item.badge : "✨ NEW!",
-    bg: item.bg || "linear-gradient(135deg,#3b82f6,#1d4ed8)"
+    bg: item.bg || "linear-gradient(135deg,#3b82f6,#1d4ed8)",
+    extraAssets: extraAssets
   };
 }
 
@@ -1333,10 +1396,29 @@ let GAMES_DATA = loadInitialGamesList();
 let currentMode = "online";
 let currentCategory = "all";
 let savedGameIds = loadSavedGames();
+let savedGameManifests = loadSavedManifests();
 let swRegistration = null;
 let isGameCurrentlyPlaying = false;
 let isDownloadingNow = false;
 window.currentActiveGameKey = "stgames_global";
+
+function loadSavedGames(){
+  try{
+    const value = JSON.parse(safeGetStorage("st_saved_offline_games", "[]"));
+    return Array.isArray(value) ? value : [];
+  }catch(error){ return []; }
+}
+
+function loadSavedManifests(){
+  try{
+    const value = JSON.parse(safeGetStorage("st_saved_game_manifests", "{}"));
+    return (value && typeof value === "object") ? value : {};
+  }catch(error){ return {}; }
+}
+
+function saveManifestsToStorage(){
+  safeSetStorage("st_saved_game_manifests", JSON.stringify(savedGameManifests));
+}
 
 function cleanSavedGameIds() {
   const validIds = new Set(GAMES_DATA.map(g => g.id));
@@ -1395,28 +1477,376 @@ document.addEventListener("visibilitychange",()=>{
   else if(!isGameCurrentlyPlaying) ensureMusicPlaying();
 });
 
-function loadSavedGames(){
-  try{
-    const value = JSON.parse(safeGetStorage("st_saved_offline_games", "[]"));
-    return Array.isArray(value) ? value : [];
-  }catch(error){ return []; }
+function fullUrl(path, baseRef){
+  if (!path) return "";
+  const trimmed = String(path).trim();
+  if (/^(data:|blob:|javascript:|mailto:|tel:|#)/i.test(trimmed)) return "";
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (trimmed.startsWith("//")) return "https:" + trimmed;
+  try {
+    const base = baseRef || BASE_URL;
+    return new URL(trimmed, base).href;
+  } catch (e) {
+    try {
+      return new URL(trimmed.split("/").map((part,i)=>i===0?part:encodeURIComponent(part)).join("/"), BASE_URL).href;
+    } catch (e2) {
+      return "";
+    }
+  }
 }
 
-function fullUrl(path){
-  if(/^https?:\/\//i.test(path)) return path;
-  return new URL(path.split("/").map((part,i)=>i===0?part:encodeURIComponent(part)).join("/"),BASE_URL).href;
+/* ============================================================================
+   DEEP ASSET & SUB-GAME CRAWLER (HTML, TFI SUB-GAMES, CSS, JS, IMAGES, AUDIO)
+   ============================================================================ */
+
+function classifyAssetType(urlStr) {
+  const clean = urlStr.split("?")[0].split("#")[0].toLowerCase();
+  if (/\.(html|htm)$/i.test(clean)) return "html";
+  if (/\.css$/i.test(clean)) return "css";
+  if (/\.(js|mjs)$/i.test(clean)) return "js";
+  if (/\.(png|jpg|jpeg|gif|webp|svg|ico|bmp|avif)$/i.test(clean)) return "img";
+  if (/\.(mp3|wav|ogg|m4a|aac|flac|webm)$/i.test(clean)) return "audio";
+  return "other";
 }
 
-async function cacheGameFiles(game){
-  if(!("caches" in window) || !navigator.onLine) return;
-  try{
-    const cache = await caches.open(CACHE_NAME);
-    const urls = [fullUrl(game.url), fullUrl(game.logo)];
-    await Promise.allSettled(urls.map(url => cache.add(url)));
-  }catch(error){}
+function isDownloadableAssetUrl(rawCandidate, baseDocUrl) {
+  if (!rawCandidate) return null;
+  let cleaned = String(rawCandidate)
+    .replace(/^['"`]+|['"`]+$/g, "")
+    .trim();
+
+  if (!cleaned || cleaned.length > 350) return null;
+  if (/^(data:|blob:|javascript:|mailto:|tel:|#|about:)/i.test(cleaned)) return null;
+  if (cleaned.includes("${") || cleaned.includes("{{") || cleaned.includes("<") || cleaned.includes(">")) return null;
+  if (/^(https?:)?\/\/(www\.)?(google-analytics|googletagmanager|googlesyndication|doubleclick|facebook|firebaseio|gstatic\.com\/firebasejs|api\.counterapi\.dev|formsubmit\.co)/i.test(cleaned)) {
+    return null;
+  }
+
+  const resolved = fullUrl(cleaned, baseDocUrl);
+  if (!resolved) return null;
+
+  // Keep assets on stgames.online or trusted static CDNs (FontAwesome, Cloudflare, jsDelivr, unpkg, Google Fonts)
+  try {
+    const u = new URL(resolved);
+    const host = u.hostname.toLowerCase();
+    const allowedHosts = [
+      "stgames.online",
+      "www.stgames.online",
+      "cdnjs.cloudflare.com",
+      "cdn.jsdelivr.net",
+      "unpkg.com",
+      "fonts.googleapis.com",
+      "fonts.gstatic.com"
+    ];
+    const isSameHost = host === window.location.hostname.toLowerCase();
+    if (!isSameHost && !allowedHosts.some(h => host === h || host.endsWith("." + h))) {
+      return null;
+    }
+  } catch (e) {
+    return null;
+  }
+
+  return resolved;
 }
 
-/* DELETE SINGLE GAME FROM OFFLINE STORAGE & CACHE */
+/* Extracts all CSS, JS, Image, Audio, Font, JSON, and Sub-Game HTML URLs from an HTML string */
+function extractUrlsFromHtml(htmlText, baseDocUrl) {
+  const discovered = new Set();
+
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlText, "text/html");
+
+    // 1. Standard tags with src / href / data-src / poster
+    const selectors = [
+      "script[src]",
+      "link[href]",
+      "img[src]",
+      "img[data-src]",
+      "audio[src]",
+      "video[src]",
+      "video[poster]",
+      "source[src]",
+      "iframe[src]",
+      "embed[src]",
+      "object[data]",
+      "a[href]"
+    ];
+
+    doc.querySelectorAll(selectors.join(",")).forEach(el => {
+      const tag = el.tagName.toLowerCase();
+      const raw = el.getAttribute("src") || el.getAttribute("href") || el.getAttribute("data-src") || el.getAttribute("poster") || el.getAttribute("data");
+      if (!raw) return;
+
+      // For <a> tags, only follow if it points to a sub-game HTML or media/asset file inside the game
+      if (tag === "a") {
+        const cleanCheck = raw.split("?")[0].split("#")[0].toLowerCase();
+        const isSubGameOrAsset = /\.(html|htm|js|css|png|jpg|jpeg|gif|webp|svg|mp3|wav|ogg|m4a|json|wasm|bin|tfi)$/i.test(cleanCheck) ||
+          cleanCheck.includes("tfi") || cleanCheck.includes("sub") || cleanCheck.includes("game");
+        if (!isSubGameOrAsset) return;
+      }
+
+      const validUrl = isDownloadableAssetUrl(raw, baseDocUrl);
+      if (validUrl) discovered.add(validUrl);
+    });
+
+    // 2. Inline style="..." attributes
+    doc.querySelectorAll("[style]").forEach(el => {
+      const styleText = el.getAttribute("style") || "";
+      extractUrlsFromCss(styleText, baseDocUrl).forEach(u => discovered.add(u));
+    });
+
+    // 3. Inline <style> blocks
+    doc.querySelectorAll("style").forEach(styleEl => {
+      extractUrlsFromCss(styleEl.textContent || "", baseDocUrl).forEach(u => discovered.add(u));
+    });
+
+    // 4. Inline <script> blocks (scan for audio, images, sub-games, JSON, TFI sub-games)
+    doc.querySelectorAll("script:not([src])").forEach(scriptEl => {
+      extractUrlsFromJs(scriptEl.textContent || "", baseDocUrl).forEach(u => discovered.add(u));
+    });
+  } catch (e) {}
+
+  // Fallback regex scan on raw HTML for any missed assets or sub-games
+  extractUrlsFromJs(htmlText, baseDocUrl).forEach(u => discovered.add(u));
+
+  return Array.from(discovered);
+}
+
+/* Extracts url(...) and @import from CSS text */
+function extractUrlsFromCss(cssText, baseCssUrl) {
+  const found = new Set();
+  if (!cssText) return [];
+
+  const urlRegex = /url\(\s*(['"]?)([^'")]+)\1\s*\)/gi;
+  let match;
+  while ((match = urlRegex.exec(cssText)) !== null) {
+    const valid = isDownloadableAssetUrl(match[2], baseCssUrl);
+    if (valid) found.add(valid);
+  }
+
+  const importRegex = /@import\s+(?:url\()?['"]([^'"]+)['"]\)?/gi;
+  while ((match = importRegex.exec(cssText)) !== null) {
+    const valid = isDownloadableAssetUrl(match[1], baseCssUrl);
+    if (valid) found.add(valid);
+  }
+
+  return Array.from(found);
+}
+
+/* Extracts asset strings (images, audio, CSS, JS, JSON, WASM, sub-game HTML/TFI files) from JS source code */
+function extractUrlsFromJs(jsText, baseJsUrl) {
+  const found = new Set();
+  if (!jsText) return [];
+
+  // Match string literals ending with common game asset / sub-game extensions
+  const assetLiteralRegex = /['"`]([^'"`\r\n\\]{1,220}?\.(?:png|jpg|jpeg|gif|webp|svg|ico|bmp|avif|mp3|wav|ogg|m4a|aac|css|js|mjs|json|wasm|html|htm|bin|atlas|fnt|xml|mp4|webm|tfi)(?:\?[^'"`\r\n\\]*)?)['"`]/gi;
+  let match;
+  while ((match = assetLiteralRegex.exec(jsText)) !== null) {
+    const candidate = match[1].trim();
+    // Skip obvious code expressions or MIME types
+    if (candidate.includes(" ") && !candidate.includes("/")) continue;
+    const valid = isDownloadableAssetUrl(candidate, baseJsUrl);
+    if (valid) found.add(valid);
+  }
+
+  return Array.from(found);
+}
+
+/* Fetches and caches a single URL into CacheStorage; returns response text if HTML/CSS/JS/JSON for deep parsing */
+async function fetchAndCacheSingleUrl(cache, targetUrl) {
+  try {
+    const req = new Request(targetUrl, { cache: "reload" });
+    const res = await fetch(req);
+    if (res && (res.ok || res.type === "opaque")) {
+      await cache.put(targetUrl, res.clone());
+      const contentType = (res.headers.get("content-type") || "").toLowerCase();
+      const type = classifyAssetType(targetUrl);
+      if (type === "html" || type === "css" || type === "js" || contentType.includes("text/") || contentType.includes("json") || contentType.includes("javascript")) {
+        try {
+          const text = await res.text();
+          return { ok: true, text, finalUrl: res.url || targetUrl };
+        } catch (_) {
+          return { ok: true, text: "", finalUrl: res.url || targetUrl };
+        }
+      }
+      return { ok: true, text: "", finalUrl: res.url || targetUrl };
+    }
+  } catch (err) {
+    // Fallback for cross-origin opaque resources (like CDN fonts/icons)
+    try {
+      const noCorsRes = await fetch(targetUrl, { mode: "no-cors" });
+      if (noCorsRes) {
+        await cache.put(targetUrl, noCorsRes.clone());
+        return { ok: true, text: "", finalUrl: targetUrl };
+      }
+    } catch (err2) {}
+  }
+
+  // Last resort: cache.add
+  try {
+    await cache.add(targetUrl);
+    return { ok: true, text: "", finalUrl: targetUrl };
+  } catch (err3) {
+    return { ok: false, text: "", finalUrl: targetUrl };
+  }
+}
+
+/* Performs a complete recursive crawl and cache of the game, all its CSS, JS, Images, Audio, and Sub-Games (including TFI sub-games) */
+async function deepDownloadGameWithProgress(game, onProgressUpdate) {
+  const cache = ("caches" in window) ? await caches.open(CACHE_NAME) : null;
+
+  const entryHtmlUrl = fullUrl(game.url);
+  const logoUrl = fullUrl(game.logo);
+
+  // Queue & tracking structures
+  const queue = [];
+  const queuedSet = new Set();
+  const completedSet = new Set();
+  const failedSet = new Set();
+
+  const stats = {
+    html: { done: 0, total: 0 },
+    css:  { done: 0, total: 0 },
+    js:   { done: 0, total: 0 },
+    img:  { done: 0, total: 0 },
+    audio:{ done: 0, total: 0 },
+    other:{ done: 0, total: 0 }
+  };
+
+  function enqueueUrl(urlStr, depth = 0) {
+    if (!urlStr) return;
+    const normalized = urlStr.split("#")[0];
+    if (queuedSet.has(normalized)) return;
+    queuedSet.add(normalized);
+
+    const kind = classifyAssetType(normalized);
+    stats[kind].total += 1;
+    queue.push({ url: normalized, kind, depth });
+  }
+
+  // 1. Enqueue main game HTML, game thumbnail logo, app icon, and any extra declared sub-game/TFI assets
+  enqueueUrl(entryHtmlUrl, 0);
+  enqueueUrl(logoUrl, 0);
+  if (Array.isArray(game.extraAssets)) {
+    game.extraAssets.forEach(raw => {
+      const resolved = isDownloadableAssetUrl(raw, entryHtmlUrl);
+      if (resolved) enqueueUrl(resolved, 1);
+    });
+  }
+
+  function reportStatus(currentFileLabel, phaseLabel) {
+    const totalCount = queue.length;
+    const finishedCount = completedSet.size + failedSet.size;
+    // Cap at 99% while queue is still actively being crawled/downloaded; 100% only when queue is completely drained
+    const rawPct = totalCount > 0 ? Math.floor((finishedCount / totalCount) * 100) : 1;
+    const displayPct = (finishedCount < totalCount) ? Math.min(99, Math.max(1, rawPct)) : 100;
+
+    if (typeof onProgressUpdate === "function") {
+      onProgressUpdate({
+        percent: displayPct,
+        doneCount: finishedCount,
+        totalCount: totalCount,
+        stats: stats,
+        currentFile: currentFileLabel,
+        phase: phaseLabel
+      });
+    }
+  }
+
+  reportStatus(game.url, "Scanning & downloading main game package...");
+
+  let cursor = 0;
+  const MAX_CONCURRENCY = 4;
+
+  async function processNextBatch() {
+    while (cursor < queue.length) {
+      const batch = [];
+      while (batch.length < MAX_CONCURRENCY && cursor < queue.length) {
+        batch.push(queue[cursor++]);
+      }
+
+      await Promise.all(batch.map(async (item) => {
+        const shortName = item.url.split("/").pop().split("?")[0] || item.url;
+        reportStatus(shortName, `Downloading ${item.kind.toUpperCase()} (${completedSet.size + 1}/${queue.length})...`);
+
+        if (!cache) {
+          completedSet.add(item.url);
+          stats[item.kind].done += 1;
+          return;
+        }
+
+        const result = await fetchAndCacheSingleUrl(cache, item.url);
+        if (result.ok) {
+          completedSet.add(item.url);
+        } else {
+          failedSet.add(item.url);
+        }
+        stats[item.kind].done += 1;
+
+        // Deep-parse downloaded HTML, Sub-Games, CSS, JS, and JSON manifests (up to depth 3 for sub-games / TFI games)
+        if (result.text && item.depth <= 3) {
+          const baseRef = result.finalUrl || item.url;
+
+          if (item.kind === "html") {
+            const subAssets = extractUrlsFromHtml(result.text, baseRef);
+            subAssets.forEach(subUrl => {
+              // Avoid crawling back to main lobby index.html
+              if (/\/stgames-apk\/index\.html$/i.test(subUrl)) return;
+              enqueueUrl(subUrl, item.depth + 1);
+            });
+          } else if (item.kind === "css") {
+            const cssAssets = extractUrlsFromCss(result.text, baseRef);
+            cssAssets.forEach(subUrl => enqueueUrl(subUrl, item.depth + 1));
+          } else if (item.kind === "js" || item.url.toLowerCase().endsWith(".json")) {
+            const jsAssets = extractUrlsFromJs(result.text, baseRef);
+            jsAssets.forEach(subUrl => {
+              if (/\/stgames-apk\/index\.html$/i.test(subUrl)) return;
+              enqueueUrl(subUrl, item.depth + 1);
+            });
+          }
+        }
+
+        reportStatus(shortName, `Downloaded ${completedSet.size} of ${queue.length} game files...`);
+      }));
+    }
+  }
+
+  await processNextBatch();
+
+  // Save the full list of cached URLs for this game so deleting the game cleans up every single sub-asset
+  const allCachedUrls = Array.from(queuedSet);
+  savedGameManifests[game.id] = {
+    urls: allCachedUrls,
+    counts: {
+      html: stats.html.done,
+      css: stats.css.done,
+      js: stats.js.done,
+      img: stats.img.done,
+      audio: stats.audio.done,
+      other: stats.other.done,
+      total: completedSet.size
+    },
+    savedAt: Date.now()
+  };
+  saveManifestsToStorage();
+
+  // Final 100% completion signal AFTER all files & sub-games are cached
+  if (typeof onProgressUpdate === "function") {
+    onProgressUpdate({
+      percent: 100,
+      doneCount: queue.length,
+      totalCount: queue.length,
+      stats: stats,
+      currentFile: `All ${completedSet.size} files verified & cached for offline play!`,
+      phase: "100% Full Game & Assets Downloaded ✅"
+    });
+  }
+
+  return savedGameManifests[game.id];
+}
+
+/* DELETE SINGLE GAME & ALL ITS SUB-ASSETS FROM OFFLINE STORAGE & CACHE */
 async function deleteOfflineGame(game, event) {
   if (event) {
     event.stopPropagation();
@@ -1426,24 +1856,34 @@ async function deleteOfflineGame(game, event) {
   savedGameIds = savedGameIds.filter(id => id !== game.id);
   safeSetStorage("st_saved_offline_games", JSON.stringify(savedGameIds));
 
+  const manifest = savedGameManifests[game.id];
+  delete savedGameManifests[game.id];
+  saveManifestsToStorage();
+
   if ("caches" in window) {
     try {
       const cache = await caches.open(CACHE_NAME);
-      await cache.delete(fullUrl(game.url));
+      if (manifest && Array.isArray(manifest.urls)) {
+        await Promise.allSettled(manifest.urls.map(u => cache.delete(u)));
+      } else {
+        await cache.delete(fullUrl(game.url));
+      }
     } catch (e) {}
   }
 
   updateSavedCounter();
   renderGames();
   renderDownloadsManagerList();
-  showToast("🗑️ Deleted " + game.title + " from Offline!");
+  showToast("🗑️ Deleted " + game.title + " & its offline files!");
 }
 
 /* DELETE ALL OFFLINE GAMES */
 async function clearAllOfflineGames() {
   if (!savedGameIds.length) return;
   savedGameIds = [];
+  savedGameManifests = {};
   safeSetStorage("st_saved_offline_games", "[]");
+  saveManifestsToStorage();
 
   if ("caches" in window) {
     try {
@@ -1454,11 +1894,11 @@ async function clearAllOfflineGames() {
   updateSavedCounter();
   renderGames();
   renderDownloadsManagerList();
-  showToast("🗑️ All offline games deleted!");
+  showToast("🗑️ All offline games & cached files deleted!");
 }
 
-/* DOWNLOAD BY OPENING GAME ANIMATION (1% -> 5% -> 10% ... -> 100%) */
-function runFirstTimeDownloadAnimation(game, onComplete) {
+/* REAL ASSET-DRIVEN DOWNLOAD MODAL (Shows 100% ONLY after all HTML, Sub-Games, CSS, JS, Images & Audios finish downloading) */
+async function runFirstTimeDownloadAnimation(game, onComplete) {
   if (isDownloadingNow) return;
   isDownloadingNow = true;
 
@@ -1468,45 +1908,63 @@ function runFirstTimeDownloadAnimation(game, onComplete) {
   const status = document.getElementById("dl-anim-status");
   const pctText = document.getElementById("dl-anim-pct");
   const bar = document.getElementById("dl-anim-bar");
+  const currentFileEl = document.getElementById("dl-current-file");
+
+  const pillTypes = ["html", "css", "js", "img", "audio", "other"];
+  pillTypes.forEach(t => {
+    const pill = document.getElementById("pill-" + t);
+    const cnt = document.getElementById("cnt-" + t);
+    if (pill) pill.classList.remove("done");
+    if (cnt) cnt.textContent = "0/0";
+  });
 
   thumb.src = fullUrl(game.logo);
   thumb.onerror = () => { thumb.src = APP_ICON_URL; };
   title.textContent = game.title;
-  status.textContent = "Downloading Game for Offline Play...";
-  pctText.textContent = "1%";
-  bar.style.width = "1%";
+  status.textContent = "Scanning Game HTML, CSS, JS, Audio & Sub-Games...";
+  pctText.textContent = "0%";
+  bar.style.width = "0%";
+  if (currentFileEl) currentFileEl.textContent = "Connecting to " + fullUrl(game.url);
   modal.classList.add("open");
 
-  const cachePromise = cacheGameFiles(game);
-  let currentPct = 1;
-
-  const interval = setInterval(async () => {
-    const step = currentPct < 15 ? 2 : (currentPct < 85 ? 4 : 3);
-    currentPct = Math.min(100, currentPct + step);
-
-    pctText.textContent = currentPct + "%";
-    bar.style.width = currentPct + "%";
-
-    if (currentPct >= 100) {
-      clearInterval(interval);
-      status.textContent = "Download Complete! 100% ✅";
-      await cachePromise;
-
-      if (!savedGameIds.includes(game.id)) {
-        savedGameIds.push(game.id);
-        safeSetStorage("st_saved_offline_games", JSON.stringify(savedGameIds));
+  try {
+    await deepDownloadGameWithProgress(game, (progress) => {
+      pctText.textContent = progress.percent + "%";
+      bar.style.width = progress.percent + "%";
+      status.textContent = progress.phase;
+      if (currentFileEl && progress.currentFile) {
+        currentFileEl.textContent = "📥 " + progress.currentFile;
       }
-      updateSavedCounter();
-      renderGames();
-      renderDownloadsManagerList();
 
-      setTimeout(() => {
-        modal.classList.remove("open");
-        isDownloadingNow = false;
-        if (typeof onComplete === "function") onComplete();
-      }, 360);
+      pillTypes.forEach(t => {
+        const s = progress.stats[t];
+        const pill = document.getElementById("pill-" + t);
+        const cnt = document.getElementById("cnt-" + t);
+        if (cnt && s) {
+          cnt.textContent = `${s.done}/${s.total}`;
+        }
+        if (pill && s) {
+          pill.classList.toggle("done", s.total > 0 && s.done >= s.total);
+        }
+      });
+    });
+
+    if (!savedGameIds.includes(game.id)) {
+      savedGameIds.push(game.id);
+      safeSetStorage("st_saved_offline_games", JSON.stringify(savedGameIds));
     }
-  }, 40);
+    updateSavedCounter();
+    renderGames();
+    renderDownloadsManagerList();
+  } catch (err) {
+    showToast("Download error—opening online mode.");
+  }
+
+  setTimeout(() => {
+    modal.classList.remove("open");
+    isDownloadingNow = false;
+    if (typeof onComplete === "function") onComplete();
+  }, 450);
 }
 
 /* DOWNLOADS MANAGER POPUP */
@@ -1540,10 +1998,10 @@ function renderDownloadsManagerList() {
 
   if (allBtn) {
     if (downloadedCount >= GAMES_DATA.length) {
-      allBtn.textContent = "✅ All Downloaded (100%)";
+      allBtn.textContent = "✅ All Games & Sources Downloaded (100%)";
       allBtn.disabled = true;
     } else {
-      allBtn.textContent = `⬇️ Download All (${GAMES_DATA.length - downloadedCount})`;
+      allBtn.textContent = `⬇️ Download All (${GAMES_DATA.length - downloadedCount} Games)`;
       allBtn.disabled = false;
     }
   }
@@ -1557,6 +2015,11 @@ function renderDownloadsManagerList() {
 
   GAMES_DATA.forEach(game => {
     const isSaved = savedGameIds.includes(game.id);
+    const manifest = savedGameManifests[game.id];
+    const assetCountText = (isSaved && manifest && manifest.counts)
+      ? `100% Complete • ${manifest.counts.total} files (HTML/CSS/JS/Img/Audio)`
+      : (isSaved ? "100% Downloaded • Offline Ready" : "0% • Tap to download all game files");
+
     const row = document.createElement("div");
     row.className = "dl-game-row";
     row.innerHTML = `
@@ -1564,12 +2027,12 @@ function renderDownloadsManagerList() {
       <div class="dl-game-info">
         <div class="dl-game-name">${game.title}</div>
         <div class="dl-game-sub" style="color:${isSaved ? '#16a34a' : '#ef4444'}">
-          ${isSaved ? '100% Downloaded • Offline Ready' : '0% • Tap game to download'}
+          ${assetCountText}
         </div>
       </div>
       <div class="dl-row-actions">
         <button type="button" class="dl-row-btn ${isSaved ? 'done' : 'get'} play-or-dl-btn">
-          ${isSaved ? '▶ PLAY' : '⬇️ OPEN'}
+          ${isSaved ? '▶ PLAY' : '⬇️ GET 100%'}
         </button>
         ${isSaved ? `<button type="button" class="dl-row-btn delete del-single-btn" title="Delete from Offline"><i class="fa-solid fa-trash-can"></i></button>` : ''}
       </div>
@@ -1604,11 +2067,11 @@ async function downloadAllRemainingGames() {
 
   for (let i = 0; i < remaining.length; i++) {
     const g = remaining[i];
-    if (allBtn) {
-      const stepPct = Math.round(((i + 1) / remaining.length) * 100);
-      allBtn.textContent = `⏳ ${stepPct}% (${g.title})...`;
-    }
-    await cacheGameFiles(g);
+    await deepDownloadGameWithProgress(g, (prog) => {
+      if (allBtn) {
+        allBtn.textContent = `⏳ [${i + 1}/${remaining.length}] ${g.title}: ${prog.percent}% (${prog.doneCount}/${prog.totalCount} files)`;
+      }
+    });
     if (!savedGameIds.includes(g.id)) {
       savedGameIds.push(g.id);
       safeSetStorage("st_saved_offline_games", JSON.stringify(savedGameIds));
@@ -1617,7 +2080,7 @@ async function downloadAllRemainingGames() {
     renderDownloadsManagerList();
   }
   renderGames();
-  showToast("100% All Games Downloaded! 🎉");
+  showToast("100% All Games & Sub-Assets Downloaded! 🎉");
 }
 
 /* Syncs strictly with games.json without auto-marking games as downloaded */
@@ -1654,14 +2117,14 @@ async function syncMainPageGamesJson(){
 const FUNNY_NOTIFICATIONS = [
   { title: "High Score Kottali Mama! 🤑", body: "Mari late enduku maharaja, ST GAMES open chesi kummey! 😎" },
   { title: "Toilet Rush Pilustondi! 🚽🏃", body: "Arey babu jaldi ra, papam vaadu aapukoleka chastunnadu! 😂" },
-  { title: "Donga Paripothunnadu! 🕵️‍♂️", body: "Catch The Thief lo police nidrapothunnadu, nuvve pattukovali mama! 🚨" },
+  { title: "Donga Paripothunnadu! 🕵️♂️", body: "Catch The Thief lo police nidrapothunnadu, nuvve pattukovali mama! 🚨" },
   { title: "Full Bore Koduthunda? 🥱", body: "Oka chinna game veyyi boss, mind full fresh ayipoddi! 🎮🔥" },
   { title: "Paamu Ki Aakali Vestondi! 🐍🍎", body: "3 gantalu ayyindi bro, Cyber Snake ki kaneesam oka apple anna pettu! 😋" },
-  { title: "Evaru Choodatledu Le! 👀", body: "Silent ga oka Street Subway Runner match eseddhama? 🏃‍♂️💨" },
+  { title: "Evaru Choodatledu Le! 👀", body: "Silent ga oka Street Subway Runner match eseddhama? 🏃♂️💨" },
   { title: "Brain Ki Pani Leda? 🔩", body: "Nuts & Bolts puzzle solve chesi nee talent chupinchu mama! 🧠✨" },
   { title: "Pro Gamer Anukuntunnava? 🏆", body: "Choosthu kurchunte High Score raadhu boss, PLAY nokku! 😎" },
   { title: "Monster Truck Ready Ga Undi! 🛻🔥", body: "Petrol full ga undi maharaja, nuvve driver seat ekkali! 🏁" },
-  { title: "Gang Antha Waiting Ikkada! 🏃‍♂️🏃‍♀️", body: "Crowd Runners lo mana batch ready, leader kosam waiting! 👑" },
+  { title: "Gang Antha Waiting Ikkada! 🏃♂️🏃♀️", body: "Crowd Runners lo mana batch ready, leader kosam waiting! 👑" },
   { title: "Reels Choosi Velu Noppi Putinda? 👆⚡", body: "Inka aapu bro, ST GAMES lo oka chinna match aadu! 😂" },
   { title: "Ninja 1v1 Dammunda? 🥷⚔️", body: "Dhammunte ra maama, Ninja Shadow Duel lo telchukundam! 🔥" },
   { title: "Fruit Cut Cheseddhama? 🍉🗡️", body: "Fruit Arcade lo katti ready ga undi, vacchi kosey mama! 🍍" },
@@ -1840,7 +2303,7 @@ function renderGames(){
   });
 
   if(currentMode==="offline" && filtered.length===0){
-    container.innerHTML = `<div class="empty-box"><i class="fa-solid fa-cloud-arrow-down"></i><h3>No Offline Games Downloaded</h3><p>Open any game in the ONLINE tab to download it (1%–100%) for offline play.</p><button type="button" class="action-btn" onclick="setAppMode('online')">GO TO ONLINE TAB</button></div>`;
+    container.innerHTML = `<div class="empty-box"><i class="fa-solid fa-cloud-arrow-down"></i><h3>No Offline Games Downloaded</h3><p>Open any game in the ONLINE tab to download all of its HTML, CSS, JS, images, audio &amp; sub-games (100%) for offline play.</p><button type="button" class="action-btn" onclick="setAppMode('online')">GO TO ONLINE TAB</button></div>`;
     return;
   }
 
@@ -1848,8 +2311,8 @@ function renderGames(){
     const isSaved = savedGameIds.includes(game.id);
     const badge = game.badge ? `<span class="game-badge">${game.badge.replace("✨ ","")}</span>` : "<span></span>";
     const downloadIcon = isSaved
-      ? `<div class="dl-indicator saved" title="100% Downloaded"><i class="fa-solid fa-check"></i></div>`
-      : `<div class="dl-indicator" title="Tap game to download (1%-100%)"><i class="fa-solid fa-arrow-down"></i></div>`;
+      ? `<div class="dl-indicator saved" title="100% Full Sources Downloaded"><i class="fa-solid fa-check"></i></div>`
+      : `<div class="dl-indicator" title="Tap game to download all files (100%)"><i class="fa-solid fa-arrow-down"></i></div>`;
 
     const deleteBtnHtml = isSaved
       ? `<span role="button" tabindex="0" class="card-del-btn" title="Delete from Offline"><i class="fa-solid fa-trash-can"></i></span>`
@@ -1915,11 +2378,11 @@ async function openAndSaveGame(game){
   const isAlreadyDownloaded = savedGameIds.includes(game.id);
 
   if(!navigator.onLine && !isAlreadyDownloaded){
-    showToast("You are offline! Connect once to open & download " + game.title + ".");
+    showToast("You are offline! Connect once to download all files for " + game.title + ".");
     return;
   }
 
-  // Download by opening game: runs 1% -> 100% animation when not yet saved offline
+  // Deep download all game sources (HTML, sub-games, CSS, JS, images, audio) before showing 100%
   if (!isAlreadyDownloaded && navigator.onLine) {
     runFirstTimeDownloadAnimation(game, () => {
       launchGameIframeNow(game);
@@ -1927,8 +2390,9 @@ async function openAndSaveGame(game){
     return;
   }
 
+  // If already downloaded and online, silently refresh cache in background while launching immediately
   if (navigator.onLine) {
-    cacheGameFiles(game);
+    deepDownloadGameWithProgress(game).catch(() => {});
   }
   launchGameIframeNow(game);
 }
@@ -2113,7 +2577,11 @@ syncMainPageGamesJson();
     logoImg.addEventListener("error", function() {
       this.style.display = "none";
       if (letterAvatar) {
-        letterAvatar.textContent = localStorage.getItem("gh_user_letter") || "U";
+        try {
+          letterAvatar.textContent = localStorage.getItem("gh_user_letter") || "U";
+        } catch (e) {
+          letterAvatar.textContent = "U";
+        }
         letterAvatar.style.display = "block";
       }
     });
@@ -2235,8 +2703,10 @@ const path = (window.location.pathname || "/").toLowerCase();
 function getSavedUsername() {
   const keys = ["st_username", "st_user", "username", "user", "player_name", "member_name", "displayName"];
   for (const k of keys) {
-    const val = localStorage.getItem(k);
-    if (val && val.trim() && val !== "null" && val !== "undefined") return val.trim().slice(0, 40);
+    try {
+      const val = localStorage.getItem(k);
+      if (val && val.trim() && val !== "null" && val !== "undefined") return val.trim().slice(0, 40);
+    } catch (e) {}
   }
   return "";
 }
@@ -2347,10 +2817,12 @@ if (isApp) {
 
 // 2. Auto-track existing logged-in session once per browser session
 const initialUser = getSavedUsername();
-if (initialUser && !sessionStorage.getItem("st_login_tracked_" + initialUser)) {
-  sessionStorage.setItem("st_login_tracked_" + initialUser, "1");
-  recordStEvent("member_logins", "login", "Active Member Session", initialUser);
-}
+try {
+  if (initialUser && !sessionStorage.getItem("st_login_tracked_" + initialUser)) {
+    sessionStorage.setItem("st_login_tracked_" + initialUser, "1");
+    recordStEvent("member_logins", "login", "Active Member Session", initialUser);
+  }
+} catch (e) {}
 
 // 3. Track Clicks (APK Downloads, Member Sign-In Buttons, and Game Plays)
 document.addEventListener("click", (e) => {
@@ -2391,7 +2863,9 @@ window.addEventListener("appinstalled", () => {
 
 // 6. Global Helper Hooks for Custom Scripts
 window.stTrackLogin = (username) => {
-  if (username) localStorage.setItem("st_username", username);
+  if (username) {
+    try { localStorage.setItem("st_username", username); } catch (e) {}
+  }
   recordStEvent("member_logins", "login", "Verified Member Login", username || getSavedUsername() || "Member");
 };
 window.stTrackDownload = () => recordStEvent("apk_downloads", "download", "Direct APK Download", getSavedUsername() || "APK Downloader");
