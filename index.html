@@ -1475,9 +1475,16 @@ window.stTrackApkPageView = () => recordStEvent("apk_page_views", "apk_view", "s
 window.stTrackGamePlay = (gameName) => recordStEvent("game_plays", "view", gameName || "Game Play", "Player");
 </script>
 <script>
-  document.querySelectorAll('a[href^="game/"]').forEach(link => {
-    const file = link.getAttribute('href').replace(/^game\//, '');
-    link.href = `animation.html?game=${encodeURIComponent(file)}`;
+  // Automatically routes any game link through animation.html
+  document.querySelectorAll('a').forEach(link => {
+    const href = link.getAttribute('href') || '';
+    
+    // Check if the link points to an HTML file inside the game folder or has 'game/' in the path
+    if ((href.includes('game/') || href.endsWith('.html')) && !href.includes('animation.html') && !href.startsWith('http')) {
+      // Extract just the filename (e.g. "happy-glass.html")
+      const file = href.split('/').pop();
+      link.href = `animation.html?game=${encodeURIComponent(file)}`;
+    }
   });
 </script>
 </body>
