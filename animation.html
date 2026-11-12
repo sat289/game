@@ -225,27 +225,40 @@
   <audio id="st-welcome-audio" src="logo/welcom.mp3" preload="auto"></audio>
 
   <script>
-    // 1. Load the target game from game/ folder
+    const audioEl = document.getElementById('st-welcome-audio');
+    audioEl.volume = 1.0;
+
+    // Force play audio immediately and unlock browser restrictions on first touch
+    function triggerAudio() {
+      audioEl.currentTime = 0;
+      audioEl.play().catch(e => console.log("Audio waiting for user gesture:", e));
+    }
+
+    triggerAudio();
+
+    // Listen for any tap, click, or key press on the overlay to instantly unlock & play audio
+    const overlay = document.getElementById('st-splash-overlay');
+    function unlockAudioOnInteraction() {
+      triggerAudio();
+      window.removeEventListener('pointerdown', unlockAudioOnInteraction);
+      window.removeEventListener('touchstart', unlockAudioOnInteraction);
+    }
+
+    window.addEventListener('pointerdown', unlockAudioOnInteraction, { once: true });
+    window.addEventListener('touchstart', unlockAudioOnInteraction, { once: true });
+
+    // 1. Load target game
     const params = new URLSearchParams(window.location.search);
     const rawGame = params.get('game') || 'index.html';
     const gamePath = rawGame.startsWith('game/') ? rawGame : `game/${rawGame}`;
-
     document.getElementById('st-game-frame').src = gamePath;
 
-    // 2. Play Welcome Audio (logo/welcom.mp3)
-    const audioEl = document.getElementById('st-welcome-audio');
-    audioEl.volume = 1.0;
-    audioEl.play().catch(() => {
-      document.addEventListener('pointerdown', () => audioEl.play(), { once: true });
-    });
-
-    // 3. Animate Progress Bar (0% to 100%) without filenames or levels
-    const overlay = document.getElementById('st-splash-overlay');
+    // 2. Animate Progress Bar (0% to 100%)
     const statusText = document.getElementById('st-status-text');
     const percentText = document.getElementById('st-progress-percent');
     const fillBar = document.getElementById('st-progress-fill');
 
-    const duration = 2500; // 2.5 seconds loading animation
+    const duration = 2500; 
     const startTime = performance.now();
 
     function animateLoader(now) {
