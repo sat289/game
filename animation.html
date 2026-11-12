@@ -1,291 +1,535 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>ST Games</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      user-select: none;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#081021">
+<title>ST Games</title>
 
-    body, html {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: #081021;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    }
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  user-select:none;
+}
 
-    /* Fullscreen Game Iframe (Preloads behind the splash screen) */
-    #st-game-frame {
-      position: fixed;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      border: none;
-      z-index: 1;
-      background: #000;
-    }
+body,html{
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:#081021;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+}
 
-    /* Splash Screen Overlay */
-    #st-splash-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 9999;
-      background: #081021;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #ffffff;
-      opacity: 1;
-      transition: opacity 0.45s ease;
-      overflow: hidden;
-    }
+/* GAME FRAME */
+#st-game-frame{
+  position:fixed;
+  inset:0;
+  width:100%;
+  height:100%;
+  border:none;
+  z-index:1;
+  background:#000;
+  display:none;
+}
 
-    #st-splash-overlay.st-splash-hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
+/* SPLASH SCREEN */
+#st-splash-overlay{
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  background:#081021;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#fff;
+  opacity:1;
+  transition:opacity .45s ease;
+  overflow:hidden;
+}
 
-    /* Background Glows */
-    .st-glow {
-      position: absolute;
-      width: 320px;
-      height: 320px;
-      border-radius: 50%;
-      filter: blur(90px);
-      opacity: 0.35;
-      pointer-events: none;
-    }
-    .st-glow-blue {
-      background: #1d6ff2;
-      top: 15%;
-      left: 15%;
-    }
-    .st-glow-green {
-      background: #65d628;
-      bottom: 10%;
-      right: 10%;
-    }
+#st-splash-overlay.st-splash-hidden{
+  opacity:0;
+  pointer-events:none;
+}
 
-    .st-splash-content {
-      position: relative;
-      z-index: 2;
-      width: 90%;
-      max-width: 360px;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
+/* BACKGROUND GLOWS */
+.st-glow{
+  position:absolute;
+  width:320px;
+  height:320px;
+  border-radius:50%;
+  filter:blur(90px);
+  opacity:.35;
+  pointer-events:none;
+}
 
-    /* Crown & Website Logo (logo/logo.jpg) */
-    .st-logo-wrapper {
-      position: relative;
-      margin-bottom: 20px;
-      animation: stFloat 2s ease-in-out infinite;
-    }
-    .st-crown {
-      position: absolute;
-      top: -24px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 26px;
-      z-index: 3;
-      filter: drop-shadow(0 2px 6px rgba(255, 200, 0, 0.6));
-    }
-    .st-logo-box {
-      width: 100px;
-      height: 100px;
-      border-radius: 24px;
-      background: linear-gradient(145deg, #2478ff, #134bd6);
-      border: 3px solid rgba(255, 255, 255, 0.9);
-      box-shadow: 0 0 30px rgba(36, 120, 255, 0.7);
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 40px;
-      font-weight: 800;
-    }
-    .st-logo-box img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
+.st-glow-blue{
+  background:#1d6ff2;
+  top:15%;
+  left:15%;
+}
 
-    @keyframes stFloat {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-5px); }
-    }
+.st-glow-green{
+  background:#65d628;
+  bottom:10%;
+  right:10%;
+}
 
-    /* Welcome Text */
-    .st-welcome-sub {
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: 4px;
-      color: #7eb6ff;
-      margin-bottom: 4px;
-    }
-    .st-welcome-title {
-      font-size: 34px;
-      font-weight: 900;
-      margin: 0 0 28px 0;
-      letter-spacing: 1.5px;
-      background: linear-gradient(90deg, #9ef01a, #38b6ff);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
+.st-splash-content{
+  position:relative;
+  z-index:2;
+  width:90%;
+  max-width:360px;
+  text-align:center;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
 
-    /* Clean Progress Bar Card */
-    .st-progress-card {
-      width: 100%;
-      background: rgba(13, 25, 48, 0.85);
-      border: 1px solid rgba(64, 156, 255, 0.25);
-      border-radius: 16px;
-      padding: 16px 18px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-    }
-    .st-progress-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 12px;
-      font-weight: 700;
-      margin-bottom: 10px;
-    }
-    #st-status-text {
-      color: #e2ecf7;
-      letter-spacing: 0.5px;
-    }
-    #st-progress-percent {
-      color: #8ce82b;
-    }
-    .st-progress-track {
-      width: 100%;
-      height: 10px;
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: 999px;
-      overflow: hidden;
-    }
-    .st-progress-fill {
-      width: 0%;
-      height: 100%;
-      border-radius: 999px;
-      background: repeating-linear-gradient(
-        -45deg,
-        #7ae51b,
-        #7ae51b 8px,
-        #2ec4b6 8px,
-        #2ec4b6 16px
-      );
-      transition: width 0.1s linear;
-    }
-  </style>
+/* LOGO */
+.st-logo-wrapper{
+  position:relative;
+  margin-bottom:20px;
+  animation:stFloat 2s ease-in-out infinite;
+}
+
+.st-crown{
+  position:absolute;
+  top:-24px;
+  left:50%;
+  transform:translateX(-50%);
+  font-size:26px;
+  z-index:3;
+  filter:drop-shadow(0 2px 6px rgba(255,200,0,.6));
+}
+
+.st-logo-box{
+  width:100px;
+  height:100px;
+  border-radius:24px;
+  background:linear-gradient(145deg,#2478ff,#134bd6);
+  border:3px solid rgba(255,255,255,.9);
+  box-shadow:0 0 30px rgba(36,120,255,.7);
+  overflow:hidden;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:40px;
+  font-weight:800;
+}
+
+.st-logo-box img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+
+@keyframes stFloat{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-5px)}
+}
+
+/* WELCOME TEXT */
+.st-welcome-sub{
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:4px;
+  color:#7eb6ff;
+  margin-bottom:4px;
+}
+
+.st-welcome-title{
+  font-size:34px;
+  font-weight:900;
+  margin:0 0 22px;
+  letter-spacing:1.5px;
+  background:linear-gradient(90deg,#9ef01a,#38b6ff);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+
+/* TAP BUTTON */
+#st-play-button{
+  width:85%;
+  padding:15px 20px;
+  margin-bottom:20px;
+  border:none;
+  border-radius:50px;
+  background:linear-gradient(90deg,#9ef01a,#38b6ff);
+  color:#081021;
+  font-size:17px;
+  font-weight:900;
+  letter-spacing:1.5px;
+  cursor:pointer;
+  box-shadow:0 0 25px rgba(56,182,255,.45);
+  animation:stPulse 1.5s infinite;
+}
+
+#st-play-button:disabled{
+  animation:none;
+  opacity:.7;
+  cursor:wait;
+}
+
+@keyframes stPulse{
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.04)}
+}
+
+/* PROGRESS CARD */
+.st-progress-card{
+  width:100%;
+  background:rgba(13,25,48,.85);
+  border:1px solid rgba(64,156,255,.25);
+  border-radius:16px;
+  padding:16px 18px;
+  box-shadow:0 10px 30px rgba(0,0,0,.45);
+}
+
+.st-progress-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:12px;
+  font-weight:700;
+  margin-bottom:10px;
+}
+
+#st-status-text{
+  color:#e2ecf7;
+  letter-spacing:.5px;
+  text-align:left;
+}
+
+#st-progress-percent{
+  color:#8ce82b;
+}
+
+.st-progress-track{
+  width:100%;
+  height:10px;
+  background:rgba(255,255,255,.08);
+  border-radius:999px;
+  overflow:hidden;
+}
+
+.st-progress-fill{
+  width:0%;
+  height:100%;
+  border-radius:999px;
+  background:repeating-linear-gradient(
+    -45deg,
+    #7ae51b,
+    #7ae51b 8px,
+    #2ec4b6 8px,
+    #2ec4b6 16px
+  );
+  transition:width .2s linear;
+}
+
+#st-retry-button{
+  display:none;
+  margin-top:12px;
+  padding:10px 20px;
+  border:1px solid #65d628;
+  border-radius:30px;
+  color:white;
+  background:transparent;
+  font-weight:bold;
+  cursor:pointer;
+}
+</style>
 </head>
+
 <body>
 
-  <!-- Preloads the selected game from game/ folder -->
-  <iframe id="st-game-frame" allow="autoplay; fullscreen; gamepad"></iframe>
+<iframe
+  id="st-game-frame"
+  allow="autoplay; fullscreen; gamepad"
+  allowfullscreen>
+</iframe>
 
-  <!-- ST Games Splash Screen -->
-  <div id="st-splash-overlay">
-    <div class="st-glow st-glow-blue"></div>
-    <div class="st-glow st-glow-green"></div>
+<!-- ST GAMES SPLASH -->
+<div id="st-splash-overlay">
 
-    <div class="st-splash-content">
-      <div class="st-logo-wrapper">
-        <span class="st-crown">👑</span>
-        <div class="st-logo-box">
-          <img src="logo/logo.jpg" alt="ST Games Logo" onerror="this.outerHTML='<span>ST</span>'">
-        </div>
-      </div>
+  <div class="st-glow st-glow-blue"></div>
+  <div class="st-glow st-glow-green"></div>
 
-      <div class="st-welcome-sub">WELCOME TO</div>
-      <h1 class="st-welcome-title">ST GAMES</h1>
+  <div class="st-splash-content">
 
-      <div class="st-progress-card">
-        <div class="st-progress-header">
-          <span id="st-status-text">⚡ LOADING ST GAMES...</span>
-          <span id="st-progress-percent">0%</span>
-        </div>
-        <div class="st-progress-track">
-          <div id="st-progress-fill" class="st-progress-fill"></div>
-        </div>
+    <div class="st-logo-wrapper">
+      <span class="st-crown">👑</span>
+
+      <div class="st-logo-box">
+        <img
+          src="logo/logo.jpg"
+          alt="ST Games Logo"
+          onerror="this.outerHTML='<span>ST</span>'">
       </div>
     </div>
+
+    <div class="st-welcome-sub">WELCOME TO</div>
+    <h1 class="st-welcome-title">ST GAMES</h1>
+
+    <button id="st-play-button">
+      ▶ TAP TO PLAY
+    </button>
+
+    <div class="st-progress-card">
+
+      <div class="st-progress-header">
+        <span id="st-status-text">⚡ READY TO PLAY</span>
+        <span id="st-progress-percent">0%</span>
+      </div>
+
+      <div class="st-progress-track">
+        <div id="st-progress-fill" class="st-progress-fill"></div>
+      </div>
+
+      <button id="st-retry-button">
+        RETRY GAME
+      </button>
+
+    </div>
+
   </div>
+</div>
 
-  <!-- Welcome Audio from logo/welcom.mp3 -->
-  <audio id="st-welcome-audio" src="logo/welcom.mp3" preload="auto"></audio>
+<!-- WELCOME AUDIO -->
+<audio id="st-welcome-audio" preload="auto">
+  <source src="logo/welcom.mp3" type="audio/mpeg">
+</audio>
 
-  <script>
-    const audioEl = document.getElementById('st-welcome-audio');
-    audioEl.volume = 1.0;
+<script>
+const audioEl = document.getElementById('st-welcome-audio');
+const frame = document.getElementById('st-game-frame');
+const overlay = document.getElementById('st-splash-overlay');
 
-    // Force play audio immediately and unlock browser restrictions on first touch
-    function triggerAudio() {
-      audioEl.currentTime = 0;
-      audioEl.play().catch(e => console.log("Audio waiting for user gesture:", e));
+const playButton = document.getElementById('st-play-button');
+const retryButton = document.getElementById('st-retry-button');
+
+const statusText = document.getElementById('st-status-text');
+const percentText = document.getElementById('st-progress-percent');
+const fillBar = document.getElementById('st-progress-fill');
+
+let gameReady = false;
+let audioReady = false;
+let gameStarted = false;
+let audioStarted = false;
+let finished = false;
+let gameTimeout = null;
+
+/* GET GAME PATH */
+const params = new URLSearchParams(window.location.search);
+
+function getSafeGamePath(){
+
+  let path = params.get('game') || 'index.html';
+
+  path = path.trim();
+
+  // Support both game/fruit.html and fruit.html
+  if(!path.startsWith('game/')){
+    path = 'game/' + path;
+  }
+
+  // Reject external or unsafe paths
+  if(
+    path.includes('..') ||
+    path.includes('\\') ||
+    path.includes(':') ||
+    path.startsWith('/')
+  ){
+    return 'game/index.html';
+  }
+
+  return path;
+}
+
+const gamePath = getSafeGamePath();
+
+/* PROGRESS */
+function updateProgress(){
+
+  let progress = 0;
+
+  if(gameReady) progress += 50;
+
+  if(audioReady) progress += 50;
+
+  fillBar.style.width = progress + '%';
+  percentText.textContent = progress + '%';
+
+  if(!gameReady){
+    statusText.textContent = '🎮 LOADING YOUR GAME...';
+  }
+  else if(!audioReady){
+    statusText.textContent = '🎵 PLAYING WELCOME AUDIO...';
+  }
+
+  if(gameReady && audioReady){
+    finishLoading();
+  }
+}
+
+/* LOAD GAME */
+function loadGame(){
+
+  if(gameStarted) return;
+
+  gameStarted = true;
+  statusText.textContent = '🎮 LOADING YOUR GAME...';
+
+  frame.onload = function(){
+
+    clearTimeout(gameTimeout);
+
+    gameReady = true;
+    retryButton.style.display = 'none';
+
+    updateProgress();
+  };
+
+  frame.src = gamePath;
+
+  // Detect games that take too long to load
+  gameTimeout = setTimeout(function(){
+
+    if(!gameReady){
+      statusText.textContent = '⚠ GAME TAKING TOO LONG';
+      retryButton.style.display = 'block';
     }
 
-    triggerAudio();
+  },30000);
+}
 
-    // Listen for any tap, click, or key press on the overlay to instantly unlock & play audio
-    const overlay = document.getElementById('st-splash-overlay');
-    function unlockAudioOnInteraction() {
-      triggerAudio();
-      window.removeEventListener('pointerdown', unlockAudioOnInteraction);
-      window.removeEventListener('touchstart', unlockAudioOnInteraction);
+/* START BUTTON */
+async function startExperience(){
+
+  if(audioStarted) return;
+
+  playButton.disabled = true;
+  playButton.textContent = 'PLEASE WAIT...';
+
+  statusText.textContent = '🎵 STARTING ST GAMES...';
+
+  // Start loading the game
+  loadGame();
+
+  // Play audio after the user's tap
+  try{
+
+    audioEl.currentTime = 0;
+
+    await audioEl.play();
+
+    audioStarted = true;
+    playButton.textContent = '🎵 PLAYING...';
+
+    statusText.textContent = '🎵 WELCOME TO ST GAMES!';
+
+  }catch(error){
+
+    console.error('Welcome audio error:',error);
+
+    playButton.disabled = false;
+    playButton.textContent = '▶ TAP TO PLAY AGAIN';
+
+    statusText.textContent =
+      '⚠ AUDIO NOT PLAYING - CHECK MP3 FILE';
+
+  }
+}
+
+/* AUDIO FINISHED */
+audioEl.addEventListener('ended',function(){
+
+  audioReady = true;
+
+  updateProgress();
+
+});
+
+/* AUDIO FILE ERROR */
+audioEl.addEventListener('error',function(){
+
+  console.error('Could not load logo/welcom.mp3');
+
+  audioReady = true;
+
+  statusText.textContent = '⚠ AUDIO UNAVAILABLE - OPENING GAME';
+
+  updateProgress();
+
+});
+
+/* GAME RETRY */
+retryButton.addEventListener('click',function(){
+
+  clearTimeout(gameTimeout);
+
+  gameStarted = false;
+  gameReady = false;
+
+  retryButton.style.display = 'none';
+
+  frame.src = 'about:blank';
+
+  setTimeout(loadGame,100);
+
+});
+
+/* FINISH */
+function finishLoading(){
+
+  if(finished) return;
+
+  finished = true;
+
+  clearTimeout(gameTimeout);
+
+  fillBar.style.width = '100%';
+  percentText.textContent = '100%';
+
+  statusText.textContent = '🚀 WELCOME TO ST GAMES!';
+
+  setTimeout(function(){
+
+    overlay.classList.add('st-splash-hidden');
+
+    setTimeout(function(){
+
+      overlay.style.display = 'none';
+      frame.style.display = 'block';
+
+    },450);
+
+  },350);
+}
+
+/* BUTTON CLICK */
+playButton.addEventListener('click',startExperience);
+
+/* AUDIO PROGRESS DISPLAY */
+audioEl.addEventListener('timeupdate',function(){
+
+  if(audioEl.duration && !audioReady){
+
+    const audioProgress =
+      audioEl.currentTime / audioEl.duration;
+
+    if(audioProgress > 0 && audioProgress < 1){
+
+      statusText.textContent = '🎵 WELCOME TO ST GAMES...';
+
     }
+  }
+});
 
-    window.addEventListener('pointerdown', unlockAudioOnInteraction, { once: true });
-    window.addEventListener('touchstart', unlockAudioOnInteraction, { once: true });
-
-    // 1. Load target game
-    const params = new URLSearchParams(window.location.search);
-    const rawGame = params.get('game') || 'index.html';
-    const gamePath = rawGame.startsWith('game/') ? rawGame : `game/${rawGame}`;
-    document.getElementById('st-game-frame').src = gamePath;
-
-    // 2. Animate Progress Bar (0% to 100%)
-    const statusText = document.getElementById('st-status-text');
-    const percentText = document.getElementById('st-progress-percent');
-    const fillBar = document.getElementById('st-progress-fill');
-
-    const duration = 2500; 
-    const startTime = performance.now();
-
-    function animateLoader(now) {
-      const elapsed = now - startTime;
-      const progress = Math.min(100, Math.floor((elapsed / duration) * 100));
-
-      fillBar.style.width = `${progress}%`;
-      percentText.textContent = `${progress}%`;
-
-      if (progress < 50) {
-        statusText.textContent = '⚡ LOADING ST GAMES...';
-      } else if (progress < 90) {
-        statusText.textContent = '🎮 STARTING GAME...';
-      } else {
-        statusText.textContent = '🚀 WELCOME TO ST GAMES!';
-      }
-
-      if (progress < 100) {
-        requestAnimationFrame(animateLoader);
-      } else {
-        setTimeout(() => {
-          overlay.classList.add('st-splash-hidden');
-        }, 350);
-      }
-    }
-
-    requestAnimationFrame(animateLoader);
-  </script>
+</script>
 </body>
 </html>
