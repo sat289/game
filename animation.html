@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ST Games - Loading...</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #081021;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    /* Fullscreen Game Iframe (Preloads behind the splash screen) */
+    #st-game-frame {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      z-index: 1;
+      background: #000;
+    }
+
+    /* Splash Screen Overlay */
+    #st-splash-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: #081021;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      opacity: 1;
+      transition: opacity 0.45s ease;
+      overflow: hidden;
+    }
+
+    #st-splash-overlay.st-splash-hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Background Glows */
+    .st-glow {
+      position: absolute;
+      width: 320px;
+      height: 320px;
+      border-radius: 50%;
+      filter: blur(90px);
+      opacity: 0.35;
+      pointer-events: none;
+    }
+    .st-glow-blue {
+      background: #1d6ff2;
+      top: 15%;
+      left: 15%;
+    }
+    .st-glow-green {
+      background: #65d628;
+      bottom: 10%;
+      right: 10%;
+    }
+
+    .st-splash-content {
+      position: relative;
+      z-index: 2;
+      width: 90%;
+      max-width: 380px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Crown & Website Logo (logo/logo.jpg) */
+    .st-logo-wrapper {
+      position: relative;
+      margin-bottom: 18px;
+      animation: stFloat 2s ease-in-out infinite;
+    }
+    .st-crown {
+      position: absolute;
+      top: -24px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 26px;
+      z-index: 3;
+      filter: drop-shadow(0 2px 6px rgba(255, 200, 0, 0.6));
+    }
+    .st-logo-box {
+      width: 96px;
+      height: 96px;
+      border-radius: 24px;
+      background: linear-gradient(145deg, #2478ff, #134bd6);
+      border: 3px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 0 0 30px rgba(36, 120, 255, 0.7);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .st-logo-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    @keyframes stFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+
+    /* Welcome Text */
+    .st-welcome-sub {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      color: #7eb6ff;
+      margin-bottom: 4px;
+    }
+    .st-welcome-title {
+      font-size: 32px;
+      font-weight: 900;
+      margin: 0 0 14px 0;
+      letter-spacing: 1.5px;
+      background: linear-gradient(90deg, #9ef01a, #38b6ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Dynamic Game Badge */
+    .st-game-badge {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 999px;
+      padding: 6px 16px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      color: #b8d0eb;
+      margin-bottom: 26px;
+      text-transform: uppercase;
+    }
+
+    /* Progress Bar Card */
+    .st-progress-card {
+      width: 100%;
+      background: rgba(13, 25, 48, 0.85);
+      border: 1px solid rgba(64, 156, 255, 0.25);
+      border-radius: 16px;
+      padding: 16px 18px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    }
+    .st-progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    #st-status-text {
+      color: #e2ecf7;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 82%;
+    }
+    #st-progress-percent {
+      color: #8ce82b;
+    }
+    .st-progress-track {
+      width: 100%;
+      height: 10px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .st-progress-fill {
+      width: 0%;
+      height: 100%;
+      border-radius: 999px;
+      background: repeating-linear-gradient(
+        -45deg,
+        #7ae51b,
+        #7ae51b 8px,
+        #2ec4b6 8px,
+        #2ec4b6 16px
+      );
+      transition: width 0.1s linear;
+    }
+    .st-progress-mb {
+      font-size: 11px;
+      color: #7d93b2;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Preloads the selected game from game/ folder -->
+  <iframe id="st-game-frame" allow="autoplay; fullscreen; gamepad"></iframe>
+
+  <!-- ST Games Splash Screen -->
+  <div id="st-splash-overlay">
+    <div class="st-glow st-glow-blue"></div>
+    <div class="st-glow st-glow-green"></div>
+
+    <div class="st-splash-content">
+      <div class="st-logo-wrapper">
+        <span class="st-crown">👑</span>
+        <div class="st-logo-box">
+          <img src="logo/logo.jpg" alt="ST Games Logo" onerror="this.outerHTML='<span>ST</span>'">
+        </div>
+      </div>
+
+      <div class="st-welcome-sub">WELCOME TO</div>
+      <h1 class="st-welcome-title">ST GAMES</h1>
+
+      <div id="st-game-badge" class="st-game-badge">
+        🎮 LOADING GAME • 50 LEVELS
+      </div>
+
+      <div class="st-progress-card">
+        <div class="st-progress-header">
+          <span id="st-status-text">⬇️ DOWNLOADING ST GAMES ENGINE...</span>
+          <span id="st-progress-percent">0%</span>
+        </div>
+        <div class="st-progress-track">
+          <div id="st-progress-fill" class="st-progress-fill"></div>
+        </div>
+        <div id="st-progress-mb" class="st-progress-mb">0.0 MB / 24.5 MB</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Welcome Audio from logo/welcom.mp3 -->
+  <audio id="st-welcome-audio" src="logo/welcom.mp3" preload="auto"></audio>
+
+  <script>
+    // 1. Read URL Parameters (e.g. animation.html?game=happy-glass.html&title=Happy Glass)
+    const params = new URLSearchParams(window.location.search);
+    let rawGame = params.get('game') || 'index.html';
+
+    // Ensure path points to game/ folder automatically
+    const gamePath = rawGame.startsWith('game/') ? rawGame : `game/${rawGame}`;
+
+    // Auto-generate clean title from filename if ?title= is not provided
+    const cleanFileName = rawGame.replace(/^game\//, '').replace(/\.html?$/i, '').replace(/[-_]/g, ' ');
+    const gameTitle = (params.get('title') || cleanFileName || 'ARCADE GAME').toUpperCase();
+    const gameIcon = params.get('icon') || '🎮';
+    const gameLevels = params.get('levels') || '50';
+    const totalMB = parseFloat(params.get('mb')) || 24.5;
+
+    // Update page title & badge
+    document.title = `${gameTitle} - ST Games`;
+    document.getElementById('st-game-badge').textContent = `${gameIcon} ${gameTitle} • ${gameLevels} LEVELS`;
+
+    // Start loading the game inside the background iframe
+    const gameFrame = document.getElementById('st-game-frame');
+    gameFrame.src = gamePath;
+
+    // 2. Play Welcome Audio (with fallback if browser requires a tap)
+    const audioEl = document.getElementById('st-welcome-audio');
+    function tryPlayAudio() {
+      audioEl.volume = 1.0;
+      audioEl.play().catch(() => {
+        // If mobile browser blocks autoplay on new page, play on first touch
+        document.addEventListener('pointerdown', () => audioEl.play(), { once: true });
+      });
+    }
+    tryPlayAudio();
+
+    // 3. Animate Progress Bar (0% to 100%)
+    const overlay = document.getElementById('st-splash-overlay');
+    const statusText = document.getElementById('st-status-text');
+    const percentText = document.getElementById('st-progress-percent');
+    const fillBar = document.getElementById('st-progress-fill');
+    const mbText = document.getElementById('st-progress-mb');
+
+    const duration = 2600; // 2.6 seconds matching your video
+    const startTime = performance.now();
+
+    function animateLoader(now) {
+      const elapsed = now - startTime;
+      const progress = Math.min(100, Math.floor((elapsed / duration) * 100));
+      const currentMB = ((progress / 100) * totalMB).toFixed(1);
+
+      fillBar.style.width = `${progress}%`;
+      percentText.textContent = `${progress}%`;
+      mbText.textContent = `${currentMB} MB / ${totalMB.toFixed(1)} MB`;
+
+      if (progress < 35) {
+        statusText.textContent = '⬇️ DOWNLOADING ST GAMES ENGINE...';
+      } else if (progress < 65) {
+        statusText.textContent = `🎨 LOADING ${gameTitle} ASSETS...`;
+      } else if (progress < 95) {
+        statusText.textContent = `✏️ PREPARING ${gameLevels} LEVELS...`;
+      } else {
+        statusText.textContent = '🚀 WELCOME TO ST GAMES!';
+      }
+
+      if (progress < 100) {
+        requestAnimationFrame(animateLoader);
+      } else {
+        setTimeout(() => {
+          // Smoothly fade out splash screen to reveal the game
+          overlay.classList.add('st-splash-hidden');
+
+          // Optional: If you prefer redirecting directly instead of an iframe,
+          // uncomment the line below:
+          // window.location.replace(gamePath);
+        }, 350);
+      }
+    }
+
+    requestAnimationFrame(animateLoader);
+  </script>
+</body>
+</html>
