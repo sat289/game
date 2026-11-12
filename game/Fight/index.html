@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Stick Kombat - Pro Audio, 1v1 Online & Cloud Sync Edition</title>
+  <title>ST Games - Stick Kombat 1v1 Online Edition</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -21,17 +21,26 @@
       <div class="dock-icon" id="dock-mute-btn" onclick="toggleAudioMute()" title="Toggle Sound & Music">&#128266;</div>
     </div>
 
-    <!-- 0. MOVIE-STYLE START & LANDSCAPE ROTATION SCREEN -->
+    <!-- 0. ST GAMES WELCOME & LANDSCAPE ROTATION SCREEN -->
     <div id="start-gate-screen" class="screen">
-      <div style="font-size:13px; color:#8fff00; font-weight:900; margin-bottom:8px;">&#127918; FULLSCREEN + REAL SYNTH SOUND & ONLINE 1V1</div>
-      <div style="font-size:32px; font-weight:900; font-style:italic; margin-bottom:20px;">STICK KOMBAT: REAPER VS LUMIS</div>
+      <div style="font-size:15px; color:#8fff00; font-weight:900; letter-spacing:1.5px; margin-bottom:6px;">&#127918; WELCOME TO ST GAMES</div>
+      <div style="font-size:32px; font-weight:900; font-style:italic; margin-bottom:20px; text-shadow:0 4px 12px rgba(0,0,0,0.9);">STICK KOMBAT: REAPER VS LUMIS</div>
       <button class="btn-enter-fullscreen" onclick="enterGameFullscreen()">&#9654; ENTER GAME (ENABLE AUDIO)</button>
     </div>
 
     <!-- 1. ST GAMES SPLASH SCREEN -->
     <div id="splash-screen" class="screen hidden">
-      <img src="../../logo/logo.jpg" alt="ST games" class="octopus-logo" />
-      <div class="seagames-title">ST games</div>
+      <svg class="octopus-logo" viewBox="0 0 100 100">
+        <path d="M20,52 A30,30 0 0,1 80,52" fill="none" stroke="#fff" stroke-width="6"/>
+        <rect x="12" y="42" width="10" height="20" rx="5" fill="#fff"/>
+        <rect x="78" y="42" width="10" height="20" rx="5" fill="#fff"/>
+        <circle cx="50" cy="48" r="24" fill="#fff"/>
+        <rect x="34" y="42" width="32" height="12" rx="6" fill="#050508"/>
+        <circle cx="43" cy="48" r="4" fill="#fff"/>
+        <circle cx="57" cy="48" r="4" fill="#fff"/>
+        <path d="M32,68 C25,82 35,88 38,76 M44,70 C42,86 50,88 50,74 M56,70 C58,86 65,86 62,74 M68,68 C75,82 65,88 62,76" stroke="#fff" stroke-width="6" stroke-linecap="round" fill="none"/>
+      </svg>
+      <div class="seagames-title" style="color:#8fff00; letter-spacing:1px;">WELCOME TO ST GAMES</div>
       <div class="splash-loader-text" id="splash-status">Generating game content: 14%</div>
       <div class="splash-bar-bg">
         <div class="splash-bar-fill" id="splash-fill"></div>
@@ -259,7 +268,7 @@
 
 <script>
 /* ============================================================================
-   0. WEB AUDIO SYNTHESIZER ENGINE (BGM + Combat SFX - No External MP3 Needed!)
+   0. WEB AUDIO SYNTHESIZER ENGINE + ST GAMES VOICE GREETING
 ============================================================================ */
 let audioCtx = null;
 let audioMuted = false;
@@ -275,6 +284,18 @@ function initAudioEngine() {
   if (audioCtx && audioCtx.state === 'suspended') {
     audioCtx.resume();
   }
+}
+
+function speakWelcomeSTGames() {
+  if (audioMuted || !('speechSynthesis' in window)) return;
+  try {
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance("Welcome to S T Games");
+    utter.rate = 0.95;
+    utter.pitch = 1.05;
+    utter.volume = 0.9;
+    window.speechSynthesis.speak(utter);
+  } catch (e) {}
 }
 
 function toggleAudioMute() {
@@ -442,6 +463,7 @@ async function forceFullscreenLandscape() {
 function enterGameFullscreen() {
   initAudioEngine();
   playSFX('GONG');
+  speakWelcomeSTGames();
   forceFullscreenLandscape();
   document.getElementById('start-gate-screen').classList.add('hidden');
   document.getElementById('splash-screen').classList.remove('hidden');
@@ -626,8 +648,8 @@ function runEntrySplash() {
     }
     fill.style.width = progress + '%';
     status.innerText = progress < 65
-      ? `Generating game content: ${progress}%`
-      : `Arranging game rules: ${progress}%`;
+      ? `Loading ST Games assets: ${progress}%`
+      : `Preparing combat arena: ${progress}%`;
   }, 140);
 }
 
@@ -1385,7 +1407,7 @@ function drawArenaBackground() {
 }
 
 /* ============================================================================
-   6. MATCH & ROUND FLOW
+   6. MATCH & ROUND FLOW (With Full HP Reset for BOTH Players in Online 1v1!)
 ============================================================================ */
 function startBestOf3Match() {
   document.getElementById('arena-canvas').classList.remove('hidden');
@@ -1407,11 +1429,21 @@ function startBestOf3Match() {
 function startSingleRound() {
   p1TagPartnerUsed = false;
   p2TagPartnerUsed = false;
+
+  // Create fresh fighter instances with 100% FULL HP for BOTH winner and loser
   p1 = new CelFighter(selectedHero, CW * 0.28, 1, true);
   p2 = new CelFighter(selectedEnemy, CW * 0.72, -1, false);
+  p1.hp = p1.maxHp;
+  p2.hp = p2.maxHp;
+
   projectiles = [];
   starbursts = [];
   dustPuffs = [];
+
+  // CRITICAL FIX: Reset online target HP in Firebase so the winner's HP isn't overwritten by Round 1 damage!
+  if (isOnlineMatch && window.resetOnlineRoundHp) {
+    window.resetOnlineRoundHp(p1.maxHp, p2.maxHp);
+  }
 
   document.getElementById('p1-hud-avatar').innerHTML = buildAvatarSVG(selectedHero);
   document.getElementById('p2-hud-avatar').innerHTML = buildAvatarSVG(selectedEnemy);
@@ -1800,7 +1832,7 @@ document.getElementById('btn-special').addEventListener('pointerdown', () => {
 mainLoop();
 </script>
 
-<!-- ================= FIREBASE AUTO CLOUD SYNC & 1V1 ONLINE ROOMS (FIXED) ================= -->
+<!-- ================= FIREBASE AUTO CLOUD SYNC & 1V1 ONLINE ROOMS (ROUND HP RESET FIXED) ================= -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
   import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
@@ -1827,7 +1859,6 @@ mainLoop();
   let currentUser = null;
   let currentHighScore = parseInt(localStorage.getItem(`${GAME_KEY}_hi`) || "0", 10);
 
-  // Load saved local unlocks/coins first
   try {
     const savedLocal = JSON.parse(localStorage.getItem(`${GAME_KEY}_save`) || "null");
     if (savedLocal) applySavedData(savedLocal);
@@ -1934,10 +1965,11 @@ mainLoop();
   }, 1000);
 
   /* ============================================================================
-     5. FIXED 1V1 ONLINE ROOM CODE SYSTEM (Real-Time Sync & Auto Match Start)
+     5. 1V1 ONLINE ROOM CODE SYSTEM (With Full HP Reset on Every New Round!)
   ============================================================================ */
   let roomListenerRef = null;
   let matchStartedInRoom = false;
+  let roundResetGuardUntil = 0;
 
   window.cleanupOnlineRoom = function() {
     if (roomListenerRef) {
@@ -1945,6 +1977,23 @@ mainLoop();
       roomListenerRef = null;
     }
     matchStartedInRoom = false;
+  };
+
+  // Resets both players' HP to 100% in Firebase at the start of Round 2 / Round 3
+  window.resetOnlineRoundHp = function(myMaxHp, enemyMaxHp) {
+    if (!isOnlineMatch || !activeRoomCode) return;
+    roundResetGuardUntil = Date.now() + 1200; // Ignore stale round-1 damage packets during transition
+    const updates = {};
+    if (onlineRole === "HOST") {
+      updates.hostTargetHp = myMaxHp;
+      updates.guestTargetHp = enemyMaxHp;
+      updates["host/hp"] = myMaxHp;
+    } else {
+      updates.guestTargetHp = myMaxHp;
+      updates.hostTargetHp = enemyMaxHp;
+      updates["guest/hp"] = myMaxHp;
+    }
+    update(ref(db, `${ROOMS_PATH}/${activeRoomCode}`), updates).catch(() => {});
   };
 
   function bindRoomRealtimeListener(roomRef) {
@@ -1985,6 +2034,12 @@ mainLoop();
           p2.y = GROUND_Y - (oppData.yOffset || 0);
           p2.facing = -oppData.facing;
 
+          // Keep opponent's HP bar synced if they healed on a new round
+          if (typeof oppData.hp === "number" && Date.now() > roundResetGuardUntil) {
+            p2.hp = oppData.hp;
+            refreshFightHUD();
+          }
+
           if (oppData.state && oppData.state !== p2.state) {
             p2.state = oppData.state;
             if (oppData.state.startsWith("SLASH")) {
@@ -1996,7 +2051,8 @@ mainLoop();
           }
         }
 
-        if (typeof myTargetHp === "number" && myTargetHp < p1.hp) {
+        // Only apply incoming damage if we are not inside the new-round full-HP reset window
+        if (Date.now() > roundResetGuardUntil && typeof myTargetHp === "number" && myTargetHp < p1.hp) {
           const dmgTaken = p1.hp - myTargetHp;
           p1.hp = Math.max(0, myTargetHp);
           p1.state = p1.hp <= 0 ? "AIR_TUMBLE" : "HURT";
@@ -2086,7 +2142,7 @@ mainLoop();
       onlineRole = "GUEST";
 
       const roomData = snap.val();
-      stageIndex = typeof roomData.stage === "number" ? roomData.stage : 0;
+      stageIndex = typeof roomData.stage === "number" ? data.stage : 0;
       const hostHero = ROSTER.find(f => f.id === roomData.host?.heroId) || ROSTER[0];
       selectedEnemy = hostHero;
 
@@ -2094,6 +2150,7 @@ mainLoop();
 
       await update(roomRef, {
         status: "READY",
+        hostTargetHp: hostHero.hp,
         guestTargetHp: selectedHero.hp,
         guest: {
           heroId: selectedHero.id,
