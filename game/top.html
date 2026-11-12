@@ -1,0 +1,2648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a12">
+<title>TAP RUSH: 50 LEVELS | ST GAMES</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a12;
+  --panel:rgba(18,18,34,0.78);
+  --panel-solid:#121222;
+  --line:rgba(255,255,255,0.10);
+  --accent:#00f3ff;
+  --world:#00f3ff;
+  --danger:#ff3366;
+  --gold:#ffcf4b;
+  --good:#7cffb2;
+  --text:#f4f7ff;
+  --muted:#8d90ab;
+}
+html,body{
+  background:#0a0a12;
+  color:var(--text);
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  min-height:100dvh;
+  overflow-x:hidden;
+  user-select:none;
+  -webkit-user-select:none;
+  -webkit-tap-highlight-color:transparent;
+}
+body.playing{
+  overflow:hidden;
+  touch-action:none;
+}
+button{
+  font:inherit;
+  color:inherit;
+  border:none;
+  background:none;
+  cursor:pointer;
+  outline:none;
+}
+button:disabled{opacity:.36;cursor:not-allowed}
+
+/* Background Ambient Layer */
+.bg-glow{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:0;
+  background:
+    radial-gradient(circle at 50% -10%,color-mix(in srgb,var(--accent) 16%,transparent) 0%,transparent 55%),
+    radial-gradient(circle at 85% 95%,color-mix(in srgb,var(--world) 10%,transparent) 0%,transparent 45%),
+    #0a0a12;
+  transition:background .5s ease;
+}
+
+#app{
+  position:relative;
+  z-index:1;
+  max-width:560px;
+  margin:0 auto;
+  min-height:100dvh;
+  padding:12px 14px 24px;
+  display:flex;
+  flex-direction:column;
+}
+
+/* Custom CSS ST GAMES Logo */
+.st-logo-wrap{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.st-emblem{
+  position:relative;
+  width:42px;
+  height:42px;
+  border-radius:12px;
+  background:linear-gradient(135deg,var(--accent),#ffffff 120%);
+  display:grid;
+  place-items:center;
+  box-shadow:0 0 20px color-mix(in srgb,var(--accent) 45%,transparent);
+  overflow:hidden;
+  flex-shrink:0;
+}
+.st-emblem::before{
+  content:"";
+  position:absolute;
+  inset:2px;
+  border-radius:10px;
+  background:linear-gradient(145deg,#0d0d1b,#181830);
+}
+.st-emblem .st-logo-img{
+  position:relative;
+  z-index:1;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  border-radius:10px;
+  display:block;
+}
+.st-emblem span{
+  position:relative;
+  z-index:1;
+  font-weight:900;
+  font-size:16px;
+  letter-spacing:-1px;
+  background:linear-gradient(135deg,#fff,var(--accent));
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+}
+.st-brand b{
+  display:block;
+  font-size:15px;
+  font-weight:900;
+  letter-spacing:1.6px;
+}
+.st-brand small{
+  display:block;
+  font-size:8.5px;
+  letter-spacing:1.8px;
+  color:var(--muted);
+  margin-top:2px;
+}
+
+header{
+  height:54px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:8px;
+}
+.head-actions{display:flex;gap:8px;align-items:center}
+.coin-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  padding:7px 11px;
+  border-radius:99px;
+  background:var(--panel);
+  border:1px solid var(--line);
+  backdrop-filter:blur(10px);
+  font-size:12px;
+  font-weight:800;
+  color:var(--gold);
+}
+.icon-btn{
+  width:38px;
+  height:38px;
+  border-radius:11px;
+  background:var(--panel);
+  border:1px solid var(--line);
+  backdrop-filter:blur(10px);
+  display:grid;
+  place-items:center;
+  font-size:16px;
+  transition:transform .12s,border-color .2s,background .2s;
+}
+.icon-btn:hover{border-color:color-mix(in srgb,var(--accent) 55%,transparent)}
+.icon-btn:active{transform:scale(.92)}
+
+/* Screens */
+.screen{display:none;flex:1}
+.screen.active{display:flex;flex-direction:column;animation:fadeUp .25s cubic-bezier(.2,.8,.2,1)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* Splash Screen */
+#splashScreen{
+  position:fixed;
+  inset:0;
+  z-index:100;
+  background:#07070e;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:24px;
+  transition:opacity .45s ease,visibility .45s ease;
+}
+#splashScreen.hide{opacity:0;visibility:hidden;pointer-events:none}
+.splash-ring{
+  width:110px;
+  height:110px;
+  border-radius:50%;
+  border:3px solid var(--accent);
+  box-shadow:0 0 35px var(--accent),inset 0 0 25px color-mix(in srgb,var(--accent) 45%,transparent);
+  display:grid;
+  place-items:center;
+  margin-bottom:22px;
+  animation:splashPulse 1.4s ease-in-out infinite;
+}
+@keyframes splashPulse{
+  0%,100%{transform:scale(1);box-shadow:0 0 25px var(--accent)}
+  50%{transform:scale(1.08);box-shadow:0 0 48px var(--accent)}
+}
+.splash-ring .splash-logo-img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}
+.splash-ring span{font-size:32px;font-weight:900;letter-spacing:-1px;color:#fff}
+.splash-sub{font-size:11px;letter-spacing:4px;color:var(--accent);font-weight:800;margin-bottom:6px}
+.splash-title{font-size:28px;font-weight:900;letter-spacing:2px}
+.splash-tag{font-size:11px;color:var(--muted);letter-spacing:2px;margin-top:8px}
+
+/* Glass Cards & Buttons */
+.glass{
+  background:var(--panel);
+  border:1px solid var(--line);
+  backdrop-filter:blur(12px);
+  border-radius:16px;
+}
+.btn-primary{
+  width:100%;
+  padding:15px 18px;
+  border-radius:14px;
+  background:linear-gradient(100deg,var(--accent),#d2fcff);
+  color:#060710;
+  font-size:14px;
+  font-weight:900;
+  letter-spacing:1.2px;
+  box-shadow:0 8px 28px color-mix(in srgb,var(--accent) 30%,transparent);
+  transition:transform .12s,filter .15s;
+}
+.btn-primary:hover{filter:brightness(1.06)}
+.btn-primary:active{transform:scale(.98)}
+.btn-secondary{
+  width:100%;
+  padding:13px 14px;
+  border-radius:12px;
+  background:var(--panel);
+  border:1px solid var(--line);
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.7px;
+  transition:transform .12s,border-color .2s,background .2s;
+}
+.btn-secondary:hover{border-color:color-mix(in srgb,var(--accent) 45%,transparent);background:rgba(28,28,48,0.85)}
+.btn-secondary:active{transform:scale(.97)}
+.btn-danger{
+  width:100%;
+  padding:13px 14px;
+  border-radius:12px;
+  background:rgba(255,51,102,0.12);
+  border:1px solid rgba(255,51,102,0.45);
+  color:#ff6b91;
+  font-size:12px;
+  font-weight:800;
+}
+
+/* Home Screen */
+.hero-box{
+  position:relative;
+  text-align:center;
+  padding:16px 12px 14px;
+}
+.hero-rings{
+  width:96px;
+  height:96px;
+  margin:0 auto 12px;
+  position:relative;
+  display:grid;
+  place-items:center;
+}
+.hero-rings i{
+  position:absolute;
+  border-radius:50%;
+  border:2px solid var(--accent);
+}
+.hero-rings i:nth-child(1){
+  width:96px;height:96px;opacity:.35;
+  animation:ringShrink 2.2s linear infinite;
+}
+.hero-rings i:nth-child(2){
+  width:96px;height:96px;opacity:.35;
+  animation:ringShrink 2.2s linear infinite 1.1s;
+}
+.hero-rings i:nth-child(3){
+  width:42px;height:42px;border-width:3px;
+  box-shadow:0 0 18px var(--accent),inset 0 0 12px color-mix(in srgb,var(--accent) 40%,transparent);
+}
+@keyframes ringShrink{
+  0%{transform:scale(1);opacity:.15}
+  70%{opacity:.85}
+  100%{transform:scale(.43);opacity:0}
+}
+.hero-kicker{font-size:10px;letter-spacing:3.5px;color:var(--accent);font-weight:800}
+.hero-title{
+  font-size:clamp(36px,10vw,54px);
+  font-weight:900;
+  font-style:italic;
+  letter-spacing:-2px;
+  line-height:1.05;
+  margin:6px 0;
+  background:linear-gradient(95deg,#fff 15%,var(--accent) 60%,#b692ff 100%);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+  filter:drop-shadow(0 0 18px color-mix(in srgb,var(--accent) 35%,transparent));
+}
+.hero-sub{font-size:11.5px;color:var(--muted);line-height:1.5}
+
+.world-banner{
+  padding:14px 16px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:10px;
+}
+.world-banner small{font-size:9px;letter-spacing:2px;color:var(--muted);font-weight:800}
+.world-banner strong{display:block;font-size:17px;margin-top:3px;color:var(--accent)}
+.world-badge{
+  padding:7px 12px;
+  border-radius:99px;
+  font-size:11px;
+  font-weight:800;
+  background:color-mix(in srgb,var(--accent) 16%,transparent);
+  border:1px solid color-mix(in srgb,var(--accent) 45%,transparent);
+  color:var(--accent);
+}
+
+.stats-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:7px;
+  margin-bottom:14px;
+}
+.stat-card{
+  padding:10px 4px;
+  text-align:center;
+  border-radius:13px;
+  background:var(--panel);
+  border:1px solid var(--line);
+}
+.stat-card small{font-size:8.5px;color:var(--muted);letter-spacing:1px;font-weight:700;display:block}
+.stat-card b{display:block;font-size:16px;margin-top:4px;color:var(--text);font-variant-numeric:tabular-nums}
+
+.menu-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px;
+  margin-top:9px;
+}
+.progress-card{
+  padding:13px 14px;
+  margin-top:14px;
+}
+.progress-top{display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:800;margin-bottom:8px}
+.progress-top span{color:var(--accent)}
+.world-bars{display:flex;gap:5px}
+.world-bars i{
+  flex:1;height:6px;border-radius:99px;background:rgba(255,255,255,0.09);display:block;overflow:hidden;
+}
+
+/* Level Select Screen */
+.screen-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:12px;
+}
+.screen-head h2{font-size:19px;font-weight:900;letter-spacing:.5px}
+.level-scroll{
+  flex:1;
+  max-height:calc(100dvh - 155px);
+  overflow-y:auto;
+  padding-right:4px;
+  scrollbar-width:thin;
+  scrollbar-color:#3a3d5c transparent;
+}
+.world-section{margin-bottom:18px}
+.world-sec-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:1.4px;
+  margin-bottom:8px;
+  padding:6px 10px;
+  border-radius:10px;
+  background:rgba(255,255,255,0.04);
+  border-left:3px solid var(--wcolor,var(--accent));
+}
+.level-grid{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:7px;
+}
+.lvl-tile{
+  aspect-ratio:1;
+  border-radius:12px;
+  background:rgba(20,20,36,0.85);
+  border:1px solid rgba(255,255,255,0.1);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+  position:relative;
+  transition:transform .12s,border-color .15s,background .15s;
+}
+.lvl-tile.unlocked{border-color:color-mix(in srgb,var(--wcolor) 42%,transparent)}
+.lvl-tile.unlocked:hover{border-color:var(--wcolor);background:rgba(30,30,52,0.95)}
+.lvl-tile.completed{background:color-mix(in srgb,var(--wcolor) 10%,rgba(20,20,36,0.9))}
+.lvl-tile.current{
+  border:2px solid var(--wcolor);
+  box-shadow:0 0 14px color-mix(in srgb,var(--wcolor) 35%,transparent);
+}
+.lvl-tile.boss::after{
+  content:"BOSS";
+  position:absolute;
+  top:3px;
+  right:4px;
+  font-size:6.5px;
+  font-weight:900;
+  color:var(--gold);
+  letter-spacing:.5px;
+}
+.lvl-tile .num{font-size:15px;font-weight:900}
+.lvl-tile .stars{font-size:8.5px;color:var(--gold);letter-spacing:-.5px}
+.lvl-tile .best-mini{font-size:7px;color:var(--muted)}
+.lvl-tile:active:not(:disabled){transform:scale(.93)}
+
+/* Gameplay Screen */
+.game-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+  margin-bottom:8px;
+}
+.game-title small{font-size:9px;letter-spacing:1.8px;color:var(--accent);font-weight:800;display:block}
+.game-title h2{font-size:16px;font-weight:900;margin-top:2px}
+.game-top-right{display:flex;align-items:center;gap:6px}
+.lvl-pill{
+  padding:6px 10px;
+  border-radius:10px;
+  background:var(--panel);
+  border:1px solid var(--line);
+  font-size:12px;
+  font-weight:900;
+}
+
+/* Mandatory Top-of-Screen HOW TO PLAY Card */
+.how-to-card{
+  display:flex;
+  align-items:flex-start;
+  gap:9px;
+  padding:9px 11px;
+  margin-bottom:9px;
+  border-radius:12px;
+  background:color-mix(in srgb,var(--accent) 8%,rgba(16,16,30,0.92));
+  border:1px solid color-mix(in srgb,var(--accent) 32%,transparent);
+  font-size:11.5px;
+  line-height:1.4;
+}
+.how-icon{
+  width:22px;height:22px;border-radius:50%;
+  background:color-mix(in srgb,var(--accent) 22%,transparent);
+  color:var(--accent);
+  display:grid;place-items:center;
+  font-size:12px;font-weight:900;flex-shrink:0;margin-top:1px;
+}
+.how-text b{color:var(--accent);font-weight:800}
+.how-text .hl{color:var(--accent);font-weight:800}
+.how-text .danger-hl{color:#ff547d;font-weight:800}
+
+/* HUD */
+.hud-grid{
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  gap:5px;
+  margin-bottom:7px;
+}
+.hud-box{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:6px 2px;
+  text-align:center;
+}
+.hud-box small{display:block;font-size:7.5px;letter-spacing:.8px;color:var(--muted);font-weight:800}
+.hud-box b{display:block;font-size:13px;margin-top:2px;font-variant-numeric:tabular-nums}
+#hudScore{color:var(--accent)}
+#hudCombo{color:var(--gold)}
+#hudShields{color:var(--danger);letter-spacing:1px}
+#hudPerfect{color:var(--good)}
+
+.progress-track{
+  height:5px;
+  border-radius:99px;
+  background:rgba(255,255,255,0.08);
+  overflow:hidden;
+  margin-bottom:9px;
+}
+.progress-fill{
+  height:100%;
+  width:0%;
+  border-radius:99px;
+  background:linear-gradient(90deg,var(--accent),#ffffff);
+  box-shadow:0 0 10px var(--accent);
+  transition:width .18s ease-out;
+}
+
+/* Arena Canvas */
+#canvasWrap{
+  position:relative;
+  flex:1;
+  min-height:290px;
+  max-height:480px;
+  border-radius:20px;
+  border:1px solid color-mix(in srgb,var(--accent) 34%,transparent);
+  background:#070710;
+  overflow:hidden;
+  touch-action:none;
+  cursor:pointer;
+  box-shadow:inset 0 0 42px rgba(0,0,0,.75),0 10px 30px rgba(0,0,0,.45);
+}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+#judgeBanner{
+  position:absolute;
+  top:12%;
+  left:0;
+  right:0;
+  text-align:center;
+  font-size:26px;
+  font-weight:900;
+  letter-spacing:3px;
+  pointer-events:none;
+  opacity:0;
+  text-shadow:0 0 18px currentColor;
+}
+#judgeBanner.pop{animation:judgePop .5s cubic-bezier(.16,1,.3,1)}
+@keyframes judgePop{
+  0%{opacity:0;transform:scale(.65) translateY(8px)}
+  25%{opacity:1;transform:scale(1.12) translateY(0)}
+  100%{opacity:0;transform:scale(1.16) translateY(-20px)}
+}
+
+.game-controls{
+  display:grid;
+  grid-template-columns:1fr 1fr auto;
+  gap:8px;
+  margin-top:9px;
+}
+.tap-hint{
+  text-align:center;
+  font-size:9.5px;
+  letter-spacing:1.4px;
+  color:var(--muted);
+  margin-top:7px;
+  font-weight:700;
+}
+
+/* Result & Celebration Screens */
+.result-wrap{
+  text-align:center;
+  padding:14px 0;
+  margin:auto 0;
+}
+.result-badge{font-size:56px;margin-bottom:6px;filter:drop-shadow(0 0 18px rgba(255,207,75,.35))}
+.result-wrap h2{font-size:28px;font-weight:900;letter-spacing:.5px}
+.result-wrap p{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.5}
+.score-panel{
+  padding:18px;
+  margin:14px 0;
+}
+.score-panel small{font-size:9.5px;letter-spacing:2px;color:var(--muted);font-weight:800}
+.score-panel strong{display:block;font-size:46px;color:var(--accent);margin:4px 0;font-variant-numeric:tabular-nums}
+.stars-row{font-size:28px;color:var(--gold);letter-spacing:6px;margin:4px 0}
+.coin-reward-box{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  margin-top:8px;
+  padding:7px 14px;
+  border-radius:99px;
+  background:rgba(255,207,75,0.14);
+  border:1px solid rgba(255,207,75,0.4);
+  color:var(--gold);
+  font-size:13px;
+  font-weight:900;
+}
+.result-metrics{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:7px;
+  margin-bottom:16px;
+}
+.result-metrics div{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:10px 4px;
+}
+.result-metrics small{display:block;font-size:8px;color:var(--muted);font-weight:800;letter-spacing:.8px}
+.result-metrics b{display:block;font-size:16px;margin-top:4px}
+.result-actions{display:flex;flex-direction:column;gap:8px}
+
+/* Shop & Settings */
+.shop-list{display:flex;flex-direction:column;gap:9px;margin:12px 0 16px}
+.shop-card{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:13px;
+  border-radius:14px;
+  background:var(--panel);
+  border:1px solid var(--line);
+}
+.swatch{
+  width:34px;height:34px;border-radius:50%;
+  border:2px solid #fff;flex-shrink:0;
+}
+.shop-info{flex:1}
+.shop-info b{display:block;font-size:14px}
+.shop-info small{display:block;font-size:10.5px;color:var(--muted);margin-top:3px}
+.shop-btn{
+  padding:9px 13px;border-radius:10px;
+  background:rgba(255,255,255,0.08);
+  border:1px solid var(--line);
+  font-size:11px;font-weight:800;min-width:76px;
+}
+.shop-btn.equipped{
+  border-color:var(--accent);
+  color:var(--accent);
+  background:color-mix(in srgb,var(--accent) 14%,transparent);
+}
+
+.setting-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px;border-radius:14px;margin-bottom:10px;
+  background:var(--panel);border:1px solid var(--line);
+}
+.setting-row b{display:block;font-size:13px}
+.setting-row small{display:block;font-size:10.5px;color:var(--muted);margin-top:3px}
+.toggle-btn{
+  padding:8px 14px;border-radius:99px;font-size:11px;font-weight:900;
+  border:1px solid var(--line);background:rgba(255,255,255,0.06);
+}
+.toggle-btn.on{
+  border-color:var(--accent);color:#060710;background:var(--accent);
+}
+
+/* Overlays & Modals */
+.overlay-bg{
+  position:fixed;
+  inset:0;
+  z-index:50;
+  background:rgba(5,5,12,0.84);
+  backdrop-filter:blur(8px);
+  display:none;
+  place-items:center;
+  padding:18px;
+}
+.overlay-bg.open{display:grid;animation:fadeUp .18s ease}
+.overlay-card{
+  width:100%;
+  max-width:390px;
+  background:#141425;
+  border:1px solid rgba(255,255,255,0.14);
+  border-radius:22px;
+  padding:22px;
+  text-align:center;
+  box-shadow:0 24px 60px rgba(0,0,0,0.65);
+}
+.overlay-card h2{font-size:22px;font-weight:900;margin-bottom:6px}
+.overlay-card p{font-size:12px;color:var(--muted);line-height:1.55;margin-bottom:14px}
+.tut-demo-box{
+  width:100%;
+  height:124px;
+  border-radius:14px;
+  background:#090913;
+  border:1px solid var(--line);
+  margin-bottom:14px;
+  overflow:hidden;
+}
+.tut-points{
+  text-align:left;
+  background:rgba(255,255,255,0.04);
+  border-radius:12px;
+  padding:11px 13px;
+  margin-bottom:16px;
+  font-size:11.5px;
+  line-height:1.55;
+}
+.tut-points div{margin-bottom:5px}
+.tut-points div:last-child{margin-bottom:0}
+.tut-points b{color:var(--accent)}
+.tut-points .avoid{color:#ff547d;font-weight:800}
+.overlay-actions{display:flex;flex-direction:column;gap:8px}
+
+/* Toast */
+#toast{
+  position:fixed;
+  z-index:90;
+  top:16px;
+  left:50%;
+  transform:translate(-50%,-100px);
+  background:#fff;
+  color:#080812;
+  padding:10px 18px;
+  border-radius:99px;
+  font-size:12px;
+  font-weight:900;
+  box-shadow:0 10px 28px rgba(0,0,0,0.45);
+  transition:transform .25s cubic-bezier(.2,.8,.2,1);
+  white-space:nowrap;
+}
+#toast.show{transform:translate(-50%,0)}
+
+footer{
+  text-align:center;
+  font-size:9px;
+  letter-spacing:2px;
+  color:#5b5e7a;
+  margin-top:16px;
+}
+
+@media (max-width:400px){
+  .hud-grid{grid-template-columns:repeat(3,1fr)}
+  .result-metrics{grid-template-columns:repeat(2,1fr)}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="bg-glow"></div>
+<div id="toast"></div>
+
+<!-- Splash Screen -->
+<div id="splashScreen">
+  <div class="splash-ring logo-slot" data-img-class="splash-logo-img"><span>ST</span></div>
+  <div class="splash-sub">ST GAMES PRESENTS</div>
+  <div class="splash-title">TAP RUSH: 50 LEVELS</div>
+  <div class="splash-tag">PERFECT TIMING · INFINITE SKILL</div>
+</div>
+
+<div id="app">
+  <header>
+    <div class="st-logo-wrap">
+      <div class="st-emblem logo-slot" data-img-class="st-logo-img"><span>ST</span></div>
+      <div class="st-brand">
+        <b>ST GAMES</b>
+        <small>SKILL • STRATEGY • VICTORY</small>
+      </div>
+    </div>
+    <div class="head-actions">
+      <div class="coin-pill"><span>🪙</span><span id="headerCoins">0</span></div>
+      <button class="icon-btn" id="muteBtn" aria-label="Toggle Sound">🔊</button>
+      <button class="icon-btn" id="settingsBtn" aria-label="Settings">⚙</button>
+    </div>
+  </header>
+
+  <!-- MAIN MENU -->
+  <section id="homeScreen" class="screen active">
+    <div class="hero-box">
+      <div class="hero-rings"><i></i><i></i><i></i></div>
+      <div class="hero-kicker">PERFECT TIMING · INFINITE SKILL</div>
+      <h1 class="hero-title">TAP RUSH</h1>
+      <p class="hero-sub">50 handcrafted reflex levels across 5 neon worlds.<br>Master ghosts, traps, fake-outs, and hyper bursts.</p>
+    </div>
+
+    <div class="world-banner glass">
+      <div>
+        <small>CURRENT WORLD</small>
+        <strong id="homeWorldName">WORLD 1 · NEON GENESIS</strong>
+      </div>
+      <div class="world-badge" id="homeWorldBadge">LVL 1 / 50</div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card"><small>UNLOCKED</small><b id="statUnlocked">1/50</b></div>
+      <div class="stat-card"><small>STARS</small><b id="statStars">0/150</b></div>
+      <div class="stat-card"><small>COINS</small><b id="statCoins">0</b></div>
+      <div class="stat-card"><small>BEST</small><b id="statBest">0</b></div>
+    </div>
+
+    <button class="btn-primary" id="playCampaignBtn">▶ PLAY CAMPAIGN</button>
+    <div class="menu-grid">
+      <button class="btn-secondary" id="levelSelectBtn">▦ LEVEL SELECT</button>
+      <button class="btn-secondary" id="shopBtn">✦ THEME SHOP</button>
+    </div>
+
+    <div class="progress-card glass">
+      <div class="progress-top">
+        <b>CAMPAIGN COMPLETION</b>
+        <span id="campaignPct">0%</span>
+      </div>
+      <div class="world-bars" id="worldBars"></div>
+    </div>
+
+    <footer>ST GAMES · TAP RUSH: 50 LEVELS</footer>
+  </section>
+
+  <!-- LEVEL SELECT -->
+  <section id="levelsScreen" class="screen">
+    <div class="screen-head">
+      <h2>SELECT LEVEL</h2>
+      <button class="icon-btn" id="levelsBackBtn" aria-label="Back">←</button>
+    </div>
+    <div class="level-scroll" id="levelScroll"></div>
+  </section>
+
+  <!-- GAMEPLAY SCREEN -->
+  <section id="gameScreen" class="screen">
+    <div class="game-top">
+      <div class="game-title">
+        <small id="gameWorldLabel">WORLD 1 · NEON GENESIS</small>
+        <h2 id="gameLevelTitle">LEVEL 1 – FIRST PULSE</h2>
+      </div>
+      <div class="game-top-right">
+        <div class="lvl-pill" id="gameLevelPill">01/50</div>
+        <button class="icon-btn" id="infoBtn" aria-label="Level Info">ℹ</button>
+      </div>
+    </div>
+
+    <div class="how-to-card">
+      <div class="how-icon">💡</div>
+      <div class="how-text" id="howToText"><b>HOW TO PLAY:</b> Wait until the shrinking outer ring overlaps the center target ring, then tap once.</div>
+    </div>
+
+    <div class="hud-grid">
+      <div class="hud-box"><small>SCORE</small><b id="hudScore">0</b></div>
+      <div class="hud-box"><small>COMBO</small><b id="hudCombo">1x</b></div>
+      <div class="hud-box"><small>PERFECT</small><b id="hudPerfect">0</b></div>
+      <div class="hud-box"><small>GOOD</small><b id="hudGood">0</b></div>
+      <div class="hud-box"><small>SHIELDS</small><b id="hudShields">♥♥♥</b></div>
+      <div class="hud-box"><small>TARGETS</small><b id="hudProgress">0/5</b></div>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+
+    <div id="canvasWrap">
+      <canvas id="gameCanvas"></canvas>
+      <div id="judgeBanner"></div>
+    </div>
+
+    <div class="game-controls">
+      <button class="btn-secondary" id="pauseBtn">Ⅱ PAUSE</button>
+      <button class="btn-secondary" id="retryBtn">↻ RETRY</button>
+      <button class="icon-btn" id="gameMuteBtn" aria-label="Mute">🔊</button>
+    </div>
+    <div class="tap-hint">TAP SCREEN · CLICK · SPACE / ENTER ON OVERLAP</div>
+  </section>
+
+  <!-- RESULT SCREEN -->
+  <section id="resultScreen" class="screen">
+    <div class="result-wrap">
+      <div class="result-badge" id="resBadge">🏆</div>
+      <h2 id="resTitle">LEVEL CLEAR!</h2>
+      <p id="resDesc">Precision timing mastered.</p>
+
+      <div class="score-panel glass">
+        <small>FINAL SCORE</small>
+        <strong id="resScore">0</strong>
+        <div class="stars-row" id="resStars">★★★</div>
+        <div class="coin-reward-box" id="resCoinBox"><span>🪙</span><span id="resCoins">+0 COINS</span></div>
+      </div>
+
+      <div class="result-metrics">
+        <div><small>PERFECT</small><b id="resPerfect">0</b></div>
+        <div><small>GOOD</small><b id="resGood">0</b></div>
+        <div><small>MISSES</small><b id="resMiss">0</b></div>
+        <div><small>ACCURACY</small><b id="resAcc">0%</b></div>
+      </div>
+
+      <div class="result-actions">
+        <button class="btn-primary" id="resNextBtn">NEXT LEVEL →</button>
+        <button class="btn-secondary" id="resRetryBtn">↻ REPLAY LEVEL</button>
+        <button class="btn-secondary" id="resMenuBtn">MAIN MENU</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- THEME SHOP -->
+  <section id="shopScreen" class="screen">
+    <div class="screen-head">
+      <h2>THEME SHOP ✦</h2>
+      <button class="icon-btn" id="shopBackBtn" aria-label="Back">←</button>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:8px">Customize ring, target, particle, and UI accents. Blended with each world's atmosphere.</p>
+    <div class="shop-list" id="shopList"></div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="settingsScreen" class="screen">
+    <div class="screen-head">
+      <h2>SETTINGS ⚙</h2>
+      <button class="icon-btn" id="settingsBackBtn" aria-label="Back">←</button>
+    </div>
+
+    <div class="setting-row">
+      <div><b>Sound Effects</b><small>Web Audio synthesized chimes &amp; impacts</small></div>
+      <button class="toggle-btn on" id="setSfxToggle">ON</button>
+    </div>
+    <div class="setting-row">
+      <div><b>Menu Ambient Synth</b><small>Subtle futuristic background pad on menus</small></div>
+      <button class="toggle-btn" id="setAmbientToggle">OFF</button>
+    </div>
+
+    <div class="glass" style="padding:14px;margin-top:8px;margin-bottom:14px">
+      <b style="font-size:12px;display:block;margin-bottom:6px">LIFETIME STATS</b>
+      <p style="font-size:11.5px;color:var(--muted);line-height:1.7" id="lifetimeStats">Loading...</p>
+    </div>
+
+    <button class="btn-danger" id="resetProgressBtn">RESET ALL PROGRESS</button>
+  </section>
+</div>
+
+<!-- MODAL / TUTORIAL / WORLD INTRO OVERLAY -->
+<div class="overlay-bg" id="overlay">
+  <div class="overlay-card">
+    <div id="ovKicker" style="font-size:10px;letter-spacing:3px;color:var(--accent);font-weight:900;margin-bottom:4px"></div>
+    <h2 id="ovTitle">PAUSED</h2>
+    <p id="ovDesc">Take a breather.</p>
+    <div class="tut-demo-box" id="tutDemoBox" style="display:none">
+      <canvas id="tutCanvas"></canvas>
+    </div>
+    <div class="tut-points" id="tutPoints" style="display:none"></div>
+    <div class="overlay-actions" id="ovActions"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+"use strict";
+
+/* =====================================================
+   1. WORLDS, THEMES & COMPLETE 50-LEVEL CONFIGURATION
+===================================================== */
+const WORLDS = [
+  { id: 1, name: "NEON GENESIS", color: "#00f3ff", sec: "#80f9ff", bgEffect: "grid", desc: "Futuristic digital arena with crisp cyan timing." },
+  { id: 2, name: "SOLAR FLARE", color: "#ffbe0b", sec: "#ffe17d", bgEffect: "sparks", desc: "Radiant solar energy with ghosts, blinks & triple bursts." },
+  { id: 3, name: "CYBER MAGENTA", color: "#ff006e", sec: "#ff7ab3", bgEffect: "glitch", desc: "Neon distortion featuring fake-out pauses & red traps." },
+  { id: 4, name: "EMERALD MATRIX", color: "#00ff87", sec: "#8affc8", bgEffect: "matrix", desc: "High-speed data stream with acceleration & quad bursts." },
+  { id: 5, name: "VOID SINGULARITY", color: "#9d4edd", sec: "#ffffff", bgEffect: "void", desc: "Cosmic darkness bending gravity, speed & visibility." }
+];
+
+const THEMES = [
+  { id: 0, name: "Neon Cyan", color: "#00f3ff", cost: 0 },
+  { id: 1, name: "Solar Gold", color: "#ffbe0b", cost: 120 },
+  { id: 2, name: "Cyber Pink", color: "#ff006e", cost: 180 },
+  { id: 3, name: "Matrix Green", color: "#00ff87", cost: 240 },
+  { id: 4, name: "Void Violet", color: "#9d4edd", cost: 300 },
+  { id: 5, name: "Arctic White", color: "#e8f4ff", cost: 400 }
+];
+
+const WINDOWS = { Wide: 30, Medium: 21, Tight: 14, Razor: 8.5 };
+
+const RING_PALETTE = [
+  "#00F3FF", // Cyan
+  "#2979FF", // Electric Blue
+  "#9D4EDD", // Purple
+  "#FF006E", // Magenta
+  "#FF4DDB", // Pink
+  "#FFBE0B", // Gold
+  "#FF7A00", // Orange
+  "#00FF87", // Emerald
+  "#B7FF00", // Lime
+  "#FFFFFF"  // White
+];
+
+const TUTORIALS = {
+  standard: {
+    title: "PRECISION TIMING",
+    desc: "Master the core overlap mechanic.",
+    does: "A neon ring shrinks smoothly toward the center target.",
+    todo: "Tap, click, or press Space/Enter at the exact moment the rings overlap.",
+    avoid: "Do not tap too early or let the ring pass without tapping.",
+    demo: "standard"
+  },
+  double: {
+    title: "DOUBLE & MULTI BURSTS",
+    desc: "Multiple rings arrive in rapid succession.",
+    does: "Two, three, or four rings spawn back-to-back.",
+    todo: "Tap once for EACH individual ring as it hits the target.",
+    avoid: "Never assume one tap clears the whole sequence.",
+    demo: "double"
+  },
+  ghost: {
+    title: "GHOST RINGS",
+    desc: "Stealth rings that fade as they shrink.",
+    does: "Ghost rings become partially transparent near the center.",
+    todo: "Track their shrink speed and tap at the real overlap.",
+    avoid: "Do not hesitate just because the outline turns faint.",
+    demo: "ghost"
+  },
+  blink: {
+    title: "BLINKING RINGS",
+    desc: "Strobe rings that vanish and reappear.",
+    does: "The ring blinks on and off while continuing to shrink.",
+    todo: "Follow the rhythm mentally and tap at the overlap.",
+    avoid: "Do not panic-tap when the ring briefly disappears.",
+    demo: "blink"
+  },
+  fake: {
+    title: "FAKE-OUT PAUSES",
+    desc: "Deceptive rings that stall mid-flight.",
+    does: "The ring freezes for 0.2 seconds before resuming.",
+    todo: "Wait for movement to resume and tap only on true overlap.",
+    avoid: "Do not tap early during the pause!",
+    demo: "fake"
+  },
+  trap: {
+    title: "RED TRAP RINGS",
+    desc: "Hazardous decoy rings you must ignore.",
+    does: "Crimson TRAP rings shrink toward the center.",
+    todo: "Let red trap rings pass safely through the center.",
+    avoid: "NEVER tap a red trap ring — it costs a shield!",
+    demo: "trap"
+  },
+  accel: {
+    title: "ACCELERATORS & DECELERATORS",
+    desc: "Non-linear ring speeds.",
+    does: "Accelerators speed up near center; decelerators slow down.",
+    todo: "Watch the ring's actual velocity instead of guessing.",
+    avoid: "Do not rely on a fixed beat when curves are active.",
+    demo: "accel"
+  },
+  drift: {
+    title: "EVENT HORIZON",
+    desc: "Shifting center target.",
+    does: "The center target slowly drifts around the arena.",
+    todo: "Track the moving target visually for every tap.",
+    avoid: "Do not tap a fixed spot without looking.",
+    demo: "drift"
+  }
+};
+
+function lvl(id, name, world, targets, speed, windowName, mechanic, instruction, tutorialKey, flags = {}) {
+  return {
+    id, name, world, targets, speed, window: windowName, mechanic, instruction,
+    tutorialKey, bgEffect: WORLDS[world - 1].bgEffect,
+    soundVar: (id % 3), flags
+  };
+}
+
+const LEVELS = [
+  // WORLD 1: NEON GENESIS (Easy -> Medium-Hard ramp)
+  lvl(1,"First Pulse",1,5,0.55,"Wide","Standard single rings (Easy).","Wait until the shrinking outer <span class='hl'>neon ring</span> overlaps the center target ring, then tap once.","standard",{}),
+  lvl(2,"Steady Beat",1,7,0.65,"Wide","Consistent rhythmic intervals.","Rings arrive at a <span class='hl'>steady rhythm</span>. Learn the timing and tap every overlap.",null,{steady:true}),
+  lvl(3,"Warming Up",1,8,0.75,"Wide","Final 2 rings become faster.","The first rings are comfortable. Be ready for the <span class='hl'>final two faster rings</span>.",null,{finalBoost:2}),
+  lvl(4,"Quick Step",1,10,0.85,"Wide","Standard pace, shorter spawn delay.","Tap each ring at overlap. The next ring appears <span class='hl'>sooner</span>, so stay focused.",null,{shortSpawn:true}),
+  lvl(5,"Cyber Gate",1,10,0.92,"Medium","Tighter target ring thickness.","The target ring is <span class='hl'>thinner</span>. Aim for exact overlap rather than an early or late tap.",null,{thinTarget:true}),
+  lvl(6,"Twin Echo",1,10,0.98,"Medium","Double-Tap sequences.","<span class='hl'>Two rings</span> arrive back-to-back. Tap once for each ring. Do not assume one tap clears both.","double",{burst:2}),
+  lvl(7,"Pulse Wave",1,12,1.05,"Medium","Alternating slow and normal rings.","Ring speeds <span class='hl'>alternate</span>. Watch each ring instead of tapping to a fixed rhythm.",null,{altSpeed:true}),
+  lvl(8,"Neon Drift",1,12,1.12,"Medium","Target ring gently pulses in size.","The center target <span class='hl'>gently pulses</span>. Watch the actual overlap and time your tap.",null,{targetPulse:true}),
+  lvl(9,"Reflex Check",1,14,1.18,"Medium","Faster spawn cadence.","More rings arrive <span class='hl'>quickly</span>. Recover your focus immediately after each tap.",null,{shortSpawn:true}),
+  lvl(10,"WORLD 1 BOSS: CORE OVERLOAD",1,15,1.25,"Medium","Double sequences and accelerating final 5 rings.","<span class='hl'>Boss challenge!</span> Handle rapid double sequences and prepare for the final five accelerating rings.",null,{boss:true,burst:2,finalBoost:5}),
+
+  // WORLD 2: SOLAR FLARE
+  lvl(11,"Sunburst",2,10,1.15,"Medium","Ghost rings introduced.","<span class='hl'>Ghost rings</span> become partially transparent. Their position is still real. Tap at the overlap even when the ring fades.","ghost",{ghost:0.65}),
+  lvl(12,"Mirage",2,12,1.2,"Medium","Every third ring is a ghost.","Every <span class='hl'>third ring</span> fades. Count the sequence, but always watch for the ring itself.",null,{everyThirdGhost:true}),
+  lvl(13,"Double Solar",2,12,1.2,"Medium","Frequent double pairs.","Rapid <span class='hl'>double pairs</span> arrive. Each outer ring needs a separate timing tap.",null,{burst:2}),
+  lvl(14,"Heatwave",2,14,1.25,"Medium","Speed ramps from 1.0x to 1.4x.","Ring speed <span class='hl'>gradually increases</span>. Adjust your reaction timing as the level progresses.",null,{rampSpeed:[1.0,1.4]}),
+  lvl(15,"Blind Spot",2,14,1.25,"Medium","Ghost rings fade closer to the center.","Ghost rings become <span class='hl'>more transparent</span> near the target. Keep your eyes on their shrinking outline.",null,{ghost:0.85,strongFade:true}),
+  lvl(16,"Triple Spark",2,15,1.25,"Medium","Triple-Tap bursts.","<span class='hl'>Three rings</span> arrive in rapid succession. Make three separate precise taps.","double",{burst:3}),
+  lvl(17,"Strobe Flash",2,15,1.3,"Medium","Rings blink while shrinking.","The ring <span class='hl'>blinks on and off</span>. Its movement continues even while invisible. Time your tap carefully.","blink",{blink:0.75}),
+  lvl(18,"High Noon",2,16,1.35,"Tight","Fast single rings with smaller hit windows.","Your <span class='hl'>timing window is smaller</span>. Aim for the exact center of the overlap.",null,{}),
+  lvl(19,"Solar Storm",2,18,1.35,"Tight","Blinking rings and double sequences.","Watch for <span class='hl'>disappearing rings</span> and rapid pairs. Do not tap blindly.",null,{blink:0.65,burst:2}),
+  lvl(20,"WORLD 2 BOSS: SUPERNOVA",2,20,1.4,"Tight","Triple bursts, ghosts and shrinking target radius.","<span class='hl'>Boss challenge!</span> Handle triple bursts and invisible ghosts while the center target becomes smaller.",null,{boss:true,burst:3,ghost:0.55,smallTarget:true}),
+
+  // WORLD 3: CYBER MAGENTA
+  lvl(21,"Glitch Start",3,12,1.3,"Tight","Fake-out pause.","Some rings suddenly <span class='hl'>pause mid-shrink</span>. Wait for the movement to resume before tapping.","fake",{fake:0.55}),
+  lvl(22,"Stutter Step",3,14,1.3,"Tight","Every second ring pauses.","Every <span class='hl'>second ring</span> has a short pause. Avoid tapping during the pause unless overlap is correct.",null,{everySecondFake:true}),
+  lvl(23,"Reverse Spin",3,14,1.35,"Tight","Canvas subtly rotates 15 degrees left and right.","The <span class='hl'>arena rotates</span> slightly. Keep following the center target and the shrinking ring.",null,{rotate:true}),
+  lvl(24,"Decoy",3,15,1.35,"Tight","Red trap rings.","<span class='danger-hl'>Red rings are traps.</span> NEVER tap a red ring. Let it pass through the target safely.","trap",{trap:0.35}),
+  lvl(25,"Trigger Discipline",3,16,1.4,"Tight","Standard and trap rings.","Distinguish normal rings from <span class='danger-hl'>red traps</span>. Tap only the normal rings at overlap.",null,{trap:0.3}),
+  lvl(26,"Hyper Glitch",3,16,1.45,"Tight","Fake-out pauses and double sequences.","<span class='hl'>Double rings</span> and fake-out pauses combine. Wait for movement to resume and time each ring.",null,{fake:0.45,burst:2}),
+  lvl(27,"Neon Maze",3,18,1.45,"Tight","Ghost rings and traps.","Ghost rings can be faint. <span class='danger-hl'>Red rings are dangerous.</span> Only tap normal-colored rings at overlap.",null,{ghost:0.45,trap:0.28}),
+  lvl(28,"Syncopation",3,18,1.5,"Tight","Irregular spawn timing.","Ring arrival timing is <span class='hl'>unpredictable</span>. Stop relying on rhythm and react to each ring individually.",null,{irregular:true}),
+  lvl(29,"Pink Noise",3,20,1.5,"Tight","Triple bursts and fake-outs.","<span class='hl'>Three-ring bursts</span> include sudden pauses. Track every ring separately.",null,{burst:3,fake:0.4}),
+  lvl(30,"WORLD 3 BOSS: OVERDRIVE QUEEN",3,22,1.55,"Tight","Traps, fake-outs and doubles combined.","<span class='hl'>Boss challenge!</span> Avoid <span class='danger-hl'>red traps</span>, wait through fake-outs and hit every normal ring perfectly.",null,{boss:true,trap:0.25,fake:0.4,burst:2}),
+
+  // WORLD 4: EMERALD MATRIX
+  lvl(31,"Warp Speed",4,15,1.55,"Tight","Accelerator rings.","Rings begin slowly then <span class='hl'>accelerate sharply</span> near the target. Anticipate the speed change.","accel",{accel:0.85}),
+  lvl(32,"Elastic Time",4,16,1.6,"Tight","Alternating accelerator and decelerator rings.","Some rings <span class='hl'>accelerate</span> and others <span class='hl'>slow down</span>. Watch the movement of each ring.",null,{altAccelDecel:true}),
+  lvl(33,"Matrix Code",4,18,1.6,"Tight","Rapid grid pulse, blinking and acceleration.","Ignore the pulsing background. Focus on the <span class='hl'>blinking &amp; accelerating</span> ring.",null,{fastGrid:true,blink:0.6,accel:0.7}),
+  lvl(34,"Venom",4,18,1.65,"Tight","Red traps and double sequences.","Avoid <span class='danger-hl'>red trap rings</span> and handle rapid green double pairs.",null,{trap:0.28,burst:2}),
+  lvl(35,"Zero Margin",4,18,1.6,"Razor","Razor timing window.","The timing window is <span class='hl'>extremely small</span>. Tap only when the rings almost perfectly overlap.",null,{}),
+  lvl(36,"Quad Burst",4,20,1.65,"Tight","Four-ring rapid rhythm sequences.","<span class='hl'>Four rings</span> arrive rapidly. Each ring requires its own tap. Stay calm and track them individually.","double",{burst:4}),
+  lvl(37,"Phantom Matrix",4,20,1.7,"Tight","Invisible ghosts and decelerators.","Ghost rings are <span class='hl'>nearly invisible</span> and may slow near the target. Watch carefully.",null,{ghost:0.8,strongFade:true,decel:0.65}),
+  lvl(38,"System Breach",4,22,1.75,"Razor","Fast singles and doubles.","Fast rings and <span class='hl'>double sequences</span> use razor timing. Avoid tapping too early.",null,{burstMix:[1,2]}),
+  lvl(39,"Binary Gauntlet",4,24,1.75,"Razor","Alternating normal and trap rings.","Normal green rings require a tap. <span class='danger-hl'>Red trap rings</span> must pass without interaction.",null,{altTrap:true}),
+  lvl(40,"WORLD 4 BOSS: THE ARCHITECT",4,25,1.8,"Razor","Quad bursts, accelerator rings and traps.","<span class='hl'>Boss challenge!</span> Handle four-ring sequences, rapidly accelerating rings and <span class='danger-hl'>red traps</span>.",null,{boss:true,burst:4,accel:0.6,trap:0.22}),
+
+  // WORLD 5: VOID SINGULARITY
+  lvl(41,"Event Horizon",5,20,1.8,"Razor","Target ring slowly drifts off-center.","The <span class='hl'>target shifts</span> slightly. Track the actual center target instead of tapping a fixed screen position.","drift",{movingTarget:true}),
+  lvl(42,"Dark Matter",5,22,1.85,"Razor","Ghost rings become 80% invisible near target.","Extremely <span class='hl'>faint rings</span> are approaching. Keep watching their movement and anticipate overlap.",null,{ghost:1.0,voidFade:true}),
+  lvl(43,"Gravity Well",5,22,1.85,"Razor","Heavy accelerator curves.","Every ring <span class='hl'>accelerates heavily</span> near the target. Watch for the sudden speed increase.",null,{heavyAccel:true}),
+  lvl(44,"Paradox",5,24,1.9,"Razor","Fake-outs and traps.","Wait through <span class='hl'>sudden pauses</span> and never tap <span class='danger-hl'>red traps</span>.",null,{fake:0.5,trap:0.28}),
+  lvl(45,"Light Speed",5,25,1.95,"Razor","Ultra-fast single rings with zero pauses.","Ultra-fast single rings. <span class='hl'>Zero pauses.</span> Stay focused and react instantly.",null,{noPause:true,shortSpawn:true}),
+  lvl(46,"Quantum Split",5,25,1.9,"Razor","Triple and quad bursts back-to-back.","Rapid groups of <span class='hl'>three and four rings</span> arrive consecutively. Count and time each one.",null,{burstMix:[3,4]}),
+  lvl(47,"Eclipse",5,26,1.95,"Razor","Screen dims every five hits; ghosts and blinking rings.","The arena <span class='hl'>briefly darkens</span> every five hits. Ghosts and blinking rings require extra focus.",null,{dimEvery5:true,ghost:0.5,blink:0.5}),
+  lvl(48,"Singularity",5,28,2.0,"Razor","Maximum speed, traps and fake-outs.","Maximum ring speed. Avoid <span class='danger-hl'>red traps</span> and do not be fooled by pauses.",null,{trap:0.25,fake:0.45}),
+  lvl(49,"Godlike Reflex",5,30,2.05,"Razor","Relentless doubles and triples.","<span class='hl'>Double and triple sequences</span> arrive continuously. Precision and concentration are essential.",null,{burstMix:[2,3]}),
+  lvl(50,"FINAL BOSS: OMEGA RUSH",5,35,2.1,"Razor","All game mechanics combined. Dynamic color shifts across all five worlds.","<span class='hl'>FINAL CHALLENGE!</span> Every mechanic returns. Watch carefully and avoid <span class='danger-hl'>red traps</span>.",null,{boss:true,omega:true})
+];
+
+/* =====================================================
+   2. STORAGE SYSTEM
+===================================================== */
+const STORAGE_KEY = "st_taprush_aaa_v1";
+const LEVELS_STORAGE_KEY = "st_taprush_levels_v1";
+const DEFAULT_SAVE = {
+  unlocked: 1,
+  completed: {},
+  stars: {},
+  best: {},
+  levels: {},
+  coins: 0,
+  owned: [0],
+  theme: 0,
+  mute: false,
+  ambient: false,
+  campaignComplete: false,
+  totalPerfect: 0,
+  totalGood: 0,
+  totalMiss: 0,
+  seenTutorials: {},
+  seenWorlds: { 1: true }
+};
+
+class StorageSystem {
+  constructor() {
+    this.data = this.load();
+  }
+  load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return structuredClone(DEFAULT_SAVE);
+      const parsed = JSON.parse(raw);
+      return {
+        ...structuredClone(DEFAULT_SAVE),
+        ...parsed,
+        completed: parsed.completed || {},
+        stars: parsed.stars || {},
+        best: parsed.best || {},
+        owned: Array.isArray(parsed.owned) && parsed.owned.length ? parsed.owned : [0],
+        seenTutorials: parsed.seenTutorials || {},
+        seenWorlds: parsed.seenWorlds || { 1: true },
+        coins: Math.max(0, Number(parsed.coins) || 0),
+        unlocked: Math.min(50, Math.max(1, Number(parsed.unlocked) || 1))
+      };
+    } catch (e) {
+      return structuredClone(DEFAULT_SAVE);
+    }
+  }
+  syncLevels() {
+    const map = {};
+    for (const lv of LEVELS) {
+      map[lv.id] = {
+        id: lv.id,
+        name: lv.name,
+        world: lv.world,
+        targets: lv.targets,
+        speed: lv.speed,
+        window: lv.window,
+        unlocked: lv.id <= this.data.unlocked,
+        completed: !!this.data.completed[lv.id],
+        stars: Number(this.data.stars[lv.id] || 0),
+        best: Number(this.data.best[lv.id] || 0)
+      };
+    }
+    this.data.levels = map;
+    return map;
+  }
+  save() {
+    try {
+      this.data.coins = Math.max(0, Math.floor(this.data.coins));
+      const levelMap = this.syncLevels();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+      localStorage.setItem(LEVELS_STORAGE_KEY, JSON.stringify(levelMap));
+    } catch (e) {}
+  }
+  reset() {
+    this.data = structuredClone(DEFAULT_SAVE);
+    this.save();
+  }
+}
+const store = new StorageSystem();
+
+/* =====================================================
+   3. WEB AUDIO SYSTEM (OFFLINE SYNTHESIZER)
+===================================================== */
+class AudioSystem {
+  constructor() {
+    this.ctx = null;
+    this.ambientOsc = null;
+    this.ambientGain = null;
+    this.lastToneTime = 0;
+  }
+  init() {
+    if (store.data.mute) return null;
+    try {
+      if (!this.ctx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return null;
+        this.ctx = new AC();
+      }
+      if (this.ctx.state === "suspended") this.ctx.resume();
+      return this.ctx;
+    } catch (e) { return null; }
+  }
+  tone(freq, dur = 0.09, type = "sine", vol = 0.11, slide = 0, delay = 0) {
+    if (store.data.mute) return;
+    const ctx = this.init();
+    if (!ctx) return;
+    try {
+      const now = ctx.currentTime + delay;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, now);
+      if (slide) {
+        osc.frequency.exponentialRampToValueAtTime(Math.max(30, freq + slide), now + dur);
+      }
+      gain.gain.setValueAtTime(0.001, now);
+      gain.gain.linearRampToValueAtTime(vol, now + 0.008);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + dur + 0.02);
+    } catch (e) {}
+  }
+  click() { this.tone(560, 0.045, "sine", 0.06, 120); }
+  countdown(step) {
+    if (step > 0) this.tone(440, 0.11, "triangle", 0.1, 40);
+    else this.tone(880, 0.22, "triangle", 0.13, 180);
+  }
+  spawn(ring) {
+    if (ring.trap) this.tone(190, 0.08, "sawtooth", 0.04, -35);
+    else if (ring.ghost) this.tone(660, 0.07, "sine", 0.028, -90);
+    else this.tone(330 + (ring.soundVar || 0) * 35, 0.05, "sine", 0.032, 70);
+  }
+  perfect(combo) {
+    const base = 540 + combo * 65;
+    this.tone(base, 0.15, "sine", 0.13, 320);
+    this.tone(145, 0.09, "triangle", 0.11, -60);
+    if (combo >= 2) {
+      this.tone(base * 1.5, 0.16, "triangle", 0.08, 120, 0.035);
+    }
+    if (combo >= 5) {
+      this.tone(base * 2, 0.18, "sine", 0.06, 180, 0.06);
+    }
+  }
+  good() {
+    this.tone(430, 0.1, "triangle", 0.09, 140);
+    this.tone(130, 0.07, "sine", 0.06, -35);
+  }
+  miss() {
+    this.tone(165, 0.24, "sawtooth", 0.12, -95);
+    this.tone(105, 0.22, "triangle", 0.1, -45, 0.05);
+  }
+  trapHit() {
+    this.tone(120, 0.22, "square", 0.1, -50);
+    this.tone(90, 0.22, "sawtooth", 0.1, -30, 0.06);
+  }
+  trapAvoid() {
+    this.tone(720, 0.06, "sine", 0.045, 160);
+  }
+  bossArrive() {
+    this.tone(110, 0.45, "sawtooth", 0.11, -45);
+    this.tone(165, 0.45, "triangle", 0.09, -60, 0.08);
+  }
+  levelClear() {
+    [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => this.tone(f, 0.24, "triangle", 0.11, 0, i * 0.085));
+  }
+  worldClear() {
+    [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((f, i) => this.tone(f, 0.32, "triangle", 0.12, 0, i * 0.09));
+  }
+  omegaWin() {
+    [523.25, 659.25, 783.99, 1046.5, 1318.5, 1567.98].forEach((f, i) => this.tone(f, 0.38, "triangle", 0.13, 40, i * 0.1));
+  }
+  coin() {
+    this.tone(987.77, 0.07, "sine", 0.08, 0);
+    this.tone(1318.51, 0.16, "sine", 0.09, 0, 0.06);
+  }
+  themeUnlock() {
+    [659.25, 880, 1174.66, 1567.98].forEach((f, i) => this.tone(f, 0.22, "sine", 0.09, 0, i * 0.06));
+  }
+  pause() { this.tone(420, 0.09, "sine", 0.07, -140); }
+  resume() { this.tone(320, 0.09, "sine", 0.07, 160); }
+  updateAmbient(isMenu) {
+    const shouldPlay = store.data.ambient && !store.data.mute && isMenu;
+    if (!shouldPlay) {
+      if (this.ambientOsc) {
+        try { this.ambientOsc.stop(); } catch (e) {}
+        this.ambientOsc = null;
+        this.ambientGain = null;
+      }
+      return;
+    }
+    if (this.ambientOsc) return;
+    const ctx = this.init();
+    if (!ctx) return;
+    try {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(110, ctx.currentTime);
+      gain.gain.setValueAtTime(0.022, ctx.currentTime);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      this.ambientOsc = osc;
+      this.ambientGain = gain;
+    } catch (e) {}
+  }
+}
+const sfx = new AudioSystem();
+
+/* =====================================================
+   4. PARTICLE & VFX ENGINE
+===================================================== */
+class ParticleSystem {
+  constructor() {
+    this.maxParticles = 140;
+    this.particles = Array.from({ length: this.maxParticles }, () => ({
+      active: false, x: 0, y: 0, vx: 0, vy: 0, life: 0, max: 1, size: 2, color: "#00F3FF"
+    }));
+    this.poolCursor = 0;
+    this.shockwaves = [];
+    this.ripples = [];
+    this.texts = [];
+  }
+  clear() {
+    for (const p of this.particles) p.active = false;
+    this.shockwaves.length = 0;
+    this.ripples.length = 0;
+    this.texts.length = 0;
+  }
+  burst(x, y, color, count) {
+    for (let i = 0; i < count; i++) {
+      let slot = null;
+      for (let k = 0; k < this.maxParticles; k++) {
+        const idx = (this.poolCursor + k) % this.maxParticles;
+        if (!this.particles[idx].active) {
+          slot = this.particles[idx];
+          this.poolCursor = (idx + 1) % this.maxParticles;
+          break;
+        }
+      }
+      if (!slot) {
+        slot = this.particles[this.poolCursor];
+        this.poolCursor = (this.poolCursor + 1) % this.maxParticles;
+      }
+      const a = Math.random() * Math.PI * 2;
+      const sp = 65 + Math.random() * 255;
+      slot.active = true;
+      slot.x = x;
+      slot.y = y;
+      slot.vx = Math.cos(a) * sp;
+      slot.vy = Math.sin(a) * sp;
+      slot.max = 0.32 + Math.random() * 0.46;
+      slot.life = slot.max;
+      slot.size = 1.8 + Math.random() * 3.2;
+      slot.color = color;
+    }
+  }
+  shockwave(x, y, r, color, lw = 4, life = 0.38) {
+    this.shockwaves.push({ x, y, r, color, lw, life, max: life });
+  }
+  ripple(x, y, color) {
+    this.ripples.push({ x, y, r: 8, color, life: 0.3, max: 0.3 });
+  }
+  floatText(text, x, y, color, size = 18) {
+    this.texts.push({ text, x, y, color, size, life: 0.72, max: 0.72 });
+  }
+  update(dt) {
+    for (const p of this.particles) {
+      if (!p.active) continue;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vy += 55 * dt;
+      p.life -= dt;
+      if (p.life <= 0) p.active = false;
+    }
+    for (let i = this.shockwaves.length - 1; i >= 0; i--) {
+      const s = this.shockwaves[i];
+      s.r += 185 * dt;
+      s.life -= dt;
+      if (s.life <= 0) this.shockwaves.splice(i, 1);
+    }
+    for (let i = this.ripples.length - 1; i >= 0; i--) {
+      const r = this.ripples[i];
+      r.r += 145 * dt;
+      r.life -= dt;
+      if (r.life <= 0) this.ripples.splice(i, 1);
+    }
+    for (let i = this.texts.length - 1; i >= 0; i--) {
+      const t = this.texts[i];
+      t.y -= 36 * dt;
+      t.life -= dt;
+      if (t.life <= 0) this.texts.splice(i, 1);
+    }
+  }
+  draw(ctx) {
+    for (const s of this.shockwaves) {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, s.life / s.max) * 0.78;
+      ctx.strokeStyle = s.color;
+      ctx.lineWidth = s.lw * (s.life / s.max);
+      ctx.shadowBlur = 16;
+      ctx.shadowColor = s.color;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+    for (const r of this.ripples) {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, r.life / r.max) * 0.45;
+      ctx.strokeStyle = r.color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    for (const p of this.particles) {
+      if (!p.active) continue;
+      ctx.globalAlpha = Math.max(0, p.life / p.max);
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+    for (const t of this.texts) {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, t.life / t.max);
+      ctx.fillStyle = t.color;
+      ctx.font = `900 ${t.size}px system-ui,sans-serif`;
+      ctx.textAlign = "center";
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = t.color;
+      ctx.fillText(t.text, t.x, t.y);
+      ctx.restore();
+    }
+  }
+}
+const vfx = new ParticleSystem();
+
+/* =====================================================
+   5. GAME ENGINE
+===================================================== */
+const $ = id => document.getElementById(id);
+
+class GameEngine {
+  constructor() {
+    this.canvas = $("gameCanvas");
+    this.ctx = this.canvas.getContext("2d");
+    this.wrap = $("canvasWrap");
+    this.level = LEVELS[0];
+    this.rings = [];
+    this.bgMotes = Array.from({ length: 32 }, () => ({
+      x: Math.random(), y: Math.random(), r: 0.8 + Math.random() * 1.6,
+      s: 0.02 + Math.random() * 0.05, a: 0.18 + Math.random() * 0.5
+    }));
+    this.running = false;
+    this.paused = false;
+    this.finished = false;
+    this.raf = 0;
+    this.lastTime = 0;
+    this.frameTime = 0;
+    this.lastTapTime = 0;
+
+    this.score = 0;
+    this.combo = 1;
+    this.shields = 3;
+    this.perfect = 0;
+    this.good = 0;
+    this.misses = 0;
+    this.spawned = 0;
+    this.cleared = 0;
+    this.ringIndex = 0;
+    this.burstLeft = 0;
+    this.spawnWait = 0;
+    this.countdown = 0;
+    this.lastCountdownStep = 4;
+    this.hitStop = 0;
+    this.shake = 0;
+    this.flash = 0;
+    this.flashColor = "#ffffff";
+    this.dim = 0;
+    this.corePulse = 0;
+    this.lastRingColor = "";
+    this.ringGlowColor = "#00F3FF";
+
+    if ("ResizeObserver" in window) {
+      this.ro = new ResizeObserver(() => this.resize());
+      this.ro.observe(this.wrap);
+    } else {
+      window.addEventListener("resize", () => this.resize());
+    }
+    window.addEventListener("orientationchange", () => setTimeout(() => this.resize(), 120));
+  }
+
+  resize() {
+    const rect = this.wrap.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const dpr = Math.min(3, window.devicePixelRatio || 1);
+    this.canvas.width = Math.round(rect.width * dpr);
+    this.canvas.height = Math.round(rect.height * dpr);
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (!this.running) this.draw();
+  }
+
+  W() { return this.wrap.clientWidth || 360; }
+  H() { return this.wrap.clientHeight || 360; }
+
+  activeColor() {
+    const custom = THEMES[store.data.theme]?.color;
+    const worldCol = WORLDS[this.level.world - 1].color;
+    if (this.level.flags.omega) {
+      return WORLDS[Math.floor((this.frameTime / 650) % 5)].color;
+    }
+    if (store.data.theme === 0) return worldCol;
+    return custom || worldCol;
+  }
+
+  center() {
+    const w = this.W(), h = this.H();
+    if (this.level.flags.movingTarget) {
+      return {
+        x: w / 2 + Math.sin(this.frameTime * 0.0014) * 24,
+        y: h / 2 + Math.cos(this.frameTime * 0.0011) * 16
+      };
+    }
+    return { x: w / 2, y: h / 2 };
+  }
+
+  maxRadius() { return Math.min(this.W(), this.H()) * 0.44; }
+
+  targetRadius() {
+    let r = Math.min(this.W(), this.H()) * 0.118;
+    if (this.level.flags.smallTarget) r *= 0.78;
+    if (this.level.flags.targetPulse) r += Math.sin(this.frameTime * 0.0075) * 4;
+    return r + this.corePulse * 5;
+  }
+
+  prepare(levelObj) {
+    this.level = levelObj;
+    this.rings = [];
+    vfx.clear();
+    this.score = 0;
+    this.combo = 1;
+    this.shields = 3;
+    this.perfect = 0;
+    this.good = 0;
+    this.misses = 0;
+    this.spawned = 0;
+    this.cleared = 0;
+    this.ringIndex = 0;
+    this.burstLeft = 0;
+    this.spawnWait = 0.22;
+    this.countdown = 2.0;
+    this.lastCountdownStep = 4;
+    this.hitStop = 0;
+    this.shake = 0;
+    this.flash = 0;
+    this.dim = 0;
+    this.corePulse = 0;
+    this.lastRingColor = "";
+    this.ringGlowColor = this.activeColor();
+    ui.updateHUD();
+    this.resize();
+  }
+
+  start(levelObj) {
+    this.prepare(levelObj);
+    this.running = true;
+    this.paused = false;
+    this.finished = false;
+    this.lastTime = 0;
+    document.body.classList.add("playing");
+    if (this.level.flags.boss) sfx.bossArrive();
+    cancelAnimationFrame(this.raf);
+    this.raf = requestAnimationFrame(ts => this.loop(ts));
+  }
+
+  stop() {
+    this.running = false;
+    this.paused = false;
+    this.finished = true;
+    this.rings = [];
+    document.body.classList.remove("playing");
+    cancelAnimationFrame(this.raf);
+  }
+
+  pause() {
+    if (!this.running || this.paused || this.finished) return;
+    this.paused = true;
+    cancelAnimationFrame(this.raf);
+    sfx.pause();
+  }
+
+  resume() {
+    if (!this.running || !this.paused || this.finished) return;
+    this.paused = false;
+    this.lastTime = 0;
+    sfx.resume();
+    this.raf = requestAnimationFrame(ts => this.loop(ts));
+  }
+
+  makeRing() {
+    this.ringIndex++;
+    const f = this.level.flags;
+    let speed = this.level.speed;
+
+    if (f.finalBoost && this.spawned >= this.level.targets - f.finalBoost) speed *= 1.28;
+    if (f.rampSpeed) {
+      const [s0, s1] = f.rampSpeed;
+      speed = s0 + (this.spawned / Math.max(1, this.level.targets - 1)) * (s1 - s0);
+    }
+    if (f.altSpeed && this.ringIndex % 2 === 1) speed *= 0.74;
+
+    let ghost = f.ghost ? Math.random() < f.ghost : false;
+    if (f.everyThirdGhost && this.ringIndex % 3 === 0) ghost = true;
+
+    let trap = f.trap ? Math.random() < f.trap : false;
+    if (f.altTrap) trap = (this.ringIndex % 2 === 0);
+
+    let fake = f.fake ? Math.random() < f.fake : false;
+    if (f.everySecondFake && this.ringIndex % 2 === 0) fake = true;
+
+    let blink = f.blink ? Math.random() < f.blink : false;
+    let accel = f.accel ? Math.random() < f.accel : false;
+    let decel = f.decel ? Math.random() < f.decel : false;
+
+    if (f.altAccelDecel) {
+      accel = this.ringIndex % 2 === 1;
+      decel = this.ringIndex % 2 === 0;
+    }
+    if (f.heavyAccel) accel = true;
+
+    if (f.omega) {
+      ghost = Math.random() < 0.3;
+      trap = Math.random() < 0.22;
+      fake = Math.random() < 0.28;
+      blink = Math.random() < 0.28;
+      accel = Math.random() < 0.35;
+      decel = !accel && Math.random() < 0.22;
+    }
+    if (f.noPause) fake = false;
+    // Ensure the final needed target is a normal tappable ring
+    if (this.cleared + this.rings.length >= this.level.targets - 1 && trap) trap = false;
+
+    let color;
+    if (trap) {
+      color = "#FF1744";
+    } else if (accel && !this.level.flags.boss) {
+      color = Math.random() < 0.5 ? "#FF7A00" : "#FF5500";
+    } else if (decel && !this.level.flags.boss) {
+      color = Math.random() < 0.5 ? "#2979FF" : "#00F3FF";
+    } else if (this.level.flags.boss && !this.level.flags.omega && Math.random() < 0.45) {
+      color = WORLDS[this.level.world - 1].color;
+    } else {
+      const choices = RING_PALETTE.filter(c => c !== this.lastRingColor);
+      color = choices[Math.floor(Math.random() * choices.length)];
+    }
+    this.lastRingColor = color;
+
+    return {
+      r: this.maxRadius(),
+      initial: this.maxRadius(),
+      speed,
+      color,
+      isBoss: !!this.level.flags.boss,
+      ghost,
+      trap,
+      fake,
+      blink,
+      accel,
+      decel,
+      heavyAccel: !!f.heavyAccel,
+      strongFade: !!f.strongFade,
+      voidFade: !!f.voidFade,
+      pauseDone: false,
+      pausedNow: false,
+      pausedAt: 0,
+      elapsed: 0,
+      soundVar: this.level.soundVar
+    };
+  }
+
+  getBurstSize() {
+    const f = this.level.flags;
+    if (f.burstMix) return f.burstMix[Math.floor(Math.random() * f.burstMix.length)];
+    if (f.burst) return f.burst;
+    if (f.omega) return [1, 2, 3, 4][Math.floor(Math.random() * 4)];
+    return 1;
+  }
+
+  spawnRing() {
+    if (!this.running || this.paused || this.finished) return;
+    const needed = this.level.targets - (this.cleared + this.rings.length);
+    if (needed <= 0) return;
+
+    if (this.burstLeft <= 0) {
+      this.burstLeft = Math.min(this.getBurstSize(), needed);
+    }
+    const rg = this.makeRing();
+    this.rings.push(rg);
+    this.spawned++;
+    this.burstLeft--;
+    sfx.spawn(rg);
+
+    const c = this.center();
+    vfx.shockwave(c.x, c.y, rg.initial * 0.94, rg.color, 2.2, 0.24);
+
+    if (this.burstLeft > 0) {
+      this.spawnWait = Math.max(0.18, 0.32 / this.level.speed);
+    } else {
+      this.spawnWait = 0;
+    }
+  }
+
+  updateRings(dt) {
+    const tr = this.targetRadius();
+    const win = WINDOWS[this.level.window];
+    for (let i = this.rings.length - 1; i >= 0; i--) {
+      const rg = this.rings[i];
+      rg.elapsed += dt;
+      if (rg.fake && !rg.pauseDone && rg.elapsed > 0.28) {
+        rg.pausedNow = true;
+        rg.pausedAt += dt;
+        if (rg.pausedAt < 0.2) continue;
+        rg.pauseDone = true;
+        rg.pausedNow = false;
+      }
+      let mult = 1;
+      const prog = Math.max(0, Math.min(1, 1 - rg.r / rg.initial));
+      if (rg.accel) mult = rg.heavyAccel ? (0.4 + prog * 1.9) : (0.48 + prog * 1.48);
+      if (rg.decel) mult = 1.55 - prog * 0.88;
+      if (this.level.flags.omega) mult *= 1 + Math.sin(rg.elapsed * 3) * 0.08;
+
+      rg.r -= rg.speed * 154 * mult * dt;
+
+      if (rg.r <= tr - win) {
+        this.rings.splice(i, 1);
+        if (rg.trap) {
+          this.cleared++;
+          this.score += 25 * this.combo;
+          sfx.trapAvoid();
+          const c = this.center();
+          vfx.floatText("DODGED!", c.x, c.y - 26, "#7cffb2", 14);
+          ui.updateHUD();
+          this.checkClear();
+          if (!this.finished && !this.rings.length && this.burstLeft <= 0) {
+            this.spawnWait = 0.22;
+          }
+        } else {
+          this.handleMiss("MISS!", false);
+        }
+      }
+    }
+    if (this.rings.length > 1) {
+      this.rings.sort((a, b) => a.r - b.r);
+    }
+  }
+
+  handleTap(clientX, clientY) {
+    if (!this.running || this.paused || this.finished || this.countdown > 0) return;
+    const now = performance.now();
+    if (now - this.lastTapTime < 45) return;
+    this.lastTapTime = now;
+
+    sfx.init();
+    if (typeof clientX === "number") {
+      const rect = this.wrap.getBoundingClientRect();
+      vfx.ripple(clientX - rect.left, clientY - rect.top, this.activeColor());
+    }
+    if (!this.rings.length) return;
+
+    const rg = this.rings[0];
+    if (rg.trap) {
+      this.rings.shift();
+      this.handleMiss("TRAP!", true);
+      return;
+    }
+
+    const tr = this.targetRadius();
+    const delta = Math.abs(rg.r - tr);
+    const win = WINDOWS[this.level.window];
+    const perfectWin = win * 0.43;
+
+    if (delta <= perfectWin) {
+      this.rings.shift();
+      this.handleHit(true, rg.color);
+    } else if (delta <= win) {
+      this.rings.shift();
+      this.handleHit(false, rg.color);
+    } else {
+      this.rings.shift();
+      this.handleMiss(rg.r > tr ? "TOO EARLY!" : "TOO LATE!", false);
+    }
+  }
+
+  handleHit(isPerfect, ringColor = null) {
+    const c = this.center();
+    const col = ringColor || this.activeColor();
+    this.ringGlowColor = col;
+    this.corePulse = 1;
+    if (isPerfect) {
+      this.perfect++;
+      store.data.totalPerfect++;
+      this.combo = Math.min(10, this.combo + 1);
+      const pts = 100 * this.combo;
+      this.score += pts;
+      this.flash = 0.34;
+      this.flashColor = col;
+      this.shake = 5.5;
+      this.hitStop = 0.03;
+      vfx.burst(c.x, c.y, col, 32);
+      vfx.shockwave(c.x, c.y, this.targetRadius(), col, 5.5, 0.44);
+      vfx.floatText(`+${pts}`, c.x, c.y - 36, col, 19);
+      ui.showJudge(this.combo >= 3 ? `PERFECT ${this.combo}x!` : "PERFECT!", col);
+      sfx.perfect(this.combo);
+    } else {
+      this.good++;
+      store.data.totalGood++;
+      const pts = 50 * this.combo;
+      this.score += pts;
+      this.flash = 0.14;
+      this.flashColor = col;
+      vfx.burst(c.x, c.y, col, 10);
+      vfx.shockwave(c.x, c.y, this.targetRadius(), col, 3, 0.28);
+      vfx.floatText(`+${pts}`, c.x, c.y - 28, col, 16);
+      ui.showJudge("GOOD!", col);
+      sfx.good();
+    }
+
+    this.cleared++;
+    if (this.level.flags.dimEvery5 && this.cleared % 5 === 0) this.dim = 0.42;
+    ui.updateHUD();
+    this.checkClear();
+
+    if (!this.finished && !this.rings.length && this.burstLeft <= 0) {
+      let delay = 0.26;
+      const f = this.level.flags;
+      if (f.steady) delay = 0.48;
+      if (f.shortSpawn) delay = 0.16;
+      if (f.irregular) delay = 0.12 + Math.random() * 0.44;
+      if (f.noPause) delay = 0.09;
+      if (f.omega) delay = 0.12;
+      this.spawnWait = delay;
+    }
+  }
+
+  handleMiss(label, isTrap) {
+    if (!this.running || this.finished) return;
+    this.misses++;
+    store.data.totalMiss++;
+    this.shields--;
+    this.combo = 1;
+    this.shake = 10;
+    this.flash = 0.35;
+    this.flashColor = "#FF1744";
+
+    const c = this.center();
+    vfx.burst(c.x, c.y, "#FF1744", isTrap ? 26 : 14);
+    vfx.shockwave(c.x, c.y, this.targetRadius(), "#FF1744", 4.5, 0.36);
+    ui.showJudge(label, "#FF1744");
+    if (isTrap) sfx.trapHit(); else sfx.miss();
+    ui.updateHUD();
+
+    if (this.shields <= 0) {
+      this.finished = true;
+      this.running = false;
+      this.rings = [];
+      document.body.classList.remove("playing");
+      cancelAnimationFrame(this.raf);
+      ui.finishLevel(false);
+    } else if (!this.rings.length && this.burstLeft <= 0) {
+      this.spawnWait = 0.44;
+    }
+  }
+
+  checkClear() {
+    if (this.cleared >= this.level.targets) {
+      this.finished = true;
+      this.running = false;
+      this.rings = [];
+      document.body.classList.remove("playing");
+      cancelAnimationFrame(this.raf);
+      ui.finishLevel(true);
+    }
+  }
+
+  loop(ts) {
+    if (!this.running || this.paused || this.finished) return;
+    this.raf = requestAnimationFrame(t => this.loop(t));
+    if (!this.lastTime) this.lastTime = ts;
+    const dt = Math.min((ts - this.lastTime) / 1000, 0.05);
+    this.lastTime = ts;
+    this.frameTime = ts;
+
+    if (this.countdown > 0) {
+      this.countdown -= dt;
+      const step = this.countdown > 0.35 ? Math.ceil((this.countdown - 0.35) / 0.55) : 0;
+      if (step !== this.lastCountdownStep && step >= 0 && step <= 3) {
+        this.lastCountdownStep = step;
+        sfx.countdown(step);
+      }
+      this.draw();
+      return;
+    }
+
+    if (this.hitStop > 0) {
+      this.hitStop -= dt;
+      this.draw();
+      return;
+    }
+
+    const needMore = (this.cleared + this.rings.length) < this.level.targets;
+    if (needMore) {
+      if (this.spawnWait > 0) {
+        this.spawnWait -= dt;
+        if (this.spawnWait <= 0) this.spawnRing();
+      } else if (this.burstLeft > 0 || this.rings.length === 0) {
+        this.spawnRing();
+      }
+      // Safety watchdog: never leave arena empty and unscheduled when targets remain
+      if (this.rings.length === 0 && this.spawnWait <= 0 && (this.cleared + this.rings.length) < this.level.targets) {
+        this.spawnRing();
+      }
+    }
+
+    if (this.rings.length) this.updateRings(dt);
+
+    this.shake = Math.max(0, this.shake - 32 * dt);
+    this.flash = Math.max(0, this.flash - 2.2 * dt);
+    this.dim = Math.max(0, this.dim - 0.9 * dt);
+    this.corePulse = Math.max(0, this.corePulse - 4.5 * dt);
+    vfx.update(dt);
+    this.draw();
+  }
+
+  draw() {
+    const ctx = this.ctx;
+    const w = this.W(), h = this.H();
+    const col = this.activeColor();
+    const c = this.center();
+    const tr = this.targetRadius();
+
+    ctx.clearRect(0, 0, w, h);
+    ctx.save();
+    if (this.shake > 0) {
+      ctx.translate((Math.random() - 0.5) * this.shake, (Math.random() - 0.5) * this.shake);
+    }
+    if (this.level.flags.rotate) {
+      ctx.translate(w / 2, h / 2);
+      ctx.rotate(Math.sin(this.frameTime * 0.0012) * 0.26);
+      ctx.translate(-w / 2, -h / 2);
+    }
+
+    // Background Radial Glow & Motes
+    const grad = ctx.createRadialGradient(c.x, c.y, 8, c.x, c.y, this.maxRadius() * 1.25);
+    grad.addColorStop(0, col + "1c");
+    grad.addColorStop(1, "transparent");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+
+    for (const m of this.bgMotes) {
+      ctx.fillStyle = col;
+      ctx.globalAlpha = m.a * (0.6 + 0.4 * Math.sin(this.frameTime * 0.003 + m.x * 12));
+      ctx.beginPath();
+      ctx.arc(m.x * w, ((m.y + this.frameTime * 0.00002 * m.s * 25) % 1) * h, m.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Reactive Grid
+    ctx.strokeStyle = col;
+    const gridAlpha = this.level.flags.fastGrid
+      ? 0.08 + 0.07 * Math.sin(this.frameTime * 0.014)
+      : 0.065 + this.corePulse * 0.05;
+    ctx.globalAlpha = gridAlpha;
+    ctx.lineWidth = 1;
+    const off = (this.frameTime * (this.level.flags.fastGrid ? 0.03 : 0.014)) % 30;
+    for (let x = -30 + off; x < w; x += 30) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+    }
+    for (let y = -30 + off; y < h; y += 30) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    // Target Ring
+    ctx.save();
+    ctx.translate(c.x, c.y);
+    ctx.rotate(this.frameTime * 0.0009);
+    ctx.strokeStyle = col;
+    ctx.globalAlpha = 0.34;
+    ctx.lineWidth = 1.6;
+    ctx.setLineDash([7, 9]);
+    ctx.beginPath(); ctx.arc(0, 0, tr + 11, 0, Math.PI * 2); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+
+    ctx.save();
+    ctx.shadowBlur = 22 + this.corePulse * 14;
+    ctx.shadowColor = col;
+    ctx.strokeStyle = col;
+    ctx.lineWidth = this.level.flags.thinTarget ? 1.8 : 2.8;
+    ctx.beginPath(); ctx.arc(c.x, c.y, tr, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = col;
+    ctx.globalAlpha = 0.09 + this.corePulse * 0.14;
+    ctx.beginPath(); ctx.arc(c.x, c.y, tr, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 0.85;
+    ctx.beginPath(); ctx.arc(c.x, c.y, 3 + this.corePulse * 2, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+
+    // Shrinking Rings (individual neon colors, trails, gradients & special ring effects)
+    for (let i = this.rings.length - 1; i >= 0; i--) {
+      const rg = this.rings[i];
+      let alpha = 1;
+      if (rg.ghost) {
+        const threshold = this.maxRadius() * 0.58;
+        alpha = rg.r < threshold ? (rg.voidFade ? 0.2 : rg.strongFade ? 0.28 : 0.42) : 0.72;
+      }
+      if (rg.blink && Math.sin(this.frameTime * 0.036) > 0.18) alpha = 0.06;
+      if (rg.pausedNow) alpha *= 0.48;
+      if (rg.ghost && rg.blink) alpha *= 0.5;
+
+      const rCol = rg.trap ? "#FF1744" : rg.color;
+      const rad = Math.max(0, rg.r);
+      ctx.save();
+
+      // Smooth neon trail behind moving ring
+      if (rad < rg.initial * 0.97) {
+        for (let t = 1; t <= 2; t++) {
+          ctx.globalAlpha = alpha * (0.2 / t);
+          ctx.strokeStyle = rCol;
+          ctx.lineWidth = 3 - t * 0.6;
+          ctx.beginPath(); ctx.arc(c.x, c.y, rad + t * 8, 0, Math.PI * 2); ctx.stroke();
+        }
+      }
+
+      // Subtle inner-to-outer radial glow
+      if (rad > 6) {
+        const rgGrad = ctx.createRadialGradient(c.x, c.y, Math.max(1, rad - 10), c.x, c.y, rad + 6);
+        rgGrad.addColorStop(0, "transparent");
+        rgGrad.addColorStop(0.75, rCol + "44");
+        rgGrad.addColorStop(1, rCol);
+        ctx.globalAlpha = alpha * 0.35;
+        ctx.strokeStyle = rgGrad;
+        ctx.lineWidth = 10;
+        ctx.beginPath(); ctx.arc(c.x, c.y, rad, 0, Math.PI * 2); ctx.stroke();
+      }
+
+      // Main bright neon ring
+      ctx.globalAlpha = alpha * (i === 0 ? 1 : 0.82);
+      ctx.strokeStyle = rg.isBoss ? "#FFFFFF" : rCol;
+      ctx.shadowColor = rCol;
+      ctx.shadowBlur = rg.trap ? 22 : 24;
+      ctx.lineWidth = rg.trap ? 4.5 : (this.level.flags.thinTarget ? 3.2 : 5);
+      if (rg.pausedNow) ctx.setLineDash([10, 6]);
+      ctx.beginPath(); ctx.arc(c.x, c.y, rad, 0, Math.PI * 2); ctx.stroke();
+      ctx.setLineDash([]);
+
+      if (rg.isBoss) {
+        ctx.globalAlpha = alpha * 0.85;
+        ctx.strokeStyle = rCol;
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(c.x, c.y, Math.max(0, rad - 3), 0, Math.PI * 2); ctx.stroke();
+      }
+
+      if (rg.trap) {
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = "#FF1744";
+        ctx.globalAlpha = Math.max(0.65, alpha);
+        ctx.font = "900 11px system-ui,sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("⚠ TRAP", c.x, c.y - rad - 10);
+      }
+      ctx.restore();
+    }
+
+    vfx.draw(ctx);
+    ctx.restore();
+
+    if (this.flash > 0) {
+      ctx.fillStyle = this.flashColor;
+      ctx.globalAlpha = Math.min(0.28, this.flash * 0.5);
+      ctx.fillRect(0, 0, w, h);
+      ctx.globalAlpha = 1;
+    }
+    if (this.dim > 0) {
+      ctx.fillStyle = `rgba(0,0,0,${Math.min(0.68, this.dim)})`;
+      ctx.fillRect(0, 0, w, h);
+    }
+
+    if (this.countdown > 0) {
+      const step = this.countdown > 0.35 ? Math.ceil((this.countdown - 0.35) / 0.55) : 0;
+      const label = step >= 1 ? String(step) : "GO!";
+      ctx.save();
+      ctx.fillStyle = col;
+      ctx.shadowBlur = 24;
+      ctx.shadowColor = col;
+      ctx.font = "900 54px system-ui,sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(label, w / 2, h / 2);
+      ctx.restore();
+    }
+  }
+}
+const game = new GameEngine();
+
+/* =====================================================
+   6. UI, TUTORIAL DEMO & CAMPAIGN FLOW
+===================================================== */
+class UISystem {
+  constructor() {
+    this.demoRaf = 0;
+    this.toastTimer = 0;
+  }
+
+  applyTheme(worldId = null) {
+    const tCol = THEMES[store.data.theme]?.color || "#00f3ff";
+    const wCol = worldId ? WORLDS[worldId - 1].color : WORLDS[Math.min(4, Math.floor((store.data.unlocked - 1) / 10))].color;
+    document.documentElement.style.setProperty("--world", wCol);
+    document.documentElement.style.setProperty("--accent", store.data.theme === 0 ? wCol : tCol);
+  }
+
+  toast(msg) {
+    const el = $("toast");
+    el.textContent = msg;
+    el.classList.add("show");
+    clearTimeout(this.toastTimer);
+    this.toastTimer = setTimeout(() => el.classList.remove("show"), 1800);
+  }
+
+  showScreen(id) {
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+    $(id).classList.add("active");
+    sfx.updateAmbient(id === "homeScreen" || id === "levelsScreen" || id === "shopScreen" || id === "settingsScreen");
+  }
+
+  showJudge(text, color) {
+    const el = $("judgeBanner");
+    el.textContent = text;
+    el.style.color = color;
+    el.classList.remove("pop");
+    void el.offsetWidth;
+    el.classList.add("pop");
+  }
+
+  updateHome() {
+    const d = store.data;
+    const wIdx = Math.min(4, Math.floor((d.unlocked - 1) / 10));
+    const totalStars = Object.values(d.stars).reduce((a, b) => a + Number(b || 0), 0);
+    const completedCount = Object.keys(d.completed).length;
+    const bestVals = Object.values(d.best).map(Number);
+    const bestScore = bestVals.length ? Math.max(0, ...bestVals) : 0;
+
+    this.applyTheme();
+    $("headerCoins").textContent = d.coins;
+    $("homeWorldName").textContent = `WORLD ${wIdx + 1} · ${WORLDS[wIdx].name}`;
+    $("homeWorldBadge").textContent = `LVL ${d.unlocked} / 50`;
+    $("statUnlocked").textContent = `${d.unlocked}/50`;
+    $("statStars").textContent = `${totalStars}/150`;
+    $("statCoins").textContent = d.coins;
+    $("statBest").textContent = bestScore;
+    $("campaignPct").textContent = `${Math.round((completedCount / 50) * 100)}%`;
+
+    $("worldBars").innerHTML = WORLDS.map((w, i) => {
+      let done = 0;
+      for (let l = i * 10 + 1; l <= (i + 1) * 10; l++) if (d.completed[l]) done++;
+      const pct = done * 10;
+      return `<i><span style="display:block;height:100%;width:${pct}%;background:${w.color};box-shadow:0 0 8px ${w.color}"></span></i>`;
+    }).join("");
+
+    $("muteBtn").textContent = d.mute ? "🔇" : "🔊";
+    $("gameMuteBtn").textContent = d.mute ? "🔇" : "🔊";
+    $("setSfxToggle").textContent = d.mute ? "OFF" : "ON";
+    $("setSfxToggle").classList.toggle("on", !d.mute);
+    $("setAmbientToggle").textContent = d.ambient ? "ON" : "OFF";
+    $("setAmbientToggle").classList.toggle("on", d.ambient);
+    $("lifetimeStats").innerHTML =
+      `Completed Levels: <b>${completedCount}/50</b><br>` +
+      `Total Perfects: <b>${d.totalPerfect}</b> · Total Goods: <b>${d.totalGood}</b> · Misses: <b>${d.totalMiss}</b>`;
+  }
+
+  renderLevels() {
+    const d = store.data;
+    const cont = $("levelScroll");
+    cont.innerHTML = "";
+    WORLDS.forEach((w, wi) => {
+      const sec = document.createElement("div");
+      sec.className = "world-section";
+      sec.style.setProperty("--wcolor", w.color);
+      sec.innerHTML = `<div class="world-sec-head"><span>WORLD ${w.id}: ${w.name}</span><span style="color:${w.color}">LVL ${wi * 10 + 1}–${(wi + 1) * 10}</span></div>`;
+      const grid = document.createElement("div");
+      grid.className = "level-grid";
+
+      for (let n = wi * 10 + 1; n <= (wi + 1) * 10; n++) {
+        const unlocked = n <= d.unlocked;
+        const stars = d.stars[n] || 0;
+        const done = !!d.completed[n];
+        const btn = document.createElement("button");
+        btn.className = `lvl-tile ${unlocked ? "unlocked" : ""} ${done ? "completed" : ""} ${n === d.unlocked ? "current" : ""} ${n % 10 === 0 ? "boss" : ""}`;
+        btn.disabled = !unlocked;
+        btn.innerHTML =
+          `<span class="num">${unlocked ? n : "🔒"}</span>` +
+          `<span class="stars">${"★".repeat(stars)}${"☆".repeat(3 - stars)}</span>` +
+          (d.best[n] ? `<span class="best-mini">${d.best[n]}</span>` : "");
+        btn.onclick = () => { sfx.click(); this.launchLevel(n); };
+        grid.appendChild(btn);
+      }
+      sec.appendChild(grid);
+      cont.appendChild(sec);
+    });
+  }
+
+  renderShop() {
+    const d = store.data;
+    const list = $("shopList");
+    list.innerHTML = "";
+    THEMES.forEach(t => {
+      const owned = d.owned.includes(t.id);
+      const active = d.theme === t.id;
+      const card = document.createElement("div");
+      card.className = "shop-card";
+      card.innerHTML = `
+        <div class="swatch" style="background:${t.color};box-shadow:0 0 14px ${t.color}66"></div>
+        <div class="shop-info">
+          <b>${t.name}</b>
+          <small>${active ? "Equipped" : owned ? "Unlocked — Tap to equip" : `Unlock for ${t.cost} coins`}</small>
+        </div>
+      `;
+      const btn = document.createElement("button");
+      btn.className = `shop-btn ${active ? "equipped" : ""}`;
+      btn.textContent = active ? "ACTIVE" : owned ? "EQUIP" : `${t.cost} 🪙`;
+      btn.disabled = active;
+      btn.onclick = () => {
+        if (!owned) {
+          if (d.coins < t.cost) { sfx.miss(); this.toast("Not enough coins!"); return; }
+          d.coins -= t.cost;
+          d.owned.push(t.id);
+          sfx.themeUnlock();
+          this.toast(`${t.name} unlocked!`);
+        } else {
+          sfx.click();
+          this.toast(`${t.name} equipped!`);
+        }
+        d.theme = t.id;
+        store.save();
+        this.updateHome();
+        this.renderShop();
+      };
+      card.appendChild(btn);
+      list.appendChild(card);
+    });
+  }
+
+  launchLevel(n) {
+    if (n < 1 || n > 50 || n > store.data.unlocked) return;
+    const level = LEVELS[n - 1];
+    this.applyTheme(level.world);
+    $("gameWorldLabel").textContent = `WORLD ${level.world} · ${WORLDS[level.world - 1].name}`;
+    $("gameLevelTitle").textContent = `LEVEL ${level.id} – ${level.name.toUpperCase()}`;
+    $("gameLevelPill").textContent = `${String(level.id).padStart(2, "0")}/50`;
+    $("howToText").innerHTML = `<b>HOW TO PLAY:</b> ${level.instruction}`;
+
+    this.showScreen("gameScreen");
+    game.prepare(level);
+
+    // Check World Intro first
+    if (!store.data.seenWorlds[level.world]) {
+      store.data.seenWorlds[level.world] = true;
+      store.save();
+      this.showWorldIntro(level);
+      return;
+    }
+
+    // Check Tutorial for new mechanic
+    if (level.tutorialKey && !store.data.seenTutorials[level.tutorialKey]) {
+      store.data.seenTutorials[level.tutorialKey] = true;
+      store.save();
+      this.showTutorial(level, false);
+      return;
+    }
+
+    game.start(level);
+  }
+
+  showWorldIntro(level) {
+    const w = WORLDS[level.world - 1];
+    this.openOverlay({
+      kicker: `ENTERING WORLD ${w.id}`,
+      title: w.name,
+      desc: w.desc,
+      actions: [
+        {
+          label: "ENTER ARENA →", primary: true, fn: () => {
+            this.closeOverlay();
+            if (level.tutorialKey && !store.data.seenTutorials[level.tutorialKey]) {
+              store.data.seenTutorials[level.tutorialKey] = true;
+              store.save();
+              this.showTutorial(level, false);
+            } else {
+              game.start(level);
+            }
+          }
+        }
+      ]
+    });
+  }
+
+  showTutorial(level, isRevisit) {
+    const tut = TUTORIALS[level.tutorialKey] || {
+      title: level.name.toUpperCase(),
+      desc: level.mechanic,
+      does: level.instruction,
+      todo: "Tap on exact overlap between the outer ring and center target.",
+      avoid: "Avoid early/late taps and red trap rings.",
+      demo: level.flags.trap ? "trap" : level.flags.ghost ? "ghost" : level.flags.fake ? "fake" : "standard"
+    };
+
+    if (isRevisit && game.running && !game.paused) game.pause();
+
+    this.openOverlay({
+      kicker: `LEVEL ${level.id} BRIEFING`,
+      title: tut.title,
+      desc: tut.desc,
+      demo: tut.demo,
+      points: [
+        `<b>Mechanic:</b> ${tut.does}`,
+        `<b>Action:</b> ${tut.todo}`,
+        `<span class="avoid">Avoid:</span> ${tut.avoid}`
+      ],
+      actions: [
+        {
+          label: isRevisit ? "RESUME" : "START LEVEL →",
+          primary: true,
+          fn: () => {
+            this.closeOverlay();
+            if (isRevisit) game.resume();
+            else game.start(level);
+          }
+        }
+      ]
+    });
+  }
+
+  openOverlay({ kicker = "", title, desc, demo = null, points = null, actions = [] }) {
+    $("ovKicker").textContent = kicker;
+    $("ovTitle").textContent = title;
+    $("ovDesc").textContent = desc;
+
+    if (demo) {
+      $("tutDemoBox").style.display = "block";
+      this.startDemo(demo);
+    } else {
+      $("tutDemoBox").style.display = "none";
+      cancelAnimationFrame(this.demoRaf);
+    }
+
+    if (points && points.length) {
+      $("tutPoints").style.display = "block";
+      $("tutPoints").innerHTML = points.map(p => `<div>${p}</div>`).join("");
+    } else {
+      $("tutPoints").style.display = "none";
+    }
+
+    const act = $("ovActions");
+    act.innerHTML = "";
+    actions.forEach(a => {
+      const b = document.createElement("button");
+      b.className = a.primary ? "btn-primary" : a.danger ? "btn-danger" : "btn-secondary";
+      b.textContent = a.label;
+      b.onclick = () => { sfx.click(); a.fn(); };
+      act.appendChild(b);
+    });
+    $("overlay").classList.add("open");
+  }
+
+  closeOverlay() {
+    $("overlay").classList.remove("open");
+    cancelAnimationFrame(this.demoRaf);
+  }
+
+  startDemo(kind) {
+    cancelAnimationFrame(this.demoRaf);
+    const cvs = $("tutCanvas");
+    const box = $("tutDemoBox");
+    const w = box.clientWidth || 340, h = box.clientHeight || 124;
+    cvs.width = w; cvs.height = h;
+    const ctx = cvs.getContext("2d");
+    const col = game.activeColor();
+    let t = 0;
+
+    const tick = () => {
+      this.demoRaf = requestAnimationFrame(tick);
+      t += 0.016;
+      ctx.clearRect(0, 0, w, h);
+      const cx = w / 2 + (kind === "drift" ? Math.sin(t * 2.2) * 26 : 0);
+      const cy = h / 2;
+      const tr = 20;
+
+      // Target
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(cx, cy, tr, 0, Math.PI * 2); ctx.stroke();
+
+      // Demo ring
+      let cycle = (t % 1.8) / 1.8;
+      if (kind === "fake" && cycle > 0.35 && cycle < 0.52) cycle = 0.35;
+      if (kind === "accel") cycle = Math.pow(cycle, 1.8);
+      const r = 56 - cycle * 42;
+      let alpha = 1;
+      if (kind === "ghost" && r < 34) alpha = 0.25;
+      if (kind === "blink" && Math.sin(t * 14) > 0.2) alpha = 0.08;
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = kind === "trap" ? "#ff3366" : col;
+      ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(cx, cy, Math.max(4, r), 0, Math.PI * 2); ctx.stroke();
+      if (kind === "double") {
+        const r2 = Math.max(4, r + 14);
+        ctx.beginPath(); ctx.arc(cx, cy, r2, 0, Math.PI * 2); ctx.stroke();
+      }
+      ctx.restore();
+
+      ctx.fillStyle = kind === "trap" ? "#ff3366" : "#fff";
+      ctx.font = "800 10px system-ui,sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(kind === "trap" ? "DO NOT TAP RED RINGS" : "TAP AT EXACT OVERLAP", w / 2, h - 10);
+    };
+    tick();
+  }
+
+  updateHUD() {
+    $("hudScore").textContent = game.score;
+    $("hudCombo").textContent = `${game.combo}x`;
+    $("hudPerfect").textContent = game.perfect;
+    $("hudGood").textContent = game.good;
+    $("hudShields").textContent = "♥".repeat(Math.max(0, game.shields)) + "♡".repeat(Math.max(0, 3 - game.shields));
+    $("hudProgress").textContent = `${game.cleared}/${game.level.targets}`;
+    $("progressFill").style.width = `${Math.min(100, (game.cleared / game.level.targets) * 100)}%`;
+  }
+
+  finishLevel(won) {
+    const lv = game.level;
+    const total = game.perfect + game.good + game.misses;
+    const acc = total ? Math.round((game.perfect / total) * 100) : 0;
+    const stars = won ? (acc >= 85 ? 3 : acc >= 60 ? 2 : 1) : 0;
+
+    const prevBest = Number(store.data.best[lv.id] || 0);
+    store.data.best[lv.id] = Math.max(prevBest, game.score);
+
+    let earnedCoins = 0;
+    if (won) {
+      const firstClear = !store.data.completed[lv.id];
+      store.data.completed[lv.id] = true;
+      store.data.stars[lv.id] = Math.max(Number(store.data.stars[lv.id] || 0), stars);
+
+      let rawCoins = 10 + game.perfect * 3 + game.good * 2;
+      if (lv.flags.boss) rawCoins += 50;
+      if (stars === 3) rawCoins += 20;
+      earnedCoins = firstClear ? rawCoins : Math.max(5, Math.round(rawCoins * 0.4));
+      store.data.coins += earnedCoins;
+
+      if (lv.id === store.data.unlocked && lv.id < 50) store.data.unlocked++;
+      if (lv.id === 50) store.data.campaignComplete = true;
+    }
+
+    store.save();
+    this.updateHome();
+
+    $("resScore").textContent = game.score;
+    $("resPerfect").textContent = game.perfect;
+    $("resGood").textContent = game.good;
+    $("resMiss").textContent = game.misses;
+    $("resAcc").textContent = `${acc}%`;
+
+    if (won) {
+      const isWorldClear = (lv.id % 10 === 0 && lv.id < 50);
+      const isFinal = lv.id === 50;
+      $("resBadge").textContent = isFinal ? "👑" : isWorldClear ? "🌟" : "🏆";
+      $("resTitle").textContent = isFinal ? "CAMPAIGN COMPLETE!" : isWorldClear ? `WORLD ${lv.world} COMPLETE!` : "LEVEL CLEAR!";
+      $("resDesc").textContent = isFinal
+        ? `You conquered all 50 levels! Total Stars: ${Object.values(store.data.stars).reduce((a, b) => a + b, 0)}/150`
+        : isWorldClear
+        ? `World ${lv.world + 1}: ${WORLDS[lv.world].name} is now unlocked!`
+        : `Completed Level ${lv.id}: ${lv.name}`;
+      $("resStars").textContent = "★".repeat(stars) + "☆".repeat(3 - stars);
+      $("resCoinBox").style.display = "inline-flex";
+      $("resCoins").textContent = `+${earnedCoins} COINS`;
+      $("resNextBtn").style.display = "block";
+      $("resNextBtn").textContent = isFinal ? "REPLAY CAMPAIGN (LVL 1)" : "NEXT LEVEL →";
+      $("resNextBtn").onclick = () => {
+        sfx.click();
+        this.launchLevel(isFinal ? 1 : lv.id + 1);
+      };
+
+      if (isFinal) sfx.omegaWin();
+      else if (isWorldClear) sfx.worldClear();
+      else sfx.levelClear();
+      setTimeout(() => sfx.coin(), 220);
+    } else {
+      $("resBadge").textContent = "💔";
+      $("resTitle").textContent = "LEVEL FAILED";
+      $("resDesc").textContent = "Your shields reached zero. Previous best score is preserved.";
+      $("resStars").textContent = "☆☆☆";
+      $("resCoinBox").style.display = "none";
+      $("resNextBtn").style.display = "none";
+      sfx.miss();
+    }
+
+    this.showScreen("resultScreen");
+  }
+}
+const ui = new UISystem();
+
+/* =====================================================
+   7. EVENT BINDINGS & INITIALIZATION
+===================================================== */
+$("canvasWrap").addEventListener("pointerdown", e => {
+  e.preventDefault();
+  if (e.isPrimary === false) return;
+  game.handleTap(e.clientX, e.clientY);
+});
+document.addEventListener("pointerdown", () => {
+  if (store.data.ambient && !store.data.mute && !game.running) {
+    sfx.updateAmbient(true);
+  }
+}, { once: true });
+
+window.addEventListener("keydown", e => {
+  if ((e.code === "Space" || e.code === "Enter") && !e.repeat) {
+    if (game.running && !game.paused && !game.finished) {
+      e.preventDefault();
+      game.handleTap();
+    }
+  }
+  if (e.code === "Escape" && game.running && !game.paused && !game.finished) {
+    openPause();
+  }
+});
+
+function openPause() {
+  game.pause();
+  ui.openOverlay({
+    kicker: `LEVEL ${game.level.id} · ${game.level.name.toUpperCase()}`,
+    title: "GAME PAUSED",
+    desc: `Score: ${game.score} · Shields: ${game.shields}/3`,
+    actions: [
+      { label: "▶ RESUME", primary: true, fn: () => { ui.closeOverlay(); game.resume(); } },
+      { label: "↻ RESTART LEVEL", fn: () => { ui.closeOverlay(); game.start(game.level); } },
+      { label: "MAIN MENU", fn: () => { ui.closeOverlay(); game.stop(); ui.showScreen("homeScreen"); ui.updateHome(); } }
+    ]
+  });
+}
+
+function toggleMute() {
+  store.data.mute = !store.data.mute;
+  store.save();
+  ui.updateHome();
+  if (!store.data.mute) sfx.click();
+}
+
+$("muteBtn").onclick = toggleMute;
+$("gameMuteBtn").onclick = toggleMute;
+$("setSfxToggle").onclick = toggleMute;
+$("setAmbientToggle").onclick = () => {
+  store.data.ambient = !store.data.ambient;
+  store.save();
+  sfx.click();
+  ui.updateHome();
+  sfx.updateAmbient(true);
+};
+
+$("playCampaignBtn").onclick = () => { sfx.click(); ui.launchLevel(store.data.unlocked); };
+$("levelSelectBtn").onclick = () => { sfx.click(); ui.renderLevels(); ui.showScreen("levelsScreen"); };
+$("levelsBackBtn").onclick = () => { sfx.click(); ui.showScreen("homeScreen"); ui.updateHome(); };
+$("shopBtn").onclick = () => { sfx.click(); ui.renderShop(); ui.showScreen("shopScreen"); };
+$("shopBackBtn").onclick = () => { sfx.click(); ui.showScreen("homeScreen"); ui.updateHome(); };
+$("settingsBtn").onclick = () => { sfx.click(); ui.updateHome(); ui.showScreen("settingsScreen"); };
+$("settingsBackBtn").onclick = () => { sfx.click(); ui.showScreen("homeScreen"); ui.updateHome(); };
+
+$("pauseBtn").onclick = () => { sfx.click(); openPause(); };
+$("retryBtn").onclick = () => { sfx.click(); game.start(game.level); };
+$("infoBtn").onclick = () => { sfx.click(); ui.showTutorial(game.level, true); };
+$("resRetryBtn").onclick = () => { sfx.click(); ui.launchLevel(game.level.id); };
+$("resMenuBtn").onclick = () => { sfx.click(); ui.showScreen("homeScreen"); ui.updateHome(); };
+
+$("resetProgressBtn").onclick = () => {
+  sfx.click();
+  ui.openOverlay({
+    kicker: "CONFIRM ACTION",
+    title: "RESET ALL PROGRESS?",
+    desc: "This permanently erases all 50 levels, stars, coins, high scores, and unlocked themes.",
+    actions: [
+      {
+        label: "YES, RESET EVERYTHING", danger: true, fn: () => {
+          store.reset();
+          ui.closeOverlay();
+          ui.updateHome();
+          ui.showScreen("homeScreen");
+          ui.toast("All progress reset");
+        }
+      },
+      { label: "CANCEL", fn: () => ui.closeOverlay() }
+    ]
+  });
+};
+
+function loadBrandLogo() {
+  const probe = new Image();
+  probe.onload = () => {
+    document.querySelectorAll(".logo-slot").forEach(el => {
+      const img = document.createElement("img");
+      img.src = probe.src;
+      img.alt = "ST GAMES";
+      img.className = el.dataset.imgClass;
+      el.prepend(img);
+      const span = el.querySelector("span");
+      if (span) span.style.display = "none";
+    });
+  };
+  probe.src = "logo/logo.jpg";
+}
+
+function init() {
+  loadBrandLogo();
+  store.save();
+  ui.updateHome();
+  setTimeout(() => $("splashScreen").classList.add("hide"), 1150);
+}
+if (document.readyState === "loading") {
+  window.addEventListener("load", init);
+} else {
+  init();
+}
+})();
+</script>
+</body>
+</html>
