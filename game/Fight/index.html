@@ -286,16 +286,48 @@ function initAudioEngine() {
   }
 }
 
+// వెల్‌కమ్ వాయిస్ లోడ్ అవ్వడానికి (Pre-load voices)
+if ('speechSynthesis' in window) {
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+}
+
 function speakWelcomeSTGames() {
-  if (audioMuted || !('speechSynthesis' in window)) return;
+  if (audioMuted) return;
+
+  // ఆప్షన్ 1: ఒకవేళ మీరు "stgames_voice.mp3" అనే ఆడియో ఫైల్ ఫోల్డర్‌లో పెడితే ఆ ఒరిజినల్ వాయిస్ ప్లే అవుతుంది
+  if (window.customWelcomeAudio) {
+    window.customWelcomeAudio.currentTime = 0;
+    window.customWelcomeAudio.play().catch(() => {});
+    return;
+  }
+
+  // ఆప్షన్ 2: బ్రౌజర్‌లోని తెలుగు / ఇండియన్ మేల్ వాయిస్ టోన్
+  if (!('speechSynthesis' in window)) return;
   try {
     window.speechSynthesis.cancel();
-    const utter = new SpeechSynthesisUtterance("Welcome to S T Games");
-    utter.rate = 0.95;
-    utter.pitch = 1.05;
-    utter.volume = 0.9;
+    const utter = new SpeechSynthesisUtterance("వెల్‌కమ్ టు ఎస్ టీ గేమ్స్");
+    
+    const voices = window.speechSynthesis.getVoices();
+    // తెలుగు (te-IN) లేదా ఇండియన్ (en-IN) మేల్ వాయిస్ కోసం వెతుకుతుంది
+    const indianMaleVoice = voices.find(v => 
+      (v.lang.includes('te') || v.lang.includes('en-IN') || v.lang.includes('hi-IN')) && 
+      (v.name.toLowerCase().includes('male') || v.name.toLowerCase().includes('prabhat') || v.name.toLowerCase().includes('rishi') || v.name.toLowerCase().includes('mohan'))
+    ) || voices.find(v => v.lang.includes('te-IN') || v.lang.includes('en-IN')) || voices[0];
+
+    if (indianMaleVoice) {
+      utter.voice = indianMaleVoice;
+    }
+
+    utter.lang = 'te-IN';
+    utter.rate = 1.05;  // వీడియోలో ఉన్నట్లుగా చురుకైన స్పీడ్
+    utter.pitch = 0.82; // మేల్ బేస్ వాయిస్ (Deep Male Pitch)
+    utter.volume = 1.0;
+
     window.speechSynthesis.speak(utter);
-  } catch (e) {}
+  } catch (e) {
+    console.warn("Speech error:", e);
+  }
 }
 
 function toggleAudioMute() {
