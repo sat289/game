@@ -691,6 +691,54 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 .tut-points b{color:var(--accent)}
 .tut-points .avoid{color:#ff547d;font-weight:800}
 .overlay-actions{display:flex;flex-direction:column;gap:8px}
+.chal-box{
+  background:#090913;
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:14px;
+  margin-bottom:14px;
+}
+.chal-timer{
+  height:6px;
+  border-radius:99px;
+  background:rgba(255,255,255,0.1);
+  overflow:hidden;
+  margin-bottom:12px;
+}
+.chal-timer-fill{
+  height:100%;
+  width:100%;
+  background:linear-gradient(90deg,var(--accent),#ffffff);
+  transition:width .08s linear;
+}
+.chal-status{font-size:12px;font-weight:800;color:var(--accent);margin-bottom:10px}
+.chal-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:10px;
+}
+.chal-orb{
+  padding:16px 10px;
+  border-radius:14px;
+  font-size:13px;
+  font-weight:900;
+  color:#fff;
+  border:2px solid rgba(255,255,255,0.22);
+  transition:transform .1s,opacity .15s;
+}
+.chal-orb:active{transform:scale(.93)}
+.chal-tap-btn{
+  width:100%;
+  padding:22px 14px;
+  border-radius:16px;
+  font-size:16px;
+  font-weight:900;
+  letter-spacing:1px;
+  background:linear-gradient(135deg,var(--accent),#ffffff);
+  color:#060710;
+  box-shadow:0 0 24px color-mix(in srgb,var(--accent) 45%,transparent);
+}
+.chal-tap-btn:active{transform:scale(.95)}
 
 /* Toast */
 #toast{
@@ -827,7 +875,7 @@ footer{
       <div class="hud-box"><small>COMBO</small><b id="hudCombo">1x</b></div>
       <div class="hud-box"><small>PERFECT</small><b id="hudPerfect">0</b></div>
       <div class="hud-box"><small>GOOD</small><b id="hudGood">0</b></div>
-      <div class="hud-box"><small>SHIELDS</small><b id="hudShields">♥♥♥</b></div>
+      <div class="hud-box"><small>HEARTS</small><b id="hudShields">♥♥♥</b></div>
       <div class="hud-box"><small>TARGETS</small><b id="hudProgress">0/5</b></div>
     </div>
     <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
@@ -931,11 +979,23 @@ footer{
    1. WORLDS, THEMES & COMPLETE 50-LEVEL CONFIGURATION
 ===================================================== */
 const WORLDS = [
-  { id: 1, name: "NEON GENESIS", color: "#00f3ff", sec: "#80f9ff", bgEffect: "grid", desc: "Futuristic digital arena with crisp cyan timing." },
-  { id: 2, name: "SOLAR FLARE", color: "#ffbe0b", sec: "#ffe17d", bgEffect: "sparks", desc: "Radiant solar energy with ghosts, blinks & triple bursts." },
-  { id: 3, name: "CYBER MAGENTA", color: "#ff006e", sec: "#ff7ab3", bgEffect: "glitch", desc: "Neon distortion featuring fake-out pauses & red traps." },
-  { id: 4, name: "EMERALD MATRIX", color: "#00ff87", sec: "#8affc8", bgEffect: "matrix", desc: "High-speed data stream with acceleration & quad bursts." },
-  { id: 5, name: "VOID SINGULARITY", color: "#9d4edd", sec: "#ffffff", bgEffect: "void", desc: "Cosmic darkness bending gravity, speed & visibility." }
+  { id: 1, name: "NEON GENESIS", color: "#00F3FF", bgEffect: "grid", desc: "Clean cyan reflex arena." },
+  { id: 2, name: "ELECTRIC PULSE", color: "#2979FF", bgEffect: "grid", desc: "Faster cadence and double sequences." },
+  { id: 3, name: "CYBER DRIFT", color: "#9D4EDD", bgEffect: "grid", desc: "Pulsing targets and rising speed." },
+  { id: 4, name: "SOLAR FLARE", color: "#FFBE0B", bgEffect: "sparks", desc: "Ghost rings and golden sparks." },
+  { id: 5, name: "BLAZE MIRAGE", color: "#FF7A00", bgEffect: "sparks", desc: "Speed ramps and stealth fades." },
+  { id: 6, name: "STROBE ARENA", color: "#FF4DDB", bgEffect: "sparks", desc: "Triple bursts and blinking rings." },
+  { id: 7, name: "CRIMSON GLITCH", color: "#FF006E", bgEffect: "glitch", desc: "Fake-out pauses and arena rotation." },
+  { id: 8, name: "DECOY ZONE", color: "#FF1744", bgEffect: "glitch", desc: "Red trap rings — do not tap traps!" },
+  { id: 9, name: "HYPER SYNC", color: "#00F3FF", bgEffect: "glitch", desc: "Irregular timing and fake-out doubles." },
+  { id: 10, name: "EMERALD MATRIX", color: "#00FF87", bgEffect: "matrix", desc: "Accelerator and decelerator curves." },
+  { id: 11, name: "VENOM CODE", color: "#B7FF00", bgEffect: "matrix", desc: "Fast grid pulses, traps & razor timing." },
+  { id: 12, name: "QUAD REACTOR", color: "#2979FF", bgEffect: "matrix", desc: "Four-ring bursts and ghost decelerators." },
+  { id: 13, name: "BINARY ARCHITECT", color: "#00FF87", bgEffect: "matrix", desc: "Alternating traps and boss gauntlets." },
+  { id: 14, name: "EVENT HORIZON", color: "#9D4EDD", bgEffect: "void", desc: "Shifting targets and 80% invisible ghosts." },
+  { id: 15, name: "GRAVITY WELL", color: "#FF4DDB", bgEffect: "void", desc: "Heavy acceleration and paradox traps." },
+  { id: 16, name: "QUANTUM ECLIPSE", color: "#FFBE0B", bgEffect: "void", desc: "Screen dimming, blinks & quad splits." },
+  { id: 17, name: "OMEGA SINGULARITY", color: "#FFFFFF", bgEffect: "void", desc: "Final gauntlet combining every mechanic!" }
 ];
 
 const THEMES = [
@@ -1029,7 +1089,8 @@ const TUTORIALS = {
   }
 };
 
-function lvl(id, name, world, targets, speed, windowName, mechanic, instruction, tutorialKey, flags = {}) {
+function lvl(id, name, _oldWorld, targets, speed, windowName, mechanic, instruction, tutorialKey, flags = {}) {
+  const world = Math.floor((id - 1) / 3) + 1;
   return {
     id, name, world, targets, speed, window: windowName, mechanic, instruction,
     tutorialKey, bgEffect: WORLDS[world - 1].bgEffect,
@@ -1609,6 +1670,27 @@ class GameEngine {
     this.raf = requestAnimationFrame(ts => this.loop(ts));
   }
 
+  reviveWithCoins() {
+    const cost = 30;
+    if (store.data.coins < cost) return false;
+    store.data.coins -= cost;
+    store.save();
+    this.shields = 3;
+    this.combo = 1;
+    this.rings = [];
+    this.burstLeft = 0;
+    this.spawnWait = 0.5;
+    this.countdown = 1.4;
+    this.lastCountdownStep = 4;
+    this.paused = false;
+    this.lastTime = 0;
+    ui.updateHUD();
+    ui.updateHome();
+    sfx.themeUnlock();
+    this.raf = requestAnimationFrame(ts => this.loop(ts));
+    return true;
+  }
+
   makeRing() {
     this.ringIndex++;
     const f = this.level.flags;
@@ -1872,12 +1954,9 @@ class GameEngine {
     ui.updateHUD();
 
     if (this.shields <= 0) {
-      this.finished = true;
-      this.running = false;
-      this.rings = [];
-      document.body.classList.remove("playing");
+      this.paused = true;
       cancelAnimationFrame(this.raf);
-      ui.finishLevel(false);
+      ui.showOutOfHearts();
     } else if (!this.rings.length && this.burstLeft <= 0) {
       this.spawnWait = 0.44;
     }
@@ -2125,7 +2204,8 @@ class UISystem {
 
   applyTheme(worldId = null) {
     const tCol = THEMES[store.data.theme]?.color || "#00f3ff";
-    const wCol = worldId ? WORLDS[worldId - 1].color : WORLDS[Math.min(4, Math.floor((store.data.unlocked - 1) / 10))].color;
+    const wIdx = worldId ? (worldId - 1) : Math.min(WORLDS.length - 1, Math.floor((store.data.unlocked - 1) / 3));
+    const wCol = WORLDS[wIdx].color;
     document.documentElement.style.setProperty("--world", wCol);
     document.documentElement.style.setProperty("--accent", store.data.theme === 0 ? wCol : tCol);
   }
@@ -2155,7 +2235,7 @@ class UISystem {
 
   updateHome() {
     const d = store.data;
-    const wIdx = Math.min(4, Math.floor((d.unlocked - 1) / 10));
+    const wIdx = Math.min(WORLDS.length - 1, Math.floor((d.unlocked - 1) / 3));
     const totalStars = Object.values(d.stars).reduce((a, b) => a + Number(b || 0), 0);
     const completedCount = Object.keys(d.completed).length;
     const bestVals = Object.values(d.best).map(Number);
@@ -2172,9 +2252,12 @@ class UISystem {
     $("campaignPct").textContent = `${Math.round((completedCount / 50) * 100)}%`;
 
     $("worldBars").innerHTML = WORLDS.map((w, i) => {
-      let done = 0;
-      for (let l = i * 10 + 1; l <= (i + 1) * 10; l++) if (d.completed[l]) done++;
-      const pct = done * 10;
+      let done = 0, totalW = 0;
+      for (let l = i * 3 + 1; l <= Math.min(50, (i + 1) * 3); l++) {
+        totalW++;
+        if (d.completed[l]) done++;
+      }
+      const pct = totalW ? Math.round((done / totalW) * 100) : 0;
       return `<i><span style="display:block;height:100%;width:${pct}%;background:${w.color};box-shadow:0 0 8px ${w.color}"></span></i>`;
     }).join("");
 
@@ -2194,14 +2277,16 @@ class UISystem {
     const cont = $("levelScroll");
     cont.innerHTML = "";
     WORLDS.forEach((w, wi) => {
+      const startL = wi * 3 + 1;
+      const endL = Math.min(50, (wi + 1) * 3);
       const sec = document.createElement("div");
       sec.className = "world-section";
       sec.style.setProperty("--wcolor", w.color);
-      sec.innerHTML = `<div class="world-sec-head"><span>WORLD ${w.id}: ${w.name}</span><span style="color:${w.color}">LVL ${wi * 10 + 1}–${(wi + 1) * 10}</span></div>`;
+      sec.innerHTML = `<div class="world-sec-head"><span>WORLD ${w.id}: ${w.name}</span><span style="color:${w.color}">LVL ${startL}${endL > startL ? "–" + endL : ""}</span></div>`;
       const grid = document.createElement("div");
       grid.className = "level-grid";
 
-      for (let n = wi * 10 + 1; n <= (wi + 1) * 10; n++) {
+      for (let n = startL; n <= endL; n++) {
         const unlocked = n <= d.unlocked;
         const stars = d.stars[n] || 0;
         const done = !!d.completed[n];
@@ -2377,7 +2462,8 @@ class UISystem {
       const b = document.createElement("button");
       b.className = a.primary ? "btn-primary" : a.danger ? "btn-danger" : "btn-secondary";
       b.textContent = a.label;
-      b.onclick = () => { sfx.click(); a.fn(); };
+      if (a.disabled) b.disabled = true;
+      b.onclick = () => { if (!b.disabled) { sfx.click(); a.fn(); } };
       act.appendChild(b);
     });
     $("overlay").classList.add("open");
@@ -2449,6 +2535,279 @@ class UISystem {
     $("progressFill").style.width = `${Math.min(100, (game.cleared / game.level.targets) * 100)}%`;
   }
 
+  showOutOfHearts() {
+    const canResume = store.data.coins >= 30;
+    this.openOverlay({
+      kicker: "OUT OF HEARTS 💔",
+      title: "3 HEARTS MISSED",
+      desc: `You lost all 3 hearts at ${game.cleared}/${game.level.targets} targets. Resume with 30 coins or replay the level.`,
+      actions: [
+        {
+          label: canResume ? "💖 RESUME WITH 30 COINS" : "💖 NEED 30 COINS TO RESUME",
+          primary: true,
+          disabled: !canResume,
+          fn: () => {
+            this.closeOverlay();
+            game.reviveWithCoins();
+          }
+        },
+        {
+          label: "↻ REPLAY LEVEL",
+          fn: () => {
+            this.closeOverlay();
+            game.start(game.level);
+          }
+        },
+        {
+          label: "MAIN MENU",
+          fn: () => {
+            this.closeOverlay();
+            game.stop();
+            this.showScreen("homeScreen");
+            this.updateHome();
+          }
+        }
+      ]
+    });
+  }
+
+  showChallengeModal(levelId, onComplete) {
+    const challengeTypes = ["green", "speed", "colorMatch", "trapDodge", "memory"];
+    const type = challengeTypes[(Math.floor(levelId / 2) - 1) % challengeTypes.length];
+    let timerId = 0;
+    let timeLeft = 10.0;
+    let resolved = false;
+
+    const cleanup = () => { clearInterval(timerId); };
+
+    const winChallenge = () => {
+      if (resolved) return;
+      resolved = true;
+      cleanup();
+      store.data.coins += 15;
+      store.save();
+      this.updateHome();
+      sfx.worldClear();
+      this.toast("+15 CHALLENGE BONUS COINS!");
+      this.closeOverlay();
+      onComplete();
+    };
+
+    const failChallenge = (msg) => {
+      if (resolved) return;
+      resolved = true;
+      cleanup();
+      sfx.miss();
+      this.openOverlay({
+        kicker: "CHALLENGE FAILED",
+        title: "TRY AGAIN!",
+        desc: msg,
+        actions: [
+          { label: "↻ RETRY CHALLENGE", primary: true, fn: () => this.showChallengeModal(levelId, onComplete) }
+        ]
+      });
+    };
+
+    $("ovKicker").textContent = `LEVEL ${levelId} CHALLENGE`;
+    $("tutDemoBox").style.display = "none";
+    $("tutPoints").style.display = "block";
+    $("ovActions").innerHTML = "";
+
+    const box = $("tutPoints");
+    box.innerHTML = `
+      <div class="chal-box">
+        <div class="chal-timer"><div class="chal-timer-fill" id="chalFill"></div></div>
+        <div class="chal-status" id="chalStatus">TIME: 10.0s</div>
+        <div id="chalBody"></div>
+      </div>
+    `;
+
+    const body = $("chalBody");
+    const status = $("chalStatus");
+    const fill = $("chalFill");
+
+    const startTimer = (sec, onTimeout) => {
+      timeLeft = sec;
+      const total = sec;
+      timerId = setInterval(() => {
+        timeLeft = Math.max(0, timeLeft - 0.1);
+        fill.style.width = `${(timeLeft / total) * 100}%`;
+        status.textContent = `TIME: ${timeLeft.toFixed(1)}s`;
+        if (timeLeft <= 0) {
+          clearInterval(timerId);
+          onTimeout();
+        }
+      }, 100);
+    };
+
+    if (type === "green") {
+      $("ovTitle").textContent = "TAP GREEN 💚";
+      $("ovDesc").textContent = "Tap ONLY the Green 💚 button 3 times before time runs out!";
+      let hits = 0;
+      const colors = [
+        { name: "GREEN 💚", bg: "#00c853", ok: true },
+        { name: "RED ❤️", bg: "#ff1744", ok: false },
+        { name: "BLUE 💙", bg: "#2979ff", ok: false },
+        { name: "GOLD 💛", bg: "#ffbe0b", ok: false }
+      ];
+      const renderGrid = () => {
+        const shuffled = [...colors].sort(() => Math.random() - 0.5);
+        body.innerHTML = `<div style="margin-bottom:8px;font-weight:800">TAPS: ${hits} / 3</div><div class="chal-grid"></div>`;
+        const g = body.querySelector(".chal-grid");
+        shuffled.forEach(c => {
+          const b = document.createElement("button");
+          b.className = "chal-orb";
+          b.style.background = c.bg;
+          b.textContent = c.name;
+          b.onclick = () => {
+            if (c.ok) {
+              sfx.perfect(hits + 1);
+              hits++;
+              if (hits >= 3) winChallenge();
+              else renderGrid();
+            } else {
+              failChallenge("You tapped the wrong color! Tap only GREEN 💚.");
+            }
+          };
+          g.appendChild(b);
+        });
+      };
+      renderGrid();
+      startTimer(10, () => failChallenge("Time ran out! Tap Green 💚 3 times faster."));
+    } else if (type === "speed") {
+      const targetTaps = Math.min(15, 5 + Math.floor(levelId / 6) * 2);
+      $("ovTitle").textContent = `TAP ${targetTaps}x IN 10s ⚡`;
+      $("ovDesc").textContent = `Tap the button ${targetTaps} times before 10 seconds expire!`;
+      let taps = 0;
+      body.innerHTML = `<button class="chal-tap-btn" id="chalSpeedBtn">TAP! (0 / ${targetTaps})</button>`;
+      $("chalSpeedBtn").onclick = () => {
+        taps++;
+        sfx.perfect(Math.min(10, taps));
+        $("chalSpeedBtn").textContent = `TAP! (${taps} / ${targetTaps})`;
+        if (taps >= targetTaps) winChallenge();
+      };
+      startTimer(10, () => failChallenge(`You reached ${taps}/${targetTaps} taps. Try again!`));
+    } else if (type === "colorMatch") {
+      const palette = [
+        { label: "CYAN", bg: "#00f3ff" },
+        { label: "PINK", bg: "#ff006e" },
+        { label: "GOLD", bg: "#ffbe0b" },
+        { label: "PURPLE", bg: "#9d4edd" }
+      ];
+      let round = 0;
+      const nextRound = () => {
+        const target = palette[Math.floor(Math.random() * palette.length)];
+        $("ovTitle").textContent = `TAP ${target.label}!`;
+        $("ovDesc").textContent = `Match the target color name (${round + 1} / 3)`;
+        const shuffled = [...palette].sort(() => Math.random() - 0.5);
+        body.innerHTML = `<div class="chal-grid"></div>`;
+        const g = body.querySelector(".chal-grid");
+        shuffled.forEach(c => {
+          const b = document.createElement("button");
+          b.className = "chal-orb";
+          b.style.background = c.bg;
+          b.textContent = "●";
+          b.onclick = () => {
+            if (c.label === target.label) {
+              sfx.perfect(round + 1);
+              round++;
+              if (round >= 3) winChallenge();
+              else nextRound();
+            } else {
+              failChallenge(`Wrong color! You needed ${target.label}.`);
+            }
+          };
+          g.appendChild(b);
+        });
+      };
+      nextRound();
+      startTimer(10, () => failChallenge("Time ran out on Color Match!"));
+    } else if (type === "trapDodge") {
+      $("ovTitle").textContent = "TRAP DODGE ⚠";
+      $("ovDesc").textContent = "Tap CYAN orbs (+1) — NEVER tap RED traps!";
+      let score = 0;
+      const nextOrb = () => {
+        const isTrap = Math.random() < 0.4;
+        body.innerHTML = `
+          <div style="margin-bottom:8px;font-weight:800">CLEARED: ${score} / 3</div>
+          <button class="chal-orb" id="dodgeBtn" style="width:100%;background:${isTrap ? "#ff1744" : "#00f3ff"};color:${isTrap ? "#fff" : "#060710"}">
+            ${isTrap ? "⚠ RED TRAP (WAIT!)" : "⚡ CYAN (TAP!)"}
+          </button>
+          ${isTrap ? `<button class="btn-secondary" id="skipTrapBtn" style="margin-top:8px">LET TRAP PASS ✓</button>` : ""}
+        `;
+        $("dodgeBtn").onclick = () => {
+          if (isTrap) failChallenge("You tapped a RED TRAP!");
+          else {
+            sfx.perfect(score + 1);
+            score++;
+            if (score >= 3) winChallenge();
+            else nextOrb();
+          }
+        };
+        if (isTrap && $("skipTrapBtn")) {
+          $("skipTrapBtn").onclick = () => {
+            sfx.trapAvoid();
+            nextOrb();
+          };
+        }
+      };
+      nextOrb();
+      startTimer(10, () => failChallenge("Time ran out on Trap Dodge!"));
+    } else {
+      $("ovTitle").textContent = "MEMORY FLASH 🧠";
+      $("ovDesc").textContent = "Watch the 3-color order, then tap them in the same order!";
+      const cols = [
+        { name: "GREEN", bg: "#00c853" },
+        { name: "CYAN", bg: "#00f3ff" },
+        { name: "GOLD", bg: "#ffbe0b" },
+        { name: "PINK", bg: "#ff006e" }
+      ];
+      const seq = [0, 1, 2].map(() => cols[Math.floor(Math.random() * cols.length)]);
+      let step = 0;
+      let locked = true;
+      body.innerHTML = `<div id="memPreview" style="padding:14px;border-radius:12px;background:#141428;font-weight:900;margin-bottom:10px">WATCH...</div><div class="chal-grid"></div>`;
+      const prev = $("memPreview");
+      const g = body.querySelector(".chal-grid");
+      cols.forEach(c => {
+        const b = document.createElement("button");
+        b.className = "chal-orb";
+        b.style.background = c.bg;
+        b.textContent = c.name;
+        b.onclick = () => {
+          if (locked) return;
+          if (c.name === seq[step].name) {
+            sfx.perfect(step + 1);
+            step++;
+            prev.textContent = `GOOD! (${step}/3)`;
+            if (step >= 3) winChallenge();
+          } else {
+            failChallenge("Wrong sequence order!");
+          }
+        };
+        g.appendChild(b);
+      });
+      seq.forEach((c, idx) => {
+        setTimeout(() => {
+          if (resolved) return;
+          prev.style.background = c.bg;
+          prev.style.color = "#060710";
+          prev.textContent = `${idx + 1}. ${c.name}`;
+          sfx.click();
+        }, idx * 650);
+      });
+      setTimeout(() => {
+        if (resolved) return;
+        locked = false;
+        prev.style.background = "#141428";
+        prev.style.color = "#fff";
+        prev.textContent = "YOUR TURN! TAP IN ORDER";
+        startTimer(10, () => failChallenge("Time ran out on Memory Flash!"));
+      }, 2000);
+    }
+
+    $("overlay").classList.add("open");
+  }
+
   finishLevel(won) {
     const lv = game.level;
     const total = game.perfect + game.good + game.misses;
@@ -2484,7 +2843,7 @@ class UISystem {
     $("resAcc").textContent = `${acc}%`;
 
     if (won) {
-      const isWorldClear = (lv.id % 10 === 0 && lv.id < 50);
+      const isWorldClear = (lv.id % 3 === 0 && lv.id < 50);
       const isFinal = lv.id === 50;
       $("resBadge").textContent = isFinal ? "👑" : isWorldClear ? "🌟" : "🏆";
       $("resTitle").textContent = isFinal ? "CAMPAIGN COMPLETE!" : isWorldClear ? `WORLD ${lv.world} COMPLETE!` : "LEVEL CLEAR!";
@@ -2517,7 +2876,11 @@ class UISystem {
       sfx.miss();
     }
 
-    this.showScreen("resultScreen");
+    if (won && lv.id % 2 === 0 && lv.id < 50) {
+      this.showChallengeModal(lv.id, () => this.showScreen("resultScreen"));
+    } else {
+      this.showScreen("resultScreen");
+    }
   }
 }
 const ui = new UISystem();
@@ -2553,7 +2916,7 @@ function openPause() {
   ui.openOverlay({
     kicker: `LEVEL ${game.level.id} · ${game.level.name.toUpperCase()}`,
     title: "GAME PAUSED",
-    desc: `Score: ${game.score} · Shields: ${game.shields}/3`,
+    desc: `Score: ${game.score} · Hearts: ${game.shields}/3`,
     actions: [
       { label: "▶ RESUME", primary: true, fn: () => { ui.closeOverlay(); game.resume(); } },
       { label: "↻ RESTART LEVEL", fn: () => { ui.closeOverlay(); game.start(game.level); } },
@@ -2616,19 +2979,26 @@ $("resetProgressBtn").onclick = () => {
 };
 
 function loadBrandLogo() {
-  const probe = new Image();
-  probe.onload = () => {
-    document.querySelectorAll(".logo-slot").forEach(el => {
-      const img = document.createElement("img");
-      img.src = probe.src;
-      img.alt = "ST GAMES";
-      img.className = el.dataset.imgClass;
-      el.prepend(img);
-      const span = el.querySelector("span");
-      if (span) span.style.display = "none";
-    });
+  const paths = ["../logo/logo.jpg", "logo/logo.jpg"];
+  let idx = 0;
+  const tryNext = () => {
+    if (idx >= paths.length) return;
+    const probe = new Image();
+    probe.onload = () => {
+      document.querySelectorAll(".logo-slot").forEach(el => {
+        const img = document.createElement("img");
+        img.src = probe.src;
+        img.alt = "ST GAMES";
+        img.className = el.dataset.imgClass;
+        el.prepend(img);
+        const span = el.querySelector("span");
+        if (span) span.style.display = "none";
+      });
+    };
+    probe.onerror = () => { idx++; tryNext(); };
+    probe.src = paths[idx];
   };
-  probe.src = "../logo/logo.jpg";
+  tryNext();
 }
 
 function init() {
