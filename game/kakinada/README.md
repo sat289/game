@@ -1,53 +1,34 @@
-# ST Foods – Kakinada Open-World Driving Game (Phase 1)
+# ST Foods Kakinada Driving Game — Road & Map System Upgrade
 
-## Phase 1: Optimized 3D city environment
+This build upgrades the road network in the existing Three.js driving game while keeping the supplied Kakinada OSM map data and the current gameplay systems.
 
-This build uses the existing ST Foods Kakinada game as its base. Existing driving controls, restaurant pickup/delivery mission flow, Pushpa container scene, route data, landmark models, and supplied map files are retained.
+## What changed
 
-### New in Phase 1
+- **Connected junction surfaces:** added shared ground-level junction pads where multiple mapped road ends meet. Bridge-tagged geometry is excluded from these ground pads so the junction fill does not cover elevated bridge decks.
+- **Flyover approach alignment:** each flyover endpoint is checked against the nearest mapped primary ground-road segment. Small gaps (1.5–30 metres) are closed by extending the flyover path to the projected road centreline. The existing ramp/elevation system then builds the approach continuously.
+- **Road markings:** main roads now use broken yellow centre markings and thin white edge guides instead of one uninterrupted centre stripe.
+- **Existing road classes retained:** primary, secondary, tertiary and local-road width/material classes remain in place, along with the supplied road polylines.
+- **Existing flyovers retained:** Atchampeta ADB Road, Panaspadu, Sarpavaram–JNTUK, Bhanugudi ROB, Mootha Gopala Krishna Varadhi and Kalpana Bridge remain in the map data.
 
-- Instanced rooftop water tanks on a selected subset of mapped buildings.
-- Instanced rooftop solar-panel props on a selected subset of buildings.
-- Instanced streetlights along primary and secondary mapped road corridors.
-- Instanced street trees along selected secondary/local road corridors.
-- Mobile-aware renderer pixel-ratio cap to reduce GPU load on phones while retaining higher detail on desktop.
-- City dressing counts are printed in the browser developer console under `ST Games Phase 1 city dressing ready`.
+## Preserved
 
-### Existing map content retained
-
-- 3,252 road features in the embedded Kakinada map dataset.
-- 2,111 building polygons in the embedded game map dataset.
-- 75 named landmarks and 6 flyover/bridge model paths.
-- SRMT Mall landmark model and existing game mission/vehicle logic.
-
-These are the counts in the embedded `KAKINADA_MAP_DATA` object. They should not be interpreted as a guarantee that every real-world building or road is represented perfectly.
+The update only changes the road-building section in `index.html`. Existing mission/order code, restaurant locations, Pushpa container delivery hubs, vehicle controls, UI controls, map landmarks, building data, and the separate `map.html` view are retained. The supplied `kakinada_map_data.js` and `kakinada_real_osm.geojson` are included unchanged.
 
 ## Files
 
-- `index.html` – playable Three.js game and Phase 1 city dressing.
-- `map.html` – existing map inspection page, preserved unchanged.
-- `kakinada_map_data.js` – shared Kakinada map data, preserved unchanged.
-- `kakinada_real_osm.geojson` – supplied OpenStreetMap-derived source data, preserved unchanged.
+- `index.html` — updated 3D driving game
+- `map.html` — existing 2D map view, unchanged
+- `kakinada_map_data.js` — supplied map data, unchanged
+- `kakinada_real_osm.geojson` — supplied OSM export, unchanged
+- `README.md` — this file
 
-## Run
+## Validation performed
 
-1. Extract the ZIP.
-2. Open the folder with a local static web server (recommended) or host the files together on your website.
-3. Open `index.html` in a modern browser with WebGL enabled.
-4. For mobile, use a recent Android browser with hardware acceleration enabled. For PC, use a current Chrome, Edge, or Firefox browser.
+- JavaScript syntax check passed for all inline scripts in `index.html` using Node.js.
+- Confirmed the map data still contains 3,252 road features and six flyover paths.
+- Confirmed key existing mission/order and control identifiers remain present in the updated game.
+- ZIP archive listing and file sizes checked after packaging.
 
-Three.js is loaded from its existing CDN URL, so an internet connection is required unless you separately vendor that library.
+## Important testing note
 
-## Performance notes
-
-The new street furniture and rooftop props use `THREE.InstancedMesh` to reduce draw calls. Their quantities are intentionally capped. Mobile rendering uses a lower maximum pixel ratio than desktop. Actual frame rate depends on device GPU, browser, screen resolution, and thermal conditions.
-
-## Validation
-
-- All inline JavaScript blocks passed `node --check` syntax validation.
-- The embedded map data parsed successfully and reported the counts above.
-- A headless Chromium visual run could not be completed in the build environment because WebGL/EGL initialization failed; test on the target Android phone and PC before publishing.
-
-## Accuracy note
-
-The map data is OpenStreetMap-derived, not Google Street View. Road/building footprints and 3D dressing are game representations and are not a photorealistic or survey-grade 1:1 replica of Kakinada.
+A browser/WebGL visual test was not available in the earlier validation environment. Please test the ZIP locally on Android and PC, especially driving from ground road onto/off each flyover and turning through Atchampeta, Panaspadu, Sarpavaram, Nagamalli Thota, Bhanugudi and Beach Road junctions. The road geometry is based on the project’s supplied OpenStreetMap export and game-coordinate bridge paths; this is not a surveyed, centimetre-accurate road reconstruction.

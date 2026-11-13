@@ -950,6 +950,7 @@ window.KAKINADA_MAP_DATA = {"meta":{"city":"Kakinada, Andhra Pradesh","centerLat
     const shoulderPos = [];
     const asphaltPos = [];
     const linePos = [];
+    const edgePos = [];
     const halfW = widthM * 0.5;
     const halfShoulder = halfW + 2.6;
 
@@ -976,13 +977,29 @@ window.KAKINADA_MAP_DATA = {"meta":{"city":"Kakinada, Andhra Pradesh","centerLat
           const dx = x2 - x1, dz = z2 - z1;
           const len = Math.hypot(dx, dz);
           if (len < 0.5) continue;
-          const cnx = (-dz / len) * 0.22;
-          const cnz = (dx / len) * 0.22;
-          const cy = yOffset + 0.03;
-          linePos.push(
-            x1 + cnx, cy, z1 + cnz,  x1 - cnx, cy, z1 - cnz,  x2 + cnx, cy, z2 + cnz,
-            x1 - cnx, cy, z1 - cnz,  x2 - cnx, cy, z2 - cnz,  x2 + cnx, cy, z2 + cnz
-          );
+          const ux = dx / len, uz = dz / len;
+          const nx = -uz, nz = ux;
+          const cy = yOffset + 0.035;
+          // Broken yellow centre line: 4m dash / 5m gap, clipped to each OSM segment.
+          for (let at = 0; at < len; at += 9) {
+            const end = Math.min(len, at + 4);
+            const ax = x1 + ux * at, az = z1 + uz * at;
+            const bx = x1 + ux * end, bz = z1 + uz * end;
+            const w = 0.13;
+            linePos.push(
+              ax + nx*w, cy, az + nz*w, ax - nx*w, cy, az - nz*w, bx + nx*w, cy, bz + nz*w,
+              ax - nx*w, cy, az - nz*w, bx - nx*w, cy, bz - nz*w, bx + nx*w, cy, bz + nz*w
+            );
+          }
+          // Thin solid edge guides make the usable road width easier to read.
+          const edgeW = 0.10, edgeOffset = Math.max(1.8, halfW - 0.85);
+          for (const side of [-1, 1]) {
+            const ox = nx * edgeOffset * side, oz = nz * edgeOffset * side;
+            edgePos.push(
+              x1 + ox + nx*edgeW, cy, z1 + oz + nz*edgeW, x1 + ox - nx*edgeW, cy, z1 + oz - nz*edgeW, x2 + ox + nx*edgeW, cy, z2 + oz + nz*edgeW,
+              x1 + ox - nx*edgeW, cy, z1 + oz - nz*edgeW, x2 + ox - nx*edgeW, cy, z2 + oz - nz*edgeW, x2 + ox + nx*edgeW, cy, z2 + oz + nz*edgeW
+            );
+          }
         }
       }
     }
@@ -1004,14 +1021,81 @@ window.KAKINADA_MAP_DATA = {"meta":{"city":"Kakinada, Andhra Pradesh","centerLat
       lGeo.setAttribute('position', new THREE.Float32BufferAttribute(linePos, 3));
       scene.add(new THREE.Mesh(lGeo, new THREE.MeshBasicMaterial({ color: 0xfacc15, side: THREE.DoubleSide })));
     }
+    if (edgePos.length > 0) {
+      const eGeo = new THREE.BufferGeometry();
+      eGeo.setAttribute('position', new THREE.Float32BufferAttribute(edgePos, 3));
+      scene.add(new THREE.Mesh(eGeo, new THREE.MeshBasicMaterial({ color: 0xe2e8f0, side: THREE.DoubleSide })));
+    }
   }
 
   buildBatchedRoadClass(r => r.h === 'p' || r.h === 's', 15.0, 0.05, 0x1e293b, 0x8c5a3c, true);
   buildBatchedRoadClass(r => r.h === 't', 10.5, 0.03, 0x263349, 0x996545, true);
   buildBatchedRoadClass(r => r.h !== 'p' && r.h !== 's' && r.h !== 't', 7.2, 0.015, 0x334155, 0xa47148, false);
 
+  // --- ROAD NETWORK CONNECTIVITY UPGRADE ---
+  // Join mapped ground-road endpoints into one continuous junction surface.
+  // Bridge-tagged road geometry is excluded so ground junction pads never cover bridge decks.
+  function buildConnectedGroundJunctions() {
+    const cells = new Map();
+    const cellSize = 5.0;
+    for (const road of MAP.roads) {
+      if (!road.p || road.p.length < 2 || road.br) continue;
+      for (const point of [road.p[0], road.p[road.p.length - 1]]) {
+        const gx = Math.round(point[0] / cellSize), gz = Math.round(point[1] / cellSize);
+        const key = gx + ':' + gz;
+        let entry = cells.get(key);
+        if (!entry) cells.set(key, entry = { x: 0, z: 0, count: 0, roads: new Set() });
+        entry.x += point[0]; entry.z += point[1]; entry.count++;
+        entry.roads.add(road.h || 'r');
+      }
+    }
+    const padPositions = [];
+    for (const entry of cells.values()) {
+      // At least three mapped road ends: likely a real multi-arm junction, not a simple bend.
+      if (entry.count < 3 || entry.roads.size < 2) continue;
+      const x = entry.x / entry.count, z = entry.z / entry.count;
+      addCircularJunctionPad(x, z, 10.5, 0.071, padPositions);
+    }
+    if (padPositions.length) {
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(padPositions, 3));
+      geo.computeVertexNormals();
+      scene.add(new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: 0x263449, side: THREE.DoubleSide })));
+    }
+  }
+  buildConnectedGroundJunctions();
+
   // --- BUILD DRIVABLE 3D ELEVATED FLYOVERS & BRIDGES (Atchampeta Flyover, Bhanugudi ROB, Varadhi, Kalpana Bridge) ---
   // Each flyover is subdivided into smooth elevation steps (0m -> maxH -> 0m) with concrete piers & side barriers!
+  // Extend near-ground flyover/bridge ends to the nearest mapped ground-road centreline.
+  // This closes small OSM/model gaps while keeping every existing bridge route and mission intact.
+  function connectFlyoverEndsToGroundRoads() {
+    const groundRoads = MAP.roads.filter(r => !r.br && ['p', 's', 't'].includes(r.h) && r.p && r.p.length > 1);
+    function nearestGroundPoint(q) {
+      let best = { distance: Infinity, point: null };
+      for (const road of groundRoads) {
+        for (let i = 0; i < road.p.length - 1; i++) {
+          const a = road.p[i], b = road.p[i + 1];
+          const dx = b[0] - a[0], dz = b[1] - a[1];
+          const l2 = dx * dx + dz * dz;
+          const t = l2 < 0.0001 ? 0 : Math.max(0, Math.min(1, ((q[0] - a[0]) * dx + (q[1] - a[1]) * dz) / l2));
+          const point = [a[0] + dx * t, a[1] + dz * t];
+          const distance = Math.hypot(point[0] - q[0], point[1] - q[1]);
+          if (distance < best.distance) best = { distance, point };
+        }
+      }
+      return best;
+    }
+    for (const flyover of (MAP.flyovers || [])) {
+      if (!flyover.p || flyover.p.length < 2) continue;
+      const start = nearestGroundPoint(flyover.p[0]);
+      if (start.point && start.distance > 1.5 && start.distance < 30) flyover.p.unshift(start.point);
+      const end = nearestGroundPoint(flyover.p[flyover.p.length - 1]);
+      if (end.point && end.distance > 1.5 && end.distance < 30) flyover.p.push(end.point);
+    }
+  }
+  connectFlyoverEndsToGroundRoads();
+
   const flyoverSegments = []; // { x1, z1, y1, x2, z2, y2, halfW }
   const pierMat = new THREE.MeshLambertMaterial({ color: 0x94a3b8 });
   const barrierMat = new THREE.MeshLambertMaterial({ color: 0xfacc15 });
