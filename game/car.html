@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Roundabout Match - Garage & Night Edition</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #121417;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      touch-action: none;
+    }
+
+    #game-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 480px;
+      height: 100%;
+      max-height: 920px;
+      background: #5a5c61;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+      touch-action: none;
+      backface-visibility: hidden;
+      transform: translateZ(0);
+    }
+
+    /* Top HUD */
+    .top-bar {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      right: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+      z-index: 10;
+      gap: 8px;
+    }
+
+    .hud-group {
+      display: flex;
+      gap: 6px;
+      pointer-events: auto;
+    }
+
+    .btn-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 2px solid #493320;
+      background: linear-gradient(145deg, #f3d1a8, #d6a976);
+      color: #493320;
+      font-size: 18px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.35);
+      transition: transform 0.1s ease;
+    }
+
+    .btn-icon:active {
+      transform: scale(0.9);
+    }
+
+    .coin-pill {
+      pointer-events: auto;
+      background: rgba(18, 20, 26, 0.9);
+      border: 1.5px solid #f59e0b;
+      color: #fde047;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+
+    .status-pill {
+      pointer-events: auto;
+      background: rgba(18, 20, 26, 0.88);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #ffffff;
+      padding: 7px 12px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Bottom Brand Bar */
+    .brand-bar {
+      position: absolute;
+      bottom: 12px;
+      left: 14px;
+      right: 14px;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .brand-tag {
+      background: rgba(15, 17, 22, 0.84);
+      color: #e4e7ef;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.14);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .brand-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    /* Generic Modal Overlay */
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(10, 12, 18, 0.86);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 30;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .banner-card {
+      background: linear-gradient(155deg, #252b48, #151828);
+      border: 3px solid #ff5e3a;
+      border-radius: 24px;
+      padding: 26px;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: 0 15px 45px rgba(0, 0, 0, 0.7);
+      transform: scale(0.95);
+      transition: transform 0.25s ease;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .overlay.active .banner-card {
+      transform: scale(1);
+    }
+
+    .trophy-icon {
+      font-size: 52px;
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    .banner-title {
+      font-size: 28px;
+      font-weight: 900;
+      color: #ffffff;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+
+    .banner-sub {
+      color: #c5c9e8;
+      font-size: 13.5px;
+      margin-bottom: 18px;
+      line-height: 1.35;
+    }
+
+    .btn-primary {
+      background: linear-gradient(to bottom, #3ad44f, #239633);
+      border: 2px solid #6bf27d;
+      color: #fff;
+      font-size: 18px;
+      font-weight: 800;
+      padding: 12px 20px;
+      border-radius: 14px;
+      cursor: pointer;
+      width: 100%;
+      box-shadow: 0 5px 0 #156120, 0 8px 16px rgba(0,0,0,0.4);
+      margin-top: 10px;
+    }
+
+    .btn-primary:active {
+      transform: translateY(3px);
+      box-shadow: 0 2px 0 #156120;
+    }
+
+    .btn-secondary {
+      margin-top: 10px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.22);
+      color: #d0d4f0;
+      font-size: 12.5px;
+      font-weight: 600;
+      padding: 9px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    /* Garage Shop Specific Styles */
+    .shop-scroll {
+      overflow-y: auto;
+      max-height: 52vh;
+      padding-right: 4px;
+      margin-bottom: 12px;
+      text-align: left;
+    }
+
+    .shop-section-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin: 10px 0 6px 2px;
+    }
+
+    .shop-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .shop-item {
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px solid rgba(255, 255, 255, 0.12);
+      border-radius: 14px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .shop-item.equipped {
+      border-color: #38bdf8;
+      background: rgba(56, 189, 248, 0.12);
+    }
+
+    .shop-item-preview {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      margin-bottom: 6px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+
+    .shop-item-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+      text-align: center;
+    }
+
+    .shop-item-price {
+      font-size: 11px;
+      font-weight: 800;
+      color: #fde047;
+      background: rgba(0,0,0,0.3);
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="game-wrapper">
+  <div class="top-bar">
+    <div class="hud-group">
+      <button class="btn-icon" id="reset-progress-btn" title="Reset Progress">🏠</button>
+      <button class="btn-icon" id="garage-btn" title="Garage Shop">🛒</button>
+      <button class="btn-icon" id="night-mode-btn" title="Toggle Night Mode">🌙</button>
+      <button class="btn-icon" id="sound-toggle-btn" title="Toggle Sound">🔊</button>
+    </div>
+    <div style="display:flex; gap:6px; align-items:center;">
+      <div class="coin-pill" id="coin-display">🪙 <span>100</span></div>
+      <div class="status-pill" id="car-info-pill">Level 1</div>
+    </div>
+  </div>
+
+  <canvas id="gameCanvas"></canvas>
+
+  <div class="brand-bar" id="brand-bar"></div>
+
+  <!-- Crash / Level Complete Modal -->
+  <div class="overlay" id="modal-overlay">
+    <div class="banner-card" id="banner-card">
+      <span class="trophy-icon" id="modal-icon">🔥</span>
+      <div class="banner-title" id="modal-title">CRASHED!</div>
+      <div class="banner-sub" id="modal-sub">Two cars bashed into each other!</div>
+      <button class="btn-primary" id="modal-action-btn">↻ Replay Level</button>
+      <button class="btn-secondary" id="modal-reset-btn">Reset to Level 1</button>
+    </div>
+  </div>
+
+  <!-- Garage Shop Modal -->
+  <div class="overlay" id="garage-overlay">
+    <div class="banner-card" style="border-color:#38bdf8;">
+      <div class="banner-title" style="font-size:24px; text-shadow:none; color:#38bdf8;">🚗 GARAGE SHOP</div>
+      <div class="banner-sub" style="margin-bottom:10px;">Customize your car paint and neon underglow!</div>
+      
+      <div class="shop-scroll">
+        <div class="shop-section-title">Premium Car Paints</div>
+        <div class="shop-grid" id="skin-shop-grid"></div>
+
+        <div class="shop-section-title">Neon Underglow</div>
+        <div class="shop-grid" id="neon-shop-grid"></div>
+      </div>
+
+      <button class="btn-primary" id="close-garage-btn" style="margin-top:auto; background:linear-gradient(to bottom, #0284c7, #0369a1); border-color:#38bdf8;">✓ Save & Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const STORAGE_LEVEL = 'roundabout_rc_level_v3';
+  const STORAGE_COINS = 'roundabout_rc_coins_v3';
+  const STORAGE_SKINS = 'roundabout_rc_unlocked_skins_v3';
+  const STORAGE_NEON = 'roundabout_rc_unlocked_neon_v3';
+  const STORAGE_EQ_SKIN = 'roundabout_rc_eq_skin_v3';
+  const STORAGE_EQ_NEON = 'roundabout_rc_eq_neon_v3';
+  const STORAGE_NIGHT = 'roundabout_rc_night_v3';
+
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d', { alpha: false });
+
+  const modalOverlay = document.getElementById('modal-overlay');
+  const modalIcon = document.getElementById('modal-icon');
+  const modalTitle = document.getElementById('modal-title');
+  const modalSub = document.getElementById('modal-sub');
+  const modalActionBtn = document.getElementById('modal-action-btn');
+  const modalResetBtn = document.getElementById('modal-reset-btn');
+  const resetProgressBtn = document.getElementById('reset-progress-btn');
+  const garageBtn = document.getElementById('garage-btn');
+  const garageOverlay = document.getElementById('garage-overlay');
+  const closeGarageBtn = document.getElementById('close-garage-btn');
+  const nightModeBtn = document.getElementById('night-mode-btn');
+  const soundToggleBtn = document.getElementById('sound-toggle-btn');
+  const carInfoPill = document.getElementById('car-info-pill');
+  const coinDisplay = document.getElementById('coin-display').querySelector('span');
+  const brandBar = document.getElementById('brand-bar');
+  const skinShopGrid = document.getElementById('skin-shop-grid');
+  const neonShopGrid = document.getElementById('neon-shop-grid');
+
+  // ==========================================
+  // AUDIO ENGINE (SFX)
+  // ==========================================
+  const SFX = {
+    ctx: null,
+    muted: false,
+    init() {
+      if (!this.ctx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) this.ctx = new AC();
+      }
+      if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+    },
+    playLaunch() {
+      if (this.muted) return;
+      this.init();
+      if (!this.ctx) return;
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(80, now);
+      osc.frequency.exponentialRampToValueAtTime(220, now + 0.2);
+      gain.gain.setValueAtTime(0.12, now);
+      gain.gain.exponentialRampToValueAtTime(0.004, now + 0.22);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.23);
+    },
+    playTurn() {
+      if (this.muted) return;
+      this.init();
+      if (!this.ctx) return;
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(300, now);
+      osc.frequency.exponentialRampToValueAtTime(160, now + 0.12);
+      gain.gain.setValueAtTime(0.06, now);
+      gain.gain.exponentialRampToValueAtTime(0.003, now + 0.13);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.14);
+    },
+    playMatch() {
+      if (this.muted) return;
+      this.init();
+      if (!this.ctx) return;
+      [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
+        const now = this.ctx.currentTime + i * 0.05;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now);
+        gain.gain.setValueAtTime(0.14, now);
+        gain.gain.exponentialRampToValueAtTime(0.003, now + 0.25);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.26);
+      });
+    },
+    playCrash() {
+      if (this.muted) return;
+      this.init();
+      if (!this.ctx) return;
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(130, now);
+      osc.frequency.exponentialRampToValueAtTime(25, now + 0.4);
+      gain.gain.setValueAtTime(0.4, now);
+      gain.gain.exponentialRampToValueAtTime(0.004, now + 0.42);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.43);
+    }
+  };
+
+  // ==========================================
+  // CAR CATALOG & SHOP CATALOG
+  // ==========================================
+  const VEHICLE_CATALOG = [
+    { id: 'tesla', name: 'Tesla Model 3', bodyColor: '#f4f6f9', roofColor: '#1b2028', width: 26, length: 46, style: 'tesla' },
+    { id: 'tata', name: 'Tata Nexon EV', bodyColor: '#0e7c86', roofColor: '#f5f7fa', width: 27, length: 45, style: 'tata' },
+    { id: 'rangerover', name: 'Range Rover SV', bodyColor: '#1e2229', roofColor: '#c89b6e', width: 29, length: 52, style: 'rangerover' },
+    { id: 'thar', name: 'Mahindra Thar', bodyColor: '#d62828', roofColor: '#1a1b1e', width: 28, length: 45, style: 'thar' },
+    { id: 'lambo', name: 'Lamborghini', bodyColor: '#facc15', roofColor: '#18181b', width: 28, length: 47, style: 'supercar' },
+    { id: 'porsche', name: 'Porsche GT3', bodyColor: '#2563eb', roofColor: '#1d4ed8', width: 26, length: 46, style: 'porsche' },
+    { id: 'gwagon', name: 'Mercedes G63', bodyColor: '#15803d', roofColor: '#14532d', width: 28, length: 50, style: 'gwagon' },
+    { id: 'truck', name: 'Tata Prima', bodyColor: '#ea580c', roofColor: '#e2e8f0', width: 29, length: 62, style: 'truck' }
+  ];
+
+  const CUSTOM_PAINTS = [
+    { id: 'default', name: 'Stock White', color: '#f4f6f9', price: 0 },
+    { id: 'matte_black', name: 'Cyber Black', color: '#111827', price: 50 },
+    { id: 'rose_gold', name: 'Rose Gold', color: '#f43f5e', price: 80 },
+    { id: 'neon_lime', name: 'Neon Lime', color: '#22c55e', price: 100 },
+    { id: 'electric_violet', name: 'Ultraviolet', color: '#8b5cf6', price: 120 }
+  ];
+
+  const NEON_UNDERGLOWS = [
+    { id: 'none', name: 'No Neon', color: null, price: 0 },
+    { id: 'cyan', name: 'Cyan Glow', color: '#06b6d4', price: 60 },
+    { id: 'purple', name: 'Plasma Purple', color: '#a855f7', price: 60 },
+    { id: 'orange', name: 'Fire Orange', color: '#f97316', price: 80 },
+    { id: 'green', name: 'Matrix Green', color: '#10b981', price: 80 }
+  ];
+
+  // Save states
+  let currentLevel = loadStorage(STORAGE_LEVEL, 1);
+  let playerCoins = loadStorage(STORAGE_COINS, 100);
+  let unlockedSkins = JSON.parse(localStorage.getItem(STORAGE_SKINS) || '["default"]');
+  let unlockedNeon = JSON.parse(localStorage.getItem(STORAGE_NEON) || '["none"]');
+  let equippedSkin = localStorage.getItem(STORAGE_EQ_SKIN) || 'default';
+  let equippedNeon = localStorage.getItem(STORAGE_EQ_NEON) || 'none';
+  let isNightMode = loadStorage(STORAGE_NIGHT, 0) === 1;
+
+  function loadStorage(key, def) {
+    const val = parseInt(localStorage.getItem(key), 10);
+    return Number.isFinite(val) && val >= 0 ? val : def;
+  }
+
+  function saveAll() {
+    localStorage.setItem(STORAGE_LEVEL, currentLevel);
+    localStorage.setItem(STORAGE_COINS, playerCoins);
+    localStorage.setItem(STORAGE_SKINS, JSON.stringify(unlockedSkins));
+    localStorage.setItem(STORAGE_NEON, JSON.stringify(unlockedNeon));
+    localStorage.setItem(STORAGE_EQ_SKIN, equippedSkin);
+    localStorage.setItem(STORAGE_EQ_NEON, equippedNeon);
+    localStorage.setItem(STORAGE_NIGHT, isNightMode ? 1 : 0);
+    coinDisplay.textContent = playerCoins;
+    nightModeBtn.textContent = isNightMode ? '☀️' : '🌙';
+  }
+
+  // ==========================================
+  // CANVAS & GEOMETRY
+  // ==========================================
+  let gameState = 'PLAYING';
+  let vehicles = [];
+  let particles = [];
+  let fireEmitters = [];
+  let scorchMarks = [];
+  let screenShake = 0;
+
+  let width = 420;
+  let height = 800;
+  let dpr = 1;
+  let cx = 210;
+  let cy = 400;
+  let trackRadius = 112;
+  let trackWidth = 50;
+
+  const angularSpeed = 0.0245;
+  const driveSpeed = 5.2;
+
+  const bgCanvas = document.createElement('canvas');
+  const bgCtx = bgCanvas.getContext('2d', { alpha: false });
+
+  function renderStaticBackground() {
+    bgCanvas.width = width * dpr;
+    bgCanvas.height = height * dpr;
+    bgCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const roadBase = isNightMode ? '#1e222a' : '#6f7277';
+    const roadRing = isNightMode ? '#282e3b' : '#8d9096';
+    const curb = isNightMode ? '#15181f' : '#585a5e';
+
+    bgCtx.fillStyle = roadBase;
+    bgCtx.fillRect(0, 0, width, height);
+
+    // Asphalt noise
+    let seed = 42;
+    const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+    for (let i = 0; i < 3000; i++) {
+      bgCtx.fillStyle = i % 2 === 0 ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.04)';
+      bgCtx.fillRect(rnd() * width, rnd() * height, 2, 2);
+    }
+
+    // Roundabout Curb
+    bgCtx.beginPath();
+    bgCtx.arc(cx, cy, trackRadius + trackWidth / 2 + 6, 0, Math.PI * 2);
+    bgCtx.arc(cx, cy, trackRadius - trackWidth / 2 - 6, 0, Math.PI * 2, true);
+    bgCtx.fillStyle = curb;
+    bgCtx.fill();
+
+    // Road Ring
+    bgCtx.beginPath();
+    bgCtx.arc(cx, cy, trackRadius + trackWidth / 2, 0, Math.PI * 2);
+    bgCtx.arc(cx, cy, trackRadius - trackWidth / 2, 0, Math.PI * 2, true);
+    bgCtx.fillStyle = roadRing;
+    bgCtx.fill();
+
+    // Edge Lines
+    bgCtx.lineWidth = 2.5;
+    bgCtx.strokeStyle = isNightMode ? 'rgba(56, 189, 248, 0.4)' : 'rgba(235, 238, 245, 0.55)';
+    bgCtx.beginPath();
+    bgCtx.arc(cx, cy, trackRadius + trackWidth / 2 - 2, 0, Math.PI * 2);
+    bgCtx.stroke();
+    bgCtx.beginPath();
+    bgCtx.arc(cx, cy, trackRadius - trackWidth / 2 + 2, 0, Math.PI * 2);
+    bgCtx.stroke();
+
+    // Center Dashed Line
+    bgCtx.save();
+    bgCtx.beginPath();
+    bgCtx.setLineDash([18, 16]);
+    bgCtx.lineWidth = 3.5;
+    bgCtx.strokeStyle = isNightMode ? 'rgba(56, 189, 248, 0.6)' : '#e2e5ec';
+    bgCtx.arc(cx, cy, trackRadius, 0, Math.PI * 2);
+    bgCtx.stroke();
+    bgCtx.restore();
+  }
+
+  function resizeCanvas() {
+    const rect = canvas.parentElement.getBoundingClientRect();
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    width = rect.width;
+    height = rect.height;
+
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    cx = width / 2;
+    cy = height / 2;
+    trackRadius = Math.min(width * 0.265, 114);
+    trackWidth = Math.max(46, Math.min(54, width * 0.118));
+
+    renderStaticBackground();
+  }
+
+  function seededRandom(seed) {
+    let s = seed % 2147483647;
+    if (s <= 0) s += 2147483646;
+    return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
+  }
+
+  function updateBrandBar(specs) {
+    brandBar.innerHTML = '';
+    const seen = new Set();
+    specs.forEach(spec => {
+      if (seen.has(spec.id)) return;
+      seen.add(spec.id);
+      const b = document.createElement('div');
+      b.className = 'brand-tag';
+      b.innerHTML = `<span class="brand-dot" style="background:${spec.bodyColor}"></span>${spec.name}`;
+      brandBar.appendChild(b);
+    });
+  }
+
+  function buildLevel(level) {
+    gameState = 'PLAYING';
+    modalOverlay.classList.remove('active');
+    particles = [];
+    fireEmitters = [];
+    scorchMarks = [];
+    vehicles = [];
+    screenShake = 0;
+
+    const numTriplets = Math.min(level, 6);
+    const uniqueCount = Math.min(level, VEHICLE_CATALOG.length);
+    const activeTypes = [];
+
+    for (let i = 0; i < numTriplets; i++) {
+      const idx = (level <= VEHICLE_CATALOG.length) ? (i % uniqueCount) : ((level + i) % VEHICLE_CATALOG.length);
+      activeTypes.push(VEHICLE_CATALOG[idx]);
+    }
+
+    carInfoPill.textContent = `Level ${level}`;
+    updateBrandBar(activeTypes);
+
+    const rng = seededRandom(level * 8191 + 47);
+    let carPool = [];
+    activeTypes.forEach(spec => carPool.push(spec, spec, spec));
+
+    if (level > 1) {
+      for (let i = carPool.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [carPool[i], carPool[j]] = [carPool[j], carPool[i]];
+      }
+    }
+
+    const innerDist = trackRadius + trackWidth / 2 + 56;
+    const outerDist = innerDist + 66;
+    const topAngles = [-2.22, -1.90, -1.57, -1.24, -0.92];
+    const bottomAngles = [0.92, 1.24, 1.57, 1.90, 2.22];
+    const orderedAngles = [];
+    for (let i = 0; i < topAngles.length; i++) {
+      orderedAngles.push(topAngles[i]);
+      orderedAngles.push(bottomAngles[i]);
+    }
+
+    const startTurnDist = trackRadius + 34;
+
+    vehicles = carPool.map((spec, idx) => {
+      const isOuter = idx >= orderedAngles.length;
+      const baseAngle = orderedAngles[idx % orderedAngles.length];
+      const angleFromCenter = baseAngle + (rng() - 0.5) * 0.03;
+      const dist = isOuter ? outerDist : innerDist;
+
+      const x = cx + Math.cos(angleFromCenter) * dist;
+      const y = cy + Math.sin(angleFromCenter) * dist;
+      const heading = angleFromCenter + Math.PI;
+
+      // Apply equipped custom skin color if available
+      let customBody = spec.bodyColor;
+      if (equippedSkin !== 'default') {
+        const paint = CUSTOM_PAINTS.find(p => p.id === equippedSkin);
+        if (paint) customBody = paint.color;
+      }
+
+      return {
+        id: idx,
+        spec: { ...spec, bodyColor: customBody },
+        state: 'PARKED',
+        x, y, heading,
+        steerAngle: 0,
+        approachAngle: angleFromCenter,
+        startTurnDist,
+        mergeStartX: 0, mergeStartY: 0, mergeStartHeading: heading,
+        mergeTargetAngle: 0, mergeProgress: 0,
+        orbitAngle: angleFromCenter,
+        scale: 1, alpha: 1
+      };
+    });
+
+    saveAll();
+  }
+
+  // ==========================================
+  // FIRE & PARTICLES
+  // ==========================================
+  function spawnCrashFire(x, y) {
+    SFX.playCrash();
+    screenShake = 16;
+    scorchMarks.push({ x, y, radius: 36 });
+    fireEmitters.push({ x, y });
+
+    for (let i = 0; i < 38; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 2 + Math.random() * 6;
+      const isSpark = i % 3 === 0;
+      particles.push({
+        type: isSpark ? 'SPARK' : 'FIRE',
+        x: x + (Math.random() - 0.5) * 12,
+        y: y + (Math.random() - 0.5) * 12,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        size: isSpark ? 3 : (10 + Math.random() * 12),
+        life: 0, maxLife: isSpark ? 18 + Math.random() * 15 : 24 + Math.random() * 18
+      });
+    }
+  }
+
+  function updateParticles() {
+    for (const em of fireEmitters) {
+      for (let k = 0; k < 2; k++) {
+        const a = Math.random() * Math.PI * 2;
+        const d = Math.random() * 16;
+        particles.push({
+          type: 'FIRE',
+          x: em.x + Math.cos(a) * d, y: em.y + Math.sin(a) * d,
+          vx: (Math.random() - 0.5) * 1.2, vy: -1.1 - Math.random() * 2,
+          size: 10 + Math.random() * 10, life: 0, maxLife: 22 + Math.random() * 16
+        });
+      }
+      if (Math.random() < 0.7) {
+        particles.push({
+          type: 'SMOKE',
+          x: em.x + (Math.random() - 0.5) * 20, y: em.y - 6 + (Math.random() - 0.5) * 12,
+          vx: (Math.random() - 0.5) * 0.8, vy: -1.3 - Math.random() * 1,
+          size: 13 + Math.random() * 10, life: 0, maxLife: 40 + Math.random() * 20
+        });
+      }
+    }
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.life++;
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.type === 'SPARK') { p.vx *= 0.94; p.vy *= 0.94; }
+      else if (p.type === 'SMOKE') { p.size *= 1.018; }
+      else if (p.type === 'FIRE') { p.size *= 0.975; }
+      else if (p.type === 'MATCH') { p.vx *= 0.95; p.vy *= 0.95; p.size *= 0.96; }
+      if (p.life >= p.maxLife) particles.splice(i, 1);
+    }
+  }
+
+  function checkMatches() {
+    const groups = {};
+    vehicles.forEach(v => {
+      if (v.state === 'ORBITING') {
+        if (!groups[v.spec.id]) groups[v.spec.id] = [];
+        groups[v.spec.id].push(v);
+      }
+    });
+
+    Object.keys(groups).forEach(id => {
+      if (groups[id].length >= 3) {
+        SFX.playMatch();
+        groups[id].slice(0, 3).forEach(v => {
+          v.state = 'CLEARING';
+          for (let i = 0; i < 16; i++) {
+            const a = Math.random() * Math.PI * 2;
+            const sp = 1.5 + Math.random() * 3.5;
+            particles.push({
+              type: 'MATCH', x: v.x, y: v.y,
+              vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+              size: 5 + Math.random() * 6, color: v.spec.bodyColor,
+              life: 0, maxLife: 22 + Math.random() * 10
+            });
+          }
+        });
+      }
+    });
+  }
+
+  function vehiclesOverlap(a, b) {
+    const dx = a.x - b.x;
+    const dy = a.y - b.y;
+    const maxR = (a.spec.length + b.spec.length) * 0.52;
+    if (dx * dx + dy * dy > maxR * maxR) return false;
+
+    const getCircles = (v) => {
+      const r = v.spec.width * 0.40;
+      const off = v.spec.length * 0.5 - r;
+      const c = Math.cos(v.heading);
+      const s = Math.sin(v.heading);
+      return [
+        { x: v.x + c * off, y: v.y + s * off, r },
+        { x: v.x, y: v.y, r },
+        { x: v.x - c * off, y: v.y - s * off, r }
+      ];
+    };
+
+    const ca = getCircles(a);
+    const cb = getCircles(b);
+    for (const p1 of ca) {
+      for (const p2 of cb) {
+        if (Math.hypot(p1.x - p2.x, p1.y - p2.y) < p1.r + p2.r - 2.5) return true;
+      }
+    }
+    return false;
+  }
+
+  function triggerCrash(a, b) {
+    if (gameState !== 'PLAYING') return;
+    gameState = 'CRASHING';
+    a.state = 'CRASHED';
+    b.state = 'CRASHED';
+    a.heading += 0.2;
+    b.heading -= 0.2;
+
+    spawnCrashFire((a.x + b.x) / 2, (a.y + b.y) / 2);
+
+    setTimeout(() => {
+      modalIcon.textContent = '🔥';
+      modalTitle.textContent = 'CRASHED!';
+      modalSub.textContent = `Watch out for oncoming traffic!`;
+      modalActionBtn.textContent = '↻ Replay Level';
+      modalOverlay.classList.add('active');
+    }, 1200);
+  }
+
+  function triggerWin() {
+    if (gameState !== 'PLAYING') return;
+    gameState = 'WON';
+    
+    // Reward coins based on level
+    const reward = currentLevel * 15;
+    playerCoins += reward;
+    currentLevel++;
+    saveAll();
+
+    setTimeout(() => {
+      buildLevel(currentLevel);
+    }, 600);
+  }
+
+  function update() {
+    if (screenShake > 0) {
+      screenShake *= 0.85;
+      if (screenShake < 0.3) screenShake = 0;
+    }
+    updateParticles();
+    if (gameState !== 'PLAYING') return;
+
+    for (let i = vehicles.length - 1; i >= 0; i--) {
+      const v = vehicles[i];
+
+      if (v.state === 'APPROACHING') {
+        v.x += Math.cos(v.heading) * driveSpeed;
+        v.y += Math.sin(v.heading) * driveSpeed;
+
+        if (Math.hypot(v.x - cx, v.y - cy) <= v.startTurnDist) {
+          v.state = 'TURNING';
+          v.mergeStartX = v.x;
+          v.mergeStartY = v.y;
+          v.mergeStartHeading = v.heading;
+          v.mergeTargetAngle = Math.atan2(v.y - cy, v.x - cx) + 0.34;
+          v.mergeProgress = 0;
+          v.steerAngle = 0.48;
+          SFX.playTurn();
+        }
+      } else if (v.state === 'TURNING') {
+        v.mergeProgress += 0.085;
+        v.mergeTargetAngle += angularSpeed * 0.45;
+        const t = Math.min(1, v.mergeProgress);
+        const smoothT = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+        const tx = cx + Math.cos(v.mergeTargetAngle) * trackRadius;
+        const ty = cy + Math.sin(v.mergeTargetAngle) * trackRadius;
+        const targetH = v.mergeTargetAngle + Math.PI / 2;
+
+        const midA = v.approachAngle + (v.mergeTargetAngle - v.approachAngle) * 0.35;
+        const cxPoint = cx + Math.cos(midA) * (trackRadius + 14);
+        const cyPoint = cy + Math.sin(midA) * (trackRadius + 14);
+
+        const invT = 1 - smoothT;
+        v.x = invT * invT * v.mergeStartX + 2 * invT * smoothT * cxPoint + smoothT * smoothT * tx;
+        v.y = invT * invT * v.mergeStartY + 2 * invT * smoothT * cyPoint + smoothT * smoothT * ty;
+        v.heading = v.mergeStartHeading + (targetH - v.mergeStartHeading) * smoothT;
+        v.steerAngle = (1 - smoothT) * 0.48;
+
+        if (t >= 1) {
+          v.state = 'ORBITING';
+          v.orbitAngle = v.mergeTargetAngle;
+          v.x = tx; v.y = ty; v.heading = targetH;
+          v.steerAngle = 0.14;
+          checkMatches();
+        }
+      } else if (v.state === 'ORBITING') {
+        v.orbitAngle += angularSpeed;
+        v.x = cx + Math.cos(v.orbitAngle) * trackRadius;
+        v.y = cy + Math.sin(v.orbitAngle) * trackRadius;
+        v.heading = v.orbitAngle + Math.PI / 2;
+        v.steerAngle = 0.14;
+      } else if (v.state === 'CLEARING') {
+        v.scale += 0.055;
+        v.alpha -= 0.095;
+        if (v.alpha <= 0) vehicles.splice(i, 1);
+      }
+    }
+
+    for (let i = 0; i < vehicles.length; i++) {
+      const a = vehicles[i];
+      if (a.state === 'CLEARING') continue;
+      for (let j = i + 1; j < vehicles.length; j++) {
+        const b = vehicles[j];
+        if (b.state === 'CLEARING') continue;
+        if (a.state === 'PARKED' && b.state === 'PARKED') continue;
+        if (vehiclesOverlap(a, b)) {
+          triggerCrash(a, b);
+          return;
+        }
+      }
+    }
+
+    if (vehicles.length === 0 && gameState === 'PLAYING') {
+      triggerWin();
+    }
+  }
+
+  // ==========================================
+  // RENDERING CARS, LIGHTS & NEON
+  // ==========================================
+  function drawRoundedRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  function drawWheel(x, y, w, h, angle = 0) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    ctx.fillStyle = '#141619';
+    drawRoundedRect(-w / 2, -h / 2, w, h, 1.5);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawVehicle(v) {
+    const { width: w, length: len, bodyColor, roofColor, style } = v.spec;
+    ctx.save();
+    ctx.translate(v.x, v.y);
+    ctx.rotate(v.heading);
+    ctx.scale(v.scale, v.scale);
+    ctx.globalAlpha = Math.max(0, v.alpha);
+
+    const halfL = len / 2;
+    const halfW = w / 2;
+
+    // Neon Underglow (Night Mode)
+    if (isNightMode && equippedNeon !== 'none') {
+      const neonObj = NEON_UNDERGLOWS.find(n => n.id === equippedNeon);
+      if (neonObj && neonObj.color) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.shadowColor = neonObj.color;
+        ctx.shadowBlur = 18;
+        ctx.fillStyle = neonObj.color;
+        drawRoundedRect(-halfL + 2, -halfW - 2, len - 4, w + 4, 8);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    // Ground shadow
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+    drawRoundedRect(-halfL - 2, -halfW + 3, len, w, 7);
+    ctx.fill();
+
+    // Wheels
+    drawWheel(halfL - 10, -halfW - 1, 9, 4.2, v.steerAngle);
+    drawWheel(halfL - 10, halfW + 1, 9, 4.2, v.steerAngle);
+    drawWheel(-halfL + 10, -halfW - 1, 9, 4.2, 0);
+    drawWheel(-halfL + 10, halfW + 1, 9, 4.2, 0);
+
+    // Car Body
+    ctx.fillStyle = v.state === 'CRASHED' ? '#333' : bodyColor;
+    ctx.strokeStyle = '#15171c';
+    ctx.lineWidth = 1.8;
+    drawRoundedRect(-halfL, -halfW, len, w, style === 'gwagon' || style === 'thar' ? 4.5 : 8);
+    ctx.fill();
+    ctx.stroke();
+
+    // Roof & Styling
+    ctx.fillStyle = roofColor;
+    drawRoundedRect(-halfL + 7, -halfW + 3.5, len - 16, w - 7, 4);
+    ctx.fill();
+
+    // Headlights & Taillights
+    ctx.fillStyle = '#ff2a2a';
+    ctx.fillRect(-halfL, -halfW + 3, 2, 5);
+    ctx.fillRect(-halfL, halfW - 8, 2, 5);
+
+    ctx.fillStyle = '#fef9c3';
+    ctx.fillRect(halfL - 2, -halfW + 3, 2, 5);
+    ctx.fillRect(halfL - 2, halfW - 8, 2, 5);
+
+    // Night Mode Headlight Cones on Road
+    if (isNightMode) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const grad = ctx.createLinearGradient(halfL, 0, halfL + 120, 0);
+      grad.addColorStop(0, 'rgba(254, 249, 195, 0.45)');
+      grad.addColorStop(1, 'rgba(254, 249, 195, 0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.moveTo(halfL, -halfW + 3);
+      ctx.lineTo(halfL + 120, -halfW - 35);
+      ctx.lineTo(halfL + 120, halfW + 35);
+      ctx.lineTo(halfL, halfW - 3);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    ctx.restore();
+  }
+
+  function renderParticles() {
+    for (const p of particles) {
+      const r = p.life / p.maxLife;
+      ctx.save();
+      if (p.type === 'FIRE') {
+        ctx.globalCompositeOperation = 'lighter';
+        const alpha = Math.max(0, 1 - r);
+        const grad = ctx.createRadialGradient(p.x, p.y, 1, p.x, p.y, p.size);
+        grad.addColorStop(0, `rgba(255, 255, 200, ${alpha})`);
+        grad.addColorStop(0.5, `rgba(255, 150, 20, ${alpha * 0.9})`);
+        grad.addColorStop(1, 'rgba(200, 30, 0, 0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (p.type === 'SMOKE') {
+        ctx.fillStyle = `rgba(30, 32, 36, ${Math.max(0, (1 - r) * 0.5)})`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (p.type === 'SPARK') {
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.fillStyle = `rgba(255, 230, 100, ${1 - r})`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (p.type === 'MATCH') {
+        ctx.globalAlpha = Math.max(0, 1 - r);
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
+
+  function render() {
+    ctx.save();
+    if (screenShake > 0) {
+      ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
+    }
+
+    ctx.drawImage(bgCanvas, 0, 0, width, height);
+
+    // Level number in center
+    ctx.font = '900 66px "Segoe UI", system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = isNightMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.25)';
+    ctx.fillText(String(currentLevel), cx, cy + 4);
+    ctx.fillStyle = isNightMode ? '#38bdf8' : '#e5e8ef';
+    ctx.fillText(String(currentLevel), cx, cy);
+
+    // Scorch marks
+    for (const s of scorchMarks) {
+      const grad = ctx.createRadialGradient(s.x, s.y, 4, s.x, s.y, s.radius);
+      grad.addColorStop(0, 'rgba(10, 10, 10, 0.9)');
+      grad.addColorStop(1, 'rgba(10, 10, 10, 0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    vehicles.forEach(drawVehicle);
+    renderParticles();
+    ctx.restore();
+  }
+
+  function gameLoop() {
+    update();
+    render();
+    requestAnimationFrame(gameLoop);
+  }
+
+  // ==========================================
+  // GARAGE SHOP UI BUILDER
+  // ==========================================
+  function buildGarageShopUI() {
+    skinShopGrid.innerHTML = '';
+    CUSTOM_PAINTS.forEach(paint => {
+      const unlocked = unlockedSkins.includes(paint.id);
+      const equipped = equippedSkin === paint.id;
+
+      const card = document.createElement('div');
+      card.className = `shop-item ${equipped ? 'equipped' : ''}`;
+      card.innerHTML = `
+        <div class="shop-item-preview" style="background:${paint.color}"></div>
+        <div class="shop-item-name">${paint.name}</div>
+        <div class="shop-item-price">${unlocked ? (equipped ? 'EQUIPPED' : 'EQUIP') : '🪙 ' + paint.price}</div>
+      `;
+      card.onclick = () => {
+        if (unlocked) {
+          equippedSkin = paint.id;
+        } else if (playerCoins >= paint.price) {
+          playerCoins -= paint.price;
+          unlockedSkins.push(paint.id);
+          equippedSkin = paint.id;
+        }
+        saveAll();
+        buildGarageShopUI();
+      };
+      skinShopGrid.appendChild(card);
+    });
+
+    neonShopGrid.innerHTML = '';
+    NEON_UNDERGLOWS.forEach(neon => {
+      const unlocked = unlockedNeon.includes(neon.id);
+      const equipped = equippedNeon === neon.id;
+
+      const card = document.createElement('div');
+      card.className = `shop-item ${equipped ? 'equipped' : ''}`;
+      card.innerHTML = `
+        <div class="shop-item-preview" style="background:${neon.color || '#475569'}; box-shadow:${neon.color ? '0 0 12px ' + neon.color : 'none'}"></div>
+        <div class="shop-item-name">${neon.name}</div>
+        <div class="shop-item-price">${unlocked ? (equipped ? 'EQUIPPED' : 'EQUIP') : '🪙 ' + neon.price}</div>
+      `;
+      card.onclick = () => {
+        if (unlocked) {
+          equippedNeon = neon.id;
+        } else if (playerCoins >= neon.price) {
+          playerCoins -= neon.price;
+          unlockedNeon.push(neon.id);
+          equippedNeon = neon.id;
+        }
+        saveAll();
+        buildGarageShopUI();
+      };
+      neonShopGrid.appendChild(card);
+    });
+
+    coinDisplay.textContent = playerCoins;
+  }
+
+  // ==========================================
+  // EVENT LISTENERS
+  // ==========================================
+  canvas.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    if (gameState !== 'PLAYING') return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    let selected = null;
+    let bestDist = Infinity;
+
+    vehicles.forEach(v => {
+      if (v.state !== 'PARKED') return;
+      const dx = x - v.x;
+      const dy = y - v.y;
+      const c = Math.cos(-v.heading);
+      const s = Math.sin(-v.heading);
+      const lx = dx * c - dy * s;
+      const ly = dx * s + dy * c;
+
+      if (Math.abs(lx) <= v.spec.length / 2 + 10 && Math.abs(ly) <= v.spec.width / 2 + 10) {
+        const d = Math.hypot(dx, dy);
+        if (d < bestDist) {
+          bestDist = d;
+          selected = v;
+        }
+      }
+    });
+
+    if (selected) {
+      SFX.playLaunch();
+      selected.state = 'APPROACHING';
+    }
+  }, { passive: false });
+
+  modalActionBtn.onclick = () => buildLevel(currentLevel);
+  modalResetBtn.onclick = () => { currentLevel = 1; buildLevel(currentLevel); };
+  resetProgressBtn.onclick = () => { currentLevel = 1; playerCoins = 100; buildLevel(currentLevel); };
+
+  garageBtn.onclick = () => {
+    buildGarageShopUI();
+    garageOverlay.classList.add('active');
+  };
+
+  closeGarageBtn.onclick = () => {
+    garageOverlay.classList.remove('active');
+    buildLevel(currentLevel); // Rebuild to apply custom paint instantly
+  };
+
+  nightModeBtn.onclick = () => {
+    isNightMode = !isNightMode;
+    renderStaticBackground();
+    saveAll();
+  };
+
+  soundToggleBtn.onclick = () => {
+    SFX.muted = !SFX.muted;
+    soundToggleBtn.textContent = SFX.muted ? '🔇' : '🔊';
+  };
+
+  window.addEventListener('resize', () => {
+    resizeCanvas();
+    buildLevel(currentLevel);
+  });
+
+  // Init
+  resizeCanvas();
+  buildLevel(currentLevel);
+  requestAnimationFrame(gameLoop);
+})();
+</script>
+</body>
+</html>
