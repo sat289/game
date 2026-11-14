@@ -656,7 +656,10 @@ window.KAKINADA_MAP_DATA = {"meta":{"city":"Kakinada, Andhra Pradesh","centerLat
 
 <script>
 async function() {
-  const MAP = window.KAKINADA_MAP_DATA;
+// Load additional Overpass map information.
+if (window.KAKINADA_MAP_PROMISE) {
+  await window.KAKINADA_MAP_PROMISE;
+}
   const viewportEl = document.getElementById('gameViewport');
   const canvas = document.getElementById('threeCanvas');
   const minimapCanvas = document.getElementById('minimapCanvas');
@@ -794,6 +797,240 @@ async function() {
   groundMesh.position.y = -0.12;
   scene.add(groundMesh);
 
+// ===============================================
+// KAKINADA IMPORTED OSM ENVIRONMENT
+// ===============================================
+
+function buildImportedOsmFeatures() {
+
+  const osm = window.KAKINADA_IMPORTED_OSM || {};
+
+  const toWorld = (lat, lon) => ({
+    x: (lon - 82.24) *
+       111320 *
+       Math.cos(16.975 * Math.PI / 180),
+
+    z: -(lat - 16.975) * 111320
+  });
+
+  // WATER AND PARK POLYGONS
+  function buildPolygonLayer(category, color, opacity) {
+
+    const elements = osm[category] || [];
+    let count = 0;
+
+    for (const element of elements) {
+
+      const points = element.geometry;
+
+      if (!points || points.length < 4) continue;
+
+      const first = points[0];
+      const last = points[points.length - 1];
+
+      // Only closed polygons.
+      if (
+        Math.abs(first.lat - last.lat) > 0.00008 ||
+        Math.abs(first.lon - last.lon) > 0.00008
+      ) continue;
+
+      const shape = new THREE.Shape();
+
+      points.forEach((point, index) => {
+
+        const p = toWorld(point.lat, point.lon);
+
+        if (index === 0) {
+          shape.moveTo(p.x, -p.z);
+        } else {
+          shape.lineTo(p.x, -p.z);
+        }
+
+      });
+
+      const geometry = new THREE.ShapeGeometry(shape);
+
+      geometry.rotateX(-Math.PI / 2);
+
+      const material = new THREE.MeshBasicMaterial({
+        color,
+        transparent: true,
+        opacity,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      });
+
+      const mesh = new THREE.Mesh(
+        geometry,
+        material
+      );
+
+      mesh.position.y =
+        category === "water" ? 0.10 : 0.075;
+
+      scene.add(mesh);
+
+      count++;
+
+      // Keep mobile geometry under control.
+      if (count >= 500) break;
+    }
+
+    console.log(category, "polygons:", count);
+  }
+
+  buildPolygonLayer("water", 0x168bd2, 0.72);
+  buildPolygonLayer("parks", 0x32834a, 0.68);
+
+  // IMPORTED TREES
+  const trees = (osm.trees || [])
+    .filter(t =>
+      Number.isFinite(t.lat) &&
+      Number.isFinite(t.lon)
+    )
+    .slice(0, 1000);
+
+  if (trees.length) {
+
+    const trunkGeo =
+      new THREE.CylinderGeometry(0.16, 0.22, 2, 5);
+
+    const crownGeo =
+      new THREE.ConeGeometry(1.05, 2.8, 6);
+
+    const trunks = new THREE.InstancedMesh(
+      trunkGeo,
+      new THREE.MeshLambertMaterial({
+        color: 0x795548
+      }),
+      trees.length
+    );
+
+    const crowns = new THREE.InstancedMesh(
+      crownGeo,
+      new THREE.MeshLambertMaterial({
+        color: 0x287a3d
+      }),
+      trees.length
+    );
+
+    const dummy = new THREE.Object3D();
+
+    trees.forEach((tree, i) => {
+
+      const p = toWorld(tree.lat, tree.lon);
+
+      dummy.position.set(p.x, 1, p.z);
+      dummy.updateMatrix();
+      trunks.setMatrixAt(i, dummy.matrix);
+
+      dummy.position.set(p.x, 3.15, p.z);
+      dummy.updateMatrix();
+      crowns.setMatrixAt(i, dummy.matrix);
+
+    });
+
+    trunks.instanceMatrix.needsUpdate = true;
+    crowns.instanceMatrix.needsUpdate = true;
+
+    scene.add(trunks, crowns);
+  }
+
+  // IMPORTED CITY POI MARKERS
+  const categories = [
+    ["restaurants", 0xff7a24],
+    ["shops", 0xfbbf24],
+    ["schools", 0x60a5fa],
+    ["hospitals", 0xef4444],
+    ["parking", 0xa78bfa],
+    ["transport", 0x22d3ee],
+    ["religious", 0xfacc15],
+    ["government", 0x34d399]
+  ];
+
+  let poiCount = 0;
+
+  for (const [category, color] of categories) {
+
+    const elements = (osm[category] || []).slice(
+      0,
+      category === "shops" ? 180 : 100
+    );
+
+    const material = new THREE.MeshLambertMaterial({
+      color
+    });
+
+    for (const element of elements) {
+
+      let lat = element.lat;
+      let lon = element.lon;
+
+      if (
+        (!Number.isFinite(lat) || !Number.isFinite(lon)) &&
+        element.center
+      ) {
+        lat = element.center.lat;
+        lon = element.center.lon;
+      }
+
+      if (
+        (!Number.isFinite(lat) || !Number.isFinite(lon)) &&
+        element.geometry?.length
+      ) {
+        const points = element.geometry;
+
+        lat = points.reduce((n, p) => n + p.lat, 0)
+          / points.length;
+
+        lon = points.reduce((n, p) => n + p.lon, 0)
+          / points.length;
+      }
+
+      if (!Number.isFinite(lat) ||
+          !Number.isFinite(lon)) continue;
+
+      const p = toWorld(lat, lon);
+
+      const marker = new THREE.Group();
+
+      const stem = new THREE.Mesh(
+        new THREE.CylinderGeometry(
+          0.24, 0.34, 2, 7
+        ),
+        material
+      );
+
+      stem.position.y = 1;
+
+      const top = new THREE.Mesh(
+        new THREE.SphereGeometry(0.58, 8, 6),
+        material
+      );
+
+      top.position.y = 2.15;
+
+      marker.add(stem, top);
+      marker.position.set(p.x, 0.12, p.z);
+
+      scene.add(marker);
+
+      poiCount++;
+    }
+  }
+
+  window.KAKINADA_IMPORTED_FEATURE_STATS = {
+    trees: trees.length,
+    poiMarkers: poiCount
+  };
+
+  console.log(
+    "Imported Kakinada environment:",
+    window.KAKINADA_IMPORTED_FEATURE_STATS
+  );
+}
+
+buildImportedOsmFeatures();
   const seaGeo = new THREE.PlaneGeometry(4500, 14000);
   const seaMat = new THREE.MeshLambertMaterial({ color: 0x0284c7 });
   const seaMesh = new THREE.Mesh(seaGeo, seaMat);
