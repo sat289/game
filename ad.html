@@ -6,7 +6,8 @@
     <meta name="referrer" content="no-referrer-when-downgrade" />
     <meta name="color-scheme" content="dark">
     <title>Reward Ad</title>
-    <!-- Fluid Player for VAST Video Ads -->
+    <!-- Fluid Player CSS & JS for VAST Video Ads -->
+    <link rel="stylesheet" href="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.css" />
     <script src="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.js"></script>
     <style>
         * {
@@ -34,13 +35,18 @@
             position: relative;
             background: #0d0617;
         }
-        video, iframe, .fluid_video_wrapper {
+        #vast-video,
+        .fluid_video_wrapper {
             width: 100% !important;
             height: 100% !important;
             max-width: 100% !important;
             max-height: 100% !important;
-            object-fit: contain;
-            border: none;
+            background: #0d0617 !important;
+        }
+        video {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: contain !important;
             background: #0d0617 !important;
         }
     </style>
@@ -48,58 +54,85 @@
 <body>
 
     <div id="ad-stage">
-        <!-- HilltopAds Script -->
-        <script>
-        (function(mkh){
-        var d = document,
-            s = d.createElement('script'),
-            l = d.currentScript || d.scripts[d.scripts.length - 1];
-        s.settings = mkh || {};
-        s.src = "https://prizefamily.com/b_XxVds.d/G/lN0LYdW/cC/Le/mf9/u/ZYUzljkOPVTzcn2NM/jbcg0pMATOMUtUNRz/YBy/NDzaQFxbN/wl";
-        s.async = true;
-        s.referrerPolicy = 'no-referrer-when-downgrade';
-        s.onerror = function() {
-            window.parent.postMessage({ type: 'AD_FAILED' }, '*');
-        };
-        l.parentNode.insertBefore(s, l);
-        })({});
-        </script>
+        <!-- HTML5 Video Element for HilltopAds VAST (#7627405) -->
+        <video id="vast-video" playsinline muted autoplay>
+            <!-- Short silent dark fallback clip so FluidPlayer can trigger preRoll VAST immediately -->
+            <source src="https://cdn.fluidplayer.com/videos/valerian-1080p.mkv" type="video/mp4" />
+        </video>
     </div>
 
     <script>
+        // Your exact VAST URL from HilltopAds Zone #7627405 (shown at 00:05 in your video)
+        const HILLTOP_VAST_URL = "https://enchantingloss.com/d.m/F/zNd.G/N/v/Z~G5U/v/eJm3HTu9ZUbI/lkgPETHcY/2cN/j_c/01N/z/Y9xV/j/c/2mW9/1/Q5";
+
         let adStartedSent = false;
+        let adCompletedSent = false;
 
         function notifyAdStarted() {
             if (adStartedSent) return;
             adStartedSent = true;
             window.parent.postMessage({ type: 'AD_STARTED' }, '*');
 
-            // Unlock reward after 5 seconds of actual video playback
+            // Unlock reward after 5 seconds of watching
             setTimeout(() => {
                 window.parent.postMessage({ type: 'AD_REWARD_READY' }, '*');
             }, 5000);
         }
 
-        // STRICT CHECK: Only trigger AD_STARTED when a <video> is actually playing frames (currentTime > 0.1)
-        const checkInterval = setInterval(() => {
-            const videos = document.querySelectorAll('video');
-            videos.forEach((video) => {
-                // Ensure muted autoplay is allowed on mobile Chrome
-                if (video.paused && video.readyState >= 2) {
-                    video.muted = true;
-                    video.play().catch(() => {});
-                }
+        function notifyAdCompleted() {
+            if (adCompletedSent) return;
+            adCompletedSent = true;
+            window.parent.postMessage({ type: 'AD_COMPLETED' }, '*');
+        }
 
-                if (!video.paused && video.currentTime > 0.1 && video.videoWidth > 0) {
-                    clearInterval(checkInterval);
-                    notifyAdStarted();
+        function notifyAdFailed() {
+            if (!adStartedSent) {
+                window.parent.postMessage({ type: 'AD_FAILED' }, '*');
+            }
+        }
 
-                    video.onended = () => {
-                        window.parent.postMessage({ type: 'AD_COMPLETED' }, '*');
-                    };
+        // Initialize FluidPlayer with your HilltopAds VAST Pre-Roll
+        try {
+            const player = fluidPlayer('vast-video', {
+                layoutControls: {
+                    fillToContainer: true,
+                    autoPlay: true,
+                    mute: true,
+                    allowTheatre: false,
+                    playButtonShowing: true,
+                    controlBar: {
+                        autoHide: true
+                    }
+                },
+                vastOptions: {
+                    allowVPAID: true,
+                    adList: [
+                        {
+                            roll: 'preRoll',
+                            vastTag: HILLTOP_VAST_URL
+                        }
+                    ],
+                    vastAdvanced: {
+                        vastLoadedCallback: function() {
+                            notifyAdStarted();
+                        },
+                        noVastVideoCallback: function() {
+                            // No VAST ad fill available right now
+                            notifyAdFailed();
+                        },
+                        vastVideoSkippedCallback: function() {
+                            notifyAdCompleted();
+                        },
+                        vastVideoEndedCallback: function() {
+                            notifyAdCompleted();
+                        }
+                    }
                 }
             });
-        }, 200);
+        } catch (err) {
+            console.error("VAST Player error:", err);
+            notifyAdFailed();
+        }
     </script>
 </body>
 </html>
