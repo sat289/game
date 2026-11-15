@@ -65,6 +65,10 @@ self.addEventListener('fetch', event => {
   }
 
   // 2. SPECIAL HANDLER FOR SONGS & AUDIO FILES (Fixes HTTP 206 Range Bug)
+  if (event.request.headers.has('range')) {
+  event.respondWith(fetch(event.request));
+  return;
+  }
   if (isAudioRequest(event.request)) {
     event.respondWith(
       caches.open(CACHE_NAME).then(async cache => {
