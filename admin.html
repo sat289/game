@@ -17,7 +17,7 @@
   <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-database-compat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-analytics-compat.js"></script>
-
+  <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-auth-compat.js"></script>
   <!-- Chart.js for Real-Time Telemetry Charts -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
@@ -293,29 +293,51 @@
     </div>
   </div>
 
-  <!-- STRICT PASSWORD GATE -->
-  <div id="passwordModal" class="fixed inset-0 z-[99999] bg-slate-950/92 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="feature-hub max-w-sm w-full p-6 rounded-3xl text-center shadow-2xl border border-[#32ffdc]/50">
-      <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-gradient-to-tr from-teal-500 to-cyan-400 text-slate-950 flex items-center justify-center text-2xl font-black shadow-lg">
-        <i class="fa-solid fa-lock"></i>
-      </div>
-      <h2 class="brand-font text-lg font-bold theme-heading mb-1">Admin Studio Access</h2>
-      <p class="text-[11px] theme-subtext mb-4">Enter security passcode</p>
+  
+<!-- FIREBASE ADMIN PASSWORD GATE -->
+<div id="passwordModal" class="fixed inset-0 z-[99999] bg-slate-950/92 backdrop-blur-md flex items-center justify-center p-4">
+  <div class="feature-hub max-w-sm w-full p-6 rounded-3xl text-center shadow-2xl border border-[#32ffdc]/50">
 
-      <div class="relative flex items-center mb-3">
-        <input id="passcodeInput" type="password" class="neon-input pr-12 text-center text-lg tracking-widest font-mono" placeholder="•••••••" autofocus onkeydown="if(event.key==='Enter') verifyAdminPassword()">
-        <button type="button" onclick="togglePasscodeVisibility()" class="absolute right-3 text-lg" title="Toggle visibility">🙈</button>
-      </div>
-
-      <p id="passcodeErrorMsg" class="hidden text-xs font-bold text-rose-600 dark:text-rose-400 mb-3">
-        <i class="fa-solid fa-circle-exclamation mr-1"></i> Incorrect passcode. Access denied.
-      </p>
-
-      <button type="button" onclick="verifyAdminPassword()" class="neon-action w-full py-2.5">
-        <i class="fa-solid fa-key mr-1"></i> Unlock Admin Console
-      </button>
+    <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-gradient-to-tr from-teal-500 to-cyan-400 text-slate-950 flex items-center justify-center text-2xl">
+      <i class="fa-solid fa-lock"></i>
     </div>
+
+    <h2 class="brand-font text-lg font-bold theme-heading mb-1">
+      Admin Studio Access
+    </h2>
+
+    <p class="text-[11px] theme-subtext mb-4">
+      Enter your admin password
+    </p>
+
+    <input
+      id="passcodeInput"
+      type="password"
+      class="neon-input text-center text-lg tracking-widest font-mono mb-3"
+      placeholder="Enter password"
+      onkeydown="if(event.key==='Enter') verifyAdminPassword()"
+    >
+
+    <p id="passcodeErrorMsg" class="hidden text-xs text-rose-500 mb-3">
+      Incorrect password. Please try again.
+    </p>
+
+    <button onclick="verifyAdminPassword()" class="neon-action w-full py-2.5">
+      <i class="fa-solid fa-unlock mr-1"></i>
+      Unlock Admin Console
+    </button>
+
+    <button onclick="togglePasscodeVisibility()" class="chip-btn w-full mt-2">
+      <i class="fa-solid fa-eye"></i> Show / Hide Password
+    </button>
+
+    <button onclick="sendAdminPasswordReset()" class="text-xs text-teal-500 font-bold mt-4">
+      Forgot Password? Send Gmail Reset Link
+    </button>
+
+    <p id="adminResetStatus" class="text-xs mt-3 theme-subtext"></p>
   </div>
+</div>
 
   <main class="max-w-5xl w-full mx-auto px-3.5 sm:px-6 pt-4 pb-12 relative z-10">
     <!-- HEADER -->
@@ -366,6 +388,49 @@
         </div>
         <p class="text-[10px] theme-subtext mt-2 font-medium">View your token details above to enter them into Section 1 below.</p>
       </section>
+      
+<!-- ADMIN ACCOUNT SECURITY -->
+<section class="feature-hub rounded-2xl p-4 mb-4">
+
+  <h2 class="brand-font font-bold text-lg mb-3">
+    <i class="fa-solid fa-shield-halved"></i>
+    Admin Account Security
+  </h2>
+
+  <p class="text-xs theme-subtext mb-3">
+    Change your Firebase admin password.
+  </p>
+
+  <input id="oldAdminPassword"
+    type="password"
+    class="neon-input mb-2"
+    placeholder="Current password">
+
+  <input id="newAdminPassword"
+    type="password"
+    class="neon-input mb-2"
+    placeholder="New password">
+
+  <input id="confirmAdminPassword"
+    type="password"
+    class="neon-input mb-3"
+    placeholder="Confirm new password">
+
+  <button onclick="changeAdminPassword()"
+    class="neon-action w-full py-2.5">
+    <i class="fa-solid fa-key"></i>
+    Update Admin Password
+  </button>
+
+  <p id="changePasswordStatus"
+    class="text-xs theme-subtext mt-3"></p>
+
+  <button onclick="sendAdminPasswordReset()"
+    class="chip-btn w-full mt-3">
+    Forgot Password? Send Gmail Reset
+  </button>
+
+</section>
 
       <!-- SECTION 1: GITHUB CONFIGURATION -->
       <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
@@ -1610,49 +1675,192 @@
       }
     }
 
-    /* ==========================================================
-       STRICT PASSWORD GATE
-    ========================================================== */
-    function verifyAdminPassword() {
-      const inputEl = document.getElementById('passcodeInput');
-      const errEl = document.getElementById('passcodeErrorMsg');
-      if (inputEl.value.trim() === '2010143') {
-        errEl.classList.add('hidden');
-        document.getElementById('passwordModal').classList.add('hidden');
-        safeSetStorage('st_admin_unlocked', 'true');
-        showToast('Admin Studio unlocked!', 'success');
-        loadAllGames();
-        fetchAllRealTelemetry(false);
+
+/* =========================================
+   ST GAMES - FIREBASE ADMIN AUTHENTICATION
+   Password-only access screen
+========================================= */
+
+const ST_ADMIN_EMAIL = "satishkommana630@gmail.com";
+
+const ST_ADMIN_FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDOFx0_vpDRDCkUW-deQJMNK5msOsGSnI",
+  authDomain: "stgames-289.firebaseapp.com",
+  databaseURL: "https://stgames-289-default-rtdb.firebaseio.com/",
+  projectId: "stgames-289",
+  storageBucket: "stgames-289.firebasestorage.app",
+  messagingSenderId: "916146081741",
+  appId: "1:916146081741:web:eb343c4dc0c6648388fe84"
+};
+
+let stAdminAuth = null;
+let stAdminUser = null;
+
+function initAdminFirebaseAuth() {
+  try {
+    const app =
+      firebase.apps.find(a => a.name === "stGamesAdminAuth") ||
+      firebase.initializeApp(
+        ST_ADMIN_FIREBASE_CONFIG,
+        "stGamesAdminAuth"
+      );
+
+    stAdminAuth = firebase.auth(app);
+
+    stAdminAuth.setPersistence(
+      firebase.auth.Auth.Persistence.SESSION
+    );
+
+    stAdminAuth.onAuthStateChanged(user => {
+      stAdminUser = user || null;
+
+      if (user && user.email === ST_ADMIN_EMAIL) {
+        document.getElementById("passwordModal")
+          .classList.add("hidden");
+
+        startAdminStudioAfterLogin();
       } else {
-        errEl.classList.remove('hidden');
-        inputEl.value = '';
-        inputEl.focus();
+        document.getElementById("passwordModal")
+          .classList.remove("hidden");
       }
+    });
+
+  } catch (error) {
+    console.error("Admin Firebase Auth:", error);
+    showToast("Firebase authentication error: " + error.message, "error");
+  }
+}
+
+async function verifyAdminPassword() {
+  const password =
+    document.getElementById("passcodeInput").value;
+
+  const errorBox =
+    document.getElementById("passcodeErrorMsg");
+
+  if (!password) {
+    errorBox.textContent = "Enter your password.";
+    errorBox.classList.remove("hidden");
+    return;
+  }
+
+  try {
+    const result =
+      await stAdminAuth.signInWithEmailAndPassword(
+        ST_ADMIN_EMAIL,
+        password
+      );
+
+    if (result.user.email !== ST_ADMIN_EMAIL) {
+      await stAdminAuth.signOut();
+      throw new Error("Unauthorized admin account.");
     }
 
-    function lockAdminConsole() {
-      safeSetStorage('st_admin_unlocked', 'false');
-      document.getElementById('passcodeInput').value = '';
-      document.getElementById('passcodeErrorMsg').classList.add('hidden');
-      document.getElementById('passwordModal').classList.remove('hidden');
+    document.getElementById("passcodeInput").value = "";
+    errorBox.classList.add("hidden");
+
+  } catch (error) {
+    errorBox.textContent =
+      error.code === "auth/too-many-requests"
+        ? "Too many attempts. Try again later."
+        : "Incorrect password or authentication failed.";
+
+    errorBox.classList.remove("hidden");
+  }
+}
+
+async function sendAdminPasswordReset() {
+  const status =
+    document.getElementById("adminResetStatus");
+
+  try {
+    await stAdminAuth.sendPasswordResetEmail(
+      ST_ADMIN_EMAIL
+    );
+
+    status.textContent =
+      "Password reset link sent. Check your Gmail inbox.";
+
+  } catch (error) {
+    status.textContent =
+      "Reset failed: " + error.message;
+  }
+}
+
+async function changeAdminPassword() {
+  const oldPassword =
+    document.getElementById("oldAdminPassword").value;
+
+  const newPassword =
+    document.getElementById("newAdminPassword").value;
+
+  const confirmPassword =
+    document.getElementById("confirmAdminPassword").value;
+
+  const status =
+    document.getElementById("changePasswordStatus");
+
+  try {
+    if (!stAdminUser || stAdminUser.email !== ST_ADMIN_EMAIL) {
+      throw new Error("Admin session not available.");
     }
 
-    function togglePasscodeVisibility() {
-      const i = document.getElementById('passcodeInput');
-      i.type = i.type === 'password' ? 'text' : 'password';
+    if (newPassword.length < 8) {
+      throw new Error("New password must have at least 8 characters.");
     }
 
-    function toggleTokenVisibility() {
-      const i = document.getElementById('ghToken');
-      const btn = i.nextElementSibling;
-      if (i.type === 'password') {
-        i.type = 'text';
-        btn.textContent = '🫥';
-      } else {
-        i.type = 'password';
-        btn.textContent = '🙈';
-      }
+    if (newPassword !== confirmPassword) {
+      throw new Error("New passwords do not match.");
     }
+
+    const credential =
+      firebase.auth.EmailAuthProvider.credential(
+        ST_ADMIN_EMAIL,
+        oldPassword
+      );
+
+    await stAdminUser.reauthenticateWithCredential(
+      credential
+    );
+
+    await stAdminUser.updatePassword(newPassword);
+
+    document.getElementById("oldAdminPassword").value = "";
+    document.getElementById("newAdminPassword").value = "";
+    document.getElementById("confirmAdminPassword").value = "";
+
+    status.textContent = "Password updated successfully!";
+
+  } catch (error) {
+    status.textContent = error.message;
+  }
+}
+
+function togglePasscodeVisibility() {
+  const input = document.getElementById("passcodeInput");
+
+  input.type =
+    input.type === "password" ? "text" : "password";
+}
+
+function lockAdminConsole() {
+  if (stAdminAuth) {
+    stAdminAuth.signOut();
+  }
+
+  stAdminUser = null;
+
+  document.getElementById("passcodeInput").value = "";
+  document.getElementById("passwordModal")
+    .classList.remove("hidden");
+}
+
+function startAdminStudioAfterLogin() {
+  if (!stAdminUser) return;
+
+  loadAllGames();
+  fetchAllRealTelemetry(false);
+}
 
     /* ==========================================================
        THEME SWITCHER
