@@ -62,6 +62,48 @@
       margin: 0 !important;
       padding-top: 0 !important;
     }
+    
+.game-card-wrap {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.game-card-wrap .game-card {
+  width: 100%;
+  flex: 1;
+}
+
+.game-details-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 5px;
+  border-radius: 11px;
+  background: #07222d;
+  color: #32ffdc;
+  border: 1px solid rgba(50,255,220,.45);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .6px;
+  text-decoration: none;
+  transition: .2s ease;
+}
+
+.game-details-link:hover {
+  background: #32ffdc;
+  color: #07222d;
+  transform: translateY(-1px);
+}
+
+body.dark-theme .game-details-link {
+  background: #0b303b;
+  color: #32ffdc;
+}
+    
 
     /* Hide empty top auto-ad spacing above notice bar */
     body > ins.adsbygoogle:first-of-type {
@@ -1219,21 +1261,42 @@
       const isFav = favoriteGames.has(game.id);
       const badge = game.badge ? `<div class="game-card-badge absolute top-2.5 left-2.5 z-10 bg-white/95 text-[#07222d] text-[10px] font-extrabold px-2 py-0.5 rounded-lg shadow">${escapeHTML(game.badge)}</div>` : '';
 
-      return `
-        <a href="${escapeHTML(game.url)}" data-game-url="${escapeHTML(game.url)}" onclick="markGamePlayed('${escapeHTML(game.id)}')" class="game-card ${spanClass} ${horizontalClass}" style="background: ${game.bg || '#07222d'};">
-          ${badge}
-          <button type="button" class="favorite-btn ${isFav ? 'is-favorite' : ''}" onclick="toggleFavorite(event, '${escapeHTML(game.id)}')"><i class="fa-${isFav ? 'solid' : 'regular'} fa-heart"></i></button>
-          <img src="${escapeHTML(game.logo)}" alt="${escapeHTML(game.title)}" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');" class="w-full h-full object-cover" loading="lazy" decoding="async">
-          <div class="hidden w-full h-full flex flex-col items-center justify-center text-white p-3 text-center">
-            <i class="${escapeHTML(game.icon || 'fa-solid fa-gamepad')} text-3xl mb-1"></i>
-            <span class="text-[11px] font-extrabold">${escapeHTML(game.title)}</span>
-          </div>
-          <div class="game-card-overlay absolute inset-0 flex flex-col justify-end p-3 text-white">
-            <h3 class="font-extrabold text-xs sm:text-sm truncate">${escapeHTML(game.title)}</h3>
-            <span class="text-[10px] text-[#32ffdc] font-semibold">Play Free Now</span>
-          </div>
-        </a>
-      `;
+      
+return `
+  <div class="game-card-wrap ${spanClass} ${horizontalClass}">
+    <a href="${escapeHTML(game.url)}"
+       data-game-url="${escapeHTML(game.url)}"
+       onclick="markGamePlayed('${escapeHTML(game.id)}')"
+       class="game-card"
+       style="background: ${game.bg || '#07222d'};">
+      ${badge}
+      <button type="button"
+        class="favorite-btn ${isFav ? 'is-favorite' : ''}"
+        onclick="toggleFavorite(event, '${escapeHTML(game.id)}')">
+        <i class="fa-${isFav ? 'solid' : 'regular'} fa-heart"></i>
+      </button>
+      <img src="${escapeHTML(game.logo)}"
+        alt="${escapeHTML(game.title)}"
+        onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');"
+        class="w-full h-full object-cover"
+        loading="lazy" decoding="async">
+      <div class="hidden w-full h-full flex flex-col items-center justify-center text-white p-3 text-center">
+        <i class="${escapeHTML(game.icon || 'fa-solid fa-gamepad')} text-3xl mb-1"></i>
+        <span class="text-[11px] font-extrabold">${escapeHTML(game.title)}</span>
+      </div>
+      <div class="game-card-overlay absolute inset-0 flex flex-col justify-end p-3 text-white">
+        <h3 class="font-extrabold text-xs sm:text-sm truncate">${escapeHTML(game.title)}</h3>
+        <span class="text-[10px] text-[#32ffdc] font-semibold">Play Free Now</span>
+      </div>
+    </a>
+
+    <a class="game-details-link"
+       href="guide.html?id=${encodeURIComponent(game.id)}">
+      <i class="fa-solid fa-book-open"></i> DETAILS
+    </a>
+  </div>
+`;
+
     }
 
     function navigateLocalPage(event, pageUrl) {
