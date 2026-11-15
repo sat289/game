@@ -1,817 +1,757 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#07222d">
-  <title>Game Guide - ST Games</title>
-  <meta name="description" content="Learn how to play games on ST Games, discover controls, tips and rules, and share your player rating.">
-  <link rel="icon" href="/stgames-apk/launchericon-512x512.png">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#07222d">
+<title>Game Guide - ST Games</title>
+<meta name="description" content="Learn how to play ST Games. Explore game controls, objectives, tips, rules and player ratings.">
+<link rel="icon" href="/logo/logo.jpg">
 
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 
-  <style>
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
-      color: #f8fafc;
-      font-family: Inter, sans-serif;
-      background: radial-gradient(circle at top, #155e63, #07222d 65%);
-    }
-
-    .brand { font-family: Fredoka, sans-serif; }
-
-    .guide-sheet {
-      position: fixed;
-      z-index: 20;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      height: 59vh;
-      max-height: 94vh;
-      min-height: 220px;
-      background: #f8fafc;
-      color: #102a35;
-      border-radius: 25px 25px 0 0;
-      box-shadow: 0 -12px 40px #0005;
-      display: flex;
-      flex-direction: column;
-      transition: height .25s ease;
-      padding-bottom: env(safe-area-inset-bottom);
-    }
-
-    .guide-sheet.expanded { height: 93vh; }
-
-    .sheet-handle-area {
-      flex-shrink: 0;
-      padding: 12px 16px 10px;
-      cursor: grab;
-      touch-action: none;
-    }
-
-    .sheet-handle {
-      width: 46px;
-      height: 5px;
-      border-radius: 10px;
-      background: #94a3b8;
-      margin: 0 auto 10px;
-    }
-
-    .sheet-content {
-      overflow-y: auto;
-      padding: 0 18px 25px;
-      overscroll-behavior: contain;
-    }
-
-    .guide-section {
-      background: white;
-      border: 1px solid #dbe7eb;
-      border-radius: 15px;
-      padding: 14px;
-      margin: 12px 0;
-    }
-
-    .guide-section h3 {
-      font-weight: 800;
-      margin-bottom: 7px;
-      color: #087e78;
-    }
-
-    .guide-section p,
-    .guide-section li {
-      line-height: 1.65;
-      font-size: 14px;
-      white-space: pre-wrap;
-    }
-
-    .guide-section ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-
-    .guide-section li {
-      padding: 5px 0;
-      border-bottom: 1px solid #edf2f4;
-    }
-
-    .guide-section li:last-child { border: 0; }
-
-    .play-btn {
-      display: block;
-      text-align: center;
-      padding: 14px;
-      border-radius: 15px;
-      background: #32ffdc;
-      color: #07222d;
-      font-weight: 900;
-      text-decoration: none;
-      transition: .2s;
-    }
-
-    .play-btn:active { transform: scale(.98); }
-
-    .game-logo {
-      width: 142px;
-      height: 142px;
-      object-fit: cover;
-      border-radius: 25px;
-      border: 3px solid #32ffdc;
-      box-shadow: 0 10px 30px #0005;
-    }
-
-    .other-card {
-      display: block;
-      background: #fff;
-      color: #102a35;
-      border-radius: 13px;
-      padding: 10px;
-      text-decoration: none;
-      border: 1px solid #dbe7eb;
-      min-width: 112px;
-      width: 112px;
-      flex-shrink: 0;
-    }
-
-    .other-card img {
-      width: 100%;
-      aspect-ratio: 1;
-      object-fit: cover;
-      border-radius: 9px;
-    }
-
-    .rating-panel {
-      background: #fff;
-      border: 1px solid #f5d58b;
-      border-radius: 15px;
-      padding: 14px;
-      margin: 12px 0;
-      text-align: center;
-    }
-
-    .rating-stars-live {
-      display: flex;
-      justify-content: center;
-      gap: 7px;
-      margin: 9px 0;
-    }
-
-    .rating-stars-live button {
-      border: 0;
-      background: transparent;
-      color: #cbd5e1;
-      font-size: 32px;
-      line-height: 1;
-      padding: 3px;
-      cursor: pointer;
-    }
-
-    .rating-stars-live button.active,
-    .rating-stars-live button.selected {
-      color: #f59e0b;
-    }
-
-    .rating-submit {
-      background: #07222d;
-      color: #fff;
-      border: 0;
-      border-radius: 10px;
-      padding: 10px 18px;
-      font-weight: 800;
-      cursor: pointer;
-    }
-
-    .rating-submit:disabled {
-      opacity: .55;
-      cursor: not-allowed;
-    }
-
-    #ratingStatus {
-      min-height: 18px;
-      font-size: 12px;
-      color: #475569;
-    }
-
-    .category-pill {
-      display: inline-block;
-      background: #cffafe;
-      color: #155e63;
-      padding: 5px 12px;
-      border-radius: 30px;
-      font-size: 12px;
-      font-weight: 800;
-      margin-top: 8px;
-    }
-
-    .loading {
-      text-align: center;
-      padding: 20px;
-      color: #64748b;
-    }
-
-    footer a { color: #087e78; font-weight: 700; }
-
-    @media(max-width: 400px) {
-      .game-logo {
-        width: 120px;
-        height: 120px;
-      }
-
-      .sheet-content { padding-left: 13px; padding-right: 13px; }
-    }
-  </style>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;min-height:100vh;color:#f8fafc;
+ font-family:Inter,sans-serif;
+ background:radial-gradient(circle at top,#155e63,#07222d 65%);
+}
+.brand{font-family:Fredoka,sans-serif}
+.guide-sheet{
+ position:fixed;z-index:20;left:0;right:0;bottom:0;
+ height:59vh;max-height:94vh;min-height:220px;
+ background:#f8fafc;color:#102a35;
+ border-radius:25px 25px 0 0;
+ box-shadow:0 -12px 40px #0005;
+ display:flex;flex-direction:column;
+ transition:height .25s ease;
+ padding-bottom:env(safe-area-inset-bottom);
+}
+.guide-sheet.expanded{height:93vh}
+.sheet-handle-area{
+ flex-shrink:0;padding:12px 16px 10px;
+ cursor:grab;touch-action:none;user-select:none;
+}
+.sheet-handle{
+ width:46px;height:5px;border-radius:10px;
+ background:#94a3b8;margin:0 auto 10px;
+}
+.sheet-content{
+ overflow-y:auto;padding:0 18px 25px;
+ overscroll-behavior:contain;
+}
+.guide-section{
+ background:#fff;border:1px solid #dbe7eb;
+ border-radius:15px;padding:14px;margin:12px 0;
+}
+.guide-section h3{
+ font-weight:800;margin-bottom:7px;color:#087e78;
+}
+.guide-section p,.guide-section li{
+ line-height:1.65;font-size:14px;white-space:pre-wrap;
+}
+.guide-section ul{list-style:none;padding:0;margin:0}
+.guide-section li{
+ padding:5px 0;border-bottom:1px solid #edf2f4;
+}
+.guide-section li:last-child{border:0}
+.play-btn{
+ display:block;text-align:center;padding:14px;
+ border-radius:15px;background:#32ffdc;color:#07222d;
+ font-weight:900;text-decoration:none;transition:.2s;
+}
+.play-btn:active{transform:scale(.98)}
+.game-logo{
+ width:142px;height:142px;object-fit:cover;
+ border-radius:25px;border:3px solid #32ffdc;
+ box-shadow:0 10px 30px #0005;
+}
+.other-card{
+ display:block;background:#fff;color:#102a35;
+ border-radius:13px;padding:10px;text-decoration:none;
+ border:1px solid #dbe7eb;min-width:112px;width:112px;
+ flex-shrink:0;
+}
+.other-card img{
+ width:100%;aspect-ratio:1;object-fit:cover;border-radius:9px;
+}
+.rating-panel{
+ background:#fff;border:1px solid #f5d58b;
+ border-radius:15px;padding:14px;margin:12px 0;text-align:center;
+}
+.rating-stars-live{
+ display:flex;justify-content:center;gap:7px;margin:9px 0;
+}
+.rating-stars-live button{
+ border:0;background:transparent;color:#cbd5e1;
+ font-size:32px;line-height:1;padding:3px;cursor:pointer;
+}
+.rating-stars-live button.selected{color:#f59e0b}
+.rating-submit{
+ background:#07222d;color:#fff;border:0;border-radius:10px;
+ padding:10px 18px;font-weight:800;cursor:pointer;
+}
+.rating-submit:disabled{opacity:.55;cursor:not-allowed}
+#ratingStatus{min-height:18px;font-size:12px;color:#475569}
+.category-pill{
+ display:inline-block;background:#cffafe;color:#155e63;
+ padding:5px 12px;border-radius:30px;font-size:12px;
+ font-weight:800;margin-top:8px;
+}
+footer a{color:#087e78;font-weight:700}
+@media(max-width:400px){
+ .game-logo{width:120px;height:120px}
+ .sheet-content{padding-left:13px;padding-right:13px}
+}
+</style>
 </head>
 
 <body>
 
 <header class="p-4 flex items-center justify-between">
-  <a href="/" class="brand text-xl font-bold text-white no-underline">
-    🎮 ST GAMES
-  </a>
-  <a href="/" class="text-sm font-bold text-cyan-200 no-underline">
-    ← All Games
-  </a>
+ <a href="/" class="brand text-xl font-bold text-white no-underline">🎮 ST GAMES</a>
+ <a href="/" class="text-sm font-bold text-cyan-200 no-underline">← All Games</a>
 </header>
 
 <main class="text-center px-5 pt-5 pb-10">
+ <img id="gameLogo" class="game-logo mx-auto"
+      src="/logo/logo.jpg" alt="Game logo">
 
-  <img
-    id="gameLogo"
-    class="game-logo mx-auto"
-    src="/stgames-apk/launchericon-512x512.png"
-    alt="Game logo"
-  >
-
-  <h1 id="gameTitle" class="brand text-3xl font-bold mt-4">
-    Loading game...
-  </h1>
-
-  <div id="gameCategory" class="category-pill">GAME</div>
-
-  <p id="gameCreator" class="text-sm text-cyan-200 mt-2"></p>
-
-  <div
-    id="guideRatingSummary"
-    class="text-sm text-amber-300 font-bold mt-3"
-  >
-    Loading player rating…
-  </div>
-
-  <p class="text-xs text-slate-300 mt-3">
-    👆 Swipe up to read the full game guide
-  </p>
-
+ <h1 id="gameTitle" class="brand text-3xl font-bold mt-4">Loading game...</h1>
+ <div id="gameCategory" class="category-pill">GAME</div>
+ <p id="gameCreator" class="text-sm text-cyan-200 mt-2"></p>
+ <div id="guideRatingSummary" class="text-sm text-amber-300 font-bold mt-3">
+  Loading player rating…
+ </div>
+ <p class="text-xs text-slate-300 mt-3">👆 Swipe up to read the full game guide</p>
 </main>
 
 <section id="guideSheet" class="guide-sheet" aria-label="Game guide">
+ <div id="dragArea" class="sheet-handle-area">
+  <div class="sheet-handle"></div>
+  <div class="flex items-center justify-between">
+   <strong class="brand text-lg">📖 GAME GUIDE</strong>
+   <button id="expandButton" type="button"
+    class="rounded-lg bg-slate-100 px-3 py-2 text-sm font-bold">
+    Expand ↑
+   </button>
+  </div>
+ </div>
 
-  <div id="dragArea" class="sheet-handle-area">
-    <div class="sheet-handle"></div>
+ <div class="sheet-content">
+  <a id="playButton" class="play-btn" href="#">▶ PLAY NOW</a>
 
-    <div class="flex items-center justify-between">
-      <strong class="brand text-lg">📖 GAME GUIDE</strong>
+  <section class="rating-panel">
+   <h2 class="brand text-xl font-bold">⭐ RATE THIS GAME</h2>
+   <p id="ratingAverage" class="text-sm font-bold text-slate-700 mt-1">
+    No ratings yet
+   </p>
 
-      <button
-        id="expandButton"
-        type="button"
-        class="rounded-lg bg-slate-100 px-3 py-2 text-sm font-bold"
-      >
-        Expand ↑
-      </button>
-    </div>
+   <div id="ratingStarsInput" class="rating-stars-live"
+        role="group" aria-label="Choose a rating from one to five stars">
+    <button type="button" data-score="1" aria-label="1 star">★</button>
+    <button type="button" data-score="2" aria-label="2 stars">★</button>
+    <button type="button" data-score="3" aria-label="3 stars">★</button>
+    <button type="button" data-score="4" aria-label="4 stars">★</button>
+    <button type="button" data-score="5" aria-label="5 stars">★</button>
+   </div>
+
+   <button id="submitRating" class="rating-submit" type="button" disabled>
+    SUBMIT RATING
+   </button>
+   <p id="ratingStatus" class="mt-2" aria-live="polite">
+    Select 1–5 stars to rate this game.
+   </p>
+  </section>
+
+  <div id="guideSections">
+   <section class="guide-section">
+    <h3>🎮 About This Game</h3>
+    <p id="description">Loading...</p>
+   </section>
+   <section class="guide-section">
+    <h3>🎯 Objective</h3>
+    <p id="objective">Loading...</p>
+   </section>
+   <section class="guide-section">
+    <h3>🕹️ How to Play</h3>
+    <div id="howToPlay"></div>
+   </section>
+   <section class="guide-section">
+    <h3>🎮 Controls</h3>
+    <div id="controls"></div>
+   </section>
+   <section class="guide-section">
+    <h3>📜 Rules & Scoring</h3>
+    <div id="rules"></div>
+   </section>
+   <section class="guide-section">
+    <h3>💡 Pro Tips</h3>
+    <div id="tips"></div>
+   </section>
+   <section class="guide-section" id="faqSection">
+    <h3>❓ Frequently Asked Questions</h3>
+    <div id="faqs"></div>
+   </section>
   </div>
 
-  <div class="sheet-content">
-
-    <a id="playButton" class="play-btn" href="#">
-      ▶ PLAY NOW
-    </a>
-
-    <section class="rating-panel" aria-label="Rate this game">
-
-      <h2 class="brand text-xl font-bold">
-        ⭐ RATE THIS GAME
-      </h2>
-
-      <p id="ratingAverage" class="text-sm font-bold text-slate-700 mt-1">
-        No ratings yet
-      </p>
-
-      <div
-        id="ratingStarsInput"
-        class="rating-stars-live"
-        role="group"
-        aria-label="Choose a rating from one to five stars"
-      >
-        <button type="button" data-score="1" aria-label="1 star">★</button>
-        <button type="button" data-score="2" aria-label="2 stars">★</button>
-        <button type="button" data-score="3" aria-label="3 stars">★</button>
-        <button type="button" data-score="4" aria-label="4 stars">★</button>
-        <button type="button" data-score="5" aria-label="5 stars">★</button>
-      </div>
-
-      <button id="submitRating" class="rating-submit" type="button" disabled>
-        SUBMIT RATING
-      </button>
-
-      <p id="ratingStatus" class="mt-2" aria-live="polite">
-        Select 1–5 stars to rate this game.
-      </p>
-
-    </section>
-
-    <div id="guideSections">
-
-      <section class="guide-section">
-        <h3>🎮 About This Game</h3>
-        <p id="description">Loading...</p>
-      </section>
-
-      <section class="guide-section">
-        <h3>🎯 Objective</h3>
-        <p id="objective">Loading...</p>
-      </section>
-
-      <section class="guide-section">
-        <h3>🕹️ How to Play</h3>
-        <div id="howToPlay"></div>
-      </section>
-
-      <section class="guide-section">
-        <h3>🎮 Controls</h3>
-        <div id="controls"></div>
-      </section>
-
-      <section class="guide-section">
-        <h3>📜 Rules & Scoring</h3>
-        <div id="rules"></div>
-      </section>
-
-      <section class="guide-section">
-        <h3>💡 Pro Tips</h3>
-        <div id="tips"></div>
-      </section>
-
-      <section class="guide-section" id="faqSection">
-        <h3>❓ Frequently Asked Questions</h3>
-        <div id="faqs"></div>
-      </section>
-
-    </div>
-
-    <h2 class="brand text-xl font-bold mt-7 mb-3">
-      🎮 MORE GAMES
-    </h2>
-
-    <div id="otherGames" class="flex gap-3 overflow-x-auto pb-4">
-      <p class="text-slate-500 text-sm">Loading more games...</p>
-    </div>
-
-    <footer class="text-center text-xs text-slate-500 py-5">
-      © ST Games - Skill | Strategy | Victory
-
-      <div class="mt-2">
-        <a href="/privacy.html">Privacy</a> ·
-        <a href="/terms.html">Terms</a> ·
-        <a href="/contact.html">Contact</a>
-      </div>
-    </footer>
-
+  <h2 class="brand text-xl font-bold mt-7 mb-3">🎮 MORE GAMES</h2>
+  <div id="otherGames" class="flex gap-3 overflow-x-auto pb-4">
+   <p class="text-slate-500 text-sm">Loading more games...</p>
   </div>
+
+  <footer class="text-center text-xs text-slate-500 py-5">
+   © ST Games - Skill | Strategy | Victory
+   <div class="mt-2">
+    <a href="/privacy.html">Privacy</a> ·
+    <a href="/terms.html">Terms</a> ·
+    <a href="/contact.html">Contact</a>
+   </div>
+  </footer>
+ </div>
 </section>
 
-<script src="/game.js"></script>
-
 <script>
+/* =====================================================
+   ST GAMES - GUIDE DATABASE
+   All 19 guides are stored directly in this file.
+===================================================== */
+
+const ST_GAME_GUIDES = [
+{
+ id:"game-mwgo5gkm",title:"Car mastar",emoji:"🏎️",url:"game/car.html",category:"Racing",
+ description:"Ready aa? 🚗 Car mastar lo road meeda drive chesthu nee driving skills chupinchu! Obstacles ni avoid chesthu safe ga destination reach avvali.",
+ objective:"🏁 Car ni control chesthu maximum distance travel cheyyadam and best score achieve cheyyadam.",
+ howToPlay:["▶️ Play button tap chesi game start cheyyi.","🚗 Screen controls use chesi car ni move cheyyi.","⚠️ Road meeda unna obstacles ni avoid cheyyi.","🏆 Best score create cheyyadaniki try cheyyi."],
+ controls:["📱 Mobile: Screen lo available controls use cheyyi.","💻 PC: Game lo chupinche keyboard controls follow avvu."],
+ rules:["🚧 Obstacles ni hit avvakunda chusuko.","🎯 Road meeda focus maintain cheyyi.","🏁 Game objective complete cheyyadaniki try cheyyi."],
+ tips:["👀 Mundu road ni observe cheyyi.","🚗 Sudden movements avoid cheyyi.","🎮 Practice chesthe control improve avuthundi."],
+ faqs:[{q:"Ee game mobile lo aadacha?",a:"📱 Yes! Game page mobile controls support chesthe phone lo aadachu."},{q:"High score ela improve cheyyali?",a:"🏆 Careful driving and regular practice tho improve chesuko."}]
+},
+{
+ id:"game-mw7wz8ct",title:"Happy Filled Glass",emoji:"🥛",url:"game/Filled water.html",category:"Puzzle",
+ description:"Glass ni water tho fill cheyyali! 💧 Lines draw chesi water correct direction lo flow ayye la plan cheyyi.",
+ objective:"🥛 Glass required level varaku water tho fill cheyyadam.",
+ howToPlay:["▶️ Level start cheyyi.","✏️ Finger tho lines draw cheyyi.","💧 Water glass loki flow ayye path create cheyyi.","⭐ Glass fill ayithe level complete!"],
+ controls:["📱 Mobile: Finger tho draw cheyyi.","💻 PC: Mouse tho lines draw cheyyi."],
+ rules:["💧 Water glass ki reach avvali.","🧠 Limited space ni smart ga use cheyyi.","⭐ Level target complete cheyyali."],
+ tips:["🧩 Line draw chese mundu water direction think cheyyi.","✏️ Simple designs try cheyyi.","💡 Different solutions experiment cheyyi."],
+ faqs:[{q:"Game lo main task enti?",a:"🥛 Glass ni required amount of water tho fill cheyyali."},{q:"Puzzle difficult ga unte?",a:"🧠 Different line designs try cheyyi."}]
+},
+{
+ id:"game-mw5uw764",title:"TFI games",emoji:"🎬",url:"game/tfi/index.html",category:"Quiz",
+ description:"Mana Telugu cinema knowledge test chesukundham! 🍿 TFI related questions ki correct answers select chesthu score penchuko.",
+ objective:"🎯 Questions ki correct answers ichi maximum score achieve cheyyadam.",
+ howToPlay:["▶️ Game open chesi start cheyyi.","❓ Screen meeda question chaduvu.","☑️ Correct option select cheyyi.","🏆 Maximum correct answers tho score penchuko."],
+ controls:["📱 Mobile: Options ni tap cheyyi.","💻 PC: Mouse tho option select cheyyi."],
+ rules:["📖 Question complete ga chaduvu.","☑️ Available options lo answer select cheyyi.","🎯 Correct answers score ni improve chestayi."],
+ tips:["🎬 Telugu movies and actors gurinchi knowledge improve chesuko.","🧠 Answer select chese mundu think cheyyi.","🏆 Accuracy meeda focus cheyyi."],
+ faqs:[{q:"TFI ante enti?",a:"🎬 TFI ante Telugu Film Industry."},{q:"Score ela penchukovali?",a:"🍿 Cinema knowledge use chesi correct answers select cheyyi."}]
+},
+{
+ id:"game-mw20ft73",title:"Rope Dash",emoji:"🪢",url:"game/rope.html",category:"Arcade",
+ description:"Rope tho movement control chesthu levels complete cheyyi! 🏃 Timing and direction chala important.",
+ objective:"🎯 Obstacles avoid chesthu target reach avvadam.",
+ howToPlay:["▶️ Level start cheyyi.","🪢 Screen controls use chesi rope movement manage cheyyi.","🔄 Correct direction choose cheyyi.","🏁 Target reach ayyi next level unlock cheyyi."],
+ controls:["📱 Mobile: Screen buttons use cheyyi.","👆 Game instructions lo chupinche controls follow avvu."],
+ rules:["⚠️ Obstacles ni avoid cheyyi.","🪢 Rope movement ni observe cheyyi.","🏁 Level objective complete cheyyi."],
+ tips:["⏱️ Timing correct ga choose cheyyi.","👀 Next obstacle ni mundhe observe cheyyi.","🎮 Controls practice cheyyi."],
+ faqs:[{q:"Levels unlock avuthaya?",a:"🔓 Game progress system batti next levels unlock avuthayi."},{q:"Mobile lo play cheyocha?",a:"📱 Screen controls available unte mobile lo play cheyochu."}]
+},
+{
+ id:"game-mw1urk4j",title:"Space waves",emoji:"🚀",url:"game/Spacewaces.html",category:"Arcade",
+ description:"Space adventure start! 🌌 Ship ni control chesthu waves ni face cheyyi and nee skills prove cheyyi.",
+ objective:"🚀 Space lo survive avuthu game target complete cheyyadam.",
+ howToPlay:["▶️ Start button tap cheyyi.","🚀 Ship ni available controls tho move cheyyi.","⚠️ Obstacles and incoming objects avoid cheyyi.","🏆 Maximum score kosam play cheyyi."],
+ controls:["📱 Mobile: Screen controls use cheyyi.","💻 PC: Game lo displayed keyboard instructions follow avvu."],
+ rules:["🌌 Play area lo focus maintain cheyyi.","⚠️ Obstacles avoid cheyyi.","🎯 Game target complete cheyyi."],
+ tips:["🚀 Movement smooth ga maintain cheyyi.","👀 Screen edges observe cheyyi.","🧠 Fast decisions teesuko."],
+ faqs:[{q:"Game category enti?",a:"🚀 Idi space-themed arcade game."},{q:"Best score ela achieve cheyyali?",a:"🏆 Obstacles avoid chesthu practice cheyyi."}]
+},
+{
+ id:"game-mvzz9zor",title:"Crowd runners",emoji:"🏃",url:"game/crowd runners/index.html",category:"Arcade",
+ description:"Crowd ni collect chesthu finish line reach avvali! 👥 Correct route select cheyyadam important.",
+ objective:"🏁 Maximum crowd collect chesthu finish line reach avvadam.",
+ howToPlay:["▶️ Game start cheyyi.","👥 Crowd ni collect cheyyadaniki move avvu.","🚧 Obstacles ni avoid cheyyi.","🏁 Finish line reach avvu."],
+ controls:["📱 Mobile: Swipe or drag controls game lo available unte use cheyyi.","💻 PC: Game displayed controls follow avvu."],
+ rules:["👥 Crowd members collect cheyyi.","🚧 Obstacles avoid cheyyi.","🏆 Finish line ki reach avvu."],
+ tips:["🛣️ Best route observe cheyyi.","👥 Crowd ni carefully collect cheyyi.","⚠️ Obstacles daggara careful ga undu."],
+ faqs:[{q:"Game lo goal enti?",a:"👥 Crowd collect chesi finish line reach avvadam."},{q:"Obstacles ni avoid cheyyala?",a:"🚧 Yes! Obstacles game progress ni affect cheyyachu."}]
+},
+{
+ id:"game-mvzyi81m",title:"Fight",emoji:"🥊",url:"game/Fight/index.html",category:"Action",
+ description:"Action challenge ready! 🥊 Game lo available moves use chesthu opponent ni face cheyyi.",
+ objective:"🏆 Game match objective complete cheyyadam.",
+ howToPlay:["▶️ Match start cheyyi.","🎮 Available movement and action controls use cheyyi.","🧠 Opponent movements observe cheyyi.","🏆 Match target complete cheyyi."],
+ controls:["📱 Mobile: Game screen controls use cheyyi.","💻 PC: Game lo displayed keyboard controls follow avvu."],
+ rules:["🎮 Available game controls follow avvu.","🎯 Match objective meeda focus cheyyi.","🏆 Game result batti next challenge continue cheyyi."],
+ tips:["🧠 Controls first practice cheyyi.","⏱️ Timing observe cheyyi.","🎮 Calm ga play cheyyi."],
+ faqs:[{q:"Controls ekkada untayi?",a:"🎮 Game screen lo available controls chudachu."},{q:"Mobile lo play cheyocha?",a:"📱 Game mobile controls support batti play cheyochu."}]
+},
+{
+ id:"game-mvxqcsca",title:"Catch the thief",emoji:"🕵️",url:"game/thief/index.html",category:"Puzzle",
+ description:"Thief ni catch cheyyagalava? 🕵️ Clues observe chesthu correct decision teesuko.",
+ objective:"🎯 Thief ni identify chesi game objective complete cheyyadam.",
+ howToPlay:["▶️ Game start cheyyi.","👀 Screen lo clues observe cheyyi.","🧠 Correct action or option select cheyyi.","🏆 Level objective complete cheyyi."],
+ controls:["📱 Mobile: Screen meeda tap cheyyi.","💻 PC: Mouse tho interact avvu."],
+ rules:["🔍 Clues carefully observe cheyyi.","🧠 Correct decision teesuko.","🎯 Level target complete cheyyi."],
+ tips:["👀 Small details miss avvaku.","🧩 Options ni carefully examine cheyyi.","💡 Hints available unte use cheyyi."],
+ faqs:[{q:"Game type enti?",a:"🕵️ Idi observation and puzzle-style challenge."},{q:"Clues important aa?",a:"🔍 Yes! Clues game objective solve cheyyadaniki help chestayi."}]
+},
+{
+ id:"game-mvwetkz4",title:"Nuts and Bolts",emoji:"🔩",url:"game/nuts.html",category:"Puzzle",
+ description:"Brain challenge time! 🧠 Nuts and bolts ni correct order lo arrange chesthu levels solve cheyyi.",
+ objective:"🔩 Puzzle rules prakaram bolts and nuts arrangement complete cheyyadam.",
+ howToPlay:["▶️ Level select cheyyi.","🔩 Move cheyyalsina bolt select cheyyi.","🧩 Available empty positions observe cheyyi.","🏆 Puzzle complete ayye varaku continue cheyyi."],
+ controls:["📱 Mobile: Bolt meeda tap cheyyi.","👆 Game lo available screen controls use cheyyi."],
+ rules:["🔩 Valid moves matrame perform cheyyi.","🧠 Level rules follow avvu.","🎯 Puzzle arrangement complete cheyyi."],
+ tips:["🤔 Move chese mundu plan cheyyi.","🔩 Empty positions observe cheyyi.","🧩 Easy levels tho practice cheyyi."],
+ faqs:[{q:"Different difficulties unnaya?",a:"🎮 Game lo available Easy, Medium and Hard levels try cheyyachu."},{q:"Game main skill enti?",a:"🧠 Planning and logical thinking."}]
+},
+{
+ id:"game-mvwc6dia",title:"Toilet rush",emoji:"🚽",url:"game/Toilet rush/index.html",category:"Puzzle",
+ description:"Time ki mundu characters correct destination reach ayye la help cheyyi! ⏱️",
+ objective:"🎯 Game lo given path puzzle ni complete cheyyadam.",
+ howToPlay:["▶️ Level start cheyyi.","✏️ Game instructions prakaram path draw cheyyi.","👀 Characters movement observe cheyyi.","🏁 Level complete cheyyi."],
+ controls:["📱 Mobile: Finger tho screen meeda draw or tap cheyyi.","💻 PC: Mouse use cheyyi."],
+ rules:["🛣️ Correct path create cheyyi.","⚠️ Characters obstacles ni avoid cheyyali.","🏆 Level target complete cheyyi."],
+ tips:["🧠 Path mundhe plan cheyyi.","⏱️ Time ni observe cheyyi.","👀 Characters routes cross avvakunda chusuko."],
+ faqs:[{q:"Game lo drawing controls unnaya?",a:"✏️ Game version batti path drawing or touch controls use cheyyali."},{q:"Puzzle ela solve cheyyali?",a:"🧠 Correct route plan chesi characters ni destination ki guide cheyyi."}]
+},
+{
+ id:"game-mvv6lmgs",title:"Salazar Game",emoji:"🎮",url:"game/salazar.html",category:"Arcade",
+ description:"Salazar Game challenge accept cheyyi! 🎯 Screen lo instructions follow avuthu levels or targets complete cheyyi.",
+ objective:"🏆 Game lo given challenge complete chesi score improve cheyyadam.",
+ howToPlay:["▶️ Play button tap cheyyi.","📖 Instructions chaduvu.","🎮 Available controls use cheyyi.","🏆 Target complete cheyyi."],
+ controls:["📱 Mobile: Screen controls use cheyyi.","💻 PC: Game instructions follow avvu."],
+ rules:["📖 Game instructions follow avvu.","🎯 Target meeda focus cheyyi.","🏆 Challenge complete cheyyi."],
+ tips:["👀 Game mechanics observe cheyyi.","🎮 Controls practice cheyyi.","🧠 Strategy tho play cheyyi."],
+ faqs:[{q:"Game objective enti?",a:"🎯 Game screen lo displayed objective complete cheyyali."},{q:"Beginner friendly aa?",a:"🎮 Instructions follow chesthu practice cheyyachu."}]
+},
+{
+ id:"custom-mvv0p7ge",title:"Merge Mania",emoji:"🧩",url:"game/merge.html",category:"Puzzle",
+ description:"Same tiles merge chesthu bigger numbers create cheyyi! 🔢 Smart moves tho highest score target cheyyi.",
+ objective:"🏆 Tiles merge chesthu highest possible score achieve cheyyadam.",
+ howToPlay:["▶️ Game start cheyyi.","🧩 Same value tiles identify cheyyi.","👆 Game controls prakaram tiles move cheyyi.","🔢 Tiles merge ayyi new values create avuthayi."],
+ controls:["📱 Mobile: Tiles ni drag cheyyi.","💻 PC: Mouse tho tiles drag cheyyi."],
+ rules:["🔢 Matching tiles merge avuthayi.","🧠 Board space ni carefully use cheyyi.","🏆 Best score create cheyyi."],
+ tips:["🧩 Moves mundhe plan cheyyi.","🔢 High-value tiles arrangement maintain cheyyi.","⚠️ Board space waste cheyyaku."],
+ faqs:[{q:"Tiles ela merge avuthayi?",a:"🧩 Matching tiles ni game rules prakaram combine cheyyali."},{q:"Best score ela improve cheyyali?",a:"🧠 Planned moves and smart tile arrangement use cheyyi."}]
+},
+{
+ id:"subway-runner",title:"Street Subway Runner",emoji:"🚆",url:"game/subway/index.html",category:"Runner",
+ description:"Subway tracks meeda fast running challenge! 🏃 Coins collect chesthu obstacles avoid cheyyi.",
+ objective:"🏁 Maximum distance run chesthu high score achieve cheyyadam.",
+ howToPlay:["▶️ Run start cheyyi.","↔️ Lanes change cheyyi.","⬆️ Game lo jump control use cheyyi.","⬇️ Game lo slide control use cheyyi.","🪙 Coins collect cheyyi."],
+ controls:["📱 Mobile: Swipe left/right/up/down, game support batti.","💻 PC: Displayed keyboard controls follow avvu."],
+ rules:["🚧 Obstacles avoid cheyyi.","🪙 Coins collect cheyyi.","🏃 Running continue cheyyi."],
+ tips:["👀 Tracks mundhe observe cheyyi.","↔️ Lanes correct time lo change cheyyi.","⏱️ Jump and slide timing practice cheyyi."],
+ faqs:[{q:"Coins enduku collect cheyyali?",a:"🪙 Game lo coins score or rewards kosam use avvachu."},{q:"Game endless aa?",a:"🏃 Actual game mode batti running continue avuthundi."}]
+},
+{
+ id:"tic-tac-toe",title:"Pro Tic-Tac-Toe",emoji:"❌",url:"game/tictactoe/index.html",category:"Strategy",
+ description:"Classic X and O game! ❌⭕ Opponent mundu winning combination create cheyyi.",
+ objective:"🏆 Horizontal, vertical or diagonal ga three matching symbols arrange cheyyadam.",
+ howToPlay:["▶️ Game start cheyyi.","❌ or ⭕ symbol select cheyyi, game mode batti.","📦 Empty box tap cheyyi.","🧠 Winning combination create cheyyi."],
+ controls:["📱 Mobile: Empty cell tap cheyyi.","💻 PC: Mouse tho empty cell select cheyyi."],
+ rules:["📦 Empty cells lo matrame move cheyyali.","❌⭕ Three matching symbols line lo arrange cheyyali.","🤝 Board full ayyi winner lekapothe draw avvachu."],
+ tips:["🧠 Opponent next move observe cheyyi.","🎯 Winning chances create cheyyi.","🛡️ Opponent winning line block cheyyi."],
+ faqs:[{q:"Tic-Tac-Toe lo winner evaru?",a:"🏆 Three matching symbols line create chesina player winner."},{q:"Draw avuthunda?",a:"🤝 Empty boxes anni fill ayyi winner lekapothe draw."}]
+},
+{
+ id:"snake",title:"Cyber Snake Retro",emoji:"🐍",url:"game/snake/index.html",category:"Classic",
+ description:"Retro snake challenge! 🐍 Food collect chesthu snake length penchuko.",
+ objective:"🍎 Food collect chesthu maximum score achieve cheyyadam.",
+ howToPlay:["▶️ Game start cheyyi.","🐍 Snake direction control cheyyi.","🍎 Food collect cheyyi.","🏆 Score penchuko."],
+ controls:["📱 Mobile: Game lo displayed direction controls use cheyyi.","💻 PC: Arrow keys or displayed controls use cheyyi."],
+ rules:["🍎 Food collect cheyyi.","🧱 Walls or obstacles ni avoid cheyyi.","🐍 Snake body ni hit avvakunda chusuko."],
+ tips:["↩️ Turns mundhe plan cheyyi.","🐍 Snake length perigina koddi careful ga move avvu.","👀 Open space observe cheyyi."],
+ faqs:[{q:"Snake length ela peruguthundi?",a:"🍎 Food collect chesinappudu game rules prakaram length peruguthundi."},{q:"High score ela vastundi?",a:"🏆 Food collect chesthu collisions avoid cheyyi."}]
+},
+{
+ id:"fruit game",title:"Fruit Arcade Pro",emoji:"🍉",url:"game/fruit.html",category:"Arcade",
+ description:"Fruit arcade fun start! 🍎 Game screen lo fruits ni collect or interact chesthu score penchuko.",
+ objective:"🎯 Game lo given fruit challenge complete cheyyadam.",
+ howToPlay:["▶️ Game start cheyyi.","🍉 Screen lo fruits observe cheyyi.","👆 Game controls prakaram interact avvu.","🏆 Target score reach avvadaniki try cheyyi."],
+ controls:["📱 Mobile: Touch controls use cheyyi.","💻 PC: Mouse or keyboard instructions follow avvu."],
+ rules:["🎯 Game target follow avvu.","🍎 Correct objects tho interact avvu.","🏆 Score improve cheyyi."],
+ tips:["👀 Screen meeda focus maintain cheyyi.","⏱️ Timing observe cheyyi.","🎮 Controls practice cheyyi."],
+ faqs:[{q:"Fruit Arcade Pro objective enti?",a:"🍉 Game lo displayed fruit challenge complete cheyyadam."},{q:"Phone lo play cheyocha?",a:"📱 Touch controls support batti mobile lo aadachu."}]
+},
+{
+ id:"bird game",title:"Bird Action Mania",emoji:"🐦",url:"game/clumsy.html",category:"Arcade",
+ description:"Bird ni guide chesthu obstacles madhya travel cheyyi! 🐦 Timing and focus important.",
+ objective:"🏆 Obstacles avoid chesthu maximum distance or score achieve cheyyadam.",
+ howToPlay:["▶️ Game start cheyyi.","🐦 Bird movement control cheyyi.","🚧 Obstacles madhya safe ga travel cheyyi.","🏆 High score create cheyyi."],
+ controls:["📱 Mobile: Tap controls use cheyyi.","💻 PC: Game displayed controls follow avvu."],
+ rules:["🚧 Obstacles ni avoid cheyyi.","🐦 Bird movement control cheyyi.","🎯 Score target meeda focus cheyyi."],
+ tips:["⏱️ Tap timing practice cheyyi.","👀 Next obstacle observe cheyyi.","🧠 Calm ga play cheyyi."],
+ faqs:[{q:"Bird movement ela control cheyyali?",a:"🐦 Game version lo available tap or keyboard controls use cheyyi."},{q:"High score ela improve cheyyali?",a:"🏆 Obstacles avoid chesthu timing practice cheyyi."}]
+},
+{
+ id:"snake-ladder",title:"Snake and Ladder",emoji:"🎲",url:"game/ladder/index.html",category:"Classic",
+ description:"Classic board game fun! 🎲 Dice roll chesthu ladders climb avvu and snakes ni avoid cheyyi.",
+ objective:"🏁 Board lo last position reach chesi game win avvadam.",
+ howToPlay:["▶️ Game start cheyyi.","🎲 Dice roll cheyyi.","🔢 Dice number prakaram move avvu.","🪜 Ladder vachithe climb avvu.","🐍 Snake vachithe game rules prakaram move avvu."],
+ controls:["📱 Mobile: Dice button tap cheyyi.","💻 PC: Mouse tho dice button click cheyyi."],
+ rules:["🎲 Dice result prakaram move avvali.","🪜 Ladder position progress help chesthundi.","🐍 Snake position valla back move avvachu.","🏁 Final square reach avvali."],
+ tips:["🎲 Prathi turn ni enjoy cheyyi.","🪜 Board positions observe cheyyi.","🤝 Friends tho aadithe inka fun!"],
+ faqs:[{q:"Snake and Ladder goal enti?",a:"🏁 Board lo final position reach avvadam."},{q:"Ladder use enti?",a:"🪜 Ladder valla board lo mundhuku move avvachu."}]
+},
+{
+ id:"typing-race",title:"Tap Master",emoji:"👆",url:"game/top.html",category:"Arcade",
+ description:"Tap speed and accuracy challenge! 👆 Game lo given targets ni correct ga tap chesthu score penchuko.",
+ objective:"🏆 Correct taps tho maximum score achieve cheyyadam.",
+ howToPlay:["▶️ Start button tap cheyyi.","🎯 Screen lo target observe cheyyi.","👆 Correct target ni tap cheyyi.","🏆 Score improve cheyyi."],
+ controls:["📱 Mobile: Finger tho target tap cheyyi.","💻 PC: Mouse tho target click cheyyi."],
+ rules:["🎯 Correct target select cheyyi.","⏱️ Time limit unte observe cheyyi.","🏆 Game target complete cheyyi."],
+ tips:["👀 Target meeda focus maintain cheyyi.","🎯 Accuracy ki importance ivvu.","👆 Regular practice cheyyi."],
+ faqs:[{q:"Tap Master lo main skill enti?",a:"👆 Accuracy and quick reactions."},{q:"Mobile lo aadacha?",a:"📱 Touch controls use chesi play cheyyachu."}]
+}
+];
+
+/* =====================================================
+   PAGE AND GUIDE FUNCTIONS
+===================================================== */
+
 const params = new URLSearchParams(location.search);
-const gameId = params.get('id');
+const gameId = params.get("id");
 
-const sheet = document.getElementById('guideSheet');
-const dragArea = document.getElementById('dragArea');
-const expandButton = document.getElementById('expandButton');
+const sheet = document.getElementById("guideSheet");
+const dragArea = document.getElementById("dragArea");
+const expandButton = document.getElementById("expandButton");
 
-let currentGame = null;
 let selectedScore = 0;
 let ratingsDb = null;
 let ratingsAuth = null;
 let currentUid = null;
-let ratingsListener = null;
+let currentGame = null;
+let gamesCatalogue = [];
 
-function setExpanded(expanded) {
-  sheet.classList.toggle('expanded', expanded);
-  expandButton.textContent = expanded ? 'Collapse ↓' : 'Expand ↑';
+function setExpanded(expanded){
+ sheet.classList.toggle("expanded",expanded);
+ expandButton.textContent=expanded?"Collapse ↓":"Expand ↑";
 }
-
-expandButton.addEventListener('click', () => {
-  setExpanded(!sheet.classList.contains('expanded'));
+expandButton.addEventListener("click",()=>{
+ setExpanded(!sheet.classList.contains("expanded"));
 });
 
-let startY = 0;
-let lastY = 0;
-let dragging = false;
+let startY=0,lastY=0,dragging=false;
 
-dragArea.addEventListener('pointerdown', e => {
-  startY = lastY = e.clientY;
-  dragging = true;
-  dragArea.setPointerCapture(e.pointerId);
+dragArea.addEventListener("pointerdown",e=>{
+ startY=lastY=e.clientY;
+ dragging=true;
+ dragArea.setPointerCapture(e.pointerId);
+});
+dragArea.addEventListener("pointermove",e=>{
+ if(dragging)lastY=e.clientY;
+});
+function finishDrag(){
+ if(!dragging)return;
+ dragging=false;
+ const delta=lastY-startY;
+ if(delta < -35)setExpanded(true);
+ if(delta > 35)setExpanded(false);
+}
+dragArea.addEventListener("pointerup",finishDrag);
+dragArea.addEventListener("pointercancel",finishDrag);
+
+function setText(id,value,fallback){
+ const el=document.getElementById(id);
+ el.textContent=typeof value==="string"&&value.trim()?value:fallback;
+}
+
+function safeGameUrl(url){
+ if(typeof url!=="string")return "/";
+ const cleaned=url.trim();
+ if(!cleaned||cleaned.startsWith("//")||
+    /^[a-z]+:/i.test(cleaned)||cleaned.includes(".."))return "/";
+ return "/"+cleaned.replace(/^\/+/,"");
+}
+
+function renderList(id,items){
+ const container=document.getElementById(id);
+ container.replaceChildren();
+ if(!Array.isArray(items)||!items.length){
+  const p=document.createElement("p");
+  p.textContent="📖 Information coming soon.";
+  container.appendChild(p);
+  return;
+ }
+ const ul=document.createElement("ul");
+ items.forEach(item=>{
+  const li=document.createElement("li");
+  li.textContent=String(item);
+  ul.appendChild(li);
+ });
+ container.appendChild(ul);
+}
+
+function renderFAQs(items){
+ const container=document.getElementById("faqs");
+ container.replaceChildren();
+ const section=document.getElementById("faqSection");
+ if(!Array.isArray(items)||!items.length){
+  section.style.display="none";
+  return;
+ }
+ section.style.display="";
+ items.forEach(item=>{
+  const block=document.createElement("div");
+  block.className="py-3 border-b border-slate-100";
+  const q=document.createElement("strong");
+  q.className="block text-sm mb-2";
+  q.textContent="❓ "+String(item.q||"");
+  const a=document.createElement("p");
+  a.className="text-sm text-slate-600";
+  a.textContent=String(item.a||"");
+  block.append(q,a);
+  container.appendChild(block);
+ });
+}
+
+function setRatingSelection(score){
+ selectedScore=Number(score);
+ document.querySelectorAll("#ratingStarsInput button").forEach(btn=>{
+  btn.classList.toggle("selected",Number(btn.dataset.score)<=selectedScore);
+ });
+ document.getElementById("submitRating").disabled=
+  !(selectedScore>=1&&selectedScore<=5);
+}
+
+document.querySelectorAll("#ratingStarsInput button").forEach(btn=>{
+ btn.addEventListener("click",()=>{
+  setRatingSelection(Number(btn.dataset.score));
+ });
 });
 
-dragArea.addEventListener('pointermove', e => {
-  if (dragging) lastY = e.clientY;
+/* =====================================================
+   FIREBASE PLAYER RATINGS
+===================================================== */
+
+function initRatings(){
+ if(!currentGame)return;
+
+ const cfg={
+  apiKey:"AIzaSyDOFx0_vpDRDCkUW-deQJMNK5msOsGSnI",
+  authDomain:"stgames-289.firebaseapp.com",
+  databaseURL:"https://stgames-289-default-rtdb.firebaseio.com/",
+  projectId:"stgames-289",
+  storageBucket:"stgames-289.firebasestorage.app",
+  messagingSenderId:"916146081741",
+  appId:"1:916146081741:web:eb343c4dc0c6648388fe84",
+  measurementId:"G-P8RQ074PWX"
+ };
+
+ try{
+  const app=firebase.apps.find(a=>a.name==="stGamesVisitorRatingsGuide")||
+    firebase.initializeApp(cfg,"stGamesVisitorRatingsGuide");
+
+  ratingsDb=firebase.database(app);
+  ratingsAuth=firebase.auth(app);
+
+  const ratingsRef=ratingsDb.ref("game_ratings/"+currentGame.id);
+
+  ratingsRef.on("value",snap=>{
+   const data=snap.val()||{};
+   const values=Object.values(data)
+    .map(v=>Number(v&&v.score))
+    .filter(v=>Number.isInteger(v)&&v>=1&&v<=5);
+
+   const count=values.length;
+   const average=count?
+    values.reduce((a,b)=>a+b,0)/count:0;
+
+   const label=count?
+    `${average.toFixed(1)} / 5 · ${count} player review${count===1?"":"s"}`:
+    "No player ratings yet";
+
+   document.getElementById("ratingAverage").textContent=label;
+   document.getElementById("guideRatingSummary").textContent="⭐ "+label;
+
+   if(currentUid&&data[currentUid]){
+    setRatingSelection(Number(data[currentUid].score));
+    document.getElementById("ratingStatus").textContent=
+     "✅ Your current rating is saved. You can update it anytime.";
+   }
+  },err=>{
+   console.error("Ratings read error:",err);
+   document.getElementById("ratingStatus").textContent=
+    "Could not load ratings. Check Firebase Database Rules.";
+  });
+
+  ratingsAuth.signInAnonymously()
+   .then(cred=>{
+    currentUid=cred.user.uid;
+    return ratingsDb.ref("game_ratings/"+currentGame.id+"/"+currentUid).once("value");
+   })
+   .then(snap=>{
+    if(snap.exists()){
+     setRatingSelection(Number(snap.val().score));
+     document.getElementById("ratingStatus").textContent=
+      "✅ You already rated this game. You can update your rating.";
+    }
+   })
+   .catch(err=>{
+    console.error("Anonymous sign-in error:",err);
+    document.getElementById("ratingStatus").textContent=
+     "❌ Rating sign-in failed. Enable Anonymous Authentication in Firebase.";
+   });
+
+ }catch(err){
+  console.error(err);
+  document.getElementById("ratingStatus").textContent=
+   "Ratings service unavailable.";
+ }
+}
+
+document.getElementById("submitRating").addEventListener("click",async()=>{
+ const status=document.getElementById("ratingStatus");
+ const button=document.getElementById("submitRating");
+
+ if(!selectedScore||!ratingsDb||!ratingsAuth||!currentGame)return;
+
+ button.disabled=true;
+ status.textContent="⏳ Saving your rating...";
+
+ try{
+  let user=ratingsAuth.currentUser;
+  if(!user){
+   const credential=await ratingsAuth.signInAnonymously();
+   user=credential.user;
+  }
+  currentUid=user.uid;
+
+  await ratingsDb.ref(
+   "game_ratings/"+currentGame.id+"/"+currentUid
+  ).set({
+   score:selectedScore,
+   updatedAt:firebase.database.ServerValue.TIMESTAMP
+  });
+
+  status.textContent="✅ Thanks! Your rating has been saved.";
+
+ }catch(err){
+  console.error("Rating save error:",err);
+  status.textContent="❌ Could not save rating. Check Firebase rules and connection.";
+ }finally{
+  button.disabled=!(selectedScore>=1&&selectedScore<=5);
+ }
 });
 
-function finishDrag() {
-  if (!dragging) return;
-  dragging = false;
+/* =====================================================
+   MORE GAMES
+===================================================== */
 
-  const delta = lastY - startY;
+function renderMoreGames(games){
+ const container=document.getElementById("otherGames");
+ container.replaceChildren();
 
-  if (delta < -35) setExpanded(true);
-  if (delta > 35) setExpanded(false);
-}
+ games.filter(item=>String(item.id)!==String(currentGame.id))
+  .slice(0,12)
+  .forEach(item=>{
+   const guide=ST_GAME_GUIDES.find(g=>String(g.id)===String(item.id));
+   const link=document.createElement("a");
+   link.className="other-card";
+   link.href="/guide.html?id="+encodeURIComponent(item.id);
 
-dragArea.addEventListener('pointerup', finishDrag);
-dragArea.addEventListener('pointercancel', finishDrag);
+   const img=document.createElement("img");
+   img.src=item.logo||"/logo/logo.jpg";
+   img.alt=(item.title||"Game")+" logo";
+   img.loading="lazy";
+   img.onerror=()=>{img.src="/logo/logo.jpg";};
 
-function setText(id, value, fallback) {
-  const element = document.getElementById(id);
-  element.textContent =
-    typeof value === 'string' && value.trim()
-      ? value
-      : fallback;
-}
+   const title=document.createElement("div");
+   title.className="font-bold text-xs mt-2";
+   title.textContent=(guide?.emoji||"🎮")+" "+(item.title||"Game");
 
-function safeGameUrl(url) {
-  if (typeof url !== 'string') return '/';
-
-  const cleaned = url.trim();
-
-  if (
-    !cleaned ||
-    cleaned.startsWith('//') ||
-    /^[a-z]+:/i.test(cleaned) ||
-    cleaned.includes('..')
-  ) return '/';
-
-  return '/' + cleaned.replace(/^\/+/, '');
-}
-
-function renderList(id, items) {
-  const container = document.getElementById(id);
-  container.replaceChildren();
-
-  if (!Array.isArray(items) || !items.length) {
-    const p = document.createElement('p');
-    p.textContent = '📖 Information coming soon.';
-    container.appendChild(p);
-    return;
-  }
-
-  const ul = document.createElement('ul');
-
-  items.forEach(item => {
-    const li = document.createElement('li');
-    li.textContent = item;
-    ul.appendChild(li);
+   link.append(img,title);
+   container.appendChild(link);
   });
 
-  container.appendChild(ul);
+ if(!container.children.length){
+  const p=document.createElement("p");
+  p.className="text-slate-500 text-sm";
+  p.textContent="More games coming soon.";
+  container.appendChild(p);
+ }
 }
 
-function renderFAQs(items) {
-  const container = document.getElementById('faqs');
-  container.replaceChildren();
+/* =====================================================
+   LOAD GUIDE
+===================================================== */
 
-  if (!Array.isArray(items) || !items.length) {
-    document.getElementById('faqSection').style.display = 'none';
-    return;
+async function loadGuide(){
+ try{
+  if(!gameId)throw new Error("Game ID missing. Open a guide from ST Games.");
+
+  const guide=ST_GAME_GUIDES.find(item=>String(item.id)===String(gameId));
+  if(!guide)throw new Error("Guide not found. Please return to ST Games.");
+
+  currentGame=guide;
+
+  /*
+   * games.json is still your original homepage catalogue.
+   * It supplies the real game logo and More Games cards.
+   */
+  try{
+   const response=await fetch("/games.json",{cache:"no-store"});
+   if(response.ok){
+    const catalogue=await response.json();
+    if(Array.isArray(catalogue))gamesCatalogue=catalogue;
+   }
+  }catch(catalogueError){
+   console.warn("Could not load games.json:",catalogueError);
   }
 
-  document.getElementById('faqSection').style.display = '';
-
-  items.forEach(item => {
-    const block = document.createElement('div');
-    block.className = 'py-3 border-b border-slate-100';
-
-    const question = document.createElement('strong');
-    question.className = 'block text-sm mb-2';
-    question.textContent = '❓ ' + item.q;
-
-    const answer = document.createElement('p');
-    answer.className = 'text-sm text-slate-600';
-    answer.textContent = item.a;
-
-    block.append(question, answer);
-    container.appendChild(block);
-  });
-}
-
-function setRatingSelection(score) {
-  selectedScore = score;
-
-  document.querySelectorAll('#ratingStarsInput button')
-    .forEach(btn => {
-      const n = Number(btn.dataset.score);
-      btn.classList.toggle('selected', n <= score);
-    });
-
-  document.getElementById('submitRating').disabled = !score;
-}
-
-document.querySelectorAll('#ratingStarsInput button')
-  .forEach(btn => {
-    btn.addEventListener('click', () => {
-      setRatingSelection(Number(btn.dataset.score));
-    });
-  });
-
-/* ===========================================
-   FIREBASE - EXISTING ST GAMES RATINGS
-=========================================== */
-
-function initRatings() {
-  if (!gameId) return;
-
-  const cfg = {
-    apiKey: 'AIzaSyDOFx0_vpPDRDCkUW-deQjMNK5msOsGSnI',
-    authDomain: 'stgames-289.firebaseapp.com',
-    databaseURL: 'https://stgames-289-default-rtdb.firebaseio.com/',
-    projectId: 'stgames-289',
-    storageBucket: 'stgames-289.firebasestorage.app',
-    messagingSenderId: '916146081741',
-    appId: '1:916146081741:web:eb343c4dc0c6648388fe84',
-    measurementId: 'G-P8RQ074PWX'
-  };
-
-  try {
-    const app =
-      firebase.apps.find(a => a.name === 'stGamesVisitorRatingsGuide') ||
-      firebase.initializeApp(cfg, 'stGamesVisitorRatingsGuide');
-
-    ratingsDb = firebase.database(app);
-    ratingsAuth = firebase.auth(app);
-
-    const gameRatingsRef = ratingsDb.ref('game_ratings/' + gameId);
-
-    gameRatingsRef.on('value', snap => {
-      const data = snap.val() || {};
-
-      const values = Object.values(data)
-        .map(v => Number(v && v.score))
-        .filter(v =>
-          Number.isInteger(v) && v >= 1 && v <= 5
-        );
-
-      const count = values.length;
-      const average = count
-        ? values.reduce((a, b) => a + b, 0) / count
-        : 0;
-
-      const ratingText = count
-        ? `${average.toFixed(1)} / 5 · ${count} player review${count === 1 ? '' : 's'}`
-        : 'No player ratings yet';
-
-      document.getElementById('ratingAverage').textContent = ratingText;
-      document.getElementById('guideRatingSummary').textContent = '⭐ ' + ratingText;
-
-      if (currentUid && data[currentUid]) {
-        setRatingSelection(Number(data[currentUid].score));
-        document.getElementById('ratingStatus').textContent =
-          '✅ Your current rating is saved. You can update it anytime.';
-      }
-    }, err => {
-      document.getElementById('ratingStatus').textContent =
-        'Could not load ratings. Please check Firebase permissions.';
-      console.warn(err);
-    });
-
-    ratingsAuth.signInAnonymously()
-      .then(cred => {
-        currentUid = cred.user.uid;
-
-        return ratingsDb
-          .ref('game_ratings/' + gameId + '/' + currentUid)
-          .once('value');
-      })
-      .then(snap => {
-        if (snap.exists()) {
-          setRatingSelection(Number(snap.val().score));
-
-          document.getElementById('ratingStatus').textContent =
-            '✅ You already rated this game. You can update your rating.';
-        }
-      })
-      .catch(err => {
-        document.getElementById('ratingStatus').textContent =
-          '❌ Rating sign-in failed. Enable Anonymous Authentication.';
-        console.warn(err);
-      });
-
-  } catch (err) {
-    document.getElementById('ratingStatus').textContent =
-      'Ratings service unavailable.';
-    console.warn(err);
-  }
-}
-
-document.getElementById('submitRating')
-  .addEventListener('click', async () => {
-
-    const status = document.getElementById('ratingStatus');
-    const button = document.getElementById('submitRating');
-
-    if (!selectedScore || !ratingsDb || !ratingsAuth || !gameId) return;
-
-    button.disabled = true;
-    status.textContent = '⏳ Saving your rating...';
-
-    try {
-      const user = ratingsAuth.currentUser ||
-        (await ratingsAuth.signInAnonymously()).user;
-
-      currentUid = user.uid;
-
-      await ratingsDb
-        .ref('game_ratings/' + gameId + '/' + currentUid)
-        .set({
-          score: selectedScore,
-          updatedAt: firebase.database.ServerValue.TIMESTAMP
-        });
-
-      status.textContent = '✅ Thanks! Your rating has been saved.';
-
-    } catch (err) {
-      console.error(err);
-      status.textContent =
-        '❌ Could not save rating. Check Firebase rules and connection.';
-
-    } finally {
-      button.disabled = !selectedScore;
-    }
-  });
-
-/* ===========================================
-   LOAD GAME DETAILS
-=========================================== */
-
-async function loadGuide() {
-  try {
-    if (!gameId) {
-      throw new Error('Game ID missing. Please open a game guide from ST Games.');
-    }
-
-    const response = await fetch('/games.json', {
-      cache: 'no-store'
-    });
-
-    if (!response.ok) {
-      throw new Error('Could not load games.json');
-    }
-
-    const games = await response.json();
-
-    const game = games.find(
-      item => String(item.id) === String(gameId)
-    );
-
-    if (!game) {
-      throw new Error('Game not found. Please return to ST Games.');
-    }
-
-    currentGame = game;
-
-    const extra = window.ST_GAME_GUIDES?.find(
-      item => String(item.id) === String(game.id)
-    );
-
-    const details = game.details || {};
-
-    /*
-      Priority:
-      1. game.js guide details
-      2. Existing games.json details
-      3. Friendly fallback
-    */
-
-    const description =
-      extra?.description || details.description;
-
-    const objective =
-      extra?.objective || details.objective;
-
-    document.title = `${game.title} Guide - ST Games`;
-
-    document.getElementById('gameTitle').textContent =
-      (extra?.emoji || '🎮') + ' ' + game.title;
-
-    document.getElementById('gameLogo').src =
-      game.logo || '/stgames-apk/launchericon-512x512.png';
-
-    document.getElementById('gameLogo').alt =
-      (game.title || 'Game') + ' logo';
-
-    document.getElementById('gameCategory').textContent =
-      extra?.category || game.category || 'GAME';
-
-    setText(
-      'gameCreator',
-      details.creator || extra?.creator,
-      'Skill | Strategy | Victory'
-    );
-
-    setText(
-      'description',
-      description,
-      '📖 Guide coming soon.'
-    );
-
-    setText(
-      'objective',
-      objective,
-      '🎯 Objective not added yet.'
-    );
-
-    renderList(
-      'howToPlay',
-      extra?.howToPlay || (Array.isArray(details.howToPlay)
-        ? details.howToPlay
-        : details.howToPlay ? [details.howToPlay] : [])
-    );
-
-    renderList(
-      'controls',
-      extra?.controls || (Array.isArray(details.controls)
-        ? details.controls
-        : details.controls ? [details.controls] : [])
-    );
-
-    renderList(
-      'rules',
-      extra?.rules || (Array.isArray(details.rules)
-        ? details.rules
-        : details.rules ? [details.rules] : [])
-    );
-
-    renderList(
-      'tips',
-      extra?.tips || (Array.isArray(details.tips)
-        ? details.tips
-        : details.tips ? [details.tips] : [])
-    );
-
-    renderFAQs(extra?.faqs || []);
-
-    document.getElementById('playButton').href =
-      safeGameUrl(game.url);
-
-    /* More Games */
-    const container = document.getElementById('otherGames');
-    container.replaceChildren();
-
-    games
-      .filter(item => item.id !== game.id)
-      .slice(0, 8)
-      .forEach(item => {
-        const link = document.createElement('a');
-
-        link.className = 'other-card';
-        link.href =
-          '/guide.html?id=' + encodeURIComponent(item.id);
-
-        const img = document.createElement('img');
-        img.src = item.logo || '/stgames-apk/launchericon-512x512.png';
-        img.alt = item.title || 'Game';
-        img.loading = 'lazy';
-
-        const title = document.createElement('div');
-        title.className = 'font-bold text-xs mt-2';
-        title.textContent = item.title || 'Game';
-
-        link.append(img, title);
-        container.appendChild(link);
-      });
-
-    initRatings();
-
-  } catch (error) {
-    console.error(error);
-
-    document.getElementById('gameTitle').textContent =
-      '😕 Guide unavailable';
-
-    document.getElementById('description').textContent =
-      error.message;
-
-    document.getElementById('playButton').style.display = 'none';
-  }
+  const catalogueGame=gamesCatalogue.find(
+   item=>String(item.id)===String(guide.id)
+  );
+
+  document.title=guide.title+" Guide - ST Games";
+
+  document.getElementById("gameTitle").textContent=
+   (guide.emoji||"🎮")+" "+guide.title;
+
+  const logo=document.getElementById("gameLogo");
+  logo.src=(catalogueGame&&catalogueGame.logo)||"/logo/logo.jpg";
+  logo.alt=guide.title+" logo";
+  logo.onerror=()=>{logo.src="/logo/logo.jpg";};
+
+  document.getElementById("gameCategory").textContent=
+   guide.category||"GAME";
+
+  setText("gameCreator","Skill | Strategy | Victory","Skill | Strategy | Victory");
+  setText("description",guide.description,"📖 Guide coming soon.");
+  setText("objective",guide.objective,"🎯 Objective not added yet.");
+
+  renderList("howToPlay",guide.howToPlay);
+  renderList("controls",guide.controls);
+  renderList("rules",guide.rules);
+  renderList("tips",guide.tips);
+  renderFAQs(guide.faqs);
+
+  document.getElementById("playButton").href=safeGameUrl(guide.url);
+
+  renderMoreGames(gamesCatalogue);
+
+  initRatings();
+
+ }catch(error){
+  console.error("Guide loading error:",error);
+  document.getElementById("gameTitle").textContent="😕 Guide unavailable";
+  document.getElementById("description").textContent=error.message;
+  document.getElementById("playButton").style.display="none";
+  document.getElementById("gameCategory").textContent="ERROR";
+  document.getElementById("guideRatingSummary").textContent="";
+  document.getElementById("otherGames").textContent="Please return to ST Games.";
+ }
 }
 
 loadGuide();
