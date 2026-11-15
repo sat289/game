@@ -547,7 +547,6 @@
             }
         }
 
-        /* Status Box stays ON TOP (z-index: 12) so iframe never flashes white */
         #ad-status-box {
             position: absolute;
             inset: 0;
@@ -584,14 +583,22 @@
             line-height: 1.45;
         }
 
+        /* Keep iframe 100%x100% (never display:none) so Chrome allows video player to initialize */
         #ad-iframe {
             width: 100%;
             height: 100%;
             border: none;
             background: #0d0617;
-            position: relative;
+            position: absolute;
+            inset: 0;
             z-index: 5;
-            display: block;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        #ad-iframe.ad-visible {
+            opacity: 1;
+            z-index: 14;
         }
 
         .ad-box-label {
@@ -799,7 +806,7 @@
                 <div id="ad-status-text">Loading Ad...</div>
             </div>
 
-            <iframe id="ad-iframe" class="hidden" src="about:blank" allow="autoplay; fullscreen"></iframe>
+            <iframe id="ad-iframe" src="about:blank" allow="autoplay; fullscreen"></iframe>
         </div>
     </div>
 
@@ -845,7 +852,6 @@
 
         let pendingRewardType = null;
         let adHasStarted = false;
-        let adRewardReady = false;
         let adLoadTimeout = null;
         let adErrorCloseTimeout = null;
 
@@ -1215,7 +1221,6 @@
         function openAdModal(rewardType) {
             pendingRewardType = rewardType;
             adHasStarted = false;
-            adRewardReady = false;
             clearTimeout(adLoadTimeout);
             clearTimeout(adErrorCloseTimeout);
 
@@ -1230,11 +1235,10 @@
             statusText.style.color = '#f8f9fa';
             statusText.innerText = 'Loading Ad...';
 
-            // Keep iframe hidden until AD_STARTED fires so it never flashes white
-            iframe.classList.add('hidden');
+            iframe.classList.remove('ad-visible');
             modal.classList.remove('hidden');
 
-            // Root path '/ad.html' works from both /admin.html and /games/.../index.html
+            // Load /ad.html from root
             iframe.src = '/ad.html?t=' + Date.now();
 
             // If ad doesn't start within 5 seconds, show "Ads are not available right now. Please try again."
@@ -1249,21 +1253,20 @@
             if (adHasStarted) return;
             adHasStarted = true;
             clearTimeout(adLoadTimeout);
-            document.getElementById('ad-iframe').classList.remove('hidden');
+            document.getElementById('ad-iframe').classList.add('ad-visible');
             document.getElementById('ad-status-box').classList.add('hidden');
         }
 
         function handleAdLoadFailed() {
             clearTimeout(adLoadTimeout);
             adHasStarted = false;
-            adRewardReady = false;
 
             const iframe = document.getElementById('ad-iframe');
             const statusBox = document.getElementById('ad-status-box');
             const spinner = document.getElementById('ad-spinner');
             const statusText = document.getElementById('ad-status-text');
 
-            iframe.classList.add('hidden');
+            iframe.classList.remove('ad-visible');
             iframe.src = 'about:blank';
 
             statusBox.classList.remove('hidden');
@@ -1277,23 +1280,19 @@
             }, 2400);
         }
 
+        // Clicking X before completion closes the ad without granting free reward
         function handleAdCloseClick() {
-            if (adRewardReady) {
-                collectAdReward();
-            } else {
-                closeAdModal();
-            }
+            closeAdModal();
         }
 
         function closeAdModal() {
             pendingRewardType = null;
             adHasStarted = false;
-            adRewardReady = false;
             clearTimeout(adLoadTimeout);
             clearTimeout(adErrorCloseTimeout);
 
             const iframe = document.getElementById('ad-iframe');
-            iframe.classList.add('hidden');
+            iframe.classList.remove('ad-visible');
             iframe.src = 'about:blank';
             document.getElementById('ad-modal').classList.add('hidden');
         }
@@ -1321,8 +1320,6 @@
             const msgType = event.data?.type || event.data;
             if (msgType === 'AD_STARTED') {
                 markAdStarted();
-            } else if (msgType === 'AD_REWARD_READY') {
-                adRewardReady = true;
             } else if (msgType === 'AD_COMPLETED') {
                 collectAdReward();
             } else if (msgType === 'AD_FAILED') {
