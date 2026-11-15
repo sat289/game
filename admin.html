@@ -3161,8 +3161,34 @@ window.stTrackGamePlay = (gameName) => recordStEvent("game_plays", "view", gameN
           game.logo = logoPath;
         }
 
-        allGamesData[index] = game;
-        await pushFileDirect("games.json", JSON.stringify(allGamesData, null, 2), `Edit game: ${title}`);
+
+// Save admin-managed rating directly to Firebase.
+// Use the authenticated Admin Studio Firebase app.
+if (!stAdminAuth || !stAdminAuth.currentUser ||
+    stAdminAuth.currentUser.email !== ST_ADMIN_EMAIL) {
+  throw new Error("Admin authentication is required to update ratings.");
+}
+
+if (!game.id) {
+  throw new Error("This game has no ID. Cannot sync its rating.");
+}
+
+const adminRatingsDb = firebase.database(stAdminAuth.app);
+
+await adminRatingsDb.ref("admin_game_ratings/" + game.id).set({
+  rating: game.rating,
+  reviewCount: game.reviewCount,
+  updatedAt: firebase.database.ServerValue.TIMESTAMP
+});
+
+// Also preserve the existing GitHub games.json update.
+allGamesData[index] = game;
+await pushFileDirect(
+  "games.json",
+  JSON.stringify(allGamesData, null, 2),
+  `Edit game: ${title}`
+);
+
         safeSaveLocalGames(allGamesData);
 
         editedGamesTotal++;
