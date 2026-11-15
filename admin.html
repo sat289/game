@@ -1107,37 +1107,6 @@
     let firebaseDb = null;
     let firebaseAnalytics = null;
     let firebaseConnected = false;
-    let stAdminAuth = null;
-
-function initAdminFirebaseAuth() {
-    try {
-        if (!window.firebase ||
-            typeof firebase.auth !== "function") {
-            throw new Error("Firebase Auth SDK not loaded.");
-        }
-
-        let app;
-
-        try {
-            app = firebase.app("stGamesAdminAuth");
-        } catch (error) {
-            app = firebase.initializeApp(
-                ST_ADMIN_FIREBASE_CONFIG,
-                "stGamesAdminAuth"
-            );
-        }
-
-        stAdminAuth = firebase.auth(app);
-
-        console.log("Admin Firebase Auth initialized");
-        return stAdminAuth;
-
-    } catch (error) {
-        console.error("Firebase Auth initialization:", error);
-        stAdminAuth = null;
-        return null;
-    }
-}
 
     /* ==========================================================
        MILESTONE ALERT CONFIGURATION STATE (DEFAULT 10 LOGINS & VIEWS)
@@ -3367,9 +3336,8 @@ window.stTrackGamePlay = (gameName) => recordStEvent("game_plays", "view", gameN
         if (s.token) document.getElementById('ghToken').value = s.token;
       } catch (_) {}
 
-      if (safeGetStorage('st_admin_unlocked') === 'true') {
-        document.getElementById('passwordModal').classList.add('hidden');
-      }
+      // Initialize Firebase Admin Authentication
+initAdminFirebaseAuth();
 
       loadMilestoneSettingsFromLocal();
       initFirebaseLiveSync();
