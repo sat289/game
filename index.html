@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script>(function(s){s.dataset.zone='12261580',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
-  <script>(function(s){s.dataset.zone='12261606',s.src='https://n6wxm.com/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+<!-- Google AdSense publisher loader -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3755940008583823" crossorigin="anonymous"></script>
   <!-- ST GAMES Favicon -->
   <link rel="icon" href="https://stgames.online/stgames-apk/launchericon-512x512.png" type="image/png">
   <link rel="canonical" href="https://stgames.online/">
@@ -421,6 +421,18 @@
       </a>
     </div>
 
+    <!-- ST GAMES ANDROID APK DOWNLOAD -->
+    <section class="mb-4">
+      <a href="https://stgames.online/ST-Games.apk" download="ST-Games.apk"
+         class="w-full flex items-center justify-center gap-3 rounded-2xl px-5 py-4 font-extrabold text-sm text-[#07222d] bg-gradient-to-r from-[#32ffdc] to-cyan-300 shadow-lg border border-white/60 hover:brightness-105 active:scale-[0.99] transition"
+         aria-label="Download ST Games Android APK">
+        <i class="fa-brands fa-android text-2xl" aria-hidden="true"></i>
+        <span>DOWNLOAD ST GAMES APK</span>
+        <i class="fa-solid fa-download" aria-hidden="true"></i>
+      </a>
+      <p class="text-[10px] text-center mt-1 font-semibold text-slate-700">Android App • ST-Games.apk</p>
+    </section>
+
     <!-- GAMES COUNT & FAVOURITES BAR -->
     <div class="space-y-2.5 mb-3">
       <div class="flex items-center justify-between gap-2">
@@ -787,20 +799,55 @@
     let isPlaying = false;
     let isDark = false;
 
+    function updateMusicButton(playing) {
+      isPlaying = playing;
+      if (soundIcon) soundIcon.className = playing
+        ? "fa-solid fa-volume-high text-sm"
+        : "fa-solid fa-volume-xmark text-sm";
+      if (soundText) soundText.innerText = playing
+        ? "Music 🎵 ON 🔊"
+        : "Tap to Play Music 🎵";
+    }
+
+    async function startMusicPlayback() {
+      if (!music || safeStorageGet('hub_sound', 'on') === 'off') return false;
+      try {
+        music.volume = 0.35;
+        await music.play();
+        updateMusicButton(true);
+        safeStorageSet('hub_sound', 'on');
+        return true;
+      } catch (_) {
+        updateMusicButton(false);
+        return false; // Most browsers require a user gesture before audible autoplay.
+      }
+    }
+
+    function enableMusicAfterInteraction(event) {
+      if (event && event.target && event.target.closest && event.target.closest('#soundToggleBtn')) return;
+      startMusicPlayback().then((started) => {
+        if (started) {
+          document.removeEventListener('pointerdown', enableMusicAfterInteraction);
+          document.removeEventListener('keydown', enableMusicAfterInteraction);
+        }
+      });
+    }
+
     function toggleAudio() {
       if (!music) return;
       if (isPlaying) {
-        music.pause(); isPlaying = false;
-        if (soundIcon) soundIcon.className = "fa-solid fa-volume-xmark text-sm";
+        music.pause();
+        updateMusicButton(false);
         if (soundText) soundText.innerText = "Music 🎶 OFF 🔇";
         safeStorageSet('hub_sound', 'off');
       } else {
+        safeStorageSet('hub_sound', 'on');
         music.play().then(() => {
-          isPlaying = true;
-          if (soundIcon) soundIcon.className = "fa-solid fa-volume-high text-sm";
-          if (soundText) soundText.innerText = "Music 🎵 ON 🔊";
-          safeStorageSet('hub_sound', 'on');
-        }).catch(() => {});
+          updateMusicButton(true);
+        }).catch(() => {
+          updateMusicButton(false);
+          if (soundText) soundText.innerText = "Tap to Play Music 🎵";
+        });
       }
     }
 
@@ -1224,6 +1271,16 @@
     window.addEventListener('DOMContentLoaded', () => {
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register(['.', 'sw.js'].join('/')).catch(() => {});
+      }
+
+      // Try audible autoplay; if the browser blocks it, start on the visitor's first interaction.
+      if (safeStorageGet('hub_sound', 'on') !== 'off') {
+        startMusicPlayback();
+        document.addEventListener('pointerdown', enableMusicAfterInteraction);
+        document.addEventListener('keydown', enableMusicAfterInteraction);
+      } else {
+        updateMusicButton(false);
+        if (soundText) soundText.innerText = "Music 🎶 OFF 🔇";
       }
 
       if (safeStorageGet('st_theme') === 'dark') document.body.classList.add('dark-theme');
