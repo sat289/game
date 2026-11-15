@@ -2178,22 +2178,28 @@ function handleNotifBannerClick() {
   playRandomGame();
 }
 
-async function registerAppServiceWorker(){
-  if(!("serviceWorker" in navigator)) return null;
-  try{
-    const registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
-    swRegistration = await navigator.serviceWorker.ready;
-    return swRegistration || registration;
-  }catch(error){
-    try {
-      const fallbackReg = await navigator.serviceWorker.register("../sw.js");
-      swRegistration = await navigator.serviceWorker.ready;
-      return swRegistration || fallbackReg;
-    } catch (e2) {
-      return null;
-    }
+
+async function registerAppServiceWorker() {
+  if (!("serviceWorker" in navigator)) return null;
+
+  try {
+    const registration = await navigator.serviceWorker.register(
+      "/stgames-apk/sw.js",
+      { scope: "/stgames-apk/" }
+    );
+
+    await navigator.serviceWorker.ready;
+    swRegistration = registration;
+    return registration;
+  } catch (error) {
+    console.error(
+      "ST GAMES app service worker registration failed:",
+      error
+    );
+    return null;
   }
 }
+
 
 async function dispatchFunnyNotification(forceEvenAtNight) {
   if (!forceEvenAtNight && !isDaytimeHours()) {
