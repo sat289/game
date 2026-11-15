@@ -21,11 +21,12 @@ self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys => {
       return Promise.all(
-        keys.map(key => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-        })
+        keys
+          .filter(key =>
+            key.startsWith('stgames-apk-cache-') &&
+            key !== CACHE_NAME
+          )
+          .map(key => caches.delete(key))
       );
     }).then(() => self.clients.claim())
   );
@@ -40,7 +41,6 @@ function isAudioRequest(request) {
     url.endsWith('.wav') ||
     url.endsWith('.ogg') ||
     url.endsWith('.m4a') ||
-    request.headers.has('range')
   );
 }
 
