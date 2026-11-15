@@ -1,3 +1,4 @@
+
 const CACHE_NAME = 'stgames-apk-cache-v3';
 
 const CORE_ASSETS = [
@@ -8,31 +9,38 @@ const CORE_ASSETS = [
   '/stgames-apk/launchericon-192x192.png'
 ];
 
+// INSTALL
 self.addEventListener('install', event => {
   self.skipWaiting();
+
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      return Promise.allSettled(CORE_ASSETS.map(url => cache.add(url)));
+      return Promise.allSettled(
+        CORE_ASSETS.map(url => cache.add(url))
+      );
     })
   );
 });
 
+// ACTIVATE
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys => {
-      return Promise.all(
-        keys
-          .filter(key =>
-            key.startsWith('stgames-apk-cache-') &&
-            key !== CACHE_NAME
-          )
-          .map(key => caches.delete(key))
-      );
-    }).then(() => self.clients.claim())
+    caches.keys()
+      .then(keys => {
+        return Promise.all(
+          keys
+            .filter(key =>
+              key.startsWith('stgames-apk-cache-') &&
+              key !== CACHE_NAME
+            )
+            .map(key => caches.delete(key))
+        );
+      })
+      .then(() => self.clients.claim())
   );
 });
 
-// Helper: Check if a request is an audio/song file
+// CHECK AUDIO FILES
 function isAudioRequest(request) {
   const url = new URL(request.url).pathname.toLowerCase();
 
@@ -42,92 +50,145 @@ function isAudioRequest(request) {
   );
 }
 
+// FETCH
 self.addEventListener('fetch', event => {
-  if (event.request.method !== 'GET') return;
+  const request = event.request;
 
-  const reqUrl = event.request.url;
+  // Only handle GET requests
+  if (request.method !== 'GET') return;
 
-  // 1. Always fetch fresh games.json when online so deleted/new games stay synced
-  if (reqUrl.includes('games.json') && self.navigator.onLine) {
-    event.respondWith(
-      fetch(event.request).then(res => {
-        if (res && res.status === 200) {
-          const clone = res.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put('/games.json', clone));
-        }
-        return res;
-}).catch(async () => {
-  const cache = await caches.open(CACHE_NAME);
-  return await cache.match('/games.json');
-})
-    );
+  const requestUrl = new URL(request.url);
+
+  // Leave external requests untouched
+  if (requestUrl.origin !== self.location.origin) return;
+
+  // Let audio range requests pass directly to the network
+  if (request.headers.has('range')) {
+    event.respondWith(fetch(request));
     return;
   }
 
-  // 2. SPECIAL HANDLER FOR SONGS & AUDIO FILES (Fixes HTTP 206 Range Bug)
-  if (event.request.headers.has('range')) {
-  event.respondWith(fetch(event.request));
-  return;
-  }
-  if (isAudioRequest(event.request)) {
+  // 1. GAMES.JSON - NETWORK FIRST
+  if (requestUrl.pathname.endsWith('/games.json')) {
     event.respondWith(
-      caches.open(CACHE_NAME).then(async cache => {
-        // Check if we already saved the full song in cache (ignoring query params)
-        const cachedAudio = await cache.match(event.request.url, { ignoreSearch: true });
+      (async () => {
+        const cache = await caches.open(CACHE_NAME);
+
+        try {
+          const response = await fetch(request);
+
+          if (response && response.status === 200) {
+            event.waitUntil(
+              cache.put('/games.json', response.clone())
+            );
+          }
+
+          return response;
+        } catch (error) {
+          const cached = await cache.match('/games.json');
+
+          if (cached) return cached;
+
+          throw error;
+        }
+      })()
+    );
+
+    return;
+  }
+
+  // 2. AUDIO AND SONG FILES
+  if (isAudioRequest(request)) {
+    event.respondWith(
+      (async () => {
+        const cache = await caches.open(CACHE_NAME);
+
+        const cachedAudio = await cache.match(request.url, {
+          ignoreSearch: true
+        });
+
         if (cachedAudio) {
           return cachedAudio;
         }
 
-        // If online and not cached yet, fetch the FULL song (without Range header) so status is 200 and cacheable
         try {
-          const cleanAudioResponse = await fetch(event.request.url, {
+          const audioResponse = await fetch(request.url, {
             method: 'GET',
             cache: 'no-cache'
           });
 
-          if (cleanAudioResponse && cleanAudioResponse.status === 200) {
-            cache.put(event.request.url, cleanAudioResponse.clone());
+          if (audioResponse && audioResponse.status === 200) {
+            event.waitUntil(
+              cache.put(request.url, audioResponse.clone())
+            );
           }
-          return cleanAudioResponse;
-        } catch (err) {
-          return fetch(event.request);
+
+          return audioResponse;
+        } catch (error) {
+          return fetch(request);
         }
-      })
+      })()
     );
+
     return;
   }
 
-  // 3. ALL OTHER GAME FILES (HTML, JS, CSS, Images)
+  // 3. OTHER GAME FILES - NETWORK FIRST
   event.respondWith(
-    caches.match(event.request, { ignoreSearch: true }).then(cachedResponse => {
-      if (self.navigator.onLine) {
-        return fetch(event.request).then(networkResponse => {
-          if (networkResponse && networkResponse.status === 200) {
-            const responseClone = networkResponse.clone();
-            caches.open(CACHE_NAME).then(cache => {
-              cache.put(event.request, responseClone);
-            });
-          }
-          return networkResponse;
-        }).catch(() => cachedResponse);
+    (async () => {
+      const cache = await caches.open(CACHE_NAME);
+
+      const cachedResponse = await cache.match(request, {
+        ignoreSearch: true
+      });
+
+      try {
+        const networkResponse = await fetch(request);
+
+        if (
+          networkResponse &&
+          networkResponse.status === 200 &&
+          networkResponse.type !== 'opaque'
+        ) {
+          event.waitUntil(
+            cache.put(request, networkResponse.clone())
+          );
+        }
+
+        return networkResponse;
+      } catch (error) {
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+
+        throw error;
       }
-      return cachedResponse || fetch(event.request);
-    })
+    })()
   );
 });
 
-// Notification click handler
+// NOTIFICATION CLICK
 self.addEventListener('notificationclick', event => {
   event.notification.close();
+
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+    clients.matchAll({
+      type: 'window',
+      includeUncontrolled: true
+    }).then(clientList => {
       for (const client of clientList) {
-        if (client.url.includes('stgames.online') && 'focus' in client) {
+        if (
+          client.url.includes('stgames.online') &&
+          'focus' in client
+        ) {
           return client.focus();
         }
       }
+
       if (clients.openWindow) {
-        return clients.openWindow('/stgames-apk/index.html');
+        return clients.openWindow(
+          '/stgames-apk/index.html'
+        );
       }
     })
   );
