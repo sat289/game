@@ -547,6 +547,7 @@
             }
         }
 
+        /* Status Box stays ON TOP (z-index: 12) so iframe never flashes white */
         #ad-status-box {
             position: absolute;
             inset: 0;
@@ -557,7 +558,7 @@
             gap: 14px;
             padding: 24px;
             text-align: center;
-            z-index: 5;
+            z-index: 12;
             background: radial-gradient(circle at center, #24103a 0%, #0d0617 100%);
         }
 
@@ -577,19 +578,19 @@
         }
 
         #ad-status-text {
-            font-size: 1rem;
+            font-size: 1.05rem;
             font-weight: 800;
             color: #f8f9fa;
-            line-height: 1.4;
+            line-height: 1.45;
         }
 
         #ad-iframe {
             width: 100%;
             height: 100%;
             border: none;
-            background: transparent;
+            background: #0d0617;
             position: relative;
-            z-index: 6;
+            z-index: 5;
             display: block;
         }
 
@@ -605,7 +606,7 @@
             letter-spacing: 1px;
             padding: 3px 9px;
             border-radius: 999px;
-            z-index: 15;
+            z-index: 18;
             pointer-events: none;
         }
 
@@ -743,7 +744,7 @@
 
         <div class="menu-bottom-nav">
             <button class="nav-btn btn-leaderboard" onclick="showLeaderboard()">🏆 Leaderboard</button>
-            <button class="nav-btn btn-portal" onclick="location.href='../index.html'">🎮 Game</button>
+            <button class="nav-btn btn-portal" onclick="location.href='/index.html'">🎮 Game</button>
         </div>
     </div>
 
@@ -798,7 +799,7 @@
                 <div id="ad-status-text">Loading Ad...</div>
             </div>
 
-            <iframe id="ad-iframe" src="about:blank" allow="autoplay; fullscreen"></iframe>
+            <iframe id="ad-iframe" class="hidden" src="about:blank" allow="autoplay; fullscreen"></iframe>
         </div>
     </div>
 
@@ -1210,7 +1211,7 @@
             openAdModal('bolt');
         }
 
-        // Opens ../ad.html inside Glowing Box with 5-second timeout check
+        // Opens /ad.html inside Glowing Box with 5-second timeout check
         function openAdModal(rewardType) {
             pendingRewardType = rewardType;
             adHasStarted = false;
@@ -1229,10 +1230,14 @@
             statusText.style.color = '#f8f9fa';
             statusText.innerText = 'Loading Ad...';
 
+            // Keep iframe hidden until AD_STARTED fires so it never flashes white
+            iframe.classList.add('hidden');
             modal.classList.remove('hidden');
-            iframe.src = '../ad.html?t=' + Date.now();
 
-            // If ad doesn't load within 5 seconds, show "Ads are not available right now. Please try again."
+            // Root path '/ad.html' works from both /admin.html and /games/.../index.html
+            iframe.src = '/ad.html?t=' + Date.now();
+
+            // If ad doesn't start within 5 seconds, show "Ads are not available right now. Please try again."
             adLoadTimeout = setTimeout(() => {
                 if (!adHasStarted) {
                     handleAdLoadFailed();
@@ -1244,6 +1249,7 @@
             if (adHasStarted) return;
             adHasStarted = true;
             clearTimeout(adLoadTimeout);
+            document.getElementById('ad-iframe').classList.remove('hidden');
             document.getElementById('ad-status-box').classList.add('hidden');
         }
 
@@ -1257,7 +1263,9 @@
             const spinner = document.getElementById('ad-spinner');
             const statusText = document.getElementById('ad-status-text');
 
+            iframe.classList.add('hidden');
             iframe.src = 'about:blank';
+
             statusBox.classList.remove('hidden');
             spinner.classList.add('hidden');
             statusText.style.color = '#fcc419';
@@ -1266,7 +1274,7 @@
             clearTimeout(adErrorCloseTimeout);
             adErrorCloseTimeout = setTimeout(() => {
                 closeAdModal();
-            }, 2200);
+            }, 2400);
         }
 
         function handleAdCloseClick() {
@@ -1285,6 +1293,7 @@
             clearTimeout(adErrorCloseTimeout);
 
             const iframe = document.getElementById('ad-iframe');
+            iframe.classList.add('hidden');
             iframe.src = 'about:blank';
             document.getElementById('ad-modal').classList.add('hidden');
         }
@@ -1307,7 +1316,7 @@
             }
         }
 
-        // Listen for messages from ../ad.html
+        // Listen for messages from /ad.html
         window.addEventListener('message', (event) => {
             const msgType = event.data?.type || event.data;
             if (msgType === 'AD_STARTED') {
@@ -1316,6 +1325,8 @@
                 adRewardReady = true;
             } else if (msgType === 'AD_COMPLETED') {
                 collectAdReward();
+            } else if (msgType === 'AD_FAILED') {
+                handleAdLoadFailed();
             }
         });
 
