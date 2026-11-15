@@ -75,6 +75,10 @@
   flex: 1;
 }
 
+/* Visitor-submitted live game ratings */
+.game-rating-badge{display:flex;align-items:center;justify-content:center;gap:5px;margin:6px auto 2px;padding:5px 9px;border-radius:999px;background:rgba(7,34,45,.92);color:#fff;font-size:11px;font-weight:800;width:max-content;max-width:100%;box-shadow:0 3px 10px #0002}
+.game-rating-badge .rating-stars{color:#fbbf24;letter-spacing:1px}
+.game-rating-badge .rating-count{color:#cbd5e1;font-weight:600}
 .game-details-link {
   display: flex;
   align-items: center;
@@ -1289,6 +1293,9 @@ return `
         <span class="text-[10px] text-[#32ffdc] font-semibold">Play Free Now</span>
       </div>
     </a>
+    <div class="game-rating-badge" data-rating-gameid="${escapeHTML(game.id)}" aria-label="Loading player rating">
+      <span class="rating-stars">☆☆☆☆☆</span><span class="rating-average">—</span><span class="rating-count">(0)</span>
+    </div>
 
     <a class="game-details-link"
        href="guide.html?id=${encodeURIComponent(game.id)}">
@@ -1528,5 +1535,52 @@ return `
     window.stTrackLogin = (username) => recordStEvent("member_logins", "login", "Verified Member Login", username || "Member");
     window.stTrackGamePlay = (gameName) => recordStEvent("game_plays", "view", gameName || "Game Play", "Player");
   </script>
+
+  <!-- ST GAMES VISITOR RATINGS (dedicated stgames-289 Firebase project) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script>
+  (() => {
+    const cfg = {
+      apiKey: "AIzaSyDOFx0_vpPDRDCkUW-deQjMNK5msOsGSnI",
+      authDomain: "stgames-289.firebaseapp.com",
+      databaseURL: "https://stgames-289-default-rtdb.firebaseio.com/",
+      projectId: "stgames-289",
+      storageBucket: "stgames-289.firebasestorage.app",
+      messagingSenderId: "916146081741",
+      appId: "1:916146081741:web:eb343c4dc0c6648388fe84",
+      measurementId: "G-P8RQ074PWX"
+    };
+    let db;
+    try {
+      const app = firebase.apps.find(a => a.name === 'stGamesVisitorRatingsHome') || firebase.initializeApp(cfg, 'stGamesVisitorRatingsHome');
+      db = firebase.database(app);
+    } catch (err) { console.warn('Ratings connection unavailable:', err); return; }
+    const fmt = n => Number(n || 0).toFixed(1);
+    function paint(root) {
+      document.querySelectorAll('[data-rating-gameid]').forEach(el => {
+        const id = el.getAttribute('data-rating-gameid');
+        const rows = root && root[id] ? Object.values(root[id]) : [];
+        const scores = rows.map(x => Number(x && x.score)).filter(x => Number.isFinite(x) && x >= 1 && x <= 5);
+        const count = scores.length;
+        const avg = count ? scores.reduce((a,b) => a+b, 0) / count : 0;
+        const stars = count ? '★'.repeat(Math.round(avg)) + '☆'.repeat(5-Math.round(avg)) : '☆☆☆☆☆';
+        const starEl=el.querySelector('.rating-stars'), avgEl=el.querySelector('.rating-average'), countEl=el.querySelector('.rating-count');
+        if(starEl) starEl.textContent=stars;
+        if(avgEl) avgEl.textContent=count ? fmt(avg) : 'No ratings';
+        if(countEl) countEl.textContent=`(${count})`;
+        el.setAttribute('aria-label', count ? `Rated ${fmt(avg)} out of 5 by ${count} players` : 'No player ratings yet');
+      });
+    }
+    db.ref('game_ratings').on('value', snap => paint(snap.val() || {}), err => console.warn('Could not read ratings:', err));
+    // New cards may be rendered after the first database response.
+    new MutationObserver(records => {
+      // Ignore text-node updates made by paint() itself to avoid an observer loop.
+      const cardsChanged = records.some(m => !(m.target.closest && m.target.closest('.game-rating-badge')));
+      if (cardsChanged) db.ref('game_ratings').once('value').then(s => paint(s.val() || {})).catch(()=>{});
+    }).observe(document.body, {childList:true,subtree:true});
+  })();
+  </script>
+
 </body>
 </html>
