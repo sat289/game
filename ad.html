@@ -6,7 +6,6 @@
     <meta name="referrer" content="no-referrer-when-downgrade" />
     <meta name="color-scheme" content="dark">
     <title>Reward Ad</title>
-    <!-- Fluid Player CSS & JS for VAST Video Ads -->
     <link rel="stylesheet" href="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.css" />
     <script src="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.js"></script>
     <style>
@@ -29,11 +28,11 @@
         #ad-stage {
             width: 100%;
             height: 100%;
+            position: relative;
+            background: #0d0617;
             display: flex;
             align-items: center;
             justify-content: center;
-            position: relative;
-            background: #0d0617;
         }
         #vast-video,
         .fluid_video_wrapper {
@@ -49,89 +48,169 @@
             object-fit: contain !important;
             background: #0d0617 !important;
         }
+        /* Tap to Play Overlay Button to bypass mobile browser autoplay blocks */
+        #play-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(13, 6, 23, 0.92);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            z-index: 9999;
+            cursor: pointer;
+            text-align: center;
+            padding: 20px;
+        }
+        .play-btn-circle {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ffd43b, #f59f00);
+            color: #1f0e33;
+            font-size: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(255, 212, 59, 0.6);
+            animation: pulsePlay 1.5s infinite alternate ease-in-out;
+        }
+        @keyframes pulsePlay {
+            0% { transform: scale(1); box-shadow: 0 0 15px rgba(255, 212, 59, 0.5); }
+            100% { transform: scale(1.08); box-shadow: 0 0 25px rgba(255, 212, 59, 0.9); }
+        }
+        .play-text {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #ffd43b;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+        .play-sub {
+            font-size: 0.8rem;
+            color: #e5dbff;
+            opacity: 0.85;
+        }
+        #ad-timer-pill {
+            position: absolute;
+            bottom: 14px;
+            left: 14px;
+            background: rgba(0, 0, 0, 0.75);
+            border: 1px solid rgba(255, 212, 59, 0.7);
+            color: #ffd43b;
+            font-size: 0.78rem;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 999px;
+            z-index: 999;
+            display: none;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
 
     <div id="ad-stage">
-        <!-- HTML5 Video Element for HilltopAds VAST (#7627405) -->
-        <video id="vast-video" playsinline muted autoplay>
-            <!-- Short silent dark fallback clip so FluidPlayer can trigger preRoll VAST immediately -->
-            <source src="https://cdn.fluidplayer.com/videos/valerian-1080p.mkv" type="video/mp4" />
-        </video>
+        <!-- Tap Overlay to guarantee mobile browser playback -->
+        <div id="play-overlay" onclick="startAdPlayback()">
+            <div class="play-btn-circle">▶</div>
+            <div class="play-text">Tap to Watch Ad</div>
+            <div class="play-sub">Watch 30s to claim your reward</div>
+        </div>
+
+        <div id="ad-timer-pill">Reward in 30s</div>
+        <video id="vast-video" playsinline webkit-playsinline muted></video>
     </div>
 
     <script>
-        // Your exact VAST URL from HilltopAds Zone #7627405 (shown at 00:05 in your video)
         const HILLTOP_VAST_URL = "https://enchantingloss.com/d.m/F/zNd.G/N/v/Z~G5U/v/eJm3HTu9ZUbI/lkgPETHcY/2cN/j_c/01N/z/Y9xV/j/c/2mW9/1/Q5";
 
+        const MAX_AD_SECONDS = 30;
         let adStartedSent = false;
         let adCompletedSent = false;
+        let countdownInterval = null;
+        let remainingSeconds = MAX_AD_SECONDS;
+        let playerInitialized = false;
+
+        const videoEl = document.getElementById('vast-video');
+        const timerPill = document.getElementById('ad-timer-pill');
+        const playOverlay = document.getElementById('play-overlay');
 
         function notifyAdStarted() {
             if (adStartedSent) return;
             adStartedSent = true;
+            playOverlay.style.display = 'none';
+            timerPill.style.display = 'block';
             window.parent.postMessage({ type: 'AD_STARTED' }, '*');
 
-            // Unlock reward after 5 seconds of watching
-            setTimeout(() => {
-                window.parent.postMessage({ type: 'AD_REWARD_READY' }, '*');
-            }, 5000);
+            countdownInterval = setInterval(() => {
+                remainingSeconds--;
+                if (remainingSeconds > 0) {
+                    timerPill.innerText = `Reward in ${remainingSeconds}s`;
+                } else {
+                    clearInterval(countdownInterval);
+                    notifyAdCompleted();
+                }
+            }, 1000);
         }
 
         function notifyAdCompleted() {
             if (adCompletedSent) return;
             adCompletedSent = true;
+            clearInterval(countdownInterval);
+            try { videoEl.pause(); } catch (e) {}
             window.parent.postMessage({ type: 'AD_COMPLETED' }, '*');
         }
 
         function notifyAdFailed() {
-            if (!adStartedSent) {
-                window.parent.postMessage({ type: 'AD_FAILED' }, '*');
-            }
+            if (adStartedSent || adCompletedSent) return;
+            clearInterval(countdownInterval);
+            window.parent.postMessage({ type: 'AD_FAILED' }, '*');
         }
 
-        // Initialize FluidPlayer with your HilltopAds VAST Pre-Roll
-        try {
-            const player = fluidPlayer('vast-video', {
-                layoutControls: {
-                    fillToContainer: true,
-                    autoPlay: true,
-                    mute: true,
-                    allowTheatre: false,
-                    playButtonShowing: true,
-                    controlBar: {
-                        autoHide: true
-                    }
-                },
-                vastOptions: {
-                    allowVPAID: true,
-                    adList: [
-                        {
-                            roll: 'preRoll',
-                            vastTag: HILLTOP_VAST_URL
+        // Triggered instantly when user taps the glowing "Tap to Watch Ad" button
+        function startAdPlayback() {
+            if (playerInitialized) return;
+            playerInitialized = true;
+
+            try {
+                const player = fluidPlayer('vast-video', {
+                    layoutControls: {
+                        fillToContainer: true,
+                        autoPlay: true,
+                        mute: false,
+                        allowTheatre: false,
+                        playButtonShowing: false
+                    },
+                    vastOptions: {
+                        allowVPAID: true,
+                        maxAllowedVastTagRedirects: 3,
+                        adList: [
+                            {
+                                roll: 'preRoll',
+                                vastTag: HILLTOP_VAST_URL
+                            }
+                        ],
+                        vastAdvanced: {
+                            vastLoadedCallback: function() {
+                                notifyAdStarted();
+                            },
+                            noVastVideoCallback: function() {
+                                notifyAdFailed();
+                            },
+                            vastVideoSkippedCallback: function() {
+                                notifyAdCompleted();
+                            },
+                            vastVideoEndedCallback: function() {
+                                notifyAdCompleted();
+                            }
                         }
-                    ],
-                    vastAdvanced: {
-                        vastLoadedCallback: function() {
-                            notifyAdStarted();
-                        },
-                        noVastVideoCallback: function() {
-                            // No VAST ad fill available right now
-                            notifyAdFailed();
-                        },
-                        vastVideoSkippedCallback: function() {
-                            notifyAdCompleted();
-                        },
-                        vastVideoEndedCallback: function() {
-                            notifyAdCompleted();
-                        }
                     }
-                }
-            });
-        } catch (err) {
-            console.error("VAST Player error:", err);
-            notifyAdFailed();
+                });
+            } catch (err) {
+                console.error("VAST Init Error:", err);
+                notifyAdFailed();
+            }
         }
     </script>
 </body>
