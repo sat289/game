@@ -524,6 +524,8 @@
           <h3 class="font-black text-sm theme-heading mb-3">
             <i class="fa-solid fa-pen-to-square"></i> EDIT GAME
           </h3>
+          <p class="text-[10px] font-bold theme-subtext mb-3">Edit sections in order: 1. Game Details · 2. Game Guide · 3. Game Ratings & Reviews</p>
+          <h4 class="font-black text-xs theme-heading mb-2">1. GAME DETAILS</h4>
 
           <input type="hidden" id="editGameIndex">
 
@@ -565,8 +567,8 @@
           </select>
           
 <div class="mt-4 mb-3 border-t border-teal-500/30 pt-4">
-  <h4 class="font-black text-sm theme-heading mb-3">
-    <i class="fa-solid fa-book-open"></i> GAME GUIDE CONTENT
+  <h4 class="font-black text-xs theme-heading mb-3">
+    2. GAME GUIDE CONTENT <i class="fa-solid fa-book-open"></i>
   </h4>
 
   <label class="block text-xs font-bold theme-label mb-1">Game Creator</label>
@@ -597,8 +599,22 @@
   <textarea id="editGuideTips" class="neon-input mb-3"
     rows="3" placeholder="Helpful tips for players..."></textarea>
 </div>
-          
 
+<div class="mt-4 mb-3 border-t border-teal-500/30 pt-4">
+  <h4 class="font-black text-xs theme-heading mb-2">3. GAME RATINGS & REVIEWS <i class="fa-solid fa-star text-amber-400"></i></h4>
+  <p class="text-[10px] theme-subtext mb-3">Set the rating and review total shown on the homepage and game guide. These are admin-managed display values, not automatic visitor votes.</p>
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <div>
+      <label class="block text-xs font-bold theme-label mb-1">Player Rating (0–5)</label>
+      <input id="editGameRating" type="number" min="0" max="5" step="0.1" value="0" class="neon-input" placeholder="Example: 4.5">
+    </div>
+    <div>
+      <label class="block text-xs font-bold theme-label mb-1">Review Count</label>
+      <input id="editGameReviewCount" type="number" min="0" step="1" value="0" class="neon-input" placeholder="Example: 128">
+    </div>
+  </div>
+</div>
+          
           <div class="flex flex-wrap gap-2">
             <button type="button" onclick="saveGameEdit()" class="neon-action flex-1">
               <i class="fa-solid fa-cloud-arrow-up"></i> Save to GitHub
@@ -608,11 +624,36 @@
         </div>
       </section>
 
-      <!-- SECTION 5: DIRECT GITHUB CODE EDITOR & LIVE PREVIEW -->
+
+      <!-- SECTION 5: VISITOR GAME RATINGS OVERVIEW -->
+      <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <div>
+            <h2 class="brand-font text-base font-bold theme-heading"><i class="fa-solid fa-star text-amber-500"></i> 5. Visitor Game Ratings</h2>
+            <p class="text-[10px] theme-subtext mt-1">Live ratings submitted by players on each game guide.</p>
+          </div>
+          <button type="button" onclick="refreshGameRatingsAdmin()" class="chip-btn"><i class="fa-solid fa-rotate"></i> Refresh</button>
+        </div>
+        <div class="grid grid-cols-2 gap-2 mb-3">
+          <div class="p-3 rounded-xl bg-amber-500/15 text-center border border-amber-500/25">
+            <div class="text-2xl font-black theme-heading" id="ratingsTotalVotes">0</div>
+            <div class="text-[10px] font-extrabold theme-text">TOTAL REVIEWS</div>
+          </div>
+          <div class="p-3 rounded-xl bg-teal-500/15 text-center border border-teal-500/25">
+            <div class="text-2xl font-black theme-heading" id="ratingsGamesCount">0</div>
+            <div class="text-[10px] font-extrabold theme-text">GAMES RATED</div>
+          </div>
+        </div>
+        <div id="ratingsAdminStatus" class="text-xs theme-subtext text-center py-2">Connecting to ST Games ratings database…</div>
+        <div id="ratingsAdminList" class="space-y-2"></div>
+        <p class="text-[10px] theme-subtext mt-3">Ratings are submitted by visitors. Admin can monitor the average and review count here; individual votes are stored under anonymous Firebase user IDs.</p>
+      </section>
+
+      <!-- SECTION 6: DIRECT GITHUB CODE EDITOR & LIVE PREVIEW -->
       <section class="feature-hub rounded-2xl p-4 sm:p-5 mb-5">
         <div class="flex flex-wrap items-center justify-between mb-3 pb-2 border-b border-teal-500/25 gap-2">
           <h2 class="brand-font text-base font-bold theme-heading">
-            <i class="fa-solid fa-code text-teal-600 dark:text-[#32ffdc]"></i> 5. Direct GitHub Code Editor
+            <i class="fa-solid fa-code text-teal-600 dark:text-[#32ffdc]"></i> 6. Direct GitHub Code Editor
           </h2>
           <div class="flex items-center flex-wrap gap-2">
             <button type="button" onclick="openLivePreview()" class="chip-btn">
@@ -1716,6 +1757,7 @@
       if (status) status.textContent = '✅ Saved!';
       await verifyGitHubConnection(true);
       loadAllGames();
+      initGameRatingsAdmin();
       fetchAllRealTelemetry(false);
     }
 
@@ -2768,6 +2810,7 @@ window.stTrackGamePlay = (gameName) => recordStEvent("game_plays", "view", gameN
 
         renderCustomGames();
         filterAllGames();
+        renderGameRatingsAdmin();
       } catch (err) {
         if (status) status.textContent = "Error: " + err.message;
       }
@@ -2831,6 +2874,8 @@ window.stTrackGamePlay = (gameName) => recordStEvent("game_plays", "view", gameN
       document.getElementById("editGuideControls").value = guide.controls || "";
       document.getElementById("editGuideRules").value = guide.rules || "";
       document.getElementById("editGuideTips").value = guide.tips || "";
+      document.getElementById("editGameRating").value = Number.isFinite(Number(game.rating)) ? Math.max(0, Math.min(5, Number(game.rating))) : 0;
+      document.getElementById("editGameReviewCount").value = Number.isFinite(Number(game.reviewCount)) ? Math.max(0, Math.floor(Number(game.reviewCount))) : 0;
 
       document.getElementById("gameEditPanel").classList.remove("hidden");
       document.getElementById("gameEditPanel").scrollIntoView({ behavior: "smooth", block: "center" });
@@ -2867,6 +2912,17 @@ window.stTrackGamePlay = (gameName) => recordStEvent("game_plays", "view", gameN
         rules: document.getElementById("editGuideRules").value.trim(),
         tips: document.getElementById("editGuideTips").value.trim()
       };
+
+      const ratingValue = Number(document.getElementById("editGameRating").value || 0);
+      const reviewCountValue = Number(document.getElementById("editGameReviewCount").value || 0);
+      if (!Number.isFinite(ratingValue) || ratingValue < 0 || ratingValue > 5) {
+        showToast("Rating must be between 0 and 5.", "warn"); return;
+      }
+      if (!Number.isFinite(reviewCountValue) || reviewCountValue < 0 || !Number.isInteger(reviewCountValue)) {
+        showToast("Review count must be a whole number of 0 or more.", "warn"); return;
+      }
+      game.rating = Math.round(ratingValue * 10) / 10;
+      game.reviewCount = reviewCountValue;
 
       game.title = title;
       game.url = url;
@@ -2994,6 +3050,59 @@ window.stTrackGamePlay = (gameName) => recordStEvent("game_plays", "view", gameN
       document.getElementById('previewModal').classList.add('hidden');
     }
 
+
+    // Visitor ratings use the dedicated stgames-289 Firebase project; telemetry above remains untouched.
+    let stGamesRatingsAdminDb = null;
+    let stGamesRatingsSnapshot = {};
+    function initGameRatingsAdmin() {
+      const status = document.getElementById('ratingsAdminStatus');
+      try {
+        const ratingsConfig = {
+      apiKey: "AIzaSyDOFx0_vpPDRDCkUW-deQjMNK5msOsGSnI",
+      authDomain: "stgames-289.firebaseapp.com",
+      databaseURL: "https://stgames-289-default-rtdb.firebaseio.com/",
+      projectId: "stgames-289",
+      storageBucket: "stgames-289.firebasestorage.app",
+      messagingSenderId: "916146081741",
+      appId: "1:916146081741:web:eb343c4dc0c6648388fe84",
+      measurementId: "G-P8RQ074PWX"
+    };
+        const app = firebase.apps.find(a => a.name === 'stGamesRatingsAdmin') || firebase.initializeApp(ratingsConfig, 'stGamesRatingsAdmin');
+        stGamesRatingsAdminDb = firebase.database(app);
+        stGamesRatingsAdminDb.ref('game_ratings').on('value', snap => {
+          stGamesRatingsSnapshot = snap.val() || {};
+          renderGameRatingsAdmin();
+          if (status) status.textContent = 'Live ratings connected to stgames-289.';
+        }, err => { if(status) status.textContent = 'Ratings read failed: ' + err.message; });
+      } catch (err) { if(status) status.textContent = 'Firebase ratings unavailable: ' + err.message; }
+    }
+    function refreshGameRatingsAdmin() {
+      if (!stGamesRatingsAdminDb) { initGameRatingsAdmin(); return; }
+      stGamesRatingsAdminDb.ref('game_ratings').once('value').then(snap => {
+        stGamesRatingsSnapshot = snap.val() || {}; renderGameRatingsAdmin();
+        const status=document.getElementById('ratingsAdminStatus'); if(status) status.textContent='Ratings refreshed.';
+      }).catch(err => showToast('Ratings refresh failed: '+err.message,'error'));
+    }
+    function renderGameRatingsAdmin() {
+      const list = document.getElementById('ratingsAdminList'); if (!list) return;
+      const games = Array.isArray(allGamesData) ? allGamesData : [];
+      const rated = games.map(game => {
+        const rows = stGamesRatingsSnapshot[game.id] ? Object.values(stGamesRatingsSnapshot[game.id]) : [];
+        const scores = rows.map(x => Number(x && x.score)).filter(x => Number.isFinite(x) && x >= 1 && x <= 5);
+        const count=scores.length, avg=count?scores.reduce((a,b)=>a+b,0)/count:0;
+        return {game,count,avg};
+      }).sort((a,b)=>b.count-a.count || b.avg-a.avg);
+      const total=rated.reduce((n,x)=>n+x.count,0), gamesRated=rated.filter(x=>x.count>0).length;
+      const totalEl=document.getElementById('ratingsTotalVotes'), gamesEl=document.getElementById('ratingsGamesCount');
+      if(totalEl) totalEl.textContent=String(total); if(gamesEl) gamesEl.textContent=String(gamesRated);
+      if(!games.length) { list.innerHTML='<div class="text-xs theme-subtext text-center py-4">Load games in Section 4 to see the ratings list.</div>'; return; }
+      list.innerHTML=rated.map(x=>`<div class="flex items-center gap-3 p-3 rounded-xl border border-amber-500/20 sub-panel">
+        <div class="min-w-0 flex-1"><div class="font-extrabold text-sm theme-text truncate">${escapeGameText(x.game.title||'Untitled game')}</div>
+        <div class="text-[10px] theme-subtext">${x.count} review${x.count===1?'':'s'}</div></div>
+        <div class="text-right shrink-0"><div class="font-black text-amber-500">${x.count?x.avg.toFixed(1):'—'} ★</div><div class="text-[10px] theme-subtext">${x.count?'out of 5':'Not rated'}</div></div>
+      </div>`).join('');
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
       const refImg = document.getElementById('tokenRefImg');
       if (refImg) {
@@ -3023,6 +3132,7 @@ window.stTrackGamePlay = (gameName) => recordStEvent("game_plays", "view", gameN
       renderRealTelemetryUI();
       verifyGitHubConnection(false);
       loadAllGames();
+      initGameRatingsAdmin();
       fetchAllRealTelemetry(false);
 
       autoRefreshTimer = setInterval(() => fetchAllRealTelemetry(false), 15000);
