@@ -34,13 +34,11 @@ self.addEventListener('activate', event => {
 
 // Helper: Check if a request is an audio/song file
 function isAudioRequest(request) {
-  const url = request.url.toLowerCase();
+  const url = new URL(request.url).pathname.toLowerCase();
+
   return (
     request.destination === 'audio' ||
-    url.endsWith('.mp3') ||
-    url.endsWith('.wav') ||
-    url.endsWith('.ogg') ||
-    url.endsWith('.m4a') ||
+    /\.(mp3|wav|ogg|m4a)$/i.test(url)
   );
 }
 
@@ -58,7 +56,10 @@ self.addEventListener('fetch', event => {
           caches.open(CACHE_NAME).then(cache => cache.put('/games.json', clone));
         }
         return res;
-      }).catch(() => caches.match('/games.json'))
+}).catch(async () => {
+  const cache = await caches.open(CACHE_NAME);
+  return await cache.match('/games.json');
+})
     );
     return;
   }
