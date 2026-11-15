@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="color-scheme" content="dark">
+    <meta name="referrer" content="no-referrer-when-downgrade" />
     <title>Nuts & Bolts Puzzle</title>
-    <!-- AppLixir Rewarded Video SDK -->
-    <script src="https://cdn.applixir.com/applixir.app.v6.1.0.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -496,8 +495,8 @@
             color: #63e6be;
         }
 
-        /* ================= GLOWING BOX AD OVERLAY ================= */
-        #applixir-ad-overlay {
+        /* ================= GLOWING BOX AD.HTML OVERLAY ================= */
+        #ad-modal {
             position: fixed;
             inset: 0;
             background: rgba(15, 6, 26, 0.85);
@@ -548,7 +547,6 @@
             }
         }
 
-        /* Loading & Timeout Status inside Glowing Box */
         #ad-status-box {
             position: absolute;
             inset: 0;
@@ -585,24 +583,14 @@
             line-height: 1.4;
         }
 
-        #applixir-ad-container {
+        #ad-iframe {
             width: 100%;
             height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            border: none;
+            background: transparent;
             position: relative;
             z-index: 6;
-        }
-
-        #applixir-ad-container iframe,
-        #applixir-ad-container video,
-        #applixir-ad-container > div {
-            width: 100% !important;
-            height: 100% !important;
-            max-width: 100% !important;
-            max-height: 100% !important;
-            border-radius: 19px;
+            display: block;
         }
 
         .ad-box-label {
@@ -621,17 +609,17 @@
             pointer-events: none;
         }
 
-        .ad-force-close-btn {
+        #ad-close-x {
             position: absolute;
             top: 10px;
             right: 10px;
-            width: 32px;
-            height: 32px;
+            width: 34px;
+            height: 34px;
             border-radius: 50%;
             border: 2px solid #ffd43b;
             background: rgba(20, 8, 34, 0.85);
             color: #ffffff;
-            font-size: 0.95rem;
+            font-size: 1rem;
             font-weight: 900;
             cursor: pointer;
             z-index: 20;
@@ -641,16 +629,8 @@
             box-shadow: 0 0 10px rgba(255, 212, 59, 0.6);
         }
 
-        .ad-force-close-btn:active {
+        #ad-close-x:active {
             transform: scale(0.9);
-        }
-
-        /* Force-hide any leftover AppLixir full-screen backdrop once closed */
-        body.ad-closed [id*="applixir"]:not(#applixir-ad-overlay):not(#applixir-ad-container),
-        body.ad-closed [class*="applixir"] {
-            display: none !important;
-            opacity: 0 !important;
-            pointer-events: none !important;
         }
 
         /* ================= LEADERBOARD SCREEN ================= */
@@ -735,7 +715,7 @@
         }
     </style>
 </head>
-<body class="ad-closed">
+<body>
 
     <!-- ==================== MAIN MENU ==================== -->
     <div id="main-menu" class="screen">
@@ -806,11 +786,11 @@
         <div id="win-points-text" class="win-sub">+10 XP</div>
     </div>
 
-    <!-- ==================== GLOWING BOX AD OVERLAY ==================== -->
-    <div id="applixir-ad-overlay" class="hidden">
+    <!-- ==================== GLOWING BOX AD.HTML OVERLAY ==================== -->
+    <div id="ad-modal" class="hidden">
         <div class="ad-glow-box">
             <span class="ad-box-label">REWARD AD</span>
-            <button class="ad-force-close-btn" onclick="closeAdOverlay()" title="Close Ad">✕</button>
+            <button id="ad-close-x" onclick="handleAdCloseClick()">✕</button>
 
             <!-- Loading Spinner & 5s Timeout Message inside Box -->
             <div id="ad-status-box">
@@ -818,7 +798,7 @@
                 <div id="ad-status-text">Loading Ad...</div>
             </div>
 
-            <div id="applixir-ad-container"></div>
+            <iframe id="ad-iframe" src="about:blank" allow="autoplay; fullscreen"></iframe>
         </div>
     </div>
 
@@ -842,7 +822,7 @@
         </div>
     </div>
 
-    <!-- ==================== GAME LOGIC + APPLIXIR ADS ==================== -->
+    <!-- ==================== GAME LOGIC ==================== -->
     <script>
         const NUT_CAPACITY = 4;
         const ALL_COLORS = ['red', 'blue', 'green', 'yellow', 'purple', 'orange', 'cyan', 'pink'];
@@ -861,66 +841,12 @@
         let selectedBoltIndex = -1;
         let extraBoltUnlocked = false;
         let hintsRemaining = 2;
+
         let pendingRewardType = null;
+        let adHasStarted = false;
+        let adRewardReady = false;
         let adLoadTimeout = null;
         let adErrorCloseTimeout = null;
-        let adHasStarted = false;
-
-        function markAdStarted() {
-            adHasStarted = true;
-            clearTimeout(adLoadTimeout);
-            document.getElementById('ad-status-box').classList.add('hidden');
-        }
-
-        function handleAdLoadFailed() {
-            if (!pendingRewardType) return;
-            clearTimeout(adLoadTimeout);
-            adHasStarted = false;
-
-            const statusBox = document.getElementById('ad-status-box');
-            const spinner = document.getElementById('ad-spinner');
-            const statusText = document.getElementById('ad-status-text');
-
-            statusBox.classList.remove('hidden');
-            spinner.classList.add('hidden');
-            statusText.style.color = '#fcc419';
-            statusText.innerText = 'Ads are not available right now.\nPlease try again.';
-
-            // Stop SDK injection & auto-close after 2.2 seconds
-            document.getElementById('applixir-ad-container').innerHTML = '';
-            clearTimeout(adErrorCloseTimeout);
-            adErrorCloseTimeout = setTimeout(() => {
-                closeAdOverlay();
-            }, 2200);
-        }
-
-        // AppLixir Rewarded Video Configuration
-        const applixirOptions = {
-            // Sandbox key: test ads only. Replace with your live API key after activation.
-            apiKey: "5a4db0c5-0000-4000-8000-5a4db0c50001",
-            injectionElementId: "applixir-ad-container",
-            adStatusCallbackFn: (status) => {
-                const type = status?.type || status;
-                if (
-                    type === "ad-started" ||
-                    type === "ad-playing" ||
-                    type === "started" ||
-                    type === "loaded"
-                ) {
-                    markAdStarted();
-                } else if (type === "complete" || type === "ad-watched" || type === "fb-watched") {
-                    collectAdReward();
-                } else if (type === "no-ad" || type === "ad-blocker") {
-                    handleAdLoadFailed();
-                } else if (type === "close" || type === "end" || type === "sys-closing") {
-                    closeAdOverlay();
-                }
-            },
-            adErrorCallbackFn: (error) => {
-                console.error("Ad error:", error?.getError ? error.getError().data : error);
-                handleAdLoadFailed();
-            }
-        };
 
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playTone(freq, type = 'sine', duration = 0.09, gainVal = 0.12) {
@@ -1284,95 +1210,89 @@
             openAdModal('bolt');
         }
 
-        // Launch AppLixir Rewarded Video inside Glowing Box with 5-second timeout
+        // Opens ../ad.html inside Glowing Box with 5-second timeout check
         function openAdModal(rewardType) {
             pendingRewardType = rewardType;
             adHasStarted = false;
+            adRewardReady = false;
             clearTimeout(adLoadTimeout);
             clearTimeout(adErrorCloseTimeout);
 
-            document.body.classList.remove('ad-closed');
-
-            const overlay = document.getElementById('applixir-ad-overlay');
-            const container = document.getElementById('applixir-ad-container');
+            const modal = document.getElementById('ad-modal');
+            const iframe = document.getElementById('ad-iframe');
             const statusBox = document.getElementById('ad-status-box');
             const spinner = document.getElementById('ad-spinner');
             const statusText = document.getElementById('ad-status-text');
 
-            // Reset loader UI inside glowing box
-            container.innerHTML = '';
             statusBox.classList.remove('hidden');
             spinner.classList.remove('hidden');
             statusText.style.color = '#f8f9fa';
             statusText.innerText = 'Loading Ad...';
-            overlay.classList.remove('hidden');
 
-            // Watch if AppLixir injects a visible video/iframe into container
-            const observer = new MutationObserver(() => {
-                const injectedVideo = container.querySelector('video');
-                const injectedIframe = container.querySelector('iframe');
-                if (injectedVideo) {
-                    observer.disconnect();
-                    markAdStarted();
-                } else if (injectedIframe) {
-                    injectedIframe.addEventListener('load', () => {
-                        observer.disconnect();
-                        markAdStarted();
-                    }, { once: true });
-                }
-            });
-            observer.observe(container, { childList: true, subtree: true });
+            modal.classList.remove('hidden');
+            iframe.src = '../ad.html?t=' + Date.now();
 
-            // 5-second timeout: if ad hasn't started within 5s, show unavailable message
+            // If ad doesn't load within 5 seconds, show "Ads are not available right now. Please try again."
             adLoadTimeout = setTimeout(() => {
-                observer.disconnect();
                 if (!adHasStarted) {
                     handleAdLoadFailed();
                 }
             }, 5000);
+        }
 
-            try {
-                if (typeof initializeAndOpenPlayer === 'function') {
-                    initializeAndOpenPlayer(applixirOptions);
-                } else {
-                    throw new Error("AppLixir SDK not loaded yet");
-                }
-            } catch (err) {
-                console.error("Failed to open AppLixir player:", err);
-                observer.disconnect();
-                handleAdLoadFailed();
+        function markAdStarted() {
+            if (adHasStarted) return;
+            adHasStarted = true;
+            clearTimeout(adLoadTimeout);
+            document.getElementById('ad-status-box').classList.add('hidden');
+        }
+
+        function handleAdLoadFailed() {
+            clearTimeout(adLoadTimeout);
+            adHasStarted = false;
+            adRewardReady = false;
+
+            const iframe = document.getElementById('ad-iframe');
+            const statusBox = document.getElementById('ad-status-box');
+            const spinner = document.getElementById('ad-spinner');
+            const statusText = document.getElementById('ad-status-text');
+
+            iframe.src = 'about:blank';
+            statusBox.classList.remove('hidden');
+            spinner.classList.add('hidden');
+            statusText.style.color = '#fcc419';
+            statusText.innerText = 'Ads are not available right now.\nPlease try again.';
+
+            clearTimeout(adErrorCloseTimeout);
+            adErrorCloseTimeout = setTimeout(() => {
+                closeAdModal();
+            }, 2200);
+        }
+
+        function handleAdCloseClick() {
+            if (adRewardReady) {
+                collectAdReward();
+            } else {
+                closeAdModal();
             }
         }
 
-        // Cleanly strip all AppLixir overlays & restore screen brightness/clicks
-        function closeAdOverlay() {
+        function closeAdModal() {
             pendingRewardType = null;
             adHasStarted = false;
+            adRewardReady = false;
             clearTimeout(adLoadTimeout);
             clearTimeout(adErrorCloseTimeout);
 
-            document.body.classList.add('ad-closed');
-            document.body.style.pointerEvents = 'auto';
-            document.body.style.opacity = '1';
-            document.body.style.filter = 'none';
-
-            const overlay = document.getElementById('applixir-ad-overlay');
-            const container = document.getElementById('applixir-ad-container');
-            overlay.classList.add('hidden');
-            container.innerHTML = '';
-
-            // Remove any stray full-screen dim/vanishing divs injected by AppLixir SDK onto body
-            document.querySelectorAll('[id*="applixir"], [class*="applixir"]').forEach(el => {
-                if (el.id !== 'applixir-ad-overlay' && el.id !== 'applixir-ad-container') {
-                    el.remove();
-                }
-            });
+            const iframe = document.getElementById('ad-iframe');
+            iframe.src = 'about:blank';
+            document.getElementById('ad-modal').classList.add('hidden');
         }
 
         function collectAdReward() {
             if (!pendingRewardType) return;
             const rewardType = pendingRewardType;
-            closeAdOverlay();
+            closeAdModal();
 
             playTone(880, 'sine', 0.15);
 
@@ -1386,6 +1306,18 @@
                 updateFooterButtons();
             }
         }
+
+        // Listen for messages from ../ad.html
+        window.addEventListener('message', (event) => {
+            const msgType = event.data?.type || event.data;
+            if (msgType === 'AD_STARTED') {
+                markAdStarted();
+            } else if (msgType === 'AD_REWARD_READY') {
+                adRewardReady = true;
+            } else if (msgType === 'AD_COMPLETED') {
+                collectAdReward();
+            }
+        });
 
         function showLeaderboard() {
             document.getElementById('main-menu').classList.add('hidden');
