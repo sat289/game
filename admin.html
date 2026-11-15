@@ -2783,15 +2783,6 @@ window.stTrackGamePlay = (gameName) => recordStEvent("game_plays", "view", gameN
           String(item.game.title || "").toLowerCase().includes(search) ||
           String(item.game.url || "").toLowerCase().includes(search)
         );
-      const guide = game.details || {};
-
-document.getElementById("editGuideCreator").value = guide.creator || "";
-document.getElementById("editGuideDescription").value = guide.description || "";
-document.getElementById("editGuideObjective").value = guide.objective || "";
-document.getElementById("editGuideHowToPlay").value = guide.howToPlay || "";
-document.getElementById("editGuideControls").value = guide.controls || "";
-document.getElementById("editGuideRules").value = guide.rules || "";
-document.getElementById("editGuideTips").value = guide.tips || "";
 
 
       if (!filtered.length) {
@@ -2831,6 +2822,16 @@ document.getElementById("editGuideTips").value = guide.tips || "";
       document.getElementById("editLogoSize").value = game.logoSize === "large" ? "large" : "small";
       document.getElementById("editGameLogo").value = "";
 
+      // Load this game's guide content into the editor.
+      const guide = game.details || {};
+      document.getElementById("editGuideCreator").value = guide.creator || "";
+      document.getElementById("editGuideDescription").value = guide.description || "";
+      document.getElementById("editGuideObjective").value = guide.objective || "";
+      document.getElementById("editGuideHowToPlay").value = guide.howToPlay || "";
+      document.getElementById("editGuideControls").value = guide.controls || "";
+      document.getElementById("editGuideRules").value = guide.rules || "";
+      document.getElementById("editGuideTips").value = guide.tips || "";
+
       document.getElementById("gameEditPanel").classList.remove("hidden");
       document.getElementById("gameEditPanel").scrollIntoView({ behavior: "smooth", block: "center" });
     }
@@ -2845,16 +2846,6 @@ document.getElementById("editGuideTips").value = guide.tips || "";
         showToast("Invalid game selected.", "error");
         return;
       }
-     
-game.details = {
-  creator: document.getElementById("editGuideCreator").value.trim(),
-  description: document.getElementById("editGuideDescription").value.trim(),
-  objective: document.getElementById("editGuideObjective").value.trim(),
-  howToPlay: document.getElementById("editGuideHowToPlay").value.trim(),
-  controls: document.getElementById("editGuideControls").value.trim(),
-  rules: document.getElementById("editGuideRules").value.trim(),
-  tips: document.getElementById("editGuideTips").value.trim()
-};
  
 
       const game = { ...allGamesData[index] };
@@ -2865,6 +2856,17 @@ game.details = {
         showToast("Game name and URL are required.", "warn");
         return;
       }
+
+      // Save the guide alongside the selected game in games.json.
+      game.details = {
+        creator: document.getElementById("editGuideCreator").value.trim(),
+        description: document.getElementById("editGuideDescription").value.trim(),
+        objective: document.getElementById("editGuideObjective").value.trim(),
+        howToPlay: document.getElementById("editGuideHowToPlay").value.trim(),
+        controls: document.getElementById("editGuideControls").value.trim(),
+        rules: document.getElementById("editGuideRules").value.trim(),
+        tips: document.getElementById("editGuideTips").value.trim()
+      };
 
       game.title = title;
       game.url = url;
