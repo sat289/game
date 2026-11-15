@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="referrer" content="no-referrer-when-downgrade" />
+    <title>Reward Ad</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        html, body {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            color: #ffffff;
+        }
+        #ad-stage {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        /* Make any injected video, iframe, or div fit the box cleanly */
+        video, iframe, #ad-stage > div {
+            max-width: 100% !important;
+            max-height: 100% !important;
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: contain;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ad-stage">
+        <!-- Your HilltopAds Script -->
+        <script>
+        (function(mkh){
+        var d = document,
+            s = d.createElement('script'),
+            l = d.currentScript || d.scripts[d.scripts.length - 1];
+        s.settings = mkh || {};
+        s.src = "//prizefamily.com/b_XxVds.d/G/lN0LYdW/cC/Le/mf9/u/ZYUzljkOPVTzcn2NM/jbcg0pMATOMUtUNRz/YBy/NDzaQFxbN/wl";
+        s.async = true;
+        s.referrerPolicy = 'no-referrer-when-downgrade';
+        l.parentNode.insertBefore(s, l);
+        })({});
+        </script>
+    </div>
+
+    <script>
+        let adStartedSent = false;
+
+        function notifyAdStarted() {
+            if (adStartedSent) return;
+            adStartedSent = true;
+            window.parent.postMessage({ type: 'AD_STARTED' }, '*');
+
+            // Unlock reward after 5 seconds of viewing or when video finishes
+            setTimeout(() => {
+                window.parent.postMessage({ type: 'AD_REWARD_READY' }, '*');
+            }, 5000);
+        }
+
+        // Watch for HilltopAds injecting a <video>, <iframe>, or ad container
+        const observer = new MutationObserver(() => {
+            const video = document.querySelector('video');
+            const iframe = document.querySelector('iframe');
+            const adDiv = document.querySelector('body > div:not(#ad-stage), #ad-stage > div');
+
+            if (video) {
+                notifyAdStarted();
+                video.onended = () => {
+                    window.parent.postMessage({ type: 'AD_COMPLETED' }, '*');
+                };
+            } else if (iframe) {
+                iframe.onload = () => notifyAdStarted();
+                notifyAdStarted();
+            } else if (adDiv) {
+                notifyAdStarted();
+            }
+        });
+
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+    </script>
+</body>
+</html>
