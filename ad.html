@@ -6,6 +6,8 @@
     <meta name="referrer" content="no-referrer-when-downgrade" />
     <meta name="color-scheme" content="dark">
     <title>Reward Ad</title>
+    <!-- Fluid Player for VAST Video Ads -->
+    <script src="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -32,14 +34,14 @@
             position: relative;
             background: #0d0617;
         }
-        video, iframe {
+        video, iframe, .fluid_video_wrapper {
             width: 100% !important;
             height: 100% !important;
             max-width: 100% !important;
             max-height: 100% !important;
             object-fit: contain;
             border: none;
-            background: #0d0617;
+            background: #0d0617 !important;
         }
     </style>
 </head>
@@ -72,28 +74,32 @@
             adStartedSent = true;
             window.parent.postMessage({ type: 'AD_STARTED' }, '*');
 
-            // Unlock reward after 5 seconds of watching
+            // Unlock reward after 5 seconds of actual video playback
             setTimeout(() => {
                 window.parent.postMessage({ type: 'AD_REWARD_READY' }, '*');
             }, 5000);
         }
 
-        // Check every 250ms if a visible video or visible ad iframe has actually rendered
+        // STRICT CHECK: Only trigger AD_STARTED when a <video> is actually playing frames (currentTime > 0.1)
         const checkInterval = setInterval(() => {
-            const video = document.querySelector('video');
-            const iframe = document.querySelector('iframe');
+            const videos = document.querySelectorAll('video');
+            videos.forEach((video) => {
+                // Ensure muted autoplay is allowed on mobile Chrome
+                if (video.paused && video.readyState >= 2) {
+                    video.muted = true;
+                    video.play().catch(() => {});
+                }
 
-            if (video && (video.readyState >= 2 || !video.paused || video.offsetWidth > 50)) {
-                clearInterval(checkInterval);
-                notifyAdStarted();
-                video.onended = () => {
-                    window.parent.postMessage({ type: 'AD_COMPLETED' }, '*');
-                };
-            } else if (iframe && iframe.offsetWidth > 50 && iframe.offsetHeight > 50) {
-                clearInterval(checkInterval);
-                notifyAdStarted();
-            }
-        }, 250);
+                if (!video.paused && video.currentTime > 0.1 && video.videoWidth > 0) {
+                    clearInterval(checkInterval);
+                    notifyAdStarted();
+
+                    video.onended = () => {
+                        window.parent.postMessage({ type: 'AD_COMPLETED' }, '*');
+                    };
+                }
+            });
+        }, 200);
     </script>
 </body>
 </html>
