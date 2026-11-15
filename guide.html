@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,104 +6,816 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#07222d">
   <title>Game Guide - ST Games</title>
-  <meta name="description" content="Learn how to play games on ST Games and rate games you enjoy.">
+  <meta name="description" content="Learn how to play games on ST Games, discover controls, tips and rules, and share your player rating.">
   <link rel="icon" href="/stgames-apk/launchericon-512x512.png">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
   <style>
     * { box-sizing: border-box; }
-    body { margin: 0; min-height: 100vh; color: #f8fafc; font-family: Inter, sans-serif; background: radial-gradient(circle at top, #155e63, #07222d 65%); }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: #f8fafc;
+      font-family: Inter, sans-serif;
+      background: radial-gradient(circle at top, #155e63, #07222d 65%);
+    }
+
     .brand { font-family: Fredoka, sans-serif; }
-    .guide-sheet { position: fixed; z-index: 20; left: 0; right: 0; bottom: 0; height: 59vh; max-height: 94vh; min-height: 220px; background: #f8fafc; color: #102a35; border-radius: 25px 25px 0 0; box-shadow: 0 -12px 40px #0005; display: flex; flex-direction: column; transition: height .25s ease; padding-bottom: env(safe-area-inset-bottom); touch-action: pan-y; }
+
+    .guide-sheet {
+      position: fixed;
+      z-index: 20;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 59vh;
+      max-height: 94vh;
+      min-height: 220px;
+      background: #f8fafc;
+      color: #102a35;
+      border-radius: 25px 25px 0 0;
+      box-shadow: 0 -12px 40px #0005;
+      display: flex;
+      flex-direction: column;
+      transition: height .25s ease;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
     .guide-sheet.expanded { height: 93vh; }
-    .sheet-handle-area { flex-shrink: 0; padding: 12px 16px 10px; cursor: grab; touch-action: none; }
-    .sheet-handle { width: 46px; height: 5px; border-radius: 10px; background: #94a3b8; margin: 0 auto 10px; }
-    .sheet-content { overflow-y: auto; padding: 0 18px 25px; }
-    .guide-section { background: white; border: 1px solid #dbe7eb; border-radius: 15px; padding: 14px; margin: 12px 0; }
-    .guide-section h3 { font-weight: 800; margin-bottom: 7px; color: #087e78; }
-    .guide-section p { white-space: pre-wrap; line-height: 1.65; font-size: 14px; }
-    .play-btn { display: block; text-align: center; padding: 14px; border-radius: 15px; background: #32ffdc; color: #07222d; font-weight: 900; text-decoration: none; }
-    .game-logo { width: 142px; height: 142px; object-fit: cover; border-radius: 25px; border: 3px solid #32ffdc; box-shadow: 0 10px 30px #0005; }
-    .other-card { display: block; background: #fff; color: #102a35; border-radius: 13px; padding: 10px; text-decoration: none; border: 1px solid #dbe7eb; min-width: 112px; }
-    .other-card img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 9px; }
-    .rating-panel { background:#fff; border:1px solid #f5d58b; border-radius:15px; padding:14px; margin:12px 0; text-align:center; }
-    .rating-stars-live { display:flex; justify-content:center; gap:7px; margin:9px 0; }
-    .rating-stars-live button { border:0; background:transparent; color:#cbd5e1; font-size:32px; line-height:1; padding:3px; cursor:pointer; }
-    .rating-stars-live button.active,.rating-stars-live button.selected { color:#f59e0b; }
-    .rating-submit { background:#07222d; color:#fff; border:0; border-radius:10px; padding:10px 18px; font-weight:800; }
-    .rating-submit:disabled { opacity:.55; }
-    #ratingStatus { min-height:18px; font-size:12px; color:#475569; }
+
+    .sheet-handle-area {
+      flex-shrink: 0;
+      padding: 12px 16px 10px;
+      cursor: grab;
+      touch-action: none;
+    }
+
+    .sheet-handle {
+      width: 46px;
+      height: 5px;
+      border-radius: 10px;
+      background: #94a3b8;
+      margin: 0 auto 10px;
+    }
+
+    .sheet-content {
+      overflow-y: auto;
+      padding: 0 18px 25px;
+      overscroll-behavior: contain;
+    }
+
+    .guide-section {
+      background: white;
+      border: 1px solid #dbe7eb;
+      border-radius: 15px;
+      padding: 14px;
+      margin: 12px 0;
+    }
+
+    .guide-section h3 {
+      font-weight: 800;
+      margin-bottom: 7px;
+      color: #087e78;
+    }
+
+    .guide-section p,
+    .guide-section li {
+      line-height: 1.65;
+      font-size: 14px;
+      white-space: pre-wrap;
+    }
+
+    .guide-section ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .guide-section li {
+      padding: 5px 0;
+      border-bottom: 1px solid #edf2f4;
+    }
+
+    .guide-section li:last-child { border: 0; }
+
+    .play-btn {
+      display: block;
+      text-align: center;
+      padding: 14px;
+      border-radius: 15px;
+      background: #32ffdc;
+      color: #07222d;
+      font-weight: 900;
+      text-decoration: none;
+      transition: .2s;
+    }
+
+    .play-btn:active { transform: scale(.98); }
+
+    .game-logo {
+      width: 142px;
+      height: 142px;
+      object-fit: cover;
+      border-radius: 25px;
+      border: 3px solid #32ffdc;
+      box-shadow: 0 10px 30px #0005;
+    }
+
+    .other-card {
+      display: block;
+      background: #fff;
+      color: #102a35;
+      border-radius: 13px;
+      padding: 10px;
+      text-decoration: none;
+      border: 1px solid #dbe7eb;
+      min-width: 112px;
+      width: 112px;
+      flex-shrink: 0;
+    }
+
+    .other-card img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      border-radius: 9px;
+    }
+
+    .rating-panel {
+      background: #fff;
+      border: 1px solid #f5d58b;
+      border-radius: 15px;
+      padding: 14px;
+      margin: 12px 0;
+      text-align: center;
+    }
+
+    .rating-stars-live {
+      display: flex;
+      justify-content: center;
+      gap: 7px;
+      margin: 9px 0;
+    }
+
+    .rating-stars-live button {
+      border: 0;
+      background: transparent;
+      color: #cbd5e1;
+      font-size: 32px;
+      line-height: 1;
+      padding: 3px;
+      cursor: pointer;
+    }
+
+    .rating-stars-live button.active,
+    .rating-stars-live button.selected {
+      color: #f59e0b;
+    }
+
+    .rating-submit {
+      background: #07222d;
+      color: #fff;
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 18px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .rating-submit:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+
+    #ratingStatus {
+      min-height: 18px;
+      font-size: 12px;
+      color: #475569;
+    }
+
+    .category-pill {
+      display: inline-block;
+      background: #cffafe;
+      color: #155e63;
+      padding: 5px 12px;
+      border-radius: 30px;
+      font-size: 12px;
+      font-weight: 800;
+      margin-top: 8px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #64748b;
+    }
+
+    footer a { color: #087e78; font-weight: 700; }
+
+    @media(max-width: 400px) {
+      .game-logo {
+        width: 120px;
+        height: 120px;
+      }
+
+      .sheet-content { padding-left: 13px; padding-right: 13px; }
+    }
   </style>
 </head>
+
 <body>
-  <header class="p-4 flex items-center justify-between">
-    <a href="/" class="brand text-xl font-bold text-white no-underline">ST GAMES</a>
-    <a href="/" class="text-sm font-bold text-cyan-200 no-underline">← All Games</a>
-  </header>
-  <main class="text-center px-5 pt-5 pb-10">
-    <img id="gameLogo" class="game-logo mx-auto" src="" alt="Game logo">
-    <h1 id="gameTitle" class="brand text-3xl font-bold mt-4">Loading game...</h1>
-    <p id="gameCreator" class="text-sm text-cyan-200 mt-2"></p>
-    <div id="guideRatingSummary" class="text-sm text-amber-300 font-bold mt-3">Loading player rating…</div>
-    <p class="text-xs text-slate-300 mt-3">Swipe up to read the full game guide</p>
-  </main>
-  <section id="guideSheet" class="guide-sheet" aria-label="Game guide">
-    <div id="dragArea" class="sheet-handle-area">
-      <div class="sheet-handle"></div>
-      <div class="flex items-center justify-between"><strong class="brand text-lg">GAME GUIDE</strong><button id="expandButton" type="button" class="rounded-lg bg-slate-100 px-3 py-2 text-sm font-bold">Expand ↑</button></div>
+
+<header class="p-4 flex items-center justify-between">
+  <a href="/" class="brand text-xl font-bold text-white no-underline">
+    🎮 ST GAMES
+  </a>
+  <a href="/" class="text-sm font-bold text-cyan-200 no-underline">
+    ← All Games
+  </a>
+</header>
+
+<main class="text-center px-5 pt-5 pb-10">
+
+  <img
+    id="gameLogo"
+    class="game-logo mx-auto"
+    src="/stgames-apk/launchericon-512x512.png"
+    alt="Game logo"
+  >
+
+  <h1 id="gameTitle" class="brand text-3xl font-bold mt-4">
+    Loading game...
+  </h1>
+
+  <div id="gameCategory" class="category-pill">GAME</div>
+
+  <p id="gameCreator" class="text-sm text-cyan-200 mt-2"></p>
+
+  <div
+    id="guideRatingSummary"
+    class="text-sm text-amber-300 font-bold mt-3"
+  >
+    Loading player rating…
+  </div>
+
+  <p class="text-xs text-slate-300 mt-3">
+    👆 Swipe up to read the full game guide
+  </p>
+
+</main>
+
+<section id="guideSheet" class="guide-sheet" aria-label="Game guide">
+
+  <div id="dragArea" class="sheet-handle-area">
+    <div class="sheet-handle"></div>
+
+    <div class="flex items-center justify-between">
+      <strong class="brand text-lg">📖 GAME GUIDE</strong>
+
+      <button
+        id="expandButton"
+        type="button"
+        class="rounded-lg bg-slate-100 px-3 py-2 text-sm font-bold"
+      >
+        Expand ↑
+      </button>
     </div>
-    <div class="sheet-content">
-      <a id="playButton" class="play-btn" href="#" target="_self">▶ PLAY NOW</a>
-      <section class="rating-panel" aria-label="Rate this game">
-        <h2 class="brand text-xl font-bold">RATE THIS GAME</h2>
-        <p id="ratingAverage" class="text-sm font-bold text-slate-700 mt-1">No ratings yet</p>
-        <div id="ratingStarsInput" class="rating-stars-live" role="group" aria-label="Choose a rating from one to five stars">
-          <button type="button" data-score="1" aria-label="1 star">★</button><button type="button" data-score="2" aria-label="2 stars">★</button><button type="button" data-score="3" aria-label="3 stars">★</button><button type="button" data-score="4" aria-label="4 stars">★</button><button type="button" data-score="5" aria-label="5 stars">★</button>
-        </div>
-        <button id="submitRating" class="rating-submit" type="button" disabled>SUBMIT RATING</button>
-        <p id="ratingStatus" class="mt-2" aria-live="polite">Select 1–5 stars to rate this game.</p>
-      </section>
-      <div id="guideSections">
-        <section class="guide-section"><h3>About this game</h3><p id="description">No guide has been added yet.</p></section>
-        <section class="guide-section"><h3>Objective</h3><p id="objective">Guide information will appear here.</p></section>
-        <section class="guide-section"><h3>How to Play</h3><p id="howToPlay">Guide information will appear here.</p></section>
-        <section class="guide-section"><h3>Controls</h3><p id="controls">Guide information will appear here.</p></section>
-        <section class="guide-section"><h3>Rules &amp; Scoring</h3><p id="rules">Guide information will appear here.</p></section>
-        <section class="guide-section"><h3>Tips</h3><p id="tips">Guide information will appear here.</p></section>
+  </div>
+
+  <div class="sheet-content">
+
+    <a id="playButton" class="play-btn" href="#">
+      ▶ PLAY NOW
+    </a>
+
+    <section class="rating-panel" aria-label="Rate this game">
+
+      <h2 class="brand text-xl font-bold">
+        ⭐ RATE THIS GAME
+      </h2>
+
+      <p id="ratingAverage" class="text-sm font-bold text-slate-700 mt-1">
+        No ratings yet
+      </p>
+
+      <div
+        id="ratingStarsInput"
+        class="rating-stars-live"
+        role="group"
+        aria-label="Choose a rating from one to five stars"
+      >
+        <button type="button" data-score="1" aria-label="1 star">★</button>
+        <button type="button" data-score="2" aria-label="2 stars">★</button>
+        <button type="button" data-score="3" aria-label="3 stars">★</button>
+        <button type="button" data-score="4" aria-label="4 stars">★</button>
+        <button type="button" data-score="5" aria-label="5 stars">★</button>
       </div>
-      <h2 class="brand text-xl font-bold mt-7 mb-3">MORE GAMES</h2>
-      <div id="otherGames" class="flex gap-3 overflow-x-auto pb-4"></div>
-      <footer class="text-center text-xs text-slate-500 py-5">© ST Games - Skill | Strategy | Victory<div class="mt-2"><a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a> · <a href="/contact.html">Contact</a></div></footer>
+
+      <button id="submitRating" class="rating-submit" type="button" disabled>
+        SUBMIT RATING
+      </button>
+
+      <p id="ratingStatus" class="mt-2" aria-live="polite">
+        Select 1–5 stars to rate this game.
+      </p>
+
+    </section>
+
+    <div id="guideSections">
+
+      <section class="guide-section">
+        <h3>🎮 About This Game</h3>
+        <p id="description">Loading...</p>
+      </section>
+
+      <section class="guide-section">
+        <h3>🎯 Objective</h3>
+        <p id="objective">Loading...</p>
+      </section>
+
+      <section class="guide-section">
+        <h3>🕹️ How to Play</h3>
+        <div id="howToPlay"></div>
+      </section>
+
+      <section class="guide-section">
+        <h3>🎮 Controls</h3>
+        <div id="controls"></div>
+      </section>
+
+      <section class="guide-section">
+        <h3>📜 Rules & Scoring</h3>
+        <div id="rules"></div>
+      </section>
+
+      <section class="guide-section">
+        <h3>💡 Pro Tips</h3>
+        <div id="tips"></div>
+      </section>
+
+      <section class="guide-section" id="faqSection">
+        <h3>❓ Frequently Asked Questions</h3>
+        <div id="faqs"></div>
+      </section>
+
     </div>
-  </section>
-  <script>
-    const params = new URLSearchParams(location.search), gameId = params.get('id');
-    const sheet=document.getElementById('guideSheet'), dragArea=document.getElementById('dragArea'), expandButton=document.getElementById('expandButton');
-    let currentGame=null, selectedScore=0, ratingsDb=null, ratingsAuth=null, currentUid=null;
-    function setExpanded(expanded){sheet.classList.toggle('expanded',expanded);expandButton.textContent=expanded?'Collapse ↓':'Expand ↑';}
-    expandButton.addEventListener('click',()=>setExpanded(!sheet.classList.contains('expanded')));
-    let startY=0,lastY=0,dragging=false;
-    dragArea.addEventListener('pointerdown',e=>{startY=lastY=e.clientY;dragging=true;dragArea.setPointerCapture(e.pointerId);});
-    dragArea.addEventListener('pointermove',e=>{if(dragging)lastY=e.clientY;});
-    function finishDrag(){if(!dragging)return;dragging=false;const delta=lastY-startY;if(delta < -35)setExpanded(true);if(delta>35)setExpanded(false);}
-    dragArea.addEventListener('pointerup',finishDrag);dragArea.addEventListener('pointercancel',finishDrag);
-    function setText(id,value,fallback){document.getElementById(id).textContent=typeof value==='string'&&value.trim()?value:fallback;}
-    function safeGameUrl(url){if(typeof url!=='string')return '/';const cleaned=url.trim();if(!cleaned||cleaned.startsWith('//')||/^[a-z]+:/i.test(cleaned)||cleaned.includes('..'))return '/';return cleaned.replace(/^\/+/, '');}
-    function setRatingSelection(score){selectedScore=score;document.querySelectorAll('#ratingStarsInput button').forEach(btn=>{const n=Number(btn.dataset.score);btn.classList.toggle('selected',n<=score);});document.getElementById('submitRating').disabled=!score;}
-    document.querySelectorAll('#ratingStarsInput button').forEach(btn=>btn.addEventListener('click',()=>setRatingSelection(Number(btn.dataset.score))));
-    function initRatings(){
-      const cfg={apiKey:'AIzaSyDOFx0_vpPDRDCkUW-deQjMNK5msOsGSnI',authDomain:'stgames-289.firebaseapp.com',databaseURL:'https://stgames-289-default-rtdb.firebaseio.com/',projectId:'stgames-289',storageBucket:'stgames-289.firebasestorage.app',messagingSenderId:'916146081741',appId:'1:916146081741:web:eb343c4dc0c6648388fe84',measurementId:'G-P8RQ074PWX'};
-      try{const app=firebase.apps.find(a=>a.name==='stGamesVisitorRatingsGuide')||firebase.initializeApp(cfg,'stGamesVisitorRatingsGuide');ratingsDb=firebase.database(app);ratingsAuth=firebase.auth(app);
-        ratingsDb.ref('game_ratings/'+gameId).on('value',snap=>{const data=snap.val()||{};const vals=Object.values(data).map(v=>Number(v&&v.score)).filter(v=>Number.isFinite(v)&&v>=1&&v<=5);const count=vals.length,avg=count?vals.reduce((a,b)=>a+b,0)/count:0;const text=count?`${avg.toFixed(1)} / 5 · ${count} player review${count===1?'':'s'}`:'No player ratings yet';document.getElementById('ratingAverage').textContent=text;document.getElementById('guideRatingSummary').textContent='★ '+text; if(currentUid&&data[currentUid]){setRatingSelection(Number(data[currentUid].score));document.getElementById('ratingStatus').textContent='Your current rating is saved. You can update it anytime.';}},err=>{document.getElementById('ratingStatus').textContent='Could not load ratings: '+err.message;});
-        ratingsAuth.signInAnonymously().then(cred=>{currentUid=cred.user.uid;return ratingsDb.ref('game_ratings/'+gameId+'/'+currentUid).once('value');}).then(snap=>{if(snap.exists()){setRatingSelection(Number(snap.val().score));document.getElementById('ratingStatus').textContent='You have already rated this game. You can update your rating.';}}).catch(err=>{document.getElementById('ratingStatus').textContent='Rating sign-in failed. Enable Anonymous Authentication in Firebase.';console.warn(err);});
-      }catch(err){document.getElementById('ratingStatus').textContent='Ratings service unavailable.';console.warn(err);}
+
+    <h2 class="brand text-xl font-bold mt-7 mb-3">
+      🎮 MORE GAMES
+    </h2>
+
+    <div id="otherGames" class="flex gap-3 overflow-x-auto pb-4">
+      <p class="text-slate-500 text-sm">Loading more games...</p>
+    </div>
+
+    <footer class="text-center text-xs text-slate-500 py-5">
+      © ST Games - Skill | Strategy | Victory
+
+      <div class="mt-2">
+        <a href="/privacy.html">Privacy</a> ·
+        <a href="/terms.html">Terms</a> ·
+        <a href="/contact.html">Contact</a>
+      </div>
+    </footer>
+
+  </div>
+</section>
+
+<script src="/game.js"></script>
+
+<script>
+const params = new URLSearchParams(location.search);
+const gameId = params.get('id');
+
+const sheet = document.getElementById('guideSheet');
+const dragArea = document.getElementById('dragArea');
+const expandButton = document.getElementById('expandButton');
+
+let currentGame = null;
+let selectedScore = 0;
+let ratingsDb = null;
+let ratingsAuth = null;
+let currentUid = null;
+let ratingsListener = null;
+
+function setExpanded(expanded) {
+  sheet.classList.toggle('expanded', expanded);
+  expandButton.textContent = expanded ? 'Collapse ↓' : 'Expand ↑';
+}
+
+expandButton.addEventListener('click', () => {
+  setExpanded(!sheet.classList.contains('expanded'));
+});
+
+let startY = 0;
+let lastY = 0;
+let dragging = false;
+
+dragArea.addEventListener('pointerdown', e => {
+  startY = lastY = e.clientY;
+  dragging = true;
+  dragArea.setPointerCapture(e.pointerId);
+});
+
+dragArea.addEventListener('pointermove', e => {
+  if (dragging) lastY = e.clientY;
+});
+
+function finishDrag() {
+  if (!dragging) return;
+  dragging = false;
+
+  const delta = lastY - startY;
+
+  if (delta < -35) setExpanded(true);
+  if (delta > 35) setExpanded(false);
+}
+
+dragArea.addEventListener('pointerup', finishDrag);
+dragArea.addEventListener('pointercancel', finishDrag);
+
+function setText(id, value, fallback) {
+  const element = document.getElementById(id);
+  element.textContent =
+    typeof value === 'string' && value.trim()
+      ? value
+      : fallback;
+}
+
+function safeGameUrl(url) {
+  if (typeof url !== 'string') return '/';
+
+  const cleaned = url.trim();
+
+  if (
+    !cleaned ||
+    cleaned.startsWith('//') ||
+    /^[a-z]+:/i.test(cleaned) ||
+    cleaned.includes('..')
+  ) return '/';
+
+  return '/' + cleaned.replace(/^\/+/, '');
+}
+
+function renderList(id, items) {
+  const container = document.getElementById(id);
+  container.replaceChildren();
+
+  if (!Array.isArray(items) || !items.length) {
+    const p = document.createElement('p');
+    p.textContent = '📖 Information coming soon.';
+    container.appendChild(p);
+    return;
+  }
+
+  const ul = document.createElement('ul');
+
+  items.forEach(item => {
+    const li = document.createElement('li');
+    li.textContent = item;
+    ul.appendChild(li);
+  });
+
+  container.appendChild(ul);
+}
+
+function renderFAQs(items) {
+  const container = document.getElementById('faqs');
+  container.replaceChildren();
+
+  if (!Array.isArray(items) || !items.length) {
+    document.getElementById('faqSection').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('faqSection').style.display = '';
+
+  items.forEach(item => {
+    const block = document.createElement('div');
+    block.className = 'py-3 border-b border-slate-100';
+
+    const question = document.createElement('strong');
+    question.className = 'block text-sm mb-2';
+    question.textContent = '❓ ' + item.q;
+
+    const answer = document.createElement('p');
+    answer.className = 'text-sm text-slate-600';
+    answer.textContent = item.a;
+
+    block.append(question, answer);
+    container.appendChild(block);
+  });
+}
+
+function setRatingSelection(score) {
+  selectedScore = score;
+
+  document.querySelectorAll('#ratingStarsInput button')
+    .forEach(btn => {
+      const n = Number(btn.dataset.score);
+      btn.classList.toggle('selected', n <= score);
+    });
+
+  document.getElementById('submitRating').disabled = !score;
+}
+
+document.querySelectorAll('#ratingStarsInput button')
+  .forEach(btn => {
+    btn.addEventListener('click', () => {
+      setRatingSelection(Number(btn.dataset.score));
+    });
+  });
+
+/* ===========================================
+   FIREBASE - EXISTING ST GAMES RATINGS
+=========================================== */
+
+function initRatings() {
+  if (!gameId) return;
+
+  const cfg = {
+    apiKey: 'AIzaSyDOFx0_vpPDRDCkUW-deQjMNK5msOsGSnI',
+    authDomain: 'stgames-289.firebaseapp.com',
+    databaseURL: 'https://stgames-289-default-rtdb.firebaseio.com/',
+    projectId: 'stgames-289',
+    storageBucket: 'stgames-289.firebasestorage.app',
+    messagingSenderId: '916146081741',
+    appId: '1:916146081741:web:eb343c4dc0c6648388fe84',
+    measurementId: 'G-P8RQ074PWX'
+  };
+
+  try {
+    const app =
+      firebase.apps.find(a => a.name === 'stGamesVisitorRatingsGuide') ||
+      firebase.initializeApp(cfg, 'stGamesVisitorRatingsGuide');
+
+    ratingsDb = firebase.database(app);
+    ratingsAuth = firebase.auth(app);
+
+    const gameRatingsRef = ratingsDb.ref('game_ratings/' + gameId);
+
+    gameRatingsRef.on('value', snap => {
+      const data = snap.val() || {};
+
+      const values = Object.values(data)
+        .map(v => Number(v && v.score))
+        .filter(v =>
+          Number.isInteger(v) && v >= 1 && v <= 5
+        );
+
+      const count = values.length;
+      const average = count
+        ? values.reduce((a, b) => a + b, 0) / count
+        : 0;
+
+      const ratingText = count
+        ? `${average.toFixed(1)} / 5 · ${count} player review${count === 1 ? '' : 's'}`
+        : 'No player ratings yet';
+
+      document.getElementById('ratingAverage').textContent = ratingText;
+      document.getElementById('guideRatingSummary').textContent = '⭐ ' + ratingText;
+
+      if (currentUid && data[currentUid]) {
+        setRatingSelection(Number(data[currentUid].score));
+        document.getElementById('ratingStatus').textContent =
+          '✅ Your current rating is saved. You can update it anytime.';
+      }
+    }, err => {
+      document.getElementById('ratingStatus').textContent =
+        'Could not load ratings. Please check Firebase permissions.';
+      console.warn(err);
+    });
+
+    ratingsAuth.signInAnonymously()
+      .then(cred => {
+        currentUid = cred.user.uid;
+
+        return ratingsDb
+          .ref('game_ratings/' + gameId + '/' + currentUid)
+          .once('value');
+      })
+      .then(snap => {
+        if (snap.exists()) {
+          setRatingSelection(Number(snap.val().score));
+
+          document.getElementById('ratingStatus').textContent =
+            '✅ You already rated this game. You can update your rating.';
+        }
+      })
+      .catch(err => {
+        document.getElementById('ratingStatus').textContent =
+          '❌ Rating sign-in failed. Enable Anonymous Authentication.';
+        console.warn(err);
+      });
+
+  } catch (err) {
+    document.getElementById('ratingStatus').textContent =
+      'Ratings service unavailable.';
+    console.warn(err);
+  }
+}
+
+document.getElementById('submitRating')
+  .addEventListener('click', async () => {
+
+    const status = document.getElementById('ratingStatus');
+    const button = document.getElementById('submitRating');
+
+    if (!selectedScore || !ratingsDb || !ratingsAuth || !gameId) return;
+
+    button.disabled = true;
+    status.textContent = '⏳ Saving your rating...';
+
+    try {
+      const user = ratingsAuth.currentUser ||
+        (await ratingsAuth.signInAnonymously()).user;
+
+      currentUid = user.uid;
+
+      await ratingsDb
+        .ref('game_ratings/' + gameId + '/' + currentUid)
+        .set({
+          score: selectedScore,
+          updatedAt: firebase.database.ServerValue.TIMESTAMP
+        });
+
+      status.textContent = '✅ Thanks! Your rating has been saved.';
+
+    } catch (err) {
+      console.error(err);
+      status.textContent =
+        '❌ Could not save rating. Check Firebase rules and connection.';
+
+    } finally {
+      button.disabled = !selectedScore;
     }
-    document.getElementById('submitRating').addEventListener('click',async()=>{const status=document.getElementById('ratingStatus'),button=document.getElementById('submitRating');if(!selectedScore||!ratingsDb||!ratingsAuth||!gameId)return;button.disabled=true;status.textContent='Saving your rating…';try{const cred=ratingsAuth.currentUser?{user:ratingsAuth.currentUser}:await ratingsAuth.signInAnonymously();currentUid=cred.user.uid;await ratingsDb.ref('game_ratings/'+gameId+'/'+currentUid).set({score:selectedScore,updatedAt:firebase.database.ServerValue.TIMESTAMP});status.textContent='Thanks! Your rating has been saved.';}catch(err){status.textContent='Could not save rating: '+err.message;}finally{button.disabled=false;}});
-    async function loadGuide(){try{const response=await fetch('/games.json',{cache:'no-store'});if(!response.ok)throw new Error('Could not load games list.');const games=await response.json();const game=games.find(item=>String(item.id)===String(gameId));if(!game)throw new Error('Game not found. Please return to ST Games.');currentGame=game;document.title=`${game.title} Guide - ST Games`;document.getElementById('gameTitle').textContent=game.title||'ST Games';document.getElementById('gameLogo').src=game.logo||'/stgames-apk/launchericon-512x512.png';document.getElementById('gameLogo').alt=(game.title||'Game')+' logo';const details=game.details||{};setText('gameCreator',details.creator,'ST Games');setText('description',details.description,'Guide coming soon. Check back later.');setText('objective',details.objective,'Objective not added yet.');setText('howToPlay',details.howToPlay,'Instructions not added yet.');setText('controls',details.controls,'Controls not added yet.');setText('rules',details.rules,'Rules not added yet.');setText('tips',details.tips,'Tips not added yet.');document.getElementById('playButton').href=safeGameUrl(game.url);const otherGames=games.filter(item=>item.id!==game.id).slice(0,8);const container=document.getElementById('otherGames');container.innerHTML='';otherGames.forEach(item=>{const link=document.createElement('a');link.className='other-card';link.href='guide.html?id='+encodeURIComponent(item.id);const img=document.createElement('img');img.src=item.logo||'/stgames-apk/launchericon-512x512.png';img.alt=item.title||'Game';const title=document.createElement('div');title.className='font-bold text-xs mt-2';title.textContent=item.title||'Game';link.append(img,title);container.appendChild(link);});initRatings();}catch(error){document.getElementById('gameTitle').textContent='Guide unavailable';document.getElementById('description').textContent=error.message;document.getElementById('playButton').style.display='none';}}
-    loadGuide();
-  </script>
+  });
+
+/* ===========================================
+   LOAD GAME DETAILS
+=========================================== */
+
+async function loadGuide() {
+  try {
+    if (!gameId) {
+      throw new Error('Game ID missing. Please open a game guide from ST Games.');
+    }
+
+    const response = await fetch('/games.json', {
+      cache: 'no-store'
+    });
+
+    if (!response.ok) {
+      throw new Error('Could not load games.json');
+    }
+
+    const games = await response.json();
+
+    const game = games.find(
+      item => String(item.id) === String(gameId)
+    );
+
+    if (!game) {
+      throw new Error('Game not found. Please return to ST Games.');
+    }
+
+    currentGame = game;
+
+    const extra = window.ST_GAME_GUIDES?.find(
+      item => String(item.id) === String(game.id)
+    );
+
+    const details = game.details || {};
+
+    /*
+      Priority:
+      1. game.js guide details
+      2. Existing games.json details
+      3. Friendly fallback
+    */
+
+    const description =
+      extra?.description || details.description;
+
+    const objective =
+      extra?.objective || details.objective;
+
+    document.title = `${game.title} Guide - ST Games`;
+
+    document.getElementById('gameTitle').textContent =
+      (extra?.emoji || '🎮') + ' ' + game.title;
+
+    document.getElementById('gameLogo').src =
+      game.logo || '/stgames-apk/launchericon-512x512.png';
+
+    document.getElementById('gameLogo').alt =
+      (game.title || 'Game') + ' logo';
+
+    document.getElementById('gameCategory').textContent =
+      extra?.category || game.category || 'GAME';
+
+    setText(
+      'gameCreator',
+      details.creator || extra?.creator,
+      'Skill | Strategy | Victory'
+    );
+
+    setText(
+      'description',
+      description,
+      '📖 Guide coming soon.'
+    );
+
+    setText(
+      'objective',
+      objective,
+      '🎯 Objective not added yet.'
+    );
+
+    renderList(
+      'howToPlay',
+      extra?.howToPlay || (Array.isArray(details.howToPlay)
+        ? details.howToPlay
+        : details.howToPlay ? [details.howToPlay] : [])
+    );
+
+    renderList(
+      'controls',
+      extra?.controls || (Array.isArray(details.controls)
+        ? details.controls
+        : details.controls ? [details.controls] : [])
+    );
+
+    renderList(
+      'rules',
+      extra?.rules || (Array.isArray(details.rules)
+        ? details.rules
+        : details.rules ? [details.rules] : [])
+    );
+
+    renderList(
+      'tips',
+      extra?.tips || (Array.isArray(details.tips)
+        ? details.tips
+        : details.tips ? [details.tips] : [])
+    );
+
+    renderFAQs(extra?.faqs || []);
+
+    document.getElementById('playButton').href =
+      safeGameUrl(game.url);
+
+    /* More Games */
+    const container = document.getElementById('otherGames');
+    container.replaceChildren();
+
+    games
+      .filter(item => item.id !== game.id)
+      .slice(0, 8)
+      .forEach(item => {
+        const link = document.createElement('a');
+
+        link.className = 'other-card';
+        link.href =
+          '/guide.html?id=' + encodeURIComponent(item.id);
+
+        const img = document.createElement('img');
+        img.src = item.logo || '/stgames-apk/launchericon-512x512.png';
+        img.alt = item.title || 'Game';
+        img.loading = 'lazy';
+
+        const title = document.createElement('div');
+        title.className = 'font-bold text-xs mt-2';
+        title.textContent = item.title || 'Game';
+
+        link.append(img, title);
+        container.appendChild(link);
+      });
+
+    initRatings();
+
+  } catch (error) {
+    console.error(error);
+
+    document.getElementById('gameTitle').textContent =
+      '😕 Guide unavailable';
+
+    document.getElementById('description').textContent =
+      error.message;
+
+    document.getElementById('playButton').style.display = 'none';
+  }
+}
+
+loadGuide();
+</script>
+
 </body>
 </html>
