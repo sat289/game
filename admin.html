@@ -563,6 +563,41 @@
             <option value="small">Small Logo</option>
             <option value="large">Large Logo</option>
           </select>
+          
+<div class="mt-4 mb-3 border-t border-teal-500/30 pt-4">
+  <h4 class="font-black text-sm theme-heading mb-3">
+    <i class="fa-solid fa-book-open"></i> GAME GUIDE CONTENT
+  </h4>
+
+  <label class="block text-xs font-bold theme-label mb-1">Game Creator</label>
+  <input id="editGuideCreator" class="neon-input mb-3"
+    placeholder="Example: ST Games">
+
+  <label class="block text-xs font-bold theme-label mb-1">About the Game</label>
+  <textarea id="editGuideDescription" class="neon-input mb-3"
+    rows="3" placeholder="Describe this game..."></textarea>
+
+  <label class="block text-xs font-bold theme-label mb-1">Objective</label>
+  <textarea id="editGuideObjective" class="neon-input mb-3"
+    rows="2" placeholder="What is the player's goal?"></textarea>
+
+  <label class="block text-xs font-bold theme-label mb-1">How to Play</label>
+  <textarea id="editGuideHowToPlay" class="neon-input mb-3"
+    rows="4" placeholder="Explain how to play..."></textarea>
+
+  <label class="block text-xs font-bold theme-label mb-1">Controls</label>
+  <textarea id="editGuideControls" class="neon-input mb-3"
+    rows="3" placeholder="Touch, keyboard, buttons..."></textarea>
+
+  <label class="block text-xs font-bold theme-label mb-1">Rules & Scoring</label>
+  <textarea id="editGuideRules" class="neon-input mb-3"
+    rows="3" placeholder="Explain the rules and scoring..."></textarea>
+
+  <label class="block text-xs font-bold theme-label mb-1">Tips</label>
+  <textarea id="editGuideTips" class="neon-input mb-3"
+    rows="3" placeholder="Helpful tips for players..."></textarea>
+</div>
+          
 
           <div class="flex flex-wrap gap-2">
             <button type="button" onclick="saveGameEdit()" class="neon-action flex-1">
@@ -2748,6 +2783,16 @@ window.stTrackGamePlay = (gameName) => recordStEvent("game_plays", "view", gameN
           String(item.game.title || "").toLowerCase().includes(search) ||
           String(item.game.url || "").toLowerCase().includes(search)
         );
+      const guide = game.details || {};
+
+document.getElementById("editGuideCreator").value = guide.creator || "";
+document.getElementById("editGuideDescription").value = guide.description || "";
+document.getElementById("editGuideObjective").value = guide.objective || "";
+document.getElementById("editGuideHowToPlay").value = guide.howToPlay || "";
+document.getElementById("editGuideControls").value = guide.controls || "";
+document.getElementById("editGuideRules").value = guide.rules || "";
+document.getElementById("editGuideTips").value = guide.tips || "";
+
 
       if (!filtered.length) {
         container.innerHTML = '<div class="text-center text-xs theme-subtext py-5 font-medium">No games found.</div>';
@@ -2800,6 +2845,17 @@ window.stTrackGamePlay = (gameName) => recordStEvent("game_plays", "view", gameN
         showToast("Invalid game selected.", "error");
         return;
       }
+     
+game.details = {
+  creator: document.getElementById("editGuideCreator").value.trim(),
+  description: document.getElementById("editGuideDescription").value.trim(),
+  objective: document.getElementById("editGuideObjective").value.trim(),
+  howToPlay: document.getElementById("editGuideHowToPlay").value.trim(),
+  controls: document.getElementById("editGuideControls").value.trim(),
+  rules: document.getElementById("editGuideRules").value.trim(),
+  tips: document.getElementById("editGuideTips").value.trim()
+};
+ 
 
       const game = { ...allGamesData[index] };
       const title = document.getElementById("editGameTitle").value.trim();
