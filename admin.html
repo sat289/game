@@ -1107,6 +1107,37 @@
     let firebaseDb = null;
     let firebaseAnalytics = null;
     let firebaseConnected = false;
+    let stAdminAuth = null;
+
+function initAdminFirebaseAuth() {
+    try {
+        if (!window.firebase ||
+            typeof firebase.auth !== "function") {
+            throw new Error("Firebase Auth SDK not loaded.");
+        }
+
+        let app;
+
+        try {
+            app = firebase.app("stGamesAdminAuth");
+        } catch (error) {
+            app = firebase.initializeApp(
+                ST_ADMIN_FIREBASE_CONFIG,
+                "stGamesAdminAuth"
+            );
+        }
+
+        stAdminAuth = firebase.auth(app);
+
+        console.log("Admin Firebase Auth initialized");
+        return stAdminAuth;
+
+    } catch (error) {
+        console.error("Firebase Auth initialization:", error);
+        stAdminAuth = null;
+        return null;
+    }
+}
 
     /* ==========================================================
        MILESTONE ALERT CONFIGURATION STATE (DEFAULT 10 LOGINS & VIEWS)
@@ -1770,21 +1801,26 @@ async function verifyAdminPassword() {
 }
 
 async function sendAdminPasswordReset() {
-  const status =
-    document.getElementById("adminResetStatus");
+    try {
+        const auth = stAdminAuth || initAdminFirebaseAuth();
 
-  try {
-    await stAdminAuth.sendPasswordResetEmail(
-      ST_ADMIN_EMAIL
-    );
+        if (!auth) {
+            throw new Error(
+                "Firebase Authentication is not initialized. Refresh the page."
+            );
+        }
 
-    status.textContent =
-      "Password reset link sent. Check your Gmail inbox.";
+        const adminEmail = "satishkommana630@gmail.com";
 
-  } catch (error) {
-    status.textContent =
-      "Reset failed: " + error.message;
-  }
+        await auth.sendPasswordResetEmail(adminEmail);
+
+        alert("Password reset email sent! Check your Gmail.");
+
+    } catch (error) {
+        console.error("Password reset error:", error);
+
+        alert("Reset failed: " + error.message);
+    }
 }
 
 async function changeAdminPassword() {
