@@ -114,56 +114,130 @@ body.dark-theme .game-details-link {
       margin-top: 0 !important;
     }
 
-    /* Poki-Style Vibrant Cyan / Teal Abstract Background (GPU Accelerated) */
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: #17c3b2;
-      overflow-x: hidden;
-      user-select: none;
-      transition: color 0.35s ease;
-      position: relative;
-      padding-bottom: calc(82px + env(safe-area-inset-bottom, 0px));
-      color: #0f172a;
-      -webkit-overflow-scrolling: touch;
-      overscroll-behavior-y: none;
-    }
 
-    /* Single Hardware-Accelerated Fixed Background Layer (Eliminates Scroll Repaint Lag) */
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 0;
-      transform: translate3d(0, 0, 0);
-      will-change: transform;
-      background: 
-        radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.45), transparent 35%),
-        radial-gradient(circle at 85% 75%, rgba(13, 148, 136, 0.35), transparent 40%),
-        linear-gradient(45deg, transparent 40%, rgba(255, 255, 255, 0.15) 50%, transparent 60%),
-        linear-gradient(135deg, #4ef2e2 0%, #17c3b2 50%, #0d9488 100%);
-    }
+/* ST GAMES — SLOW ANIMATED NEON BACKGROUND */
+body {
+  font-family: 'Inter', sans-serif;
+  background: #071d29;
+  color: #eafcff;
+  overflow-x: hidden;
+  position: relative;
+  padding-bottom: calc(82px + env(safe-area-inset-bottom, 0px));
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: none;
+}
 
-    body > * { position: relative; z-index: 1; }
+/* Fixed animated background */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -30%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 15% 25%, rgba(34,211,238,.28), transparent 32%),
+    radial-gradient(ellipse at 80% 20%, rgba(139,92,246,.24), transparent 34%),
+    radial-gradient(ellipse at 55% 85%, rgba(20,184,166,.25), transparent 35%),
+    linear-gradient(135deg, #061923, #073a46, #101c3a, #062b32);
+  background-size: 150% 150%;
+  animation: stBackgroundFlow 28s ease-in-out infinite alternate;
+  will-change: background-position, transform;
+}
 
-    /* DARK THEME OVERRIDES */
-    body.dark-theme {
-      background-color: #061820;
-      color: #f8fafc;
-    }
+/* Soft floating light particles */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: .55;
+  background-image:
+    radial-gradient(circle, rgba(103,232,249,.8) 1px, transparent 2px),
+    radial-gradient(circle, rgba(196,181,253,.65) 1px, transparent 2px),
+    radial-gradient(circle, rgba(255,255,255,.5) 1px, transparent 2px);
+  background-size: 110px 110px, 170px 170px, 230px 230px;
+  animation: stParticleDrift 45s linear infinite;
+}
 
-    body.dark-theme::before {
-      background: 
-        radial-gradient(circle at 15% 20%, rgba(34, 211, 238, 0.15), transparent 35%),
-        radial-gradient(circle at 85% 75%, rgba(15, 118, 110, 0.25), transparent 40%),
-        linear-gradient(135deg, #092c35 0%, #061820 50%, #040e14 100%);
-    }
+body > * {
+  position: relative;
+  z-index: 1;
+}
 
-    body.dark-theme .theme-surface {
-      background-color: rgba(15, 23, 42, 0.95) !important;
-      border-color: rgba(255, 255, 255, 0.1) !important;
-      color: #f8fafc !important;
-    }
+@keyframes stBackgroundFlow {
+  0% {
+    background-position: 0% 40%;
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    background-position: 100% 60%;
+    transform: rotate(2deg) scale(1.04);
+  }
+  100% {
+    background-position: 40% 100%;
+    transform: rotate(-2deg) scale(1);
+  }
+}
+
+@keyframes stParticleDrift {
+  from { background-position: 0 0, 0 0, 0 0; }
+  to { background-position: 0 -500px, 170px -650px, -100px -800px; }
+}
+
+/* Glass-style cards */
+.theme-surface {
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  background-color: rgba(8, 32, 45, .86) !important;
+  border-color: rgba(103, 232, 249, .22) !important;
+  color: #f0fdff;
+}
+
+/* Dark theme */
+body.dark-theme {
+  background: #030d17;
+  color: #f8fafc;
+}
+
+body.dark-theme::before {
+  filter: brightness(.72) saturate(1.2);
+}
+
+body.dark-theme .theme-surface {
+  background-color: rgba(3, 17, 30, .91) !important;
+  color: #f8fafc !important;
+  border-color: rgba(34, 211, 238, .2) !important;
+}
+
+/* Smooth appearance for sections */
+.game-card-wrap,
+.popular-section,
+#aboutEditorialSection {
+  animation: stSectionReveal .7s ease both;
+}
+
+@keyframes stSectionReveal {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Accessibility and low-power devices */
+@media (prefers-reduced-motion: reduce) {
+  body::before,
+  body::after,
+  .game-card-wrap,
+  .popular-section,
+  #aboutEditorialSection {
+    animation: none !important;
+  }
+
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
+}
+
 
     body.dark-theme .theme-text-primary { color: #f8fafc !important; }
     body.dark-theme .theme-text-sub { color: #94a3b8 !important; }
@@ -537,6 +611,50 @@ body.dark-theme .game-details-link {
   <section id="remainingGamesSection" class="max-w-5xl w-full mx-auto px-3.5 sm:px-6 pt-8 pb-6 relative z-10">
     <div id="remainingGamesGrid" class="poki-grid"></div>
   </section>
+    
+<!-- ST GAMES — COMPLETE GAME GUIDE DIRECTORY -->
+<section id="allGameGuides"
+  class="max-w-5xl w-full mx-auto px-3.5 sm:px-6 pb-8 relative z-10">
+
+  <div class="rounded-3xl p-5 sm:p-7 border border-cyan-300/20
+              bg-slate-950/75 shadow-2xl">
+
+    <div class="mb-5">
+      <span class="text-cyan-300 text-xs font-extrabold uppercase tracking-widest">
+        ST GAMES KNOWLEDGE CENTRE
+      </span>
+
+      <h2 class="brand-font text-2xl sm:text-3xl font-bold text-white mt-2">
+        🎮 Complete Game Guides
+      </h2>
+
+      <p class="text-sm text-slate-300 mt-2 leading-relaxed">
+        Learn the objective, controls, rules, scoring and strategies
+        before starting a game. Each guide has its own information page.
+      </p>
+    </div>
+
+    <div class="flex items-center justify-between mb-4 gap-3">
+      <span class="text-sm font-bold text-cyan-200">
+        Available game guides
+      </span>
+
+      <span id="guideDirectoryCount"
+        class="rounded-full px-3 py-1 text-xs font-extrabold
+               bg-cyan-300 text-slate-950">
+        Loading...
+      </span>
+    </div>
+
+    <div id="guideDirectoryGrid"
+      class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+      <p class="text-sm text-slate-300">Loading game guides...</p>
+
+    </div>
+
+  </div>
+</section>
 
   <!-- RICH EDITORIAL CONTENT, GAME GUIDES & FAQ (MANDATORY FOR GOOGLE ADSENSE APPROVAL) -->
   <section id="aboutEditorialSection" class="max-w-5xl w-full mx-auto px-3.5 sm:px-6 pb-8 relative z-10">
@@ -1132,8 +1250,10 @@ body.dark-theme .game-details-link {
       });
 
       GAMES_DATA = loaded;
-      renderGames();
-      updateHeroStats();
+
+renderGames();
+updateHeroStats();
+renderGuideDirectory();
     }
 
     async function loadNotice() {
@@ -1348,6 +1468,126 @@ return `
       document.body.classList.toggle('dark-theme', isDark);
       safeStorageSet('st_theme', isDark ? 'dark' : 'light');
     }
+    
+/* ==========================================
+   ST GAMES — GUIDE DIRECTORY
+========================================== */
+
+function renderGuideDirectory() {
+  const grid = document.getElementById("guideDirectoryGrid");
+  const count = document.getElementById("guideDirectoryCount");
+
+  if (!grid || !count) return;
+
+  const games = Array.isArray(GAMES_DATA) ? GAMES_DATA : [];
+
+  count.textContent = games.length + " Guides";
+
+  if (!games.length) {
+    grid.innerHTML = `
+      <p class="text-sm text-slate-300">
+        No game guides are available right now.
+      </p>`;
+    return;
+  }
+
+  grid.innerHTML = games.map(game => {
+    const details = game.details || {};
+
+    const description = details.description ||
+      "Open this guide to learn more about the game.";
+
+    const creator = details.creator || "Creator information not provided";
+
+    const guideUrl = "guide.html?id=" +
+      encodeURIComponent(game.id);
+
+    const hasObjective = Boolean(details.objective);
+    const hasControls = Boolean(details.controls);
+    const hasRules = Boolean(details.rules);
+    const hasTips = Boolean(details.tips);
+    const hasScreenshots = Array.isArray(details.screenshots) &&
+      details.screenshots.length > 0;
+
+    const completedSections = [
+      details.description,
+      details.objective,
+      details.howToPlay,
+      details.controls,
+      details.rules,
+      details.tips,
+      details.creator,
+      details.difference,
+      hasScreenshots
+    ].filter(Boolean).length;
+
+    return `
+      <article class="rounded-2xl border border-cyan-300/20
+                      bg-slate-900/80 p-4 hover:border-cyan-300/70
+                      transition-all duration-300">
+
+        <div class="flex items-start gap-3">
+
+          <img
+            src="${escapeHTML(game.logo || '')}"
+            alt="${escapeHTML(game.title)} gameplay logo"
+            loading="lazy"
+            class="w-16 h-16 rounded-xl object-cover bg-slate-800"
+            onerror="this.style.display='none'">
+
+          <div class="min-w-0 flex-1">
+
+            <h3 class="font-extrabold text-white text-sm">
+              ${escapeHTML(game.title)}
+            </h3>
+
+            <p class="text-xs text-cyan-300 mt-1">
+              Creator: ${escapeHTML(creator)}
+            </p>
+
+            <p class="text-xs text-slate-300 mt-2 line-clamp-3">
+              ${escapeHTML(description)}
+            </p>
+
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 mt-4">
+
+          <span class="text-xs rounded-lg bg-slate-800 p-2 text-slate-200">
+            🎯 Objective: ${hasObjective ? "Available" : "Missing"}
+          </span>
+
+          <span class="text-xs rounded-lg bg-slate-800 p-2 text-slate-200">
+            🎮 Controls: ${hasControls ? "Available" : "Missing"}
+          </span>
+
+          <span class="text-xs rounded-lg bg-slate-800 p-2 text-slate-200">
+            📖 Rules: ${hasRules ? "Available" : "Missing"}
+          </span>
+
+          <span class="text-xs rounded-lg bg-slate-800 p-2 text-slate-200">
+            💡 Tips: ${hasTips ? "Available" : "Missing"}
+          </span>
+
+        </div>
+
+        <p class="text-xs text-slate-400 mt-3">
+          Guide information fields: ${completedSections}/9
+        </p>
+
+        <a href="${guideUrl}"
+           class="block text-center mt-3 rounded-xl
+                  bg-cyan-300 text-slate-950 py-2.5
+                  text-xs font-extrabold hover:bg-white transition">
+          READ FULL GAME GUIDE →
+        </a>
+
+      </article>
+    `;
+  }).join("");
+}
+
 
     /* POLICY MODAL CONTENT FOR GOOGLE ADSENSE COMPLIANCE & PREVIEW */
     const POLICY_CONTENT = {
