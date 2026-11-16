@@ -1,1 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Real 3D Supercar Garage &amp; Sky-Ramp Racing</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,600;0,700;1,700;1,800&family=Inter:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- 3D WebGL Driving World Canvas (Used in Driving Mode 3412.mp4) -->
+  <div id="canvas-container"></div>
+
+  <!-- Real Photorealistic Garage Stage (Extracted directly from 3408.mp4) -->
+  <div id="real-garage-stage">
+    <img id="real-garage-img" alt="Real Garage Car Showroom" src="" />
+    <div class="spotlight-sweep"></div>
+  </div>
+
+  <!-- Real Animated Driving Car Overlay (Extracted from 3412.mp4) -->
+  <div id="real-driving-car-wrapper" class="hidden">
+    <img id="real-driving-car-img" alt="Real Driving Supercar" src="" />
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- GARAGE UI LAYER (3408.mp4)                                        -->
+  <!-- ================================================================= -->
+  <div id="garage-ui" class="hud-layer flex flex-col justify-between p-3 sm:p-5">
+    <!-- TOP BAR -->
+    <div class="flex items-center justify-between w-full">
+      <div class="flex items-center gap-2.5 pointer-auto">
+        <div id="top-left-icon" class="w-9 h-9 rounded-lg bg-zinc-900/90 border border-zinc-700 flex items-center justify-center shadow-lg">
+          <span class="text-amber-400 text-lg">🔧</span>
+        </div>
+        <button id="btn-back-to-garage" class="hidden items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900/90 border border-zinc-700 hover:border-amber-400 text-white font-racing text-lg tracking-wider transition">
+          <span>&larr;</span> <span>PLAY MODE</span>
+        </button>
+        <h1 id="garage-header-title" class="font-racing text-2xl sm:text-3xl font-extrabold tracking-wider text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
+          GARAGE
+        </h1>
+      </div>
+
+      <div class="flex items-center gap-2 sm:gap-3 pointer-auto">
+        <button id="btn-open-daily" class="px-2.5 py-1 rounded-md bg-red-600/90 hover:bg-red-500 border border-red-400 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-lg transition">
+          <span>🎁</span> <span class="hidden sm:inline">Daily Rewards</span>
+        </button>
+
+        <div class="flex items-center bg-zinc-950/90 border border-zinc-700/80 rounded-full px-2.5 py-1 gap-2 shadow-inner">
+          <span class="w-5 h-5 rounded-full bg-gradient-to-b from-yellow-300 to-amber-600 flex items-center justify-center text-[11px] font-black text-amber-950 shadow">$</span>
+          <span id="hud-coins" class="font-racing text-sm sm:text-base font-bold text-amber-300 min-w-[36px] text-right">2,000</span>
+          <button id="btn-add-coins" title="Add Free Coins" class="w-5 h-5 rounded-full bg-zinc-700 hover:bg-amber-500 hover:text-black flex items-center justify-center text-xs font-bold transition">+</button>
+        </div>
+
+        <div class="flex items-center bg-zinc-950/90 border border-zinc-700/80 rounded-full px-2.5 py-1 gap-2 shadow-inner">
+          <span class="w-5 h-5 rounded-full bg-gradient-to-b from-cyan-300 to-blue-600 flex items-center justify-center text-[10px] font-black text-blue-950 shadow">💎</span>
+          <span id="hud-gems" class="font-racing text-sm sm:text-base font-bold text-cyan-300 min-w-[24px] text-right">25</span>
+          <button id="btn-add-gems" title="Add Free Gems" class="w-5 h-5 rounded-full bg-zinc-700 hover:bg-cyan-400 hover:text-black flex items-center justify-center text-xs font-bold transition">+</button>
+        </div>
+
+        <button id="btn-sound-toggle" title="Toggle Sound" class="w-9 h-9 rounded-lg bg-zinc-900/90 border border-zinc-700 hover:border-amber-400 flex items-center justify-center text-base transition">
+          🔊
+        </button>
+      </div>
+    </div>
+
+    <!-- MIDDLE GARAGE AREA -->
+    <div id="garage-middle-area" class="flex-1 flex items-center justify-between relative my-1">
+      <!-- LEFT STATS & SPEED PASS -->
+      <div class="flex flex-col gap-2 w-44 sm:w-56 pointer-auto z-20">
+        <div class="bg-zinc-950/85 backdrop-blur-md border border-zinc-800/90 rounded-lg p-2.5 shadow-xl">
+          <div class="flex items-center justify-between mb-1">
+            <div class="flex items-center gap-1.5">
+              <span id="car-class-badge" class="px-2 py-0.5 rounded font-racing font-black text-xs bg-red-600 text-white shadow">A</span>
+              <span class="font-racing text-xs font-bold text-zinc-300 tracking-wider">CLASS</span>
+            </div>
+            <span id="car-index-indicator" class="text-[11px] font-semibold text-zinc-400">1 / 20</span>
+          </div>
+          <div id="car-name-display" class="font-racing text-xs sm:text-sm font-extrabold text-amber-400 truncate mb-2">
+            LAMBORGHINI AVENTADOR SVJ
+          </div>
+
+          <div class="space-y-1.5 text-[10px] font-racing tracking-wider">
+            <div>
+              <div class="flex justify-between text-zinc-300 mb-0.5"><span>SPEED</span><span id="stat-speed-val">92</span></div>
+              <div class="stat-track">
+                <div id="stat-speed-bar" class="h-full bg-white transition-all duration-300" style="width: 84%"></div>
+                <div id="stat-speed-plus" class="h-full bg-emerald-400 absolute top-0 transition-all duration-300" style="left: 84%; width: 6%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-zinc-300 mb-0.5"><span>HANDLING</span><span id="stat-handling-val">88</span></div>
+              <div class="stat-track">
+                <div id="stat-handling-bar" class="h-full bg-white transition-all duration-300" style="width: 80%"></div>
+                <div id="stat-handling-plus" class="h-full bg-emerald-400 absolute top-0 transition-all duration-300" style="left: 80%; width: 6%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-zinc-300 mb-0.5"><span>ACCELERATION</span><span id="stat-accel-val">94</span></div>
+              <div class="stat-track">
+                <div id="stat-accel-bar" class="h-full bg-white transition-all duration-300" style="width: 86%"></div>
+                <div id="stat-accel-plus" class="h-full bg-emerald-400 absolute top-0 transition-all duration-300" style="left: 86%; width: 6%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-zinc-300 mb-0.5"><span>BRAKE</span><span id="stat-brake-val">86</span></div>
+              <div class="stat-track">
+                <div id="stat-brake-bar" class="h-full bg-white transition-all duration-300" style="width: 78%"></div>
+                <div id="stat-brake-plus" class="h-full bg-emerald-400 absolute top-0 transition-all duration-300" style="left: 78%; width: 6%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button id="btn-speed-pass" class="bg-gradient-to-r from-zinc-900/95 via-zinc-800/90 to-amber-900/50 border border-amber-500/40 hover:border-amber-400 rounded-lg p-2 text-left shadow-lg transition group">
+          <div class="flex items-center justify-between">
+            <span class="font-racing text-xs font-extrabold text-white group-hover:text-amber-300">SPEED PASS</span>
+            <span class="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 rounded font-bold">SEASON 1</span>
+          </div>
+          <div class="flex items-center gap-2 mt-1">
+            <div class="w-6 h-6 rounded bg-amber-500 flex items-center justify-center font-racing font-black text-xs text-black">S</div>
+            <div class="flex-1">
+              <div class="w-full bg-zinc-950 h-2 rounded-full overflow-hidden border border-zinc-700">
+                <div id="speed-pass-bar" class="bg-gradient-to-r from-amber-400 to-orange-500 h-full" style="width: 25%"></div>
+              </div>
+              <div id="speed-pass-text" class="text-[10px] text-zinc-400 mt-0.5">25 / 100 XP</div>
+            </div>
+          </div>
+        </button>
+
+        <button id="btn-free-reward" class="bg-gradient-to-r from-amber-600/90 to-yellow-600/90 hover:from-amber-500 hover:to-yellow-500 border border-yellow-300/70 rounded-lg p-2 flex items-center justify-between shadow-lg transition">
+          <div>
+            <div class="text-[10px] font-extrabold uppercase text-amber-950 bg-yellow-300 px-1.5 rounded inline-block">FREE REWARD X2</div>
+            <div class="font-racing text-base font-black text-white drop-shadow mt-0.5">+ 3000</div>
+          </div>
+          <div class="w-8 h-8 rounded-full bg-yellow-300/30 border border-yellow-200 flex items-center justify-center text-lg">🪙</div>
+        </button>
+
+        <button id="btn-vip" class="bg-gradient-to-r from-sky-600 to-blue-800 hover:from-sky-500 hover:to-blue-700 border border-sky-300/70 rounded-lg py-1.5 px-2.5 flex items-center gap-2 shadow-lg transition">
+          <span class="text-base">👑</span>
+          <div class="text-left">
+            <div id="vip-status-label" class="font-racing text-xs font-black text-white tracking-wider">BECOME VIP</div>
+            <div class="text-[9px] text-sky-200">2X Race Cash + Bonus Gems</div>
+          </div>
+        </button>
+      </div>
+
+      <!-- CENTER OVERLAY: CAROUSEL ARROWS + LOCKED/UNLOCKED PINS -->
+      <div class="flex-1 h-full flex items-center justify-between px-2 sm:px-6 relative">
+        <button id="btn-prev-car" class="pointer-auto w-11 h-16 sm:w-12 sm:h-20 rounded-xl bg-zinc-950/70 hover:bg-zinc-900 border border-zinc-600 hover:border-amber-400 flex items-center justify-center text-2xl sm:text-3xl text-white shadow-xl transition active:scale-95">
+          &#10094;
+        </button>
+
+        <!-- Lock Overlay (When Car is Locked) -->
+        <div id="center-lock-overlay" class="hidden flex-col items-center justify-center text-center pointer-auto mb-36 sm:mb-44">
+          <div id="watch-ads-banner" class="hidden mb-2 px-4 py-1 rounded-md bg-gradient-to-r from-emerald-600 to-green-500 border border-emerald-300 shadow-lg">
+            <div class="font-racing text-xs font-black text-white uppercase tracking-wider">WATCH ADS TO UNLOCK</div>
+            <div id="watch-ads-progress" class="font-racing text-sm font-extrabold text-yellow-200">0/2</div>
+          </div>
+          <div class="w-14 h-14 rounded-2xl bg-zinc-950/85 border-2 border-zinc-400/80 flex items-center justify-center text-3xl shadow-2xl">
+            🔒
+          </div>
+          <div class="font-racing text-sm sm:text-base font-extrabold tracking-widest text-white mt-1.5 drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
+            LOCKED CAR
+          </div>
+        </div>
+
+        <!-- Floating Unlocked Nodes (CUSTOMIZE & UPGRADE) -->
+        <div id="center-unlocked-nodes" class="flex items-center gap-8 sm:gap-16 mb-28 sm:mb-36 pointer-auto">
+          <button id="btn-customize-node" class="floating-pin group flex flex-col items-center gap-1">
+            <div class="px-3 py-1 rounded-full bg-zinc-950/90 border border-zinc-400 group-hover:border-amber-400 flex items-center gap-1.5 shadow-xl transition">
+              <span class="font-racing text-xs font-extrabold text-white group-hover:text-amber-300">CUSTOMIZE</span>
+              <span class="text-sm">🎨</span>
+            </div>
+            <div class="w-2.5 h-2.5 rounded-full bg-amber-400 ring-4 ring-amber-400/30"></div>
+          </button>
+
+          <button id="btn-upgrade-node" class="floating-pin group flex flex-col items-center gap-1" style="animation-delay: 0.5s;">
+            <div class="px-3 py-1 rounded-full bg-zinc-950/90 border border-zinc-400 group-hover:border-emerald-400 flex items-center gap-1.5 shadow-xl transition">
+              <span class="font-racing text-xs font-extrabold text-white group-hover:text-emerald-300">UPGRADE</span>
+              <span class="text-sm text-emerald-400">⏫</span>
+            </div>
+            <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 ring-4 ring-emerald-400/30"></div>
+          </button>
+        </div>
+
+        <button id="btn-next-car" class="pointer-auto w-11 h-16 sm:w-12 sm:h-20 rounded-xl bg-zinc-950/70 hover:bg-zinc-900 border border-zinc-600 hover:border-amber-400 flex items-center justify-center text-2xl sm:text-3xl text-white shadow-xl transition active:scale-95">
+          &#10095;
+        </button>
+      </div>
+
+      <!-- RIGHT COLUMN: COST / WHEELSPIN / DRIVE / BUY / TRY -->
+      <div class="flex flex-col items-end justify-between h-full py-1 w-40 sm:w-48 pointer-auto z-20">
+        <div class="flex flex-col items-end gap-2 w-full">
+          <div id="car-cost-box" class="hidden bg-zinc-950/85 border border-zinc-700 rounded-lg px-3 py-1.5 text-right w-full shadow-xl">
+            <div class="font-racing text-xs text-zinc-400 font-bold">COST</div>
+            <div id="car-cost-value" class="font-racing text-lg sm:text-xl font-black text-amber-400 flex items-center justify-end gap-1.5">
+              <span>🪙</span> <span>10,000</span>
+            </div>
+          </div>
+
+          <div class="flex flex-col items-end gap-2">
+            <button id="btn-wheelspin" class="bg-zinc-900/90 hover:bg-zinc-800 border border-amber-500/50 rounded-xl px-3 py-1.5 flex items-center gap-2 shadow-lg transition">
+              <span class="text-xl animate-spin" style="animation-duration: 6s;">🎡</span>
+              <span class="font-racing text-xs font-extrabold text-amber-300">WHEELSPIN</span>
+            </button>
+
+            <button id="btn-quick-freeroam" class="bg-gradient-to-b from-blue-600/90 to-indigo-900/90 hover:from-blue-500 hover:to-indigo-800 border border-blue-400/70 rounded-xl px-3 py-1.5 flex items-center gap-2 shadow-lg transition">
+              <span class="text-base">🏎️</span>
+              <div class="text-left">
+                <div class="font-racing text-[11px] font-black text-white leading-tight">FREEROAM</div>
+                <div class="text-[9px] text-blue-200 leading-tight">CITY &amp; RAMPS</div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex flex-col items-end gap-2 w-full mt-auto">
+          <div id="unlocked-actions" class="flex flex-col items-end gap-2 w-full">
+            <button id="btn-sell-car" class="skew-box bg-zinc-900/90 hover:bg-red-950/90 border border-amber-500/60 hover:border-red-400 px-3 py-1 rounded text-right w-36 sm:w-40 transition">
+              <div class="unskew flex flex-col items-end">
+                <span class="font-racing text-[10px] text-zinc-300 font-bold">SELL FOR</span>
+                <span id="sell-price-val" class="font-racing text-xs sm:text-sm font-black text-amber-400">🪙 1,200.00</span>
+              </div>
+            </button>
+
+            <button id="btn-drive-main" class="btn-drive skew-box w-40 sm:w-48 py-2.5 sm:py-3 rounded-md text-center">
+              <span class="unskew block font-racing text-xl sm:text-2xl font-black text-white tracking-wider drop-shadow">
+                DRIVE
+              </span>
+            </button>
+          </div>
+
+          <div id="locked-actions" class="hidden flex-col items-end gap-2 w-full">
+            <button id="btn-watch-ad-unlock" class="hidden skew-box bg-emerald-600 hover:bg-emerald-500 border border-emerald-300 w-40 sm:w-48 py-1.5 rounded text-center shadow-lg transition">
+              <span class="unskew block font-racing text-xs font-black text-white">
+                ▶ WATCH AD (+1 STEP)
+              </span>
+            </button>
+
+            <button id="btn-buy-car" class="btn-buy skew-box w-40 sm:w-48 py-2 rounded-md text-center">
+              <span class="unskew block font-racing text-lg sm:text-xl font-black text-white tracking-wider">
+                BUY
+              </span>
+            </button>
+
+            <button id="btn-try-car" class="btn-try skew-box w-40 sm:w-48 py-2 rounded-md text-center">
+              <span class="unskew flex items-center justify-center gap-1.5 font-racing text-base sm:text-lg font-black text-white tracking-wider">
+                <span class="text-xs bg-black/30 px-1.5 py-0.5 rounded">▶ AD</span>
+                <span>TRY</span>
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTTOM REAL CAR SELECTOR STRIP -->
+    <div id="garage-bottom-strip" class="w-full flex items-center justify-between gap-2 bg-zinc-950/85 backdrop-blur-md border border-zinc-800/90 rounded-xl px-3 py-1.5 pointer-auto">
+      <div class="text-[11px] font-racing text-amber-300 hidden md:block">
+        20 REAL VIDEO CARS &bull; CLICK DRIVE OR TRY FOR CITY &amp; SKY-RAMP STUNTS
+      </div>
+      <div id="car-dots-container" class="flex items-center gap-1.5 overflow-x-auto py-0.5 mx-auto md:mx-0"></div>
+      <div class="text-[11px] font-racing text-amber-400 font-bold hidden sm:block" id="owned-count-label">
+        OWNED: 1 / 20
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- PLAY MODE SELECTION OVERLAY (3408.mp4 00:21 - 00:22)              -->
+  <!-- ================================================================= -->
+  <div id="play-mode-ui" class="hud-layer hidden items-center justify-end p-6 sm:p-12 bg-gradient-to-l from-black/85 via-black/45 to-transparent">
+    <div class="flex items-center gap-5 sm:gap-8 mr-2 sm:mr-10 pointer-auto">
+      <button id="card-mode-freeroam" class="mode-card w-44 sm:w-64 h-72 sm:h-96 relative group bg-zinc-900 text-left">
+        <div class="absolute inset-0 bg-gradient-to-b from-sky-500/40 via-amber-500/20 to-zinc-950"></div>
+        <div class="unskew absolute inset-0 flex flex-col justify-between p-4 sm:p-5">
+          <span class="px-2.5 py-0.5 rounded bg-amber-500 text-black font-racing font-black text-xs w-max">OPEN WORLD + SKY RAMPS</span>
+          <div>
+            <div class="font-racing text-2xl sm:text-3xl font-black text-white tracking-wider drop-shadow">
+              FREEROAM
+            </div>
+            <p class="text-xs text-zinc-200 mt-1">
+              Drive real supercars through the city, pass traffic for NEAR MISS X2 &amp; fly off the giant blue glass sky-ramp!
+            </p>
+          </div>
+        </div>
+      </button>
+
+      <button id="card-mode-multiplayer" class="mode-card w-44 sm:w-64 h-72 sm:h-96 relative group bg-zinc-900 text-left">
+        <div class="absolute inset-0 bg-gradient-to-b from-orange-500/45 via-red-700/30 to-zinc-950"></div>
+        <div class="unskew absolute inset-0 flex flex-col justify-between p-4 sm:p-5">
+          <span class="px-2.5 py-0.5 rounded bg-red-600 text-white font-racing font-black text-xs w-max">ONLINE RIVAL RACE</span>
+          <div>
+            <div class="font-racing text-2xl sm:text-3xl font-black text-white tracking-wider drop-shadow">
+              MULTIPLAYER
+            </div>
+            <p class="text-xs text-zinc-200 mt-1">
+              Race 3 rival supercars across city highways &amp; sky ramps for massive coin and gem prizes!
+            </p>
+          </div>
+        </div>
+      </button>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- DRIVING HUD (EXACT MATCH TO 3412.mp4)                             -->
+  <!-- ================================================================= -->
+  <div id="driving-ui" class="hud-layer hidden flex-col justify-between p-3 sm:p-5">
+    <!-- TOP ROW: Left Minimap + NOS Bar | Center Stunt Callout | Right Analog Tachometer -->
+    <div class="flex items-start justify-between w-full">
+
+      <!-- TOP-LEFT: Vertical Green NOS Bar + Utility Icons + Circular Radar Minimap (3412.mp4) -->
+      <div class="flex items-start gap-2.5 pointer-auto">
+        <!-- Left Vertical Stack: NOS Segments + Wrench + Camera + Garage Back -->
+        <div class="flex flex-col items-center gap-1.5">
+          <!-- Segmented Green NOS Bar -->
+          <div class="bg-zinc-950/85 border border-zinc-700 rounded-lg p-1 flex flex-col items-center gap-0.5 shadow-xl">
+            <div id="nos-seg-5" class="w-4 h-2.5 rounded-xs bg-emerald-400"></div>
+            <div id="nos-seg-4" class="w-4 h-2.5 rounded-xs bg-emerald-400"></div>
+            <div id="nos-seg-3" class="w-4 h-2.5 rounded-xs bg-emerald-500"></div>
+            <div id="nos-seg-2" class="w-4 h-2.5 rounded-xs bg-lime-400"></div>
+            <div id="nos-seg-1" class="w-4 h-2.5 rounded-xs bg-amber-400"></div>
+            <span class="text-[9px] font-racing font-black text-cyan-300 mt-0.5">NOS</span>
+          </div>
+
+          <button id="btn-repair-car" title="Repair Car" class="w-8 h-8 rounded-full bg-zinc-900/90 hover:bg-emerald-600 border border-zinc-600 flex items-center justify-center text-xs shadow-lg">
+            🔧
+          </button>
+          <button id="btn-camera-view" title="Switch Camera" class="w-8 h-8 rounded-full bg-zinc-900/90 hover:bg-amber-500 border border-zinc-600 flex items-center justify-center text-xs shadow-lg">
+            🎥
+          </button>
+          <button id="btn-reset-car" title="Reset Position / Teleport to Sky Ramp" class="w-8 h-8 rounded-full bg-zinc-900/90 hover:bg-sky-500 border border-zinc-600 flex items-center justify-center text-xs shadow-lg">
+            🔄
+          </button>
+        </div>
+
+        <!-- Circular City Minimap + Return to Garage Button -->
+        <div class="flex flex-col items-center gap-1.5">
+          <div class="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-zinc-900/90 border-4 border-zinc-600/90 shadow-2xl relative overflow-hidden">
+            <canvas id="minimap-canvas" width="120" height="120" class="w-full h-full"></canvas>
+            <div class="absolute top-1 left-1/2 -translate-x-1/2 bg-black/70 px-1.5 rounded text-[9px] font-racing font-bold text-amber-300">N</div>
+          </div>
+          <button id="btn-exit-drive" class="px-2.5 py-1 rounded-md bg-zinc-950/90 hover:bg-red-600 border border-zinc-600 font-racing text-xs font-black text-white shadow-lg transition">
+            &larr; GARAGE
+          </button>
+        </div>
+      </div>
+
+      <!-- TOP-CENTER: Dynamic Stunt & Near Miss Callout (Matches 3412.mp4: NEAR MISS +107 X2, DRIFT +107 X2, JUMP 21m REC) -->
+      <div class="flex flex-col items-center pointer-auto">
+        <button id="btn-ramp-teleport" class="px-3 py-1 rounded-full bg-sky-600/90 hover:bg-sky-500 border border-sky-300 font-racing text-xs font-black text-white shadow-lg mb-2 transition">
+          🚀 WARP TO GIANT SKY RAMP
+        </button>
+        <div id="stunt-callout" class="opacity-0 transition-all duration-200 transform scale-95 text-center">
+          <div class="flex items-center justify-center gap-1.5">
+            <span id="stunt-title" class="font-racing text-lg sm:text-2xl font-black text-white drop-shadow-[0_3px_6px_rgba(0,0,0,0.95)]">NEAR MISS</span>
+            <span id="stunt-badge" class="px-2 py-0.5 rounded-full bg-emerald-500 text-black font-racing text-xs font-black shadow">X2</span>
+          </div>
+          <div id="stunt-value" class="font-racing text-xl sm:text-3xl font-black text-amber-300 drop-shadow-[0_3px_6px_rgba(0,0,0,0.95)]">+107 🪙</div>
+        </div>
+      </div>
+
+      <!-- TOP-RIGHT: Realistic Circular Analog RPM Tachometer + Gear + KMH + Pause (Matches 3412.mp4) -->
+      <div class="flex items-start gap-2 pointer-auto">
+        <div class="relative w-28 h-28 sm:w-36 sm:h-36 rounded-full bg-zinc-950/85 border-4 border-zinc-600/80 shadow-2xl flex flex-col items-center justify-center">
+          <svg class="absolute inset-0 w-full h-full" viewBox="0 0 120 120">
+            <!-- Tachometer Arc Ticks -->
+            <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="6" stroke-dasharray="220 360" stroke-dashoffset="-70" transform="rotate(135 60 60)"/>
+            <circle cx="60" cy="60" r="50" fill="none" stroke="#ef4444" stroke-width="6" stroke-dasharray="55 360" stroke-dashoffset="-235" transform="rotate(135 60 60)"/>
+            <!-- RPM Needle -->
+            <line id="rpm-needle" x1="60" y1="60" x2="26" y2="84" stroke="#ef4444" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="60" cy="60" r="5" fill="#e4e4e7"/>
+          </svg>
+          <div class="text-[9px] font-racing text-zinc-400 mt-2">RPM x1000</div>
+          <div id="gear-display" class="font-racing text-xs font-black text-emerald-400">GEAR 1</div>
+          <div id="speedo-kmh" class="font-racing text-2xl sm:text-3xl font-black text-white leading-none mt-0.5">0</div>
+          <div class="font-racing text-[9px] font-bold text-amber-400">KMH</div>
+        </div>
+
+        <button id="btn-pause-drive" title="Pause / Return to Garage" class="w-9 h-9 rounded-lg bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-600 flex items-center justify-center font-black text-white shadow-lg">
+          &#10074;&#10074;
+        </button>
+      </div>
+    </div>
+
+    <!-- BOTTOM ROW: Left Round Steering Buttons | Right Metallic Perforated Pedals (3412.mp4) -->
+    <div class="flex items-end justify-between w-full mt-auto">
+      <!-- Bottom-Left Steering & Headlight/Drift Toggles -->
+      <div class="flex flex-col gap-2 pointer-auto">
+        <div class="flex items-center gap-3 ml-2">
+          <button id="btn-toggle-lights" class="w-10 h-10 rounded-full bg-zinc-900/75 hover:bg-amber-500/80 border border-zinc-500 flex items-center justify-center text-sm text-white shadow-lg">
+            💡
+          </button>
+          <button id="btn-toggle-tcs" class="w-10 h-10 rounded-full bg-zinc-900/75 hover:bg-emerald-500/80 border border-zinc-500 flex items-center justify-center text-xs font-racing font-black text-emerald-300 shadow-lg">
+            TCS
+          </button>
+        </div>
+        <div class="flex items-center gap-4">
+          <button id="touch-left" class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-zinc-900/75 active:bg-amber-500/80 border-2 border-zinc-400/80 flex items-center justify-center text-3xl font-black text-white shadow-2xl">
+            &#10094;
+          </button>
+          <button id="touch-right" class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-zinc-900/75 active:bg-amber-500/80 border-2 border-zinc-400/80 flex items-center justify-center text-3xl font-black text-white shadow-2xl">
+            &#10095;
+          </button>
+        </div>
+      </div>
+
+      <!-- Center Controls Hint -->
+      <div class="hidden md:flex flex-col items-center bg-zinc-950/75 border border-zinc-700/80 rounded-xl px-4 py-1.5 mb-1">
+        <div class="text-[11px] font-racing text-amber-300">
+          WASD / ARROWS: DRIVE &bull; SHIFT: BLUE NITRO FLAMES &bull; SPACE: DRIFT
+        </div>
+      </div>
+
+      <!-- Bottom-Right: Handbrake + Nitro + Metallic Brake & Gas Pedals (Matches 3412.mp4) -->
+      <div class="flex items-end gap-3 pointer-auto">
+        <div class="flex flex-col items-center gap-2 mb-1">
+          <button id="touch-nitro" class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-cyan-950/90 active:bg-cyan-500 border-2 border-cyan-400 flex flex-col items-center justify-center font-racing text-[10px] font-black text-cyan-200 shadow-2xl">
+            <span>🔥</span>
+            <span>NOS</span>
+          </button>
+          <button id="touch-drift" class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-zinc-900/85 active:bg-red-600 border-2 border-zinc-400 flex flex-col items-center justify-center font-racing text-xs font-black text-white shadow-2xl">
+            <span>( ! )</span>
+          </button>
+        </div>
+
+        <!-- Brake Pedal -->
+        <button id="touch-brake" class="pedal-metallic w-12 h-16 sm:w-14 sm:h-20 rounded-xl flex flex-col items-center justify-around p-2">
+          <div class="grid grid-cols-2 gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-zinc-800"></span>
+            <span class="w-2 h-2 rounded-full bg-zinc-800"></span>
+            <span class="w-2 h-2 rounded-full bg-zinc-800"></span>
+            <span class="w-2 h-2 rounded-full bg-zinc-800"></span>
+          </div>
+          <span class="font-racing text-[9px] font-black text-zinc-900">BRAKE</span>
+        </button>
+
+        <!-- Tall Perforated Metallic Gas Pedal (3412.mp4) -->
+        <button id="touch-gas" class="pedal-metallic w-14 h-28 sm:w-16 sm:h-32 rounded-xl flex flex-col items-center justify-between p-2.5">
+          <div class="grid grid-cols-2 gap-2 my-auto">
+            <span class="w-2.5 h-2.5 rounded-full bg-zinc-800 shadow-inner"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-zinc-800 shadow-inner"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-zinc-800 shadow-inner"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-zinc-800 shadow-inner"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-zinc-800 shadow-inner"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-zinc-800 shadow-inner"></span>
+          </div>
+          <span class="font-racing text-[10px] font-black text-zinc-900">GAS</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- DAILY REWARDS MODAL (3408.mp4 00:02 - 00:03)                      -->
+  <!-- ================================================================= -->
+  <div id="daily-rewards-modal" class="hud-layer hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4 z-30">
+    <div class="daily-modal-bg rounded-2xl max-w-xl w-full p-5 sm:p-6 relative pointer-auto">
+      <button id="btn-close-daily" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-yellow-400 hover:bg-yellow-300 text-black font-black flex items-center justify-center shadow-lg transition">
+        ✕
+      </button>
+
+      <h2 class="font-racing text-2xl sm:text-3xl font-black text-center text-white tracking-wider drop-shadow mb-4">
+        DAILY REWARDS
+      </h2>
+
+      <div class="grid grid-cols-4 gap-2 sm:gap-3 mb-3">
+        <div class="bg-gradient-to-b from-amber-300 via-amber-400 to-orange-500 border-2 border-white rounded-xl p-2.5 text-center shadow-lg">
+          <div class="font-racing text-xs font-black text-amber-950 uppercase">Today</div>
+          <div class="text-2xl sm:text-3xl my-1.5">🪙</div>
+          <div class="font-racing text-sm sm:text-base font-black text-amber-950">2000</div>
+        </div>
+        <div class="bg-zinc-100/95 text-zinc-900 rounded-xl p-2.5 text-center shadow">
+          <div class="font-racing text-xs font-extrabold text-zinc-600 uppercase">DAY 2</div>
+          <div class="text-2xl sm:text-3xl my-1.5">💎</div>
+          <div class="font-racing text-sm sm:text-base font-black text-cyan-700">10</div>
+        </div>
+        <div class="bg-zinc-100/95 text-zinc-900 rounded-xl p-2.5 text-center shadow">
+          <div class="font-racing text-xs font-extrabold text-zinc-600 uppercase">DAY 3</div>
+          <div class="text-2xl sm:text-3xl my-1.5">🪙</div>
+          <div class="font-racing text-sm sm:text-base font-black text-amber-700">4000</div>
+        </div>
+        <div class="bg-zinc-100/95 text-zinc-900 rounded-xl p-2.5 text-center shadow">
+          <div class="font-racing text-xs font-extrabold text-zinc-600 uppercase">DAY 4</div>
+          <div class="text-2xl sm:text-3xl my-1.5">💎</div>
+          <div class="font-racing text-sm sm:text-base font-black text-cyan-700">25</div>
+        </div>
+      </div>
+
+      <div class="bg-gradient-to-r from-zinc-100 via-white to-sky-100 rounded-xl p-3 sm:p-4 flex items-center justify-between text-zinc-900 shadow-inner mb-5">
+        <div>
+          <div class="text-[11px] font-racing font-bold text-zinc-500 uppercase">DAY 5 GRAND PRIZE</div>
+          <div class="font-racing text-lg sm:text-xl font-black text-zinc-800 leading-tight">
+            COME BACK <span id="daily-days-left" class="text-red-600 text-2xl">5</span> MORE DAYS
+          </div>
+          <div class="text-xs font-semibold text-sky-700 mt-0.5">Unlocks Audi R8 V10 Plus Supercar!</div>
+        </div>
+        <div class="text-4xl">🏎️</div>
+      </div>
+
+      <div class="flex items-center justify-center gap-4">
+        <button id="btn-claim-daily" class="px-7 py-2.5 rounded-lg bg-gradient-to-b from-yellow-300 to-amber-500 hover:from-yellow-200 hover:to-amber-400 text-black font-racing text-base sm:text-lg font-black tracking-wider shadow-lg transition">
+          CLAIM
+        </button>
+        <button id="btn-claim-daily-x2" class="px-7 py-2.5 rounded-lg bg-gradient-to-b from-indigo-500 to-purple-700 hover:from-indigo-400 hover:to-purple-600 border border-indigo-300 text-white font-racing text-base sm:text-lg font-black tracking-wider flex items-center gap-2 shadow-lg transition">
+          <span>▶</span> <span>CLAIM X2</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- CUSTOMIZE & UPGRADE MODAL                                         -->
+  <!-- ================================================================= -->
+  <div id="customize-modal" class="hud-layer hidden items-end sm:items-center justify-center bg-black/60 p-4 z-30">
+    <div class="bg-zinc-900/95 border border-zinc-700 rounded-2xl max-w-md w-full p-5 pointer-auto shadow-2xl">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-racing text-xl font-black text-amber-400">CUSTOMIZE &amp; UPGRADE</h3>
+        <button id="btn-close-custom" class="w-8 h-8 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white font-bold">✕</button>
+      </div>
+
+      <div class="mb-4">
+        <label class="text-xs font-racing text-zinc-400 block mb-1.5">REAL CAR PAINT HUE SHIFT</label>
+        <div id="paint-swatches" class="flex items-center gap-2 flex-wrap">
+          <button data-hue="0" class="px-2.5 py-1 rounded bg-amber-400 text-black font-bold text-xs">ORIGINAL</button>
+          <button data-hue="65" class="px-2.5 py-1 rounded bg-lime-500 text-black font-bold text-xs">ACID GREEN</button>
+          <button data-hue="155" class="px-2.5 py-1 rounded bg-sky-400 text-black font-bold text-xs">MIAMI BLUE</button>
+          <button data-hue="220" class="px-2.5 py-1 rounded bg-purple-500 text-white font-bold text-xs">ULTRA VIOLET</button>
+          <button data-hue="315" class="px-2.5 py-1 rounded bg-red-600 text-white font-bold text-xs">ROSSO RED</button>
+        </div>
+      </div>
+
+      <div class="border-t border-zinc-800 pt-3">
+        <div class="flex items-center justify-between mb-2">
+          <div>
+            <div class="font-racing text-sm font-bold text-white">STAGE TUNING UPGRADE</div>
+            <div id="upgrade-level-text" class="text-xs text-emerald-400">Current Stage: Lv. 1 / 5</div>
+          </div>
+          <button id="btn-do-upgrade" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 font-racing text-sm font-black text-white shadow-lg transition">
+            UPGRADE (🪙 2,500)
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast-box" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-opacity duration-300">
+    <div id="toast-text" class="px-5 py-2 rounded-full bg-zinc-950/95 border border-amber-400 text-amber-300 font-racing text-sm font-bold shadow-2xl">
+      Reward Claimed!
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
 
