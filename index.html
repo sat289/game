@@ -63,49 +63,99 @@
       padding-top: 0 !important;
     }
     
+/* ST GAMES — Poki-inspired artwork cards with information below */
 .game-card-wrap {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 8px;
+  align-self: stretch;
 }
+.game-card-wrap .game-card { width: 100%; flex: none; }
 
-.game-card-wrap .game-card {
-  width: 100%;
-  flex: 1;
+/* Live player rating is intentionally placed ON the artwork */
+.game-rating-badge {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  z-index: 11;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  max-width: calc(100% - 16px);
+  padding: 5px 8px;
+  border: 1px solid rgba(255,255,255,.28);
+  border-radius: 999px;
+  background: rgba(7,34,45,.92);
+  color: #fff;
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 900;
+  box-shadow: 0 3px 12px #0004;
+  white-space: nowrap;
+  pointer-events: none;
 }
+.game-rating-badge .rating-stars { color: #fbbf24; letter-spacing: .5px; font-size: 11px; }
+.game-rating-badge .rating-average { color: #fff; }
+.game-rating-badge .rating-count { color: #cbd5e1; font-weight: 700; }
 
-/* Visitor-submitted live game ratings */
-.game-rating-badge{display:flex;align-items:center;justify-content:center;gap:5px;margin:6px auto 2px;padding:5px 9px;border-radius:999px;background:rgba(7,34,45,.92);color:#fff;font-size:11px;font-weight:800;width:max-content;max-width:100%;box-shadow:0 3px 10px #0002}
-.game-rating-badge .rating-stars{color:#fbbf24;letter-spacing:1px}
-.game-rating-badge .rating-count{color:#cbd5e1;font-weight:600}
-.game-details-link {
+.game-info {
+  min-width: 0;
+  padding: 0 2px 2px;
   display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+.game-info-title {
+  width: 100%;
+  margin: 0;
+  color: #07222d;
+  font-size: 12px;
+  line-height: 1.25;
+  font-weight: 900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.game-info-description {
+  width: 100%;
+  min-height: 28px;
+  margin: 0;
+  color: #38515a;
+  font-size: 10px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.game-details-link {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  width: 100%;
-  padding: 8px 5px;
-  border-radius: 11px;
+  max-width: 100%;
+  padding: 6px 10px;
+  border-radius: 999px;
   background: #07222d;
   color: #32ffdc;
   border: 1px solid rgba(50,255,220,.45);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 900;
-  letter-spacing: .6px;
+  letter-spacing: .5px;
   text-decoration: none;
   transition: .2s ease;
 }
-
-.game-details-link:hover {
-  background: #32ffdc;
-  color: #07222d;
-  transform: translateY(-1px);
-}
-
-body.dark-theme .game-details-link {
-  background: #0b303b;
-  color: #32ffdc;
+.game-details-link:hover { background: #32ffdc; color: #07222d; transform: translateY(-1px); }
+body.dark-theme .game-info-title { color: #f8fafc; }
+body.dark-theme .game-info-description { color: #b8cbd1; }
+body.dark-theme .game-details-link { background: #0b303b; color: #32ffdc; }
+@media (max-width: 380px) {
+  .game-rating-badge { left: 5px; bottom: 5px; padding: 4px 6px; font-size: 9px; }
+  .game-rating-badge .rating-stars { font-size: 10px; }
+  .game-info-description { font-size: 9px; }
 }
     
 
@@ -289,11 +339,22 @@ body.dark-theme .game-details-link {
       cursor: pointer;
     }
 
-    /* POKI BENTO GRID LAYOUT */
+    /* Full game details live together at the bottom, never under each logo */
+    .all-game-guides { margin: 28px auto 30px; }
+    .bottom-guide-card { display:grid; grid-template-columns:76px minmax(0,1fr); gap:12px; align-items:center; padding:12px; border-radius:18px; background:rgba(255,255,255,.96); border:1px solid rgba(7,34,45,.10); box-shadow:0 5px 15px rgba(7,34,45,.09); color:#07222d; }
+    .bottom-guide-card img { width:76px; height:76px; object-fit:contain; background:#fff; border-radius:13px; }
+    .bottom-guide-card h3 { margin:0 0 4px; font-size:14px; font-weight:900; }
+    .bottom-guide-card p { margin:0; color:#475569; font-size:11px; line-height:1.45; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .bottom-guide-card a { display:inline-flex; margin-top:7px; padding:6px 11px; border-radius:999px; background:#07222d; color:#32ffdc; font-size:10px; font-weight:900; text-decoration:none; }
+    body.dark-theme .bottom-guide-card { background:#0f2932; color:#f8fafc; border-color:#31515a; }
+    body.dark-theme .bottom-guide-card p { color:#cbd5e1; }
+
+    /* POKI-INSPIRED BENTO GRID */
     .poki-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      grid-auto-rows: 1fr;
+      grid-auto-rows: auto;
+      align-items: start;
       gap: 14px;
       grid-auto-flow: dense;
     }
@@ -306,20 +367,20 @@ body.dark-theme .game-details-link {
       .poki-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 20px; }
     }
 
-    .tile-large {
-      grid-column: span 2;
-      grid-row: span 2;
-    }
+    /* Large artwork tiles span two columns, like the reference layout */
+    .tile-large { grid-column: span 2; }
+    .game-card-wrap.tile-large .game-card { aspect-ratio: 1 / 1; }
 
     .game-card {
       aspect-ratio: 1 / 1;
+      width: 100%;
       position: relative;
       border-radius: 24px;
       overflow: hidden;
       background: #fff;
       cursor: pointer;
       display: block;
-      border: 1px solid rgba(255, 255, 255, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.5);
       box-shadow: 0 8px 18px rgba(7, 34, 45, 0.14);
       contain: layout paint;
       transition: transform 0.18s ease;
@@ -331,13 +392,32 @@ body.dark-theme .game-details-link {
       z-index: 10;
     }
 
-    .game-card-overlay {
-      background: linear-gradient(to top, rgba(7, 34, 45, 0.9) 0%, rgba(7, 34, 45, 0.2) 65%, transparent 100%);
-      opacity: 0;
-      transition: opacity 0.18s ease;
+    /* SQUARE GAME ARTWORK: crop artwork edge-to-edge to fill the entire tile */
+    .game-card > img {
+      position: absolute;
+      inset: 0;
+      display: block;
+      width: 100% !important;
+      height: 100% !important;
+      min-width: 100%;
+      min-height: 100%;
+      max-width: none;
+      max-height: none;
+      object-fit: cover !important;
+      object-position: center center;
+      padding: 0 !important;
+      margin: 0;
+      border: 0;
+      background: transparent;
+      transform: none;
     }
 
-    .game-card:hover .game-card-overlay { opacity: 1; }
+    .game-card .game-art-fallback { position: absolute; inset: 0; }
+
+    @media (max-width: 420px) {
+      .game-card { border-radius: 18px; }
+      .game-card-wrap.tile-large .game-card { aspect-ratio: 1 / 1; }
+    }
 
     .favorite-btn {
       position: absolute; right: 10px; top: 10px; z-index: 12;
@@ -503,7 +583,7 @@ body.dark-theme .game-details-link {
       <button type="button" class="cat-btn" onclick="filterCategory('sports', this)">⚽ Sports</button>
     </div>
 
-    <!-- POKI BENTO GRID (TOP GAMES) -->
+    <!-- POKI-STYLE BENTO GRID (ALL GAMES) -->
     <section>
       <div id="gamesGrid" class="poki-grid"></div>
       <div id="emptyState" class="hidden bg-white/90 rounded-3xl p-8 text-center my-4 shadow-md">
@@ -513,30 +593,19 @@ body.dark-theme .game-details-link {
         <button type="button" onclick="clearSearch()" class="bg-[#07222d] text-[#32ffdc] text-xs font-bold px-4 py-2 rounded-xl">Show All Games</button>
       </div>
     </section>
-  </main>
 
-  <!-- POPULAR GAMES SECTION -->
-  <section id="popularSection" class="popular-section pt-5 pb-8 px-4 sm:px-6 mt-4 shadow-inner">
-    <div class="max-w-5xl mx-auto">
-      <div class="flex items-center justify-between mb-3">
-        <div class="flex items-center justify-between gap-2.5">
-          <i class="fa-solid fa-fire text-xl sm:text-2xl text-[#32ffdc]"></i>
-          <h2 class="brand-font text-xl sm:text-2xl font-bold text-white">Popular Free Games</h2>
-          <span id="popularCountBadge" class="bg-[#32ffdc] text-[#07222d] text-xs font-extrabold px-2.5 py-0.5 rounded-full">0</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <button type="button" onclick="scrollPopular(-1)" aria-label="Scroll Left" class="w-9 h-9 rounded-full bg-slate-800 text-white flex items-center justify-center shadow hover:bg-slate-700 transition"><i class="fa-solid fa-chevron-left text-xs"></i></button>
-          <button type="button" onclick="scrollPopular(1)" aria-label="Scroll Right" class="w-9 h-9 rounded-full bg-slate-800 text-white flex items-center justify-center shadow hover:bg-slate-700 transition"><i class="fa-solid fa-chevron-right text-xs"></i></button>
-        </div>
+  <!-- ALL GAME DETAILS: placed directly between the game grid and the guides -->
+  <section id="allGameGuides" class="all-game-guides max-w-5xl w-full mx-auto px-3.5 sm:px-6 relative z-10" aria-labelledby="allGameGuidesTitle">
+    <div class="theme-surface bg-white/95 rounded-3xl p-4 sm:p-6 shadow-xl border border-white/80">
+      <div class="mb-4">
+        <p class="text-[10px] uppercase tracking-[.2em] font-black text-teal-700">Explore and learn</p>
+        <h2 id="allGameGuidesTitle" class="brand-font text-xl sm:text-2xl font-bold text-[#07222d] theme-text-primary">Game Details</h2>
+        <p class="text-xs text-slate-600 theme-text-sub mt-1">Browse each game's logo, description and rating. Tap SHOW MORE to read the complete guide.</p>
       </div>
-      <div id="popularGamesRow" class="flex items-center gap-3.5 sm:gap-4 overflow-x-auto no-scrollbar scroll-smooth snap-x snap-mandatory py-2 px-1"></div>
+      <div id="bottomGameGuidesList" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
     </div>
   </section>
-
-  <!-- REMAINING GAMES GRID -->
-  <section id="remainingGamesSection" class="max-w-5xl w-full mx-auto px-3.5 sm:px-6 pt-8 pb-6 relative z-10">
-    <div id="remainingGamesGrid" class="poki-grid"></div>
-  </section>
+  </main>
 
   <!-- RICH EDITORIAL CONTENT, GAME GUIDES & FAQ (MANDATORY FOR GOOGLE ADSENSE APPROVAL) -->
   <section id="aboutEditorialSection" class="max-w-5xl w-full mx-auto px-3.5 sm:px-6 pb-8 relative z-10">
@@ -1219,16 +1288,32 @@ body.dark-theme .game-details-link {
       renderGames();
     }
 
+    function renderBottomGameGuides() {
+      const host = document.getElementById('bottomGameGuidesList');
+      if (!host || !Array.isArray(GAMES_DATA)) return;
+      const visible = GAMES_DATA.filter(game => !isRemovedGame(game));
+      host.innerHTML = visible.map(game => {
+        const description = (game.details && game.details.description) || game.description || 'Open the full guide to learn more about this game.';
+        const guideUrl = `guide.html?id=${encodeURIComponent(game.id)}`;
+        return `<article class="bottom-guide-card">
+          <img src="${escapeHTML(game.logo || '')}" alt="${escapeHTML(game.title)} logo" loading="lazy" decoding="async" onerror="this.style.visibility='hidden'">
+          <div class="min-w-0">
+            <h3>${escapeHTML(game.title || 'ST Games')}</h3>
+            <p>${escapeHTML(description)}</p>
+            <a href="${guideUrl}">SHOW MORE <i class="fa-solid fa-arrow-right ml-1"></i></a>
+          </div>
+        </article>`;
+      }).join('');
+    }
+
     function renderGames() {
-      const topGridEl = document.getElementById('gamesGrid');
-      const popularRowEl = document.getElementById('popularGamesRow');
-      const remainingSectionEl = document.getElementById('remainingGamesSection');
-      const remainingGridEl = document.getElementById('remainingGamesGrid');
+      const gridEl = document.getElementById('gamesGrid');
       const emptyEl = document.getElementById('emptyState');
 
-      let filteredGames = GAMES_DATA.filter(game => {
+      const filteredGames = GAMES_DATA.filter(game => {
         if (isRemovedGame(game)) return false;
-        const searchable = (game.title + ' ' + game.url).toLowerCase();
+        const searchable = (game.title + ' ' + game.url + ' ' +
+          ((game.details && game.details.description) || '')).toLowerCase();
         const matchesSearch = searchable.includes(currentSearch.toLowerCase());
         const matchesFav = !favoritesOnly || favoriteGames.has(game.id);
         const cats = Array.isArray(game.categories) ? game.categories : [game.category || 'popular'];
@@ -1236,27 +1321,14 @@ body.dark-theme .game-details-link {
         return matchesSearch && matchesFav && matchesCat;
       });
 
-      const topTenGames = filteredGames.slice(0, TOP_GAMES_LIMIT);
-      const remainingGames = filteredGames.slice(TOP_GAMES_LIMIT);
-
-      if (topTenGames.length === 0) {
-        topGridEl.innerHTML = ''; emptyEl.classList.remove('hidden');
+      if (!filteredGames.length) {
+        gridEl.innerHTML = '';
+        emptyEl.classList.remove('hidden');
       } else {
         emptyEl.classList.add('hidden');
-        topGridEl.innerHTML = topTenGames.map(g => createCardHTML(g, true, false)).join('');
+        gridEl.innerHTML = filteredGames.map(game => createCardHTML(game, true, false)).join('');
       }
-
-      const popularGames = GAMES_DATA.filter(game => !isRemovedGame(game) && game.categories && game.categories.includes('popular'));
-      document.getElementById('popularCountBadge').textContent = popularGames.length;
-      popularRowEl.innerHTML = popularGames.map(g => createCardHTML(g, false, true)).join('');
-
-      if (remainingGames.length === 0) {
-        remainingSectionEl.classList.add('hidden');
-        remainingGridEl.innerHTML = '';
-      } else {
-        remainingSectionEl.classList.remove('hidden');
-        remainingGridEl.innerHTML = remainingGames.map(g => createCardHTML(g, true, false)).join('');
-      }
+      renderBottomGameGuides();
     }
 
     function createCardHTML(game, allowLarge, isHorizontalScroll) {
@@ -1265,45 +1337,38 @@ body.dark-theme .game-details-link {
       const isFav = favoriteGames.has(game.id);
       const badge = game.badge ? `<div class="game-card-badge absolute top-2.5 left-2.5 z-10 bg-white/95 text-[#07222d] text-[10px] font-extrabold px-2 py-0.5 rounded-lg shadow">${escapeHTML(game.badge)}</div>` : '';
 
-      
-return `
-  <div class="game-card-wrap ${spanClass} ${horizontalClass}">
-    <a href="${escapeHTML(game.url)}"
-       data-game-url="${escapeHTML(game.url)}"
-       onclick="markGamePlayed('${escapeHTML(game.id)}')"
-       class="game-card"
-       style="background: ${game.bg || '#07222d'};">
-      ${badge}
-      <button type="button"
-        class="favorite-btn ${isFav ? 'is-favorite' : ''}"
-        onclick="toggleFavorite(event, '${escapeHTML(game.id)}')">
-        <i class="fa-${isFav ? 'solid' : 'regular'} fa-heart"></i>
-      </button>
-      <img src="${escapeHTML(game.logo)}"
-        alt="${escapeHTML(game.title)}"
-        onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');"
-        class="w-full h-full object-cover"
-        loading="lazy" decoding="async">
-      <div class="hidden w-full h-full flex flex-col items-center justify-center text-white p-3 text-center">
-        <i class="${escapeHTML(game.icon || 'fa-solid fa-gamepad')} text-3xl mb-1"></i>
-        <span class="text-[11px] font-extrabold">${escapeHTML(game.title)}</span>
-      </div>
-      <div class="game-card-overlay absolute inset-0 flex flex-col justify-end p-3 text-white">
-        <h3 class="font-extrabold text-xs sm:text-sm truncate">${escapeHTML(game.title)}</h3>
-        <span class="text-[10px] text-[#32ffdc] font-semibold">Play Free Now</span>
-      </div>
-    </a>
-    <div class="game-rating-badge" data-rating-gameid="${escapeHTML(game.id)}" aria-label="Loading player rating">
-      <span class="rating-stars">☆☆☆☆☆</span><span class="rating-average">—</span><span class="rating-count">(0)</span>
-    </div>
+      return `
+        <div class="game-card-wrap ${spanClass} ${horizontalClass}">
+          <a href="${escapeHTML(game.url)}"
+             data-game-url="${escapeHTML(game.url)}"
+             onclick="markGamePlayed('${escapeHTML(game.id)}')"
+             class="game-card"
+             aria-label="Play ${escapeHTML(game.title)}"
+             style="background: ${game.bg || '#ffffff'};">
+            ${badge}
+            <button type="button"
+              class="favorite-btn ${isFav ? 'is-favorite' : ''}"
+              aria-label="${isFav ? 'Remove from favourites' : 'Add to favourites'}"
+              onclick="toggleFavorite(event, '${escapeHTML(game.id)}')">
+              <i class="fa-${isFav ? 'solid' : 'regular'} fa-heart"></i>
+            </button>
+            <img class="game-artwork" src="${escapeHTML(game.logo || '')}"
+              alt="${escapeHTML(game.title)}"
+              onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');"
+              loading="lazy" decoding="async">
+            <div class="game-art-fallback hidden flex flex-col items-center justify-center text-[#07222d] p-3 text-center">
+              <i class="${escapeHTML(game.icon || 'fa-solid fa-gamepad')} text-3xl mb-1"></i>
+              <span class="text-[11px] font-extrabold">${escapeHTML(game.title)}</span>
+            </div>
+            <div class="game-rating-badge" data-rating-gameid="${escapeHTML(game.id)}" aria-label="Loading player rating">
+              <span class="rating-stars">☆☆☆☆☆</span>
+              <span class="rating-average">—</span>
+              <span class="rating-count">(0)</span>
+            </div>
+          </a>
 
-    <a class="game-details-link"
-       href="guide.html?id=${encodeURIComponent(game.id)}">
-      <i class="fa-solid fa-book-open"></i> DETAILS
-    </a>
-  </div>
-`;
-
+        </div>
+      `;
     }
 
     function navigateLocalPage(event, pageUrl) {
@@ -1315,12 +1380,13 @@ return `
     }
 
     function scrollPopular(direction) {
-      const row = document.getElementById('popularGamesRow');
-      if (row) row.scrollBy({ left: direction * 320, behavior: 'smooth' });
+      // Kept as a compatibility hook for older navigation buttons.
+      jumpToPopular();
     }
 
     function jumpToPopular() {
-      document.getElementById('popularSection').scrollIntoView({ behavior: 'smooth' });
+      const grid = document.getElementById('gamesGrid');
+      if (grid) grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     function toggleSearchBar() {
@@ -1567,8 +1633,8 @@ return `
         const stars = count ? '★'.repeat(Math.round(avg)) + '☆'.repeat(5-Math.round(avg)) : '☆☆☆☆☆';
         const starEl=el.querySelector('.rating-stars'), avgEl=el.querySelector('.rating-average'), countEl=el.querySelector('.rating-count');
         if(starEl) starEl.textContent=stars;
-        if(avgEl) avgEl.textContent=count ? fmt(avg) : 'No ratings';
-        if(countEl) countEl.textContent=`(${count})`;
+        if(avgEl) avgEl.textContent=count ? fmt(avg) : '—';
+        if(countEl) countEl.textContent=count ? `(${count})` : '(0)';
         el.setAttribute('aria-label', count ? `Rated ${fmt(avg)} out of 5 by ${count} players` : 'No player ratings yet');
       });
     }
