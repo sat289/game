@@ -1,195 +1,81 @@
+/* ST GAMES root service worker
+   Required location: https://stgames.online/sw.js
+   This root scope is necessary because games are served from /game/, not only /stgames-apk/.
+*/
+"use strict";
 
-const CACHE_NAME = 'stgames-apk-cache-v3';
-
-const CORE_ASSETS = [
-  '/',
-  '/stgames-apk/index.html',
-  '/stgames-apk/login.html',
-  '/stgames-apk/app.mp3',
-  '/stgames-apk/launchericon-192x192.png'
+const ST_GAME_CACHE = "stgames-apk-cache-v4";
+const ST_SHELL_CACHE = "stgames-shell-v1";
+const ST_APP_SHELL = [
+  "/stgames-apk/index.html",
+  "/stgames-apk/manifest.json",
+  "/stgames-apk/launchericon-192x192.png"
 ];
 
-// INSTALL
-self.addEventListener('install', event => {
-  self.skipWaiting();
-
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return Promise.allSettled(
-        CORE_ASSETS.map(url => cache.add(url))
-      );
-    })
-  );
+self.addEventListener("install", event => {
+  event.waitUntil((async () => {
+    const cache = await caches.open(ST_SHELL_CACHE);
+    await Promise.allSettled(ST_APP_SHELL.map(url => cache.add(url)));
+    await self.skipWaiting();
+  })());
 });
 
-// ACTIVATE
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys()
-      .then(keys => {
-        return Promise.all(
-          keys
-            .filter(key =>
-              key.startsWith('stgames-apk-cache-') &&
-              key !== CACHE_NAME
-            )
-            .map(key => caches.delete(key))
-        );
-      })
-      .then(() => self.clients.claim())
-  );
+self.addEventListener("activate", event => {
+  event.waitUntil((async () => {
+    const names = await caches.keys();
+    await Promise.all(names
+      .filter(name => name.startsWith("stgames-apk-cache-") && name !== ST_GAME_CACHE)
+      .map(name => caches.delete(name)));
+    await self.clients.claim();
+  })());
 });
 
-// CHECK AUDIO FILES
-function isAudioRequest(request) {
-  const url = new URL(request.url).pathname.toLowerCase();
-
-  return (
-    request.destination === 'audio' ||
-    /\.(mp3|wav|ogg|m4a)$/i.test(url)
-  );
-}
-
-// FETCH
-self.addEventListener('fetch', event => {
+self.addEventListener("fetch", event => {
   const request = event.request;
+  if (request.method !== "GET") return;
 
-  // Only handle GET requests
-  if (request.method !== 'GET') return;
-
-  const requestUrl = new URL(request.url);
-
-  // Leave external requests untouched
-  if (requestUrl.origin !== self.location.origin) return;
-
-  // Let audio range requests pass directly to the network
-  if (request.headers.has('range')) {
-    event.respondWith(fetch(request));
-    return;
-  }
-
-  // 1. GAMES.JSON - NETWORK FIRST
-  if (requestUrl.pathname.endsWith('/games.json')) {
-    event.respondWith(
-      (async () => {
-        const cache = await caches.open(CACHE_NAME);
-
-        try {
-          const response = await fetch(request);
-
-          if (response && response.status === 200) {
-            event.waitUntil(
-              cache.put('/games.json', response.clone())
-            );
-          }
-
-          return response;
-        } catch (error) {
-          const cached = await cache.match('/games.json');
-
-          if (cached) return cached;
-
-          throw error;
-        }
-      })()
-    );
-
-    return;
-  }
-
-  // 2. AUDIO AND SONG FILES
-  if (isAudioRequest(request)) {
-    event.respondWith(
-      (async () => {
-        const cache = await caches.open(CACHE_NAME);
-
-        const cachedAudio = await cache.match(request.url, {
-          ignoreSearch: true
-        });
-
-        if (cachedAudio) {
-          return cachedAudio;
-        }
-
-        try {
-          const audioResponse = await fetch(request.url, {
-            method: 'GET',
-            cache: 'no-cache'
-          });
-
-          if (audioResponse && audioResponse.status === 200) {
-            event.waitUntil(
-              cache.put(request.url, audioResponse.clone())
-            );
-          }
-
-          return audioResponse;
-        } catch (error) {
-          return fetch(request);
-        }
-      })()
-    );
-
-    return;
-  }
-
-  // 3. OTHER GAME FILES - NETWORK FIRST
-  event.respondWith(
-    (async () => {
-      const cache = await caches.open(CACHE_NAME);
-
-      const cachedResponse = await cache.match(request, {
-        ignoreSearch: true
-      });
-
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) {
+    // Cross-origin assets can still be returned from CacheStorage if the
+    // downloader previously saved them as opaque responses.
+    event.respondWith((async () => {
+      const cached = await caches.match(request);
+      if (cached) return cached;
       try {
-        const networkResponse = await fetch(request);
-
-        if (
-          networkResponse &&
-          networkResponse.status === 200 &&
-          networkResponse.type !== 'opaque'
-        ) {
-          event.waitUntil(
-            cache.put(request, networkResponse.clone())
-          );
-        }
-
-        return networkResponse;
-      } catch (error) {
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-
-        throw error;
+        return await fetch(request);
+      } catch (_) {
+        return new Response("This asset is not available offline.", {
+          status: 503,
+          headers: { "Content-Type": "text/plain; charset=utf-8" }
+        });
       }
-    })()
-  );
+    })());
+    return;
+  }
+
+  event.respondWith((async () => {
+    // Exact cache-first lookup: game HTML, styles, scripts, images and audio
+    // are stored by the download manager in ST_GAME_CACHE.
+    const gameCache = await caches.open(ST_GAME_CACHE);
+    const savedGameAsset = await gameCache.match(request);
+    if (savedGameAsset) return savedGameAsset;
+
+    const shellCache = await caches.open(ST_SHELL_CACHE);
+    const shellAsset = await shellCache.match(request);
+    if (shellAsset) return shellAsset;
+
+    try {
+      return await fetch(request);
+    } catch (_) {
+      // A clear offline response is better than an indefinite failed request.
+      return new Response(
+        "<!doctype html><html><meta name='viewport' content='width=device-width,initial-scale=1'><title>Offline</title><body style='font-family:Arial;padding:24px;background:#0f172a;color:white'><h2>ST GAMES is offline</h2><p>This file was not saved on this device. Connect to the internet and download this game first.</p></body></html>",
+        {
+          status: 503,
+          headers: { "Content-Type": "text/html; charset=utf-8" }
+        }
+      );
+    }
+  })());
 });
 
-// NOTIFICATION CLICK
-self.addEventListener('notificationclick', event => {
-  event.notification.close();
-
-  event.waitUntil(
-    clients.matchAll({
-      type: 'window',
-      includeUncontrolled: true
-    }).then(clientList => {
-      for (const client of clientList) {
-        if (
-          client.url.includes('stgames.online') &&
-          'focus' in client
-        ) {
-          return client.focus();
-        }
-      }
-
-      if (clients.openWindow) {
-        return clients.openWindow(
-          '/stgames-apk/index.html'
-        );
-      }
-    })
-  );
-});
