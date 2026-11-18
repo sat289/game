@@ -1064,27 +1064,6 @@
       transform: translateX(-50%) translateY(0);
     }
 
-
-    /* Low-memory Android profile: preserve layout, reduce expensive effects */
-    html.low-ram-mode *,
-    html.low-ram-mode *::before,
-    html.low-ram-mode *::after {
-      scroll-behavior: auto !important;
-      animation-duration: .01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: .01ms !important;
-    }
-    html.low-ram-mode .dl-anim-modal,
-    html.low-ram-mode .downloads-modal,
-    html.low-ram-mode .settings-modal {
-      backdrop-filter: none !important;
-    }
-    html.low-ram-mode .game-card,
-    html.low-ram-mode .bottom-bar,
-    html.low-ram-mode .dl-anim-card {
-      box-shadow: none !important;
-    }
-
     @media (max-width: 380px) {
       .mode-bar {
         padding: 8px 10px;
@@ -1189,7 +1168,7 @@
   </div>
 
   <!-- Background Music (Plays in Lobby only, pauses inside games) -->
-  <audio id="bg-music" loop preload="none">
+  <audio id="bg-music" loop preload="auto">
     <source src="https://stgames.online/stgames-apk/app.mp3" type="audio/mpeg">
   </audio>
 
@@ -1290,13 +1269,6 @@ const BASE_URL = "https://stgames.online/";
 const CACHE_NAME = "stgames-apk-cache-v4";
 const SONG_URL = BASE_URL + "stgames-apk/app.mp3";
 const APP_ICON_URL = BASE_URL + "stgames-apk/launchericon-192x192.png";
-
-const DEVICE_MEMORY_GB = Number(navigator.deviceMemory || 0);
-const DEVICE_CORES = Number(navigator.hardwareConcurrency || 0);
-const ST_LOW_RAM = (DEVICE_MEMORY_GB > 0 && DEVICE_MEMORY_GB <= 2) ||
-                   (DEVICE_CORES > 0 && DEVICE_CORES <= 4);
-if (ST_LOW_RAM) document.documentElement.classList.add("low-ram-mode");
-
 
 const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
 const DAY_START_HOUR = 8;
@@ -1428,7 +1400,6 @@ let savedGameManifests = loadSavedManifests();
 let swRegistration = null;
 let isGameCurrentlyPlaying = false;
 let isDownloadingNow = false;
-const ST_BACKGROUND_DOWNLOADS = new Set();
 window.currentActiveGameKey = "stgames_global";
 
 function loadSavedGames(){
@@ -1486,12 +1457,8 @@ function toggleMusic(input){
   musicEnabled = input.checked;
   safeSetStorage("st_music_enabled", String(musicEnabled));
   updateMusicUI();
-  if(musicEnabled) {
-    bgMusic.load();
-    ensureMusicPlaying();
-  } else {
-    bgMusic.pause();
-  }
+  if(musicEnabled) ensureMusicPlaying();
+  else bgMusic.pause();
 }
 
 function toggleInGameMusic(){
@@ -1688,54 +1655,49 @@ function extractUrlsFromJs(jsText, baseJsUrl) {
 
 /* Fetches and caches a single URL into CacheStorage; returns response text if HTML/CSS/JS/JSON for deep parsing */
 async function fetchAndCacheSingleUrl(cache, targetUrl) {
-  if (!cache) return { ok: false, text: "", finalUrl: targetUrl, error: "CacheStorage unavailable" };
-
-  let lastError = null;
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    try {
-      const req = new Request(targetUrl, { cache: "reload", credentials: "same-origin" });
-      const res = await fetch(req);
-
-      if (res && (res.ok || res.type === "opaque")) {
-        await cache.put(targetUrl, res.clone());
-        const contentType = (res.headers.get("content-type") || "").toLowerCase();
-        const type = classifyAssetType(targetUrl);
-
-        if (res.type !== "opaque" &&
-            (type === "html" || type === "css" || type === "js" ||
-             contentType.includes("text/") || contentType.includes("json") ||
-             contentType.includes("javascript"))) {
-          try {
-            const text = await res.text();
-            return { ok: true, text, finalUrl: res.url || targetUrl };
-          } catch (_) {}
+  try {
+    const req = new Request(targetUrl, { cache: "reload" });
+    const res = await fetch(req);
+    if (res && (res.ok || res.type === "opaque")) {
+      await cache.put(targetUrl, res.clone());
+      const contentType = (res.headers.get("content-type") || "").toLowerCase();
+      const type = classifyAssetType(targetUrl);
+      if (type === "html" || type === "css" || type === "js" || contentType.includes("text/") || contentType.includes("json") || contentType.includes("javascript")) {
+        try {
+          const text = await res.text();
+          return { ok: true, text, finalUrl: res.url || targetUrl };
+        } catch (_) {
+          return { ok: true, text: "", finalUrl: res.url || targetUrl };
         }
-        return { ok: true, text: "", finalUrl: res.url || targetUrl };
       }
-      lastError = new Error("HTTP " + (res ? res.status : "no response"));
-    } catch (err) {
-      lastError = err;
+      return { ok: true, text: "", finalUrl: res.url || targetUrl };
     }
-
-    // Small backoff; do not spin or create many parallel retries on low-RAM phones.
-    if (attempt < 3) {
-      await new Promise(resolve => setTimeout(resolve, attempt * (ST_LOW_RAM ? 450 : 250)));
-    }
+  } catch (err) {
+    // Fallback for cross-origin opaque resources (like CDN fonts/icons)
+    try {
+      const noCorsRes = await fetch(targetUrl, { mode: "no-cors" });
+      if (noCorsRes) {
+        await cache.put(targetUrl, noCorsRes.clone());
+        return { ok: true, text: "", finalUrl: targetUrl };
+      }
+    } catch (err2) {}
   }
 
-  // Last fallback for resources that the browser permits caching directly.
+  // Last resort: cache.add
   try {
     await cache.add(targetUrl);
     return { ok: true, text: "", finalUrl: targetUrl };
-  } catch (err) {
-    return { ok: false, text: "", finalUrl: targetUrl, error: String(lastError || err) };
+  } catch (err3) {
+    return { ok: false, text: "", finalUrl: targetUrl };
   }
 }
 
+/* Per-game live download state shown in the Downloads manager. */
+const ST_DOWNLOAD_STATES = Object.create(null);
+
 /* Performs a complete recursive crawl and cache of the game, all its CSS, JS, Images, Audio, and Sub-Games (including TFI sub-games) */
 async function deepDownloadGameWithProgress(game, onProgressUpdate) {
-  if (!("caches" in window)) throw new Error("This browser does not support offline cache storage.");
-  const cache = await caches.open(CACHE_NAME);
+  const cache = ("caches" in window) ? await caches.open(CACHE_NAME) : null;
 
   const entryHtmlUrl = fullUrl(game.url);
   const logoUrl = fullUrl(game.logo);
@@ -1781,9 +1743,7 @@ async function deepDownloadGameWithProgress(game, onProgressUpdate) {
     const finishedCount = completedSet.size + failedSet.size;
     // Cap at 99% while queue is still actively being crawled/downloaded; 100% only when queue is completely drained
     const rawPct = totalCount > 0 ? Math.floor((finishedCount / totalCount) * 100) : 1;
-    const displayPct = (finishedCount < totalCount || failedSet.size > 0)
-      ? Math.min(99, Math.max(1, rawPct))
-      : 100;
+    const displayPct = (finishedCount < totalCount) ? Math.min(99, Math.max(1, rawPct)) : 100;
 
     if (typeof onProgressUpdate === "function") {
       onProgressUpdate({
@@ -1791,6 +1751,8 @@ async function deepDownloadGameWithProgress(game, onProgressUpdate) {
         doneCount: finishedCount,
         totalCount: totalCount,
         stats: stats,
+        failedCount: failedSet.size,
+        failedFiles: Array.from(failedSet).slice(0, 8),
         currentFile: currentFileLabel,
         phase: phaseLabel
       });
@@ -1800,7 +1762,7 @@ async function deepDownloadGameWithProgress(game, onProgressUpdate) {
   reportStatus(game.url, "Scanning & downloading main game package...");
 
   let cursor = 0;
-  const MAX_CONCURRENCY = ST_LOW_RAM ? 2 : 3;
+  const MAX_CONCURRENCY = 4;
 
   async function processNextBatch() {
     while (cursor < queue.length) {
@@ -1813,13 +1775,19 @@ async function deepDownloadGameWithProgress(game, onProgressUpdate) {
         const shortName = item.url.split("/").pop().split("?")[0] || item.url;
         reportStatus(shortName, `Downloading ${item.kind.toUpperCase()} (${completedSet.size + 1}/${queue.length})...`);
 
+        if (!cache) {
+          completedSet.add(item.url);
+          stats[item.kind].done += 1;
+          return;
+        }
+
         const result = await fetchAndCacheSingleUrl(cache, item.url);
         if (result.ok) {
           completedSet.add(item.url);
-          stats[item.kind].done += 1;
         } else {
           failedSet.add(item.url);
         }
+        stats[item.kind].done += 1;
 
         // Deep-parse downloaded HTML, Sub-Games, CSS, JS, and JSON manifests (up to depth 3 for sub-games / TFI games)
         if (result.text && item.depth <= 3) {
@@ -1851,20 +1819,19 @@ async function deepDownloadGameWithProgress(game, onProgressUpdate) {
 
   await processNextBatch();
 
-  // Never mark a partial download as offline-ready.
+  // Never label a partial download as offline-ready.
   if (failedSet.size > 0) {
-    const sharedUrls = new Set(
-      Object.values(savedGameManifests).flatMap(manifest =>
-        manifest && Array.isArray(manifest.urls) ? manifest.urls : [])
-    );
-    const unusedPartialUrls = Array.from(completedSet).filter(url => !sharedUrls.has(url));
-    await Promise.allSettled(unusedPartialUrls.map(url => cache.delete(url)));
-    const failedNames = Array.from(failedSet).slice(0, 3).map(url => url.split("/").pop().split("?")[0]);
-    throw new Error(`${failedSet.size} file(s) could not be cached: ${failedNames.join(", ")}`);
+    const failedNames = Array.from(failedSet).slice(0, 8).map(u => u.split("/").pop().split("?")[0] || u);
+    const error = new Error(`${failedSet.size} file(s) could not be saved: ${failedNames.join(", ")}`);
+    error.failedFiles = Array.from(failedSet);
+    error.stats = stats;
+    error.doneCount = completedSet.size;
+    error.totalCount = queue.length;
+    throw error;
   }
 
-  // Save only verified cached URLs so deleting a game removes exactly its assets.
-  const allCachedUrls = Array.from(completedSet);
+  // Save the full list of cached URLs for this game so deleting the game cleans up every single sub-asset
+  const allCachedUrls = Array.from(queuedSet);
   savedGameManifests[game.id] = {
     urls: allCachedUrls,
     counts: {
@@ -1884,8 +1851,8 @@ async function deepDownloadGameWithProgress(game, onProgressUpdate) {
   if (typeof onProgressUpdate === "function") {
     onProgressUpdate({
       percent: 100,
-      doneCount: completedSet.size,
-      totalCount: completedSet.size,
+      doneCount: queue.length,
+      totalCount: queue.length,
       stats: stats,
       currentFile: `All ${completedSet.size} files verified & cached for offline play!`,
       phase: "100% Full Game & Assets Downloaded ✅"
@@ -1912,18 +1879,11 @@ async function deleteOfflineGame(game, event) {
   if ("caches" in window) {
     try {
       const cache = await caches.open(CACHE_NAME);
-      const urlsToDelete = manifest && Array.isArray(manifest.urls)
-        ? manifest.urls
-        : [fullUrl(game.url)];
-      const stillUsedByOtherGames = new Set(
-        Object.values(savedGameManifests).flatMap(item =>
-          item && Array.isArray(item.urls) ? item.urls : [])
-      );
-      await Promise.allSettled(
-        urlsToDelete
-          .filter(url => !stillUsedByOtherGames.has(url))
-          .map(url => cache.delete(url))
-      );
+      if (manifest && Array.isArray(manifest.urls)) {
+        await Promise.allSettled(manifest.urls.map(u => cache.delete(u)));
+      } else {
+        await cache.delete(fullUrl(game.url));
+      }
     } catch (e) {}
   }
 
@@ -1983,7 +1943,6 @@ async function runFirstTimeDownloadAnimation(game, onComplete) {
   if (currentFileEl) currentFileEl.textContent = "Connecting to " + fullUrl(game.url);
   modal.classList.add("open");
 
-  let downloadSucceeded = false;
   try {
     await deepDownloadGameWithProgress(game, (progress) => {
       pctText.textContent = progress.percent + "%";
@@ -2013,19 +1972,15 @@ async function runFirstTimeDownloadAnimation(game, onComplete) {
     updateSavedCounter();
     renderGames();
     renderDownloadsManagerList();
-    downloadSucceeded = true;
   } catch (err) {
-    console.error("ST GAMES offline download failed:", err);
-    showToast("Download incomplete. Check connection/storage and retry.");
-    status.textContent = "Download incomplete — some files were not saved.";
-    if (currentFileEl) currentFileEl.textContent = String(err && err.message ? err.message : err).slice(0, 180);
+    showToast("Download error—opening online mode.");
   }
 
   setTimeout(() => {
     modal.classList.remove("open");
     isDownloadingNow = false;
-    if (downloadSucceeded && typeof onComplete === "function") onComplete();
-  }, 700);
+    if (typeof onComplete === "function") onComplete();
+  }, 450);
 }
 
 /* DOWNLOADS MANAGER POPUP */
@@ -2045,135 +2000,131 @@ function renderDownloadsManagerList() {
   const validIds = new Set(GAMES_DATA.map(g => g.id));
   const downloadedCount = savedGameIds.filter(id => validIds.has(id)).length;
   const overallPct = Math.round((downloadedCount / total) * 100);
-
   const countEl = document.getElementById("dl-manager-count");
   const pctEl = document.getElementById("dl-manager-pct");
   const barEl = document.getElementById("dl-manager-bar");
   const allBtn = document.getElementById("dl-all-games-btn");
   const clearBtn = document.getElementById("dl-clear-all-btn");
   const listEl = document.getElementById("dl-games-list");
-
   if (countEl) countEl.textContent = `${downloadedCount} / ${GAMES_DATA.length} Games Saved`;
   if (pctEl) pctEl.textContent = `${overallPct}%`;
   if (barEl) barEl.style.width = `${overallPct}%`;
-
   if (allBtn) {
-    if (downloadedCount >= GAMES_DATA.length) {
-      allBtn.textContent = "✅ All Games & Sources Downloaded (100%)";
-      allBtn.disabled = true;
-    } else {
-      allBtn.textContent = `⬇️ Download All (${GAMES_DATA.length - downloadedCount} Games)`;
-      allBtn.disabled = false;
-    }
+    allBtn.textContent = downloadedCount >= GAMES_DATA.length
+      ? "✅ All Games & Sources Downloaded (100%)"
+      : `⬇️ Download All (${GAMES_DATA.length - downloadedCount} Games)`;
+    allBtn.disabled = downloadedCount >= GAMES_DATA.length || !!window.stDownloadAllRunning;
   }
-
-  if (clearBtn) {
-    clearBtn.disabled = downloadedCount === 0;
-  }
-
+  if (clearBtn) clearBtn.disabled = downloadedCount === 0;
   if (!listEl) return;
   listEl.innerHTML = "";
 
   GAMES_DATA.forEach(game => {
     const isSaved = savedGameIds.includes(game.id);
     const manifest = savedGameManifests[game.id];
-    const assetCountText = (isSaved && manifest && manifest.counts)
-      ? `100% Complete • ${manifest.counts.total} files (HTML/CSS/JS/Img/Audio)`
-      : (isSaved ? "100% Downloaded • Offline Ready" : "0% • Tap to download all game files");
-
+    const state = ST_DOWNLOAD_STATES[game.id] || {};
+    const progress = state.progress || {};
+    const pct = isSaved ? 100 : Math.max(0, Math.min(99, Number(progress.percent) || 0));
+    const stats = progress.stats || state.errorStats || {};
+    const typeText = [
+      ["HTML", stats.html], ["CSS", stats.css], ["JS", stats.js],
+      ["IMG", stats.img], ["AUDIO", stats.audio], ["OTHER", stats.other]
+    ].filter(x => x[1] && x[1].total > 0).map(x => `${x[0]} ${x[1].done}/${x[1].total}`).join(" · ");
+    const statusText = isSaved
+      ? `100% Complete · ${(manifest && manifest.counts && manifest.counts.total) || progress.totalCount || "All"} files saved`
+      : state.status === "downloading"
+        ? `Downloading · ${progress.doneCount || 0}/${progress.totalCount || 0} files`
+        : state.status === "failed"
+          ? `Failed · ${state.error || "Some files could not be saved"}`
+          : state.status === "partial"
+            ? `Incomplete · ${progress.doneCount || 0}/${progress.totalCount || 0} files saved`
+            : "Not downloaded · Tap GET 100% to save for offline play";
     const row = document.createElement("div");
     row.className = "dl-game-row";
     row.innerHTML = `
       <img src="${fullUrl(game.logo)}" alt="${game.title}" onerror="this.src='${APP_ICON_URL}'">
       <div class="dl-game-info">
-        <div class="dl-game-name">${game.title}</div>
-        <div class="dl-game-sub" style="color:${isSaved ? '#16a34a' : '#ef4444'}">
-          ${assetCountText}
-        </div>
+        <div class="dl-game-name"></div>
+        <div class="dl-game-sub"></div>
+        <div style="height:5px;background:rgba(128,128,128,.2);border-radius:8px;margin-top:6px;overflow:hidden"><div class="dl-progress-fill" style="height:100%;width:${pct}%;background:${isSaved ? '#22c55e' : state.status === 'failed' ? '#ef4444' : '#3b82f6'};border-radius:8px"></div></div>
+        <div style="font-size:10px;opacity:.78;margin-top:4px" class="dl-game-file-detail"></div>
+        <div style="font-size:10px;color:#dc2626;margin-top:3px;overflow-wrap:anywhere" class="dl-game-error"></div>
       </div>
       <div class="dl-row-actions">
-        <button type="button" class="dl-row-btn ${isSaved ? 'done' : 'get'} play-or-dl-btn">
-          ${isSaved ? '▶ PLAY' : '⬇️ GET 100%'}
-        </button>
+        <button type="button" class="dl-row-btn ${isSaved ? 'done' : 'get'} play-or-dl-btn">${isSaved ? '▶ PLAY' : state.status === 'downloading' ? '⏳ DOWNLOADING' : state.status === 'failed' || state.status === 'partial' ? '↻ RETRY' : '⬇️ GET 100%'}</button>
         ${isSaved ? `<button type="button" class="dl-row-btn delete del-single-btn" title="Delete from Offline"><i class="fa-solid fa-trash-can"></i></button>` : ''}
-      </div>
-    `;
-
-    row.querySelector(".play-or-dl-btn").addEventListener("click", () => {
-      closeDownloadsModal();
-      openAndSaveGame(game);
+      </div>`;
+    row.querySelector('.dl-game-name').textContent = game.title;
+    row.querySelector('.dl-game-sub').textContent = statusText;
+    row.querySelector('.dl-game-sub').style.color = isSaved ? '#16a34a' : state.status === 'failed' ? '#dc2626' : '#64748b';
+    row.querySelector('.dl-game-file-detail').textContent = isSaved ? typeText : [typeText, progress.currentFile ? `Now: ${progress.currentFile}` : ''].filter(Boolean).join(' · ');
+    row.querySelector('.dl-game-error').textContent = state.status === 'failed' ? (state.error || 'Download failed. Tap RETRY.') : (progress.failedCount ? `${progress.failedCount} failed file(s)` : '');
+    const action = row.querySelector('.play-or-dl-btn');
+    action.disabled = state.status === 'downloading';
+    action.addEventListener('click', () => {
+      if (isSaved) {
+        closeDownloadsModal();
+        openAndSaveGame(game);
+      } else {
+        startBackgroundGameDownload(game, true);
+      }
     });
-
-    const delBtn = row.querySelector(".del-single-btn");
-    if (delBtn) {
-      delBtn.addEventListener("click", (e) => {
-        deleteOfflineGame(game, e);
-      });
-    }
-
+    const delBtn = row.querySelector('.del-single-btn');
+    if (delBtn) delBtn.addEventListener('click', e => deleteOfflineGame(game, e));
     listEl.appendChild(row);
   });
 }
 
-async function downloadAllRemainingGames() {
+async function startBackgroundGameDownload(game, showProgressToast = false) {
   if (!navigator.onLine) {
-    showToast("Connect to the internet to download games.");
+    ST_DOWNLOAD_STATES[game.id] = { status: 'failed', error: 'Connect to the internet and retry.' };
+    renderDownloadsManagerList();
+    if (showProgressToast) showToast('Connect to the internet to download this game.');
     return;
   }
-  if (isDownloadingNow) {
-    showToast("A download is already running.");
-    return;
-  }
-
-  const remaining = GAMES_DATA.filter(g => !savedGameIds.includes(g.id));
-  if (!remaining.length) return;
-
-  const allBtn = document.getElementById("dl-all-games-btn");
-  if (allBtn) allBtn.disabled = true;
-  isDownloadingNow = true;
-
-  let completedGames = 0;
-  let failedGames = 0;
+  if (ST_DOWNLOAD_STATES[game.id]?.status === 'downloading') return;
+  ST_DOWNLOAD_STATES[game.id] = { status: 'downloading', progress: { percent: 0, doneCount: 0, totalCount: 0 } };
+  renderDownloadsManagerList();
+  if (showProgressToast) showToast(`Starting ${game.title} download…`);
   try {
-    // One game at a time keeps memory and network use predictable on budget phones.
-    for (let i = 0; i < remaining.length; i++) {
-      const g = remaining[i];
-      if (!navigator.onLine) {
-        failedGames += remaining.length - i;
-        break;
-      }
-      try {
-        await deepDownloadGameWithProgress(g, (prog) => {
-          if (allBtn) {
-            allBtn.textContent = `⏳ [${i + 1}/${remaining.length}] ${g.title}: ${prog.percent}% (${prog.doneCount}/${prog.totalCount})`;
-          }
-        });
-        if (!savedGameIds.includes(g.id)) {
-          savedGameIds.push(g.id);
-          safeSetStorage("st_saved_offline_games", JSON.stringify(savedGameIds));
-        }
-        completedGames++;
-      } catch (err) {
-        failedGames++;
-        console.warn("Could not save " + g.title, err);
-      }
-      updateSavedCounter();
+    const manifest = await deepDownloadGameWithProgress(game, progress => {
+      ST_DOWNLOAD_STATES[game.id] = { status: 'downloading', progress };
       renderDownloadsManagerList();
-    }
-  } finally {
-    isDownloadingNow = false;
+    });
+    if (!savedGameIds.includes(game.id)) savedGameIds.push(game.id);
+    safeSetStorage('st_saved_offline_games', JSON.stringify(savedGameIds));
+    ST_DOWNLOAD_STATES[game.id] = { status: 'complete', progress: { percent: 100, doneCount: manifest.counts.total, totalCount: manifest.counts.total, stats: { html:{done:manifest.counts.html,total:manifest.counts.html}, css:{done:manifest.counts.css,total:manifest.counts.css}, js:{done:manifest.counts.js,total:manifest.counts.js}, img:{done:manifest.counts.img,total:manifest.counts.img}, audio:{done:manifest.counts.audio,total:manifest.counts.audio}, other:{done:manifest.counts.other,total:manifest.counts.other} } } };
+    updateSavedCounter();
     renderGames();
     renderDownloadsManagerList();
-    if (allBtn) {
-      allBtn.disabled = false;
-      allBtn.textContent = "⬇️ Download All (" + GAMES_DATA.filter(g => !savedGameIds.includes(g.id)).length + " Games)";
-    }
+    if (showProgressToast) showToast(`✅ ${game.title} is saved for offline play.`);
+  } catch (err) {
+    ST_DOWNLOAD_STATES[game.id] = { status: 'failed', error: err && err.message ? err.message : 'Download failed. Check your connection and retry.', errorStats: err && err.stats ? err.stats : (ST_DOWNLOAD_STATES[game.id]?.progress?.stats || {}), progress: ST_DOWNLOAD_STATES[game.id]?.progress || {} };
+    renderDownloadsManagerList();
+    if (showProgressToast) showToast(`${game.title} download failed. Open Downloads for details.`);
   }
+}
 
-  if (failedGames) {
-    showToast(`${completedGames} saved, ${failedGames} incomplete. Retry failed games.`);
-  } else {
-    showToast("All remaining games saved for offline play! 🎉");
+async function downloadAllRemainingGames() {
+  if (!navigator.onLine) { showToast("Connect to the internet to download games."); return; }
+  if (window.stDownloadAllRunning) return;
+  window.stDownloadAllRunning = true;
+  const remaining = GAMES_DATA.filter(g => !savedGameIds.includes(g.id));
+  const allBtn = document.getElementById("dl-all-games-btn");
+  if (allBtn) allBtn.disabled = true;
+  try {
+    for (let i = 0; i < remaining.length; i++) {
+      const game = remaining[i];
+      if (allBtn) allBtn.textContent = `⏳ [${i + 1}/${remaining.length}] ${game.title}`;
+      await startBackgroundGameDownload(game, false);
+    }
+    const failed = remaining.filter(g => ST_DOWNLOAD_STATES[g.id]?.status === 'failed');
+    renderDownloadsManagerList();
+    renderGames();
+    showToast(failed.length ? `${failed.length} game(s) need retry. See their error details in Downloads.` : "100% All Games & Sub-Assets Downloaded! 🎉");
+  } finally {
+    window.stDownloadAllRunning = false;
+    renderDownloadsManagerList();
   }
 }
 
@@ -2277,24 +2228,13 @@ async function registerAppServiceWorker() {
   if (!("serviceWorker" in navigator)) return null;
 
   try {
-    // Remove the previous narrower /stgames-apk/ worker so the root worker
-    // can also serve cached /game/ and /logo/ assets to game iframes.
-    const registrations = await navigator.serviceWorker.getRegistrations();
-    await Promise.all(registrations
-      .filter(reg => reg.scope.endsWith("/stgames-apk/"))
-      .map(reg => reg.unregister()));
-
     const registration = await navigator.serviceWorker.register(
-      "/sw.js",
-      { scope: "/" }
+      "/stgames-apk/sw.js",
+      { scope: "/stgames-apk/" }
     );
 
     await navigator.serviceWorker.ready;
     swRegistration = registration;
-    // Ask the active worker to refresh the app shell while the device is online.
-    if (navigator.onLine && registration.active) {
-      registration.active.postMessage({ type: "ST_CACHE_APP_SHELL" });
-    }
     return registration;
   } catch (error) {
     console.error(
@@ -2450,26 +2390,6 @@ function renderGames(){
         </div>
       </div>`;
 
-    const downloadControl = card.querySelector(".dl-indicator");
-    if (downloadControl) {
-      downloadControl.setAttribute("role", "button");
-      downloadControl.setAttribute("tabindex", "0");
-      downloadControl.setAttribute("aria-label", isSaved ? "Already downloaded" : "Download game for offline play");
-      downloadControl.addEventListener("click", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        if (isSaved) showToast(game.title + " is already saved offline.");
-        else startBackgroundGameDownload(game, true);
-      });
-      downloadControl.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          event.stopPropagation();
-          if (!isSaved) startBackgroundGameDownload(game, true);
-        }
-      });
-    }
-
     const artwork = card.querySelector(".card-artwork");
     artwork.src = fullUrl(game.logo);
     artwork.addEventListener("error",()=>{
@@ -2508,58 +2428,24 @@ function launchGameIframeNow(game) {
 async function openAndSaveGame(game){
   const isAlreadyDownloaded = savedGameIds.includes(game.id);
 
-  if (!navigator.onLine && !isAlreadyDownloaded) {
-    showToast("This game is not saved for offline play yet. Connect to the internet and download it first.");
+  if(!navigator.onLine && !isAlreadyDownloaded){
+    showToast("You are offline! Connect once to download all files for " + game.title + ".");
     return;
   }
 
-  // Always launch immediately. When online, cache the game package in the background.
-  // This keeps the player responsive and lets the user start playing while files save.
-  launchGameIframeNow(game);
-  if (navigator.onLine && !isAlreadyDownloaded) {
-    startBackgroundGameDownload(game, false);
-  }
-}
-
-async function startBackgroundGameDownload(game, showProgressToast = true){
-  if (!navigator.onLine) {
-    showToast("Connect to the internet to download " + game.title + ".");
-    return false;
-  }
-  if (savedGameIds.includes(game.id)) {
-    showToast(game.title + " is already saved for offline play.");
-    return true;
-  }
-  if (ST_BACKGROUND_DOWNLOADS.has(game.id)) {
-    showToast(game.title + " is already downloading in the background.");
-    return false;
-  }
-
-  ST_BACKGROUND_DOWNLOADS.add(game.id);
-  if (showProgressToast) showToast("Starting offline download: " + game.title);
-  let lastToastPct = -1;
-  try {
-    await deepDownloadGameWithProgress(game, progress => {
-      // Keep the UI informed without interrupting gameplay with a modal.
-      if (showProgressToast && progress.percent >= lastToastPct + 10 && progress.percent < 100) {
-        lastToastPct = progress.percent;
-        showToast("Saving " + game.title + " offline: " + progress.percent + "%");
-      }
+  // Deep download all game sources (HTML, sub-games, CSS, JS, images, audio) before showing 100%
+  if (!isAlreadyDownloaded && navigator.onLine) {
+    runFirstTimeDownloadAnimation(game, () => {
+      launchGameIframeNow(game);
     });
-    if (!savedGameIds.includes(game.id)) savedGameIds.push(game.id);
-    safeSetStorage("st_saved_offline_games", JSON.stringify(savedGameIds));
-    updateSavedCounter();
-    renderGames();
-    renderDownloadsManagerList();
-    showToast("✓ " + game.title + " saved for offline play!");
-    return true;
-  } catch (err) {
-    console.error("ST GAMES background download failed:", err);
-    showToast("Could not fully save " + game.title + ". Open Downloads and retry.");
-    return false;
-  } finally {
-    ST_BACKGROUND_DOWNLOADS.delete(game.id);
+    return;
   }
+
+  // If already downloaded and online, silently refresh cache in background while launching immediately
+  if (navigator.onLine) {
+    deepDownloadGameWithProgress(game).catch(() => {});
+  }
+  launchGameIframeNow(game);
 }
 
 function closeGame(fromPopState = false){
@@ -2684,11 +2570,7 @@ document.addEventListener("keydown",event=>{
 });
 
 updateNetworkStatus();
-// Render the locally saved app catalogue immediately; network sync may update it later.
-GAMES_DATA = loadInitialGamesList();
-cleanSavedGameIds();
-renderGames();
-if (navigator.onLine) syncMainPageGamesJson();
+syncMainPageGamesJson();
 </script>
 
 <!-- ================= FIREBASE LOGIN LOGO & CLOUD SCORE SYNC ================= -->
