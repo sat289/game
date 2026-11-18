@@ -2500,14 +2500,55 @@ function copyTextFallback(text) {
   document.body.removeChild(ta);
 }
 
-function generateReferralLink(){
-  const referralUrl = BASE_URL;
-  if(navigator.share){
-    navigator.share({title:"ST GAMES",text:"Play online and offline arcade games on ST GAMES!",url:referralUrl}).catch(()=>{});
-  }else if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(referralUrl).then(()=>showToast("ST GAMES link copied!")).catch(()=>copyTextFallback(referralUrl));
-  }else{
-    copyTextFallback(referralUrl);
+
+async function generateReferralLink() {
+  const apkUrl = "https://stgames.online/ST-Games.apk";
+  const logoUrl = "https://stgames.online/logo/logo.jpg";
+
+  const shareText =
+    "🎮 Download ST GAMES!\nPlay amazing games online and offline.\n\nDownload APK:\n" + apkUrl;
+
+  try {
+    const response = await fetch(logoUrl);
+    if (!response.ok) throw new Error("Logo unavailable");
+
+    const blob = await response.blob();
+    const file = new File(
+      [blob],
+      "ST-GAMES.jpg",
+      { type: blob.type || "image/jpeg" }
+    );
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        title: "Download ST GAMES",
+        text: shareText,
+        files: [file]
+      });
+      return;
+    }
+
+    if (navigator.share) {
+      await navigator.share({
+        title: "Download ST GAMES",
+        text: shareText
+      });
+      return;
+    }
+
+    copyTextFallback(shareText);
+
+  } catch (error) {
+    if (error.name === "AbortError") return;
+
+    if (navigator.share) {
+      navigator.share({
+        title: "Download ST GAMES",
+        text: shareText
+      }).catch(() => {});
+    } else {
+      copyTextFallback(shareText);
+    }
   }
 }
 function openSettings(){document.getElementById("settings-modal").classList.add("open");}
