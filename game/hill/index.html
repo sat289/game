@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>ST GAMES • Hill Climb World 3D</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+</head>
+<body>
+  <!-- FREE FIRE STYLE HOMEPAGE LOBBY -->
+  <div id="menu" class="menu">
+    <img id="homepageBg" class="menu-art" src="assets/backgrounds/homepage-bg.png" alt="ST Games Homepage Lobby">
+    <div class="lobby-vignette"></div>
+
+    <!-- TOP-LEFT PLAYER BADGE -->
+    <div class="top-left-brand">
+      <div class="brand-avatar">ST</div>
+      <div class="brand-meta">
+        <strong id="topPlayerName">GUEST RACER</strong>
+        <small id="topAccountMode">💾 GUEST LOCAL SAVE</small>
+      </div>
+    </div>
+
+    <!-- WHITE ZONE (Top-Right): Currencies, Notifications & Achievements -->
+    <div class="zone-white-topright">
+      <div class="currency-bar">
+        <span class="curr-pill">🪙 <b id="coins">125,680</b></span>
+        <span class="curr-pill">💎 <b id="gems">2,450</b></span>
+        <span class="curr-pill">⛽ <b>100%</b></span>
+      </div>
+      <div class="white-action-row">
+        <button type="button" class="white-zone-btn" id="btnNotifications">
+          <span>🔔</span><span>NOTIFICATIONS</span>
+          <span class="notif-badge" id="notifBadge">3</span>
+        </button>
+        <button type="button" class="white-zone-btn" id="btnAchievements">
+          <span>🏆</span><span>ACHIEVEMENTS</span>
+        </button>
+        <button type="button" class="white-zone-btn" id="btnDailyReward">
+          <span>🎁</span><span>REWARD</span>
+        </button>
+        <button type="button" class="white-zone-btn" id="btnSettings" aria-label="Settings">
+          <span>⚙️</span>
+        </button>
+        <div id="whiteCustomBtns" style="display:flex;gap:6px;"></div>
+      </div>
+    </div>
+
+    <!-- ORANGE ZONE (Left Vertical Sidebar): Create Account (Firebase/Guest), Store, Upgrades -->
+    <div class="zone-orange-left">
+      <button type="button" class="orange-btn account-btn" id="btnAccount">
+        <div class="btn-icon">☁️</div>
+        <div class="btn-text">
+          <strong id="accountBtnTitle">CREATE ACCOUNT</strong>
+          <small id="accountBtnSub">Firebase / Guest Save</small>
+        </div>
+      </button>
+
+      <button type="button" class="orange-btn" id="btnStore">
+        <div class="btn-icon">🛒</div>
+        <div class="btn-text">
+          <strong>STORE</strong>
+          <small>3D Cars, Maps &amp; Skins</small>
+        </div>
+      </button>
+
+      <button type="button" class="orange-btn" id="btnSkinsStore">
+        <div class="btn-icon">🎨</div>
+        <div class="btn-text">
+          <strong>CAR SKINS</strong>
+          <small>Custom Paint &amp; Wraps</small>
+        </div>
+      </button>
+
+      <button type="button" class="orange-btn" id="btnUpgrades">
+        <div class="btn-icon">🔧</div>
+        <div class="btn-text">
+          <strong>UPGRADES</strong>
+          <small>Engine, Tires, Nitro</small>
+        </div>
+      </button>
+
+      <div id="orangeCustomBtns" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+
+    <!-- CENTER TURNTABLE RAMP: 3D Rotatable Selected Vehicle -->
+    <div id="turntableStage" class="turntable-stage">
+      <div class="car-hud-Floating">
+        <div class="car-title-row">
+          <strong id="activeCarName">KOENIGSEGG AGERA</strong>
+          <span class="car-badge-pill" id="activeCarBadge">3D HYPERCAR</span>
+        </div>
+        <div class="car-stats-mini">
+          <span>SPD <b id="statSpd">100</b></span>
+          <span>ACC <b id="statAcc">96</b></span>
+          <span>HND <b id="statHnd">92</b></span>
+          <span>FUEL <b id="statFuel">85</b></span>
+        </div>
+      </div>
+
+      <div class="turntable-glow-ring"></div>
+      <canvas id="turntableCanvas"></canvas>
+
+      <div class="turntable-controls-bar">
+        <button type="button" class="turntable-mini-btn" id="rotLeftBtn">⟲</button>
+        <span>◀ DRAG RAMP TO ROTATE 3D CAR 360° ▶</span>
+        <button type="button" class="turntable-mini-btn" id="rotRightBtn">⟳</button>
+        <button type="button" class="turntable-mini-btn" id="rotAutoBtn">🔄 AUTO: OFF</button>
+      </div>
+    </div>
+
+    <!-- GREY ZONE (Bottom-Left / Center-Left): Events & Library of Bought Cars/Maps -->
+    <div class="zone-grey-bottom">
+      <div class="grey-top-actions">
+        <button type="button" class="grey-action-btn events-btn" id="btnEvents">
+          <span>🎉</span><span>EVENTS</span>
+        </button>
+        <button type="button" class="grey-action-btn library-btn" id="btnLibrary">
+          <span>🚘</span><span>OWNED LIBRARY (CARS &amp; MAPS)</span>
+        </button>
+        <div id="greyCustomBtns" style="display:flex;gap:6px;"></div>
+      </div>
+      <div id="ownedQuickStrip" class="owned-quick-strip"></div>
+    </div>
+
+    <!-- RED ZONE (Bottom-Right): Upper Half = Selected Map Display & Selector, Lower Half = Yellow START Button -->
+    <div class="zone-red-startbox">
+      <button type="button" id="mapSelectBox" class="red-map-half" aria-label="Select Map">
+        <div id="redMapGround" class="map-preview-ground"></div>
+        <div class="red-map-info">
+          <span id="redMapIcon" class="red-map-icon">🌳</span>
+          <div class="red-map-text">
+            <small>SELECTED MAP</small>
+            <strong id="redMapName">COUNTRYSIDE</strong>
+          </div>
+        </div>
+        <span class="red-map-change-pill">🗺️ CHANGE MAP ▾</span>
+      </button>
+
+      <button type="button" id="play" class="yellow-start-btn">
+        <span>▶</span><span>START</span>
+      </button>
+    </div>
+
+    <!-- CUSTOM FLOATING BUTTONS LAYER (Populated from Admin Page) -->
+    <div id="customFloatingLayer" class="custom-floating-layer"></div>
+  </div>
+
+  <!-- MODAL OVERLAY -->
+  <div id="modal" class="modal hidden">
+    <div class="box">
+      <div class="box-header">
+        <h2 id="title">STORE</h2>
+        <button type="button" id="close" class="close">✕</button>
+      </div>
+      <div id="content"></div>
+    </div>
+  </div>
+
+  <!-- RACE GAMEPLAY VIEW -->
+  <div id="game" class="game hidden">
+    <canvas id="canvas"></canvas>
+    <canvas id="game3dCanvas" class="hidden"></canvas>
+    <div class="hud">
+      <div class="hud-group">
+        <button type="button" id="home">⌂ LOBBY</button>
+        <button type="button" id="camModeBtn">🎥 3D MESH: OFF</button>
+      </div>
+      <div class="hud-group">
+        <span>🏁 <b id="dist">0</b> m</span>
+        <span>🪙 <b id="runCoins">0</b></span>
+        <span>⛽ <b id="fuel">100</b>%</span>
+      </div>
+    </div>
+    <div class="controls">
+      <button type="button" id="brake">◀ BRAKE</button>
+      <div class="controls-right">
+        <button type="button" id="nitro">🚀 NITRO</button>
+        <button type="button" id="gas">GAS ▶</button>
+      </div>
+    </div>
+    <div id="end" class="end hidden">
+      <h1>RUN COMPLETED</h1>
+      <p id="summary"></p>
+      <button type="button" id="retry">🔄 RETRY</button>
+      <button type="button" id="garage">⌂ LOBBY</button>
+    </div>
+  </div>
+
+  <script src="agera_3d_data.js"></script>
+  <script src="vehicles.js"></script>
+  <script src="maps.js"></script>
+  <script src="main.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
