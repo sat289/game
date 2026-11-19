@@ -1525,28 +1525,24 @@ function isDownloadableAssetUrl(rawCandidate, baseDocUrl) {
   const resolved = fullUrl(cleaned, baseDocUrl);
   if (!resolved) return null;
 
-  // Keep assets on stgames.online or trusted static CDNs (FontAwesome, Cloudflare, jsDelivr, unpkg, Google Fonts)
+  // Allow public external game asset/CDN hosts; block trackers and private/local hosts.
+  // Cross-origin resources are cached as opaque responses when the host does not enable CORS.
   try {
     const u = new URL(resolved);
+    if (u.protocol !== "http:" && u.protocol !== "https:") return null;
     const host = u.hostname.toLowerCase();
-    const allowedHosts = [
-      "stgames.online",
-      "www.stgames.online",
-      "cdnjs.cloudflare.com",
-      "cdn.jsdelivr.net",
-      "unpkg.com",
-      "fonts.googleapis.com",
-      "fonts.gstatic.com"
-    ];
-    const isSameHost = host === window.location.hostname.toLowerCase();
-    if (!isSameHost && !allowedHosts.some(h => host === h || host.endsWith("." + h))) {
-      return null;
-    }
+    if (
+      host === "localhost" || host.endsWith(".localhost") ||
+      host === "127.0.0.1" || host === "::1" ||
+      /^10\./.test(host) || /^192\.168\./.test(host) ||
+      /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(host) ||
+      /(^|\.)(google-analytics|googletagmanager|googlesyndication|doubleclick|facebook|hotjar|segment|mixpanel)(\.|$)/i.test(host)
+    ) return null;
+    u.hash = "";
+    return u.href;
   } catch (e) {
     return null;
   }
-
-  return resolved;
 }
 
 /* Extracts all CSS, JS, Image, Audio, Font, JSON, and Sub-Game HTML URLs from an HTML string */
@@ -1563,10 +1559,18 @@ function extractUrlsFromHtml(htmlText, baseDocUrl) {
       "link[href]",
       "img[src]",
       "img[data-src]",
+      "img[data-original]",
+      "img[data-lazy-src]",
+      "img[srcset]",
+      "img[data-srcset]",
+      "picture source[srcset]",
       "audio[src]",
+      "audio source[src]",
       "video[src]",
       "video[poster]",
+      "video source[src]",
       "source[src]",
+      "source[srcset]",
       "iframe[src]",
       "embed[src]",
       "object[data]",
@@ -1588,6 +1592,20 @@ function extractUrlsFromHtml(htmlText, baseDocUrl) {
 
       const validUrl = isDownloadableAssetUrl(raw, baseDocUrl);
       if (validUrl) discovered.add(validUrl);
+      ["srcset", "data-srcset", "data-original", "data-lazy-src", "data-original-src", "data-url"].forEach(attr => {
+        const value = el.getAttribute(attr);
+        if (!value) return;
+        if (attr.includes("srcset")) {
+          value.split(",").forEach(candidate => {
+            const candidateUrl = candidate.trim().split(/\\s+/)[0];
+            const resolvedCandidate = isDownloadableAssetUrl(candidateUrl, baseDocUrl);
+            if (resolvedCandidate) discovered.add(resolvedCandidate);
+          });
+        } else {
+          const resolvedCandidate = isDownloadableAssetUrl(value, baseDocUrl);
+          if (resolvedCandidate) discovered.add(resolvedCandidate);
+        }
+      });
     });
 
     // 2. Inline style="..." attributes
@@ -1640,7 +1658,7 @@ function extractUrlsFromJs(jsText, baseJsUrl) {
   if (!jsText) return [];
 
   // Match string literals ending with common game asset / sub-game extensions
-  const assetLiteralRegex = /['"`]([^'"`\r\n\\]{1,220}?\.(?:png|jpg|jpeg|gif|webp|svg|ico|bmp|avif|mp3|wav|ogg|m4a|aac|css|js|mjs|json|wasm|html|htm|bin|atlas|fnt|xml|mp4|webm|tfi)(?:\?[^'"`\r\n\\]*)?)['"`]/gi;
+  const assetLiteralRegex = /['"`]([^'"`\r\n\\]{1,220}?\.(?:png|jpg|jpeg|jfif|gif|webp|svg|ico|bmp|avif|mp3|wav|ogg|m4a|aac|flac|css|js|mjs|json|wasm|html|htm|bin|atlas|fnt|xml|mp4|webm|tfi)(?:\?[^'"`\r\n\\]*)?)['"`]/gi;
   let match;
   while ((match = assetLiteralRegex.exec(jsText)) !== null) {
     const candidate = match[1].trim();
@@ -1655,40 +1673,45 @@ function extractUrlsFromJs(jsText, baseJsUrl) {
 
 /* Fetches and caches a single URL into CacheStorage; returns response text if HTML/CSS/JS/JSON for deep parsing */
 async function fetchAndCacheSingleUrl(cache, targetUrl) {
+  if (!cache) return { ok: false, text: "", finalUrl: targetUrl, error: "CacheStorage is unavailable" };
+
+  // First try CORS fetch so text resources can be parsed for additional game assets.
   try {
-    const req = new Request(targetUrl, { cache: "reload" });
-    const res = await fetch(req);
-    if (res && (res.ok || res.type === "opaque")) {
+    const res = await fetch(new Request(targetUrl, {
+      cache: "reload", mode: "cors", credentials: "omit", redirect: "follow"
+    }));
+    if (res && res.ok) {
       await cache.put(targetUrl, res.clone());
       const contentType = (res.headers.get("content-type") || "").toLowerCase();
       const type = classifyAssetType(targetUrl);
-      if (type === "html" || type === "css" || type === "js" || contentType.includes("text/") || contentType.includes("json") || contentType.includes("javascript")) {
-        try {
-          const text = await res.text();
-          return { ok: true, text, finalUrl: res.url || targetUrl };
-        } catch (_) {
-          return { ok: true, text: "", finalUrl: res.url || targetUrl };
-        }
+      if (type === "html" || type === "css" || type === "js" ||
+          contentType.includes("text/") || contentType.includes("json") ||
+          contentType.includes("javascript")) {
+        const text = await res.clone().text().catch(() => "");
+        return { ok: true, text, finalUrl: res.url || targetUrl };
       }
       return { ok: true, text: "", finalUrl: res.url || targetUrl };
     }
   } catch (err) {
-    // Fallback for cross-origin opaque resources (like CDN fonts/icons)
-    try {
-      const noCorsRes = await fetch(targetUrl, { mode: "no-cors" });
-      if (noCorsRes) {
-        await cache.put(targetUrl, noCorsRes.clone());
-        return { ok: true, text: "", finalUrl: targetUrl };
-      }
-    } catch (err2) {}
+    // Continue with opaque fetch for public cross-origin media without CORS headers.
   }
 
-  // Last resort: cache.add
+  // Opaque no-cors responses cannot be inspected, but can be stored and replayed by CacheStorage.
+  try {
+    const opaque = await fetch(targetUrl, {
+      mode: "no-cors", credentials: "omit", redirect: "follow"
+    });
+    if (opaque && (opaque.type === "opaque" || opaque.ok)) {
+      await cache.put(targetUrl, opaque.clone());
+      return { ok: true, text: "", finalUrl: targetUrl, opaque: opaque.type === "opaque" };
+    }
+  } catch (err) {}
+
   try {
     await cache.add(targetUrl);
     return { ok: true, text: "", finalUrl: targetUrl };
-  } catch (err3) {
-    return { ok: false, text: "", finalUrl: targetUrl };
+  } catch (err) {
+    return { ok: false, text: "", finalUrl: targetUrl, error: err && err.message ? err.message : "Fetch/cache rejected" };
   }
 }
 
