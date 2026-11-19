@@ -1597,7 +1597,7 @@ function extractUrlsFromHtml(htmlText, baseDocUrl) {
         if (!value) return;
         if (attr.includes("srcset")) {
           value.split(",").forEach(candidate => {
-            const candidateUrl = candidate.trim().split(/\\s+/)[0];
+            const candidateUrl = candidate.trim().split(/\s+/)[0];
             const resolvedCandidate = isDownloadableAssetUrl(candidateUrl, baseDocUrl);
             if (resolvedCandidate) discovered.add(resolvedCandidate);
           });
@@ -1619,9 +1619,31 @@ function extractUrlsFromHtml(htmlText, baseDocUrl) {
       extractUrlsFromCss(styleEl.textContent || "", baseDocUrl).forEach(u => discovered.add(u));
     });
 
-    // 4. Inline <script> blocks (scan for audio, images, sub-games, JSON, TFI sub-games)
+    // 4. Inline scripts, including import maps used by Three.js and other module games.
     doc.querySelectorAll("script:not([src])").forEach(scriptEl => {
-      extractUrlsFromJs(scriptEl.textContent || "", baseDocUrl).forEach(u => discovered.add(u));
+      const scriptText = scriptEl.textContent || "";
+      const scriptType = (scriptEl.getAttribute("type") || "").toLowerCase();
+
+      if (scriptType === "importmap") {
+        try {
+          const importMap = JSON.parse(scriptText);
+          const addImportMapValues = (obj) => {
+            if (!obj || typeof obj !== "object") return;
+            Object.values(obj).forEach(value => {
+              if (typeof value === "string") {
+                const resolved = isDownloadableAssetUrl(value, baseDocUrl);
+                if (resolved) discovered.add(resolved);
+              } else if (value && typeof value === "object") {
+                addImportMapValues(value);
+              }
+            });
+          };
+          addImportMapValues(importMap.imports);
+          addImportMapValues(importMap.scopes);
+        } catch (e) {}
+      } else {
+        extractUrlsFromJs(scriptText, baseDocUrl).forEach(u => discovered.add(u));
+      }
     });
   } catch (e) {}
 
@@ -2252,8 +2274,8 @@ async function registerAppServiceWorker() {
 
   try {
     const registration = await navigator.serviceWorker.register(
-      "/stgames-apk/sw.js",
-      { scope: "/stgames-apk/" }
+      "/sw.js",
+      { scope: "/" }
     );
 
     await navigator.serviceWorker.ready;
