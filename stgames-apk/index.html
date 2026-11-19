@@ -1096,6 +1096,92 @@
       }
     }
   </style>
+  
+<style>
+/* ST GAMES Promotional Image Slider */
+.st-share-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(0,0,0,.88);
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+}
+
+.st-share-overlay.active {
+  display: flex;
+}
+
+.st-share-box {
+  width: 100%;
+  max-width: 420px;
+  background: #151c27;
+  color: white;
+  border: 1px solid #34465b;
+  border-radius: 20px;
+  padding: 18px;
+  text-align: center;
+}
+
+.st-share-box h2 {
+  margin: 0 0 8px;
+  font-size: 22px;
+}
+
+.st-share-preview {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  background: #080d14;
+  border-radius: 14px;
+  overflow: hidden;
+  margin: 16px 0;
+}
+
+.st-share-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.st-share-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.st-share-controls button,
+.st-share-action,
+.st-share-close {
+  border: 0;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.st-share-controls button {
+  background: #26384b;
+  color: white;
+}
+
+.st-share-action {
+  width: 100%;
+  background: #20d9c0;
+  color: #061a19;
+  font-size: 16px;
+  margin-top: 10px;
+}
+
+.st-share-close {
+  background: transparent;
+  color: #cbd5e1;
+  margin-top: 8px;
+}
+</style>
 </head>
 <body id="app-body">
   <!-- Native-Style In-App Notification Banner -->
@@ -2546,56 +2632,136 @@ function copyTextFallback(text) {
 }
 
 
-async function generateReferralLink() {
-  const apkUrl = "https://stgames.online/ST-Games.apk";
-  const logoUrl = "https://stgames.online/logo/logo.jpg";
+// ST GAMES Promotional Image Gallery
+const stShareImages = [
+  "share-images/promo-1.jpg",
+  "share-images/promo-2.jpg",
+  "share-images/promo-3.jpg",
+  "share-images/promo-4.jpg"
+];
 
+let stShareIndex = 0;
+
+function generateReferralLink() {
+  stShareIndex = 0;
+  stUpdateShareImage();
+
+  document.getElementById("stShareOverlay")
+    .classList.add("active");
+}
+
+function stUpdateShareImage() {
+  const image = document.getElementById("stShareImage");
+  const counter = document.getElementById("stShareCounter");
+
+  image.src = stShareImages[stShareIndex];
+  counter.textContent =
+    (stShareIndex + 1) + " / " + stShareImages.length;
+}
+
+function stShareNext() {
+  stShareIndex =
+    (stShareIndex + 1) % stShareImages.length;
+
+  stUpdateShareImage();
+}
+
+function stSharePrevious() {
+  stShareIndex =
+    (stShareIndex - 1 + stShareImages.length)
+    % stShareImages.length;
+
+  stUpdateShareImage();
+}
+
+function stCloseShareGallery() {
+  document.getElementById("stShareOverlay")
+    .classList.remove("active");
+}
+
+async function stShareSelectedImage() {
+  const apkUrl = "https://stgames.online/ST-Games.apk";
+  const selectedImage = stShareImages[stShareIndex];
+
+  const shareTitle = "Download ST GAMES";
   const shareText =
-    "🎮 Download ST GAMES!\nPlay amazing games online and offline.\n\nDownload APK:\n" + apkUrl;
+    "🎮 Download ST GAMES!\n" +
+    "Play amazing games online and offline.\n\n" +
+    "Download APK:\n" + apkUrl;
 
   try {
-    const response = await fetch(logoUrl);
-    if (!response.ok) throw new Error("Logo unavailable");
+    if (navigator.share) {
+      const response = await fetch(selectedImage);
 
-    const blob = await response.blob();
-    const file = new File(
-      [blob],
-      "ST-GAMES.jpg",
-      { type: blob.type || "image/jpeg" }
-    );
+      if (!response.ok) {
+        throw new Error("Image could not be loaded");
+      }
 
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({
-        title: "Download ST GAMES",
-        text: shareText,
-        files: [file]
-      });
+      const blob = await response.blob();
+
+      const extension = blob.type.includes("png")
+        ? "png" : "jpg";
+
+      const file = new File(
+        [blob],
+        "ST-GAMES-Promo-" + (stShareIndex + 1) +
+          "." + extension,
+        { type: blob.type || "image/jpeg" }
+      );
+
+      if (
+        navigator.canShare &&
+        navigator.canShare({ files: [file] })
+      ) {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          files: [file]
+        });
+      } else {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: apkUrl
+        });
+      }
+
+      stCloseShareGallery();
       return;
     }
 
-    if (navigator.share) {
-      await navigator.share({
-        title: "Download ST GAMES",
-        text: shareText
-      });
-      return;
-    }
-
-    copyTextFallback(shareText);
-
-  } catch (error) {
-    if (error.name === "AbortError") return;
-
-    if (navigator.share) {
-      navigator.share({
-        title: "Download ST GAMES",
-        text: shareText
-      }).catch(() => {});
+    if (navigator.clipboard) {
+      await navigator.clipboard.writeText(shareText);
+      if (typeof showToast === "function") {
+        showToast("ST GAMES APK link copied!");
+      }
     } else {
       copyTextFallback(shareText);
     }
+
+    stCloseShareGallery();
+
+  } catch (error) {
+    if (error && error.name === "AbortError") return;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: apkUrl
+        });
+      } else {
+        copyTextFallback(shareText);
+      }
+    } catch (fallbackError) {
+      if (fallbackError.name !== "AbortError") {
+        copyTextFallback(shareText);
+      }
+    }
   }
 }
+
 function openSettings(){document.getElementById("settings-modal").classList.add("open");}
 function closeSettings(){document.getElementById("settings-modal").classList.remove("open");}
 function setTheme(themeClassName){
@@ -3009,5 +3175,33 @@ window.stTrackDownload = () => recordStEvent("apk_downloads", "download", "Direc
 window.stTrackApkPageView = () => recordStEvent("apk_page_views", "apk_view", "stgames-apk/index.html", getSavedUsername() || "App User");
 window.stTrackGamePlay = (gameName) => recordStEvent("game_plays", "view", gameName || "Game Play", getSavedUsername() || "Player");
 </script>
+  
+<div class="st-share-overlay" id="stShareOverlay">
+  <div class="st-share-box">
+    <h2>🎮 Share ST GAMES</h2>
+    <p>Choose your promotional image</p>
+
+    <div class="st-share-preview">
+      <img id="stShareImage" src="share-images/promo-1.jpg"
+           alt="ST GAMES promotional image">
+    </div>
+
+    <div class="st-share-controls">
+      <button type="button" onclick="stSharePrevious()">❮ Previous</button>
+      <span id="stShareCounter">1 / 4</span>
+      <button type="button" onclick="stShareNext()">Next ❯</button>
+    </div>
+
+    <button type="button" class="st-share-action"
+            onclick="stShareSelectedImage()">
+      SHARE NOW
+    </button>
+
+    <button type="button" class="st-share-close"
+            onclick="stCloseShareGallery()">
+      CLOSE
+    </button>
+  </div>
+</div>
 </body>
 </html>
