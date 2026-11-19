@@ -457,6 +457,45 @@ body.dark-theme .game-details-link { background: #0b303b; color: #32ffdc; }
 
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+
+    /* LOW-RAM MODE: reduce expensive paint, compositing and animation work. */
+    .game-card-wrap,
+    .bottom-guide-card {
+      content-visibility: auto;
+      contain-intrinsic-size: 220px;
+    }
+    .game-card-wrap { contain: layout paint style; }
+    .game-card,
+    .theme-surface,
+    .insta-glow-card,
+    .youtube-glow-card,
+    .favorite-btn,
+    .game-details-link {
+      transition-duration: .12s !important;
+    }
+    @media (max-width: 640px) {
+      body::before {
+        background: linear-gradient(145deg, #092c35 0%, #061820 58%, #040e14 100%) !important;
+        transform: none !important;
+        will-change: auto !important;
+      }
+      body:not(.dark-theme)::before {
+        background: linear-gradient(145deg, #20cabb 0%, #109b91 100%) !important;
+      }
+      .game-card { box-shadow: 0 3px 8px rgba(0,0,0,.16); }
+      .popular-section { contain: layout paint; }
+      .st-bottom-nav { box-shadow: 0 -2px 8px rgba(0,0,0,.22); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+      }
+      .single-notice-track { animation: none !important; transform: none !important; }
+    }
   </style>
 </head>
 
@@ -1395,7 +1434,12 @@ body.dark-theme .game-details-link { background: #0b303b; color: #32ffdc; }
       if (!document.getElementById('searchDrawer').classList.contains('hidden')) document.getElementById('gameSearchInput').focus();
     }
 
-    function handleSearch(val) { currentSearch = val.trim(); renderGames(); }
+    let searchRenderTimer = 0;
+    function handleSearch(val) {
+      currentSearch = val.trim();
+      window.clearTimeout(searchRenderTimer);
+      searchRenderTimer = window.setTimeout(renderGames, 120);
+    }
     function clearSearch() {
       document.getElementById('gameSearchInput').value = '';
       currentSearch = '';
@@ -1640,12 +1684,20 @@ body.dark-theme .game-details-link { background: #0b303b; color: #32ffdc; }
       });
     }
     db.ref('game_ratings').on('value', snap => paint(snap.val() || {}), err => console.warn('Could not read ratings:', err));
-    // New cards may be rendered after the first database response.
-    new MutationObserver(records => {
-      // Ignore text-node updates made by paint() itself to avoid an observer loop.
-      const cardsChanged = records.some(m => !(m.target.closest && m.target.closest('.game-rating-badge')));
-      if (cardsChanged) db.ref('game_ratings').once('value').then(s => paint(s.val() || {})).catch(()=>{});
-    }).observe(document.body, {childList:true,subtree:true});
+    // Watch only the game grid; coalesce renders so rapid filters/searches
+    // do not trigger repeated Firebase reads across the entire document.
+    const grid = document.getElementById('gamesGrid');
+    let ratingRefreshQueued = false;
+    if (grid) new MutationObserver(() => {
+      if (ratingRefreshQueued) return;
+      ratingRefreshQueued = true;
+      Promise.resolve().then(() => {
+        ratingRefreshQueued = false;
+        db.ref('game_ratings').once('value')
+          .then(s => paint(s.val() || {}))
+          .catch(() => {});
+      });
+    }).observe(grid, { childList: true });
   })();
   </script>
 
