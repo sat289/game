@@ -437,31 +437,68 @@
     rebuildTurntableVehicle();
   }
 
+  function mergeCustomVehiclesLists(...lists) {
+    const mapById = new Map();
+    lists.forEach(list => {
+      if (!Array.isArray(list)) return;
+      list.forEach(v => {
+        if (v && v.id) mapById.set(v.id, Object.assign({}, mapById.get(v.id) || {}, v));
+      });
+    });
+    return Array.from(mapById.values());
+  }
+
   async function loadExternalConfigs() {
+    let mergedCfg = Object.assign({}, liveConfig);
+    let localCfg = null;
     try {
-      const localCfg = JSON.parse(safeGetLS('sthw_admin_config', 'null'));
-      if (localCfg) applyAdminConfig(localCfg);
+      localCfg = JSON.parse(safeGetLS('sthw_admin_config', 'null'));
+      if (localCfg && typeof localCfg === 'object') {
+        mergedCfg = Object.assign({}, mergedCfg, localCfg);
+        applyAdminConfig(mergedCfg);
+      }
     } catch (e) {}
 
+    // 1. Fetch game-config.json directly from GitHub Raw & relative path (always works even if Firebase is blocked)
+    const configUrls = [
+      `https://raw.githubusercontent.com/sat289/game/main/carff/game-config.json?t=${Date.now()}`,
+      `game-config.json?t=${Date.now()}`
+    ];
+    let fileCfg = null;
+    for (const url of configUrls) {
+      try {
+        const r = await fetch(url, { cache: 'no-store' });
+        if (r.ok) {
+          const parsed = await r.json();
+          if (parsed && typeof parsed === 'object') {
+            fileCfg = parsed;
+            break;
+          }
+        }
+      } catch (e) {}
+    }
+
+    // 2. Fetch Firebase live_config.json
+    let fbCfg = null;
     try {
       const res = await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/live_config.json`, { cache: 'no-store' });
       if (res.ok) {
-        const fbCfg = await res.json();
-        if (fbCfg && typeof fbCfg === 'object') {
-          let localCfg = null;
-          try { localCfg = JSON.parse(safeGetLS('sthw_admin_config', 'null')); } catch (e) {}
-          if (localCfg && Array.isArray(localCfg.customVehicles)) {
-            const fbVehs = Array.isArray(fbCfg.customVehicles) ? fbCfg.customVehicles : [];
-            const mapById = new Map();
-            fbVehs.forEach(v => v && v.id && mapById.set(v.id, v));
-            localCfg.customVehicles.forEach(v => v && v.id && mapById.set(v.id, v));
-            fbCfg.customVehicles = Array.from(mapById.values());
-          }
-          safeSetLS('sthw_admin_config', JSON.stringify(fbCfg));
-          applyAdminConfig(fbCfg);
-        }
+        const parsed = await res.json();
+        if (parsed && typeof parsed === 'object') fbCfg = parsed;
       }
     } catch (e) {}
+
+    if (fileCfg) mergedCfg = Object.assign({}, mergedCfg, fileCfg);
+    if (fbCfg) mergedCfg = Object.assign({}, mergedCfg, fbCfg);
+
+    mergedCfg.customVehicles = mergeCustomVehiclesLists(
+      fileCfg?.customVehicles,
+      fbCfg?.customVehicles,
+      localCfg?.customVehicles
+    );
+
+    safeSetLS('sthw_admin_config', JSON.stringify(mergedCfg));
+    applyAdminConfig(mergedCfg);
   }
 
   async function savePlayerState() {

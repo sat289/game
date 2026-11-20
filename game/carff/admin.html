@@ -180,7 +180,7 @@
         </div>
         <div>
           <label class="block text-[11px] font-extrabold text-slate-300 mb-1">Game Folder (optional)</label>
-          <input id="ghFolder" class="adm-input" placeholder="e.g. st_hill_climb_v2 or blank" value="">
+          <input id="ghFolder" class="adm-input" placeholder="e.g. carff" value="carff">
         </div>
         <div>
           <label class="block text-[11px] font-extrabold text-amber-300 mb-1">GitHub Token (ghp_...)</label>
@@ -1152,10 +1152,25 @@
         } catch (e) {}
 
         try {
+          const rFile = await fetch(`game-config.json?t=${Date.now()}`, { cache: 'no-store' });
+          if (rFile.ok) {
+            const fc = await rFile.json();
+            if (fc && typeof fc === 'object') adminCfg = Object.assign({}, adminCfg, fc);
+          }
+        } catch (e) {}
+
+        try {
           const r = await fetch(`https://friendsgame-872f5-default-rtdb.firebaseio.com/st_hill_climb_v2/live_config.json`, { cache: 'no-store' });
           if (r.ok) {
             const fb = await r.json();
-            if (fb && typeof fb === 'object') adminCfg = Object.assign({}, adminCfg, fb);
+            if (fb && typeof fb === 'object') {
+              const prevVehs = Array.isArray(adminCfg.customVehicles) ? adminCfg.customVehicles : [];
+              const fbVehs = Array.isArray(fb.customVehicles) ? fb.customVehicles : [];
+              const byId = new Map();
+              prevVehs.forEach(v => v && v.id && byId.set(v.id, v));
+              fbVehs.forEach(v => v && v.id && byId.set(v.id, v));
+              adminCfg = Object.assign({}, adminCfg, fb, { customVehicles: Array.from(byId.values()) });
+            }
           }
         } catch (e) {}
 
