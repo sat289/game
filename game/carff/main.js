@@ -295,36 +295,88 @@
     return bytes.buffer;
   }
 
+  async function fetchModelBufferFromUrls(urls) {
+    for (const u of urls) {
+      if (!u) continue;
+      try {
+        const res = await fetch(u, { cache: 'no-store' });
+        if (res.ok) return await res.arrayBuffer();
+      } catch (e) {}
+    }
+    return null;
+  }
+
   async function ensureCustomModelLoaded(veh) {
-    if (!veh || !veh.id || custom3DModelCache[veh.id]) return custom3DModelCache[veh.id] || null;
-    if (!veh.isCustomAdmin && !veh.inlineObjText && !veh.inlineGlbBase64 && !veh.hasStoredBlob && !veh.modelUrl) return null;
+    if (!veh || !veh.id) return null;
+    if (custom3DModelCache[veh.id]) return custom3DModelCache[veh.id];
+    if (!veh.isCustomAdmin && !veh.inlineObjText && !veh.inlineGlbBase64 && !veh.hasStoredBlob && !veh.modelUrl && !veh.rawModelUrl) return null;
     const THREE = window.THREE;
     if (!THREE) return null;
 
     let blobRec = window.ModelStorage ? await window.ModelStorage.getModelData(veh.id) : null;
     const fmt = (blobRec?.format || veh.modelFormat || '').toLowerCase();
     const rawData = blobRec?.data || veh.inlineGlbBase64 || veh.inlineObjText || null;
+    const candidateUrls = [veh.rawModelUrl, veh.modelUrl].filter(Boolean);
 
-    if (rawData && (fmt === 'glb' || fmt === 'gltf') && THREE.GLTFLoader) {
-      return await new Promise((resolve) => {
-        try {
-          const loader = new THREE.GLTFLoader();
-          const buf = fmt === 'glb' ? base64ToArrayBuffer(rawData) : rawData;
-          loader.parse(buf, '', (gltf) => { custom3DModelCache[veh.id] = gltf.scene; resolve(gltf.scene); }, () => resolve(null));
-        } catch (e) { resolve(null); }
-      });
+    // 1. FBX Support (Local IndexedDB/LocalStorage OR GitHub Raw URL on other devices)
+    if (fmt === 'fbx' && THREE.FBXLoader) {
+      try {
+        let buf = null;
+        if (rawData) {
+          buf = (typeof rawData === 'string' && rawData.startsWith('; FBX'))
+            ? new TextEncoder().encode(rawData).buffer
+            : base64ToArrayBuffer(rawData);
+        } else {
+          buf = await fetchModelBufferFromUrls(candidateUrls);
+        }
+        if (buf) {
+          const obj = new THREE.FBXLoader().parse(buf, '');
+          custom3DModelCache[veh.id] = obj;
+          if (selected === veh.id) rebuildTurntableVehicle();
+          return obj;
+        }
+      } catch (e) {}
     }
-    if (rawData && fmt === 'obj') {
-      const grp = parseOBJStringToGroup(rawData, veh, getSkin());
-      custom3DModelCache[veh.id] = grp;
-      return grp;
+
+    // 2. GLB / GLTF Support (Local OR GitHub Raw URL on other devices)
+    if ((fmt === 'glb' || fmt === 'gltf') && THREE.GLTFLoader) {
+      try {
+        let bufOrText = null;
+        if (rawData) {
+          bufOrText = fmt === 'glb' ? base64ToArrayBuffer(rawData) : rawData;
+        } else {
+          const ab = await fetchModelBufferFromUrls(candidateUrls);
+          if (ab) bufOrText = fmt === 'glb' ? ab : new TextDecoder().decode(ab);
+        }
+        if (bufOrText) {
+          return await new Promise((resolve) => {
+            try {
+              new THREE.GLTFLoader().parse(bufOrText, '', (gltf) => {
+                custom3DModelCache[veh.id] = gltf.scene;
+                if (selected === veh.id) rebuildTurntableVehicle();
+                resolve(gltf.scene);
+              }, () => resolve(null));
+            } catch (e) { resolve(null); }
+          });
+        }
+      } catch (e) {}
     }
-    if (veh.modelUrl && (fmt === 'glb' || fmt === 'gltf') && THREE.GLTFLoader) {
-      return await new Promise((resolve) => {
-        try {
-          new THREE.GLTFLoader().load(veh.modelUrl, (gltf) => { custom3DModelCache[veh.id] = gltf.scene; resolve(gltf.scene); }, undefined, () => resolve(null));
-        } catch (e) { resolve(null); }
-      });
+
+    // 3. OBJ Support (Local OR GitHub Raw URL on other devices)
+    if (fmt === 'obj') {
+      try {
+        let objText = rawData;
+        if (!objText) {
+          const ab = await fetchModelBufferFromUrls(candidateUrls);
+          if (ab) objText = new TextDecoder().decode(ab);
+        }
+        if (objText) {
+          const grp = parseOBJStringToGroup(objText, veh, getSkin());
+          custom3DModelCache[veh.id] = grp;
+          if (selected === veh.id) rebuildTurntableVehicle();
+          return grp;
+        }
+      } catch (e) {}
     }
     return null;
   }
