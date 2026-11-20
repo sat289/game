@@ -9,4 +9,3 @@ window.DEFAULT_MAPS = [
   { id: 'moon', name: 'Cyber Spaceway', icon: '🌑', sky: '#030712', skyBottom: '#111827', ground: '#374151', road: '#1f2937', price: 18000, unlocked: false, desc: 'High-speed futuristic night expressway' }
 ];
 window.MAPS = JSON.parse(JSON.stringify(window.DEFAULT_MAPS));
-
