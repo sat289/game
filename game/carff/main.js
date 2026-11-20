@@ -337,6 +337,7 @@
     updateLobbyHUD();
     syncTurntableCameraSize();
     rebuildTurntableVehicle();
+    initLivePeer(myTeamCode, true);
   }
 
   function openLoginScreen() {
@@ -484,8 +485,90 @@
   }
 
   // ========================================================
-  // VOICE & MESSAGE SYSTEM BELOW USER VEHICLE
+  // LIVE P2P VOICE CHAT & LIVE MESSAGING (WebRTC / PeerJS — ZERO FIREBASE STORAGE)
   // ========================================================
+  let livePeer = null;
+  let liveDataConn = null;
+  let liveMediaCall = null;
+  let remotePeerId = null;
+
+  function appendLiveChatUI(sender, text) {
+    chatMessages.push({ sender, text, ts: Date.now() });
+    if (chatMessages.length > 40) chatMessages.shift();
+    if ($('#chatTickerText')) $('#chatTickerText').textContent = `[Live] ${sender}: ${text}`;
+    const box = $('#chatHistoryBox');
+    if (box) {
+      const div = document.createElement('div');
+      div.className = 'chat-msg';
+      div.innerHTML = `<b>[${sender}]:</b> <span>${text.replace(/</g, '&lt;')}</span>`;
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+    }
+  }
+
+  function attachDataConn(conn) {
+    liveDataConn = conn;
+    remotePeerId = conn.peer;
+    conn.on('open', () => {
+      showToast('🟢 Live P2P Squad Chat & Voice Connected!');
+    });
+    conn.on('data', (data) => {
+      if (data && data.type === 'chat' && data.text) {
+        appendLiveChatUI(data.sender || 'FRIEND', data.text);
+      }
+    });
+    conn.on('close', () => {
+      if (liveDataConn === conn) liveDataConn = null;
+      showToast('Live Squad peer disconnected.');
+    });
+  }
+
+  function attachRemoteAudioStream(stream) {
+    const audioEl = $('#remoteVoiceAudio');
+    if (!audioEl) return;
+    audioEl.srcObject = stream;
+    audioEl.muted = !speakerOn;
+    audioEl.play().catch(() => {});
+  }
+
+  function initLivePeer(teamCode, isHost) {
+    if (!window.Peer) return;
+    try { if (livePeer) livePeer.destroy(); } catch (e) {}
+    liveDataConn = null;
+    liveMediaCall = null;
+    remotePeerId = null;
+
+    const hostPeerId = `stgames-team-${teamCode}-host`;
+    const myPeerId = isHost ? hostPeerId : `stgames-team-${teamCode}-guest-${playerUID.slice(-4)}`;
+
+    livePeer = new window.Peer(myPeerId);
+
+    livePeer.on('open', () => {
+      if (!isHost) {
+        const conn = livePeer.connect(hostPeerId, { reliable: true });
+        attachDataConn(conn);
+        if (micActive && micStream) {
+          const call = livePeer.call(hostPeerId, micStream);
+          liveMediaCall = call;
+          call.on('stream', attachRemoteAudioStream);
+        }
+      }
+    });
+
+    livePeer.on('connection', (conn) => {
+      attachDataConn(conn);
+    });
+
+    livePeer.on('call', (call) => {
+      liveMediaCall = call;
+      remotePeerId = call.peer;
+      call.answer(micActive && micStream ? micStream : undefined);
+      call.on('stream', attachRemoteAudioStream);
+    });
+
+    livePeer.on('error', () => {});
+  }
+
   async function toggleVoiceMic() {
     const btn = $('#btnVoiceMic'), lbl = $('#micLabel'), ico = $('#micIcon');
     if (!micActive) {
@@ -495,41 +578,45 @@
         }
         micActive = true;
         btn?.classList.add('mic-live');
-        if (lbl) lbl.textContent = 'VOICE ON';
+        if (lbl) lbl.textContent = 'LIVE VOICE';
         if (ico) ico.textContent = '🎤';
-        showToast('🎤 Squad Voice Mic ON');
+        if (livePeer && remotePeerId && micStream) {
+          const call = livePeer.call(remotePeerId, micStream);
+          liveMediaCall = call;
+          call.on('stream', attachRemoteAudioStream);
+        }
+        showToast('🎤 Live P2P Voice Chat ON');
       } catch (e) {
         showToast('Mic permission denied or unavailable.');
       }
     } else {
       micActive = false;
       if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+      if (liveMediaCall) { try { liveMediaCall.close(); } catch (e) {} liveMediaCall = null; }
       btn?.classList.remove('mic-live');
       if (lbl) lbl.textContent = 'VOICE OFF';
       if (ico) ico.textContent = '🎙️';
-      showToast('🎙️ Squad Voice Mic OFF');
+      showToast('🎙️ Live Voice Chat OFF');
     }
   }
 
   function toggleVoiceSpeaker() {
     speakerOn = !speakerOn;
+    const audioEl = $('#remoteVoiceAudio');
+    if (audioEl) audioEl.muted = !speakerOn;
     if ($('#spkIcon')) $('#spkIcon').textContent = speakerOn ? '🔊' : '🔇';
-    showToast(speakerOn ? '🔊 Squad Audio ON' : '🔇 Squad Audio MUTED');
+    showToast(speakerOn ? '🔊 Live Squad Audio ON' : '🔇 Live Squad Audio MUTED');
   }
 
-  async function sendChatMessage(text) {
+  function sendChatMessage(text) {
     const clean = (text || '').trim();
     if (!clean) return;
     const sender = (currentUser && currentUser.name) || 'RACER';
-    const msgObj = { sender, uid: playerUID, text: clean, ts: Date.now() };
-    chatMessages.push(msgObj);
-    if (chatMessages.length > 30) chatMessages.shift();
-    if ($('#chatTickerText')) $('#chatTickerText').textContent = `[Team] ${sender}: ${clean}`;
-    try {
-      await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/chat/${encodeURIComponent(myTeamCode)}.json`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(msgObj)
-      });
-    } catch (e) {}
+    // Live P2P only — NOT stored on Firebase!
+    appendLiveChatUI(sender, clean);
+    if (liveDataConn && liveDataConn.open) {
+      liveDataConn.send({ type: 'chat', sender, text: clean });
+    }
   }
 
   // ========================================================
@@ -878,6 +965,7 @@
         if (!friendsList.some(f => f.uid === fr.uid)) friendsList.unshift(fr);
         activeSquadFriend = fr;
         myTeamCode = code;
+        initLivePeer(code, false);
         await savePlayerState();
         rebuildTurntableVehicle();
         modal.classList.add('hidden');
