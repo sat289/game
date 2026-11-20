@@ -62,10 +62,11 @@
     if (mode === 'google' && email) {
       return 'google_' + String(email).trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
     }
-    let guestSlot = safeGetLS('sthw_guest_key', '');
+    // Guest account is unique to THIS phone's localStorage
+    let guestSlot = safeGetLS('sthw_guest_device_key', '');
     if (!guestSlot) {
-      guestSlot = 'guest_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
-      safeSetLS('sthw_guest_key', guestSlot);
+      guestSlot = 'guest_' + Date.now().toString(36) + '_' + Math.floor(10000 + Math.random() * 89999);
+      safeSetLS('sthw_guest_device_key', guestSlot);
     }
     return guestSlot;
   }
@@ -73,47 +74,90 @@
   async function getOrAssignSequentialUID(mode, email) {
     const accKey = getAccountKey(mode, email);
     let localMap = {};
-    try { localMap = JSON.parse(safeGetLS('sthw_account_uids', '{}')) || {}; } catch (e) { localMap = {}; }
+    try { localMap = JSON.parse(safeGetLS('sthw_account_uids_v8', '{}')) || {}; } catch (e) { localMap = {}; }
 
-    // 1. Check if this account already has a UID in Firebase or LocalStorage
+    // 1. Return existing UID for this specific account on this device
     if (localMap[accKey]) return String(localMap[accKey]);
-    try {
-      const rAcc = await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/account_uids/${encodeURIComponent(accKey)}.json`, { cache: 'no-store' });
-      if (rAcc.ok) {
-        const existingUid = await rAcc.json();
-        if (existingUid) {
-          localMap[accKey] = String(existingUid);
-          safeSetLS('sthw_account_uids', JSON.stringify(localMap));
-          return String(existingUid);
-        }
-      }
-    } catch (e) {}
 
-    // 2. Allocate next sequential UID starting from 11111
-    let nextUid = Math.max(11111, parseInt(safeGetLS('sthw_uid_counter', '11111'), 10) || 11111);
+    // 2. For Google accounts, check if this email already has a UID in Firebase
+    if (mode === 'google') {
+      try {
+        const rAcc = await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/account_uids/${encodeURIComponent(accKey)}.json`, { cache: 'no-store' });
+        if (rAcc.ok) {
+          const existingUid = await rAcc.json();
+          if (existingUid && Number(existingUid) >= 11111) {
+            localMap[accKey] = String(existingUid);
+            safeSetLS('sthw_account_uids_v8', JSON.stringify(localMap));
+            return String(existingUid);
+          }
+        }
+      } catch (e) {}
+    }
+
+    // 3. Allocate next unique sequential UID starting from 11111 (verified against Firebase uids/)
+    let nextUid = 11111;
     try {
       const rCnt = await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/uid_counter.json`, { cache: 'no-store' });
       if (rCnt.ok) {
         const fbCnt = parseInt(await rCnt.json(), 10);
-        if (!isNaN(fbCnt) && fbCnt >= 11111) nextUid = Math.max(nextUid, fbCnt + 1);
+        if (!isNaN(fbCnt) && fbCnt >= 11111) nextUid = fbCnt + 1;
       }
-    } catch (e) {}
+      // Double-check against existing uids so two phones never collide
+      const rUids = await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/uids.json?shallow=true`, { cache: 'no-store' });
+      if (rUids.ok) {
+        const keysObj = await rUids.json();
+        if (keysObj && typeof keysObj === 'object') {
+          Object.keys(keysObj).forEach(k => {
+            const n = parseInt(k, 10);
+            if (!isNaN(n) && n >= 11111 && n < 9999999 && n >= nextUid) nextUid = n + 1;
+          });
+        }
+      }
+    } catch (e) {
+      const localCnt = parseInt(safeGetLS('sthw_uid_counter', '11111'), 10) || 11111;
+      nextUid = Math.max(11111, localCnt);
+    }
 
     const assigned = String(nextUid);
     localMap[accKey] = assigned;
-    safeSetLS('sthw_account_uids', JSON.stringify(localMap));
+    safeSetLS('sthw_account_uids_v8', JSON.stringify(localMap));
     safeSetLS('sthw_uid_counter', String(nextUid + 1));
 
     try {
       await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/uid_counter.json`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(nextUid)
       });
-      await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/account_uids/${encodeURIComponent(accKey)}.json`, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(assigned)
-      });
+      if (mode === 'google') {
+        await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/account_uids/${encodeURIComponent(accKey)}.json`, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(assigned)
+        });
+      }
     } catch (e) {}
 
     return assigned;
+  }
+
+  async function regenerateTeamCode() {
+    myTeamCode = generateTeamCode();
+    safeSetLS('sthw_team_code', myTeamCode);
+    const displayName = (currentUser && currentUser.name) ? currentUser.name : ('GUEST_' + playerUID);
+    const tcPayload = {
+      uid: playerUID,
+      name: displayName,
+      carId: selected,
+      level: playerLevel,
+      teamCode: myTeamCode,
+      status: presenceStatus,
+      lastSeen: Date.now()
+    };
+    try {
+      await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/teamcodes/${encodeURIComponent(myTeamCode)}.json`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(tcPayload)
+      });
+    } catch (e) {}
+    initLivePeer(myTeamCode, true);
+    updateLobbyHUD();
+    return myTeamCode;
   }
 
   function generateTeamCode() {
@@ -176,14 +220,13 @@
     safeSetLS('sthw_player_uid', playerUID);
   }
 
-  // Saved Google accounts on this device for the Account Picker
+  // Saved Google accounts on THIS device only (never hardcoded to one person!)
   let savedGoogleAccounts = [];
   try {
-    savedGoogleAccounts = JSON.parse(safeGetLS('sthw_google_accounts', 'null')) || [
-      { name: 'Satish Kommana', email: 'satish.kommana@gmail.com' }
-    ];
+    const parsedG = JSON.parse(safeGetLS('sthw_google_accounts', 'null'));
+    if (Array.isArray(parsedG)) savedGoogleAccounts = parsedG;
   } catch (e) {
-    savedGoogleAccounts = [{ name: 'Satish Kommana', email: 'satish.kommana@gmail.com' }];
+    savedGoogleAccounts = [];
   }
 
   function cleanUsernameKey(name) {
@@ -597,7 +640,7 @@
     updateLobbyHUD();
     syncTurntableCameraSize();
     rebuildTurntableVehicle();
-    initLivePeer(myTeamCode, true);
+    regenerateTeamCode();
     pollPresenceAndRequests();
   }
 
@@ -609,7 +652,13 @@
 
   function renderGoogleAccountsPicker(onSelectAccount) {
     const listEl = $('#googleAccountsList');
+    const otherBox = $('#addOtherGoogleBox');
     if (!listEl) return;
+    if (!savedGoogleAccounts.length) {
+      listEl.innerHTML = `<div style="font-size:11px;color:#64748b;padding:4px 2px;">No Google account saved on this phone yet. Enter your Gmail below to create/sign in:</div>`;
+      otherBox?.classList.remove('hidden');
+      return;
+    }
     listEl.innerHTML = savedGoogleAccounts.map((acc, idx) => {
       const initials = (acc.name || 'G').slice(0, 2).toUpperCase();
       return `<button type="button" class="g-acc-item" data-g-idx="${idx}">
@@ -1268,9 +1317,9 @@
           bodyHtml = `
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
               <div class="item-card">
-                <strong>🔎 SEND FRIEND REQUEST BY UID</strong>
+                <strong>🔎 SEARCH PLAYER BY UID</strong>
                 <input id="addFriendUidIn" class="auth-input" placeholder="Enter Friend UID (e.g. 11111)">
-                <button type="button" class="card-action-btn buy" id="addFriendUidBtn">📩 SEND REQUEST</button>
+                <button type="button" class="card-action-btn buy" id="searchUidProfileBtn">🔍 VIEW PROFILE</button>
               </div>
               <div class="item-card">
                 <strong>🚀 JOIN DUO BY TEAM CODE</strong>
@@ -1278,6 +1327,7 @@
                 <button type="button" class="card-action-btn equipped" id="joinTeamCodeBtn">🔗 JOIN SQUAD</button>
               </div>
             </div>
+            <div id="uidSearchResultBox" style="margin-bottom:10px;"></div>
             <div style="margin-bottom:6px;font-size:11px;font-weight:900;color:#38bdf8;">🌐 PLAYERS DIRECTORY (LIVE STATUS)</div>
             ${onlineNow.length ? `<div class="grid-cards">${onlineNow.slice(0, 8).map(u => {
               const stBadge = u.liveStatus === 'in_game' ? '🏎️ PLAYING GAME' : u.liveStatus === 'online' ? '🟢 ONLINE' : '⚫ OFFLINE';
@@ -1316,8 +1366,52 @@
         contentEl.querySelectorAll('[data-fr-tab]').forEach(b => { b.onclick = () => renderFriendsTab(b.dataset.frTab); });
         $('#goAddTabBtn')?.addEventListener('click', () => renderFriendsTab('add'));
 
-        $('#addFriendUidBtn')?.addEventListener('click', async () => {
-          await sendFriendRequestToUID($('#addFriendUidIn').value);
+        $('#searchUidProfileBtn')?.addEventListener('click', async () => {
+          const searchUid = ($('#addFriendUidIn')?.value || '').trim();
+          const resBox = $('#uidSearchResultBox');
+          if (!resBox) return;
+          if (searchUid.length < 4) {
+            resBox.innerHTML = `<div class="item-card"><small style="color:#f87171;">Enter a valid UID (e.g. 11111).</small></div>`;
+            return;
+          }
+          resBox.innerHTML = `<div class="item-card"><small style="color:#93c5fd;">🔍 Searching UID ${searchUid}...</small></div>`;
+          let found = null;
+          try {
+            const r = await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/uids/${encodeURIComponent(searchUid)}.json`, { cache: 'no-store' });
+            if (r.ok) {
+              const d = await r.json();
+              if (d && d.uid) found = d;
+            }
+          } catch (e) {}
+          if (!found) {
+            resBox.innerHTML = `<div class="item-card" style="border-color:#ef4444;">
+              <strong style="color:#fca5a5;">❌ No player found with UID: ${searchUid}</strong>
+              <small>Ask your friend to open the game once so their UID registers online.</small>
+            </div>`;
+            return;
+          }
+          const st = computeLiveStatus(found);
+          const stBadge = st === 'in_game' ? '🏎️ PLAYING GAME' : st === 'online' ? '🟢 ONLINE' : '⚫ OFFLINE';
+          const isMe = String(found.uid) === String(playerUID);
+          const alreadyFr = friendsList.some(f => String(f.uid) === String(found.uid));
+          const carObj = getVehicle(found.selected || 'agera');
+          resBox.innerHTML = `<div class="item-card selected" style="flex-direction:row;align-items:center;justify-content:space-between;gap:10px;">
+            <div>
+              <strong>👤 ${found.name || 'RACER'} <span style="color:#fde047;font-size:10px;">LV.${found.level || 1}</span></strong>
+              <small>UID: <b>${found.uid}</b> • ${stBadge}</small>
+              <small>Car: <b>${carObj ? carObj.name : 'Agera RS'}</b> • Best: <b>${Number(found.bestDistKm || 0).toFixed(2)} KM</b></small>
+            </div>
+            <div>
+              ${isMe
+                ? `<span style="font-size:10px;color:#fde047;font-weight:900;">YOUR PROFILE</span>`
+                : alreadyFr
+                  ? `<span style="font-size:10px;color:#4ade80;font-weight:900;">✓ ALREADY FRIENDS</span>`
+                  : `<button type="button" class="card-action-btn buy" id="sendReqFromProfileBtn" style="width:auto;">📩 SEND REQUEST</button>`}
+            </div>
+          </div>`;
+          $('#sendReqFromProfileBtn')?.addEventListener('click', async () => {
+            await sendFriendRequestToUID(found.uid);
+          });
         });
 
         $('#joinTeamCodeBtn')?.addEventListener('click', async () => {
@@ -1333,7 +1427,17 @@
               }
             }
           } catch (e) {}
-          if (!fr) { showToast('Team Code not found or expired!'); return; }
+          if (!fr) {
+            try {
+              const rAll = await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/uids.json`, { cache: 'no-store' });
+              if (rAll.ok) {
+                const allU = await rAll.json() || {};
+                const match = Object.values(allU).find(u => u && String(u.teamCode) === String(code) && String(u.uid) !== String(playerUID));
+                if (match) fr = { uid: match.uid, name: match.name || 'SQUAD', carId: match.selected || 'agera', level: match.level || 1, liveStatus: computeLiveStatus(match) };
+              }
+            } catch (e) {}
+          }
+          if (!fr) { showToast('Team Code not found or expired! Ask friend to copy their latest Team Code.'); return; }
           if (!friendsList.some(f => f.uid === fr.uid)) friendsList.unshift(fr);
           activeSquadFriend = fr;
           myTeamCode = code;
@@ -1747,6 +1851,7 @@
     },
     onReturnToLobby() {
       presenceStatus = 'online';
+      regenerateTeamCode();
       savePlayerState();
     },
     onRunEnded(scoreVal, distKm, earnedTCoins, nearMissCount) {
@@ -1758,6 +1863,7 @@
       const xpEarned = Math.max(15, Math.floor((distKm || 0) * 35 + (nearMissCount || 0) * 8));
       const leveledUp = addPlayerXP(xpEarned);
       presenceStatus = 'online';
+      regenerateTeamCode();
       savePlayerState();
       if (leveledUp) showToast(`🎉 LEVEL UP! You reached LV.${playerLevel}!`);
       return { earnedTCoins: earnedTCoins || 0, xpEarned };
