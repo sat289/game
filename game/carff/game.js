@@ -18,7 +18,8 @@ window.HillGame = {
 
     let kmh = 72;
     const minCruiseKmh = 65;
-    const maxKmh = 220 + (vehicle.speed || 90) * 0.85 + upLv('Engine') * 12;
+    const tuning = window.STGameplayTuning || { trafficCount: 8, nearMissMultiplier: 1.0, speedMultiplier: 1.0 };
+    const maxKmh = (220 + (vehicle.speed || 90) * 0.85 + upLv('Engine') * 12) * (tuning.speedMultiplier || 1.0);
     const accelRate = 0.44 + (vehicle.acc || 90) * 0.003 + upLv('Tires') * 0.04;
 
     let distanceMeters = 0, bonusScore = 0, score = 0;
@@ -242,7 +243,8 @@ window.HillGame = {
       headlightBeam.target.position.set(playerX, 0.1, -65);
       scene.add(headlightBeam); scene.add(headlightBeam.target);
 
-      for (let i = 0; i < 8; i++) spawnTrafficVehicle(-48 - i * 32);
+      const tCount = Math.max(4, Math.min(14, parseInt(tuning.trafficCount, 10) || 8));
+      for (let i = 0; i < tCount; i++) spawnTrafficVehicle(-48 - i * (256 / tCount));
     }
 
     initHighway3D();
@@ -353,7 +355,7 @@ window.HillGame = {
               lastNearMissTime = now;
               nearMissCount += 1;
               const isUltra = lateralDist < 2.05;
-              const tCoinsEarned = (isUltra ? 50 : 25) * combo;
+              const tCoinsEarned = Math.round((isUltra ? 50 : 25) * combo * (tuning.nearMissMultiplier || 1.0));
               const pts = (isUltra ? 100 : 50) * combo;
               runTCoins += tCoinsEarned;
               bonusScore += pts;

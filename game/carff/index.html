@@ -7,88 +7,27 @@
   <link rel="stylesheet" href="style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 </head>
 <body>
   <div id="stage16x9" class="stage-16x9">
-    <!-- LOGIN SCREEN (GOOGLE ACCOUNT PICKER + GUEST WITH AUTO UID) -->
-    <div id="loginScreen" class="login-screen">
-      <img class="lobby-bg-img" src="assets/backgrounds/homepage-bg.png" alt="Background">
-      <div class="login-backdrop"></div>
-
-      <div class="login-card">
-        <div class="login-brand">
-          <div class="login-logo-box">ST</div>
-          <div>
-            <h1>ST GAMES • 3D HIGHWAY RACER</h1>
-            <p>☁️ Firebase Cloud: <b>friendsgame-872f5</b> • Auto UID</p>
-          </div>
-        </div>
-
-        <button type="button" id="loginGoogleBtn" class="login-google-btn">
-          <span class="g-badge">G</span>
-          <span>SIGN IN WITH GOOGLE (CHOOSE ACCOUNT)</span>
-        </button>
-
-        <div class="login-divider"><span>OR PLAY AS GUEST</span></div>
-
-        <div class="login-fields">
-          <input type="text" id="loginName" class="login-input" placeholder="Desired Username (optional)">
-        </div>
-
-        <div id="loginError" class="login-error hidden"></div>
-
-        <button type="button" id="loginGuestBtn" class="login-guest-btn">
-          <span>👤 PLAY AS GUEST (AUTO UID)</span>
-          <small>Instant Play • Local Storage Save &amp; Friends UID</small>
-        </button>
-      </div>
-
-      <!-- GOOGLE ACCOUNT CHOOSER OVERLAY -->
-      <div id="googlePickerModal" class="g-picker-overlay hidden">
-        <div class="g-picker-card">
-          <div class="g-picker-head">
-            <span class="g-badge">G</span>
-            <div>
-              <h3>Choose an account</h3>
-              <small>to continue to <b>ST GAMES 3D</b></small>
-            </div>
-            <button type="button" id="closeGooglePicker" class="g-picker-close">✕</button>
-          </div>
-
-          <div id="googleAccountsList" class="g-accounts-list"></div>
-
-          <div id="addOtherGoogleBox" class="g-other-box hidden">
-            <input type="email" id="otherGoogleEmail" class="g-input" placeholder="Gmail address (e.g. player@gmail.com)">
-            <input type="text" id="otherGoogleName" class="g-input" placeholder="Display Name (e.g. Satish)">
-            <button type="button" id="confirmOtherGoogleBtn" class="g-confirm-btn">Continue with this Google Account</button>
-          </div>
-
-          <button type="button" id="useAnotherGoogleBtn" class="g-other-trigger">
-            <span>👤</span> Use another account
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- CLEAN FREE FIRE INDIA STYLE LOBBY -->
-    <div id="menu" class="menu hidden">
+    <!-- CLEAN LOBBY (OPENS DIRECTLY AS GUEST — NO FORCED LOGIN POPUP) -->
+    <div id="menu" class="menu">
       <img id="lobbyBgImg" class="lobby-bg-img" src="assets/backgrounds/homepage-bg.png" alt="Lobby Background">
       <div class="lobby-vignette"></div>
 
-      <!-- SINGLE SLEEK TOP BAR -->
+      <!-- TOP BAR -->
       <header class="ff-topbar">
         <div class="ff-top-left">
           <!-- ACCOUNT PILL + LEVEL PROGRESS BAR BELOW ACCOUNT -->
           <div class="ff-profile-stack">
-            <button type="button" class="ff-profile-pill" id="btnAccountTop" title="Account, Username & UID">
+            <button type="button" class="ff-profile-pill" id="btnAccountTop" title="Switch Account / Sign In">
               <div class="ff-avatar">
-                <span id="topAvatarInitials">ST</span>
+                <span id="topAvatarInitials">G</span>
                 <em id="topPlayerLevel">1</em>
               </div>
               <div class="ff-pinfo">
-                <strong id="topPlayerName">RACER</strong>
-                <small id="topPlayerUid">UID: 000000000</small>
+                <strong id="topPlayerName">GUEST</strong>
+                <small id="topPlayerUid">UID: 11111</small>
               </div>
             </button>
             <div class="ff-xp-bar-wrap" title="Level Progress">
@@ -112,10 +51,6 @@
 
         <div class="ff-top-right">
           <span class="ff-game-mark">ST GAMES <em>3D</em></span>
-          <button type="button" class="ff-top-ico" id="btnFriendsTop" title="Friends, Requests & Team Code">
-            <span>👥</span>
-            <span class="ff-dot hidden" id="friendReqBadge">0</span>
-          </button>
           <button type="button" class="ff-top-ico" id="btnNotifications" title="Mail & Rewards">
             <span>✉️</span>
             <span class="ff-dot" id="notifBadge">2</span>
@@ -130,7 +65,7 @@
         </div>
       </header>
 
-      <!-- CLEAN LEFT NAVIGATION COLUMN -->
+      <!-- LEFT NAVIGATION COLUMN -->
       <nav class="ff-left-col" aria-label="Main Menu">
         <button type="button" class="ff-side-btn ff-side-gold" id="btnStore">
           <span>🛒</span><strong>STORE</strong>
@@ -150,65 +85,28 @@
         <div id="orangeCustomBtns" style="display:flex;flex-direction:column;gap:5px;"></div>
       </nav>
 
-      <!-- RIGHT VERTICAL FRIENDS / SQUAD STRIP (EMPTY UNTIL YOU ADD FRIENDS) -->
-      <aside class="ff-right-friends" aria-label="Friends & Squad">
-        <div class="ff-fr-head">
-          <span>FRIENDS</span>
-          <button type="button" id="btnAddFriendQuick" title="Add Friends / Requests">+</button>
-        </div>
-        <div id="rightFriendsList" class="ff-fr-list"></div>
-        <button type="button" class="ff-teamcode-mini" id="btnTeamCodeMini">
-          <span>🔗 TEAM CODE</span>
-        </button>
-      </aside>
-
-      <!-- CENTER 3D RAMP STAGE (1 CAR SOLO OR 2 ROTATING CARS DUO!) -->
+      <!-- CENTER 3D RAMP STAGE -->
       <div id="turntableStage" class="turntable-stage">
         <div class="ff-car-banner">
           <strong id="activeCarName">KOENIGSEGG AGERA RS</strong>
-          <span class="ff-squad-pill hidden" id="squadDuoBadge">👥 DUO SQUAD</span>
         </div>
-
         <canvas id="turntableCanvas"></canvas>
-
-        <!-- LIVE VOICE & MESSAGE BUTTONS DIRECTLY BELOW THE USER VEHICLE -->
-        <div class="ff-vehicle-comms">
-          <button type="button" class="ff-comm-btn" id="btnVoiceMic" title="Toggle Live Voice Mic">
-            <span id="micIcon">🎙️</span>
-            <small id="micLabel">VOICE OFF</small>
-          </button>
-          <button type="button" class="ff-comm-btn" id="btnVoiceSpeaker" title="Toggle Squad Speaker">
-            <span id="spkIcon">🔊</span>
-            <small>AUDIO</small>
-          </button>
-          <button type="button" class="ff-comm-btn ff-comm-msg" id="btnOpenChat" title="Live Squad Chat">
-            <span>💬</span>
-            <small>MESSAGE</small>
-          </button>
-        </div>
       </div>
 
-      <!-- BOTTOM-LEFT: CHAT TICKER + COMPACT FREE FIRE DOCK -->
+      <!-- BOTTOM-LEFT DOCK -->
       <div class="ff-bottom-left">
-        <button type="button" class="ff-chat-ticker" id="chatTickerBtn">
-          <span class="ff-chat-ico">💬</span>
-          <span id="chatTickerText">[Live] Tap MESSAGE to chat with squad!</span>
-        </button>
-
         <div class="ff-bottom-bar">
           <span class="ff-logo-mini">ST</span>
           <button type="button" id="dockVault">🚘 VAULT</button>
           <span class="ff-sep">|</span>
           <button type="button" id="dockSkins">🎨 SKINS</button>
           <span class="ff-sep">|</span>
-          <button type="button" id="dockFriends">👥 FRIENDS</button>
-          <span class="ff-sep">|</span>
-          <button type="button" id="btnAccount">☁️ ACCOUNT</button>
+          <button type="button" id="btnAccount">👤 ACCOUNT</button>
           <div id="greyCustomBtns" style="display:flex;gap:4px;"></div>
         </div>
       </div>
 
-      <!-- BOTTOM-RIGHT: FREE FIRE MODE CARD + GOLDEN START BUTTON -->
+      <!-- BOTTOM-RIGHT: MODE CARD + GOLDEN START BUTTON -->
       <div class="ff-bottom-right">
         <button type="button" id="mapSelectBox" class="ff-mode-card">
           <div id="redMapGround" class="ff-mode-accent"></div>
@@ -229,6 +127,93 @@
       </div>
 
       <div id="customFloatingLayer" class="custom-floating-layer"></div>
+    </div>
+
+    <!-- GOOGLE-STYLE DARK ACCOUNT SWITCHER & SIGN-IN OVERLAY (OPENED ONLY WHEN USER TAPS ACCOUNT) -->
+    <div id="accountSwitcherModal" class="gdark-overlay hidden">
+      <div class="gdark-shell">
+        <button type="button" id="closeAccountSwitcher" class="gdark-close" aria-label="Close">✕</button>
+
+        <div class="gdark-scroll">
+          <!-- MAIN ACCOUNTS CARD -->
+          <div class="gdark-card">
+            <div class="gdark-active-row" id="gdarkToggleExpand">
+              <div class="gdark-avatar-lg">
+                <span id="gdarkActiveInitial">G</span>
+                <i class="gdark-edit-ico">✎</i>
+              </div>
+              <div class="gdark-active-meta">
+                <strong id="gdarkActiveName">GUEST_11111</strong>
+                <small id="gdarkActiveSub">Guest Account • Local Device</small>
+                <div class="gdark-badges">
+                  <span class="gdark-pill-pro" id="gdarkModeBadge">Guest</span>
+                  <span class="gdark-pill-uid" id="gdarkUidBadge">UID: 11111</span>
+                </div>
+              </div>
+              <button type="button" class="gdark-chevron" id="gdarkChevronBtn">⌃</button>
+            </div>
+
+            <div id="gdarkAccountsBody" class="gdark-accounts-body">
+              <div id="gdarkSavedList" class="gdark-saved-list"></div>
+
+              <button type="button" class="gdark-action-row" id="gdarkAddAccBtn">
+                <span class="gdark-row-ico">＋</span>
+                <span>Add another account</span>
+              </button>
+
+              <!-- INLINE ADD GOOGLE ACCOUNT FORM -->
+              <div id="gdarkAddForm" class="gdark-inline-form hidden">
+                <input type="email" id="gdarkNewEmail" class="gdark-input" placeholder="Enter Gmail (e.g. yourname@gmail.com)">
+                <input type="text" id="gdarkNewName" class="gdark-input" placeholder="Display Name (optional)">
+                <div class="gdark-form-btns">
+                  <button type="button" id="gdarkSaveNewAccBtn" class="gdark-btn-blue">Sign in with Google</button>
+                  <button type="button" id="gdarkCancelAddBtn" class="gdark-btn-ghost">Cancel</button>
+                </div>
+              </div>
+
+              <button type="button" class="gdark-action-row" id="gdarkManageDeviceBtn">
+                <span class="gdark-row-ico">👤</span>
+                <span>Manage accounts on this device</span>
+              </button>
+
+              <!-- INLINE MANAGE DEVICE ACCOUNTS -->
+              <div id="gdarkManageBox" class="gdark-inline-form hidden">
+                <div id="gdarkManageList" class="gdark-manage-list"></div>
+                <button type="button" id="gdarkSwitchGuestBtn" class="gdark-btn-ghost" style="width:100%;">👤 Switch to Local Guest Account</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- MANAGE USERNAME & ACCOUNT CARD -->
+          <button type="button" class="gdark-pill-card" id="gdarkManageUsernameToggle">
+            <span class="gdark-g-logo">G</span>
+            <span>Manage your Account &amp; Username</span>
+          </button>
+
+          <div id="gdarkUsernameBox" class="gdark-card gdark-inline-form hidden">
+            <div style="font-size:11px;color:#9aa0a6;margin-bottom:4px;">Change Username (checks availability across Firebase)</div>
+            <div style="display:flex;gap:6px;">
+              <input type="text" id="gdarkUsernameInput" class="gdark-input" placeholder="New available username">
+              <button type="button" id="gdarkSaveUsernameBtn" class="gdark-btn-blue" style="white-space:nowrap;">Save</button>
+            </div>
+            <small id="gdarkUsernameMsg" style="font-size:10.5px;color:#9aa0a6;"></small>
+          </div>
+
+          <!-- SETTINGS SHORTCUT CARD -->
+          <div class="gdark-card">
+            <button type="button" class="gdark-action-row" id="gdarkOpenSettingsBtn">
+              <span class="gdark-row-ico">⚙️</span>
+              <span>Settings &amp; Controls</span>
+            </button>
+            <button type="button" class="gdark-action-row" id="gdarkOpenMailBtn">
+              <span class="gdark-row-ico">✉️</span>
+              <span>Mail &amp; Rewards</span>
+            </button>
+          </div>
+
+          <div class="gdark-footer">ST GAMES 3D • Firebase Cloud Sync</div>
+        </div>
+      </div>
     </div>
 
     <!-- MODAL OVERLAY -->
@@ -338,6 +323,5 @@
   <script src="maps.js"></script>
   <script src="main.js"></script>
   <script src="game.js"></script>
-  <audio id="remoteVoiceAudio" autoplay playsinline style="display:none;"></audio>
 </body>
 </html>
