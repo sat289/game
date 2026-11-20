@@ -6,6 +6,8 @@
   <title>ST GAMES • Hill Climb 3D Admin Studio (GitHub + Firebase)</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="model-storage.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body {
@@ -646,13 +648,29 @@
         loop();
       }
 
-      // Strictly validate & preview 3D car files (.glb, .gltf, .obj, .fbx)
+      // Preview & validate 3D car/bike files (.glb, .gltf, .obj)
+      function setAdminPreviewObject(obj) {
+        const THREE = window.THREE;
+        if (!pScene || !THREE) return;
+        if (pGroup) pScene.remove(pGroup);
+        const box = new THREE.Box3().setFromObject(obj);
+        const size = new THREE.Vector3(), center = new THREE.Vector3();
+        box.getSize(size); box.getCenter(center);
+        const sc = 3.2 / Math.max(size.x, size.y, size.z, 0.01);
+        obj.scale.multiplyScalar(sc);
+        box.setFromObject(obj); box.getCenter(center);
+        obj.position.set(-center.x, -box.min.y - 0.65, -center.z);
+        pGroup = new THREE.Group();
+        pGroup.add(obj);
+        pScene.add(pGroup);
+      }
+
       $('#car3dFile').addEventListener('change', async e => {
         const f = e.target.files[0];
         if (!f) return;
         const ext = f.name.split('.').pop().toLowerCase();
         if (!['glb', 'gltf', 'obj', 'mtl', 'fbx', '3ds', 'blend', 'zip'].includes(ext)) {
-          toast('❌ Only 3D Car/Bike files (.obj, .mtl, .glb, .gltf, .fbx, .3ds, .blend, .zip) are allowed!');
+          toast('❌ Only 3D Car/Bike files (.glb, .gltf, .obj, .fbx) are allowed!');
           e.target.value = '';
           return;
         }
@@ -662,19 +680,28 @@
           $('#carName').value = base;
           $('#carId').value = base.toLowerCase().replace(/[^a-z0-9]+/g, '_');
         }
+        // Live 3D preview for .glb/.gltf
+        if ((ext === 'glb' || ext === 'gltf') && window.THREE?.GLTFLoader) {
+          const url = URL.createObjectURL(f);
+          new window.THREE.GLTFLoader().load(url, (gltf) => {
+            setAdminPreviewObject(gltf.scene);
+            $('#admin3dStatus').textContent = `✅ 3D Preview Loaded: ${f.name}`;
+            URL.revokeObjectURL(url);
+          });
+        }
       });
 
-      // Upload 3D Car to GitHub & Game
+      // Upload 3D Car/Bike -> LocalStorage + IndexedDB + Firebase + GitHub (immediately appears in Game!)
       $('#upload3dCarBtn').onclick = async () => {
         const name = ($('#carName').value || '').trim();
         const id = ($('#carId').value || name.toLowerCase().replace(/[^a-z0-9]+/g, '_')).trim();
         const f = $('#car3dFile').files[0];
         if (!name || !id) {
-          toast('Please enter a Car Name and Unique ID.');
+          toast('Please enter a Vehicle Name and Unique ID.');
           return;
         }
         if (!f) {
-          toast('Please select a 3D car model file (.glb, .gltf, .obj, or .fbx)!');
+          toast('Please select a 3D vehicle model file (.glb, .gltf, or .obj)!');
           return;
         }
         const ext = f.name.split('.').pop().toLowerCase();
@@ -687,13 +714,14 @@
         const relModelPath = `assets/models/${safeFileName}`;
 
         try {
-          toast(`⏳ Processing & uploading 3D model ${safeFileName}...`);
+          toast(`⏳ Saving & uploading 3D model ${safeFileName}...`);
           const buf = await f.arrayBuffer();
           const b64 = arrayBufferToBase64(buf);
+          const rawForStorage = (ext === 'obj' || ext === 'gltf') ? new TextDecoder().decode(buf) : b64;
 
-          let inlineObjText = undefined;
-          if (ext === 'obj' && f.size < 1800000) {
-            inlineObjText = new TextDecoder().decode(buf);
+          // 1. Save full 3D file to LocalStorage + IndexedDB so index.html loads it immediately!
+          if (window.ModelStorage) {
+            await window.ModelStorage.saveModelData(id, ext, rawForStorage);
           }
 
           const vType = ($('#carType') && $('#carType').value) || 'car';
@@ -703,34 +731,48 @@
             type: vType,
             emoji: vType === 'bike' ? '🏍️' : '🏎️',
             prebakedKey: vType === 'bike' ? 'MOTO_3D_DATA' : 'AGERA_3D_DATA',
-            price: parseInt($('#carPrice').value, 10) || 150000,
+            price: parseInt($('#carPrice').value, 10) || 0,
             speed: parseInt($('#carSpeed').value, 10) || 98,
             acc: parseInt($('#carAcc').value, 10) || 95,
             handling: parseInt($('#carHandling').value, 10) || 92,
             fuel: parseInt($('#carFuel').value, 10) || 85,
             is3D: true,
+            isCustomAdmin: true,
+            hasStoredBlob: true,
+            autoUnlock: true,
             modelFormat: ext,
             modelUrl: relModelPath,
             defaultColor: $('#carColor').value || '#e11d48',
             secondaryColor: '#111827',
             scale: parseFloat($('#carScale').value) || 1.0,
-            badge: '3D CUSTOM',
-            inlineObjText
+            badge: '3D CUSTOM'
           };
+
+          // Keep small OBJ/GLB inline in config too for cross-device Firebase sync if under 900KB
+          if (ext === 'obj' && f.size < 900000) newCar.inlineObjText = rawForStorage;
+          if (ext === 'glb' && f.size < 650000) newCar.inlineGlbBase64 = b64;
 
           adminCfg.customVehicles = (adminCfg.customVehicles || []).filter(v => v.id !== id);
           adminCfg.customVehicles.unshift(newCar);
 
-          // Upload binary 3D file to GitHub if token is configured
+          // 2. Also auto-unlock & select in local player garage so it appears immediately in Game
+          try {
+            const ownedArr = JSON.parse(localStorage.getItem('sthwOwned') || '["agera","moto_1000r","astra_gt"]');
+            if (!ownedArr.includes(id)) ownedArr.unshift(id);
+            localStorage.setItem('sthwOwned', JSON.stringify(ownedArr));
+            localStorage.setItem('sthwVehicle', id);
+          } catch (e) {}
+
+          // 3. Push binary 3D file to GitHub if token is configured
           const c = getCreds();
           if (c.token) {
-            await githubPutBase64(relModelPath, b64, `Upload 3D car model ${safeFileName}`);
+            await githubPutBase64(relModelPath, b64, `Upload 3D model ${safeFileName}`);
           }
           await syncConfigEverywhere(`Add 3D vehicle ${name}`);
           renderAdminLists();
-          toast(`✅ 3D Car "${name}" uploaded & synced to Game!`);
+          toast(`✅ "${name}" saved to LocalStorage & Game! Open index.html to drive it.`);
         } catch (err) {
-          toast('Saved to Firebase/Local! GitHub note: ' + err.message);
+          toast('Saved to LocalStorage/Firebase! GitHub note: ' + err.message);
           renderAdminLists();
         }
       };

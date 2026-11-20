@@ -1,6 +1,8 @@
-# ST GAMES — 3D Highway Racer (v4.0 — Free Fire Style Lobby)
+# ST GAMES — 3D Highway Racer (v5.0)
 
-## What's New in v4.0
-- **Free Fire Style Lobby UI**: Angled tactical profile banner (`LV.16`, `HEROIC` badge, XP bar), skewed top-right currency & icon bar, translucent left vertical navigation rail (`STORE`, `VAULT / GARAGE`, `WRAPS & SKINS`, `UPGRADES`, `UPLOAD 3D CAR`, `ACCOUNT`), compact bottom-left quick-switch dock, and bottom-right mode selector + iconic animated golden **START** button.
-- **Your Custom Background Included**: Full-bleed `assets/backgrounds/homepage-bg.png` behind the transparent Three.js 3D car turntable.
-- **Realistic 4-Lane Highway + Backside Camera**: Procedural weathered PBR asphalt with bump mapping, anisotropic filtering, tire tracks, rear chase camera (`VIEW: BACKSIDE`), and live `.glb`/`.gltf`/`.obj` 3D car file uploads.
+## What's New in v5.0
+1. **Vehicles Grounded Directly on the Ramp**: Exact `THREE.Box3` grounding + calibrated camera pitch + soft contact shadow so every 3D car & bike sits flush on the glowing blue circular ramp in `homepage-bg.png`.
+2. **Upload Removed from Game (Admin-Only)**: 3D vehicle uploads (`.glb`, `.gltf`, `.obj`) are strictly inside `admin.html`. Uploaded models are stored in `localStorage` + `IndexedDB` (via `model-storage.js`) and synced with Firebase so they appear immediately in the game garage & on the highway.
+3. **Larger Gameplay Vehicles**: Cars and bikes are scaled up significantly in 3D highway gameplay with a closer backside chase camera.
+4. **No Road Coins/Diamonds — Pure Distance + Near-Miss Scoring**: Removed road coin/diamond pickups. Score continuously rises with distance (`KM`) and awards combo bonuses (`+50` / `+100` × combo) whenever you pass closely alongside traffic vehicles.
+5. **Professional Login Page**: Fullscreen Sign In / Create Account screen connected to your Firebase Realtime Database (`friendsgame-872f5`) with a **Continue as Guest** option.

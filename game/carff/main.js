@@ -1,6 +1,7 @@
 (() => {
   const $ = s => document.querySelector(s);
   const FIREBASE_PROJECT_ID = "friendsgame-872f5";
+  const FIREBASE_DB_URL = "https://friendsgame-872f5-default-rtdb.firebaseio.com";
 
   function getStageRect() {
     const isPortrait = window.innerHeight > window.innerWidth;
@@ -54,9 +55,11 @@
 
   let currentUser = null;
   try { currentUser = JSON.parse(safeGetLS('sthw_fb_user', 'null')); } catch (e) { currentUser = null; }
+  let sessionMode = safeGetLS('sthw_session_mode', ''); // 'firebase' | 'guest' | ''
 
   let coins = +(safeGetLS('sthwCoins', '125680'));
   let gems = +(safeGetLS('sthwGems', '2450'));
+  let bestDistKm = parseFloat(safeGetLS('sthwBestDistKm', '0')) || 0;
   let selected = safeGetLS('sthwVehicle', 'agera');
   let selectedSkin = safeGetLS('sthwSkin', 'skin_crimson');
   let mapName = safeGetLS('sthwMap', 'Sunset Highway');
@@ -65,7 +68,6 @@
   let owned = [], ownedSkins = [], savedMaps = [], upgrade = {}, claimedNotifs = [], claimedAchievs = [];
   try { owned = JSON.parse(safeGetLS('sthwOwned', '["agera","moto_1000r","astra_gt"]')); } catch (e) { owned = ['agera', 'moto_1000r', 'astra_gt']; }
   ['agera', 'moto_1000r', 'astra_gt'].forEach(defId => { if (!owned.includes(defId)) owned.push(defId); });
-  if (!(window.VEHICLES || []).some(v => v.id === selected)) selected = 'agera';
 
   try { ownedSkins = JSON.parse(safeGetLS('sthwOwnedSkins', '["skin_crimson"]')); } catch (e) { ownedSkins = ['skin_crimson']; }
   try { savedMaps = JSON.parse(safeGetLS('sthwMaps', '["Sunset Highway","Countryside Autobahn"]')); } catch (e) { savedMaps = ['Sunset Highway', 'Countryside Autobahn']; }
@@ -74,23 +76,81 @@
   try { claimedNotifs = JSON.parse(safeGetLS('sthwClaimedNotifs', '[]')); } catch (e) { claimedNotifs = []; }
   try { claimedAchievs = JSON.parse(safeGetLS('sthwClaimedAchievs', '[]')); } catch (e) { claimedAchievs = []; }
 
+  // Cache for async-loaded custom GLB/GLTF/OBJ models from admin/IndexedDB
+  const custom3DModelCache = {};
+
   let liveConfig = {
     homepageBackground: "assets/backgrounds/homepage-bg.png",
     notifications: [
-      { id: "notif_highway", title: "🌅 Free Fire Style Lobby & Realistic Highway!", body: "Your custom background is active with Free Fire style tactical buttons, backside chase camera, and .GLB/.OBJ 3D car uploads!", date: "New", rewardCoins: 3000 },
-      { id: "notif_moto", title: "🏍️ Real 3D Bikes & Hypercars Fleet!", body: "Race the Street Moto 1000R, Ninja H2R, Hayabusa, Koenigsegg Agera RS, and Bugatti Chiron in full 3D!", date: "New", rewardCoins: 2500 },
-      { id: "notif_cloud", title: "☁️ Firebase Account Sync Active", body: "Tap ACCOUNT in the left rail to sync your garage to Firebase Cloud, or play in Guest mode.", date: "New", rewardCoins: 1500 }
+      { id: "notif_v5", title: "🏎️ Ramp-Grounded 3D Turntable & Near-Miss Scoring!", body: "Vehicles now sit directly on the ramp, gameplay vehicles are larger, and passing close to traffic boosts your score!", date: "New", rewardCoins: 3000 },
+      { id: "notif_cloud", title: "☁️ Firebase Account Sync Active", body: "Sign in with Firebase Cloud or play in Guest mode with LocalStorage save.", date: "New", rewardCoins: 1500 }
     ],
     events: [
-      { id: "ev_sunset_overtake", title: "🌅 Sunset Highway Overtake Rush", desc: "Weave through 4-lane highway traffic at 150+ KMH with rear chase view!", map: "Sunset Highway", vehicle: "astra_gt", rewardCoins: 5000, badge: "HIGHWAY STAGE" },
+      { id: "ev_sunset_overtake", title: "🌅 Sunset Highway Overtake Rush", desc: "Pass closely alongside highway traffic for massive Near-Miss combos!", map: "Sunset Highway", vehicle: "agera", rewardCoins: 5000, badge: "NEAR-MISS CUP" },
       { id: "ev_moto_sprint", title: "🏍️ 3D Street Moto 1000R Sprint", desc: "Split lanes on your 3D Superbike across Night City Metro!", map: "Night City Metro", vehicle: "moto_1000r", rewardCoins: 6000, badge: "3D BIKE CUP" },
-      { id: "ev_agera_autobahn", title: "🏎️ Koenigsegg Agera Top-Speed Run", desc: "Hit 260+ KMH on Countryside Autobahn without crashing!", map: "Countryside Autobahn", vehicle: "agera", rewardCoins: 7500, badge: "HYPERCAR" }
+      { id: "ev_agera_autobahn", title: "🏎️ Autobahn Distance Challenge", desc: "Push maximum distance at 250+ KMH on Countryside Autobahn!", map: "Countryside Autobahn", vehicle: "agera", rewardCoins: 7500, badge: "DISTANCE RUN" }
     ],
     customButtons: [],
     customVehicles: [],
     customMaps: [],
     customSkins: []
   };
+
+  function base64ToArrayBuffer(b64) {
+    const bin = atob(b64);
+    const len = bin.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes.buffer;
+  }
+
+  async function ensureCustomModelLoaded(veh) {
+    if (!veh || !veh.id || custom3DModelCache[veh.id]) return custom3DModelCache[veh.id] || null;
+    if (!veh.isCustomAdmin && !veh.inlineObjText && !veh.inlineGlbBase64 && !veh.hasStoredBlob && !veh.modelUrl) return null;
+
+    const THREE = window.THREE;
+    if (!THREE) return null;
+
+    let blobRec = null;
+    if (window.ModelStorage) {
+      blobRec = await window.ModelStorage.getModelData(veh.id);
+    }
+
+    const fmt = (blobRec?.format || veh.modelFormat || '').toLowerCase();
+    const rawData = blobRec?.data || veh.inlineGlbBase64 || veh.inlineObjText || null;
+
+    if (rawData && (fmt === 'glb' || fmt === 'gltf') && THREE.GLTFLoader) {
+      return await new Promise((resolve) => {
+        try {
+          const loader = new THREE.GLTFLoader();
+          const buf = fmt === 'glb' ? base64ToArrayBuffer(rawData) : rawData;
+          loader.parse(buf, '', (gltf) => {
+            custom3DModelCache[veh.id] = gltf.scene;
+            resolve(gltf.scene);
+          }, () => resolve(null));
+        } catch (e) { resolve(null); }
+      });
+    }
+
+    if (rawData && fmt === 'obj') {
+      const grp = parseOBJStringToGroup(rawData, veh, getSkin());
+      custom3DModelCache[veh.id] = grp;
+      return grp;
+    }
+
+    if (veh.modelUrl && (fmt === 'glb' || fmt === 'gltf') && THREE.GLTFLoader) {
+      return await new Promise((resolve) => {
+        try {
+          new THREE.GLTFLoader().load(veh.modelUrl, (gltf) => {
+            custom3DModelCache[veh.id] = gltf.scene;
+            resolve(gltf.scene);
+          }, undefined, () => resolve(null));
+        } catch (e) { resolve(null); }
+      });
+    }
+
+    return null;
+  }
 
   function applyAdminConfig(cfg) {
     if (!cfg || typeof cfg !== 'object') return;
@@ -105,11 +165,18 @@
     const mergedVehs = [...baseVehs];
     customVehs.forEach(cv => {
       if (!cv || !cv.id) return;
+      cv.isCustomAdmin = true;
       const idx = mergedVehs.findIndex(v => v.id === cv.id);
       if (idx >= 0) mergedVehs[idx] = Object.assign({}, mergedVehs[idx], cv);
       else mergedVehs.unshift(cv);
+      // Auto-unlock admin-uploaded vehicles if configured or free
+      if ((cv.autoUnlock !== false || cv.price === 0) && !owned.includes(cv.id)) {
+        owned.push(cv.id);
+      }
     });
     window.VEHICLES = mergedVehs;
+
+    if (!window.VEHICLES.some(v => v.id === selected)) selected = window.VEHICLES[0].id;
 
     const baseMaps = JSON.parse(JSON.stringify(window.DEFAULT_MAPS || window.MAPS));
     const customMaps = Array.isArray(liveConfig.customMaps) ? liveConfig.customMaps : [];
@@ -146,10 +213,20 @@
     } catch (e) {}
 
     try {
-      const res = await fetch(`https://friendsgame-872f5-default-rtdb.firebaseio.com/st_hill_climb_v2/live_config.json`, { cache: 'no-store' });
+      const res = await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/live_config.json`, { cache: 'no-store' });
       if (res.ok) {
         const fbCfg = await res.json();
         if (fbCfg && typeof fbCfg === 'object') {
+          // Merge local customVehicles so locally-uploaded admin models are never wiped
+          let localCfg = null;
+          try { localCfg = JSON.parse(safeGetLS('sthw_admin_config', 'null')); } catch (e) {}
+          if (localCfg && Array.isArray(localCfg.customVehicles)) {
+            const fbVehs = Array.isArray(fbCfg.customVehicles) ? fbCfg.customVehicles : [];
+            const mapById = new Map();
+            fbVehs.forEach(v => v && v.id && mapById.set(v.id, v));
+            localCfg.customVehicles.forEach(v => v && v.id && mapById.set(v.id, v));
+            fbCfg.customVehicles = Array.from(mapById.values());
+          }
           safeSetLS('sthw_admin_config', JSON.stringify(fbCfg));
           applyAdminConfig(fbCfg);
         }
@@ -163,6 +240,7 @@
 
     safeSetLS('sthwCoins', String(coins));
     safeSetLS('sthwGems', String(gems));
+    safeSetLS('sthwBestDistKm', String(bestDistKm.toFixed(2)));
     safeSetLS('sthwVehicle', selected);
     safeSetLS('sthwSkin', selectedSkin);
     safeSetLS('sthwMap', mapName);
@@ -178,12 +256,12 @@
     if (currentUser && currentUser.uid) {
       const payload = {
         uid: currentUser.uid, name: currentUser.name || 'Racer', email: currentUser.email || '',
-        coins, gems, selected, selectedSkin, mapName, owned, ownedSkins,
+        coins, gems, bestDistKm, selected, selectedSkin, mapName, owned, ownedSkins,
         savedMaps: unlockedMapsList, upgrade, bestScore: +(safeGetLS('sthwBest', '0')),
         claimedNotifs, claimedAchievs, updatedAt: new Date().toISOString()
       };
       try {
-        await fetch(`https://friendsgame-872f5-default-rtdb.firebaseio.com/st_hill_climb_v2/users/${encodeURIComponent(currentUser.uid)}.json`, {
+        await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/users/${encodeURIComponent(currentUser.uid)}.json`, {
           method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
         });
       } catch (e) {}
@@ -192,13 +270,14 @@
 
   async function pullFirebaseUserState(uid) {
     try {
-      const res = await fetch(`https://friendsgame-872f5-default-rtdb.firebaseio.com/st_hill_climb_v2/users/${encodeURIComponent(uid)}.json`, { cache: 'no-store' });
+      const res = await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/users/${encodeURIComponent(uid)}.json`, { cache: 'no-store' });
       if (!res.ok) return false;
       const data = await res.json();
       if (!data || typeof data !== 'object') return false;
 
       if (typeof data.coins === 'number') coins = data.coins;
       if (typeof data.gems === 'number') gems = data.gems;
+      if (typeof data.bestDistKm === 'number') bestDistKm = Math.max(bestDistKm, data.bestDistKm);
       if (data.selected) selected = data.selected;
       if (data.selectedSkin) selectedSkin = data.selectedSkin;
       if (data.mapName && (window.MAPS || []).some(m => m.name === data.mapName)) mapName = data.mapName;
@@ -221,9 +300,135 @@
   function getSkin() { return (window.VEHICLE_SKINS || []).find(s => s.id === selectedSkin) || null; }
   function getMap() { return (window.MAPS || []).find(m => m.name === mapName) || window.MAPS[0]; }
 
+  // ========================================================
+  // PROFESSIONAL LOGIN SCREEN LOGIC
+  // ========================================================
+  function enterLobby() {
+    $('#loginScreen')?.classList.add('hidden');
+    $('#menu')?.classList.remove('hidden');
+    updateLobbyHUD();
+    syncTurntableCameraSize();
+    rebuildTurntableVehicle();
+  }
+
+  function openLoginScreen() {
+    $('#modal')?.classList.add('hidden');
+    $('#menu')?.classList.add('hidden');
+    $('#loginScreen')?.classList.remove('hidden');
+  }
+
+  function initLoginScreen() {
+    let loginMode = 'signin';
+    const tabIn = $('#loginTabSignIn'), tabUp = $('#loginTabSignUp');
+    const nameIn = $('#loginName'), emailIn = $('#loginEmail'), passIn = $('#loginPass');
+    const errEl = $('#loginError'), submitBtn = $('#loginSubmitBtn'), guestBtn = $('#loginGuestBtn');
+
+    const setError = (msg) => {
+      if (!errEl) return;
+      if (!msg) { errEl.classList.add('hidden'); errEl.textContent = ''; }
+      else { errEl.textContent = msg; errEl.classList.remove('hidden'); }
+    };
+
+    const setMode = (m) => {
+      loginMode = m;
+      tabIn?.classList.toggle('active', m === 'signin');
+      tabUp?.classList.toggle('active', m === 'signup');
+      nameIn?.classList.toggle('hidden', m !== 'signup');
+      if (submitBtn) submitBtn.innerHTML = m === 'signin' ? '<span>SIGN IN WITH FIREBASE</span>' : '<span>CREATE FIREBASE ACCOUNT</span>';
+      setError('');
+    };
+
+    tabIn?.addEventListener('click', () => setMode('signin'));
+    tabUp?.addEventListener('click', () => setMode('signup'));
+
+    submitBtn?.addEventListener('click', async () => {
+      const email = (emailIn?.value || '').trim().toLowerCase();
+      const pass = (passIn?.value || '').trim();
+      const name = (nameIn?.value || '').trim() || email.split('@')[0] || 'ST Racer';
+
+      if (!email || !email.includes('@')) { setError('Please enter a valid email address.'); return; }
+      if (pass.length < 4) { setError('Password must be at least 4 characters.'); return; }
+
+      setError('');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span>⏳ CONNECTING TO FIREBASE...</span>';
+
+      const uid = 'user_' + btoa(email).replace(/[^a-zA-Z0-9]/g, '').slice(0, 22);
+      const passHash = btoa(unescape(encodeURIComponent(pass)));
+
+      try {
+        const checkRes = await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/users/${encodeURIComponent(uid)}.json`, { cache: 'no-store' });
+        const existing = checkRes.ok ? await checkRes.json() : null;
+
+        if (loginMode === 'signin') {
+          if (!existing) {
+            setError('No account found for this email. Switch to CREATE ACCOUNT.');
+            submitBtn.disabled = false; setMode('signin'); return;
+          }
+          if (existing.passHash && existing.passHash !== passHash) {
+            setError('Incorrect password. Please try again.');
+            submitBtn.disabled = false; setMode('signin'); return;
+          }
+          currentUser = { uid, name: existing.name || name, email };
+          safeSetLS('sthw_fb_user', JSON.stringify(currentUser));
+          safeSetLS('sthw_session_mode', 'firebase');
+          sessionMode = 'firebase';
+          await pullFirebaseUserState(uid);
+          enterLobby();
+          showToast(`☁️ Welcome back, ${currentUser.name}!`);
+        } else {
+          if (existing && existing.passHash) {
+            setError('Account already exists! Please switch to SIGN IN.');
+            submitBtn.disabled = false; setMode('signup'); return;
+          }
+          currentUser = { uid, name, email };
+          safeSetLS('sthw_fb_user', JSON.stringify(currentUser));
+          safeSetLS('sthw_session_mode', 'firebase');
+          sessionMode = 'firebase';
+          await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/users/${encodeURIComponent(uid)}/passHash.json`, {
+            method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(passHash)
+          });
+          await savePlayerState();
+          enterLobby();
+          showToast(`☁️ Account created & synced for ${name}!`);
+        }
+      } catch (err) {
+        currentUser = { uid, name, email };
+        safeSetLS('sthw_fb_user', JSON.stringify(currentUser));
+        safeSetLS('sthw_session_mode', 'firebase');
+        sessionMode = 'firebase';
+        await savePlayerState();
+        enterLobby();
+        showToast(`Signed in as ${name} (Offline fallback).`);
+      } finally {
+        submitBtn.disabled = false;
+        setMode(loginMode);
+      }
+    });
+
+    guestBtn?.addEventListener('click', () => {
+      currentUser = null;
+      safeSetLS('sthw_fb_user', 'null');
+      safeSetLS('sthw_session_mode', 'guest');
+      sessionMode = 'guest';
+      enterLobby();
+      showToast('👤 Playing as Guest (LocalStorage Save)');
+    });
+
+    // Auto-enter lobby if user already logged in or picked guest previously
+    if (sessionMode === 'firebase' && currentUser && currentUser.uid) {
+      enterLobby();
+    } else if (sessionMode === 'guest') {
+      enterLobby();
+    } else {
+      openLoginScreen();
+    }
+  }
+
   function updateLobbyHUD() {
     if ($('#coins')) $('#coins').textContent = coins.toLocaleString('en-IN');
     if ($('#gems')) $('#gems').textContent = gems.toLocaleString('en-IN');
+    if ($('#bestDistHud')) $('#bestDistHud').textContent = bestDistKm.toFixed(1) + ' KM';
 
     const accLabel = $('#accountBtnTitle'), accSub = $('#accountBtnSub'), accBtn = $('#btnAccount');
     const topPlayerName = $('#topPlayerName'), topAccountMode = $('#topAccountMode');
@@ -232,13 +437,13 @@
       if (accLabel) accLabel.textContent = currentUser.name || 'CLOUD ACCOUNT';
       if (accSub) accSub.textContent = 'FIREBASE SYNCED';
       if (accBtn) accBtn.classList.add('synced');
-      if (topPlayerName) topPlayerName.textContent = currentUser.name || 'PRO RACER';
+      if (topPlayerName) topPlayerName.textContent = (currentUser.name || 'PRO RACER').toUpperCase();
       if (topAccountMode) topAccountMode.textContent = '☁️ FIREBASE CLOUD SYNC';
     } else {
       if (accLabel) accLabel.textContent = 'ACCOUNT';
-      if (accSub) accSub.textContent = 'GUEST / CLOUD';
+      if (accSub) accSub.textContent = 'SIGN IN / GUEST';
       if (accBtn) accBtn.classList.remove('synced');
-      if (topPlayerName) topPlayerName.textContent = 'SATISH KOMMANA';
+      if (topPlayerName) topPlayerName.textContent = 'GUEST RACER';
       if (topAccountMode) topAccountMode.textContent = '💾 GUEST LOCAL SAVE';
     }
 
@@ -273,7 +478,6 @@
       strip.querySelectorAll('[data-quick-veh]').forEach(btn => {
         btn.onclick = () => {
           selected = btn.dataset.quickVeh;
-          if (window.HillGame) window.HillGame._customCarModel = null;
           savePlayerState();
           rebuildTurntableVehicle();
           showToast(`Equipped ${getVehicle().name}`);
@@ -339,10 +543,13 @@
     });
   }
 
-  // THREE.JS 3D TURNTABLE
+  // ========================================================
+  // THREE.JS 3D TURNTABLE — EXACTLY GROUNDED ON THE BLUE RAMP
+  // ========================================================
   let scene, camera, renderer, carGroup, wheelMeshes = [];
   let isDraggingTurntable = false, dragStartCoord = 0;
   let targetRotationY = 0.62, currentRotationY = 0.62, autoSpin = false;
+  const RAMP_Y = -0.68; // Projects directly onto center of glowing blue ramp in homepage-bg.png
 
   function decodeBase64Int16(b64) {
     const bin = atob(b64), buf = new ArrayBuffer(bin.length), view = new Uint8Array(buf);
@@ -378,7 +585,32 @@
     };
   }
 
-  function buildPrebakedAgeraMesh(veh, skin, customScale) {
+  function normalizeAndGroundMesh(meshObj, targetLength) {
+    const THREE = window.THREE;
+    const wrapper = new THREE.Group();
+    const clone = meshObj;
+    const box = new THREE.Box3().setFromObject(clone);
+    const size = new THREE.Vector3();
+    const center = new THREE.Vector3();
+    box.getSize(size);
+    box.getCenter(center);
+
+    const maxHoriz = Math.max(size.x, size.z, 0.01);
+    const sc = targetLength / maxHoriz;
+    clone.scale.multiplyScalar(sc);
+
+    box.setFromObject(clone);
+    box.getCenter(center);
+    // Center X/Z and place bottom of tires at y = 0
+    clone.position.x -= center.x;
+    clone.position.z -= center.z;
+    clone.position.y -= box.min.y;
+
+    wrapper.add(clone);
+    return wrapper;
+  }
+
+  function buildPrebakedAgeraMesh(veh, skin) {
     const THREE = window.THREE, data = window.AGERA_3D_DATA, root = new THREE.Group();
     wheelMeshes = [];
     if (!data || !THREE) return root;
@@ -416,14 +648,10 @@
         root.add(wMesh); wheelMeshes.push(wMesh);
       });
     }
-
-    const s = (customScale || 0.095) * (veh.scale || 1.0);
-    root.scale.set(s, s, s);
-    root.position.y = customScale ? 0 : -0.45;
     return root;
   }
 
-  function buildPrebakedMotoMesh(veh, skin, customScale) {
+  function buildPrebakedMotoMesh(veh, skin) {
     const THREE = window.THREE, data = window.MOTO_3D_DATA, root = new THREE.Group();
     wheelMeshes = [];
     if (!data || !THREE) return root;
@@ -443,14 +671,10 @@
       geo.computeVertexNormals();
       root.add(new THREE.Mesh(geo, roleMat[k] || mats.paintMat));
     });
-
-    const s = (customScale || 0.46) * (veh.scale || 1.0);
-    root.scale.set(s, s, s);
-    root.position.y = customScale ? 0 : -0.45;
     return root;
   }
 
-  function parseOBJStringToGroup(objText, veh, skin, customScale) {
+  function parseOBJStringToGroup(objText, veh, skin) {
     const THREE = window.THREE, root = new THREE.Group(), verts = [], facesByMtl = {};
     let curMtl = 'Paint', curObj = 'Root';
     const lines = objText.split('\n');
@@ -477,29 +701,10 @@
         for (let k = 1; k < idxs.length - 1; k++) arr.push(idxs[0], idxs[k], idxs[k + 1]);
       }
     }
-    if (!verts.length) return buildPrebakedAgeraMesh(veh, skin, customScale);
+    if (!verts.length) return buildPrebakedAgeraMesh(veh, skin);
 
-    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, minZ = Infinity, maxZ = -Infinity;
-    const usedIndices = new Set();
-    Object.values(facesByMtl).forEach(arr => arr.forEach(idx => usedIndices.add(idx)));
-    usedIndices.forEach(idx => {
-      const x = verts[idx * 3], y = verts[idx * 3 + 1], z = verts[idx * 3 + 2];
-      if (Math.abs(x) > 45 || Math.abs(z) > 45) return;
-      if (x < minX) minX = x; if (x > maxX) maxX = x;
-      if (y < minY) minY = y; if (y > maxY) maxY = y;
-      if (z < minZ) minZ = z; if (z > maxZ) maxZ = z;
-    });
-    const cx = (minX + maxX) / 2, cy = minY, cz = (minZ + maxZ) / 2;
-    const maxSpan = Math.max(maxX - minX, maxY - minY, maxZ - minZ) || 1;
-    const normFactor = (customScale || 3.4) / maxSpan;
-
-    const posArray = new Float32Array(verts.length);
-    for (let i = 0; i < verts.length; i += 3) {
-      posArray[i] = (verts[i] - cx) * normFactor;
-      posArray[i + 1] = (verts[i + 1] - cy) * normFactor;
-      posArray[i + 2] = (verts[i + 2] - cz) * normFactor;
-    }
-    const posAttr = new THREE.BufferAttribute(posArray, 3), mats = buildMaterialsForSkin(veh, skin);
+    const posAttr = new THREE.BufferAttribute(new Float32Array(verts), 3);
+    const mats = buildMaterialsForSkin(veh, skin);
     const matMap = { Paint: mats.paintMat, Carbon: mats.carbonMat, Chrome: mats.chromeMat, Glass: mats.glassMat, Lights: mats.lightsMat };
 
     Object.keys(facesByMtl).forEach(k => {
@@ -509,27 +714,37 @@
       geo.computeVertexNormals();
       root.add(new THREE.Mesh(geo, matMap[k] || mats.paintMat));
     });
-    root.position.y = customScale ? 0 : -0.45;
     return root;
   }
 
-  function buildAnyVehicle3D(veh, skin, customScale) {
+  function buildAnyVehicle3D(veh, skin, targetLength) {
     if (!veh) veh = getVehicle();
-    if (veh.inlineObjText) return parseOBJStringToGroup(veh.inlineObjText, veh, skin, customScale);
-    if (veh.prebakedKey === 'MOTO_3D_DATA' || veh.type === 'bike') return buildPrebakedMotoMesh(veh, skin, customScale);
-    return buildPrebakedAgeraMesh(veh, skin, customScale);
+    const isBike = veh.type === 'bike';
+    const desiredLen = targetLength || (isBike ? 2.55 : 3.35) * (veh.scale || 1.0);
+
+    let rawMesh = null;
+    if (custom3DModelCache[veh.id]) {
+      rawMesh = custom3DModelCache[veh.id].clone();
+    } else if (veh.inlineObjText) {
+      rawMesh = parseOBJStringToGroup(veh.inlineObjText, veh, skin);
+    } else if (veh.prebakedKey === 'MOTO_3D_DATA' || isBike) {
+      rawMesh = buildPrebakedMotoMesh(veh, skin);
+    } else {
+      rawMesh = buildPrebakedAgeraMesh(veh, skin);
+    }
+
+    return normalizeAndGroundMesh(rawMesh, desiredLen);
   }
 
-  function rebuildTurntableVehicle() {
+  async function rebuildTurntableVehicle() {
     if (!scene || !window.THREE) return;
-    if (carGroup) { scene.remove(carGroup); carGroup = null; }
-    if (window.HillGame && window.HillGame._customCarModel) {
-      carGroup = window.HillGame._customCarModel.clone();
-      carGroup.scale.setScalar(1.38);
-      carGroup.position.y = -0.45;
-    } else {
-      carGroup = buildAnyVehicle3D(getVehicle(), getSkin());
+    const veh = getVehicle();
+    if ((veh.isCustomAdmin || veh.hasStoredBlob || veh.inlineGlbBase64 || veh.modelUrl) && !custom3DModelCache[veh.id]) {
+      await ensureCustomModelLoaded(veh);
     }
+    if (carGroup) { scene.remove(carGroup); carGroup = null; }
+    carGroup = buildAnyVehicle3D(veh, getSkin(), veh.type === 'bike' ? 2.45 : 3.25);
+    carGroup.position.y = RAMP_Y;
     carGroup.rotation.y = currentRotationY;
     scene.add(carGroup);
   }
@@ -538,8 +753,8 @@
     const stage = document.getElementById('turntableStage');
     if (!stage || !renderer || !camera) return;
     const sr = getStageRect();
-    const w = Math.max(300, Math.floor(sr.width * 0.59));
-    const h = Math.max(200, Math.floor(sr.height * 0.70));
+    const w = Math.max(300, Math.floor(sr.width * 0.66));
+    const h = Math.max(200, Math.floor(sr.height * 0.80));
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
     renderer.setSize(w, h, false);
@@ -553,21 +768,39 @@
     const THREE = window.THREE;
     scene = new THREE.Scene();
 
-    camera = new THREE.PerspectiveCamera(32, 16 / 9, 0.1, 100);
-    camera.position.set(0, 1.25, 6.25);
-    camera.lookAt(0, -0.15, 0);
+    // Camera pitched so RAMP_Y (-0.68) projects directly onto the glowing blue circular ramp!
+    camera = new THREE.PerspectiveCamera(34, 16 / 9, 0.1, 100);
+    camera.position.set(0, 1.45, 6.5);
+    camera.lookAt(0, 0.45, 0);
 
     renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     syncTurntableCameraSize();
 
-    scene.add(new THREE.HemisphereLight(0xfff7ed, 0x0f172a, 1.55));
-    const sun = new THREE.DirectionalLight(0xffffff, 2.0);
+    scene.add(new THREE.HemisphereLight(0xfff7ed, 0x0f172a, 1.65));
+    const sun = new THREE.DirectionalLight(0xffffff, 2.1);
     sun.position.set(5, 9, 6);
     scene.add(sun);
-    const rimLeft = new THREE.DirectionalLight(0xf59e0b, 1.35);
+    const rimLeft = new THREE.DirectionalLight(0x38bdf8, 1.35);
     rimLeft.position.set(-6, 3, -4);
     scene.add(rimLeft);
+
+    // Subtle soft contact shadow right on the blue ramp surface
+    const shCanvas = document.createElement('canvas');
+    shCanvas.width = 256; shCanvas.height = 256;
+    const sCtx = shCanvas.getContext('2d');
+    const grad = sCtx.createRadialGradient(128, 128, 12, 128, 128, 120);
+    grad.addColorStop(0, 'rgba(0,0,0,0.68)');
+    grad.addColorStop(0.55, 'rgba(0,0,0,0.28)');
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    sCtx.fillStyle = grad; sCtx.fillRect(0, 0, 256, 256);
+    const shadowMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(3.4, 2.4),
+      new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(shCanvas), transparent: true, depthWrite: false })
+    );
+    shadowMesh.rotation.x = -Math.PI / 2;
+    shadowMesh.position.set(0, RAMP_Y + 0.005, 0);
+    scene.add(shadowMesh);
 
     rebuildTurntableVehicle();
 
@@ -603,13 +836,14 @@
       if (autoSpin && !isDraggingTurntable) targetRotationY += 0.008;
       currentRotationY += (targetRotationY - currentRotationY) * 0.15;
       if (carGroup) carGroup.rotation.y = currentRotationY;
-      wheelMeshes.forEach(w => { w.rotation.x += 0.015; });
       renderer.render(scene, camera);
     }
     animateTurntable();
   }
 
+  // ========================================================
   // MODAL PANELS
+  // ========================================================
   function openModalPanel(panelName, initialTab) {
     const modal = $('#modal'), titleEl = $('#title'), contentEl = $('#content');
     if (!modal || !titleEl || !contentEl) return;
@@ -619,72 +853,27 @@
       titleEl.textContent = '☁️ ACCOUNT & FIREBASE CLOUD SYNC';
       const isLogged = Boolean(currentUser && currentUser.uid);
       contentEl.innerHTML = `
-        <div style="margin-bottom:12px;padding:10px;background:rgba(245,158,11,0.14);border:1px solid #f59e0b;">
-          <strong>Current Mode: ${isLogged ? '☁️ Logged In (' + (currentUser.name || currentUser.email) + ')' : '💾 Guest Account (LocalStorage)'}</strong>
+        <div style="margin-bottom:12px;padding:12px;background:rgba(245,158,11,0.14);border:1px solid #f59e0b;border-radius:6px;">
+          <strong style="font-size:14px;">Status: ${isLogged ? '☁️ Signed In — ' + (currentUser.name || currentUser.email) : '👤 Guest Account (LocalStorage)'}</strong>
           <small style="display:block;margin-top:4px;color:#cbd5e1;">
-            Sync Coins, Diamonds, Owned 3D Cars &amp; Bikes, Maps, Skins &amp; Upgrades with Firebase (<b>${FIREBASE_PROJECT_ID}</b>).
+            Firebase Project: <b>${FIREBASE_PROJECT_ID}</b> • Best Distance: <b>${bestDistKm.toFixed(2)} KM</b>
           </small>
         </div>
-        <div class="tab-bar">
-          <button type="button" class="tab-pill active" id="tabCreateAcc">✨ Create Account</button>
-          <button type="button" class="tab-pill" id="tabLoginAcc">🔑 Login Existing</button>
-          <button type="button" class="tab-pill" id="tabGuestAcc">💾 Guest Mode</button>
-        </div>
-        <div id="authFormContainer" class="auth-form">
-          <input id="authName" class="auth-input" placeholder="Player Display Name" value="${currentUser?.name || ''}">
-          <input id="authEmail" type="email" class="auth-input" placeholder="Email Address" value="${currentUser?.email || ''}">
-          <input id="authPass" type="password" class="auth-input" placeholder="Password (4+ characters)">
-          <button type="button" class="card-action-btn buy" id="submitAuthBtn" style="padding:11px;font-size:13px;">☁️ CREATE ACCOUNT &amp; SYNC</button>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <button type="button" class="card-action-btn buy" id="openFullLoginBtn" style="padding:11px;">🔑 SWITCH ACCOUNT / LOGIN PAGE</button>
+          <button type="button" class="card-action-btn ${isLogged ? 'danger' : ''}" id="switchGuestBtn" style="padding:11px;">${isLogged ? '🚪 SIGN OUT TO GUEST' : '💾 STAY IN GUEST MODE'}</button>
         </div>`;
 
-      let mode = 'create';
-      const updateAuthFormUI = () => {
-        $('#tabCreateAcc').classList.toggle('active', mode === 'create');
-        $('#tabLoginAcc').classList.toggle('active', mode === 'login');
-        $('#tabGuestAcc').classList.toggle('active', mode === 'guest');
-        $('#authName').classList.toggle('hidden', mode !== 'create');
-        $('#authEmail').classList.toggle('hidden', mode === 'guest');
-        $('#authPass').classList.toggle('hidden', mode === 'guest');
-        $('#submitAuthBtn').textContent = mode === 'guest' ? '💾 USE GUEST ACCOUNT' : mode === 'create' ? '☁️ CREATE & SYNC' : '🔑 LOGIN & LOAD';
-      };
-      $('#tabCreateAcc').onclick = () => { mode = 'create'; updateAuthFormUI(); };
-      $('#tabLoginAcc').onclick = () => { mode = 'login'; updateAuthFormUI(); };
-      $('#tabGuestAcc').onclick = () => { mode = 'guest'; updateAuthFormUI(); };
-
-      $('#submitAuthBtn').onclick = async () => {
-        if (mode === 'guest') {
-          currentUser = null; safeSetLS('sthw_fb_user', 'null'); await savePlayerState();
-          showToast('Switched to Guest Account'); modal.classList.add('hidden'); return;
+      $('#openFullLoginBtn').onclick = () => openLoginScreen();
+      $('#switchGuestBtn').onclick = async () => {
+        if (isLogged) {
+          currentUser = null;
+          safeSetLS('sthw_fb_user', 'null');
+          safeSetLS('sthw_session_mode', 'guest');
+          await savePlayerState();
+          showToast('Signed out to Guest Mode');
         }
-        const email = ($('#authEmail').value || '').trim().toLowerCase();
-        const pass = ($('#authPass').value || '').trim();
-        const name = ($('#authName').value || '').trim() || email.split('@')[0] || 'ST Racer';
-        if (!email || !email.includes('@') || pass.length < 4) { showToast('Enter valid email & 4+ char password.'); return; }
-        const uid = 'user_' + btoa(email).replace(/[^a-zA-Z0-9]/g, '').slice(0, 20);
-        const passHash = btoa(unescape(encodeURIComponent(pass)));
-        try {
-          const checkRes = await fetch(`https://friendsgame-872f5-default-rtdb.firebaseio.com/st_hill_climb_v2/users/${encodeURIComponent(uid)}.json`, { cache: 'no-store' });
-          const existing = checkRes.ok ? await checkRes.json() : null;
-          if (mode === 'login') {
-            if (!existing) { showToast('Account not found. Create Account first!'); return; }
-            if (existing.passHash && existing.passHash !== passHash) { showToast('Incorrect password.'); return; }
-            currentUser = { uid, name: existing.name || name, email };
-            safeSetLS('sthw_fb_user', JSON.stringify(currentUser));
-            await pullFirebaseUserState(uid);
-            showToast(`Welcome back, ${currentUser.name}!`); modal.classList.add('hidden');
-          } else {
-            currentUser = { uid, name, email };
-            safeSetLS('sthw_fb_user', JSON.stringify(currentUser));
-            await fetch(`https://friendsgame-872f5-default-rtdb.firebaseio.com/st_hill_climb_v2/users/${encodeURIComponent(uid)}/passHash.json`, {
-              method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(passHash)
-            });
-            await savePlayerState();
-            showToast(`Account created for ${name}!`); modal.classList.add('hidden');
-          }
-        } catch (err) {
-          currentUser = { uid, name, email }; safeSetLS('sthw_fb_user', JSON.stringify(currentUser));
-          await savePlayerState(); showToast(`Linked ${name}!`); modal.classList.add('hidden');
-        }
+        modal.classList.add('hidden');
       };
       return;
     }
@@ -708,7 +897,7 @@
                 <small>SPD ${v.speed} • ACC ${v.acc} • HND ${v.handling}</small>
               </div>
               <button type="button" class="card-action-btn ${isSelected ? 'equipped' : isOwned ? '' : 'buy'}" data-store-car="${v.id}">
-                ${isSelected ? '✓ EQUIPPED' : isOwned ? 'EQUIP IN LOBBY' : '🪙 BUY ' + v.price.toLocaleString('en-IN')}
+                ${isSelected ? '✓ EQUIPPED' : isOwned ? 'EQUIP ON RAMP' : '🪙 BUY ' + v.price.toLocaleString('en-IN')}
               </button>
             </div>`;
           }).join('');
@@ -760,11 +949,9 @@
             const v = (window.VEHICLES || []).find(x => x.id === b.dataset.storeCar);
             if (!v) return;
             if (owned.includes(v.id)) {
-              selected = v.id; if (window.HillGame) window.HillGame._customCarModel = null;
-              savePlayerState(); rebuildTurntableVehicle(); renderStoreTab(activeTab); showToast(`Equipped ${v.name}`);
+              selected = v.id; savePlayerState(); rebuildTurntableVehicle(); renderStoreTab(activeTab); showToast(`Equipped ${v.name}`);
             } else if (coins >= v.price) {
               coins -= v.price; owned.push(v.id); selected = v.id;
-              if (window.HillGame) window.HillGame._customCarModel = null;
               savePlayerState(); rebuildTurntableVehicle(); renderStoreTab(activeTab); showToast(`Unlocked ${v.name}!`);
             } else showToast(`Need ${(v.price - coins).toLocaleString('en-IN')} more coins!`);
           };
@@ -830,7 +1017,7 @@
           <div class="grid-cards">${html}</div>`;
         contentEl.querySelectorAll('[data-lib-tab]').forEach(b => { b.onclick = () => renderLibTab(b.dataset.libTab); });
         contentEl.querySelectorAll('[data-lib-car]').forEach(b => {
-          b.onclick = () => { selected = b.dataset.libCar; if (window.HillGame) window.HillGame._customCarModel = null; savePlayerState(); rebuildTurntableVehicle(); renderLibTab(activeTab); };
+          b.onclick = () => { selected = b.dataset.libCar; savePlayerState(); rebuildTurntableVehicle(); renderLibTab(activeTab); };
         });
         contentEl.querySelectorAll('[data-lib-map]').forEach(b => { b.onclick = () => { mapName = b.dataset.libMap; savePlayerState(); renderLibTab('maps'); }; });
         contentEl.querySelectorAll('[data-lib-skin]').forEach(b => { b.onclick = () => { selectedSkin = b.dataset.libSkin; savePlayerState(); rebuildTurntableVehicle(); renderLibTab('skins'); }; });
@@ -950,9 +1137,9 @@
       const bestScore = +(safeGetLS('sthwBest', '0'));
       const achievs = [
         { id: 'ach_hyper', title: '🏎️🏍️ 3D Car & Bike Owner', desc: 'Own Koenigsegg Agera 3D & Street Moto 1000R', done: owned.includes('agera') && owned.includes('moto_1000r'), reward: 3000 },
-        { id: 'ach_score50', title: '🛣️ Highway Overtaker', desc: 'Reach Score 50+ overtaking traffic', done: bestScore >= 50, reward: 2500 },
-        { id: 'ach_score200', title: '⚡ Speed Demon 200', desc: 'Reach Score 200+ (Best: ' + bestScore + ')', done: bestScore >= 200, reward: 8000 },
-        { id: 'ach_cloud', title: '☁️ Cloud Connected', desc: 'Link your Firebase account', done: Boolean(currentUser && currentUser.uid), reward: 5000 }
+        { id: 'ach_dist5', title: '🛣️ 2.0 KM Highway Cruiser', desc: 'Drive 2.0 KM in a single run (Best: ' + bestDistKm.toFixed(2) + ' KM)', done: bestDistKm >= 2.0, reward: 4000 },
+        { id: 'ach_score500', title: '⚡ Near-Miss Master 500', desc: 'Reach Score 500+ (Best: ' + bestScore + ')', done: bestScore >= 500, reward: 8000 },
+        { id: 'ach_cloud', title: '☁️ Cloud Connected', desc: 'Sign in with Firebase Cloud', done: Boolean(currentUser && currentUser.uid), reward: 5000 }
       ];
       contentEl.innerHTML = `<div class="grid-cards">${achievs.map(a => {
         const claimed = claimedAchievs.includes(a.id);
@@ -999,32 +1186,25 @@
         <div class="grid-cards">
           <button type="button" class="item-card" id="fullscreenBtn"><strong>⛶ Lock 16:9 Fullscreen</strong><small>Expand to landscape fullscreen</small></button>
           <button type="button" class="item-card" id="resetCamBtn"><strong>🔄 Reset 3D Turntable</strong><small>Center vehicle angle</small></button>
+          <button type="button" class="item-card" id="settingsLoginBtn"><strong>🔑 Open Login Screen</strong><small>Switch Firebase / Guest account</small></button>
         </div>`;
       $('#fullscreenBtn').onclick = () => { request16x9Fullscreen(); modal.classList.add('hidden'); };
       $('#resetCamBtn').onclick = () => { targetRotationY = 0.62; modal.classList.add('hidden'); showToast('Turntable angle reset!'); };
+      $('#settingsLoginBtn').onclick = () => openLoginScreen();
     }
   }
 
-  function launchRaceNow() {
+  async function launchRaceNow() {
     request16x9Fullscreen();
     if (!window.HillGame) return;
+    const veh = getVehicle();
+    if ((veh.isCustomAdmin || veh.hasStoredBlob || veh.inlineGlbBase64 || veh.modelUrl) && !custom3DModelCache[veh.id]) {
+      await ensureCustomModelLoaded(veh);
+    }
     $('#menu').classList.add('hidden');
     $('#game').classList.remove('hidden');
-    window.HillGame.start(getVehicle(), getMap(), getSkin(), upgrade);
+    window.HillGame.start(veh, getMap(), getSkin(), upgrade);
   }
-
-  $('#directCarUpload')?.addEventListener('change', e => {
-    const file = e.target.files?.[0];
-    if (!file || !window.HillGame?.loadCustomCarFile) return;
-    showToast(`Loading 3D model: ${file.name}...`);
-    window.HillGame.loadCustomCarFile(file, () => {
-      const cleanName = file.name.replace(/\.[^.]+$/, '').toUpperCase();
-      if ($('#activeCarName')) $('#activeCarName').textContent = cleanName;
-      if ($('#activeCarBadge')) $('#activeCarBadge').textContent = 'CUSTOM 3D FILE';
-      rebuildTurntableVehicle();
-      showToast(`Loaded ${cleanName} onto Turntable & Highway!`);
-    });
-  });
 
   $('#btnFullscreenTop')?.addEventListener('click', request16x9Fullscreen);
   $('#btnAccount')?.addEventListener('click', () => openModalPanel('account'));
@@ -1051,14 +1231,18 @@
       $('#pauseOverlay')?.classList.add('hidden');
       launchRaceNow();
     },
-    addCoins(n) { coins += n; savePlayerState(); },
-    addGems(n) { gems += n; savePlayerState(); },
-    onRunEnded(scoreVal) {
+    onRunEnded(scoreVal, distKm, nearMisses) {
       const prevBest = +(safeGetLS('sthwBest', '0'));
       if (scoreVal > prevBest) safeSetLS('sthwBest', String(scoreVal));
+      if (distKm > bestDistKm) bestDistKm = distKm;
+      const earnedCoins = Math.max(0, Math.floor(scoreVal * 0.5));
+      coins += earnedCoins;
       savePlayerState();
+      return earnedCoins;
     },
-    buildThreeCarMesh(veh, skin, customScale) { return buildAnyVehicle3D(veh || getVehicle(), skin || getSkin(), customScale); },
+    buildThreeCarMesh(veh, skin, targetLength) {
+      return buildAnyVehicle3D(veh || getVehicle(), skin || getSkin(), targetLength);
+    },
     coin(freq) {
       try {
         const Ctx = window.AudioContext || window.webkitAudioContext;
@@ -1079,8 +1263,8 @@
 
   window.addEventListener('DOMContentLoaded', () => {
     (window.MAPS || []).forEach(m => { if (savedMaps.includes(m.name) || m.price === 0) m.unlocked = true; });
-    updateLobbyHUD();
     initTurntable3D();
+    initLoginScreen();
     loadExternalConfigs();
     if (currentUser && currentUser.uid) pullFirebaseUserState(currentUser.uid);
     checkManualAdminRoute();

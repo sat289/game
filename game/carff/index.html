@@ -3,16 +3,55 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-  <title>ST GAMES • 3D Highway Racer (Free Fire Style Lobby)</title>
+  <title>ST GAMES • 3D Highway Racer</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 <body>
   <div id="stage16x9" class="stage-16x9">
+    <!-- PROFESSIONAL LOGIN SCREEN (FIREBASE + GUEST MODE) -->
+    <div id="loginScreen" class="login-screen">
+      <img class="lobby-bg-img" src="assets/backgrounds/homepage-bg.png" alt="Background">
+      <div class="login-backdrop"></div>
+
+      <div class="login-card">
+        <div class="login-brand">
+          <div class="login-logo-box">ST</div>
+          <div>
+            <h1>ST GAMES • 3D HIGHWAY RACER</h1>
+            <p>☁️ Firebase Cloud Sync: <b>friendsgame-872f5</b></p>
+          </div>
+        </div>
+
+        <div class="login-tabs">
+          <button type="button" class="login-tab active" id="loginTabSignIn">🔑 SIGN IN</button>
+          <button type="button" class="login-tab" id="loginTabSignUp">✨ CREATE ACCOUNT</button>
+        </div>
+
+        <div class="login-fields">
+          <input type="text" id="loginName" class="login-input hidden" placeholder="Racer Display Name (e.g. Satish)">
+          <input type="email" id="loginEmail" class="login-input" placeholder="Email Address">
+          <input type="password" id="loginPass" class="login-input" placeholder="Password (4+ characters)">
+        </div>
+
+        <div id="loginError" class="login-error hidden"></div>
+
+        <button type="button" id="loginSubmitBtn" class="login-primary-btn">
+          <span>SIGN IN WITH FIREBASE</span>
+        </button>
+
+        <div class="login-divider"><span>OR</span></div>
+
+        <button type="button" id="loginGuestBtn" class="login-guest-btn">
+          <span>👤 CONTINUE AS GUEST</span>
+          <small>Instant Play • Local Storage Save</small>
+        </button>
+      </div>
+    </div>
+
     <!-- 16:9 FREE FIRE STYLE LOBBY WITH USER BACKGROUND -->
-    <div id="menu" class="menu">
-      <!-- User Custom Background -->
+    <div id="menu" class="menu hidden">
       <img id="lobbyBgImg" class="lobby-bg-img" src="assets/backgrounds/homepage-bg.png" alt="Lobby Background">
       <div class="lobby-vignette"></div>
 
@@ -44,8 +83,8 @@
             <b id="gems">2,450</b>
           </div>
           <div class="ff-curr-item">
-            <span class="ff-curr-ico">⛽</span>
-            <b>100%</b>
+            <span class="ff-curr-ico">🛣️</span>
+            <b id="bestDistHud">0.0 KM</b>
           </div>
         </div>
 
@@ -70,7 +109,7 @@
         </div>
       </div>
 
-      <!-- LEFT VERTICAL RAIL: FREE FIRE STYLE NAVIGATION BUTTONS -->
+      <!-- LEFT VERTICAL RAIL: FREE FIRE STYLE NAVIGATION BUTTONS (ADMIN-ONLY UPLOADS) -->
       <nav class="ff-left-rail" aria-label="Lobby Navigation">
         <button type="button" class="ff-nav-btn ff-nav-highlight" id="btnStore">
           <span class="ff-nav-ico">🛒</span>
@@ -104,15 +143,6 @@
           </span>
         </button>
 
-        <label class="ff-nav-btn ff-nav-upload" title="Upload .GLB, .GLTF, or .OBJ Car Model">
-          <span class="ff-nav-ico">📂</span>
-          <span class="ff-nav-lbl">
-            <strong>UPLOAD 3D CAR</strong>
-            <small>.GLB / .OBJ FILE</small>
-          </span>
-          <input type="file" id="directCarUpload" accept=".glb,.gltf,.obj" style="display:none;">
-        </label>
-
         <button type="button" class="ff-nav-btn ff-nav-account" id="btnAccount">
           <span class="ff-nav-ico">☁️</span>
           <span class="ff-nav-lbl">
@@ -124,7 +154,7 @@
         <div id="orangeCustomBtns" style="display:flex;flex-direction:column;gap:5px;"></div>
       </nav>
 
-      <!-- CENTER: TRANSPARENT 3D TURNTABLE OVER USER BACKGROUND -->
+      <!-- CENTER: TRANSPARENT 3D TURNTABLE GROUNDED DIRECTLY ONTO THE BLUE RAMP -->
       <div id="turntableStage" class="turntable-stage">
         <div class="ff-car-hud">
           <div class="ff-car-title-row">
@@ -195,18 +225,18 @@
       </div>
     </div>
 
-    <!-- CONTINUOUS FORWARD 3D HIGHWAY GAMEPLAY -->
+    <!-- CONTINUOUS FORWARD 3D HIGHWAY GAMEPLAY (DISTANCE + NEAR-MISS SCORING) -->
     <div id="game" class="game hidden">
       <canvas id="highway3dCanvas"></canvas>
       <canvas id="canvas"></canvas>
 
-      <!-- TOP-LEFT SCORE -->
+      <!-- TOP-LEFT SCORE, DISTANCE & NEAR-MISS HUD -->
       <div class="video-hud-topleft">
         <span class="lbl">SCORE</span>
         <span class="val" id="dist">0</span>
         <div class="video-hud-sub">
-          <span>🪙 <b id="runCoins" style="color:#fde047;">0</b></span>
-          <span>💎 <b id="runGems" style="color:#38bdf8;">0</b></span>
+          <span>🛣️ <b id="runDistKm" style="color:#fde047;">0.00 KM</b></span>
+          <span>⚡ NEAR MISS: <b id="runNearMiss" style="color:#38bdf8;">0</b></span>
         </div>
       </div>
 
@@ -293,9 +323,9 @@
       <!-- FINAL SCORE OVERLAY -->
       <div id="end" class="video-overlay hidden">
         <div style="text-align:center;">
-          <div style="color:#facc15;font-size:20px;font-weight:900;letter-spacing:0.06em;">SCORE</div>
+          <div style="color:#facc15;font-size:20px;font-weight:900;letter-spacing:0.06em;">TOTAL SCORE</div>
           <div id="finalScoreNum" style="color:#ffffff;font-size:52px;font-weight:900;line-height:1.05;">0</div>
-          <p id="summary" style="color:#f8fafc;font-size:14px;font-weight:800;margin:8px 0 20px;">YOU EARNED: 0 🪙</p>
+          <p id="summary" style="color:#f8fafc;font-size:14px;font-weight:800;margin:8px 0 20px;">DIST: 0.00 KM • NEAR MISSES: 0</p>
         </div>
         <div class="video-blue-squares">
           <button type="button" class="v-sq-item" id="garage">
@@ -315,6 +345,7 @@
     </div>
   </div>
 
+  <script src="model-storage.js"></script>
   <script src="agera_3d_data.js"></script>
   <script src="vehicles.js"></script>
   <script src="maps.js"></script>
