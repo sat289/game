@@ -5,27 +5,34 @@ window.HillGame = {
     const ctx = canvas.getContext('2d');
     const up = upgradeMap || {};
     const upLv = (k) => up[(vehicle.id || 'agera') + k] || 0;
+    const ctrl = window.STControls || { tiltEnabled: true, tiltSensitivity: 1.0, desktopKeyboard: true, touchButtons: true };
+
+    // Show/hide on-screen steer buttons based on Settings
+    const slBtn = document.getElementById('steerLeft'), srBtn = document.getElementById('steerRight');
+    if (slBtn) slBtn.classList.toggle('hidden', !ctrl.touchButtons);
+    if (srBtn) srBtn.classList.toggle('hidden', !ctrl.touchButtons);
 
     let W = 1280, H = 720;
     let alive = true, paused = false, crashed = false;
     let countdownVal = 0, countdownTimer = null;
 
-    let kmh = 67;
-    const minCruiseKmh = 60;
-    const maxKmh = 215 + (vehicle.speed || 90) * 0.85 + upLv('Engine') * 12;
+    let kmh = 72;
+    const minCruiseKmh = 65;
+    const maxKmh = 220 + (vehicle.speed || 90) * 0.85 + upLv('Engine') * 12;
     const accelRate = 0.44 + (vehicle.acc || 90) * 0.003 + upLv('Tires') * 0.04;
 
-    // Distance & Near-Miss Scoring (NO coins/diamonds on road)
-    let distanceMeters = 0;
-    let bonusScore = 0;
-    let score = 0;
-    let nearMissCount = 0;
-    let combo = 0;
-    let lastNearMissTime = 0;
+    let distanceMeters = 0, bonusScore = 0, score = 0;
+    let nearMissCount = 0, runTCoins = 0, combo = 0, lastNearMissTime = 0;
 
-    let playerX = 1.85;
-    let steerInput = 0;
-    let wheelAngle = 0;
+    // REALISTIC NARROWER 4-LANE HIGHWAY (10.8 units wide instead of 15.6!)
+    const LANES = [-3.9, -1.3, 1.3, 3.9];
+    const ROAD_HALF_LIMIT = 4.45;
+    const PLAYER_Z = -3.4;
+
+    let playerX = 1.3;
+    let smoothSteer = 0;
+    let tiltSteer = 0;
+    let dragSteer = 0;
     let gas = false, brake = false, nitroActive = false;
     let steerLeftHeld = false, steerRightHeld = false;
     let headlightsOn = false;
@@ -42,70 +49,65 @@ window.HillGame = {
     document.getElementById('end')?.classList.add('hidden');
     document.getElementById('dist').textContent = '0';
     if (document.getElementById('runDistKm')) document.getElementById('runDistKm').textContent = '0.00 KM';
+    if (document.getElementById('runTCoins')) document.getElementById('runTCoins').textContent = '0';
     if (document.getElementById('runNearMiss')) document.getElementById('runNearMiss').textContent = '0';
 
     const camBtn = document.getElementById('camModeBtn');
-    if (camBtn) camBtn.textContent = '🎥 VIEW: BACKSIDE';
+    if (camBtn) camBtn.textContent = '🎥 BACKSIDE';
+
+    // MOBILE TILT / GYROSCOPE STEERING LISTENER (DEFAULT ON)
+    function onDeviceOrientation(e) {
+      if (!ctrl.tiltEnabled || paused || crashed) { tiltSteer = 0; return; }
+      const isPortrait = window.innerHeight > window.innerWidth;
+      // In landscape, phone tilt left/right is beta; in portrait, it's gamma
+      let rawAngle = isPortrait ? (e.gamma || 0) : (e.beta || 0);
+      if (!isPortrait && (window.orientation === -90 || (screen.orientation && screen.orientation.angle === 270))) {
+        rawAngle = -rawAngle;
+      }
+      // Deadzone of 3 degrees for ultra-smooth straight driving
+      if (Math.abs(rawAngle) < 3) { tiltSteer = 0; return; }
+      const norm = Math.max(-1, Math.min(1, (rawAngle / 24) * (ctrl.tiltSensitivity || 1.0)));
+      tiltSteer = norm;
+    }
+    window.addEventListener('deviceorientation', onDeviceOrientation);
 
     const THREE = window.THREE;
     let scene, camera, renderer, player3DMesh = null, headlightBeam = null;
     let roadTex = null, roadBumpTex = null;
     let roadsideProps = [], trafficList = [];
 
-    // 4 wide highway lanes sized for larger vehicles
-    const LANES = [-5.55, -1.85, 1.85, 5.55];
-    const PLAYER_Z = -3.4;
-
     function createRealisticRoadTextures(maxAniso) {
       const diffC = document.createElement('canvas');
-      diffC.width = 1024;
-      diffC.height = 1024;
+      diffC.width = 1024; diffC.height = 1024;
       const dCtx = diffC.getContext('2d');
-
       const bumpC = document.createElement('canvas');
-      bumpC.width = 512;
-      bumpC.height = 512;
+      bumpC.width = 512; bumpC.height = 512;
       const bCtx = bumpC.getContext('2d');
 
-      dCtx.fillStyle = '#2d3138';
+      dCtx.fillStyle = '#2b2f36';
       dCtx.fillRect(0, 0, 1024, 1024);
-
       bCtx.fillStyle = '#808080';
       bCtx.fillRect(0, 0, 512, 512);
 
-      for (let i = 0; i < 45000; i++) {
-        const x = Math.random() * 1024;
-        const y = Math.random() * 1024;
-        const shade = 32 + Math.floor(Math.random() * 38);
+      for (let i = 0; i < 40000; i++) {
+        const x = Math.random() * 1024, y = Math.random() * 1024;
+        const shade = 30 + Math.floor(Math.random() * 34);
         dCtx.fillStyle = `rgb(${shade},${shade + 2},${shade + 5})`;
         dCtx.fillRect(x, y, 2, 2);
-
-        if (i < 22000) {
+        if (i < 18000) {
           const b = 90 + Math.floor(Math.random() * 80);
           bCtx.fillStyle = `rgb(${b},${b},${b})`;
           bCtx.fillRect(x * 0.5, y * 0.5, 2, 2);
         }
       }
 
-      const laneCenters = [128, 384, 640, 896];
-      laneCenters.forEach(cx => {
-        [-42, 42].forEach(off => {
-          const grad = dCtx.createLinearGradient(cx + off - 26, 0, cx + off + 26, 0);
-          grad.addColorStop(0, 'rgba(15,18,22,0)');
-          grad.addColorStop(0.5, 'rgba(15,18,22,0.32)');
-          grad.addColorStop(1, 'rgba(15,18,22,0)');
-          dCtx.fillStyle = grad;
-          dCtx.fillRect(cx + off - 26, 0, 52, 1024);
-        });
-      });
-
       dCtx.fillStyle = '#e2e8f0';
-      dCtx.fillRect(22, 0, 12, 1024);
-      dCtx.fillRect(990, 0, 12, 1024);
+      dCtx.fillRect(20, 0, 14, 1024);
+      dCtx.fillRect(990, 0, 14, 1024);
 
       dCtx.fillStyle = '#eab308';
-      dCtx.fillRect(496, 0, 10, 1024);
-      dCtx.fillRect(518, 0, 10, 1024);
+      dCtx.fillRect(498, 0, 10, 1024);
+      dCtx.fillRect(516, 0, 10, 1024);
 
       dCtx.fillStyle = '#e2e8f0';
       for (let y = 32; y < 1024; y += 256) {
@@ -114,29 +116,44 @@ window.HillGame = {
       }
 
       const diffTex = new THREE.CanvasTexture(diffC);
-      diffTex.wrapS = THREE.RepeatWrapping;
-      diffTex.wrapT = THREE.RepeatWrapping;
-      diffTex.repeat.set(1, 22);
-      diffTex.anisotropy = maxAniso;
+      diffTex.wrapS = THREE.RepeatWrapping; diffTex.wrapT = THREE.RepeatWrapping;
+      diffTex.repeat.set(1, 24); diffTex.anisotropy = maxAniso;
 
       const bumpTex = new THREE.CanvasTexture(bumpC);
-      bumpTex.wrapS = THREE.RepeatWrapping;
-      bumpTex.wrapT = THREE.RepeatWrapping;
-      bumpTex.repeat.set(2, 44);
-      bumpTex.anisotropy = maxAniso;
+      bumpTex.wrapS = THREE.RepeatWrapping; bumpTex.wrapT = THREE.RepeatWrapping;
+      bumpTex.repeat.set(2, 48); bumpTex.anisotropy = maxAniso;
 
       return { diffTex, bumpTex };
     }
 
     function syncSizes() {
       const sr = window.getStageRect ? window.getStageRect() : { width: innerWidth, height: innerHeight };
-      W = canvas.width = sr.width;
-      H = canvas.height = sr.height;
+      W = canvas.width = sr.width; H = canvas.height = sr.height;
       if (renderer && camera) {
-        camera.aspect = W / H;
-        camera.updateProjectionMatrix();
+        camera.aspect = W / H; camera.updateProjectionMatrix();
         renderer.setSize(W, H, false);
       }
+    }
+
+    // OPPONENT TRAFFIC POOL: INCLUDES ALL ADMIN-UPLOADED 3D CARS + BUILT-IN CARS (NO BIKES!)
+    const allCarsPool = (window.VEHICLES || []).filter(v => v && v.type !== 'bike');
+    const customUploadedCars = allCarsPool.filter(v => v.isCustomAdmin);
+    const opponentPool = customUploadedCars.length ? [...customUploadedCars, ...allCarsPool] : allCarsPool;
+
+    function spawnTrafficVehicle(zPos) {
+      const laneIdx = Math.floor(Math.random() * 4);
+      const laneX = LANES[laneIdx];
+      const tpl = opponentPool[Math.floor(Math.random() * opponentPool.length)] || vehicle;
+      const mesh = window.GameUI.buildThreeCarMesh(tpl, null, 3.85);
+      mesh.rotation.y = Math.PI;
+      mesh.position.set(laneX, 0.02, zPos);
+      scene.add(mesh);
+      trafficList.push({
+        mesh, laneIdx, x: laneX, z: zPos,
+        speedKmh: 58 + Math.random() * 38,
+        halfWidth: 0.88,
+        overtaken: false
+      });
     }
 
     function initHighway3D() {
@@ -148,7 +165,7 @@ window.HillGame = {
       const fogCol = new THREE.Color(map.skyBottom || '#ea580c');
       scene.fog = new THREE.FogExp2(fogCol, 0.0062);
 
-      camera = new THREE.PerspectiveCamera(58, W / H, 0.1, 280);
+      camera = new THREE.PerspectiveCamera(56, W / H, 0.1, 280);
       renderer = new THREE.WebGLRenderer({ canvas: hwCanvas, antialias: true, alpha: false });
       renderer.setSize(W, H, false);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -169,11 +186,11 @@ window.HillGame = {
 
       const maxAniso = renderer.capabilities.getMaxAnisotropy ? renderer.capabilities.getMaxAnisotropy() : 4;
       const texPack = createRealisticRoadTextures(maxAniso);
-      roadTex = texPack.diffTex;
-      roadBumpTex = texPack.bumpTex;
+      roadTex = texPack.diffTex; roadBumpTex = texPack.bumpTex;
 
+      // REALISTIC NARROWER ROAD (10.8 units wide)
       const roadMesh = new THREE.Mesh(
-        new THREE.PlaneGeometry(15.6, 420),
+        new THREE.PlaneGeometry(10.8, 420),
         new THREE.MeshStandardMaterial({ map: roadTex, bumpMap: roadBumpTex, bumpScale: 0.04, roughness: 0.82, metalness: 0.08 })
       );
       roadMesh.rotation.x = -Math.PI / 2;
@@ -181,101 +198,51 @@ window.HillGame = {
       scene.add(roadMesh);
 
       const railMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, metalness: 0.72, roughness: 0.32 });
-      [-8.05, 8.05].forEach(rx => {
-        const beam = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.38, 420), railMat);
-        beam.position.set(rx, 0.62, -150);
+      [-5.65, 5.65].forEach(rx => {
+        const beam = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.36, 420), railMat);
+        beam.position.set(rx, 0.58, -150);
         scene.add(beam);
       });
 
-      const postGeo = new THREE.BoxGeometry(0.16, 0.82, 0.16);
-      const trunkGeo = new THREE.CylinderGeometry(0.22, 0.34, 2.4, 8);
+      const postGeo = new THREE.BoxGeometry(0.14, 0.78, 0.14);
+      const trunkGeo = new THREE.CylinderGeometry(0.2, 0.3, 2.3, 8);
       const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5c2d0c });
-      const foliageColors = map.id === 'sunset'
-        ? [0xd97706, 0xb45309, 0x65a30d, 0x9a3412]
-        : map.id === 'snow'
-        ? [0xe2e8f0, 0xcbd5e1]
-        : [0x15803d, 0x166534, 0x22c55e];
-      const rockGeo = new THREE.DodecahedronGeometry(3.2, 1);
-      const rockMat = new THREE.MeshStandardMaterial({ color: 0x57534e, roughness: 0.9 });
+      const foliageColors = map.id === 'sunset' ? [0xd97706, 0xb45309, 0x65a30d] : map.id === 'snow' ? [0xe2e8f0, 0xcbd5e1] : [0x15803d, 0x166534, 0x22c55e];
 
       for (let z = 12; z > -250; z -= 10) {
-        [-8.1, 8.1].forEach(px => {
+        [-5.7, 5.7].forEach(px => {
           const post = new THREE.Mesh(postGeo, railMat);
-          post.position.set(px, 0.41, z);
+          post.position.set(px, 0.39, z);
           scene.add(post);
           roadsideProps.push({ mesh: post, step: 260 });
         });
-
         if (Math.abs(z) % 20 === 0) {
           [-1, 1].forEach(side => {
             const treeGroup = new THREE.Group();
-            const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-            trunk.position.y = 1.2;
-            treeGroup.add(trunk);
+            const trunk = new THREE.Mesh(trunkGeo, trunkMat); trunk.position.y = 1.15; treeGroup.add(trunk);
             const fCol = foliageColors[Math.abs(Math.floor(z)) % foliageColors.length];
-            const crown = new THREE.Mesh(
-              new THREE.SphereGeometry(2.3, 10, 10),
-              new THREE.MeshStandardMaterial({ color: fCol, roughness: 0.78 })
-            );
-            crown.position.y = 3.5;
-            treeGroup.add(crown);
-            treeGroup.position.set(side * (12.0 + (Math.abs(z) % 6)), 0, z);
+            const crown = new THREE.Mesh(new THREE.SphereGeometry(2.1, 10, 10), new THREE.MeshStandardMaterial({ color: fCol, roughness: 0.78 }));
+            crown.position.y = 3.3; treeGroup.add(crown);
+            treeGroup.position.set(side * (9.2 + (Math.abs(z) % 5)), 0, z);
             scene.add(treeGroup);
             roadsideProps.push({ mesh: treeGroup, step: 260 });
           });
         }
-
-        if (Math.abs(z) % 30 === 0) {
-          const rock = new THREE.Mesh(rockGeo, rockMat);
-          const side = (Math.abs(z) % 60 === 0) ? -1 : 1;
-          rock.position.set(side * 18.0, 1.5, z - 5);
-          rock.scale.set(1.5, 1.1, 1.3);
-          scene.add(rock);
-          roadsideProps.push({ mesh: rock, step: 260 });
-        }
       }
 
-      // LARGER, GROUNDED PLAYER 3D VEHICLE (car ~4.6 units long, bike ~2.9 units long)
       if (window.GameUI && window.GameUI.buildThreeCarMesh) {
-        const isBike = vehicle.type === 'bike';
-        player3DMesh = window.GameUI.buildThreeCarMesh(vehicle, skin, isBike ? 2.95 : 4.65);
+        player3DMesh = window.GameUI.buildThreeCarMesh(vehicle, skin, 3.95);
         player3DMesh.rotation.y = Math.PI;
         player3DMesh.position.set(playerX, 0.02, PLAYER_Z);
         scene.add(player3DMesh);
       }
 
       headlightBeam = new THREE.SpotLight(0xfef08a, 0.0, 95, Math.PI / 5, 0.4, 1);
-      headlightBeam.position.set(playerX, 1.2, PLAYER_Z - 1.0);
+      headlightBeam.position.set(playerX, 1.1, PLAYER_Z - 1.0);
       headlightBeam.target.position.set(playerX, 0.1, -65);
-      scene.add(headlightBeam);
-      scene.add(headlightBeam.target);
+      scene.add(headlightBeam); scene.add(headlightBeam.target);
 
-      // Traffic vehicles ONLY (no coins/diamonds on road)
-      for (let i = 0; i < 9; i++) spawnTrafficVehicle(-45 - i * 30);
-    }
-
-    const trafficRealPool = [
-      { id: 'agera', type: 'car', prebakedKey: 'AGERA_3D_DATA', defaultColor: '#e11d48', secondaryColor: '#111827', scale: 1.0 },
-      { id: 'bugatti_chiron', type: 'car', prebakedKey: 'AGERA_3D_DATA', defaultColor: '#2563eb', secondaryColor: '#090d16', scale: 1.0 },
-      { id: 'lambo_revuelto', type: 'car', prebakedKey: 'AGERA_3D_DATA', defaultColor: '#22c55e', secondaryColor: '#0f172a', scale: 1.0 },
-      { id: 'moto_1000r', type: 'bike', prebakedKey: 'MOTO_3D_DATA', defaultColor: '#f97316', secondaryColor: '#18181b', scale: 1.0 }
-    ];
-
-    function spawnTrafficVehicle(zPos) {
-      const laneIdx = Math.floor(Math.random() * 4);
-      const laneX = LANES[laneIdx];
-      const tpl = trafficRealPool[Math.floor(Math.random() * trafficRealPool.length)];
-      const isBike = tpl.type === 'bike';
-      const mesh = window.GameUI.buildThreeCarMesh(tpl, null, isBike ? 2.85 : 4.45);
-      mesh.rotation.y = Math.PI;
-      mesh.position.set(laneX, 0.02, zPos);
-      scene.add(mesh);
-      trafficList.push({
-        mesh, laneIdx, x: laneX, z: zPos,
-        speedKmh: 58 + Math.random() * 38,
-        halfWidth: isBike ? 0.62 : 1.05,
-        overtaken: false
-      });
+      for (let i = 0; i < 8; i++) spawnTrafficVehicle(-48 - i * 32);
     }
 
     initHighway3D();
@@ -286,13 +253,9 @@ window.HillGame = {
       if (audio || soundVol <= 0.02) return;
       try {
         audio = new (window.AudioContext || window.webkitAudioContext)();
-        engineOsc = audio.createOscillator();
-        engineGain = audio.createGain();
-        engineOsc.type = 'sawtooth';
-        engineOsc.frequency.value = 65;
-        engineGain.gain.value = 0.0001;
-        engineOsc.connect(engineGain);
-        engineGain.connect(audio.destination);
+        engineOsc = audio.createOscillator(); engineGain = audio.createGain();
+        engineOsc.type = 'sawtooth'; engineOsc.frequency.value = 65; engineGain.gain.value = 0.0001;
+        engineOsc.connect(engineGain); engineGain.connect(audio.destination);
         engineOsc.start();
       } catch (e) {}
     }
@@ -327,54 +290,54 @@ window.HillGame = {
           else if (kmh > 95) kmh -= 0.05;
         }
 
-        let targetSteer = steerLeftHeld ? -1 : steerRightHeld ? 1 : steerInput;
-        const steerSpeed = 0.10 * ((vehicle.handling || 90) / 90);
-        playerX += targetSteer * steerSpeed * (kmh / 95);
-        playerX = Math.max(-6.35, Math.min(6.35, playerX));
+        // Smooth combined steering: Keyboard/Buttons + Tilt (Mobile Default) + Touch Drag
+        let rawSteer = 0;
+        if (steerLeftHeld) rawSteer = -1;
+        else if (steerRightHeld) rawSteer = 1;
+        else if (Math.abs(dragSteer) > 0.04) rawSteer = dragSteer;
+        else if (ctrl.tiltEnabled) rawSteer = tiltSteer;
 
-        wheelAngle += (targetSteer * 0.65 - wheelAngle) * 0.18;
+        smoothSteer += (rawSteer - smoothSteer) * 0.14;
+        const steerSpeed = 5.4 * ((vehicle.handling || 90) / 90);
+        playerX += smoothSteer * steerSpeed * dt;
+        playerX = Math.max(-ROAD_HALF_LIMIT, Math.min(ROAD_HALF_LIMIT, playerX));
 
-        // Distance calculation (real meters based on KMH * dt)
         const metersThisFrame = (kmh / 3.6) * dt;
         distanceMeters += metersThisFrame;
-        const distScore = Math.floor(distanceMeters * 0.2); // +1 score per 5 meters
-        score = distScore + bonusScore;
+        score = Math.floor(distanceMeters * 0.2) + bonusScore;
 
         document.getElementById('dist').textContent = score.toLocaleString('en-IN');
-        if (document.getElementById('runDistKm')) {
-          document.getElementById('runDistKm').textContent = (distanceMeters / 1000).toFixed(2) + ' KM';
-        }
+        if (document.getElementById('runDistKm')) document.getElementById('runDistKm').textContent = (distanceMeters / 1000).toFixed(2) + ' KM';
 
-        const dz = (kmh / 3.6) * 0.048;
-        if (roadTex) roadTex.offset.y += dz * 0.052;
-        if (roadBumpTex) roadBumpTex.offset.y += dz * 0.104;
+        const dz = (kmh / 3.6) * dt * 1.45;
+        if (roadTex) roadTex.offset.y += dz * 0.056;
+        if (roadBumpTex) roadBumpTex.offset.y += dz * 0.112;
 
         roadsideProps.forEach(p => {
           p.mesh.position.z += dz;
           if (p.mesh.position.z > 14) p.mesh.position.z -= p.step;
         });
 
-        // Reset combo if more than 4 seconds since last near miss
         if (combo > 0 && now - lastNearMissTime > 4000) combo = 0;
 
         for (let i = 0; i < trafficList.length; i++) {
           const tv = trafficList[i];
           const relSpeedKmh = kmh - tv.speedKmh;
-          tv.z += (relSpeedKmh / 3.6) * 0.048;
+          tv.z += (relSpeedKmh / 3.6) * dt * 1.45;
           tv.mesh.position.z = tv.z;
 
-          if (headlightsOn && tv.z < -5 && tv.z > -40 && Math.abs(tv.x - playerX) < 2.2) {
-            const shiftDir = tv.x > 0 ? 0.032 : -0.032;
-            tv.x = Math.max(-5.8, Math.min(5.8, tv.x + shiftDir));
+          if (headlightsOn && tv.z < -5 && tv.z > -40 && Math.abs(tv.x - playerX) < 1.9) {
+            const shiftDir = tv.x > 0 ? 0.028 : -0.028;
+            tv.x = Math.max(-4.1, Math.min(4.1, tv.x + shiftDir));
             tv.mesh.position.x = tv.x;
           }
 
-          const playerHalfW = vehicle.type === 'bike' ? 0.56 : 1.02;
+          const playerHalfW = 0.86;
           const lateralDist = Math.abs(tv.x - playerX);
 
-          // Collision check
-          if (tv.z > PLAYER_Z - 2.3 && tv.z < PLAYER_Z + 2.1) {
-            if (lateralDist < (tv.halfWidth + playerHalfW - 0.22)) {
+          // Collision
+          if (tv.z > PLAYER_Z - 2.1 && tv.z < PLAYER_Z + 1.95) {
+            if (lateralDist < (tv.halfWidth + playerHalfW - 0.18)) {
               crashed = true;
               window.GameUI?.coin?.(180);
               document.getElementById('crashOverlay')?.classList.remove('hidden');
@@ -382,35 +345,36 @@ window.HillGame = {
             }
           }
 
-          // NEAR-MISS / CLOSE OVERTAKE ("vehicles pakka nunchi vellinappudu score peragali")
-          if (!tv.overtaken && tv.z > PLAYER_Z + 1.8) {
+          // NEAR MISS -> AWARD T-COINS + SCORE!
+          if (!tv.overtaken && tv.z > PLAYER_Z + 1.7) {
             tv.overtaken = true;
-            if (lateralDist < 3.65 && kmh >= 75) {
+            if (lateralDist < 2.85 && kmh >= 72) {
               combo = (now - lastNearMissTime <= 4000) ? Math.min(5, combo + 1) : 1;
               lastNearMissTime = now;
               nearMissCount += 1;
-              const pts = (lateralDist < 2.45 ? 100 : 50) * combo;
+              const isUltra = lateralDist < 2.05;
+              const tCoinsEarned = (isUltra ? 50 : 25) * combo;
+              const pts = (isUltra ? 100 : 50) * combo;
+              runTCoins += tCoinsEarned;
               bonusScore += pts;
               score = Math.floor(distanceMeters * 0.2) + bonusScore;
 
               window.GameUI?.coin?.(980 + combo * 110);
               document.getElementById('dist').textContent = score.toLocaleString('en-IN');
-              if (document.getElementById('runNearMiss')) {
-                document.getElementById('runNearMiss').textContent = String(nearMissCount);
-              }
-              const tag = lateralDist < 2.45 ? '⚡ ULTRA CLOSE' : '🔥 NEAR MISS';
+              if (document.getElementById('runTCoins')) document.getElementById('runTCoins').textContent = String(runTCoins);
+              if (document.getElementById('runNearMiss')) document.getElementById('runNearMiss').textContent = String(nearMissCount);
+
               popups.push({
-                text: `${tag} +${pts}${combo > 1 ? ' (x' + combo + ')' : ''}`,
-                x: W * 0.5,
-                y: H * 0.44,
-                color: lateralDist < 2.45 ? '#38bdf8' : '#facc15',
+                text: `+${tCoinsEarned} T-COINS ⚡ NEAR MISS${combo > 1 ? ' x' + combo : ''}`,
+                x: W * 0.5, y: H * 0.42,
+                color: isUltra ? '#38bdf8' : '#facc15',
                 life: 52
               });
             }
           }
 
           if (tv.z > 16) {
-            tv.z = -245 - Math.random() * 50;
+            tv.z = -245 - Math.random() * 55;
             tv.laneIdx = Math.floor(Math.random() * 4);
             tv.x = LANES[tv.laneIdx];
             tv.mesh.position.set(tv.x, 0.02, tv.z);
@@ -427,21 +391,19 @@ window.HillGame = {
           if (player3DMesh) {
             player3DMesh.visible = true;
             player3DMesh.position.set(playerX, 0.02, PLAYER_Z);
-            player3DMesh.rotation.z = -wheelAngle * (vehicle.type === 'bike' ? 0.5 : 0.1);
-            player3DMesh.rotation.y = Math.PI - wheelAngle * 0.16;
+            player3DMesh.rotation.z = -smoothSteer * 0.08;
+            player3DMesh.rotation.y = Math.PI - smoothSteer * 0.14;
           }
-
-          const targetFov = 56 + Math.min(14, (kmh - 60) * 0.08);
+          const targetFov = 55 + Math.min(13, (kmh - 65) * 0.08);
           camera.fov += (targetFov - camera.fov) * 0.08;
           camera.updateProjectionMatrix();
 
           if (viewMode === 'far3d') {
-            camera.position.set(playerX * 0.90, 3.0, 3.6);
-            camera.lookAt(playerX, 0.9, -45);
+            camera.position.set(playerX * 0.90, 2.85, 3.2);
+            camera.lookAt(playerX, 0.85, -45);
           } else {
-            // Closer backside chase camera so vehicle looks large & bold
-            camera.position.set(playerX * 0.92, 2.05, 1.45);
-            camera.lookAt(playerX, 0.85, -42);
+            camera.position.set(playerX * 0.92, 1.95, 1.25);
+            camera.lookAt(playerX, 0.82, -42);
           }
         }
 
@@ -450,24 +412,19 @@ window.HillGame = {
           headlightBeam.position.set(playerX, 1.1, PLAYER_Z - 1.0);
           headlightBeam.target.position.set(playerX, 0.1, -65);
         }
-
         renderer.render(scene, camera);
       }
 
       ctx.clearRect(0, 0, W, H);
       for (let i = popups.length - 1; i >= 0; i--) {
         const p = popups[i];
-        p.y -= 0.95;
-        p.life--;
+        p.y -= 0.95; p.life--;
         ctx.save();
         ctx.globalAlpha = Math.min(1, p.life / 18);
-        ctx.font = '900 24px Inter, sans-serif';
-        ctx.fillStyle = p.color;
-        ctx.strokeStyle = 'rgba(0,0,0,0.88)';
-        ctx.lineWidth = 4;
+        ctx.font = '900 22px Inter, sans-serif';
+        ctx.fillStyle = p.color; ctx.strokeStyle = 'rgba(0,0,0,0.88)'; ctx.lineWidth = 4;
         ctx.textAlign = 'center';
-        ctx.strokeText(p.text, p.x, p.y);
-        ctx.fillText(p.text, p.x, p.y);
+        ctx.strokeText(p.text, p.x, p.y); ctx.fillText(p.text, p.x, p.y);
         ctx.restore();
         if (p.life <= 0) popups.splice(i, 1);
       }
@@ -476,12 +433,9 @@ window.HillGame = {
         ctx.save();
         ctx.font = '900 54px Inter, sans-serif';
         ctx.fillStyle = countdownVal === 1 ? '#4ade80' : '#facc15';
-        ctx.strokeStyle = '#090d16';
-        ctx.lineWidth = 5;
-        ctx.textAlign = 'center';
+        ctx.strokeStyle = '#090d16'; ctx.lineWidth = 5; ctx.textAlign = 'center';
         const txt = countdownVal === 1 ? 'GO!' : String(countdownVal - 1);
-        ctx.strokeText(txt, W * 0.5, H * 0.45);
-        ctx.fillText(txt, W * 0.5, H * 0.45);
+        ctx.strokeText(txt, W * 0.5, H * 0.45); ctx.fillText(txt, W * 0.5, H * 0.45);
         ctx.restore();
       }
 
@@ -493,6 +447,7 @@ window.HillGame = {
     const stop = () => {
       alive = false;
       clearInterval(countdownTimer);
+      window.removeEventListener('deviceorientation', onDeviceOrientation);
       if (audio) { try { audio.close(); } catch (e) {} audio = null; }
       window.removeEventListener('resize', syncSizes);
     };
@@ -523,44 +478,23 @@ window.HillGame = {
     hwCanvas.onpointerdown = e => { audioStart(); draggingSteer = true; steerStartCoord = getCoord(e); };
     window.onpointermove = e => {
       if (!draggingSteer) return;
-      steerInput = Math.max(-1, Math.min(1, (getCoord(e) - steerStartCoord) / 90));
+      dragSteer = Math.max(-1, Math.min(1, (getCoord(e) - steerStartCoord) / 90));
     };
-    window.onpointerup = () => { draggingSteer = false; steerInput = 0; };
+    window.onpointerup = () => { draggingSteer = false; dragSteer = 0; };
 
     const hlBtn = document.getElementById('headlightBtn');
-    if (hlBtn) {
-      hlBtn.onclick = () => {
-        headlightsOn = !headlightsOn;
-        hlBtn.classList.toggle('active', headlightsOn);
-        window.GameUI?.coin?.(720);
-      };
-    }
+    if (hlBtn) hlBtn.onclick = () => { headlightsOn = !headlightsOn; hlBtn.classList.toggle('active', headlightsOn); window.GameUI?.coin?.(720); };
 
-    if (camBtn) {
-      camBtn.onclick = () => {
-        viewMode = viewMode === 'chase3d' ? 'far3d' : 'chase3d';
-        camBtn.textContent = viewMode === 'chase3d' ? '🎥 VIEW: BACKSIDE' : '🎥 VIEW: WIDE CHASE';
-      };
-    }
+    if (camBtn) camBtn.onclick = () => {
+      viewMode = viewMode === 'chase3d' ? 'far3d' : 'chase3d';
+      camBtn.textContent = viewMode === 'chase3d' ? '🎥 BACKSIDE' : '🎥 WIDE CHASE';
+    };
 
-    document.getElementById('pauseBtn').onclick = () => {
-      if (crashed) return;
-      paused = true;
-      document.getElementById('pauseOverlay').classList.remove('hidden');
-    };
-    document.getElementById('pauseContinueBtn').onclick = () => {
-      document.getElementById('pauseOverlay').classList.add('hidden');
-      startResumeCountdown();
-    };
+    document.getElementById('pauseBtn').onclick = () => { if (!crashed) { paused = true; document.getElementById('pauseOverlay').classList.remove('hidden'); } };
+    document.getElementById('pauseContinueBtn').onclick = () => { document.getElementById('pauseOverlay').classList.add('hidden'); startResumeCountdown(); };
     document.getElementById('pauseRestartBtn').onclick = () => { stop(); window.GameUI.start(); };
-    document.getElementById('openOptionsBtn').onclick = () => {
-      document.getElementById('pauseOverlay').classList.add('hidden');
-      document.getElementById('optionsOverlay').classList.remove('hidden');
-    };
-    document.getElementById('optionsContinueBtn').onclick = () => {
-      document.getElementById('optionsOverlay').classList.add('hidden');
-      document.getElementById('pauseOverlay').classList.remove('hidden');
-    };
+    document.getElementById('openOptionsBtn').onclick = () => { document.getElementById('pauseOverlay').classList.add('hidden'); document.getElementById('optionsOverlay').classList.remove('hidden'); };
+    document.getElementById('optionsContinueBtn').onclick = () => { document.getElementById('optionsOverlay').classList.add('hidden'); document.getElementById('pauseOverlay').classList.remove('hidden'); };
 
     const bindBar = (trackId, fillId, isMusic) => {
       const tr = document.getElementById(trackId), fl = document.getElementById(fillId);
@@ -568,9 +502,7 @@ window.HillGame = {
       tr.onclick = e => {
         const rect = tr.getBoundingClientRect();
         const sr = window.getStageRect ? window.getStageRect() : { isPortrait: false };
-        const ratio = sr.isPortrait
-          ? Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height))
-          : Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+        const ratio = sr.isPortrait ? Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height)) : Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
         fl.style.width = Math.round(ratio * 100) + '%';
         if (isMusic) musicVol = ratio; else soundVol = ratio;
       };
@@ -581,32 +513,25 @@ window.HillGame = {
     document.getElementById('continueFreeBtn').onclick = () => {
       document.getElementById('crashOverlay').classList.add('hidden');
       trafficList.forEach(tv => { if (tv.z > -45) { tv.z -= 95; tv.mesh.position.z = tv.z; } });
-      crashed = false; kmh = 85;
-      startResumeCountdown();
+      crashed = false; kmh = 85; startResumeCountdown();
     };
     document.getElementById('crashCancelBtn').onclick = () => {
       document.getElementById('crashOverlay').classList.add('hidden');
       const distKm = distanceMeters / 1000;
-      const earnedCoins = window.GameUI?.onRunEnded?.(score, distKm, nearMissCount) || 0;
+      window.GameUI?.onRunEnded?.(score, distKm, runTCoins);
       document.getElementById('finalScoreNum').textContent = score.toLocaleString('en-IN');
-      document.getElementById('summary').textContent = `DIST: ${distKm.toFixed(2)} KM • NEAR MISSES: ${nearMissCount} • REWARD: +${earnedCoins} 🪙`;
+      document.getElementById('summary').textContent = `DIST: ${distKm.toFixed(2)} KM • NEAR MISSES: ${nearMissCount} • T-COINS: +${runTCoins} 🟡`;
       document.getElementById('end').classList.remove('hidden');
     };
 
-    const exitToMenu = () => {
-      stop();
-      document.getElementById('game').classList.add('hidden');
-      document.getElementById('menu').classList.remove('hidden');
-    };
+    const exitToMenu = () => { stop(); document.getElementById('game').classList.add('hidden'); document.getElementById('menu').classList.remove('hidden'); };
     document.getElementById('home').onclick = exitToMenu;
     document.getElementById('garage').onclick = exitToMenu;
     document.getElementById('retry').onclick = () => { stop(); window.GameUI.start(); };
-    document.getElementById('scoresBtn').onclick = () => {
-      const best = localStorage.getItem('sthwBest') || score;
-      window.showToast?.(`👑 Best Score: ${best} • Distance: ${(distanceMeters / 1000).toFixed(2)} KM`);
-    };
+    document.getElementById('scoresBtn').onclick = () => { window.showToast?.(`👑 Best Score: ${localStorage.getItem('sthwBest') || score}`); };
 
     window.onkeydown = e => {
+      if (!ctrl.desktopKeyboard) return;
       if (e.key === 'ArrowUp' || e.key === 'w') { audioStart(); gas = true; }
       if (e.key === 'ArrowDown' || e.key === 's') brake = true;
       if (e.key === 'ArrowLeft' || e.key === 'a') steerLeftHeld = true;

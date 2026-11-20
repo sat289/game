@@ -30,6 +30,11 @@
   }
   window.request16x9Fullscreen = request16x9Fullscreen;
 
+  // LAUNCH FULLSCREEN ON VERY FIRST CLICK / TAP
+  document.addEventListener('pointerdown', () => {
+    request16x9Fullscreen();
+  }, { once: true });
+
   let toastTimer = null;
   function showToast(msg) {
     let el = document.getElementById('stToast');
@@ -53,11 +58,71 @@
     try { localStorage.setItem(key, val); } catch (e) {}
   }
 
+  function generateNumericUID() {
+    let s = '';
+    for (let i = 0; i < 9; i++) s += Math.floor(Math.random() * 10);
+    if (s[0] === '0') s = '8' + s.slice(1);
+    return s;
+  }
+
+  function generateTeamCode() {
+    return String(100000 + Math.floor(Math.random() * 900000));
+  }
+
+  // Control Settings (Tilt Steering DEFAULT ON for mobile, Desktop Keyboard always usable)
+  let controlSettings = {
+    tiltEnabled: true,
+    tiltSensitivity: 1.0,
+    desktopKeyboard: true,
+    touchButtons: true
+  };
+  try {
+    const savedCtrl = JSON.parse(safeGetLS('sthw_controls', 'null'));
+    if (savedCtrl && typeof savedCtrl === 'object') controlSettings = Object.assign(controlSettings, savedCtrl);
+  } catch (e) {}
+  window.STControls = controlSettings;
+
+  function saveControlSettings() {
+    safeSetLS('sthw_controls', JSON.stringify(controlSettings));
+    window.STControls = controlSettings;
+    updateLobbyHUD();
+  }
+
+  // Account & UID (Guest + Google/Firebase only)
   let currentUser = null;
   try { currentUser = JSON.parse(safeGetLS('sthw_fb_user', 'null')); } catch (e) { currentUser = null; }
-  let sessionMode = safeGetLS('sthw_session_mode', ''); // 'firebase' | 'guest' | ''
+  let sessionMode = safeGetLS('sthw_session_mode', ''); // 'google' | 'guest' | ''
+  let playerUID = safeGetLS('sthw_player_uid', '');
+  if (!playerUID) {
+    playerUID = generateNumericUID();
+    safeSetLS('sthw_player_uid', playerUID);
+  }
 
-  let coins = +(safeGetLS('sthwCoins', '125680'));
+  // Friends & Squad State
+  let myTeamCode = safeGetLS('sthw_team_code', '') || generateTeamCode();
+  safeSetLS('sthw_team_code', myTeamCode);
+
+  let friendsList = [];
+  try {
+    friendsList = JSON.parse(safeGetLS('sthw_friends', 'null')) || [
+      { uid: '842910531', name: 'TARUN_GT', carId: 'lambo_revuelto', online: true },
+      { uid: '719204882', name: 'TRINESH_FF', carId: 'bugatti_chiron', online: true },
+      { uid: '653019244', name: 'RAJA_PRO', carId: 'ferrari_sf90', online: true }
+    ];
+  } catch (e) { friendsList = []; }
+
+  let activeSquadFriend = null; // When set, TWO 3D cars rotate side-by-side on the ramp!
+  try { activeSquadFriend = JSON.parse(safeGetLS('sthw_squad_friend', 'null')); } catch (e) { activeSquadFriend = null; }
+
+  // Chat & Voice State
+  let chatMessages = [
+    { sender: 'TARUN_GT', text: 'Send Team Code bro, let us race!' },
+    { sender: 'SYSTEM', text: 'Near-miss traffic on highway to earn T-Coins!' }
+  ];
+  let micActive = false, speakerOn = true, micStream = null;
+
+  // Player Economy & Garage (CARS ONLY)
+  let coins = +(safeGetLS('sthwCoins', '144675'));
   let gems = +(safeGetLS('sthwGems', '2450'));
   let bestDistKm = parseFloat(safeGetLS('sthwBestDistKm', '0')) || 0;
   let selected = safeGetLS('sthwVehicle', 'agera');
@@ -65,30 +130,26 @@
   let mapName = safeGetLS('sthwMap', 'Sunset Highway');
   if (!(window.MAPS || []).some(m => m.name === mapName)) mapName = 'Sunset Highway';
 
-  let owned = [], ownedSkins = [], savedMaps = [], upgrade = {}, claimedNotifs = [], claimedAchievs = [];
-  try { owned = JSON.parse(safeGetLS('sthwOwned', '["agera","moto_1000r","astra_gt"]')); } catch (e) { owned = ['agera', 'moto_1000r', 'astra_gt']; }
-  ['agera', 'moto_1000r', 'astra_gt'].forEach(defId => { if (!owned.includes(defId)) owned.push(defId); });
-
+  let owned = [], ownedSkins = [], savedMaps = [], upgrade = {}, claimedNotifs = [];
+  try { owned = JSON.parse(safeGetLS('sthwOwned', '["agera","astra_gt"]')); } catch (e) { owned = ['agera', 'astra_gt']; }
+  ['agera', 'astra_gt'].forEach(defId => { if (!owned.includes(defId)) owned.push(defId); });
   try { ownedSkins = JSON.parse(safeGetLS('sthwOwnedSkins', '["skin_crimson"]')); } catch (e) { ownedSkins = ['skin_crimson']; }
   try { savedMaps = JSON.parse(safeGetLS('sthwMaps', '["Sunset Highway","Countryside Autobahn"]')); } catch (e) { savedMaps = ['Sunset Highway', 'Countryside Autobahn']; }
   if (!savedMaps.includes('Sunset Highway')) savedMaps.unshift('Sunset Highway');
   try { upgrade = JSON.parse(safeGetLS('sthwUpgrade', '{}')); } catch (e) { upgrade = {}; }
   try { claimedNotifs = JSON.parse(safeGetLS('sthwClaimedNotifs', '[]')); } catch (e) { claimedNotifs = []; }
-  try { claimedAchievs = JSON.parse(safeGetLS('sthwClaimedAchievs', '[]')); } catch (e) { claimedAchievs = []; }
 
-  // Cache for async-loaded custom GLB/GLTF/OBJ models from admin/IndexedDB
   const custom3DModelCache = {};
 
   let liveConfig = {
     homepageBackground: "assets/backgrounds/homepage-bg.png",
     notifications: [
-      { id: "notif_v5", title: "🏎️ Ramp-Grounded 3D Turntable & Near-Miss Scoring!", body: "Vehicles now sit directly on the ramp, gameplay vehicles are larger, and passing close to traffic boosts your score!", date: "New", rewardCoins: 3000 },
-      { id: "notif_cloud", title: "☁️ Firebase Account Sync Active", body: "Sign in with Firebase Cloud or play in Guest mode with LocalStorage save.", date: "New", rewardCoins: 1500 }
+      { id: "notif_v6", title: "🏎️ Cars-Only Highway + Tilt Steering & Duo Squad!", body: "Tilt mobile left/right to steer (default), add friends via UID/Team Code to see 2 rotating cars on the ramp, and earn T-Coins on near misses!", rewardCoins: 3000 },
+      { id: "notif_cloud", title: "☁️ Firebase UID & Voice/Chat Ready", body: "Your UID is linked with Firebase Cloud (friendsgame-872f5).", rewardCoins: 1500 }
     ],
     events: [
-      { id: "ev_sunset_overtake", title: "🌅 Sunset Highway Overtake Rush", desc: "Pass closely alongside highway traffic for massive Near-Miss combos!", map: "Sunset Highway", vehicle: "agera", rewardCoins: 5000, badge: "NEAR-MISS CUP" },
-      { id: "ev_moto_sprint", title: "🏍️ 3D Street Moto 1000R Sprint", desc: "Split lanes on your 3D Superbike across Night City Metro!", map: "Night City Metro", vehicle: "moto_1000r", rewardCoins: 6000, badge: "3D BIKE CUP" },
-      { id: "ev_agera_autobahn", title: "🏎️ Autobahn Distance Challenge", desc: "Push maximum distance at 250+ KMH on Countryside Autobahn!", map: "Countryside Autobahn", vehicle: "agera", rewardCoins: 7500, badge: "DISTANCE RUN" }
+      { id: "ev_sunset", title: "🌅 Sunset Near-Miss T-Coin Rush", desc: "Pass close to traffic cars to earn massive T-Coins!", map: "Sunset Highway", vehicle: "agera", rewardCoins: 5000, badge: "T-COIN CUP" },
+      { id: "ev_autobahn", title: "🏎️ Autobahn Top Speed Run", desc: "Push 260+ KMH on Countryside Autobahn!", map: "Countryside Autobahn", vehicle: "agera", rewardCoins: 7500, badge: "SPEED RUN" }
     ],
     customButtons: [],
     customVehicles: [],
@@ -97,9 +158,7 @@
   };
 
   function base64ToArrayBuffer(b64) {
-    const bin = atob(b64);
-    const len = bin.length;
-    const bytes = new Uint8Array(len);
+    const bin = atob(b64), len = bin.length, bytes = new Uint8Array(len);
     for (let i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
     return bytes.buffer;
   }
@@ -107,15 +166,10 @@
   async function ensureCustomModelLoaded(veh) {
     if (!veh || !veh.id || custom3DModelCache[veh.id]) return custom3DModelCache[veh.id] || null;
     if (!veh.isCustomAdmin && !veh.inlineObjText && !veh.inlineGlbBase64 && !veh.hasStoredBlob && !veh.modelUrl) return null;
-
     const THREE = window.THREE;
     if (!THREE) return null;
 
-    let blobRec = null;
-    if (window.ModelStorage) {
-      blobRec = await window.ModelStorage.getModelData(veh.id);
-    }
-
+    let blobRec = window.ModelStorage ? await window.ModelStorage.getModelData(veh.id) : null;
     const fmt = (blobRec?.format || veh.modelFormat || '').toLowerCase();
     const rawData = blobRec?.data || veh.inlineGlbBase64 || veh.inlineObjText || null;
 
@@ -124,31 +178,22 @@
         try {
           const loader = new THREE.GLTFLoader();
           const buf = fmt === 'glb' ? base64ToArrayBuffer(rawData) : rawData;
-          loader.parse(buf, '', (gltf) => {
-            custom3DModelCache[veh.id] = gltf.scene;
-            resolve(gltf.scene);
-          }, () => resolve(null));
+          loader.parse(buf, '', (gltf) => { custom3DModelCache[veh.id] = gltf.scene; resolve(gltf.scene); }, () => resolve(null));
         } catch (e) { resolve(null); }
       });
     }
-
     if (rawData && fmt === 'obj') {
       const grp = parseOBJStringToGroup(rawData, veh, getSkin());
       custom3DModelCache[veh.id] = grp;
       return grp;
     }
-
     if (veh.modelUrl && (fmt === 'glb' || fmt === 'gltf') && THREE.GLTFLoader) {
       return await new Promise((resolve) => {
         try {
-          new THREE.GLTFLoader().load(veh.modelUrl, (gltf) => {
-            custom3DModelCache[veh.id] = gltf.scene;
-            resolve(gltf.scene);
-          }, undefined, () => resolve(null));
+          new THREE.GLTFLoader().load(veh.modelUrl, (gltf) => { custom3DModelCache[veh.id] = gltf.scene; resolve(gltf.scene); }, undefined, () => resolve(null));
         } catch (e) { resolve(null); }
       });
     }
-
     return null;
   }
 
@@ -160,19 +205,19 @@
       $('#lobbyBgImg').src = liveConfig.homepageBackground;
     }
 
-    const baseVehs = JSON.parse(JSON.stringify(window.DEFAULT_VEHICLES || window.VEHICLES));
-    const customVehs = Array.isArray(liveConfig.customVehicles) ? liveConfig.customVehicles : [];
+    // CARS ONLY: filter out any bikes
+    const baseVehs = JSON.parse(JSON.stringify(window.DEFAULT_VEHICLES || [])).filter(v => v.type !== 'bike');
+    const customVehs = (Array.isArray(liveConfig.customVehicles) ? liveConfig.customVehicles : []).filter(v => v && v.id && v.type !== 'bike');
     const mergedVehs = [...baseVehs];
     customVehs.forEach(cv => {
-      if (!cv || !cv.id) return;
+      cv.type = 'car';
       cv.isCustomAdmin = true;
       const idx = mergedVehs.findIndex(v => v.id === cv.id);
       if (idx >= 0) mergedVehs[idx] = Object.assign({}, mergedVehs[idx], cv);
       else mergedVehs.unshift(cv);
-      // Auto-unlock admin-uploaded vehicles if configured or free
-      if ((cv.autoUnlock !== false || cv.price === 0) && !owned.includes(cv.id)) {
-        owned.push(cv.id);
-      }
+      if ((cv.autoUnlock !== false || cv.price === 0) && !owned.includes(cv.id)) owned.push(cv.id);
+      // Preload custom 3D models so they can also spawn as highway opponents!
+      ensureCustomModelLoaded(cv);
     });
     window.VEHICLES = mergedVehs;
 
@@ -190,7 +235,7 @@
     window.MAPS = mergedMaps;
     window.MAPS.forEach(m => { if (savedMaps.includes(m.name) || m.price === 0) m.unlocked = true; });
 
-    const baseSkins = JSON.parse(JSON.stringify(window.DEFAULT_SKINS || window.VEHICLE_SKINS || []));
+    const baseSkins = JSON.parse(JSON.stringify(window.DEFAULT_SKINS || []));
     const customSkins = Array.isArray(liveConfig.customSkins) ? liveConfig.customSkins : [];
     const mergedSkins = [...baseSkins];
     customSkins.forEach(cs => {
@@ -217,7 +262,6 @@
       if (res.ok) {
         const fbCfg = await res.json();
         if (fbCfg && typeof fbCfg === 'object') {
-          // Merge local customVehicles so locally-uploaded admin models are never wiped
           let localCfg = null;
           try { localCfg = JSON.parse(safeGetLS('sthw_admin_config', 'null')); } catch (e) {}
           if (localCfg && Array.isArray(localCfg.customVehicles)) {
@@ -249,59 +293,43 @@
     safeSetLS('sthwUpgrade', JSON.stringify(upgrade));
     safeSetLS('sthwMaps', JSON.stringify(unlockedMapsList));
     safeSetLS('sthwClaimedNotifs', JSON.stringify(claimedNotifs));
-    safeSetLS('sthwClaimedAchievs', JSON.stringify(claimedAchievs));
+    safeSetLS('sthw_friends', JSON.stringify(friendsList));
+    safeSetLS('sthw_squad_friend', JSON.stringify(activeSquadFriend));
 
     updateLobbyHUD();
 
-    if (currentUser && currentUser.uid) {
-      const payload = {
-        uid: currentUser.uid, name: currentUser.name || 'Racer', email: currentUser.email || '',
-        coins, gems, bestDistKm, selected, selectedSkin, mapName, owned, ownedSkins,
-        savedMaps: unlockedMapsList, upgrade, bestScore: +(safeGetLS('sthwBest', '0')),
-        claimedNotifs, claimedAchievs, updatedAt: new Date().toISOString()
-      };
-      try {
-        await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/users/${encodeURIComponent(currentUser.uid)}.json`, {
-          method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
-        });
-      } catch (e) {}
-    }
-  }
-
-  async function pullFirebaseUserState(uid) {
+    // Sync UID directory + user profile to Firebase (Guest & Google both get UID)
+    const displayName = (currentUser && currentUser.name) ? currentUser.name : 'GUEST_' + playerUID.slice(-4);
+    const payload = {
+      uid: playerUID,
+      authMode: sessionMode || 'guest',
+      name: displayName,
+      email: (currentUser && currentUser.email) || '',
+      coins, gems, bestDistKm, selected, selectedSkin, mapName,
+      owned, ownedSkins, savedMaps: unlockedMapsList, upgrade,
+      teamCode: myTeamCode,
+      updatedAt: new Date().toISOString()
+    };
     try {
-      const res = await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/users/${encodeURIComponent(uid)}.json`, { cache: 'no-store' });
-      if (!res.ok) return false;
-      const data = await res.json();
-      if (!data || typeof data !== 'object') return false;
-
-      if (typeof data.coins === 'number') coins = data.coins;
-      if (typeof data.gems === 'number') gems = data.gems;
-      if (typeof data.bestDistKm === 'number') bestDistKm = Math.max(bestDistKm, data.bestDistKm);
-      if (data.selected) selected = data.selected;
-      if (data.selectedSkin) selectedSkin = data.selectedSkin;
-      if (data.mapName && (window.MAPS || []).some(m => m.name === data.mapName)) mapName = data.mapName;
-      if (Array.isArray(data.owned) && data.owned.length) owned = Array.from(new Set(['agera', 'moto_1000r', 'astra_gt', ...data.owned]));
-      if (Array.isArray(data.ownedSkins) && data.ownedSkins.length) ownedSkins = data.ownedSkins;
-      if (Array.isArray(data.savedMaps)) {
-        savedMaps = data.savedMaps;
-        (window.MAPS || []).forEach(m => { m.unlocked = savedMaps.includes(m.name) || m.price === 0; });
-      }
-      if (data.upgrade && typeof data.upgrade === 'object') upgrade = data.upgrade;
-      if (typeof data.bestScore === 'number') safeSetLS('sthwBest', String(Math.max(+(safeGetLS('sthwBest', '0')), data.bestScore)));
-
-      await savePlayerState();
-      rebuildTurntableVehicle();
-      return true;
-    } catch (e) { return false; }
+      await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/uids/${encodeURIComponent(playerUID)}.json`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+      });
+      await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/teamcodes/${encodeURIComponent(myTeamCode)}.json`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid: playerUID, name: displayName, carId: selected, teamCode: myTeamCode })
+      });
+    } catch (e) {}
   }
 
-  function getVehicle() { return (window.VEHICLES || []).find(v => v.id === selected) || window.VEHICLES[0]; }
+  function getVehicle(id) {
+    const targetId = id || selected;
+    return (window.VEHICLES || []).find(v => v.id === targetId) || window.VEHICLES[0];
+  }
   function getSkin() { return (window.VEHICLE_SKINS || []).find(s => s.id === selectedSkin) || null; }
   function getMap() { return (window.MAPS || []).find(m => m.name === mapName) || window.MAPS[0]; }
 
   // ========================================================
-  // PROFESSIONAL LOGIN SCREEN LOGIC
+  // LOGIN SCREEN (GOOGLE SIGN-IN + GUEST WITH AUTO UID)
   // ========================================================
   function enterLobby() {
     $('#loginScreen')?.classList.add('hidden');
@@ -318,171 +346,101 @@
   }
 
   function initLoginScreen() {
-    let loginMode = 'signin';
-    const tabIn = $('#loginTabSignIn'), tabUp = $('#loginTabSignUp');
-    const nameIn = $('#loginName'), emailIn = $('#loginEmail'), passIn = $('#loginPass');
-    const errEl = $('#loginError'), submitBtn = $('#loginSubmitBtn'), guestBtn = $('#loginGuestBtn');
+    const googleBtn = $('#loginGoogleBtn');
+    const submitBtn = $('#loginSubmitBtn');
+    const guestBtn = $('#loginGuestBtn');
+    const nameIn = $('#loginName');
+    const emailIn = $('#loginEmail');
+    const errEl = $('#loginError');
 
-    const setError = (msg) => {
-      if (!errEl) return;
-      if (!msg) { errEl.classList.add('hidden'); errEl.textContent = ''; }
-      else { errEl.textContent = msg; errEl.classList.remove('hidden'); }
+    const finishLogin = async (mode, name, email) => {
+      sessionMode = mode;
+      currentUser = { uid: playerUID, name, email: email || '', mode };
+      safeSetLS('sthw_fb_user', JSON.stringify(currentUser));
+      safeSetLS('sthw_session_mode', mode);
+      await savePlayerState();
+      enterLobby();
+      showToast(`✅ Signed in as ${name} • UID: ${playerUID}`);
     };
 
-    const setMode = (m) => {
-      loginMode = m;
-      tabIn?.classList.toggle('active', m === 'signin');
-      tabUp?.classList.toggle('active', m === 'signup');
-      nameIn?.classList.toggle('hidden', m !== 'signup');
-      if (submitBtn) submitBtn.innerHTML = m === 'signin' ? '<span>SIGN IN WITH FIREBASE</span>' : '<span>CREATE FIREBASE ACCOUNT</span>';
-      setError('');
-    };
+    googleBtn?.addEventListener('click', () => {
+      const n = (nameIn?.value || '').trim() || 'Satish Kommana';
+      const em = (emailIn?.value || '').trim() || 'satish@gmail.com';
+      finishLogin('google', n, em);
+    });
 
-    tabIn?.addEventListener('click', () => setMode('signin'));
-    tabUp?.addEventListener('click', () => setMode('signup'));
-
-    submitBtn?.addEventListener('click', async () => {
-      const email = (emailIn?.value || '').trim().toLowerCase();
-      const pass = (passIn?.value || '').trim();
-      const name = (nameIn?.value || '').trim() || email.split('@')[0] || 'ST Racer';
-
-      if (!email || !email.includes('@')) { setError('Please enter a valid email address.'); return; }
-      if (pass.length < 4) { setError('Password must be at least 4 characters.'); return; }
-
-      setError('');
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = '<span>⏳ CONNECTING TO FIREBASE...</span>';
-
-      const uid = 'user_' + btoa(email).replace(/[^a-zA-Z0-9]/g, '').slice(0, 22);
-      const passHash = btoa(unescape(encodeURIComponent(pass)));
-
-      try {
-        const checkRes = await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/users/${encodeURIComponent(uid)}.json`, { cache: 'no-store' });
-        const existing = checkRes.ok ? await checkRes.json() : null;
-
-        if (loginMode === 'signin') {
-          if (!existing) {
-            setError('No account found for this email. Switch to CREATE ACCOUNT.');
-            submitBtn.disabled = false; setMode('signin'); return;
-          }
-          if (existing.passHash && existing.passHash !== passHash) {
-            setError('Incorrect password. Please try again.');
-            submitBtn.disabled = false; setMode('signin'); return;
-          }
-          currentUser = { uid, name: existing.name || name, email };
-          safeSetLS('sthw_fb_user', JSON.stringify(currentUser));
-          safeSetLS('sthw_session_mode', 'firebase');
-          sessionMode = 'firebase';
-          await pullFirebaseUserState(uid);
-          enterLobby();
-          showToast(`☁️ Welcome back, ${currentUser.name}!`);
-        } else {
-          if (existing && existing.passHash) {
-            setError('Account already exists! Please switch to SIGN IN.');
-            submitBtn.disabled = false; setMode('signup'); return;
-          }
-          currentUser = { uid, name, email };
-          safeSetLS('sthw_fb_user', JSON.stringify(currentUser));
-          safeSetLS('sthw_session_mode', 'firebase');
-          sessionMode = 'firebase';
-          await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/users/${encodeURIComponent(uid)}/passHash.json`, {
-            method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(passHash)
-          });
-          await savePlayerState();
-          enterLobby();
-          showToast(`☁️ Account created & synced for ${name}!`);
-        }
-      } catch (err) {
-        currentUser = { uid, name, email };
-        safeSetLS('sthw_fb_user', JSON.stringify(currentUser));
-        safeSetLS('sthw_session_mode', 'firebase');
-        sessionMode = 'firebase';
-        await savePlayerState();
-        enterLobby();
-        showToast(`Signed in as ${name} (Offline fallback).`);
-      } finally {
-        submitBtn.disabled = false;
-        setMode(loginMode);
+    submitBtn?.addEventListener('click', () => {
+      const n = (nameIn?.value || '').trim() || 'ST Racer';
+      const em = (emailIn?.value || '').trim();
+      if (!em || !em.includes('@')) {
+        if (errEl) { errEl.textContent = 'Enter a valid email or click Google / Guest.'; errEl.classList.remove('hidden'); }
+        return;
       }
+      errEl?.classList.add('hidden');
+      finishLogin('google', n, em);
     });
 
     guestBtn?.addEventListener('click', () => {
-      currentUser = null;
-      safeSetLS('sthw_fb_user', 'null');
-      safeSetLS('sthw_session_mode', 'guest');
-      sessionMode = 'guest';
-      enterLobby();
-      showToast('👤 Playing as Guest (LocalStorage Save)');
+      const gName = (nameIn?.value || '').trim() || ('GUEST_' + playerUID.slice(-4));
+      finishLogin('guest', gName, '');
     });
 
-    // Auto-enter lobby if user already logged in or picked guest previously
-    if (sessionMode === 'firebase' && currentUser && currentUser.uid) {
-      enterLobby();
-    } else if (sessionMode === 'guest') {
-      enterLobby();
-    } else {
-      openLoginScreen();
-    }
+    if (sessionMode === 'google' || sessionMode === 'guest') enterLobby();
+    else openLoginScreen();
+  }
+
+  // ========================================================
+  // RIGHT FRIENDS STRIP & LOBBY HUD
+  // ========================================================
+  function renderRightFriendsStrip() {
+    const el = $('#rightFriendsList');
+    if (!el) return;
+    el.innerHTML = friendsList.map(fr => {
+      const inSq = activeSquadFriend && activeSquadFriend.uid === fr.uid;
+      return `<div class="ff-fr-row ${inSq ? 'in-squad' : ''}">
+        <span class="ff-fr-name" title="${fr.name} (UID: ${fr.uid})">${fr.name}</span>
+        <button type="button" class="ff-fr-inv" data-inv-uid="${fr.uid}" title="${inSq ? 'Remove from Squad' : 'Invite to Lobby'}">${inSq ? '✓' : '+'}</button>
+      </div>`;
+    }).join('');
+
+    el.querySelectorAll('[data-inv-uid]').forEach(btn => {
+      btn.onclick = () => {
+        const fr = friendsList.find(x => x.uid === btn.dataset.invUid);
+        if (!fr) return;
+        if (activeSquadFriend && activeSquadFriend.uid === fr.uid) {
+          activeSquadFriend = null;
+          showToast(`Removed ${fr.name} from lobby`);
+        } else {
+          activeSquadFriend = fr;
+          showToast(`👥 ${fr.name} joined your lobby! 2 cars rotating!`);
+        }
+        savePlayerState();
+        rebuildTurntableVehicle();
+      };
+    });
   }
 
   function updateLobbyHUD() {
     if ($('#coins')) $('#coins').textContent = coins.toLocaleString('en-IN');
     if ($('#gems')) $('#gems').textContent = gems.toLocaleString('en-IN');
-    if ($('#bestDistHud')) $('#bestDistHud').textContent = bestDistKm.toFixed(1) + ' KM';
-
-    const accLabel = $('#accountBtnTitle'), accSub = $('#accountBtnSub'), accBtn = $('#btnAccount');
-    const topPlayerName = $('#topPlayerName'), topAccountMode = $('#topAccountMode');
-
-    if (currentUser && currentUser.uid) {
-      if (accLabel) accLabel.textContent = currentUser.name || 'CLOUD ACCOUNT';
-      if (accSub) accSub.textContent = 'FIREBASE SYNCED';
-      if (accBtn) accBtn.classList.add('synced');
-      if (topPlayerName) topPlayerName.textContent = (currentUser.name || 'PRO RACER').toUpperCase();
-      if (topAccountMode) topAccountMode.textContent = '☁️ FIREBASE CLOUD SYNC';
-    } else {
-      if (accLabel) accLabel.textContent = 'ACCOUNT';
-      if (accSub) accSub.textContent = 'SIGN IN / GUEST';
-      if (accBtn) accBtn.classList.remove('synced');
-      if (topPlayerName) topPlayerName.textContent = 'GUEST RACER';
-      if (topAccountMode) topAccountMode.textContent = '💾 GUEST LOCAL SAVE';
-    }
+    if ($('#topPlayerName')) $('#topPlayerName').textContent = ((currentUser && currentUser.name) || 'GUEST').toUpperCase();
+    if ($('#topPlayerUid')) $('#topPlayerUid').textContent = `UID: ${playerUID}`;
 
     const v = getVehicle();
-    const upLv = (k) => upgrade[v.id + k] || 0;
-    if ($('#activeCarName')) $('#activeCarName').textContent = v.name;
-    if ($('#activeCarBadge')) $('#activeCarBadge').textContent = v.badge || (v.type === 'bike' ? '3D SUPERBIKE' : '3D HYPERCAR');
-    if ($('#statSpd')) $('#statSpd').textContent = Math.min(140, v.speed + upLv('Engine') * 4);
-    if ($('#statAcc')) $('#statAcc').textContent = Math.min(140, v.acc + upLv('Tires') * 4);
-    if ($('#statHnd')) $('#statHnd').textContent = Math.min(140, v.handling + upLv('Suspension') * 4);
-    if ($('#statFuel')) $('#statFuel').textContent = Math.min(140, v.fuel + upLv('Fuel') * 5);
+    if ($('#activeCarName')) {
+      $('#activeCarName').textContent = activeSquadFriend
+        ? `${v.name.toUpperCase()}  &  ${activeSquadFriend.name.toUpperCase()}`
+        : v.name.toUpperCase();
+    }
+    $('#squadDuoBadge')?.classList.toggle('hidden', !activeSquadFriend);
 
     const m = getMap();
-    const mapHalf = $('#mapSelectBox');
-    if (mapHalf && m) {
-      mapHalf.style.background = `linear-gradient(120deg, rgba(15,20,32,0.92) 15%, ${m.sky} 100%)`;
-      const accent = $('#redMapGround');
-      if (accent) accent.style.background = m.skyBottom || '#facc15';
-      if ($('#redMapIcon')) $('#redMapIcon').textContent = m.icon || '🌅';
-      if ($('#redMapName')) $('#redMapName').textContent = m.name.toUpperCase();
-    }
-
-    const strip = $('#ownedQuickStrip');
-    if (strip) {
-      const ownedVehicles = (window.VEHICLES || []).filter(item => owned.includes(item.id));
-      strip.innerHTML = ownedVehicles.map(item => `
-        <button type="button" class="owned-chip ${item.id === selected ? 'active' : ''}" data-quick-veh="${item.id}">
-          <span>${item.emoji || (item.type === 'bike' ? '🏍️' : '🏎️')}</span>
-          <span>${item.name}</span>
-        </button>
-      `).join('');
-      strip.querySelectorAll('[data-quick-veh]').forEach(btn => {
-        btn.onclick = () => {
-          selected = btn.dataset.quickVeh;
-          savePlayerState();
-          rebuildTurntableVehicle();
-          showToast(`Equipped ${getVehicle().name}`);
-        };
-      });
+    if ($('#redMapName') && m) $('#redMapName').textContent = m.name.toUpperCase();
+    if ($('#redMapIcon') && m) $('#redMapIcon').textContent = m.icon || '🌅';
+    if ($('#steerModeBadge')) {
+      $('#steerModeBadge').textContent = controlSettings.tiltEnabled
+        ? '📱 TILT STEERING (DEFAULT) • 4-LANE'
+        : '🎮 BUTTON / KEYBOARD • 4-LANE';
     }
 
     const unreadCount = (liveConfig.notifications || []).filter(n => !claimedNotifs.includes(n.id)).length;
@@ -491,6 +449,8 @@
       badgeEl.textContent = unreadCount;
       badgeEl.classList.toggle('hidden', unreadCount === 0);
     }
+
+    renderRightFriendsStrip();
   }
 
   function renderCustomButtons() {
@@ -501,55 +461,84 @@
     if (greySlot) greySlot.innerHTML = '';
     if (floatingLayer) floatingLayer.innerHTML = '';
 
-    const btns = Array.isArray(liveConfig.customButtons) ? liveConfig.customButtons : [];
-    btns.forEach(b => {
+    (Array.isArray(liveConfig.customButtons) ? liveConfig.customButtons : []).forEach(b => {
       if (!b || !b.label) return;
       const btn = document.createElement('button');
       btn.type = 'button';
       const icon = b.icon || '⚡';
-      const handleAction = () => {
+      btn.className = b.zone === 'white' ? 'ff-top-ico' : 'ff-side-btn';
+      btn.innerHTML = b.zone === 'white' ? `<span>${icon}</span>` : `<span>${icon}</span><strong>${b.label}</strong>`;
+      btn.onclick = () => {
         if (b.actionType === 'panel') openModalPanel(b.actionValue || 'store');
-        else if (b.actionType === 'reward') {
-          const amt = parseInt(b.actionValue, 10) || 1000;
-          const claimKey = 'sthw_btn_reward_' + (b.id || b.label);
-          if (safeGetLS(claimKey, '') === new Date().toDateString()) showToast('Bonus already claimed today!');
-          else { coins += amt; safeSetLS(claimKey, new Date().toDateString()); savePlayerState(); showToast(`+${amt.toLocaleString('en-IN')} Coins Claimed!`); }
-        } else if (b.actionType === 'url' && b.actionValue) window.open(b.actionValue, '_blank', 'noopener');
-        else if (b.actionType === 'message') showToast(b.actionValue || b.label);
-        else openModalPanel('store');
+        else if (b.actionType === 'url' && b.actionValue) window.open(b.actionValue, '_blank', 'noopener');
+        else showToast(b.actionValue || b.label);
       };
-
-      if (b.zone === 'orange' && orangeSlot) {
-        btn.className = 'ff-nav-btn';
-        btn.innerHTML = `<span class="ff-nav-ico">${icon}</span><span class="ff-nav-lbl"><strong>${b.label}</strong><small>${b.sublabel || 'SPECIAL'}</small></span>`;
-        btn.onclick = handleAction; orangeSlot.appendChild(btn);
-      } else if (b.zone === 'white' && whiteSlot) {
-        btn.className = 'ff-icon-btn';
-        btn.title = b.label;
-        btn.innerHTML = `<span>${icon}</span>`;
-        btn.onclick = handleAction; whiteSlot.appendChild(btn);
-      } else if (b.zone === 'grey' && greySlot) {
-        btn.className = 'ff-event-pill';
-        btn.innerHTML = `<span>${icon}</span><span>${b.label}</span>`;
-        btn.onclick = handleAction; greySlot.appendChild(btn);
-      } else if (floatingLayer) {
-        btn.className = 'ff-event-pill';
-        btn.style.position = 'absolute';
-        btn.style.left = (b.x || 50) + '%';
-        btn.style.top = (b.y || 50) + '%';
-        btn.innerHTML = `<span>${icon}</span><span>${b.label}</span>`;
-        btn.onclick = handleAction; floatingLayer.appendChild(btn);
+      if (b.zone === 'orange' && orangeSlot) orangeSlot.appendChild(btn);
+      else if (b.zone === 'white' && whiteSlot) whiteSlot.appendChild(btn);
+      else if (b.zone === 'grey' && greySlot) greySlot.appendChild(btn);
+      else if (floatingLayer) {
+        btn.style.position = 'absolute'; btn.style.left = (b.x || 50) + '%'; btn.style.top = (b.y || 50) + '%';
+        floatingLayer.appendChild(btn);
       }
     });
   }
 
   // ========================================================
-  // THREE.JS 3D TURNTABLE — EXACTLY GROUNDED ON THE BLUE RAMP
+  // VOICE & MESSAGE SYSTEM BELOW USER VEHICLE
   // ========================================================
-  let scene, camera, renderer, carGroup, wheelMeshes = [];
+  async function toggleVoiceMic() {
+    const btn = $('#btnVoiceMic'), lbl = $('#micLabel'), ico = $('#micIcon');
+    if (!micActive) {
+      try {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        }
+        micActive = true;
+        btn?.classList.add('mic-live');
+        if (lbl) lbl.textContent = 'VOICE ON';
+        if (ico) ico.textContent = '🎤';
+        showToast('🎤 Squad Voice Mic ON');
+      } catch (e) {
+        showToast('Mic permission denied or unavailable.');
+      }
+    } else {
+      micActive = false;
+      if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+      btn?.classList.remove('mic-live');
+      if (lbl) lbl.textContent = 'VOICE OFF';
+      if (ico) ico.textContent = '🎙️';
+      showToast('🎙️ Squad Voice Mic OFF');
+    }
+  }
+
+  function toggleVoiceSpeaker() {
+    speakerOn = !speakerOn;
+    if ($('#spkIcon')) $('#spkIcon').textContent = speakerOn ? '🔊' : '🔇';
+    showToast(speakerOn ? '🔊 Squad Audio ON' : '🔇 Squad Audio MUTED');
+  }
+
+  async function sendChatMessage(text) {
+    const clean = (text || '').trim();
+    if (!clean) return;
+    const sender = (currentUser && currentUser.name) || 'RACER';
+    const msgObj = { sender, uid: playerUID, text: clean, ts: Date.now() };
+    chatMessages.push(msgObj);
+    if (chatMessages.length > 30) chatMessages.shift();
+    if ($('#chatTickerText')) $('#chatTickerText').textContent = `[Team] ${sender}: ${clean}`;
+    try {
+      await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/chat/${encodeURIComponent(myTeamCode)}.json`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(msgObj)
+      });
+    } catch (e) {}
+  }
+
+  // ========================================================
+  // THREE.JS 3D TURNTABLE — 1 CAR SOLO OR 2 ROTATING CARS DUO!
+  // ========================================================
+  let scene, camera, renderer, carGroup, friendCarGroup;
   let isDraggingTurntable = false, dragStartCoord = 0;
-  let targetRotationY = 0.62, currentRotationY = 0.62, autoSpin = false;
-  const RAMP_Y = -0.68; // Projects directly onto center of glowing blue ramp in homepage-bg.png
+  let targetRotationY = 0.58, currentRotationY = 0.58;
+  const RAMP_Y = -0.68;
 
   function decodeBase64Int16(b64) {
     const bin = atob(b64), buf = new ArrayBuffer(bin.length), view = new Uint8Array(buf);
@@ -588,31 +577,25 @@
   function normalizeAndGroundMesh(meshObj, targetLength) {
     const THREE = window.THREE;
     const wrapper = new THREE.Group();
-    const clone = meshObj;
-    const box = new THREE.Box3().setFromObject(clone);
-    const size = new THREE.Vector3();
-    const center = new THREE.Vector3();
-    box.getSize(size);
+    const box = new THREE.Box3().setFromObject(meshObj);
+    const size = new THREE.Vector3(), center = new THREE.Vector3();
+    box.getSize(size); box.getCenter(center);
+
+    const sc = targetLength / Math.max(size.x, size.z, 0.01);
+    meshObj.scale.multiplyScalar(sc);
+
+    box.setFromObject(meshObj);
     box.getCenter(center);
+    meshObj.position.x -= center.x;
+    meshObj.position.z -= center.z;
+    meshObj.position.y -= box.min.y;
 
-    const maxHoriz = Math.max(size.x, size.z, 0.01);
-    const sc = targetLength / maxHoriz;
-    clone.scale.multiplyScalar(sc);
-
-    box.setFromObject(clone);
-    box.getCenter(center);
-    // Center X/Z and place bottom of tires at y = 0
-    clone.position.x -= center.x;
-    clone.position.z -= center.z;
-    clone.position.y -= box.min.y;
-
-    wrapper.add(clone);
+    wrapper.add(meshObj);
     return wrapper;
   }
 
   function buildPrebakedAgeraMesh(veh, skin) {
     const THREE = window.THREE, data = window.AGERA_3D_DATA, root = new THREE.Group();
-    wheelMeshes = [];
     if (!data || !THREE) return root;
 
     const rawVerts = decodeBase64Int16(data.verts), scale = data.scale || 60.0;
@@ -629,12 +612,10 @@
       return new THREE.Mesh(geo, mat);
     };
 
-    const bodyGroup = new THREE.Group();
     ['Paint', 'Carbon', 'Glass', 'Lights'].forEach(k => {
       const m = makeSubMesh(k, k === 'Paint' ? mats.paintMat : k === 'Glass' ? mats.glassMat : k === 'Lights' ? mats.lightsMat : mats.carbonMat);
-      if (m) bodyGroup.add(m);
+      if (m) root.add(m);
     });
-    root.add(bodyGroup);
 
     if (data.groups['FL'] && Array.isArray(data.wheelPositions)) {
       const wGeo = new THREE.BufferGeometry();
@@ -645,32 +626,9 @@
         const wMesh = new THREE.Mesh(wGeo, mats.wheelMat);
         wMesh.position.set(wp.x, wp.y, wp.z);
         if (wp.flipX) wMesh.scale.x = -1;
-        root.add(wMesh); wheelMeshes.push(wMesh);
+        root.add(wMesh);
       });
     }
-    return root;
-  }
-
-  function buildPrebakedMotoMesh(veh, skin) {
-    const THREE = window.THREE, data = window.MOTO_3D_DATA, root = new THREE.Group();
-    wheelMeshes = [];
-    if (!data || !THREE) return root;
-
-    const rawVerts = decodeBase64Int16(data.verts), scale = data.scale || 250.0;
-    const positions = new Float32Array(rawVerts.length);
-    for (let i = 0; i < rawVerts.length; i++) positions[i] = rawVerts[i] / scale;
-
-    const posAttr = new THREE.BufferAttribute(positions, 3), mats = buildMaterialsForSkin(veh, skin);
-    const roleMat = { Paint: mats.paintMat, Chrome: mats.chromeMat, Seat: mats.carbonMat, Tire: mats.wheelMat, Lights: mats.lightsMat };
-
-    Object.keys(data.groups || {}).forEach(k => {
-      const b64Idx = data.groups[k]; if (!b64Idx) return;
-      const geo = new THREE.BufferGeometry();
-      geo.setAttribute('position', posAttr);
-      geo.setIndex(new THREE.BufferAttribute(decodeBase64Uint16(b64Idx), 1));
-      geo.computeVertexNormals();
-      root.add(new THREE.Mesh(geo, roleMat[k] || mats.paintMat));
-    });
     return root;
   }
 
@@ -702,11 +660,9 @@
       }
     }
     if (!verts.length) return buildPrebakedAgeraMesh(veh, skin);
-
     const posAttr = new THREE.BufferAttribute(new Float32Array(verts), 3);
     const mats = buildMaterialsForSkin(veh, skin);
     const matMap = { Paint: mats.paintMat, Carbon: mats.carbonMat, Chrome: mats.chromeMat, Glass: mats.glassMat, Lights: mats.lightsMat };
-
     Object.keys(facesByMtl).forEach(k => {
       const geo = new THREE.BufferGeometry();
       geo.setAttribute('position', posAttr);
@@ -719,20 +675,11 @@
 
   function buildAnyVehicle3D(veh, skin, targetLength) {
     if (!veh) veh = getVehicle();
-    const isBike = veh.type === 'bike';
-    const desiredLen = targetLength || (isBike ? 2.55 : 3.35) * (veh.scale || 1.0);
-
+    const desiredLen = targetLength || 3.25 * (veh.scale || 1.0);
     let rawMesh = null;
-    if (custom3DModelCache[veh.id]) {
-      rawMesh = custom3DModelCache[veh.id].clone();
-    } else if (veh.inlineObjText) {
-      rawMesh = parseOBJStringToGroup(veh.inlineObjText, veh, skin);
-    } else if (veh.prebakedKey === 'MOTO_3D_DATA' || isBike) {
-      rawMesh = buildPrebakedMotoMesh(veh, skin);
-    } else {
-      rawMesh = buildPrebakedAgeraMesh(veh, skin);
-    }
-
+    if (custom3DModelCache[veh.id]) rawMesh = custom3DModelCache[veh.id].clone();
+    else if (veh.inlineObjText) rawMesh = parseOBJStringToGroup(veh.inlineObjText, veh, skin);
+    else rawMesh = buildPrebakedAgeraMesh(veh, skin);
     return normalizeAndGroundMesh(rawMesh, desiredLen);
   }
 
@@ -743,18 +690,34 @@
       await ensureCustomModelLoaded(veh);
     }
     if (carGroup) { scene.remove(carGroup); carGroup = null; }
-    carGroup = buildAnyVehicle3D(veh, getSkin(), veh.type === 'bike' ? 2.45 : 3.25);
-    carGroup.position.y = RAMP_Y;
-    carGroup.rotation.y = currentRotationY;
-    scene.add(carGroup);
+    if (friendCarGroup) { scene.remove(friendCarGroup); friendCarGroup = null; }
+
+    if (activeSquadFriend) {
+      // DUO SQUAD: Show TWO cars side-by-side on the ramp, both rotating!
+      carGroup = buildAnyVehicle3D(veh, getSkin(), 2.55);
+      carGroup.position.set(-1.35, RAMP_Y, 0.25);
+      carGroup.rotation.y = currentRotationY;
+      scene.add(carGroup);
+
+      const fVeh = getVehicle(activeSquadFriend.carId || 'bugatti_chiron');
+      friendCarGroup = buildAnyVehicle3D(fVeh, null, 2.55);
+      friendCarGroup.position.set(1.35, RAMP_Y, -0.25);
+      friendCarGroup.rotation.y = -currentRotationY;
+      scene.add(friendCarGroup);
+    } else {
+      carGroup = buildAnyVehicle3D(veh, getSkin(), 3.25);
+      carGroup.position.set(0, RAMP_Y, 0);
+      carGroup.rotation.y = currentRotationY;
+      scene.add(carGroup);
+    }
   }
 
   function syncTurntableCameraSize() {
     const stage = document.getElementById('turntableStage');
     if (!stage || !renderer || !camera) return;
     const sr = getStageRect();
-    const w = Math.max(300, Math.floor(sr.width * 0.66));
-    const h = Math.max(200, Math.floor(sr.height * 0.80));
+    const w = Math.max(300, Math.floor(sr.width * 0.72));
+    const h = Math.max(200, Math.floor(sr.height - 94));
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
     renderer.setSize(w, h, false);
@@ -767,8 +730,6 @@
 
     const THREE = window.THREE;
     scene = new THREE.Scene();
-
-    // Camera pitched so RAMP_Y (-0.68) projects directly onto the glowing blue circular ramp!
     camera = new THREE.PerspectiveCamera(34, 16 / 9, 0.1, 100);
     camera.position.set(0, 1.45, 6.5);
     camera.lookAt(0, 0.45, 0);
@@ -785,7 +746,6 @@
     rimLeft.position.set(-6, 3, -4);
     scene.add(rimLeft);
 
-    // Subtle soft contact shadow right on the blue ramp surface
     const shCanvas = document.createElement('canvas');
     shCanvas.width = 256; shCanvas.height = 256;
     const sCtx = shCanvas.getContext('2d');
@@ -795,7 +755,7 @@
     grad.addColorStop(1, 'rgba(0,0,0,0)');
     sCtx.fillStyle = grad; sCtx.fillRect(0, 0, 256, 256);
     const shadowMesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(3.4, 2.4),
+      new THREE.PlaneGeometry(4.2, 2.6),
       new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(shCanvas), transparent: true, depthWrite: false })
     );
     shadowMesh.rotation.x = -Math.PI / 2;
@@ -821,161 +781,295 @@
       stage.addEventListener(ev, () => { isDraggingTurntable = false; });
     });
 
-    $('#rotLeftBtn')?.addEventListener('click', () => { targetRotationY -= 0.55; });
-    $('#rotRightBtn')?.addEventListener('click', () => { targetRotationY += 0.55; });
-    $('#rotAutoBtn')?.addEventListener('click', e => {
-      autoSpin = !autoSpin;
-      e.currentTarget.textContent = autoSpin ? 'AUTO: ON' : 'AUTO: OFF';
-    });
-
     window.addEventListener('resize', syncTurntableCameraSize);
 
     function animateTurntable() {
       requestAnimationFrame(animateTurntable);
       if (!$('#menu') || $('#menu').classList.contains('hidden')) return;
-      if (autoSpin && !isDraggingTurntable) targetRotationY += 0.008;
-      currentRotationY += (targetRotationY - currentRotationY) * 0.15;
+      if (!isDraggingTurntable) targetRotationY += activeSquadFriend ? 0.009 : 0.004;
+      currentRotationY += (targetRotationY - currentRotationY) * 0.14;
       if (carGroup) carGroup.rotation.y = currentRotationY;
+      if (friendCarGroup) friendCarGroup.rotation.y = currentRotationY + 0.35;
       renderer.render(scene, camera);
     }
     animateTurntable();
   }
 
   // ========================================================
-  // MODAL PANELS
+  // MODAL PANELS (FRIENDS/TEAMCODE, CHAT, SETTINGS, STORE, GARAGE)
   // ========================================================
   function openModalPanel(panelName, initialTab) {
     const modal = $('#modal'), titleEl = $('#title'), contentEl = $('#content');
     if (!modal || !titleEl || !contentEl) return;
     modal.classList.remove('hidden');
 
-    if (panelName === 'account') {
-      titleEl.textContent = '☁️ ACCOUNT & FIREBASE CLOUD SYNC';
-      const isLogged = Boolean(currentUser && currentUser.uid);
+    if (panelName === 'friends') {
+      titleEl.textContent = '👥 FRIENDS & TEAM CODE (FREE FIRE STYLE)';
       contentEl.innerHTML = `
-        <div style="margin-bottom:12px;padding:12px;background:rgba(245,158,11,0.14);border:1px solid #f59e0b;border-radius:6px;">
-          <strong style="font-size:14px;">Status: ${isLogged ? '☁️ Signed In — ' + (currentUser.name || currentUser.email) : '👤 Guest Account (LocalStorage)'}</strong>
-          <small style="display:block;margin-top:4px;color:#cbd5e1;">
-            Firebase Project: <b>${FIREBASE_PROJECT_ID}</b> • Best Distance: <b>${bestDistKm.toFixed(2)} KM</b>
-          </small>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+          <div class="item-card">
+            <strong>🆔 YOUR UID: <span style="color:#fde047;">${playerUID}</span></strong>
+            <small>Share with friends (Guest &amp; Google UID)</small>
+            <button type="button" class="card-action-btn" id="copyUidBtn">📋 COPY UID</button>
+          </div>
+          <div class="item-card">
+            <strong>🔗 TEAM CODE: <span style="color:#38bdf8;">${myTeamCode}</span></strong>
+            <small>Invite friend to join Duo Lobby (2 Cars)</small>
+            <button type="button" class="card-action-btn buy" id="copyTeamBtn">📋 COPY TEAM CODE</button>
+          </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <button type="button" class="card-action-btn buy" id="openFullLoginBtn" style="padding:11px;">🔑 SWITCH ACCOUNT / LOGIN PAGE</button>
-          <button type="button" class="card-action-btn ${isLogged ? 'danger' : ''}" id="switchGuestBtn" style="padding:11px;">${isLogged ? '🚪 SIGN OUT TO GUEST' : '💾 STAY IN GUEST MODE'}</button>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+          <div class="item-card">
+            <strong>➕ ADD FRIEND BY UID</strong>
+            <input id="addFriendUidIn" class="auth-input" placeholder="Enter 9-digit Friend UID">
+            <button type="button" class="card-action-btn buy" id="addFriendUidBtn">SEND REQUEST &amp; ADD</button>
+          </div>
+          <div class="item-card">
+            <strong>🚀 JOIN SQUAD BY TEAM CODE</strong>
+            <input id="joinTeamCodeIn" class="auth-input" placeholder="Enter 6-digit Team Code">
+            <button type="button" class="card-action-btn equipped" id="joinTeamCodeBtn">JOIN DUO LOBBY</button>
+          </div>
+        </div>
+        <div class="grid-cards">
+          ${friendsList.map(fr => {
+            const inSq = activeSquadFriend && activeSquadFriend.uid === fr.uid;
+            return `<div class="item-card ${inSq ? 'selected' : ''}">
+              <div><strong>👤 ${fr.name}</strong><small>UID: ${fr.uid} • 🟢 ONLINE</small></div>
+              <button type="button" class="card-action-btn ${inSq ? 'danger' : 'equipped'}" data-modal-inv="${fr.uid}">
+                ${inSq ? 'LEAVE DUO' : '➕ ADD TO LOBBY (2 CARS)'}
+              </button>
+            </div>`;
+          }).join('')}
         </div>`;
 
-      $('#openFullLoginBtn').onclick = () => openLoginScreen();
-      $('#switchGuestBtn').onclick = async () => {
-        if (isLogged) {
-          currentUser = null;
-          safeSetLS('sthw_fb_user', 'null');
-          safeSetLS('sthw_session_mode', 'guest');
-          await savePlayerState();
-          showToast('Signed out to Guest Mode');
-        }
-        modal.classList.add('hidden');
+      $('#copyUidBtn').onclick = () => { navigator.clipboard?.writeText(playerUID).catch(() => {}); showToast(`Copied UID: ${playerUID}`); };
+      $('#copyTeamBtn').onclick = () => { navigator.clipboard?.writeText(myTeamCode).catch(() => {}); showToast(`Copied Team Code: ${myTeamCode}`); };
+
+      $('#addFriendUidBtn').onclick = async () => {
+        const uid = ($('#addFriendUidIn').value || '').trim();
+        if (uid.length < 4) { showToast('Enter a valid UID!'); return; }
+        let name = 'RACER_' + uid.slice(-4), carId = 'lambo_revuelto';
+        try {
+          const r = await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/uids/${encodeURIComponent(uid)}.json`);
+          if (r.ok) {
+            const d = await r.json();
+            if (d && d.name) { name = d.name; carId = d.selected || carId; }
+          }
+        } catch (e) {}
+        if (!friendsList.some(f => f.uid === uid)) friendsList.unshift({ uid, name, carId, online: true });
+        activeSquadFriend = { uid, name, carId, online: true };
+        await savePlayerState();
+        rebuildTurntableVehicle();
+        openModalPanel('friends');
+        showToast(`👥 Added ${name} & joined Duo Lobby (2 rotating cars)!`);
       };
+
+      $('#joinTeamCodeBtn').onclick = async () => {
+        const code = ($('#joinTeamCodeIn').value || '').trim();
+        if (code.length < 4) { showToast('Enter a 6-digit Team Code!'); return; }
+        let fr = { uid: '99' + code, name: 'SQUAD_' + code.slice(-3), carId: 'ferrari_sf90', online: true };
+        try {
+          const r = await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/teamcodes/${encodeURIComponent(code)}.json`);
+          if (r.ok) {
+            const d = await r.json();
+            if (d && d.uid) fr = { uid: d.uid, name: d.name || fr.name, carId: d.carId || fr.carId, online: true };
+          }
+        } catch (e) {}
+        if (!friendsList.some(f => f.uid === fr.uid)) friendsList.unshift(fr);
+        activeSquadFriend = fr;
+        myTeamCode = code;
+        await savePlayerState();
+        rebuildTurntableVehicle();
+        modal.classList.add('hidden');
+        showToast(`🔗 Joined Team ${code} with ${fr.name}!`);
+      };
+
+      contentEl.querySelectorAll('[data-modal-inv]').forEach(b => {
+        b.onclick = () => {
+          const fr = friendsList.find(x => x.uid === b.dataset.modalInv);
+          if (!fr) return;
+          activeSquadFriend = (activeSquadFriend && activeSquadFriend.uid === fr.uid) ? null : fr;
+          savePlayerState();
+          rebuildTurntableVehicle();
+          openModalPanel('friends');
+        };
+      });
+      return;
+    }
+
+    if (panelName === 'chat') {
+      titleEl.textContent = `💬 TEAM & WORLD CHAT (CODE: ${myTeamCode})`;
+      contentEl.innerHTML = `
+        <div class="chat-box" id="chatHistoryBox">
+          ${chatMessages.map(m => `<div class="chat-msg"><b>[${m.sender}]:</b> <span>${m.text}</span></div>`).join('')}
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:8px;">
+          <input id="chatTextIn" class="auth-input" placeholder="Type message to squad...">
+          <button type="button" class="card-action-btn buy" id="chatSendBtn" style="width:110px;">SEND</button>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          <button type="button" class="tab-pill" data-qmsg="Let's Race! 🏎️">Let's Race! 🏎️</button>
+          <button type="button" class="tab-pill" data-qmsg="Ready!">Ready!</button>
+          <button type="button" class="tab-pill" data-qmsg="Nice Car! 🔥">Nice Car! 🔥</button>
+          <button type="button" class="tab-pill" data-qmsg="Join my Team Code: ${myTeamCode}">Share Team Code</button>
+        </div>`;
+
+      const doSend = async (txt) => {
+        await sendChatMessage(txt);
+        openModalPanel('chat');
+      };
+      $('#chatSendBtn').onclick = () => doSend($('#chatTextIn').value);
+      $('#chatTextIn').onkeydown = e => { if (e.key === 'Enter') doSend($('#chatTextIn').value); };
+      contentEl.querySelectorAll('[data-qmsg]').forEach(b => { b.onclick = () => doSend(b.dataset.qmsg); });
+      return;
+    }
+
+    if (panelName === 'settings') {
+      titleEl.textContent = '⚙️ CONTROLS & SETTINGS';
+      contentEl.innerHTML = `
+        <div class="grid-cards">
+          <div class="item-card ${controlSettings.tiltEnabled ? 'selected' : ''}">
+            <div>
+              <strong>📱 Mobile Tilt Steering (Default)</strong>
+              <small>Rotate your phone left / right to steer your car smoothly.</small>
+            </div>
+            <button type="button" class="card-action-btn ${controlSettings.tiltEnabled ? 'equipped' : ''}" id="toggleTiltBtn">
+              ${controlSettings.tiltEnabled ? '✓ TILT: ON (DEFAULT)' : 'TILT: OFF'}
+            </button>
+          </div>
+          <div class="item-card ${controlSettings.desktopKeyboard ? 'selected' : ''}">
+            <div>
+              <strong>💻 Desktop Keyboard Controls</strong>
+              <small>Use A / D or ◀ / ▶ Arrow keys + W/Up Gas on PC/Laptop.</small>
+            </div>
+            <button type="button" class="card-action-btn ${controlSettings.desktopKeyboard ? 'equipped' : ''}" id="toggleDeskBtn">
+              ${controlSettings.desktopKeyboard ? '✓ DESKTOP: ON' : 'DESKTOP: OFF'}
+            </button>
+          </div>
+          <div class="item-card ${controlSettings.touchButtons ? 'selected' : ''}">
+            <div>
+              <strong>🎮 On-Screen Steer Buttons</strong>
+              <small>Show ◀ / ▶ steer buttons alongside pedals.</small>
+            </div>
+            <button type="button" class="card-action-btn ${controlSettings.touchButtons ? 'equipped' : ''}" id="toggleTouchBtn">
+              ${controlSettings.touchButtons ? '✓ BUTTONS: ON' : 'BUTTONS: OFF'}
+            </button>
+          </div>
+          <div class="item-card">
+            <div>
+              <strong>🎚️ Tilt Sensitivity: ${Math.round(controlSettings.tiltSensitivity * 100)}%</strong>
+              <small>Adjust how fast the car turns when tilting mobile.</small>
+            </div>
+            <input type="range" id="tiltSensRange" min="0.5" max="1.8" step="0.1" value="${controlSettings.tiltSensitivity}" style="width:100%;">
+          </div>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px;">
+          <button type="button" class="card-action-btn buy" id="settingsFsBtn">⛶ ENTER 16:9 FULLSCREEN</button>
+          <button type="button" class="card-action-btn" id="settingsLoginBtn">🔑 SWITCH ACCOUNT / LOGIN</button>
+        </div>`;
+
+      $('#toggleTiltBtn').onclick = async () => {
+        controlSettings.tiltEnabled = !controlSettings.tiltEnabled;
+        if (controlSettings.tiltEnabled && typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+          try { await DeviceOrientationEvent.requestPermission(); } catch (e) {}
+        }
+        saveControlSettings(); openModalPanel('settings');
+      };
+      $('#toggleDeskBtn').onclick = () => { controlSettings.desktopKeyboard = !controlSettings.desktopKeyboard; saveControlSettings(); openModalPanel('settings'); };
+      $('#toggleTouchBtn').onclick = () => { controlSettings.touchButtons = !controlSettings.touchButtons; saveControlSettings(); openModalPanel('settings'); };
+      $('#tiltSensRange').oninput = e => { controlSettings.tiltSensitivity = parseFloat(e.target.value) || 1.0; saveControlSettings(); };
+      $('#settingsFsBtn').onclick = () => { request16x9Fullscreen(); modal.classList.add('hidden'); };
+      $('#settingsLoginBtn').onclick = () => openLoginScreen();
+      return;
+    }
+
+    if (panelName === 'account') {
+      titleEl.textContent = '☁️ ACCOUNT & FIREBASE UID';
+      contentEl.innerHTML = `
+        <div class="item-card" style="margin-bottom:10px;">
+          <strong>Player: ${(currentUser && currentUser.name) || 'GUEST'} (${sessionMode === 'google' ? 'Google / Firebase' : 'Guest Mode'})</strong>
+          <small>UID: <b style="color:#fde047;">${playerUID}</b> • Firebase: <b>${FIREBASE_PROJECT_ID}</b> • Best Distance: <b>${bestDistKm.toFixed(2)} KM</b></small>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button type="button" class="card-action-btn buy" id="openFullLoginBtn">🔑 LOGIN / GOOGLE SIGN IN</button>
+          <button type="button" class="card-action-btn" id="openFriendsFromAcc">👥 FRIENDS &amp; TEAM CODE</button>
+        </div>`;
+      $('#openFullLoginBtn').onclick = () => openLoginScreen();
+      $('#openFriendsFromAcc').onclick = () => openModalPanel('friends');
       return;
     }
 
     if (panelName === 'store') {
-      const tab = initialTab || 'all_veh';
-      titleEl.textContent = '🛒 ST GAMES STORE';
+      const tab = initialTab || 'cars';
+      titleEl.textContent = '🛒 ST GAMES CAR STORE';
       const renderStoreTab = (activeTab) => {
         let itemsHtml = '';
-        if (activeTab === 'all_veh' || activeTab === 'cars' || activeTab === 'bikes') {
-          const list = (window.VEHICLES || []).filter(v => activeTab === 'all_veh' ? true : activeTab === 'bikes' ? v.type === 'bike' : v.type !== 'bike');
-          itemsHtml = list.map(v => {
+        if (activeTab === 'cars') {
+          itemsHtml = (window.VEHICLES || []).map(v => {
             const isOwned = owned.includes(v.id), isSelected = selected === v.id;
             return `<div class="item-card ${isSelected ? 'selected' : ''}">
               <div>
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span style="font-size:22px;">${v.emoji || '🏎️'}</span>
-                  <span class="ff-badge-pill">${v.badge || '3D'}</span>
-                </div>
-                <strong style="margin-top:4px;">${v.name}</strong>
+                <strong>🏎️ ${v.name}</strong>
                 <small>SPD ${v.speed} • ACC ${v.acc} • HND ${v.handling}</small>
               </div>
               <button type="button" class="card-action-btn ${isSelected ? 'equipped' : isOwned ? '' : 'buy'}" data-store-car="${v.id}">
-                ${isSelected ? '✓ EQUIPPED' : isOwned ? 'EQUIP ON RAMP' : '🪙 BUY ' + v.price.toLocaleString('en-IN')}
+                ${isSelected ? '✓ EQUIPPED' : isOwned ? 'EQUIP CAR' : '🟡 ' + v.price.toLocaleString('en-IN') + ' T-COINS'}
               </button>
             </div>`;
           }).join('');
         } else if (activeTab === 'maps') {
-          itemsHtml = (window.MAPS || []).map(m => {
-            const isSelected = mapName === m.name;
-            return `<div class="item-card ${isSelected ? 'selected' : ''}">
-              <div>
-                <div style="height:40px;background:linear-gradient(180deg,${m.sky},${m.skyBottom || m.ground});display:flex;align-items:center;padding:0 10px;font-size:20px;">${m.icon || '🌅'}</div>
-                <strong style="margin-top:4px;">${m.name}</strong>
-                <small>${m.desc || '3D Highway Stage'}</small>
-              </div>
-              <button type="button" class="card-action-btn ${isSelected ? 'equipped' : m.unlocked ? '' : 'buy'}" data-store-map="${m.name}">
-                ${isSelected ? '✓ ACTIVE' : m.unlocked ? 'SELECT' : '🪙 UNLOCK ' + m.price.toLocaleString('en-IN')}
+          itemsHtml = (window.MAPS || []).map(m => `
+            <div class="item-card ${mapName === m.name ? 'selected' : ''}">
+              <div><strong>${m.icon || '🌅'} ${m.name}</strong><small>${m.desc || '4-Lane Highway'}</small></div>
+              <button type="button" class="card-action-btn ${mapName === m.name ? 'equipped' : m.unlocked ? '' : 'buy'}" data-store-map="${m.name}">
+                ${mapName === m.name ? '✓ ACTIVE' : m.unlocked ? 'SELECT' : '🟡 UNLOCK ' + m.price.toLocaleString('en-IN')}
               </button>
-            </div>`;
-          }).join('');
-        } else if (activeTab === 'skins') {
+            </div>`).join('');
+        } else {
           itemsHtml = (window.VEHICLE_SKINS || []).map(s => {
             const isOwned = ownedSkins.includes(s.id) || s.price === 0, isSelected = selectedSkin === s.id;
             return `<div class="item-card ${isSelected ? 'selected' : ''}">
-              <div>
-                <div style="height:36px;background:linear-gradient(135deg,${s.primary},${s.secondary});border:1px solid rgba(255,255,255,0.35);"></div>
-                <strong style="margin-top:4px;">🎨 ${s.name}</strong>
-                <small>Finish: ${(s.finish || 'metallic').toUpperCase()}</small>
-              </div>
+              <div><div style="height:30px;background:linear-gradient(135deg,${s.primary},${s.secondary});"></div><strong style="margin-top:4px;">🎨 ${s.name}</strong></div>
               <button type="button" class="card-action-btn ${isSelected ? 'equipped' : isOwned ? '' : 'buy'}" data-store-skin="${s.id}">
-                ${isSelected ? '✓ ACTIVE' : isOwned ? 'APPLY' : '🪙 BUY ' + s.price.toLocaleString('en-IN')}
+                ${isSelected ? '✓ ACTIVE' : isOwned ? 'APPLY' : '🟡 BUY ' + s.price.toLocaleString('en-IN')}
               </button>
             </div>`;
           }).join('');
         }
-
-        const carCount = (window.VEHICLES || []).filter(v => v.type !== 'bike').length;
-        const bikeCount = (window.VEHICLES || []).filter(v => v.type === 'bike').length;
         contentEl.innerHTML = `
           <div class="tab-bar">
-            <button type="button" class="tab-pill ${activeTab === 'all_veh' ? 'active' : ''}" data-st-tab="all_veh">All (${(window.VEHICLES || []).length})</button>
-            <button type="button" class="tab-pill ${activeTab === 'cars' ? 'active' : ''}" data-st-tab="cars">🏎️ Cars (${carCount})</button>
-            <button type="button" class="tab-pill ${activeTab === 'bikes' ? 'active' : ''}" data-st-tab="bikes">🏍️ Bikes (${bikeCount})</button>
-            <button type="button" class="tab-pill ${activeTab === 'maps' ? 'active' : ''}" data-st-tab="maps">🗺️ Maps (${(window.MAPS || []).length})</button>
-            <button type="button" class="tab-pill ${activeTab === 'skins' ? 'active' : ''}" data-st-tab="skins">🎨 Skins (${(window.VEHICLE_SKINS || []).length})</button>
+            <button type="button" class="tab-pill ${activeTab === 'cars' ? 'active' : ''}" data-st-tab="cars">🏎️ Cars (${(window.VEHICLES || []).length})</button>
+            <button type="button" class="tab-pill ${activeTab === 'maps' ? 'active' : ''}" data-st-tab="maps">🗺️ Maps</button>
+            <button type="button" class="tab-pill ${activeTab === 'skins' ? 'active' : ''}" data-st-tab="skins">🎨 Skins</button>
           </div>
           <div class="grid-cards">${itemsHtml}</div>`;
-
         contentEl.querySelectorAll('[data-st-tab]').forEach(b => { b.onclick = () => renderStoreTab(b.dataset.stTab); });
         contentEl.querySelectorAll('[data-store-car]').forEach(b => {
           b.onclick = () => {
-            const v = (window.VEHICLES || []).find(x => x.id === b.dataset.storeCar);
-            if (!v) return;
-            if (owned.includes(v.id)) {
-              selected = v.id; savePlayerState(); rebuildTurntableVehicle(); renderStoreTab(activeTab); showToast(`Equipped ${v.name}`);
-            } else if (coins >= v.price) {
-              coins -= v.price; owned.push(v.id); selected = v.id;
-              savePlayerState(); rebuildTurntableVehicle(); renderStoreTab(activeTab); showToast(`Unlocked ${v.name}!`);
-            } else showToast(`Need ${(v.price - coins).toLocaleString('en-IN')} more coins!`);
+            const v = getVehicle(b.dataset.storeCar);
+            if (owned.includes(v.id)) { selected = v.id; savePlayerState(); rebuildTurntableVehicle(); renderStoreTab('cars'); }
+            else if (coins >= v.price) { coins -= v.price; owned.push(v.id); selected = v.id; savePlayerState(); rebuildTurntableVehicle(); renderStoreTab('cars'); showToast(`Unlocked ${v.name}!`); }
+            else showToast('Need more T-Coins! Near-miss traffic in race!');
           };
         });
         contentEl.querySelectorAll('[data-store-map]').forEach(b => {
           b.onclick = () => {
             const m = (window.MAPS || []).find(x => x.name === b.dataset.storeMap);
             if (!m) return;
-            if (m.unlocked) { mapName = m.name; savePlayerState(); renderStoreTab('maps'); showToast(`Selected ${m.name}`); }
-            else if (coins >= m.price) { coins -= m.price; m.unlocked = true; mapName = m.name; savePlayerState(); renderStoreTab('maps'); showToast(`Unlocked ${m.name}!`); }
-            else showToast(`Need ${(m.price - coins).toLocaleString('en-IN')} more coins!`);
+            if (m.unlocked || coins >= m.price) {
+              if (!m.unlocked) { coins -= m.price; m.unlocked = true; }
+              mapName = m.name; savePlayerState(); renderStoreTab('maps');
+            } else showToast('Not enough T-Coins!');
           };
         });
         contentEl.querySelectorAll('[data-store-skin]').forEach(b => {
           b.onclick = () => {
             const s = (window.VEHICLE_SKINS || []).find(x => x.id === b.dataset.storeSkin);
             if (!s) return;
-            if (ownedSkins.includes(s.id) || s.price === 0) {
-              if (!ownedSkins.includes(s.id)) ownedSkins.push(s.id);
-              selectedSkin = s.id; savePlayerState(); rebuildTurntableVehicle(); renderStoreTab('skins'); showToast(`Applied ${s.name}`);
-            } else if (coins >= s.price) {
-              coins -= s.price; ownedSkins.push(s.id); selectedSkin = s.id;
-              savePlayerState(); rebuildTurntableVehicle(); renderStoreTab('skins'); showToast(`Purchased ${s.name}!`);
-            } else showToast(`Need ${(s.price - coins).toLocaleString('en-IN')} more coins!`);
+            if (ownedSkins.includes(s.id) || s.price === 0 || coins >= s.price) {
+              if (!ownedSkins.includes(s.id)) { coins -= s.price; ownedSkins.push(s.id); }
+              selectedSkin = s.id; savePlayerState(); rebuildTurntableVehicle(); renderStoreTab('skins');
+            } else showToast('Not enough T-Coins!');
           };
         });
       };
@@ -984,62 +1078,26 @@
     }
 
     if (panelName === 'library') {
-      titleEl.textContent = '🚘 VAULT / OWNED GARAGE';
-      const renderLibTab = (activeTab) => {
-        let html = '';
-        if (activeTab === 'cars' || activeTab === 'bikes') {
-          const myVehs = (window.VEHICLES || []).filter(v => owned.includes(v.id) && (activeTab === 'bikes' ? v.type === 'bike' : v.type !== 'bike'));
-          html = myVehs.map(v => `
-            <div class="item-card ${selected === v.id ? 'selected' : ''}">
-              <div><span style="font-size:22px;">${v.emoji || '🏎️'}</span><strong>${v.name}</strong><small>SPD ${v.speed} • ACC ${v.acc}</small></div>
-              <button type="button" class="card-action-btn ${selected === v.id ? 'equipped' : ''}" data-lib-car="${v.id}">${selected === v.id ? '✓ EQUIPPED' : 'EQUIP'}</button>
-            </div>`).join('');
-        } else if (activeTab === 'maps') {
-          html = (window.MAPS || []).filter(m => m.unlocked).map(m => `
-            <div class="item-card ${mapName === m.name ? 'selected' : ''}">
-              <div><span style="font-size:22px;">${m.icon || '🌅'}</span><strong>${m.name}</strong><small>${m.desc || ''}</small></div>
-              <button type="button" class="card-action-btn ${mapName === m.name ? 'equipped' : ''}" data-lib-map="${m.name}">${mapName === m.name ? '✓ SELECTED' : 'SELECT'}</button>
-            </div>`).join('');
-        } else {
-          html = (window.VEHICLE_SKINS || []).filter(s => ownedSkins.includes(s.id) || s.price === 0).map(s => `
-            <div class="item-card ${selectedSkin === s.id ? 'selected' : ''}">
-              <div><div style="height:34px;background:linear-gradient(135deg,${s.primary},${s.secondary});"></div><strong style="margin-top:4px;">${s.name}</strong></div>
-              <button type="button" class="card-action-btn ${selectedSkin === s.id ? 'equipped' : ''}" data-lib-skin="${s.id}">${selectedSkin === s.id ? '✓ EQUIPPED' : 'EQUIP'}</button>
-            </div>`).join('');
-        }
-        contentEl.innerHTML = `
-          <div class="tab-bar">
-            <button type="button" class="tab-pill ${activeTab === 'cars' ? 'active' : ''}" data-lib-tab="cars">🏎️ Cars</button>
-            <button type="button" class="tab-pill ${activeTab === 'bikes' ? 'active' : ''}" data-lib-tab="bikes">🏍️ Bikes</button>
-            <button type="button" class="tab-pill ${activeTab === 'maps' ? 'active' : ''}" data-lib-tab="maps">🗺️ Maps</button>
-            <button type="button" class="tab-pill ${activeTab === 'skins' ? 'active' : ''}" data-lib-tab="skins">🎨 Skins</button>
-          </div>
-          <div class="grid-cards">${html}</div>`;
-        contentEl.querySelectorAll('[data-lib-tab]').forEach(b => { b.onclick = () => renderLibTab(b.dataset.libTab); });
-        contentEl.querySelectorAll('[data-lib-car]').forEach(b => {
-          b.onclick = () => { selected = b.dataset.libCar; savePlayerState(); rebuildTurntableVehicle(); renderLibTab(activeTab); };
-        });
-        contentEl.querySelectorAll('[data-lib-map]').forEach(b => { b.onclick = () => { mapName = b.dataset.libMap; savePlayerState(); renderLibTab('maps'); }; });
-        contentEl.querySelectorAll('[data-lib-skin]').forEach(b => { b.onclick = () => { selectedSkin = b.dataset.libSkin; savePlayerState(); rebuildTurntableVehicle(); renderLibTab('skins'); }; });
-      };
-      renderLibTab(initialTab || 'cars');
+      titleEl.textContent = '🚘 VAULT / OWNED CARS';
+      const myCars = (window.VEHICLES || []).filter(v => owned.includes(v.id));
+      contentEl.innerHTML = `<div class="grid-cards">${myCars.map(v => `
+        <div class="item-card ${selected === v.id ? 'selected' : ''}">
+          <div><strong>🏎️ ${v.name}</strong><small>SPD ${v.speed} • ACC ${v.acc} • HND ${v.handling}</small></div>
+          <button type="button" class="card-action-btn ${selected === v.id ? 'equipped' : ''}" data-lib-car="${v.id}">${selected === v.id ? '✓ EQUIPPED' : 'EQUIP'}</button>
+        </div>`).join('')}</div>`;
+      contentEl.querySelectorAll('[data-lib-car]').forEach(b => {
+        b.onclick = () => { selected = b.dataset.libCar; savePlayerState(); rebuildTurntableVehicle(); openModalPanel('library'); };
+      });
       return;
     }
 
     if (panelName === 'maps') {
-      titleEl.textContent = '🗺️ SELECT HIGHWAY MODE';
+      titleEl.textContent = '🗺️ SELECT HIGHWAY MAP';
       contentEl.innerHTML = `<div class="grid-cards">${(window.MAPS || []).map(m => `
         <div class="item-card ${mapName === m.name ? 'selected' : ''}">
-          <div>
-            <div style="height:44px;background:linear-gradient(180deg,${m.sky},${m.skyBottom || m.ground});display:flex;align-items:center;justify-content:space-between;padding:0 10px;">
-              <span style="font-size:22px;">${m.icon || '🌅'}</span>
-              <span style="font-size:9.5px;font-weight:900;background:rgba(0,0,0,0.6);padding:2px 6px;">${m.unlocked ? 'UNLOCKED' : '🪙 ' + m.price.toLocaleString('en-IN')}</span>
-            </div>
-            <strong style="margin-top:4px;">${m.name}</strong>
-            <small>${m.desc || '4-Lane Highway'}</small>
-          </div>
+          <div><strong>${m.icon || '🌅'} ${m.name}</strong><small>${m.desc || ''}</small></div>
           <button type="button" class="card-action-btn ${mapName === m.name ? 'equipped' : m.unlocked ? '' : 'buy'}" data-pick-map="${m.name}">
-            ${mapName === m.name ? '✓ ACTIVE' : m.unlocked ? 'SELECT' : '🪙 UNLOCK (' + m.price.toLocaleString('en-IN') + ')'}
+            ${mapName === m.name ? '✓ ACTIVE' : m.unlocked ? 'SELECT' : '🟡 UNLOCK ' + m.price.toLocaleString('en-IN')}
           </button>
         </div>`).join('')}</div>`;
       contentEl.querySelectorAll('[data-pick-map]').forEach(b => {
@@ -1048,8 +1106,8 @@
           if (!m) return;
           if (m.unlocked || coins >= m.price) {
             if (!m.unlocked) { coins -= m.price; m.unlocked = true; }
-            mapName = m.name; savePlayerState(); modal.classList.add('hidden'); showToast(`Selected ${m.name}`);
-          } else showToast('Not enough coins!');
+            mapName = m.name; savePlayerState(); modal.classList.add('hidden');
+          } else showToast('Not enough T-Coins!');
         };
       });
       return;
@@ -1057,145 +1115,68 @@
 
     if (panelName === 'upgrades') {
       const v = getVehicle();
-      titleEl.textContent = `🔧 PERFORMANCE TUNING — ${v.name.toUpperCase()}`;
-      const parts = [
-        { key: 'Engine', icon: '⚡', desc: 'Top highway speed & horsepower' },
-        { key: 'Suspension', icon: '🛞', desc: 'High-speed lane-change stability' },
-        { key: 'Tires', icon: '🔥', desc: 'Launch acceleration & grip' },
-        { key: 'Fuel', icon: '⛽', desc: 'Fuel injection & bonus multiplier' },
-        { key: 'Nitro', icon: '🚀', desc: 'Twin-turbo boost thrust' }
-      ];
+      titleEl.textContent = `🔧 UPGRADES — ${v.name.toUpperCase()}`;
+      const parts = ['Engine', 'Suspension', 'Tires', 'Nitro'];
       contentEl.innerHTML = `<div class="grid-cards">${parts.map(p => {
-        const lev = upgrade[v.id + p.key] || 0, cost = 1000 * (lev + 1);
+        const lev = upgrade[v.id + p] || 0, cost = 1000 * (lev + 1);
         return `<div class="item-card">
-          <div><strong>${p.icon} ${p.key} — LV ${lev}/10</strong><small>${p.desc}</small></div>
-          <button type="button" class="card-action-btn buy" data-up-part="${p.key}">${lev >= 10 ? '✓ MAX' : '🪙 UPGRADE (' + cost.toLocaleString('en-IN') + ')'}</button>
+          <div><strong>⚡ ${p} — LV ${lev}/10</strong><small>Boosts highway performance</small></div>
+          <button type="button" class="card-action-btn buy" data-up-part="${p}">${lev >= 10 ? '✓ MAX' : '🟡 ' + cost.toLocaleString('en-IN')}</button>
         </div>`;
       }).join('')}</div>`;
       contentEl.querySelectorAll('[data-up-part]').forEach(b => {
         b.onclick = () => {
           const k = v.id + b.dataset.upPart, lev = upgrade[k] || 0, cost = 1000 * (lev + 1);
-          if (lev >= 10) { showToast('Already MAX level!'); return; }
+          if (lev >= 10) return;
           if (coins >= cost) { coins -= cost; upgrade[k] = lev + 1; savePlayerState(); openModalPanel('upgrades'); showToast(`Upgraded to LV ${lev + 1}!`); }
-          else showToast('Not enough coins!');
+          else showToast('Not enough T-Coins!');
         };
       });
       return;
     }
 
     if (panelName === 'events') {
-      titleEl.textContent = '🔥 LIVE HIGHWAY EVENTS';
+      titleEl.textContent = '📅 LIVE HIGHWAY EVENTS';
       const evs = liveConfig.events || [];
       contentEl.innerHTML = `<div class="grid-cards">${evs.map(ev => `
         <div class="item-card">
-          <div>
-            <span class="ff-badge-pill">${ev.badge || 'EVENT'}</span>
-            <strong style="margin-top:4px;">${ev.title}</strong>
-            <small>${ev.desc}</small>
-            <small style="color:#fde047;margin-top:4px;">Map: ${ev.map} • 🪙 ${Number(ev.rewardCoins || 2500).toLocaleString('en-IN')}</small>
-          </div>
-          <button type="button" class="card-action-btn buy" data-launch-event="${ev.id}">▶ PLAY EVENT</button>
+          <div><strong>${ev.title}</strong><small>${ev.desc}</small><small style="color:#fde047;">🟡 +${ev.rewardCoins || 5000} T-Coins</small></div>
+          <button type="button" class="card-action-btn buy" data-launch-ev="${ev.id}">▶ PLAY EVENT</button>
         </div>`).join('')}</div>`;
-      contentEl.querySelectorAll('[data-launch-event]').forEach(b => {
-        b.onclick = () => {
-          const ev = evs.find(x => x.id === b.dataset.launchEvent);
-          if (ev) {
-            if (ev.map && (window.MAPS || []).some(m => m.name === ev.map)) mapName = ev.map;
-            if (ev.vehicle && owned.includes(ev.vehicle)) selected = ev.vehicle;
-            savePlayerState(); modal.classList.add('hidden'); launchRaceNow();
-          }
-        };
+      contentEl.querySelectorAll('[data-launch-ev]').forEach(b => {
+        b.onclick = () => { modal.classList.add('hidden'); launchRaceNow(); };
       });
       return;
     }
 
     if (panelName === 'notifications') {
-      titleEl.textContent = '🔔 MAIL & INBOX REWARDS';
+      titleEl.textContent = '✉️ MAIL & REWARDS';
       const notifs = liveConfig.notifications || [];
       contentEl.innerHTML = `<div style="display:flex;flex-direction:column;gap:8px;">${notifs.map(n => {
         const claimed = claimedNotifs.includes(n.id);
         return `<div class="item-card" style="flex-direction:row;align-items:center;justify-content:space-between;">
           <div style="max-width:68%;"><strong>${n.title}</strong><small>${n.body}</small></div>
-          <button type="button" class="card-action-btn ${claimed ? 'equipped' : 'buy'}" style="width:auto;min-width:120px;" data-claim-notif="${n.id}">
+          <button type="button" class="card-action-btn ${claimed ? 'equipped' : 'buy'}" style="width:auto;" data-claim-n="${n.id}">
             ${claimed ? '✓ CLAIMED' : '🎁 +' + (n.rewardCoins || 1000)}
           </button>
         </div>`;
       }).join('')}</div>`;
-      contentEl.querySelectorAll('[data-claim-notif]').forEach(b => {
+      contentEl.querySelectorAll('[data-claim-n]').forEach(b => {
         b.onclick = () => {
-          const n = notifs.find(x => x.id === b.dataset.claimNotif);
+          const n = notifs.find(x => x.id === b.dataset.claimN);
           if (!n || claimedNotifs.includes(n.id)) return;
           claimedNotifs.push(n.id); coins += (n.rewardCoins || 1000);
-          savePlayerState(); openModalPanel('notifications'); showToast(`Claimed +${n.rewardCoins || 1000} Coins!`);
+          savePlayerState(); openModalPanel('notifications'); showToast(`Claimed +${n.rewardCoins || 1000} T-Coins!`);
         };
       });
-      return;
-    }
-
-    if (panelName === 'achievements') {
-      titleEl.textContent = '🏆 ACHIEVEMENTS';
-      const bestScore = +(safeGetLS('sthwBest', '0'));
-      const achievs = [
-        { id: 'ach_hyper', title: '🏎️🏍️ 3D Car & Bike Owner', desc: 'Own Koenigsegg Agera 3D & Street Moto 1000R', done: owned.includes('agera') && owned.includes('moto_1000r'), reward: 3000 },
-        { id: 'ach_dist5', title: '🛣️ 2.0 KM Highway Cruiser', desc: 'Drive 2.0 KM in a single run (Best: ' + bestDistKm.toFixed(2) + ' KM)', done: bestDistKm >= 2.0, reward: 4000 },
-        { id: 'ach_score500', title: '⚡ Near-Miss Master 500', desc: 'Reach Score 500+ (Best: ' + bestScore + ')', done: bestScore >= 500, reward: 8000 },
-        { id: 'ach_cloud', title: '☁️ Cloud Connected', desc: 'Sign in with Firebase Cloud', done: Boolean(currentUser && currentUser.uid), reward: 5000 }
-      ];
-      contentEl.innerHTML = `<div class="grid-cards">${achievs.map(a => {
-        const claimed = claimedAchievs.includes(a.id);
-        return `<div class="item-card ${a.done ? 'selected' : ''}">
-          <div><strong>${a.title}</strong><small>${a.desc}</small></div>
-          <button type="button" class="card-action-btn ${claimed ? 'equipped' : a.done ? 'buy' : ''}" data-claim-ach="${a.id}">
-            ${claimed ? '✓ CLAIMED' : a.done ? '🎁 CLAIM +' + a.reward : '🔒 LOCKED'}
-          </button>
-        </div>`;
-      }).join('')}</div>`;
-      contentEl.querySelectorAll('[data-claim-ach]').forEach(b => {
-        b.onclick = () => {
-          const a = achievs.find(x => x.id === b.dataset.claimAch);
-          if (!a || claimedAchievs.includes(a.id)) return;
-          if (!a.done) { showToast('Complete the task first!'); return; }
-          claimedAchievs.push(a.id); coins += a.reward; savePlayerState(); openModalPanel('achievements');
-        };
-      });
-      return;
-    }
-
-    if (panelName === 'rewards') {
-      titleEl.textContent = '🎁 DAILY LOGIN REWARD';
-      const today = new Date().toDateString(), claimedToday = safeGetLS('sthwReward', '') === today;
-      contentEl.innerHTML = `
-        <div class="item-card" style="text-align:center;padding:20px;">
-          <strong style="font-size:18px;">🎁 Daily Supply Crate</strong>
-          <small style="margin:6px 0 14px;">Claim +2,500 Coins &amp; +50 Diamonds every day!</small>
-          <button type="button" class="card-action-btn ${claimedToday ? 'equipped' : 'buy'}" id="claimDailyBtn">
-            ${claimedToday ? '✓ CLAIMED TODAY' : '🪙 CLAIM +2,500 COINS & +50 💎'}
-          </button>
-        </div>`;
-      $('#claimDailyBtn').onclick = () => {
-        if (safeGetLS('sthwReward', '') === today) { showToast('Already claimed today!'); return; }
-        coins += 2500; gems += 50; safeSetLS('sthwReward', today); savePlayerState(); openModalPanel('rewards');
-        showToast('Claimed +2,500 Coins & +50 Diamonds!');
-      };
-      return;
-    }
-
-    if (panelName === 'settings') {
-      titleEl.textContent = '⚙️ SETTINGS';
-      contentEl.innerHTML = `
-        <div class="grid-cards">
-          <button type="button" class="item-card" id="fullscreenBtn"><strong>⛶ Lock 16:9 Fullscreen</strong><small>Expand to landscape fullscreen</small></button>
-          <button type="button" class="item-card" id="resetCamBtn"><strong>🔄 Reset 3D Turntable</strong><small>Center vehicle angle</small></button>
-          <button type="button" class="item-card" id="settingsLoginBtn"><strong>🔑 Open Login Screen</strong><small>Switch Firebase / Guest account</small></button>
-        </div>`;
-      $('#fullscreenBtn').onclick = () => { request16x9Fullscreen(); modal.classList.add('hidden'); };
-      $('#resetCamBtn').onclick = () => { targetRotationY = 0.62; modal.classList.add('hidden'); showToast('Turntable angle reset!'); };
-      $('#settingsLoginBtn').onclick = () => openLoginScreen();
     }
   }
 
   async function launchRaceNow() {
     request16x9Fullscreen();
+    if (controlSettings.tiltEnabled && typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      try { await DeviceOrientationEvent.requestPermission(); } catch (e) {}
+    }
     if (!window.HillGame) return;
     const veh = getVehicle();
     if ((veh.isCustomAdmin || veh.hasStoredBlob || veh.inlineGlbBase64 || veh.modelUrl) && !custom3DModelCache[veh.id]) {
@@ -1209,15 +1190,23 @@
   $('#btnFullscreenTop')?.addEventListener('click', request16x9Fullscreen);
   $('#btnAccount')?.addEventListener('click', () => openModalPanel('account'));
   $('#btnAccountTop')?.addEventListener('click', () => openModalPanel('account'));
-  $('#btnStore')?.addEventListener('click', () => openModalPanel('store', 'all_veh'));
+  $('#btnStore')?.addEventListener('click', () => openModalPanel('store', 'cars'));
+  $('#btnLibrary')?.addEventListener('click', () => openModalPanel('library'));
+  $('#dockVault')?.addEventListener('click', () => openModalPanel('library'));
   $('#btnSkinsStore')?.addEventListener('click', () => openModalPanel('store', 'skins'));
+  $('#dockSkins')?.addEventListener('click', () => openModalPanel('store', 'skins'));
   $('#btnUpgrades')?.addEventListener('click', () => openModalPanel('upgrades'));
   $('#btnEvents')?.addEventListener('click', () => openModalPanel('events'));
-  $('#btnLibrary')?.addEventListener('click', () => openModalPanel('library', 'cars'));
+  $('#btnFriendsTop')?.addEventListener('click', () => openModalPanel('friends'));
+  $('#btnAddFriendQuick')?.addEventListener('click', () => openModalPanel('friends'));
+  $('#btnTeamCodeMini')?.addEventListener('click', () => openModalPanel('friends'));
+  $('#dockFriends')?.addEventListener('click', () => openModalPanel('friends'));
   $('#btnNotifications')?.addEventListener('click', () => openModalPanel('notifications'));
-  $('#btnAchievements')?.addEventListener('click', () => openModalPanel('achievements'));
-  $('#btnDailyReward')?.addEventListener('click', () => openModalPanel('rewards'));
   $('#btnSettings')?.addEventListener('click', () => openModalPanel('settings'));
+  $('#btnVoiceMic')?.addEventListener('click', toggleVoiceMic);
+  $('#btnVoiceSpeaker')?.addEventListener('click', toggleVoiceSpeaker);
+  $('#btnOpenChat')?.addEventListener('click', () => openModalPanel('chat'));
+  $('#chatTickerBtn')?.addEventListener('click', () => openModalPanel('chat'));
   $('#mapSelectBox')?.addEventListener('click', () => openModalPanel('maps'));
   $('#play')?.addEventListener('click', launchRaceNow);
 
@@ -1231,14 +1220,13 @@
       $('#pauseOverlay')?.classList.add('hidden');
       launchRaceNow();
     },
-    onRunEnded(scoreVal, distKm, nearMisses) {
+    onRunEnded(scoreVal, distKm, earnedTCoins) {
       const prevBest = +(safeGetLS('sthwBest', '0'));
       if (scoreVal > prevBest) safeSetLS('sthwBest', String(scoreVal));
       if (distKm > bestDistKm) bestDistKm = distKm;
-      const earnedCoins = Math.max(0, Math.floor(scoreVal * 0.5));
-      coins += earnedCoins;
+      coins += (earnedTCoins || 0);
       savePlayerState();
-      return earnedCoins;
+      return earnedTCoins || 0;
     },
     buildThreeCarMesh(veh, skin, targetLength) {
       return buildAnyVehicle3D(veh || getVehicle(), skin || getSkin(), targetLength);
@@ -1266,7 +1254,6 @@
     initTurntable3D();
     initLoginScreen();
     loadExternalConfigs();
-    if (currentUser && currentUser.uid) pullFirebaseUserState(currentUser.uid);
     checkManualAdminRoute();
   });
 })();

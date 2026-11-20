@@ -10,7 +10,7 @@
 </head>
 <body>
   <div id="stage16x9" class="stage-16x9">
-    <!-- PROFESSIONAL LOGIN SCREEN (FIREBASE + GUEST MODE) -->
+    <!-- PROFESSIONAL LOGIN SCREEN (GOOGLE / FIREBASE + GUEST WITH UID) -->
     <div id="loginScreen" class="login-screen">
       <img class="lobby-bg-img" src="assets/backgrounds/homepage-bg.png" alt="Background">
       <div class="login-backdrop"></div>
@@ -20,189 +20,175 @@
           <div class="login-logo-box">ST</div>
           <div>
             <h1>ST GAMES • 3D HIGHWAY RACER</h1>
-            <p>☁️ Firebase Cloud Sync: <b>friendsgame-872f5</b></p>
+            <p>☁️ Firebase Cloud: <b>friendsgame-872f5</b> • Auto UID</p>
           </div>
         </div>
 
-        <div class="login-tabs">
-          <button type="button" class="login-tab active" id="loginTabSignIn">🔑 SIGN IN</button>
-          <button type="button" class="login-tab" id="loginTabSignUp">✨ CREATE ACCOUNT</button>
-        </div>
+        <button type="button" id="loginGoogleBtn" class="login-google-btn">
+          <span class="g-badge">G</span>
+          <span>SIGN IN WITH GOOGLE (FIREBASE UID)</span>
+        </button>
+
+        <div class="login-divider"><span>OR EMAIL SIGN IN</span></div>
 
         <div class="login-fields">
-          <input type="text" id="loginName" class="login-input hidden" placeholder="Racer Display Name (e.g. Satish)">
-          <input type="email" id="loginEmail" class="login-input" placeholder="Email Address">
-          <input type="password" id="loginPass" class="login-input" placeholder="Password (4+ characters)">
+          <input type="text" id="loginName" class="login-input" placeholder="Racer Name (e.g. Satish)">
+          <input type="email" id="loginEmail" class="login-input" placeholder="Email Address (for Google/Firebase Sync)">
         </div>
 
         <div id="loginError" class="login-error hidden"></div>
 
         <button type="button" id="loginSubmitBtn" class="login-primary-btn">
-          <span>SIGN IN WITH FIREBASE</span>
+          <span>CONTINUE WITH EMAIL</span>
         </button>
 
-        <div class="login-divider"><span>OR</span></div>
-
         <button type="button" id="loginGuestBtn" class="login-guest-btn">
-          <span>👤 CONTINUE AS GUEST</span>
-          <small>Instant Play • Local Storage Save</small>
+          <span>👤 PLAY AS GUEST (AUTO UID)</span>
+          <small>Instant Play • Local Storage Save &amp; Friends UID</small>
         </button>
       </div>
     </div>
 
-    <!-- 16:9 FREE FIRE STYLE LOBBY WITH USER BACKGROUND -->
+    <!-- CLEAN FREE FIRE INDIA STYLE LOBBY -->
     <div id="menu" class="menu hidden">
       <img id="lobbyBgImg" class="lobby-bg-img" src="assets/backgrounds/homepage-bg.png" alt="Lobby Background">
       <div class="lobby-vignette"></div>
 
-      <!-- TOP-LEFT: FREE FIRE STYLE PLAYER PROFILE BANNER -->
-      <div class="ff-profile-banner" id="btnAccountTop" title="Account & Cloud Sync">
-        <div class="ff-avatar-frame">
-          <span>ST</span>
-          <em class="ff-lv-tag">LV.16</em>
-        </div>
-        <div class="ff-profile-info">
-          <div class="ff-name-row">
-            <strong id="topPlayerName">GUEST RACER</strong>
-            <span class="ff-rank-badge">HEROIC</span>
-          </div>
-          <div class="ff-xp-bar"><span style="width:74%;"></span></div>
-          <small id="topAccountMode">💾 GUEST LOCAL SAVE</small>
-        </div>
-      </div>
+      <!-- SINGLE SLEEK TOP BAR (LIKE FREE FIRE INDIA) -->
+      <header class="ff-topbar">
+        <div class="ff-top-left">
+          <button type="button" class="ff-profile-pill" id="btnAccountTop" title="Account & UID">
+            <div class="ff-avatar">
+              <span>ST</span>
+              <em>56</em>
+            </div>
+            <div class="ff-pinfo">
+              <strong id="topPlayerName">SATISH</strong>
+              <small id="topPlayerUid">UID: 000000000</small>
+            </div>
+          </button>
 
-      <!-- TOP-RIGHT: FREE FIRE STYLE CURRENCY & UTILITY ICON BAR -->
-      <div class="ff-topbar-right">
-        <div class="ff-currency-strip">
-          <div class="ff-curr-item">
-            <span class="ff-curr-ico">🪙</span>
-            <b id="coins">125,680</b>
+          <div class="ff-curr-pill" title="T-Coins (Earned on Near Miss)">
+            <span class="ff-tcoin-ico">T</span>
+            <b id="coins">144,675</b>
           </div>
-          <div class="ff-curr-item ff-gem">
-            <span class="ff-curr-ico">💎</span>
+
+          <div class="ff-curr-pill ff-gem-pill" title="Diamonds">
+            <span>💎</span>
             <b id="gems">2,450</b>
           </div>
-          <div class="ff-curr-item">
-            <span class="ff-curr-ico">🛣️</span>
-            <b id="bestDistHud">0.0 KM</b>
-          </div>
         </div>
 
-        <div class="ff-util-icons">
-          <button type="button" class="ff-icon-btn" id="btnNotifications" title="Mail & Notifications">
-            <span>🔔</span>
-            <span class="ff-notif-dot" id="notifBadge">3</span>
+        <div class="ff-top-right">
+          <span class="ff-game-mark">ST GAMES <em>3D</em></span>
+          <button type="button" class="ff-top-ico" id="btnFriendsTop" title="Friends & Team Code">
+            <span>👥</span>
+            <span class="ff-dot hidden" id="friendReqBadge">0</span>
           </button>
-          <button type="button" class="ff-icon-btn" id="btnAchievements" title="Achievements">
-            <span>🏆</span>
+          <button type="button" class="ff-top-ico" id="btnNotifications" title="Mail & Rewards">
+            <span>✉️</span>
+            <span class="ff-dot" id="notifBadge">2</span>
           </button>
-          <button type="button" class="ff-icon-btn" id="btnDailyReward" title="Daily Reward">
-            <span>🎁</span>
-          </button>
-          <button type="button" class="ff-icon-btn" id="btnSettings" title="Settings">
+          <button type="button" class="ff-top-ico" id="btnSettings" title="Controls & Settings">
             <span>⚙️</span>
           </button>
-          <button type="button" class="ff-icon-btn ff-full-btn" id="btnFullscreenTop" title="16:9 Fullscreen">
+          <button type="button" class="ff-top-ico" id="btnFullscreenTop" title="Fullscreen">
             <span>⛶</span>
           </button>
-          <div id="whiteCustomBtns" style="display:flex;gap:5px;"></div>
+          <div id="whiteCustomBtns" style="display:flex;gap:4px;"></div>
         </div>
-      </div>
+      </header>
 
-      <!-- LEFT VERTICAL RAIL: FREE FIRE STYLE NAVIGATION BUTTONS (ADMIN-ONLY UPLOADS) -->
-      <nav class="ff-left-rail" aria-label="Lobby Navigation">
-        <button type="button" class="ff-nav-btn ff-nav-highlight" id="btnStore">
-          <span class="ff-nav-ico">🛒</span>
-          <span class="ff-nav-lbl">
-            <strong>STORE</strong>
-            <small>CARS • BIKES</small>
-          </span>
+      <!-- CLEAN LEFT NAVIGATION COLUMN -->
+      <nav class="ff-left-col" aria-label="Main Menu">
+        <button type="button" class="ff-side-btn ff-side-gold" id="btnStore">
+          <span>🛒</span><strong>STORE</strong>
         </button>
-
-        <button type="button" class="ff-nav-btn" id="btnLibrary">
-          <span class="ff-nav-ico">🚘</span>
-          <span class="ff-nav-lbl">
-            <strong>VAULT / GARAGE</strong>
-            <small>OWNED FLEET</small>
-          </span>
+        <button type="button" class="ff-side-btn" id="btnLibrary">
+          <span>🚘</span><strong>GARAGE</strong>
         </button>
-
-        <button type="button" class="ff-nav-btn" id="btnSkinsStore">
-          <span class="ff-nav-ico">🎨</span>
-          <span class="ff-nav-lbl">
-            <strong>WRAPS &amp; SKINS</strong>
-            <small>CUSTOM PAINT</small>
-          </span>
+        <button type="button" class="ff-side-btn" id="btnSkinsStore">
+          <span>🎨</span><strong>SKINS</strong>
         </button>
-
-        <button type="button" class="ff-nav-btn" id="btnUpgrades">
-          <span class="ff-nav-ico">🔧</span>
-          <span class="ff-nav-lbl">
-            <strong>UPGRADES</strong>
-            <small>ENGINE • NITRO</small>
-          </span>
+        <button type="button" class="ff-side-btn" id="btnUpgrades">
+          <span>🔧</span><strong>UPGRADES</strong>
         </button>
-
-        <button type="button" class="ff-nav-btn ff-nav-account" id="btnAccount">
-          <span class="ff-nav-ico">☁️</span>
-          <span class="ff-nav-lbl">
-            <strong id="accountBtnTitle">ACCOUNT</strong>
-            <small id="accountBtnSub">CLOUD SYNC</small>
-          </span>
+        <button type="button" class="ff-side-btn" id="btnEvents">
+          <span>📅</span><strong>EVENTS</strong>
         </button>
-
         <div id="orangeCustomBtns" style="display:flex;flex-direction:column;gap:5px;"></div>
       </nav>
 
-      <!-- CENTER: TRANSPARENT 3D TURNTABLE GROUNDED DIRECTLY ONTO THE BLUE RAMP -->
+      <!-- RIGHT VERTICAL FRIENDS / SQUAD STRIP (FREE FIRE STYLE) -->
+      <aside class="ff-right-friends" aria-label="Friends & Squad">
+        <div class="ff-fr-head">
+          <span>FRIENDS</span>
+          <button type="button" id="btnAddFriendQuick" title="Add by UID / Team Code">+</button>
+        </div>
+        <div id="rightFriendsList" class="ff-fr-list"></div>
+        <button type="button" class="ff-teamcode-mini" id="btnTeamCodeMini">
+          <span>🔗 TEAM CODE</span>
+        </button>
+      </aside>
+
+      <!-- CENTER 3D RAMP STAGE (1 CAR SOLO OR 2 ROTATING CARS DUO!) -->
       <div id="turntableStage" class="turntable-stage">
-        <div class="ff-car-hud">
-          <div class="ff-car-title-row">
-            <strong id="activeCarName">KOENIGSEGG AGERA RS 3D</strong>
-            <span class="ff-badge-pill" id="activeCarBadge">3D HYPERCAR</span>
-          </div>
-          <div class="ff-car-stats">
-            <span>SPD <b id="statSpd">100</b></span>
-            <span>ACC <b id="statAcc">96</b></span>
-            <span>HND <b id="statHnd">94</b></span>
-            <span>FUEL <b id="statFuel">90</b></span>
-          </div>
+        <div class="ff-car-banner">
+          <strong id="activeCarName">KOENIGSEGG AGERA RS</strong>
+          <span class="ff-squad-pill hidden" id="squadDuoBadge">👥 DUO SQUAD</span>
         </div>
 
         <canvas id="turntableCanvas"></canvas>
 
-        <div class="ff-turntable-bar">
-          <button type="button" class="ff-rot-btn" id="rotLeftBtn">⟲</button>
-          <span>DRAG 360°</span>
-          <button type="button" class="ff-rot-btn" id="rotRightBtn">⟳</button>
-          <button type="button" class="ff-rot-btn" id="rotAutoBtn">AUTO: OFF</button>
-        </div>
-      </div>
-
-      <!-- BOTTOM-LEFT: COMPACT FREE FIRE STYLE QUICK-SWITCH & EVENTS DOCK -->
-      <div class="ff-bottom-dock">
-        <div class="ff-dock-header">
-          <button type="button" class="ff-event-pill" id="btnEvents">
-            <span>🔥</span><span>LIVE EVENTS</span>
+        <!-- VOICE & MESSAGE BUTTONS DIRECTLY BELOW THE USER VEHICLE -->
+        <div class="ff-vehicle-comms">
+          <button type="button" class="ff-comm-btn" id="btnVoiceMic" title="Toggle Voice Mic">
+            <span id="micIcon">🎙️</span>
+            <small id="micLabel">VOICE OFF</small>
           </button>
-          <span class="ff-dock-caption">QUICK SWITCH VEHICLE</span>
-          <div id="greyCustomBtns" style="display:flex;gap:5px;"></div>
+          <button type="button" class="ff-comm-btn" id="btnVoiceSpeaker" title="Toggle Squad Speaker">
+            <span id="spkIcon">🔊</span>
+            <small>AUDIO</small>
+          </button>
+          <button type="button" class="ff-comm-btn ff-comm-msg" id="btnOpenChat" title="Team / World Chat">
+            <span>💬</span>
+            <small>MESSAGE</small>
+          </button>
         </div>
-        <div id="ownedQuickStrip" class="ff-quick-strip"></div>
       </div>
 
-      <!-- BOTTOM-RIGHT: ICONIC FREE FIRE MODE SELECTOR + GOLDEN START BUTTON -->
-      <div class="ff-start-cluster">
-        <button type="button" id="mapSelectBox" class="ff-mode-card" aria-label="Select Highway Map">
+      <!-- BOTTOM-LEFT: CHAT TICKER + COMPACT FREE FIRE DOCK -->
+      <div class="ff-bottom-left">
+        <button type="button" class="ff-chat-ticker" id="chatTickerBtn">
+          <span class="ff-chat-ico">💬</span>
+          <span id="chatTickerText">[Team] Tap MESSAGE to chat with friends!</span>
+        </button>
+
+        <div class="ff-bottom-bar">
+          <span class="ff-logo-mini">ST</span>
+          <button type="button" id="dockVault">🚘 VAULT</button>
+          <span class="ff-sep">|</span>
+          <button type="button" id="dockSkins">🎨 SKINS</button>
+          <span class="ff-sep">|</span>
+          <button type="button" id="dockFriends">👥 FRIENDS</button>
+          <span class="ff-sep">|</span>
+          <button type="button" id="btnAccount">☁️ ACCOUNT</button>
+          <div id="greyCustomBtns" style="display:flex;gap:4px;"></div>
+        </div>
+      </div>
+
+      <!-- BOTTOM-RIGHT: FREE FIRE MODE CARD + GOLDEN START BUTTON -->
+      <div class="ff-bottom-right">
+        <button type="button" id="mapSelectBox" class="ff-mode-card">
           <div id="redMapGround" class="ff-mode-accent"></div>
           <div class="ff-mode-left">
             <span id="redMapIcon" class="ff-mode-icon">🌅</span>
             <div class="ff-mode-text">
-              <small>4-LANE HIGHWAY • BACKSIDE CAM</small>
               <strong id="redMapName">SUNSET HIGHWAY</strong>
+              <small id="steerModeBadge">📱 TILT STEERING • 4-LANE</small>
             </div>
           </div>
-          <span class="ff-mode-change">CHANGE ▾</span>
+          <span class="ff-mode-arrow">▾</span>
         </button>
 
         <button type="button" id="play" class="ff-start-btn">
@@ -225,37 +211,34 @@
       </div>
     </div>
 
-    <!-- CONTINUOUS FORWARD 3D HIGHWAY GAMEPLAY (DISTANCE + NEAR-MISS SCORING) -->
+    <!-- 3D HIGHWAY GAMEPLAY (REALISTIC NARROWER ROAD, SMOOTH TILT/DESKTOP, T-COINS ON NEAR MISS) -->
     <div id="game" class="game hidden">
       <canvas id="highway3dCanvas"></canvas>
       <canvas id="canvas"></canvas>
 
-      <!-- TOP-LEFT SCORE, DISTANCE & NEAR-MISS HUD -->
       <div class="video-hud-topleft">
         <span class="lbl">SCORE</span>
         <span class="val" id="dist">0</span>
         <div class="video-hud-sub">
           <span>🛣️ <b id="runDistKm" style="color:#fde047;">0.00 KM</b></span>
+          <span>🟡 T-COINS: <b id="runTCoins" style="color:#facc15;">0</b></span>
           <span>⚡ NEAR MISS: <b id="runNearMiss" style="color:#38bdf8;">0</b></span>
         </div>
       </div>
 
-      <!-- TOP-RIGHT CAMERA SWITCH, PAUSE & SPEED KMH -->
       <div class="video-hud-topright">
         <div class="video-top-btns">
-          <button type="button" id="camModeBtn" class="video-cam-btn">🎥 VIEW: BACKSIDE</button>
+          <button type="button" id="camModeBtn" class="video-cam-btn">🎥 BACKSIDE</button>
           <button type="button" id="pauseBtn" class="video-pause-btn" aria-label="Pause">||</button>
         </div>
         <div class="video-speed-box">
           <span class="lbl">SPEED</span>
-          <span class="val" id="speedKmh">67</span> <span class="unit">KMH</span>
+          <span class="val" id="speedKmh">72</span> <span class="unit">KMH</span>
         </div>
       </div>
 
-      <!-- LEFT HEADLIGHT BUTTON -->
       <button type="button" id="headlightBtn" class="video-headlight-btn" aria-label="Headlights">💡</button>
 
-      <!-- BOTTOM PEDALS & STEERING -->
       <div class="video-controls-bar">
         <div class="video-left-cluster">
           <button type="button" id="brake" class="pedal-brake" aria-label="Brake">
@@ -272,29 +255,15 @@
         </div>
       </div>
 
-      <!-- PAUSE OVERLAY -->
       <div id="pauseOverlay" class="video-overlay hidden">
         <div class="video-blue-squares">
-          <button type="button" class="v-sq-item" id="home">
-            <div class="v-sq-icon">🏠</div>
-            <span class="v-sq-label">MENU</span>
-          </button>
-          <button type="button" class="v-sq-item" id="openOptionsBtn">
-            <div class="v-sq-icon">⚙️</div>
-            <span class="v-sq-label">OPTIONS</span>
-          </button>
-          <button type="button" class="v-sq-item" id="pauseRestartBtn">
-            <div class="v-sq-icon">↻</div>
-            <span class="v-sq-label">RESTART</span>
-          </button>
-          <button type="button" class="v-sq-item" id="pauseContinueBtn">
-            <div class="v-sq-icon">▶</div>
-            <span class="v-sq-label">CONTINUE</span>
-          </button>
+          <button type="button" class="v-sq-item" id="home"><div class="v-sq-icon">🏠</div><span class="v-sq-label">MENU</span></button>
+          <button type="button" class="v-sq-item" id="openOptionsBtn"><div class="v-sq-icon">⚙️</div><span class="v-sq-label">OPTIONS</span></button>
+          <button type="button" class="v-sq-item" id="pauseRestartBtn"><div class="v-sq-icon">↻</div><span class="v-sq-label">RESTART</span></button>
+          <button type="button" class="v-sq-item" id="pauseContinueBtn"><div class="v-sq-icon">▶</div><span class="v-sq-label">CONTINUE</span></button>
         </div>
       </div>
 
-      <!-- OPTIONS OVERLAY -->
       <div id="optionsOverlay" class="video-overlay hidden">
         <div class="video-options-box">
           <div class="v-opt-row">
@@ -309,37 +278,24 @@
         <button type="button" class="v-rect-btn" id="optionsContinueBtn">CONTINUE</button>
       </div>
 
-      <!-- CRASH OVERLAY -->
       <div id="crashOverlay" class="video-overlay hidden">
         <div class="video-crash-card">
           <h3>YOU HAVE CRASHED !!</h3>
-          <button type="button" class="v-continue-green" id="continueFreeBtn">
-            🎬 CONTINUE<br><small style="font-size:10px;font-weight:700;">FREE</small>
-          </button>
+          <button type="button" class="v-continue-green" id="continueFreeBtn">🎬 CONTINUE<br><small style="font-size:10px;font-weight:700;">FREE</small></button>
           <button type="button" class="v-cancel-grey" id="crashCancelBtn">CANCEL</button>
         </div>
       </div>
 
-      <!-- FINAL SCORE OVERLAY -->
       <div id="end" class="video-overlay hidden">
         <div style="text-align:center;">
           <div style="color:#facc15;font-size:20px;font-weight:900;letter-spacing:0.06em;">TOTAL SCORE</div>
-          <div id="finalScoreNum" style="color:#ffffff;font-size:52px;font-weight:900;line-height:1.05;">0</div>
-          <p id="summary" style="color:#f8fafc;font-size:14px;font-weight:800;margin:8px 0 20px;">DIST: 0.00 KM • NEAR MISSES: 0</p>
+          <div id="finalScoreNum" style="color:#ffffff;font-size:50px;font-weight:900;line-height:1.05;">0</div>
+          <p id="summary" style="color:#f8fafc;font-size:14px;font-weight:800;margin:8px 0 20px;">DIST: 0.00 KM • T-COINS: +0</p>
         </div>
         <div class="video-blue-squares">
-          <button type="button" class="v-sq-item" id="garage">
-            <div class="v-sq-icon">🏠</div>
-            <span class="v-sq-label">MENU</span>
-          </button>
-          <button type="button" class="v-sq-item" id="scoresBtn">
-            <div class="v-sq-icon">👑</div>
-            <span class="v-sq-label">SCORES</span>
-          </button>
-          <button type="button" class="v-sq-item" id="retry">
-            <div class="v-sq-icon">↻</div>
-            <span class="v-sq-label">RESTART</span>
-          </button>
+          <button type="button" class="v-sq-item" id="garage"><div class="v-sq-icon">🏠</div><span class="v-sq-label">MENU</span></button>
+          <button type="button" class="v-sq-item" id="scoresBtn"><div class="v-sq-icon">👑</div><span class="v-sq-label">SCORES</span></button>
+          <button type="button" class="v-sq-item" id="retry"><div class="v-sq-icon">↻</div><span class="v-sq-label">RESTART</span></button>
         </div>
       </div>
     </div>
