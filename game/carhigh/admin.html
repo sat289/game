@@ -1,0 +1,1014 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ST GAMES • Hill Climb 3D Admin Studio (GitHub + Firebase)</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: radial-gradient(circle at top, #0f2942 0%, #040d1a 100%);
+      color: #f0f9ff;
+      min-height: 100vh;
+    }
+    .glass-card {
+      background: rgba(10, 25, 44, 0.88);
+      border: 1.5px solid rgba(56, 189, 248, 0.35);
+      border-radius: 18px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(12px);
+    }
+    .adm-input {
+      width: 100%;
+      background: rgba(4, 13, 26, 0.92);
+      border: 1.5px solid rgba(56, 189, 248, 0.4);
+      border-radius: 11px;
+      padding: 9px 12px;
+      color: #f8fafc;
+      font-size: 13px;
+      font-weight: 600;
+      outline: none;
+    }
+    .adm-input:focus {
+      border-color: #fde047;
+      box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.2);
+    }
+    .adm-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+      transition: transform 0.12s ease, filter 0.15s ease;
+    }
+    .adm-btn:active { transform: scale(0.97); }
+    .adm-btn-primary {
+      background: linear-gradient(135deg, #f97316, #ea580c);
+      border: 1.5px solid #fed7aa;
+      color: #ffffff;
+    }
+    .adm-btn-yellow {
+      background: linear-gradient(135deg, #fde047, #eab308);
+      border: 1.5px solid #fef9c3;
+      color: #090d16;
+    }
+    .adm-btn-cyan {
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      border: 1.5px solid #7dd3fc;
+      color: #ffffff;
+    }
+    .tab-btn {
+      padding: 9px 15px;
+      border-radius: 11px;
+      font-size: 12.5px;
+      font-weight: 800;
+      background: rgba(15, 35, 60, 0.8);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #bae6fd;
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      background: linear-gradient(135deg, #f97316, #ea580c);
+      border-color: #fde047;
+      color: #ffffff;
+    }
+    .toast-banner {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 9999;
+      background: #0f172a;
+      border: 2px solid #fde047;
+      color: #ffffff;
+      padding: 12px 18px;
+      border-radius: 14px;
+      font-weight: 800;
+      font-size: 13px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.65);
+    }
+  </style>
+</head>
+<body class="p-4 sm:p-6">
+  <div id="admToast" class="toast-banner hidden"></div>
+
+  <div class="max-w-5xl mx-auto space-y-5">
+    <!-- HEADER -->
+    <header class="glass-card p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="px-2.5 py-1 rounded-full text-[11px] font-black bg-amber-500 text-slate-950">MANUAL ADMIN CONSOLE</span>
+          <span class="text-xs font-bold text-sky-400">Firebase: friendsgame-872f5</span>
+        </div>
+        <h1 class="text-xl sm:text-2xl font-black tracking-tight mt-1">ST GAMES • Hill Climb 3D Admin Manager</h1>
+        <p class="text-xs text-slate-300 mt-0.5">Auto-upload 3D Cars (.glb/.gltf/.obj/.fbx), Homepage Backgrounds, Dynamic Homepage Buttons, Maps, Skins &amp; Code with GitHub Token</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button type="button" id="syncAllBtn" class="adm-btn adm-btn-yellow">🚀 Push All Config to GitHub &amp; Firebase</button>
+      </div>
+    </header>
+
+    <!-- SECTION 1: GITHUB TOKEN & REPO CREDENTIALS -->
+    <section class="glass-card p-4 sm:p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm sm:text-base font-black text-sky-300">🔑 1. GitHub Personal Access Token &amp; Repository Path</h2>
+        <span id="credStatus" class="text-xs font-bold text-emerald-400"></span>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-5 gap-3">
+        <div>
+          <label class="block text-[11px] font-extrabold text-slate-300 mb-1">GitHub Owner</label>
+          <input id="ghOwner" class="adm-input" value="sat289">
+        </div>
+        <div>
+          <label class="block text-[11px] font-extrabold text-slate-300 mb-1">Repository</label>
+          <input id="ghRepo" class="adm-input" value="game">
+        </div>
+        <div>
+          <label class="block text-[11px] font-extrabold text-slate-300 mb-1">Branch</label>
+          <input id="ghBranch" class="adm-input" value="main">
+        </div>
+        <div>
+          <label class="block text-[11px] font-extrabold text-slate-300 mb-1">Game Folder (optional)</label>
+          <input id="ghFolder" class="adm-input" placeholder="e.g. st_hill_climb_v2 or blank" value="">
+        </div>
+        <div>
+          <label class="block text-[11px] font-extrabold text-amber-300 mb-1">GitHub Token (ghp_...)</label>
+          <input id="ghToken" type="password" class="adm-input" placeholder="Paste Personal Token">
+        </div>
+      </div>
+      <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
+        <small class="text-xs text-slate-400">Every change automatically updates Firebase Realtime DB (<code>friendsgame-872f5</code>) + LocalStorage, and uploads directly to GitHub when your token is provided.</small>
+        <button type="button" id="saveCredsBtn" class="adm-btn adm-btn-cyan">💾 Save Token &amp; Repo Settings</button>
+      </div>
+    </section>
+
+    <!-- NAVIGATION TABS -->
+    <div class="flex flex-wrap gap-2">
+      <button type="button" class="tab-btn active" data-adm-tab="cars">🏎️🏍️ 3D Cars & Bikes File Uploader</button>
+      <button type="button" class="tab-btn" data-adm-tab="bg">🖼️ Homepage Background</button>
+      <button type="button" class="tab-btn" data-adm-tab="buttons">🔘 Homepage Buttons</button>
+      <button type="button" class="tab-btn" data-adm-tab="maps">🗺️ Maps &amp; 🎨 Skins</button>
+      <button type="button" class="tab-btn" data-adm-tab="code">💻 Direct GitHub File Editor &amp; Broadcasts</button>
+    </div>
+
+    <!-- TAB 1: 3D CARS UPLOADER (STRICTLY 3D MODELS ONLY) -->
+    <section id="tab_cars" class="glass-card p-5 space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 class="text-base font-black text-amber-300">🏎️🏍️ Upload 3D Car or 3D Bike Files to GitHub &amp; Game (.obj, .mtl, .glb, .gltf, .fbx, .3ds, .blend, .zip)</h2>
+          <p class="text-xs text-slate-300">Strictly accepts 3D car files (<code>.glb</code>, <code>.gltf</code>, <code>.obj</code>, <code>.fbx</code>). Automatically uploads to <code>assets/models/</code> on GitHub and registers the car in the game store &amp; turntable.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">Vehicle Name *</label>
+            <input id="carName" class="adm-input" placeholder="e.g. Yamaha R1M 3D or Bugatti 3D">
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1">Unique ID *</label>
+              <input id="carId" class="adm-input" placeholder="e.g. yamaha_r1m">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-amber-300 mb-1">Vehicle Type *</label>
+              <select id="carType" class="adm-input">
+                <option value="car">🏎️ 3D Car</option>
+                <option value="bike">🏍️ 3D Bike / Moto</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-amber-300 mb-1">Select 3D Car / Bike Files (.obj, .mtl, .glb, .gltf, .fbx, .3ds, .blend, .zip) *</label>
+            <input id="car3dFile" type="file" multiple accept=".glb,.gltf,.obj,.mtl,.fbx,.3ds,.blend,.zip" class="adm-input text-xs">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">Price (Coins)</label>
+            <input id="carPrice" type="number" class="adm-input" value="150000">
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1">Speed (1-120)</label>
+              <input id="carSpeed" type="number" class="adm-input" value="98">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1">Accel (1-120)</label>
+              <input id="carAcc" type="number" class="adm-input" value="95">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1">Handling</label>
+              <input id="carHandling" type="number" class="adm-input" value="92">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1">Fuel</label>
+              <input id="carFuel" type="number" class="adm-input" value="85">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1">Default Paint Color</label>
+              <input id="carColor" type="color" class="adm-input h-10 p-1" value="#e11d48">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1">3D Scale</label>
+              <input id="carScale" type="number" step="0.1" class="adm-input" value="1.0">
+            </div>
+          </div>
+          <div class=" flex items-end">
+            <button type="button" id="upload3dCarBtn" class="adm-btn adm-btn-primary w-full">☁️ Upload 3D Car to GitHub &amp; Add to Game</button>
+          </div>
+        </div>
+
+        <!-- LIVE 3D PREVIEW TURNTABLE IN ADMIN -->
+        <div class="flex flex-col items-center justify-between p-3 rounded-2xl bg-slate-950/90 border border-sky-500/40">
+          <span class="text-xs font-extrabold text-sky-300">🔄 Live 3D Model Preview (Drag to Rotate)</span>
+          <canvas id="admin3dPreview" class="w-full h-48 rounded-xl my-1 cursor-grab"></canvas>
+          <span id="admin3dStatus" class="text-[11px] text-slate-400">Koenigsegg Agera 3D Loaded</span>
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-slate-700/60">
+        <h3 class="text-xs font-black uppercase text-sky-300 mb-2">Active 3D Vehicles in Game</h3>
+        <div id="adminCarsList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5"></div>
+      </div>
+    </section>
+
+    <!-- TAB 2: HOMEPAGE BACKGROUND UPLOADER -->
+    <section id="tab_bg" class="glass-card p-5 space-y-4 hidden">
+      <h2 class="text-base font-black text-amber-300">🖼️ Upload &amp; Update Homepage Background Image</h2>
+      <p class="text-xs text-slate-300">Upload a new homepage background image (<code>.png</code>, <code>.jpg</code>, <code>.webp</code>). It will be pushed to <code>assets/backgrounds/</code> on GitHub and applied to the homepage lobby without altering your button layout.</p>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">Choose Background Image File</label>
+            <input id="bgFileInput" type="file" accept="image/*" class="adm-input text-xs">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">Or Enter Direct Image Path / URL</label>
+            <input id="bgUrlInput" class="adm-input" value="assets/backgrounds/homepage-bg.png">
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" id="uploadBgBtn" class="adm-btn adm-btn-primary">☁️ Upload &amp; Set Homepage Background</button>
+            <button type="button" id="resetBgBtn" class="adm-btn adm-btn-cyan">↺ Reset to Default Turntable BG</button>
+          </div>
+        </div>
+        <div class="p-3 rounded-2xl bg-slate-950/80 border border-sky-500/30 text-center">
+          <span class="text-xs font-bold text-sky-300 block mb-2">Current Active Homepage Background Preview</span>
+          <img id="bgPreviewImg" src="assets/backgrounds/homepage-bg.png" alt="Homepage Background Preview" class="w-full h-48 object-cover rounded-xl border border-slate-700">
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: DYNAMIC HOMEPAGE BUTTONS MANAGER -->
+    <section id="tab_buttons" class="glass-card p-5 space-y-4 hidden">
+      <h2 class="text-base font-black text-amber-300">🔘 Add / Edit Buttons on Homepage</h2>
+      <p class="text-xs text-slate-300">Add new interactive buttons to any zone on the homepage (Orange Left Sidebar, White Top-Right Bar, Grey Bottom Bar, or Custom X%/Y% screen coordinates).</p>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">Button Label *</label>
+          <input id="btnLabel" class="adm-input" placeholder="e.g. VIP PASS">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">Sub-label (for Orange bar)</label>
+          <input id="btnSublabel" class="adm-input" placeholder="e.g. Unlock 2x Rewards">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">Emoji / Icon</label>
+          <input id="btnIcon" class="adm-input" value="⚡">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">Homepage Placement Zone</label>
+          <select id="btnZone" class="adm-input">
+            <option value="orange">🟧 Orange Left Zone (Stores / Account column)</option>
+            <option value="white">⬜ White Top-Right Zone (Notifications / Achievements bar)</option>
+            <option value="grey">⬜ Grey Bottom Zone (Events / Library dock)</option>
+            <option value="custom">📍 Custom Screen Position (X% / Y%)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">Click Action Type</label>
+          <select id="btnActionType" class="adm-input">
+            <option value="panel">Open Game Panel (store / library / upgrades / events / achievements / account)</option>
+            <option value="reward">Give Daily Coin Bonus (enter amount below)</option>
+            <option value="url">Open URL / Link</option>
+            <option value="message">Show Popup Toast Message</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">Action Target / Value</label>
+          <input id="btnActionValue" class="adm-input" value="store" placeholder="store, 5000, https://...">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">Custom X% (if Custom Zone)</label>
+          <input id="btnPosX" type="number" class="adm-input" value="50">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">Custom Y% (if Custom Zone)</label>
+          <input id="btnPosY" type="number" class="adm-input" value="15">
+        </div>
+        <div class="flex items-end">
+          <button type="button" id="addCustomBtn" class="adm-btn adm-btn-primary w-full">➕ Add Button to Homepage &amp; Sync</button>
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-slate-700/60">
+        <h3 class="text-xs font-black uppercase text-sky-300 mb-2">Custom Homepage Buttons</h3>
+        <div id="customBtnsList" class="space-y-2"></div>
+      </div>
+    </section>
+
+    <!-- TAB 4: MAPS & SKINS MANAGER -->
+    <section id="tab_maps" class="glass-card p-5 space-y-6 hidden">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- ADD MAP -->
+        <div class="space-y-3">
+          <h2 class="text-base font-black text-amber-300">🗺️ Add New Race Map</h2>
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1">Map Name *</label>
+              <input id="mapNameIn" class="adm-input" placeholder="e.g. Cyber Canyon">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1">Emoji Icon</label>
+              <input id="mapIconIn" class="adm-input" value="🌉">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1">Sky Color</label>
+              <input id="mapSkyIn" type="color" class="adm-input h-10 p-1" value="#0ea5e9">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1">Ground Color</label>
+              <input id="mapGroundIn" type="color" class="adm-input h-10 p-1" value="#15803d">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1">Road Trim Color</label>
+              <input id="mapRoadIn" type="color" class="adm-input h-10 p-1" value="#fde047">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1">Price (Coins)</label>
+              <input id="mapPriceIn" type="number" class="adm-input" value="6000">
+            </div>
+          </div>
+          <input id="mapDescIn" class="adm-input" placeholder="Short description (e.g. High-speed suspension bridge)">
+          <button type="button" id="addMapBtn" class="adm-btn adm-btn-primary w-full">🗺️ Add Map &amp; Push to GitHub/Firebase</button>
+          <div id="adminMapsList" class="space-y-1.5 max-h-56 overflow-y-auto pt-2"></div>
+        </div>
+
+        <!-- ADD VEHICLE SKIN -->
+        <div class="space-y-3">
+          <h2 class="text-base font-black text-amber-300">🎨 Add New 3D Car Skin / Paint Wrap</h2>
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1">Skin Name *</label>
+              <input id="skinNameIn" class="adm-input" placeholder="e.g. Inferno Carbon">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1">Finish Style</label>
+              <select id="skinFinishIn" class="adm-input">
+                <option value="metallic">Metallic Gloss</option>
+                <option value="chrome">Mirror Chrome</option>
+                <option value="neon">Neon Emissive Glow</option>
+                <option value="matte">Stealth Matte Carbon</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1">Primary Paint</label>
+              <input id="skinPrimaryIn" type="color" class="adm-input h-10 p-1" value="#f97316">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1">Secondary / Carbon</label>
+              <input id="skinSecondaryIn" type="color" class="adm-input h-10 p-1" value="#111827">
+            </div>
+            <div class="col-span-2">
+              <label class="block text-xs font-bold text-slate-300 mb-1">Price (Coins)</label>
+              <input id="skinPriceIn" type="number" class="adm-input" value="9500">
+            </div>
+          </div>
+          <button type="button" id="addSkinBtn" class="adm-btn adm-btn-primary w-full">🎨 Add Skin &amp; Push to GitHub/Firebase</button>
+          <div id="adminSkinsList" class="space-y-1.5 max-h-56 overflow-y-auto pt-2"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: DIRECT GITHUB FILE EDITOR & NOTIFICATIONS BROADCAST -->
+    <section id="tab_code" class="glass-card p-5 space-y-5 hidden">
+      <div class="space-y-3">
+        <h2 class="text-base font-black text-amber-300">🔔 Send Live Notification &amp; Reward to White Zone Inbox</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+          <input id="notifTitleIn" class="adm-input" placeholder="Title (e.g. 🎁 Weekend Hypercar Gift)">
+          <input id="notifBodyIn" class="adm-input sm:col-span-2" placeholder="Message body shown in Notifications">
+          <input id="notifRewardIn" type="number" class="adm-input" value="3000" placeholder="Reward Coins">
+        </div>
+        <button type="button" id="sendNotifBtn" class="adm-btn adm-btn-yellow">📢 Broadcast Notification &amp; Gift</button>
+      </div>
+
+      <div class="pt-4 border-t border-slate-700/60 space-y-3">
+        <h2 class="text-base font-black text-sky-300">💻 Direct GitHub Repository File Editor (Update Anything with Token)</h2>
+        <div class="flex flex-wrap gap-2">
+          <input id="ghEditPath" class="adm-input flex-1 font-mono" value="game-config.json" placeholder="e.g. index.html, main.js, vehicles.js, maps.js, style.css">
+          <button type="button" id="loadGhFileBtn" class="adm-btn adm-btn-cyan">📥 Load File from GitHub</button>
+          <button type="button" id="pushGhFileBtn" class="adm-btn adm-btn-primary">☁️ Commit &amp; Push File to GitHub</button>
+        </div>
+        <textarea id="ghCodeArea" rows="12" class="adm-input font-mono text-xs leading-relaxed" spellcheck="false" placeholder="Load any file from your repository or inspect/edit JSON/JS/HTML code directly here..."></textarea>
+      </div>
+    </section>
+  </div>
+
+  <script src="agera_3d_data.js"></script>
+  <script src="vehicles.js"></script>
+  <script src="maps.js"></script>
+  <script>
+    (() => {
+      const $ = s => document.querySelector(s);
+      const $$ = s => Array.from(document.querySelectorAll(s));
+      const FIREBASE_DB_URL = "https://friendsgame-872f5-default-rtdb.firebaseio.com";
+
+      let toastTimer = null;
+      function toast(msg) {
+        const el = $('#admToast');
+        if (!el) return;
+        el.textContent = msg;
+        el.classList.remove('hidden');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => el.classList.add('hidden'), 3500);
+      }
+
+      function getCreds() {
+        return {
+          owner: ($('#ghOwner').value || 'sat289').trim(),
+          repo: ($('#ghRepo').value || 'game').trim(),
+          branch: ($('#ghBranch').value || 'main').trim(),
+          folder: ($('#ghFolder').value || '').trim().replace(/^\/+|\/+$/g, ''),
+          token: ($('#ghToken').value || '').trim()
+        };
+      }
+
+      function repoFilePath(relPath) {
+        const c = getCreds();
+        const clean = String(relPath || '').replace(/^\/+/, '');
+        return c.folder ? `${c.folder}/${clean}` : clean;
+      }
+
+      function utf8ToBase64(str) {
+        const bytes = new TextEncoder().encode(str);
+        let bin = '';
+        for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+        return btoa(bin);
+      }
+
+      function arrayBufferToBase64(buf) {
+        const bytes = new Uint8Array(buf);
+        let bin = '';
+        const chunk = 0x8000;
+        for (let i = 0; i < bytes.length; i += chunk) {
+          bin += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+        }
+        return btoa(bin);
+      }
+
+      async function githubPutBase64(relPath, base64Content, commitMsg) {
+        const c = getCreds();
+        if (!c.token) return { pushed: false, reason: 'No GitHub token set (saved to Firebase & LocalStorage).' };
+        const fullPath = repoFilePath(relPath).split('/').map(encodeURIComponent).join('/');
+        const api = `https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/${fullPath}`;
+
+        let sha = null;
+        try {
+          const check = await fetch(`https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/${fullPath}?ref=${encodeURIComponent(c.branch)}&t=${Date.now()}`, {
+            headers: { 'Authorization': `Bearer ${c.token}`, 'Accept': 'application/vnd.github+json' }
+          });
+          if (check.ok) {
+            const d = await check.json();
+            sha = d.sha;
+          }
+        } catch (e) {}
+
+        const body = { message: commitMsg, content: base64Content, branch: c.branch };
+        if (sha) body.sha = sha;
+
+        const res = await fetch(api, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${c.token}`,
+            'Accept': 'application/vnd.github+json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(body)
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.message || 'GitHub upload failed');
+        }
+        return { pushed: true };
+      }
+
+      // Admin state
+      let adminCfg = {
+        homepageBackground: "assets/backgrounds/homepage-bg.png",
+        notifications: [
+          { id: "notif_agera", title: "🏎️ Koenigsegg Agera 3D Ready!", body: "Your 3D Koenigsegg Agera is on the center ramp! Drag left or right to rotate 360° manually.", rewardCoins: 2500 }
+        ],
+        events: [],
+        customButtons: [],
+        customVehicles: [],
+        customMaps: [],
+        customSkins: []
+      };
+
+      try {
+        const saved = JSON.parse(localStorage.getItem('sthw_admin_config') || 'null');
+        if (saved && typeof saved === 'object') adminCfg = Object.assign({}, adminCfg, saved);
+      } catch (e) {}
+
+      async function syncConfigEverywhere(commitNote) {
+        try {
+          localStorage.setItem('sthw_admin_config', JSON.stringify(adminCfg));
+        } catch (e) {}
+
+        // Push to Firebase Realtime DB
+        try {
+          await fetch(`https://friendsgame-872f5-default-rtdb.firebaseio.com/st_hill_climb_v2/live_config.json`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(adminCfg)
+          });
+        } catch (e) {}
+
+        // Push game-config.json to GitHub if token provided
+        const c = getCreds();
+        if (c.token) {
+          await githubPutBase64('game-config.json', utf8ToBase64(JSON.stringify(adminCfg, null, 2)), commitNote || 'Update game-config.json via Admin');
+        }
+      }
+
+      // Tabs
+      $$('[data-adm-tab]').forEach(btn => {
+        btn.onclick = () => {
+          $$('[data-adm-tab]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          ['cars', 'bg', 'buttons', 'maps', 'code'].forEach(k => {
+            $('#tab_' + k)?.classList.toggle('hidden', k !== btn.dataset.admTab);
+          });
+        };
+      });
+
+      // Save GitHub Creds
+      $('#saveCredsBtn').onclick = () => {
+        const c = getCreds();
+        try { localStorage.setItem('sthw_github_creds', JSON.stringify(c)); } catch (e) {}
+        $('#credStatus').textContent = c.token ? '✓ Token & Repo Saved' : '✓ Repo Saved (Add Token for GitHub Push)';
+        toast('GitHub settings saved!');
+      };
+
+      $('#syncAllBtn').onclick = async () => {
+        try {
+          await syncConfigEverywhere('Sync full game configuration from Admin Studio');
+          toast('Synced configuration to Firebase & GitHub!');
+        } catch (err) {
+          toast('Synced to Firebase/Local. GitHub: ' + err.message);
+        }
+      };
+
+      // 3D Preview inside Admin
+      let pScene, pCam, pRenderer, pGroup, pRotY = -0.6;
+      function initAdmin3DPreview() {
+        const canvas = $('#admin3dPreview');
+        if (!canvas || !window.THREE) return;
+        const THREE = window.THREE;
+        pScene = new THREE.Scene();
+        pCam = new THREE.PerspectiveCamera(35, canvas.clientWidth / canvas.clientHeight, 0.1, 100);
+        pCam.position.set(0, 1.3, 6.2);
+        pCam.lookAt(0, -0.1, 0);
+        pRenderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+        pRenderer.setSize(canvas.clientWidth || 280, canvas.clientHeight || 190, false);
+        pScene.add(new THREE.HemisphereLight(0xffffff, 0x0284c7, 1.4));
+        const dl = new THREE.DirectionalLight(0xffffff, 1.8);
+        dl.position.set(5, 8, 5);
+        pScene.add(dl);
+
+        // Default preview: Koenigsegg Agera 3D
+        pGroup = new THREE.Group();
+        if (window.AGERA_3D_DATA && window.AGERA_3D_DATA.verts) {
+          const bin = atob(window.AGERA_3D_DATA.verts);
+          const buf = new ArrayBuffer(bin.length);
+          const v8 = new Uint8Array(buf);
+          for (let i = 0; i < bin.length; i++) v8[i] = bin.charCodeAt(i);
+          const i16 = new Int16Array(buf);
+          const pos = new Float32Array(i16.length);
+          for (let i = 0; i < i16.length; i++) pos[i] = i16[i] / (window.AGERA_3D_DATA.scale || 60);
+          const attr = new THREE.BufferAttribute(pos, 3);
+          ['Paint', 'Carbon', 'Glass', 'Lights'].forEach(k => {
+            const b64 = window.AGERA_3D_DATA.groups[k];
+            if (!b64) return;
+            const ibin = atob(b64);
+            const ibuf = new ArrayBuffer(ibin.length);
+            const iv8 = new Uint8Array(ibuf);
+            for (let i = 0; i < ibin.length; i++) iv8[i] = ibin.charCodeAt(i);
+            const idx = new Uint16Array(ibuf);
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', attr);
+            geo.setIndex(new THREE.BufferAttribute(idx, 1));
+            geo.computeVertexNormals();
+            const col = k === 'Paint' ? 0xe11d48 : k === 'Glass' ? 0x0f172a : k === 'Lights' ? 0xff1e42 : 0x1e293b;
+            pGroup.add(new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: col, metalness: 0.65, roughness: 0.25 })));
+          });
+          pGroup.scale.set(0.11, 0.11, 0.11);
+          pGroup.position.y = -0.45;
+        }
+        pScene.add(pGroup);
+
+        let dragging = false, sx = 0;
+        canvas.addEventListener('pointerdown', e => { dragging = true; sx = e.clientX; });
+        window.addEventListener('pointermove', e => {
+          if (!dragging) return;
+          pRotY += (e.clientX - sx) * 0.015;
+          sx = e.clientX;
+        });
+        window.addEventListener('pointerup', () => { dragging = false; });
+
+        function loop() {
+          requestAnimationFrame(loop);
+          if (!dragging) pRotY += 0.007;
+          if (pGroup) pGroup.rotation.y = pRotY;
+          pRenderer.render(pScene, pCam);
+        }
+        loop();
+      }
+
+      // Strictly validate & preview 3D car files (.glb, .gltf, .obj, .fbx)
+      $('#car3dFile').addEventListener('change', async e => {
+        const f = e.target.files[0];
+        if (!f) return;
+        const ext = f.name.split('.').pop().toLowerCase();
+        if (!['glb', 'gltf', 'obj', 'mtl', 'fbx', '3ds', 'blend', 'zip'].includes(ext)) {
+          toast('❌ Only 3D Car/Bike files (.obj, .mtl, .glb, .gltf, .fbx, .3ds, .blend, .zip) are allowed!');
+          e.target.value = '';
+          return;
+        }
+        $('#admin3dStatus').textContent = `Selected 3D Model: ${f.name} (${(f.size / 1024).toFixed(1)} KB)`;
+        if (!$('#carName').value) {
+          const base = f.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ');
+          $('#carName').value = base;
+          $('#carId').value = base.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+        }
+      });
+
+      // Upload 3D Car to GitHub & Game
+      $('#upload3dCarBtn').onclick = async () => {
+        const name = ($('#carName').value || '').trim();
+        const id = ($('#carId').value || name.toLowerCase().replace(/[^a-z0-9]+/g, '_')).trim();
+        const f = $('#car3dFile').files[0];
+        if (!name || !id) {
+          toast('Please enter a Car Name and Unique ID.');
+          return;
+        }
+        if (!f) {
+          toast('Please select a 3D car model file (.glb, .gltf, .obj, or .fbx)!');
+          return;
+        }
+        const ext = f.name.split('.').pop().toLowerCase();
+        if (!['glb', 'gltf', 'obj', 'mtl', 'fbx', '3ds', 'blend', 'zip'].includes(ext)) {
+          toast('Only 3D Car/Bike files are permitted!');
+          return;
+        }
+
+        const safeFileName = f.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const relModelPath = `assets/models/${safeFileName}`;
+
+        try {
+          toast(`⏳ Processing & uploading 3D model ${safeFileName}...`);
+          const buf = await f.arrayBuffer();
+          const b64 = arrayBufferToBase64(buf);
+
+          let inlineObjText = undefined;
+          if (ext === 'obj' && f.size < 1800000) {
+            inlineObjText = new TextDecoder().decode(buf);
+          }
+
+          const vType = ($('#carType') && $('#carType').value) || 'car';
+          const newCar = {
+            id,
+            name,
+            type: vType,
+            emoji: vType === 'bike' ? '🏍️' : '🏎️',
+            prebakedKey: vType === 'bike' ? 'MOTO_3D_DATA' : 'AGERA_3D_DATA',
+            price: parseInt($('#carPrice').value, 10) || 150000,
+            speed: parseInt($('#carSpeed').value, 10) || 98,
+            acc: parseInt($('#carAcc').value, 10) || 95,
+            handling: parseInt($('#carHandling').value, 10) || 92,
+            fuel: parseInt($('#carFuel').value, 10) || 85,
+            is3D: true,
+            modelFormat: ext,
+            modelUrl: relModelPath,
+            defaultColor: $('#carColor').value || '#e11d48',
+            secondaryColor: '#111827',
+            scale: parseFloat($('#carScale').value) || 1.0,
+            badge: '3D CUSTOM',
+            inlineObjText
+          };
+
+          adminCfg.customVehicles = (adminCfg.customVehicles || []).filter(v => v.id !== id);
+          adminCfg.customVehicles.unshift(newCar);
+
+          // Upload binary 3D file to GitHub if token is configured
+          const c = getCreds();
+          if (c.token) {
+            await githubPutBase64(relModelPath, b64, `Upload 3D car model ${safeFileName}`);
+          }
+          await syncConfigEverywhere(`Add 3D vehicle ${name}`);
+          renderAdminLists();
+          toast(`✅ 3D Car "${name}" uploaded & synced to Game!`);
+        } catch (err) {
+          toast('Saved to Firebase/Local! GitHub note: ' + err.message);
+          renderAdminLists();
+        }
+      };
+
+      // Upload Homepage Background Image
+      $('#uploadBgBtn').onclick = async () => {
+        const f = $('#bgFileInput').files[0];
+        const urlIn = ($('#bgUrlInput').value || '').trim();
+        try {
+          if (f) {
+            toast('⏳ Uploading homepage background...');
+            const buf = await f.arrayBuffer();
+            const b64 = arrayBufferToBase64(buf);
+            const safeName = `bg_${Date.now()}_${f.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+            const relPath = `assets/backgrounds/${safeName}`;
+            const c = getCreds();
+            if (c.token) {
+              await githubPutBase64(relPath, b64, `Upload homepage background ${safeName}`);
+              adminCfg.homepageBackground = relPath;
+            } else {
+              const dataUrl = `data:${f.type || 'image/png'};base64,${b64}`;
+              adminCfg.homepageBackground = dataUrl;
+            }
+            $('#bgPreviewImg').src = adminCfg.homepageBackground;
+            await syncConfigEverywhere('Update homepage background image');
+            toast('✅ Homepage background updated across game!');
+          } else if (urlIn) {
+            adminCfg.homepageBackground = urlIn;
+            $('#bgPreviewImg').src = urlIn;
+            await syncConfigEverywhere('Update homepage background URL');
+            toast('✅ Homepage background path updated!');
+          }
+        } catch (err) {
+          toast('Background updated in Firebase/Local! GitHub: ' + err.message);
+        }
+      };
+
+      $('#resetBgBtn').onclick = async () => {
+        adminCfg.homepageBackground = 'assets/backgrounds/homepage-bg.png';
+        $('#bgUrlInput').value = adminCfg.homepageBackground;
+        $('#bgPreviewImg').src = adminCfg.homepageBackground;
+        await syncConfigEverywhere('Reset homepage background to default');
+        toast('Reset homepage background to default!');
+      };
+
+      // Add Custom Homepage Button
+      $('#addCustomBtn').onclick = async () => {
+        const label = ($('#btnLabel').value || '').trim();
+        if (!label) {
+          toast('Enter a Button Label first!');
+          return;
+        }
+        const btnObj = {
+          id: 'btn_' + Date.now(),
+          label,
+          sublabel: ($('#btnSublabel').value || '').trim(),
+          icon: ($('#btnIcon').value || '⚡').trim(),
+          zone: $('#btnZone').value,
+          actionType: $('#btnActionType').value,
+          actionValue: ($('#btnActionValue').value || 'store').trim(),
+          x: parseFloat($('#btnPosX').value) || 50,
+          y: parseFloat($('#btnPosY').value) || 15
+        };
+        adminCfg.customButtons = adminCfg.customButtons || [];
+        adminCfg.customButtons.push(btnObj);
+        await syncConfigEverywhere(`Add homepage button ${label}`);
+        renderAdminLists();
+        toast(`✅ Button "${label}" added to ${btnObj.zone.toUpperCase()} zone!`);
+      };
+
+      // Add Map
+      $('#addMapBtn').onclick = async () => {
+        const name = ($('#mapNameIn').value || '').trim();
+        if (!name) {
+          toast('Enter a Map Name!');
+          return;
+        }
+        const newMap = {
+          id: name.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
+          name,
+          icon: ($('#mapIconIn').value || '🗺️').trim(),
+          sky: $('#mapSkyIn').value || '#0ea5e9',
+          skyBottom: '#e0f2fe',
+          ground: $('#mapGroundIn').value || '#15803d',
+          road: $('#mapRoadIn').value || '#fde047',
+          price: parseInt($('#mapPriceIn').value, 10) || 5000,
+          unlocked: false,
+          desc: ($('#mapDescIn').value || 'Custom Admin Hill Stage').trim()
+        };
+        adminCfg.customMaps = (adminCfg.customMaps || []).filter(m => m.name !== name);
+        adminCfg.customMaps.push(newMap);
+        await syncConfigEverywhere(`Add map ${name}`);
+        renderAdminLists();
+        toast(`✅ Map "${name}" added!`);
+      };
+
+      // Add Skin
+      $('#addSkinBtn').onclick = async () => {
+        const name = ($('#skinNameIn').value || '').trim();
+        if (!name) {
+          toast('Enter a Skin Name!');
+          return;
+        }
+        const newSkin = {
+          id: 'skin_' + Date.now(),
+          name,
+          vehicleId: 'all',
+          primary: $('#skinPrimaryIn').value || '#f97316',
+          secondary: $('#skinSecondaryIn').value || '#111827',
+          finish: $('#skinFinishIn').value || 'metallic',
+          price: parseInt($('#skinPriceIn').value, 10) || 8000,
+          unlocked: false
+        };
+        adminCfg.customSkins = adminCfg.customSkins || [];
+        adminCfg.customSkins.push(newSkin);
+        await syncConfigEverywhere(`Add vehicle skin ${name}`);
+        renderAdminLists();
+        toast(`✅ Skin "${name}" added!`);
+      };
+
+      // Send Notification Broadcast
+      $('#sendNotifBtn').onclick = async () => {
+        const title = ($('#notifTitleIn').value || '').trim();
+        const body = ($('#notifBodyIn').value || '').trim();
+        const rewardCoins = parseInt($('#notifRewardIn').value, 10) || 1000;
+        if (!title) {
+          toast('Enter a notification title!');
+          return;
+        }
+        adminCfg.notifications = adminCfg.notifications || [];
+        adminCfg.notifications.unshift({
+          id: 'notif_' + Date.now(),
+          title,
+          body: body || 'Special Admin broadcast reward!',
+          rewardCoins
+        });
+        await syncConfigEverywhere(`Broadcast notification: ${title}`);
+        toast('📢 Notification broadcasted to all players!');
+      };
+
+      // Direct GitHub Code Editor
+      $('#loadGhFileBtn').onclick = async () => {
+        const c = getCreds();
+        const path = ($('#ghEditPath').value || 'game-config.json').trim();
+        if (path === 'game-config.json' && !c.token) {
+          $('#ghCodeArea').value = JSON.stringify(adminCfg, null, 2);
+          toast('Loaded current game-config.json!');
+          return;
+        }
+        if (!c.token) {
+          toast('Enter your GitHub Personal Access Token in Section 1 to fetch repo files.');
+          return;
+        }
+        try {
+          const full = repoFilePath(path).split('/').map(encodeURIComponent).join('/');
+          const res = await fetch(`https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/${full}?ref=${encodeURIComponent(c.branch)}&t=${Date.now()}`, {
+            headers: { 'Authorization': `Bearer ${c.token}`, 'Accept': 'application/vnd.github+json' }
+          });
+          const d = await res.json();
+          if (!res.ok) throw new Error(d.message || 'File not found');
+          const bin = atob((d.content || '').replace(/\s/g, ''));
+          const bytes = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+          $('#ghCodeArea').value = new TextDecoder().decode(bytes);
+          toast(`Loaded ${path} from GitHub!`);
+        } catch (err) {
+          toast('Load error: ' + err.message);
+        }
+      };
+
+      $('#pushGhFileBtn').onclick = async () => {
+        const path = ($('#ghEditPath').value || 'game-config.json').trim();
+        const code = $('#ghCodeArea').value;
+        if (path === 'game-config.json') {
+          try {
+            adminCfg = JSON.parse(code);
+            await syncConfigEverywhere('Update game-config.json from Code Editor');
+            renderAdminLists();
+            toast('✅ Updated & synced game-config.json!');
+            return;
+          } catch (e) {
+            toast('Invalid JSON in game-config.json');
+            return;
+          }
+        }
+        try {
+          await githubPutBase64(path, utf8ToBase64(code), `Update ${path} via Admin Studio`);
+          toast(`✅ Committed & pushed ${path} to GitHub!`);
+        } catch (err) {
+          toast('Push error: ' + err.message);
+        }
+      };
+
+      function renderAdminLists() {
+        // Cars
+        const allCars = [...(adminCfg.customVehicles || []), ...(window.DEFAULT_VEHICLES || [])];
+        $('#adminCarsList').innerHTML = allCars.map(c => `
+          <div class="p-3 rounded-xl bg-slate-900/90 border border-sky-500/30 flex items-center justify-between gap-2">
+            <div>
+              <div class="font-extrabold text-xs text-white">${c.emoji || '🏎️'} ${c.name} <span class="text-[10px] text-amber-300">(${c.modelFormat || '3D'})</span></div>
+              <div class="text-[10px] text-slate-400">SPD ${c.speed} • ACC ${c.acc} • 🪙 ${Number(c.price || 0).toLocaleString('en-IN')}</div>
+            </div>
+            ${(adminCfg.customVehicles || []).some(x => x.id === c.id)
+              ? `<button type="button" class="px-2 py-1 rounded bg-rose-500/20 text-rose-300 text-[10px] font-bold" data-del-car="${c.id}">Delete</button>`
+              : `<span class="text-[10px] font-bold text-emerald-400">Built-in 3D</span>`}
+          </div>
+        `).join('');
+
+        $$('[data-del-car]').forEach(b => {
+          b.onclick = async () => {
+            adminCfg.customVehicles = (adminCfg.customVehicles || []).filter(x => x.id !== b.dataset.delCar);
+            await syncConfigEverywhere('Remove custom 3D car');
+            renderAdminLists();
+          };
+        });
+
+        // Buttons
+        const btns = adminCfg.customButtons || [];
+        $('#customBtnsList').innerHTML = btns.length ? btns.map(b => `
+          <div class="p-2.5 rounded-xl bg-slate-900/90 border border-sky-500/30 flex items-center justify-between">
+            <span class="text-xs font-bold">${b.icon} <b>${b.label}</b> — Zone: <span class="text-amber-300 uppercase">${b.zone}</span> (${b.actionType}: ${b.actionValue})</span>
+            <button type="button" class="px-2.5 py-1 rounded bg-rose-500/20 text-rose-300 text-xs font-bold" data-del-btn="${b.id}">Remove</button>
+          </div>
+        `).join('') : '<div class="text-xs text-slate-400">No extra custom buttons added yet. Use the form above to add buttons to any homepage zone.</div>';
+
+        $$('[data-del-btn]').forEach(b => {
+          b.onclick = async () => {
+            adminCfg.customButtons = (adminCfg.customButtons || []).filter(x => x.id !== b.dataset.delBtn);
+            await syncConfigEverywhere('Remove custom button');
+            renderAdminLists();
+          };
+        });
+
+        // Maps
+        const maps = [...(adminCfg.customMaps || []), ...(window.DEFAULT_MAPS || [])];
+        $('#adminMapsList').innerHTML = maps.map(m => `
+          <div class="p-2 rounded-lg bg-slate-900/80 border border-slate-700 flex items-center justify-between text-xs">
+            <span>${m.icon || '🗺️'} <b>${m.name}</b> (🪙 ${m.price})</span>
+            <span class="w-5 h-5 rounded" style="background:${m.sky};border:2px solid ${m.ground};"></span>
+          </div>
+        `).join('');
+
+        // Skins
+        const skins = [...(adminCfg.customSkins || []), ...(window.DEFAULT_SKINS || [])];
+        $('#adminSkinsList').innerHTML = skins.map(s => `
+          <div class="p-2 rounded-lg bg-slate-900/80 border border-slate-700 flex items-center justify-between text-xs">
+            <span>🎨 <b>${s.name}</b> (${s.finish}) — 🪙 ${s.price}</span>
+            <span class="w-8 h-4 rounded" style="background:linear-gradient(90deg,${s.primary},${s.secondary});"></span>
+          </div>
+        `).join('');
+
+        $('#ghCodeArea').value = JSON.stringify(adminCfg, null, 2);
+      }
+
+      window.addEventListener('DOMContentLoaded', async () => {
+        try {
+          const savedCreds = JSON.parse(localStorage.getItem('sthw_github_creds') || 'null');
+          if (savedCreds) {
+            if (savedCreds.owner) $('#ghOwner').value = savedCreds.owner;
+            if (savedCreds.repo) $('#ghRepo').value = savedCreds.repo;
+            if (savedCreds.branch) $('#ghBranch').value = savedCreds.branch;
+            if (savedCreds.folder !== undefined) $('#ghFolder').value = savedCreds.folder;
+            if (savedCreds.token) $('#ghToken').value = savedCreds.token;
+          }
+        } catch (e) {}
+
+        try {
+          const r = await fetch(`https://friendsgame-872f5-default-rtdb.firebaseio.com/st_hill_climb_v2/live_config.json`, { cache: 'no-store' });
+          if (r.ok) {
+            const fb = await r.json();
+            if (fb && typeof fb === 'object') adminCfg = Object.assign({}, adminCfg, fb);
+          }
+        } catch (e) {}
+
+        initAdmin3DPreview();
+        renderAdminLists();
+      });
+    })();
+  </script>
+</body>
+</html>

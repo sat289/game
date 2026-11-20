@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <title>ST GAMES • 3D Highway Car &amp; Bike Racer (16:9 Fullscreen)</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+</head>
+<body>
+  <div id="stage16x9" class="stage-16x9">
+    <!-- 16:9 LOBBY (PURE 3D & CSS — NO IMAGE FILES REQUIRED) -->
+    <div id="menu" class="menu">
+      <div class="lobby-sky-bg"></div>
+      <div class="lobby-grid-floor"></div>
+      <div class="lobby-vignette"></div>
+
+      <!-- TOP-LEFT PLAYER BADGE -->
+      <div class="top-left-brand">
+        <div class="brand-avatar">ST</div>
+        <div class="brand-meta">
+          <strong id="topPlayerName">GUEST RACER</strong>
+          <small id="topAccountMode">💾 GUEST LOCAL SAVE</small>
+        </div>
+      </div>
+
+      <!-- WHITE ZONE (Top-Right): Currencies, Notifications & Achievements -->
+      <div class="zone-white-topright">
+        <div class="currency-bar">
+          <span class="curr-pill">🪙 <b id="coins">125,680</b></span>
+          <span class="curr-pill gem-pill">💎 <b id="gems">2,450</b></span>
+          <span class="curr-pill">⛽ <b>100%</b></span>
+          <button type="button" class="white-zone-btn" id="btnFullscreenTop" style="padding:3px 9px;font-size:10.5px;">⛶ 16:9 FULL</button>
+        </div>
+        <div class="white-action-row">
+          <button type="button" class="white-zone-btn" id="btnNotifications">
+            <span>🔔</span><span>NOTIFICATIONS</span>
+            <span class="notif-badge" id="notifBadge">3</span>
+          </button>
+          <button type="button" class="white-zone-btn" id="btnAchievements">
+            <span>🏆</span><span>ACHIEVEMENTS</span>
+          </button>
+          <button type="button" class="white-zone-btn" id="btnDailyReward">
+            <span>🎁</span><span>REWARD</span>
+          </button>
+          <button type="button" class="white-zone-btn" id="btnSettings" aria-label="Settings">
+            <span>⚙️</span>
+          </button>
+          <div id="whiteCustomBtns" style="display:flex;gap:6px;"></div>
+        </div>
+      </div>
+
+      <!-- ORANGE ZONE (Left Vertical Sidebar): Create Account, Store, Upload 3D Car, Upgrades -->
+      <div class="zone-orange-left">
+        <button type="button" class="orange-btn account-btn" id="btnAccount">
+          <div class="btn-icon">☁️</div>
+          <div class="btn-text">
+            <strong id="accountBtnTitle">CREATE ACCOUNT</strong>
+            <small id="accountBtnSub">Firebase / Guest Save</small>
+          </div>
+        </button>
+
+        <button type="button" class="orange-btn" id="btnStore">
+          <div class="btn-icon">🛒</div>
+          <div class="btn-text">
+            <strong>STORE (CARS &amp; BIKES)</strong>
+            <small>Real 3D Cars, Bikes &amp; Maps</small>
+          </div>
+        </button>
+
+        <label class="orange-btn" style="cursor:pointer;">
+          <div class="btn-icon">📂</div>
+          <div class="btn-text">
+            <strong>UPLOAD 3D CAR</strong>
+            <small>.GLB / .GLTF / .OBJ File</small>
+          </div>
+          <input type="file" id="directCarUpload" accept=".glb,.gltf,.obj" style="display:none;">
+        </label>
+
+        <button type="button" class="orange-btn" id="btnSkinsStore">
+          <div class="btn-icon">🎨</div>
+          <div class="btn-text">
+            <strong>SKINS &amp; WRAPS</strong>
+            <small>Custom Paint &amp; Carbon</small>
+          </div>
+        </button>
+
+        <button type="button" class="orange-btn" id="btnUpgrades">
+          <div class="btn-icon">🔧</div>
+          <div class="btn-text">
+            <strong>UPGRADES</strong>
+            <small>Engine, Turbo, Brakes</small>
+          </div>
+        </button>
+
+        <div id="orangeCustomBtns" style="display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
+
+      <!-- CENTER 3D TURNTABLE RAMP: Rotatable Selected 3D Car or 3D Bike -->
+      <div id="turntableStage" class="turntable-stage">
+        <div class="car-hud-Floating">
+          <div class="car-title-row">
+            <strong id="activeCarName">KOENIGSEGG AGERA RS 3D</strong>
+            <span class="car-badge-pill" id="activeCarBadge">3D HYPERCAR</span>
+          </div>
+          <div class="car-stats-mini">
+            <span>SPD <b id="statSpd">100</b></span>
+            <span>ACC <b id="statAcc">96</b></span>
+            <span>HND <b id="statHnd">94</b></span>
+            <span>FUEL <b id="statFuel">90</b></span>
+          </div>
+        </div>
+
+        <canvas id="turntableCanvas"></canvas>
+
+        <div class="turntable-controls-bar">
+          <button type="button" class="turntable-mini-btn" id="rotLeftBtn">⟲</button>
+          <span>◀ DRAG 3D RAMP TO ROTATE CAR / BIKE 360° ▶</span>
+          <button type="button" class="turntable-mini-btn" id="rotRightBtn">⟳</button>
+          <button type="button" class="turntable-mini-btn" id="rotAutoBtn">🔄 AUTO: OFF</button>
+        </div>
+      </div>
+
+      <!-- GREY ZONE (Bottom-Left / Center-Left): Events & Library of Bought Cars/Bikes/Maps -->
+      <div class="zone-grey-bottom">
+        <div class="grey-top-actions">
+          <button type="button" class="grey-action-btn events-btn" id="btnEvents">
+            <span>🎉</span><span>EVENTS</span>
+          </button>
+          <button type="button" class="grey-action-btn library-btn" id="btnLibrary">
+            <span>🚘</span><span>OWNED LIBRARY (3D CARS, BIKES &amp; MAPS)</span>
+          </button>
+          <div id="greyCustomBtns" style="display:flex;gap:6px;"></div>
+        </div>
+        <div id="ownedQuickStrip" class="owned-quick-strip"></div>
+      </div>
+
+      <!-- RED ZONE (Bottom-Right): Upper Half = Selected Map Display & Selector, Lower Half = Yellow START Button -->
+      <div class="zone-red-startbox">
+        <button type="button" id="mapSelectBox" class="red-map-half" aria-label="Select Map">
+          <div id="redMapGround" class="map-preview-ground"></div>
+          <div class="red-map-info">
+            <span id="redMapIcon" class="red-map-icon">🌅</span>
+            <div class="red-map-text">
+              <small>SELECTED HIGHWAY</small>
+              <strong id="redMapName">SUNSET HIGHWAY</strong>
+            </div>
+          </div>
+          <span class="red-map-change-pill">🗺️ CHANGE MAP ▾</span>
+        </button>
+
+        <button type="button" id="play" class="yellow-start-btn">
+          <span>▶</span><span>START</span>
+        </button>
+      </div>
+
+      <div id="customFloatingLayer" class="custom-floating-layer"></div>
+    </div>
+
+    <!-- MODAL OVERLAY -->
+    <div id="modal" class="modal hidden">
+      <div class="box">
+        <div class="box-header">
+          <h2 id="title">STORE</h2>
+          <button type="button" id="close" class="close">✕</button>
+        </div>
+        <div id="content"></div>
+      </div>
+    </div>
+
+    <!-- CONTINUOUS FORWARD 3D HIGHWAY GAMEPLAY -->
+    <div id="game" class="game hidden">
+      <canvas id="highway3dCanvas"></canvas>
+      <canvas id="canvas"></canvas>
+
+      <!-- TOP-LEFT SCORE -->
+      <div class="video-hud-topleft">
+        <span class="lbl">SCORE</span>
+        <span class="val" id="dist">0</span>
+        <div class="video-hud-sub">
+          <span>🪙 <b id="runCoins" style="color:#fde047;">0</b></span>
+          <span>💎 <b id="runGems" style="color:#38bdf8;">0</b></span>
+        </div>
+      </div>
+
+      <!-- TOP-RIGHT CAMERA SWITCH, PAUSE & SPEED KMH -->
+      <div class="video-hud-topright">
+        <div class="video-top-btns">
+          <button type="button" id="camModeBtn" class="video-cam-btn">🎥 VIEW: BACKSIDE</button>
+          <button type="button" id="pauseBtn" class="video-pause-btn" aria-label="Pause">||</button>
+        </div>
+        <div class="video-speed-box">
+          <span class="lbl">SPEED</span>
+          <span class="val" id="speedKmh">67</span> <span class="unit">KMH</span>
+        </div>
+      </div>
+
+      <!-- LEFT HEADLIGHT BUTTON -->
+      <button type="button" id="headlightBtn" class="video-headlight-btn" aria-label="Headlights">💡</button>
+
+      <!-- BOTTOM PEDALS & STEERING -->
+      <div class="video-controls-bar">
+        <div class="video-left-cluster">
+          <button type="button" id="brake" class="pedal-brake" aria-label="Brake">
+            <span></span><span></span><span></span><span></span><span></span>
+          </button>
+          <button type="button" id="steerLeft" class="steer-btn" aria-label="Steer Left">◀</button>
+          <button type="button" id="steerRight" class="steer-btn" aria-label="Steer Right">▶</button>
+        </div>
+        <div class="video-right-cluster">
+          <button type="button" id="nitro" class="steer-btn" style="border-color:#a855f7;color:#e9d5ff;" aria-label="Nitro">🚀</button>
+          <button type="button" id="gas" class="pedal-gas" aria-label="Gas">
+            <span></span><span></span><span></span><span></span><span></span><span></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- PAUSE OVERLAY -->
+      <div id="pauseOverlay" class="video-overlay hidden">
+        <div class="video-blue-squares">
+          <button type="button" class="v-sq-item" id="home">
+            <div class="v-sq-icon">🏠</div>
+            <span class="v-sq-label">MENU</span>
+          </button>
+          <button type="button" class="v-sq-item" id="openOptionsBtn">
+            <div class="v-sq-icon">⚙️</div>
+            <span class="v-sq-label">OPTIONS</span>
+          </button>
+          <button type="button" class="v-sq-item" id="pauseRestartBtn">
+            <div class="v-sq-icon">↻</div>
+            <span class="v-sq-label">RESTART</span>
+          </button>
+          <button type="button" class="v-sq-item" id="pauseContinueBtn">
+            <div class="v-sq-icon">▶</div>
+            <span class="v-sq-label">CONTINUE</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- OPTIONS OVERLAY -->
+      <div id="optionsOverlay" class="video-overlay hidden">
+        <div class="video-options-box">
+          <div class="v-opt-row">
+            <strong>SOUND</strong>
+            <div class="v-bar-track" id="soundBarTrack"><div class="v-bar-fill" id="soundBarFill" style="width:75%;"></div></div>
+          </div>
+          <div class="v-opt-row">
+            <strong>MUSIC</strong>
+            <div class="v-bar-track" id="musicBarTrack"><div class="v-bar-fill" id="musicBarFill" style="width:65%;"></div></div>
+          </div>
+        </div>
+        <button type="button" class="v-rect-btn" id="optionsContinueBtn">CONTINUE</button>
+      </div>
+
+      <!-- CRASH OVERLAY -->
+      <div id="crashOverlay" class="video-overlay hidden">
+        <div class="video-crash-card">
+          <h3>YOU HAVE CRASHED !!</h3>
+          <button type="button" class="v-continue-green" id="continueFreeBtn">
+            🎬 CONTINUE<br><small style="font-size:10px;font-weight:700;">FREE</small>
+          </button>
+          <button type="button" class="v-cancel-grey" id="crashCancelBtn">CANCEL</button>
+        </div>
+      </div>
+
+      <!-- FINAL SCORE OVERLAY -->
+      <div id="end" class="video-overlay hidden">
+        <div style="text-align:center;">
+          <div style="color:#facc15;font-size:20px;font-weight:900;letter-spacing:0.06em;">SCORE</div>
+          <div id="finalScoreNum" style="color:#ffffff;font-size:52px;font-weight:900;line-height:1.05;">0</div>
+          <p id="summary" style="color:#f8fafc;font-size:14px;font-weight:800;margin:8px 0 20px;">YOU EARNED: 0 🪙</p>
+        </div>
+        <div class="video-blue-squares">
+          <button type="button" class="v-sq-item" id="garage">
+            <div class="v-sq-icon">🏠</div>
+            <span class="v-sq-label">MENU</span>
+          </button>
+          <button type="button" class="v-sq-item" id="scoresBtn">
+            <div class="v-sq-icon">👑</div>
+            <span class="v-sq-label">SCORES</span>
+          </button>
+          <button type="button" class="v-sq-item" id="retry">
+            <div class="v-sq-icon">↻</div>
+            <span class="v-sq-label">RESTART</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="agera_3d_data.js"></script>
+  <script src="vehicles.js"></script>
+  <script src="maps.js"></script>
+  <script src="main.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
