@@ -518,13 +518,13 @@ window.HillGame = {
     document.getElementById('crashCancelBtn').onclick = () => {
       document.getElementById('crashOverlay').classList.add('hidden');
       const distKm = distanceMeters / 1000;
-      window.GameUI?.onRunEnded?.(score, distKm, runTCoins);
+      const res = window.GameUI?.onRunEnded?.(score, distKm, runTCoins, nearMissCount) || { xpEarned: 0 };
       document.getElementById('finalScoreNum').textContent = score.toLocaleString('en-IN');
-      document.getElementById('summary').textContent = `DIST: ${distKm.toFixed(2)} KM • NEAR MISSES: ${nearMissCount} • T-COINS: +${runTCoins} 🟡`;
+      document.getElementById('summary').textContent = `DIST: ${distKm.toFixed(2)} KM • T-COINS: +${runTCoins} 🟡 • XP: +${res.xpEarned}`;
       document.getElementById('end').classList.remove('hidden');
     };
 
-    const exitToMenu = () => { stop(); document.getElementById('game').classList.add('hidden'); document.getElementById('menu').classList.remove('hidden'); };
+    const exitToMenu = () => { stop(); window.GameUI?.onReturnToLobby?.(); document.getElementById('game').classList.add('hidden'); document.getElementById('menu').classList.remove('hidden'); };
     document.getElementById('home').onclick = exitToMenu;
     document.getElementById('garage').onclick = exitToMenu;
     document.getElementById('retry').onclick = () => { stop(); window.GameUI.start(); };

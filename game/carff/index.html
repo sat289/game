@@ -11,7 +11,7 @@
 </head>
 <body>
   <div id="stage16x9" class="stage-16x9">
-    <!-- PROFESSIONAL LOGIN SCREEN (GOOGLE / FIREBASE + GUEST WITH UID) -->
+    <!-- LOGIN SCREEN (GOOGLE ACCOUNT PICKER + GUEST WITH AUTO UID) -->
     <div id="loginScreen" class="login-screen">
       <img class="lobby-bg-img" src="assets/backgrounds/homepage-bg.png" alt="Background">
       <div class="login-backdrop"></div>
@@ -27,26 +27,47 @@
 
         <button type="button" id="loginGoogleBtn" class="login-google-btn">
           <span class="g-badge">G</span>
-          <span>SIGN IN WITH GOOGLE (FIREBASE UID)</span>
+          <span>SIGN IN WITH GOOGLE (CHOOSE ACCOUNT)</span>
         </button>
 
-        <div class="login-divider"><span>OR EMAIL SIGN IN</span></div>
+        <div class="login-divider"><span>OR PLAY AS GUEST</span></div>
 
         <div class="login-fields">
-          <input type="text" id="loginName" class="login-input" placeholder="Racer Name (e.g. Satish)">
-          <input type="email" id="loginEmail" class="login-input" placeholder="Email Address (for Google/Firebase Sync)">
+          <input type="text" id="loginName" class="login-input" placeholder="Desired Username (optional)">
         </div>
 
         <div id="loginError" class="login-error hidden"></div>
-
-        <button type="button" id="loginSubmitBtn" class="login-primary-btn">
-          <span>CONTINUE WITH EMAIL</span>
-        </button>
 
         <button type="button" id="loginGuestBtn" class="login-guest-btn">
           <span>👤 PLAY AS GUEST (AUTO UID)</span>
           <small>Instant Play • Local Storage Save &amp; Friends UID</small>
         </button>
+      </div>
+
+      <!-- GOOGLE ACCOUNT CHOOSER OVERLAY -->
+      <div id="googlePickerModal" class="g-picker-overlay hidden">
+        <div class="g-picker-card">
+          <div class="g-picker-head">
+            <span class="g-badge">G</span>
+            <div>
+              <h3>Choose an account</h3>
+              <small>to continue to <b>ST GAMES 3D</b></small>
+            </div>
+            <button type="button" id="closeGooglePicker" class="g-picker-close">✕</button>
+          </div>
+
+          <div id="googleAccountsList" class="g-accounts-list"></div>
+
+          <div id="addOtherGoogleBox" class="g-other-box hidden">
+            <input type="email" id="otherGoogleEmail" class="g-input" placeholder="Gmail address (e.g. player@gmail.com)">
+            <input type="text" id="otherGoogleName" class="g-input" placeholder="Display Name (e.g. Satish)">
+            <button type="button" id="confirmOtherGoogleBtn" class="g-confirm-btn">Continue with this Google Account</button>
+          </div>
+
+          <button type="button" id="useAnotherGoogleBtn" class="g-other-trigger">
+            <span>👤</span> Use another account
+          </button>
+        </div>
       </div>
     </div>
 
@@ -55,19 +76,28 @@
       <img id="lobbyBgImg" class="lobby-bg-img" src="assets/backgrounds/homepage-bg.png" alt="Lobby Background">
       <div class="lobby-vignette"></div>
 
-      <!-- SINGLE SLEEK TOP BAR (LIKE FREE FIRE INDIA) -->
+      <!-- SINGLE SLEEK TOP BAR -->
       <header class="ff-topbar">
         <div class="ff-top-left">
-          <button type="button" class="ff-profile-pill" id="btnAccountTop" title="Account & UID">
-            <div class="ff-avatar">
-              <span>ST</span>
-              <em>56</em>
+          <!-- ACCOUNT PILL + LEVEL PROGRESS BAR BELOW ACCOUNT -->
+          <div class="ff-profile-stack">
+            <button type="button" class="ff-profile-pill" id="btnAccountTop" title="Account, Username & UID">
+              <div class="ff-avatar">
+                <span id="topAvatarInitials">ST</span>
+                <em id="topPlayerLevel">1</em>
+              </div>
+              <div class="ff-pinfo">
+                <strong id="topPlayerName">RACER</strong>
+                <small id="topPlayerUid">UID: 000000000</small>
+              </div>
+            </button>
+            <div class="ff-xp-bar-wrap" title="Level Progress">
+              <div class="ff-xp-track">
+                <div class="ff-xp-fill" id="topXpFill" style="width:0%;"></div>
+              </div>
+              <span class="ff-xp-text" id="topXpText">LV.1 • 0/1000 XP</span>
             </div>
-            <div class="ff-pinfo">
-              <strong id="topPlayerName">SATISH</strong>
-              <small id="topPlayerUid">UID: 000000000</small>
-            </div>
-          </button>
+          </div>
 
           <div class="ff-curr-pill" title="T-Coins (Earned on Near Miss)">
             <span class="ff-tcoin-ico">T</span>
@@ -82,7 +112,7 @@
 
         <div class="ff-top-right">
           <span class="ff-game-mark">ST GAMES <em>3D</em></span>
-          <button type="button" class="ff-top-ico" id="btnFriendsTop" title="Friends & Team Code">
+          <button type="button" class="ff-top-ico" id="btnFriendsTop" title="Friends, Requests & Team Code">
             <span>👥</span>
             <span class="ff-dot hidden" id="friendReqBadge">0</span>
           </button>
@@ -120,11 +150,11 @@
         <div id="orangeCustomBtns" style="display:flex;flex-direction:column;gap:5px;"></div>
       </nav>
 
-      <!-- RIGHT VERTICAL FRIENDS / SQUAD STRIP (FREE FIRE STYLE) -->
+      <!-- RIGHT VERTICAL FRIENDS / SQUAD STRIP (EMPTY UNTIL YOU ADD FRIENDS) -->
       <aside class="ff-right-friends" aria-label="Friends & Squad">
         <div class="ff-fr-head">
           <span>FRIENDS</span>
-          <button type="button" id="btnAddFriendQuick" title="Add by UID / Team Code">+</button>
+          <button type="button" id="btnAddFriendQuick" title="Add Friends / Requests">+</button>
         </div>
         <div id="rightFriendsList" class="ff-fr-list"></div>
         <button type="button" class="ff-teamcode-mini" id="btnTeamCodeMini">
@@ -141,9 +171,9 @@
 
         <canvas id="turntableCanvas"></canvas>
 
-        <!-- VOICE & MESSAGE BUTTONS DIRECTLY BELOW THE USER VEHICLE -->
+        <!-- LIVE VOICE & MESSAGE BUTTONS DIRECTLY BELOW THE USER VEHICLE -->
         <div class="ff-vehicle-comms">
-          <button type="button" class="ff-comm-btn" id="btnVoiceMic" title="Toggle Voice Mic">
+          <button type="button" class="ff-comm-btn" id="btnVoiceMic" title="Toggle Live Voice Mic">
             <span id="micIcon">🎙️</span>
             <small id="micLabel">VOICE OFF</small>
           </button>
@@ -151,7 +181,7 @@
             <span id="spkIcon">🔊</span>
             <small>AUDIO</small>
           </button>
-          <button type="button" class="ff-comm-btn ff-comm-msg" id="btnOpenChat" title="Team / World Chat">
+          <button type="button" class="ff-comm-btn ff-comm-msg" id="btnOpenChat" title="Live Squad Chat">
             <span>💬</span>
             <small>MESSAGE</small>
           </button>
@@ -162,7 +192,7 @@
       <div class="ff-bottom-left">
         <button type="button" class="ff-chat-ticker" id="chatTickerBtn">
           <span class="ff-chat-ico">💬</span>
-          <span id="chatTickerText">[Team] Tap MESSAGE to chat with friends!</span>
+          <span id="chatTickerText">[Live] Tap MESSAGE to chat with squad!</span>
         </button>
 
         <div class="ff-bottom-bar">
@@ -212,7 +242,7 @@
       </div>
     </div>
 
-    <!-- 3D HIGHWAY GAMEPLAY (REALISTIC NARROWER ROAD, SMOOTH TILT/DESKTOP, T-COINS ON NEAR MISS) -->
+    <!-- 3D HIGHWAY GAMEPLAY -->
     <div id="game" class="game hidden">
       <canvas id="highway3dCanvas"></canvas>
       <canvas id="canvas"></canvas>

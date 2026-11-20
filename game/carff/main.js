@@ -58,11 +58,62 @@
     try { localStorage.setItem(key, val); } catch (e) {}
   }
 
-  function generateNumericUID() {
-    let s = '';
-    for (let i = 0; i < 9; i++) s += Math.floor(Math.random() * 10);
-    if (s[0] === '0') s = '8' + s.slice(1);
-    return s;
+  function getAccountKey(mode, email) {
+    if (mode === 'google' && email) {
+      return 'google_' + String(email).trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+    }
+    let guestSlot = safeGetLS('sthw_guest_key', '');
+    if (!guestSlot) {
+      guestSlot = 'guest_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+      safeSetLS('sthw_guest_key', guestSlot);
+    }
+    return guestSlot;
+  }
+
+  async function getOrAssignSequentialUID(mode, email) {
+    const accKey = getAccountKey(mode, email);
+    let localMap = {};
+    try { localMap = JSON.parse(safeGetLS('sthw_account_uids', '{}')) || {}; } catch (e) { localMap = {}; }
+
+    // 1. Check if this account already has a UID in Firebase or LocalStorage
+    if (localMap[accKey]) return String(localMap[accKey]);
+    try {
+      const rAcc = await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/account_uids/${encodeURIComponent(accKey)}.json`, { cache: 'no-store' });
+      if (rAcc.ok) {
+        const existingUid = await rAcc.json();
+        if (existingUid) {
+          localMap[accKey] = String(existingUid);
+          safeSetLS('sthw_account_uids', JSON.stringify(localMap));
+          return String(existingUid);
+        }
+      }
+    } catch (e) {}
+
+    // 2. Allocate next sequential UID starting from 11111
+    let nextUid = Math.max(11111, parseInt(safeGetLS('sthw_uid_counter', '11111'), 10) || 11111);
+    try {
+      const rCnt = await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/uid_counter.json`, { cache: 'no-store' });
+      if (rCnt.ok) {
+        const fbCnt = parseInt(await rCnt.json(), 10);
+        if (!isNaN(fbCnt) && fbCnt >= 11111) nextUid = Math.max(nextUid, fbCnt + 1);
+      }
+    } catch (e) {}
+
+    const assigned = String(nextUid);
+    localMap[accKey] = assigned;
+    safeSetLS('sthw_account_uids', JSON.stringify(localMap));
+    safeSetLS('sthw_uid_counter', String(nextUid + 1));
+
+    try {
+      await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/uid_counter.json`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(nextUid)
+      });
+      await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/account_uids/${encodeURIComponent(accKey)}.json`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(assigned)
+      });
+    } catch (e) {}
+
+    return assigned;
   }
 
   function generateTeamCode() {
@@ -88,36 +139,111 @@
     updateLobbyHUD();
   }
 
-  // Account & UID (Guest + Google/Firebase only)
+  // ========================================================
+  // SLOW LEVELING & XP PROGRESS SYSTEM (STARTS AT LV 1)
+  // ========================================================
+  let playerLevel = Math.max(1, parseInt(safeGetLS('sthw_level', '1'), 10) || 1);
+  let playerXP = Math.max(0, parseInt(safeGetLS('sthw_xp', '0'), 10) || 0);
+
+  function xpForNextLevel(lv) {
+    return Math.floor(1000 * Math.pow(1.45, Math.max(0, lv - 1)));
+  }
+
+  function addPlayerXP(amount) {
+    if (!amount || amount <= 0) return false;
+    playerXP += Math.floor(amount);
+    let leveledUp = false;
+    while (playerXP >= xpForNextLevel(playerLevel)) {
+      playerXP -= xpForNextLevel(playerLevel);
+      playerLevel += 1;
+      leveledUp = true;
+    }
+    safeSetLS('sthw_level', String(playerLevel));
+    safeSetLS('sthw_xp', String(playerXP));
+    updateLobbyHUD();
+    return leveledUp;
+  }
+
+  // ========================================================
+  // ACCOUNT, GOOGLE ACCOUNT PICKER & AVAILABLE USERNAME SYSTEM
+  // ========================================================
   let currentUser = null;
   try { currentUser = JSON.parse(safeGetLS('sthw_fb_user', 'null')); } catch (e) { currentUser = null; }
   let sessionMode = safeGetLS('sthw_session_mode', ''); // 'google' | 'guest' | ''
   let playerUID = safeGetLS('sthw_player_uid', '');
-  if (!playerUID) {
-    playerUID = generateNumericUID();
+  if (!playerUID || playerUID.length > 7) {
+    playerUID = '11111';
     safeSetLS('sthw_player_uid', playerUID);
   }
 
-  // Friends & Squad State
+  // Saved Google accounts on this device for the Account Picker
+  let savedGoogleAccounts = [];
+  try {
+    savedGoogleAccounts = JSON.parse(safeGetLS('sthw_google_accounts', 'null')) || [
+      { name: 'Satish Kommana', email: 'satish.kommana@gmail.com' }
+    ];
+  } catch (e) {
+    savedGoogleAccounts = [{ name: 'Satish Kommana', email: 'satish.kommana@gmail.com' }];
+  }
+
+  function cleanUsernameKey(name) {
+    return String(name || '').trim().toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 18);
+  }
+
+  async function isUsernameAvailable(name) {
+    const key = cleanUsernameKey(name);
+    if (key.length < 3) return false;
+    try {
+      const r = await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/usernames/${encodeURIComponent(key)}.json`, { cache: 'no-store' });
+      if (r.ok) {
+        const ownerUid = await r.json();
+        return !ownerUid || ownerUid === playerUID;
+      }
+    } catch (e) {}
+    return true;
+  }
+
+  async function claimAvailableUsername(desiredName) {
+    let base = String(desiredName || 'RACER').trim().replace(/[^a-zA-Z0-9_ ]/g, '').replace(/\s+/g, '_').slice(0, 14) || 'RACER';
+    if (base.length < 3) base = 'RACER_' + playerUID.slice(-3);
+    let candidate = base;
+    for (let i = 0; i < 4; i++) {
+      if (await isUsernameAvailable(candidate)) break;
+      candidate = `${base.slice(0, 11)}_${Math.floor(100 + Math.random() * 900)}`;
+    }
+    const key = cleanUsernameKey(candidate);
+    try {
+      await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/usernames/${encodeURIComponent(key)}.json`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(playerUID)
+      });
+    } catch (e) {}
+    return candidate;
+  }
+
+  // ========================================================
+  // REAL FRIENDS & REQUESTS STATE (EMPTY BY DEFAULT — NO FAKE FRIENDS!)
+  // ========================================================
   let myTeamCode = safeGetLS('sthw_team_code', '') || generateTeamCode();
   safeSetLS('sthw_team_code', myTeamCode);
 
   let friendsList = [];
   try {
-    friendsList = JSON.parse(safeGetLS('sthw_friends', 'null')) || [
-      { uid: '842910531', name: 'TARUN_GT', carId: 'lambo_revuelto', online: true },
-      { uid: '719204882', name: 'TRINESH_FF', carId: 'bugatti_chiron', online: true },
-      { uid: '653019244', name: 'RAJA_PRO', carId: 'ferrari_sf90', online: true }
-    ];
+    const parsed = JSON.parse(safeGetLS('sthw_friends_v7', 'null'));
+    if (Array.isArray(parsed)) friendsList = parsed;
   } catch (e) { friendsList = []; }
 
-  let activeSquadFriend = null; // When set, TWO 3D cars rotate side-by-side on the ramp!
+  let incomingRequests = [];
+  let onlineDirectory = [];
+  let presenceStatus = 'online'; // 'online' | 'in_game'
+  let activeSquadFriend = null;
   try { activeSquadFriend = JSON.parse(safeGetLS('sthw_squad_friend', 'null')); } catch (e) { activeSquadFriend = null; }
+  if (activeSquadFriend && !friendsList.some(f => f.uid === activeSquadFriend.uid)) {
+    activeSquadFriend = null;
+  }
 
-  // Chat & Voice State
+  // Chat & Voice State (Live P2P only — ZERO Firebase storage)
   let chatMessages = [
-    { sender: 'TARUN_GT', text: 'Send Team Code bro, let us race!' },
-    { sender: 'SYSTEM', text: 'Near-miss traffic on highway to earn T-Coins!' }
+    { sender: 'SYSTEM', text: 'Add friends by UID or Team Code for Live Voice & Chat!' }
   ];
   let micActive = false, speakerOn = true, micStream = null;
 
@@ -144,8 +270,8 @@
   let liveConfig = {
     homepageBackground: "assets/backgrounds/homepage-bg.png",
     notifications: [
-      { id: "notif_v6", title: "🏎️ Cars-Only Highway + Tilt Steering & Duo Squad!", body: "Tilt mobile left/right to steer (default), add friends via UID/Team Code to see 2 rotating cars on the ramp, and earn T-Coins on near misses!", rewardCoins: 3000 },
-      { id: "notif_cloud", title: "☁️ Firebase UID & Voice/Chat Ready", body: "Your UID is linked with Firebase Cloud (friendsgame-872f5).", rewardCoins: 1500 }
+      { id: "notif_v7", title: "🏎️ v7.0: Real Friends, Google Picker & Level Progress!", body: "Only real added friends appear on the right, with live Online / Playing Game status, Accept/Reject requests, Google Account Picker, and slow Level XP bar!", rewardCoins: 3000 },
+      { id: "notif_cloud", title: "☁️ Live P2P Voice & Chat Ready", body: "Voice and messages stream live via WebRTC without storing chats on Firebase.", rewardCoins: 1500 }
     ],
     events: [
       { id: "ev_sunset", title: "🌅 Sunset Near-Miss T-Coin Rush", desc: "Pass close to traffic cars to earn massive T-Coins!", map: "Sunset Highway", vehicle: "agera", rewardCoins: 5000, badge: "T-COIN CUP" },
@@ -205,7 +331,6 @@
       $('#lobbyBgImg').src = liveConfig.homepageBackground;
     }
 
-    // CARS ONLY: filter out any bikes
     const baseVehs = JSON.parse(JSON.stringify(window.DEFAULT_VEHICLES || [])).filter(v => v.type !== 'bike');
     const customVehs = (Array.isArray(liveConfig.customVehicles) ? liveConfig.customVehicles : []).filter(v => v && v.id && v.type !== 'bike');
     const mergedVehs = [...baseVehs];
@@ -216,7 +341,6 @@
       if (idx >= 0) mergedVehs[idx] = Object.assign({}, mergedVehs[idx], cv);
       else mergedVehs.unshift(cv);
       if ((cv.autoUnlock !== false || cv.price === 0) && !owned.includes(cv.id)) owned.push(cv.id);
-      // Preload custom 3D models so they can also spawn as highway opponents!
       ensureCustomModelLoaded(cv);
     });
     window.VEHICLES = mergedVehs;
@@ -285,6 +409,8 @@
     safeSetLS('sthwCoins', String(coins));
     safeSetLS('sthwGems', String(gems));
     safeSetLS('sthwBestDistKm', String(bestDistKm.toFixed(2)));
+    safeSetLS('sthw_level', String(playerLevel));
+    safeSetLS('sthw_xp', String(playerXP));
     safeSetLS('sthwVehicle', selected);
     safeSetLS('sthwSkin', selectedSkin);
     safeSetLS('sthwMap', mapName);
@@ -293,21 +419,24 @@
     safeSetLS('sthwUpgrade', JSON.stringify(upgrade));
     safeSetLS('sthwMaps', JSON.stringify(unlockedMapsList));
     safeSetLS('sthwClaimedNotifs', JSON.stringify(claimedNotifs));
-    safeSetLS('sthw_friends', JSON.stringify(friendsList));
+    safeSetLS('sthw_friends_v7', JSON.stringify(friendsList));
     safeSetLS('sthw_squad_friend', JSON.stringify(activeSquadFriend));
 
     updateLobbyHUD();
 
-    // Sync UID directory + user profile to Firebase (Guest & Google both get UID)
     const displayName = (currentUser && currentUser.name) ? currentUser.name : 'GUEST_' + playerUID.slice(-4);
     const payload = {
       uid: playerUID,
       authMode: sessionMode || 'guest',
       name: displayName,
       email: (currentUser && currentUser.email) || '',
+      level: playerLevel,
+      xp: playerXP,
       coins, gems, bestDistKm, selected, selectedSkin, mapName,
       owned, ownedSkins, savedMaps: unlockedMapsList, upgrade,
       teamCode: myTeamCode,
+      status: presenceStatus,
+      lastSeen: Date.now(),
       updatedAt: new Date().toISOString()
     };
     try {
@@ -316,9 +445,138 @@
       });
       await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/teamcodes/${encodeURIComponent(myTeamCode)}.json`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid: playerUID, name: displayName, carId: selected, teamCode: myTeamCode })
+        body: JSON.stringify({ uid: playerUID, name: displayName, carId: selected, teamCode: myTeamCode, status: presenceStatus, lastSeen: Date.now() })
       });
     } catch (e) {}
+  }
+
+  // ========================================================
+  // REAL-TIME PRESENCE, FRIEND REQUESTS & ONLINE DIRECTORY
+  // ========================================================
+  function computeLiveStatus(rec) {
+    if (!rec || !rec.lastSeen) return 'offline';
+    const age = Date.now() - Number(rec.lastSeen);
+    if (age > 45000) return 'offline';
+    return rec.status === 'in_game' ? 'in_game' : 'online';
+  }
+
+  async function pollPresenceAndRequests() {
+    if (!sessionMode) return;
+    const now = Date.now();
+    // 1. Update my heartbeat
+    try {
+      await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/uids/${encodeURIComponent(playerUID)}/lastSeen.json`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(now)
+      });
+      await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/uids/${encodeURIComponent(playerUID)}/status.json`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(presenceStatus)
+      });
+    } catch (e) {}
+
+    // 2. Poll incoming friend requests
+    try {
+      const r = await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/friend_requests/${encodeURIComponent(playerUID)}.json`, { cache: 'no-store' });
+      if (r.ok) {
+        const data = await r.json();
+        incomingRequests = data ? Object.values(data).filter(x => x && x.uid && !friendsList.some(f => f.uid === x.uid)) : [];
+      }
+    } catch (e) {}
+
+    // 3. Poll accepted friends synced from Firebase + live status of all players
+    try {
+      const rAll = await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/uids.json`, { cache: 'no-store' });
+      if (rAll.ok) {
+        const allMap = await rAll.json() || {};
+        const arr = Object.values(allMap).filter(u => u && u.uid && u.uid !== playerUID);
+        onlineDirectory = arr.map(u => ({
+          uid: u.uid,
+          name: u.name || ('RACER_' + String(u.uid).slice(-4)),
+          carId: u.selected || 'agera',
+          level: u.level || 1,
+          liveStatus: computeLiveStatus(u)
+        })).sort((a, b) => (a.liveStatus === 'offline' ? 1 : 0) - (b.liveStatus === 'offline' ? 1 : 0));
+
+        // Update live status of my added friends
+        friendsList = friendsList.map(fr => {
+          const live = allMap[fr.uid];
+          if (!live) return Object.assign({}, fr, { liveStatus: 'offline' });
+          return Object.assign({}, fr, {
+            name: live.name || fr.name,
+            carId: live.selected || fr.carId || 'agera',
+            level: live.level || fr.level || 1,
+            liveStatus: computeLiveStatus(live)
+          });
+        });
+        safeSetLS('sthw_friends_v7', JSON.stringify(friendsList));
+      }
+    } catch (e) {}
+
+    // Also pull any friends who accepted my request
+    try {
+      const rAcc = await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/friends/${encodeURIComponent(playerUID)}.json`, { cache: 'no-store' });
+      if (rAcc.ok) {
+        const accMap = await rAcc.json();
+        if (accMap && typeof accMap === 'object') {
+          Object.values(accMap).forEach(fr => {
+            if (fr && fr.uid && !friendsList.some(x => x.uid === fr.uid)) {
+              friendsList.push({ uid: fr.uid, name: fr.name || 'RACER', carId: fr.carId || 'agera', liveStatus: 'online' });
+            }
+          });
+          safeSetLS('sthw_friends_v7', JSON.stringify(friendsList));
+        }
+      }
+    } catch (e) {}
+
+    updateLobbyHUD();
+  }
+
+  async function sendFriendRequestToUID(targetUid) {
+    const cleanUid = String(targetUid || '').trim();
+    if (cleanUid.length < 4 || cleanUid === playerUID) {
+      showToast('Enter a valid friend UID!');
+      return;
+    }
+    if (friendsList.some(f => f.uid === cleanUid)) {
+      showToast('Already in your friends list!');
+      return;
+    }
+    const myName = (currentUser && currentUser.name) || ('GUEST_' + playerUID.slice(-4));
+    const reqObj = { uid: playerUID, name: myName, carId: selected, level: playerLevel, ts: Date.now() };
+    try {
+      await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/friend_requests/${encodeURIComponent(cleanUid)}/${encodeURIComponent(playerUID)}.json`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(reqObj)
+      });
+      showToast(`📩 Friend Request sent to UID: ${cleanUid}!`);
+    } catch (e) {
+      showToast('Could not send request right now.');
+    }
+  }
+
+  async function acceptFriendRequest(reqObj) {
+    if (!reqObj || !reqObj.uid) return;
+    if (!friendsList.some(f => f.uid === reqObj.uid)) {
+      friendsList.unshift({ uid: reqObj.uid, name: reqObj.name || 'RACER', carId: reqObj.carId || 'agera', level: reqObj.level || 1, liveStatus: 'online' });
+    }
+    incomingRequests = incomingRequests.filter(r => r.uid !== reqObj.uid);
+    const myName = (currentUser && currentUser.name) || ('GUEST_' + playerUID.slice(-4));
+    try {
+      await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/friend_requests/${encodeURIComponent(playerUID)}/${encodeURIComponent(reqObj.uid)}.json`, { method: 'DELETE' });
+      await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/friends/${encodeURIComponent(reqObj.uid)}/${encodeURIComponent(playerUID)}.json`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid: playerUID, name: myName, carId: selected })
+      });
+    } catch (e) {}
+    await savePlayerState();
+    showToast(`✅ Accepted ${reqObj.name}! Now friends!`);
+  }
+
+  async function rejectFriendRequest(uid) {
+    incomingRequests = incomingRequests.filter(r => r.uid !== uid);
+    try {
+      await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/friend_requests/${encodeURIComponent(playerUID)}/${encodeURIComponent(uid)}.json`, { method: 'DELETE' });
+    } catch (e) {}
+    updateLobbyHUD();
+    showToast('❌ Friend request rejected.');
   }
 
   function getVehicle(id) {
@@ -329,15 +587,18 @@
   function getMap() { return (window.MAPS || []).find(m => m.name === mapName) || window.MAPS[0]; }
 
   // ========================================================
-  // LOGIN SCREEN (GOOGLE SIGN-IN + GUEST WITH AUTO UID)
+  // LOGIN SCREEN & GOOGLE ACCOUNT PICKER
   // ========================================================
   function enterLobby() {
     $('#loginScreen')?.classList.add('hidden');
+    $('#googlePickerModal')?.classList.add('hidden');
     $('#menu')?.classList.remove('hidden');
+    presenceStatus = 'online';
     updateLobbyHUD();
     syncTurntableCameraSize();
     rebuildTurntableVehicle();
     initLivePeer(myTeamCode, true);
+    pollPresenceAndRequests();
   }
 
   function openLoginScreen() {
@@ -346,39 +607,72 @@
     $('#loginScreen')?.classList.remove('hidden');
   }
 
+  function renderGoogleAccountsPicker(onSelectAccount) {
+    const listEl = $('#googleAccountsList');
+    if (!listEl) return;
+    listEl.innerHTML = savedGoogleAccounts.map((acc, idx) => {
+      const initials = (acc.name || 'G').slice(0, 2).toUpperCase();
+      return `<button type="button" class="g-acc-item" data-g-idx="${idx}">
+        <div class="g-acc-avatar">${initials}</div>
+        <div><strong>${acc.name}</strong><small>${acc.email}</small></div>
+      </button>`;
+    }).join('');
+
+    listEl.querySelectorAll('[data-g-idx]').forEach(btn => {
+      btn.onclick = () => {
+        const acc = savedGoogleAccounts[parseInt(btn.dataset.gIdx, 10)];
+        if (acc) onSelectAccount(acc);
+      };
+    });
+  }
+
   function initLoginScreen() {
     const googleBtn = $('#loginGoogleBtn');
-    const submitBtn = $('#loginSubmitBtn');
     const guestBtn = $('#loginGuestBtn');
     const nameIn = $('#loginName');
-    const emailIn = $('#loginEmail');
-    const errEl = $('#loginError');
+    const pickerModal = $('#googlePickerModal');
+    const closePicker = $('#closeGooglePicker');
+    const useOtherBtn = $('#useAnotherGoogleBtn');
+    const otherBox = $('#addOtherGoogleBox');
+    const confirmOtherBtn = $('#confirmOtherGoogleBtn');
 
-    const finishLogin = async (mode, name, email) => {
+    const finishLogin = async (mode, rawName, email) => {
+      showToast('⏳ Assigning unique UID & checking username...');
+      playerUID = await getOrAssignSequentialUID(mode, email);
+      safeSetLS('sthw_player_uid', playerUID);
+      const availableName = await claimAvailableUsername(rawName);
       sessionMode = mode;
-      currentUser = { uid: playerUID, name, email: email || '', mode };
+      currentUser = { uid: playerUID, name: availableName, email: email || '', mode };
       safeSetLS('sthw_fb_user', JSON.stringify(currentUser));
       safeSetLS('sthw_session_mode', mode);
       await savePlayerState();
       enterLobby();
-      showToast(`✅ Signed in as ${name} • UID: ${playerUID}`);
+      showToast(`✅ Welcome ${availableName} • UID: ${playerUID}`);
     };
 
     googleBtn?.addEventListener('click', () => {
-      const n = (nameIn?.value || '').trim() || 'Satish Kommana';
-      const em = (emailIn?.value || '').trim() || 'satish@gmail.com';
-      finishLogin('google', n, em);
+      otherBox?.classList.add('hidden');
+      renderGoogleAccountsPicker(acc => {
+        finishLogin('google', acc.name, acc.email);
+      });
+      pickerModal?.classList.remove('hidden');
     });
 
-    submitBtn?.addEventListener('click', () => {
-      const n = (nameIn?.value || '').trim() || 'ST Racer';
-      const em = (emailIn?.value || '').trim();
+    closePicker?.addEventListener('click', () => pickerModal?.classList.add('hidden'));
+    useOtherBtn?.addEventListener('click', () => otherBox?.classList.toggle('hidden'));
+
+    confirmOtherBtn?.addEventListener('click', () => {
+      const em = ($('#otherGoogleEmail')?.value || '').trim();
+      const nm = ($('#otherGoogleName')?.value || '').trim() || (em.split('@')[0] || 'Racer');
       if (!em || !em.includes('@')) {
-        if (errEl) { errEl.textContent = 'Enter a valid email or click Google / Guest.'; errEl.classList.remove('hidden'); }
+        showToast('Enter a valid Gmail address!');
         return;
       }
-      errEl?.classList.add('hidden');
-      finishLogin('google', n, em);
+      if (!savedGoogleAccounts.some(a => a.email.toLowerCase() === em.toLowerCase())) {
+        savedGoogleAccounts.unshift({ name: nm, email: em });
+        safeSetLS('sthw_google_accounts', JSON.stringify(savedGoogleAccounts));
+      }
+      finishLogin('google', nm, em);
     });
 
     guestBtn?.addEventListener('click', () => {
@@ -391,16 +685,35 @@
   }
 
   // ========================================================
-  // RIGHT FRIENDS STRIP & LOBBY HUD
+  // RIGHT FRIENDS STRIP (SHOWS ONLY ADDED FRIENDS OR "ADD FRIENDS")
   // ========================================================
   function renderRightFriendsStrip() {
     const el = $('#rightFriendsList');
     if (!el) return;
+
+    if (!friendsList.length) {
+      el.innerHTML = `<div class="ff-fr-empty">
+        <small>No friends added yet</small>
+        <button type="button" class="ff-fr-add-cta" id="btnEmptyAddFriends">➕ ADD FRIENDS</button>
+      </div>`;
+      $('#btnEmptyAddFriends')?.addEventListener('click', () => openModalPanel('friends', 'add'));
+      return;
+    }
+
     el.innerHTML = friendsList.map(fr => {
       const inSq = activeSquadFriend && activeSquadFriend.uid === fr.uid;
+      const st = fr.liveStatus || 'offline';
+      const stLabel = st === 'in_game' ? '🏎️ PLAYING' : st === 'online' ? '🟢 ONLINE' : '⚫ OFFLINE';
+      const stClass = st === 'in_game' ? 'playing' : st === 'online' ? 'online' : 'offline';
+      const canInvite = st === 'online' || inSq;
       return `<div class="ff-fr-row ${inSq ? 'in-squad' : ''}">
-        <span class="ff-fr-name" title="${fr.name} (UID: ${fr.uid})">${fr.name}</span>
-        <button type="button" class="ff-fr-inv" data-inv-uid="${fr.uid}" title="${inSq ? 'Remove from Squad' : 'Invite to Lobby'}">${inSq ? '✓' : '+'}</button>
+        <div style="min-width:0;">
+          <span class="ff-fr-name" title="${fr.name} (UID: ${fr.uid})">${fr.name}</span>
+          <span class="ff-fr-status ${stClass}">${stLabel}</span>
+        </div>
+        ${canInvite
+          ? `<button type="button" class="ff-fr-inv" data-inv-uid="${fr.uid}" title="${inSq ? 'Remove from Squad' : 'Invite to Duo Lobby'}">${inSq ? '✓' : '+'}</button>`
+          : `<span style="font-size:9px;color:#64748b;font-weight:800;">${st === 'in_game' ? '🏁' : '—'}</span>`}
       </div>`;
     }).join('');
 
@@ -424,8 +737,24 @@
   function updateLobbyHUD() {
     if ($('#coins')) $('#coins').textContent = coins.toLocaleString('en-IN');
     if ($('#gems')) $('#gems').textContent = gems.toLocaleString('en-IN');
-    if ($('#topPlayerName')) $('#topPlayerName').textContent = ((currentUser && currentUser.name) || 'GUEST').toUpperCase();
+    const dispName = ((currentUser && currentUser.name) || 'GUEST').toUpperCase();
+    if ($('#topPlayerName')) $('#topPlayerName').textContent = dispName;
+    if ($('#topAvatarInitials')) $('#topAvatarInitials').textContent = dispName.slice(0, 2);
     if ($('#topPlayerUid')) $('#topPlayerUid').textContent = `UID: ${playerUID}`;
+
+    // Level & XP Progress Bar below Account
+    const reqXp = xpForNextLevel(playerLevel);
+    const pct = Math.min(100, Math.round((playerXP / reqXp) * 100));
+    if ($('#topPlayerLevel')) $('#topPlayerLevel').textContent = String(playerLevel);
+    if ($('#topXpFill')) $('#topXpFill').style.width = pct + '%';
+    if ($('#topXpText')) $('#topXpText').textContent = `LV.${playerLevel} • ${playerXP}/${reqXp} XP`;
+
+    // Incoming Friend Requests Badge
+    const reqBadge = $('#friendReqBadge');
+    if (reqBadge) {
+      reqBadge.textContent = String(incomingRequests.length);
+      reqBadge.classList.toggle('hidden', incomingRequests.length === 0);
+    }
 
     const v = getVehicle();
     if ($('#activeCarName')) {
@@ -509,9 +838,7 @@
   function attachDataConn(conn) {
     liveDataConn = conn;
     remotePeerId = conn.peer;
-    conn.on('open', () => {
-      showToast('🟢 Live P2P Squad Chat & Voice Connected!');
-    });
+    conn.on('open', () => showToast('🟢 Live P2P Squad Chat & Voice Connected!'));
     conn.on('data', (data) => {
       if (data && data.type === 'chat' && data.text) {
         appendLiveChatUI(data.sender || 'FRIEND', data.text);
@@ -555,17 +882,13 @@
       }
     });
 
-    livePeer.on('connection', (conn) => {
-      attachDataConn(conn);
-    });
-
+    livePeer.on('connection', (conn) => attachDataConn(conn));
     livePeer.on('call', (call) => {
       liveMediaCall = call;
       remotePeerId = call.peer;
       call.answer(micActive && micStream ? micStream : undefined);
       call.on('stream', attachRemoteAudioStream);
     });
-
     livePeer.on('error', () => {});
   }
 
@@ -612,7 +935,6 @@
     const clean = (text || '').trim();
     if (!clean) return;
     const sender = (currentUser && currentUser.name) || 'RACER';
-    // Live P2P only — NOT stored on Firebase!
     appendLiveChatUI(sender, clean);
     if (liveDataConn && liveDataConn.open) {
       liveDataConn.send({ type: 'chat', sender, text: clean });
@@ -780,7 +1102,6 @@
     if (friendCarGroup) { scene.remove(friendCarGroup); friendCarGroup = null; }
 
     if (activeSquadFriend) {
-      // DUO SQUAD: Show TWO cars side-by-side on the ramp, both rotating!
       carGroup = buildAnyVehicle3D(veh, getSkin(), 2.55);
       carGroup.position.set(-1.35, RAMP_Y, 0.25);
       carGroup.rotation.y = currentRotationY;
@@ -883,7 +1204,7 @@
   }
 
   // ========================================================
-  // MODAL PANELS (FRIENDS/TEAMCODE, CHAT, SETTINGS, STORE, GARAGE)
+  // REMODELED FRIENDS MODAL & OTHER PANELS
   // ========================================================
   function openModalPanel(panelName, initialTab) {
     const modal = $('#modal'), titleEl = $('#title'), contentEl = $('#content');
@@ -891,108 +1212,193 @@
     modal.classList.remove('hidden');
 
     if (panelName === 'friends') {
-      titleEl.textContent = '👥 FRIENDS & TEAM CODE (FREE FIRE STYLE)';
-      contentEl.innerHTML = `
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
-          <div class="item-card">
-            <strong>🆔 YOUR UID: <span style="color:#fde047;">${playerUID}</span></strong>
-            <small>Share with friends (Guest &amp; Google UID)</small>
-            <button type="button" class="card-action-btn" id="copyUidBtn">📋 COPY UID</button>
-          </div>
-          <div class="item-card">
-            <strong>🔗 TEAM CODE: <span style="color:#38bdf8;">${myTeamCode}</span></strong>
-            <small>Invite friend to join Duo Lobby (2 Cars)</small>
-            <button type="button" class="card-action-btn buy" id="copyTeamBtn">📋 COPY TEAM CODE</button>
-          </div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
-          <div class="item-card">
-            <strong>➕ ADD FRIEND BY UID</strong>
-            <input id="addFriendUidIn" class="auth-input" placeholder="Enter 9-digit Friend UID">
-            <button type="button" class="card-action-btn buy" id="addFriendUidBtn">SEND REQUEST &amp; ADD</button>
-          </div>
-          <div class="item-card">
-            <strong>🚀 JOIN SQUAD BY TEAM CODE</strong>
-            <input id="joinTeamCodeIn" class="auth-input" placeholder="Enter 6-digit Team Code">
-            <button type="button" class="card-action-btn equipped" id="joinTeamCodeBtn">JOIN DUO LOBBY</button>
-          </div>
-        </div>
-        <div class="grid-cards">
-          ${friendsList.map(fr => {
-            const inSq = activeSquadFriend && activeSquadFriend.uid === fr.uid;
-            return `<div class="item-card ${inSq ? 'selected' : ''}">
-              <div><strong>👤 ${fr.name}</strong><small>UID: ${fr.uid} • 🟢 ONLINE</small></div>
-              <button type="button" class="card-action-btn ${inSq ? 'danger' : 'equipped'}" data-modal-inv="${fr.uid}">
-                ${inSq ? 'LEAVE DUO' : '➕ ADD TO LOBBY (2 CARS)'}
-              </button>
+      const activeTab = initialTab || (incomingRequests.length ? 'requests' : friendsList.length ? 'list' : 'add');
+      titleEl.textContent = '👥 FRIENDS & SQUAD (FREE FIRE STYLE)';
+
+      const renderFriendsTab = (tab) => {
+        let bodyHtml = '';
+
+        if (tab === 'list') {
+          if (!friendsList.length) {
+            bodyHtml = `<div class="item-card" style="text-align:center;padding:18px;">
+              <strong>No friends added yet</strong>
+              <small style="margin:4px 0 10px;">Go to the <b>ADD FRIENDS</b> tab to send a request by UID or join via Team Code.</small>
+              <button type="button" class="card-action-btn buy" id="goAddTabBtn" style="max-width:220px;margin:0 auto;">➕ ADD FRIENDS</button>
             </div>`;
-          }).join('')}
-        </div>`;
-
-      $('#copyUidBtn').onclick = () => { navigator.clipboard?.writeText(playerUID).catch(() => {}); showToast(`Copied UID: ${playerUID}`); };
-      $('#copyTeamBtn').onclick = () => { navigator.clipboard?.writeText(myTeamCode).catch(() => {}); showToast(`Copied Team Code: ${myTeamCode}`); };
-
-      $('#addFriendUidBtn').onclick = async () => {
-        const uid = ($('#addFriendUidIn').value || '').trim();
-        if (uid.length < 4) { showToast('Enter a valid UID!'); return; }
-        let name = 'RACER_' + uid.slice(-4), carId = 'lambo_revuelto';
-        try {
-          const r = await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/uids/${encodeURIComponent(uid)}.json`);
-          if (r.ok) {
-            const d = await r.json();
-            if (d && d.name) { name = d.name; carId = d.selected || carId; }
+          } else {
+            bodyHtml = `<div class="grid-cards">${friendsList.map(fr => {
+              const inSq = activeSquadFriend && activeSquadFriend.uid === fr.uid;
+              const st = fr.liveStatus || 'offline';
+              const stBadge = st === 'in_game' ? '🏎️ PLAYING GAME' : st === 'online' ? '🟢 ONLINE' : '⚫ OFFLINE';
+              return `<div class="item-card ${inSq ? 'selected' : ''}">
+                <div>
+                  <strong>👤 ${fr.name} <small style="display:inline;color:#fde047;">LV.${fr.level || 1}</small></strong>
+                  <small>UID: ${fr.uid} • ${stBadge}</small>
+                </div>
+                <div style="display:flex;gap:5px;">
+                  ${st === 'online' || inSq
+                    ? `<button type="button" class="card-action-btn ${inSq ? 'danger' : 'equipped'}" data-modal-inv="${fr.uid}">${inSq ? 'LEAVE DUO' : 'INVITE DUO'}</button>`
+                    : `<button type="button" class="card-action-btn" disabled style="opacity:0.55;">${st === 'in_game' ? 'IN GAME' : 'OFFLINE'}</button>`}
+                  <button type="button" class="card-action-btn danger" style="width:36px;" data-del-fr="${fr.uid}" title="Remove Friend">✕</button>
+                </div>
+              </div>`;
+            }).join('')}</div>`;
           }
-        } catch (e) {}
-        if (!friendsList.some(f => f.uid === uid)) friendsList.unshift({ uid, name, carId, online: true });
-        activeSquadFriend = { uid, name, carId, online: true };
-        await savePlayerState();
-        rebuildTurntableVehicle();
-        openModalPanel('friends');
-        showToast(`👥 Added ${name} & joined Duo Lobby (2 rotating cars)!`);
-      };
-
-      $('#joinTeamCodeBtn').onclick = async () => {
-        const code = ($('#joinTeamCodeIn').value || '').trim();
-        if (code.length < 4) { showToast('Enter a 6-digit Team Code!'); return; }
-        let fr = { uid: '99' + code, name: 'SQUAD_' + code.slice(-3), carId: 'ferrari_sf90', online: true };
-        try {
-          const r = await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/teamcodes/${encodeURIComponent(code)}.json`);
-          if (r.ok) {
-            const d = await r.json();
-            if (d && d.uid) fr = { uid: d.uid, name: d.name || fr.name, carId: d.carId || fr.carId, online: true };
+        } else if (tab === 'requests') {
+          if (!incomingRequests.length) {
+            bodyHtml = `<div class="item-card" style="text-align:center;padding:18px;">
+              <strong>No pending friend requests</strong>
+              <small>When another player sends a request to your UID (<b>${playerUID}</b>), you can Accept or Reject it here.</small>
+            </div>`;
+          } else {
+            bodyHtml = `<div style="display:flex;flex-direction:column;gap:8px;">${incomingRequests.map(req => `
+              <div class="fr-req-row">
+                <div>
+                  <strong style="font-size:12.5px;color:#fff;">👤 ${req.name} <small style="color:#fde047;">LV.${req.level || 1}</small></strong>
+                  <small style="display:block;font-size:10px;color:#94a3b8;">UID: ${req.uid} • Wants to be your friend</small>
+                </div>
+                <div style="display:flex;gap:6px;">
+                  <button type="button" class="card-action-btn equipped" style="width:auto;" data-acc-req="${req.uid}">✅ ACCEPT</button>
+                  <button type="button" class="card-action-btn danger" style="width:auto;" data-rej-req="${req.uid}">❌ REJECT</button>
+                </div>
+              </div>`).join('')}</div>`;
           }
-        } catch (e) {}
-        if (!friendsList.some(f => f.uid === fr.uid)) friendsList.unshift(fr);
-        activeSquadFriend = fr;
-        myTeamCode = code;
-        initLivePeer(code, false);
-        await savePlayerState();
-        rebuildTurntableVehicle();
-        modal.classList.add('hidden');
-        showToast(`🔗 Joined Team ${code} with ${fr.name}!`);
-      };
+        } else {
+          const onlineNow = onlineDirectory.filter(u => !friendsList.some(f => f.uid === u.uid));
+          bodyHtml = `
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+              <div class="item-card">
+                <strong>🔎 SEND FRIEND REQUEST BY UID</strong>
+                <input id="addFriendUidIn" class="auth-input" placeholder="Enter Friend UID (e.g. 11111)">
+                <button type="button" class="card-action-btn buy" id="addFriendUidBtn">📩 SEND REQUEST</button>
+              </div>
+              <div class="item-card">
+                <strong>🚀 JOIN DUO BY TEAM CODE</strong>
+                <input id="joinTeamCodeIn" class="auth-input" placeholder="Enter 6-digit Team Code">
+                <button type="button" class="card-action-btn equipped" id="joinTeamCodeBtn">🔗 JOIN SQUAD</button>
+              </div>
+            </div>
+            <div style="margin-bottom:6px;font-size:11px;font-weight:900;color:#38bdf8;">🌐 PLAYERS DIRECTORY (LIVE STATUS)</div>
+            ${onlineNow.length ? `<div class="grid-cards">${onlineNow.slice(0, 8).map(u => {
+              const stBadge = u.liveStatus === 'in_game' ? '🏎️ PLAYING GAME' : u.liveStatus === 'online' ? '🟢 ONLINE' : '⚫ OFFLINE';
+              return `<div class="item-card">
+                <div>
+                  <strong>👤 ${u.name} <small style="display:inline;color:#fde047;">LV.${u.level}</small></strong>
+                  <small>UID: ${u.uid} • ${stBadge}</small>
+                </div>
+                <button type="button" class="card-action-btn ${u.liveStatus === 'online' ? 'buy' : ''}" data-send-req="${u.uid}" ${u.liveStatus === 'offline' ? 'disabled style="opacity:0.5;"' : ''}>
+                  ${u.liveStatus === 'offline' ? 'OFFLINE' : '📩 SEND REQUEST'}
+                </button>
+              </div>`;
+            }).join('')}</div>` : `<div class="item-card"><small>No other online players right now. Share your UID (<b>${playerUID}</b>) or Team Code (<b>${myTeamCode}</b>) with friends!</small></div>`}`;
+        }
 
-      contentEl.querySelectorAll('[data-modal-inv]').forEach(b => {
-        b.onclick = () => {
-          const fr = friendsList.find(x => x.uid === b.dataset.modalInv);
-          if (!fr) return;
-          activeSquadFriend = (activeSquadFriend && activeSquadFriend.uid === fr.uid) ? null : fr;
-          savePlayerState();
+        contentEl.innerHTML = `
+          <div class="fr-hero-bar">
+            <div class="fr-hero-pill">
+              <div><small>YOUR UID</small><strong>${playerUID}</strong></div>
+              <button type="button" class="fr-mini-btn" id="copyUidBtn">📋 COPY</button>
+            </div>
+            <div class="fr-hero-pill">
+              <div><small>YOUR TEAM CODE</small><strong style="color:#38bdf8;">${myTeamCode}</strong></div>
+              <button type="button" class="fr-mini-btn" id="copyTeamBtn">📋 COPY</button>
+            </div>
+          </div>
+          <div class="tab-bar">
+            <button type="button" class="tab-pill ${tab === 'list' ? 'active' : ''}" data-fr-tab="list">👥 MY FRIENDS (${friendsList.length})</button>
+            <button type="button" class="tab-pill ${tab === 'requests' ? 'active' : ''}" data-fr-tab="requests">📩 REQUESTS (${incomingRequests.length})</button>
+            <button type="button" class="tab-pill ${tab === 'add' ? 'active' : ''}" data-fr-tab="add">➕ ADD FRIENDS</button>
+          </div>
+          ${bodyHtml}`;
+
+        $('#copyUidBtn').onclick = () => { navigator.clipboard?.writeText(playerUID).catch(() => {}); showToast(`Copied UID: ${playerUID}`); };
+        $('#copyTeamBtn').onclick = () => { navigator.clipboard?.writeText(myTeamCode).catch(() => {}); showToast(`Copied Team Code: ${myTeamCode}`); };
+        contentEl.querySelectorAll('[data-fr-tab]').forEach(b => { b.onclick = () => renderFriendsTab(b.dataset.frTab); });
+        $('#goAddTabBtn')?.addEventListener('click', () => renderFriendsTab('add'));
+
+        $('#addFriendUidBtn')?.addEventListener('click', async () => {
+          await sendFriendRequestToUID($('#addFriendUidIn').value);
+        });
+
+        $('#joinTeamCodeBtn')?.addEventListener('click', async () => {
+          const code = ($('#joinTeamCodeIn').value || '').trim();
+          if (code.length < 4) { showToast('Enter a 6-digit Team Code!'); return; }
+          let fr = null;
+          try {
+            const r = await fetch(`${FIREBASE_DB_URL}/st_hill_climb_v2/teamcodes/${encodeURIComponent(code)}.json`, { cache: 'no-store' });
+            if (r.ok) {
+              const d = await r.json();
+              if (d && d.uid && d.uid !== playerUID) {
+                fr = { uid: d.uid, name: d.name || 'SQUAD', carId: d.carId || 'agera', liveStatus: 'online' };
+              }
+            }
+          } catch (e) {}
+          if (!fr) { showToast('Team Code not found or expired!'); return; }
+          if (!friendsList.some(f => f.uid === fr.uid)) friendsList.unshift(fr);
+          activeSquadFriend = fr;
+          myTeamCode = code;
+          initLivePeer(code, false);
+          await savePlayerState();
           rebuildTurntableVehicle();
-          openModalPanel('friends');
-        };
-      });
+          modal.classList.add('hidden');
+          showToast(`🔗 Joined Team ${code} with ${fr.name}!`);
+        });
+
+        contentEl.querySelectorAll('[data-send-req]').forEach(b => {
+          b.onclick = () => sendFriendRequestToUID(b.dataset.sendReq);
+        });
+
+        contentEl.querySelectorAll('[data-acc-req]').forEach(b => {
+          b.onclick = async () => {
+            const req = incomingRequests.find(x => x.uid === b.dataset.accReq);
+            await acceptFriendRequest(req);
+            renderFriendsTab('requests');
+          };
+        });
+
+        contentEl.querySelectorAll('[data-rej-req]').forEach(b => {
+          b.onclick = async () => {
+            await rejectFriendRequest(b.dataset.rejReq);
+            renderFriendsTab('requests');
+          };
+        });
+
+        contentEl.querySelectorAll('[data-modal-inv]').forEach(b => {
+          b.onclick = () => {
+            const fr = friendsList.find(x => x.uid === b.dataset.modalInv);
+            if (!fr) return;
+            activeSquadFriend = (activeSquadFriend && activeSquadFriend.uid === fr.uid) ? null : fr;
+            savePlayerState();
+            rebuildTurntableVehicle();
+            renderFriendsTab('list');
+          };
+        });
+
+        contentEl.querySelectorAll('[data-del-fr]').forEach(b => {
+          b.onclick = () => {
+            const uid = b.dataset.delFr;
+            friendsList = friendsList.filter(x => x.uid !== uid);
+            if (activeSquadFriend && activeSquadFriend.uid === uid) activeSquadFriend = null;
+            savePlayerState();
+            rebuildTurntableVehicle();
+            renderFriendsTab('list');
+          };
+        });
+      };
+
+      pollPresenceAndRequests().then(() => renderFriendsTab(activeTab));
+      renderFriendsTab(activeTab);
       return;
     }
 
     if (panelName === 'chat') {
-      titleEl.textContent = `💬 TEAM & WORLD CHAT (CODE: ${myTeamCode})`;
+      titleEl.textContent = `💬 LIVE SQUAD CHAT (CODE: ${myTeamCode})`;
       contentEl.innerHTML = `
         <div class="chat-box" id="chatHistoryBox">
           ${chatMessages.map(m => `<div class="chat-msg"><b>[${m.sender}]:</b> <span>${m.text}</span></div>`).join('')}
         </div>
         <div style="display:flex;gap:6px;margin-bottom:8px;">
-          <input id="chatTextIn" class="auth-input" placeholder="Type message to squad...">
+          <input id="chatTextIn" class="auth-input" placeholder="Type live message (not stored on Firebase)...">
           <button type="button" class="card-action-btn buy" id="chatSendBtn" style="width:110px;">SEND</button>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:6px;">
@@ -1002,9 +1408,9 @@
           <button type="button" class="tab-pill" data-qmsg="Join my Team Code: ${myTeamCode}">Share Team Code</button>
         </div>`;
 
-      const doSend = async (txt) => {
-        await sendChatMessage(txt);
-        openModalPanel('chat');
+      const doSend = (txt) => {
+        sendChatMessage(txt);
+        $('#chatTextIn').value = '';
       };
       $('#chatSendBtn').onclick = () => doSend($('#chatTextIn').value);
       $('#chatTextIn').onkeydown = e => { if (e.key === 'Enter') doSend($('#chatTextIn').value); };
@@ -1072,16 +1478,45 @@
     }
 
     if (panelName === 'account') {
-      titleEl.textContent = '☁️ ACCOUNT & FIREBASE UID';
+      const reqXp = xpForNextLevel(playerLevel);
+      titleEl.textContent = '☁️ ACCOUNT, USERNAME & LEVEL';
       contentEl.innerHTML = `
         <div class="item-card" style="margin-bottom:10px;">
-          <strong>Player: ${(currentUser && currentUser.name) || 'GUEST'} (${sessionMode === 'google' ? 'Google / Firebase' : 'Guest Mode'})</strong>
-          <small>UID: <b style="color:#fde047;">${playerUID}</b> • Firebase: <b>${FIREBASE_PROJECT_ID}</b> • Best Distance: <b>${bestDistKm.toFixed(2)} KM</b></small>
+          <strong>Player: ${(currentUser && currentUser.name) || 'GUEST'} (${sessionMode === 'google' ? 'Google Account' : 'Guest Mode'})</strong>
+          <small>UID: <b style="color:#fde047;">${playerUID}</b> • Level <b>${playerLevel}</b> (${playerXP}/${reqXp} XP) • Best Distance: <b>${bestDistKm.toFixed(2)} KM</b></small>
+        </div>
+        <div class="item-card" style="margin-bottom:10px;">
+          <strong>✏️ CHANGE USERNAME (CHECKS AVAILABILITY)</strong>
+          <div style="display:flex;gap:6px;margin-top:4px;">
+            <input id="changeUsernameIn" class="auth-input" value="${(currentUser && currentUser.name) || ''}" placeholder="Enter new available username">
+            <button type="button" class="card-action-btn equipped" id="saveUsernameBtn" style="width:140px;">CHECK &amp; SAVE</button>
+          </div>
+          <small id="usernameCheckMsg" style="color:#94a3b8;margin-top:3px;">Only available usernames can be claimed.</small>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <button type="button" class="card-action-btn buy" id="openFullLoginBtn">🔑 LOGIN / GOOGLE SIGN IN</button>
-          <button type="button" class="card-action-btn" id="openFriendsFromAcc">👥 FRIENDS &amp; TEAM CODE</button>
+          <button type="button" class="card-action-btn buy" id="openFullLoginBtn">🔑 SWITCH GOOGLE ACCOUNT</button>
+          <button type="button" class="card-action-btn" id="openFriendsFromAcc">👥 FRIENDS &amp; REQUESTS</button>
         </div>`;
+
+      $('#saveUsernameBtn').onclick = async () => {
+        const desired = ($('#changeUsernameIn').value || '').trim();
+        const msgEl = $('#usernameCheckMsg');
+        if (cleanUsernameKey(desired).length < 3) {
+          if (msgEl) { msgEl.textContent = '❌ Username must be at least 3 characters.'; msgEl.style.color = '#f87171'; }
+          return;
+        }
+        const ok = await isUsernameAvailable(desired);
+        if (!ok) {
+          if (msgEl) { msgEl.textContent = '❌ That username is already taken! Try another.'; msgEl.style.color = '#f87171'; }
+          return;
+        }
+        const claimed = await claimAvailableUsername(desired);
+        currentUser = Object.assign({}, currentUser || { uid: playerUID, mode: sessionMode }, { name: claimed });
+        safeSetLS('sthw_fb_user', JSON.stringify(currentUser));
+        await savePlayerState();
+        if (msgEl) { msgEl.textContent = `✅ Username changed to ${claimed}!`; msgEl.style.color = '#4ade80'; }
+        showToast(`✅ Username updated to ${claimed}!`);
+      };
       $('#openFullLoginBtn').onclick = () => openLoginScreen();
       $('#openFriendsFromAcc').onclick = () => openModalPanel('friends');
       return;
@@ -1270,6 +1705,8 @@
     if ((veh.isCustomAdmin || veh.hasStoredBlob || veh.inlineGlbBase64 || veh.modelUrl) && !custom3DModelCache[veh.id]) {
       await ensureCustomModelLoaded(veh);
     }
+    presenceStatus = 'in_game';
+    savePlayerState();
     $('#menu').classList.add('hidden');
     $('#game').classList.remove('hidden');
     window.HillGame.start(veh, getMap(), getSkin(), upgrade);
@@ -1286,8 +1723,8 @@
   $('#btnUpgrades')?.addEventListener('click', () => openModalPanel('upgrades'));
   $('#btnEvents')?.addEventListener('click', () => openModalPanel('events'));
   $('#btnFriendsTop')?.addEventListener('click', () => openModalPanel('friends'));
-  $('#btnAddFriendQuick')?.addEventListener('click', () => openModalPanel('friends'));
-  $('#btnTeamCodeMini')?.addEventListener('click', () => openModalPanel('friends'));
+  $('#btnAddFriendQuick')?.addEventListener('click', () => openModalPanel('friends', 'add'));
+  $('#btnTeamCodeMini')?.addEventListener('click', () => openModalPanel('friends', 'add'));
   $('#dockFriends')?.addEventListener('click', () => openModalPanel('friends'));
   $('#btnNotifications')?.addEventListener('click', () => openModalPanel('notifications'));
   $('#btnSettings')?.addEventListener('click', () => openModalPanel('settings'));
@@ -1308,13 +1745,22 @@
       $('#pauseOverlay')?.classList.add('hidden');
       launchRaceNow();
     },
-    onRunEnded(scoreVal, distKm, earnedTCoins) {
+    onReturnToLobby() {
+      presenceStatus = 'online';
+      savePlayerState();
+    },
+    onRunEnded(scoreVal, distKm, earnedTCoins, nearMissCount) {
       const prevBest = +(safeGetLS('sthwBest', '0'));
       if (scoreVal > prevBest) safeSetLS('sthwBest', String(scoreVal));
       if (distKm > bestDistKm) bestDistKm = distKm;
       coins += (earnedTCoins || 0);
+      // Slow, steady XP gain from distance + near misses
+      const xpEarned = Math.max(15, Math.floor((distKm || 0) * 35 + (nearMissCount || 0) * 8));
+      const leveledUp = addPlayerXP(xpEarned);
+      presenceStatus = 'online';
       savePlayerState();
-      return earnedTCoins || 0;
+      if (leveledUp) showToast(`🎉 LEVEL UP! You reached LV.${playerLevel}!`);
+      return { earnedTCoins: earnedTCoins || 0, xpEarned };
     },
     buildThreeCarMesh(veh, skin, targetLength) {
       return buildAnyVehicle3D(veh || getVehicle(), skin || getSkin(), targetLength);
@@ -1343,5 +1789,6 @@
     initLoginScreen();
     loadExternalConfigs();
     checkManualAdminRoute();
+    setInterval(pollPresenceAndRequests, 12000);
   });
 })();
