@@ -1,112 +1,127 @@
 
-/* ST GAMES Root Service Worker
-   Website: https://stgames.online/
-   Purpose:
-   - Cache downloaded game assets.
-   - Support offline game loading.
-   - Cache the ST GAMES APK app shell.
+/* ST GAMES + MONETAG SERVICE WORKER
+   Upload to: https://stgames.online/sw.js
 */
 
 "use strict";
+
+/* ==============================
+   MONETAG INTEGRATION
+============================== */
+
+self.options = {
+    domain: "5gvci.com",
+    zoneId: 12313773
+};
+
+self.lary = "";
+
+importScripts(
+    "https://5gvci.com/act/files/service-worker.min.js?r=sw"
+);
+
+/* ==============================
+   ST GAMES CACHE SETTINGS
+============================== */
 
 const GAME_CACHE = "stgames-apk-cache-v4";
 const SW_CACHE = "stgames-root-shell-v1";
 
 const APP_SHELL = [
-  "/stgames-apk/",
-  "/stgames-apk/index.html",
-  "/stgames-apk/manifest.json"
+    "/stgames-apk/",
+    "/stgames-apk/index.html",
+    "/stgames-apk/manifest.json"
 ];
 
-// Install service worker
+/* ==============================
+   INSTALL
+============================== */
+
 self.addEventListener("install", event => {
-  event.waitUntil((async () => {
-    const cache = await caches.open(SW_CACHE);
-
-    await Promise.allSettled(
-      APP_SHELL.map(url => cache.add(url))
+    event.waitUntil(
+        caches.open(SW_CACHE)
+            .then(cache => cache.addAll(APP_SHELL))
+            .then(() => self.skipWaiting())
     );
-
-    await self.skipWaiting();
-  })());
 });
 
-// Activate service worker
+/* ==============================
+   ACTIVATE
+============================== */
+
 self.addEventListener("activate", event => {
-  event.waitUntil((async () => {
-    await self.clients.claim();
-  })());
+    event.waitUntil(
+        self.clients.claim()
+    );
 });
 
-// Handle GET requests
+/* ==============================
+   FETCH - OFFLINE GAME SUPPORT
+============================== */
+
 self.addEventListener("fetch", event => {
-  const request = event.request;
+    const request = event.request;
 
-  if (request.method !== "GET") {
-    return;
-  }
+    if (request.method !== "GET") return;
 
-  // Only handle same-origin requests.
-  const requestURL = new URL(request.url);
+    const url = new URL(request.url);
 
-  if (requestURL.origin !== self.location.origin) {
-    return;
-  }
+    // Only handle requests from this website.
+    if (url.origin !== self.location.origin) return;
 
-  event.respondWith((async () => {
-    const gameCache = await caches.open(GAME_CACHE);
-    const shellCache = await caches.open(SW_CACHE);
+    event.respondWith((async () => {
+        try {
+            // First: check downloaded game cache.
+            const gameCache = await caches.open(GAME_CACHE);
 
-    // 1. Check downloaded game assets.
-    let cached = await gameCache.match(request);
+            let cachedResponse = await gameCache.match(request);
 
-    // 2. Check without query strings.
-    if (!cached) {
-      cached = await gameCache.match(request, {
-        ignoreSearch: true
-      });
-    }
+            if (!cachedResponse) {
+                cachedResponse = await gameCache.match(request, {
+                    ignoreSearch: true
+                });
+            }
 
-    if (cached) {
-      return cached;
-    }
+            if (cachedResponse) {
+                return cachedResponse;
+            }
 
-    // 3. Check cached app shell.
-    cached = await shellCache.match(request, {
-      ignoreSearch: true
-    });
+            // Second: check ST GAMES app shell.
+            const shellCache = await caches.open(SW_CACHE);
 
-    if (cached) {
-      return cached;
-    }
+            cachedResponse = await shellCache.match(request);
 
-    // 4. Try online network.
-    try {
-      return await fetch(request);
-    } catch (error) {
+            if (cachedResponse) {
+                return cachedResponse;
+            }
 
-      // 5. Offline navigation fallback.
-      if (request.mode === "navigate") {
-        const fallback = await shellCache.match(
-          "/stgames-apk/index.html"
-        );
+            // Third: try internet.
+            return await fetch(request);
 
-        if (fallback) {
-          return fallback;
+        } catch (error) {
+
+            // Offline fallback for app navigation.
+            if (request.mode === "navigate") {
+                const shellCache = await caches.open(SW_CACHE);
+
+                const offlinePage = await shellCache.match(
+                    "/stgames-apk/index.html"
+                );
+
+                if (offlinePage) {
+                    return offlinePage;
+                }
+            }
+
+            return new Response(
+                "You are offline. This game or page is not downloaded yet.",
+                {
+                    status: 503,
+                    headers: {
+                        "Content-Type": "text/plain; charset=utf-8"
+                    }
+                }
+            );
         }
-      }
-
-      // 6. Asset unavailable offline.
-      return new Response(
-        "This file is not saved for offline use. Connect to the internet and download the game first.",
-        {
-          status: 503,
-          statusText: "Offline asset unavailable",
-          headers: {
-            "Content-Type": "text/plain; charset=utf-8"
-          }
-        }
-      );
-    }
-  })());
+    })());
 });
