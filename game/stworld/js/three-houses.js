@@ -25,8 +25,6 @@ export function createThreeHouseLayer(map, getHousesFn, getPreviewFn) {
 
       renderer = new THREE.WebGLRenderer({ canvas: map.getCanvas(), context: gl, antialias: true });
       renderer.autoClear = false;
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
-
       try {
         const pmrem = new THREE.PMREMGenerator(renderer);
         scene.environment = pmrem.fromScene(new THREE.RoomEnvironment(), 0.04).texture;
