@@ -1,12 +1,276 @@
-import {firebaseConfig,ADMIN_UID} from '../firebase-config.js';
-import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
-import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-import {getFirestore,collection,getDocs,doc,getDoc,runTransaction,serverTimestamp,query,where,orderBy,limit,setDoc} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
-const $=s=>document.querySelector(s);let auth,db,admin=null,places;const ready=Object.values(firebaseConfig).every(v=>v&&!String(v).startsWith('PASTE')&&!String(v).startsWith('YOUR_'));const clean=s=>s.trim().replace(/^@/,'').toLowerCase(),valid=s=>/^[a-z0-9._]{1,30}$/.test(s)&&!s.startsWith('.')&&!s.endsWith('.')&&!s.includes('..');
-fetch('../data/andhra.json').then(r=>r.json()).then(d=>{places=d;$('#mDistrict').innerHTML=d.districts.map(x=>`<option>${x.d}</option>`).join('');$('#mTown').innerHTML=d.towns.map(x=>`<option>${x.t}</option>`).join('')});
-if(ready){const app=initializeApp(firebaseConfig);auth=getAuth(app);db=getFirestore(app);onAuthStateChanged(auth,u=>{admin=u;if(u){if(u.uid!==ADMIN_UID){$('#loginStatus').textContent='This account is not the configured admin. Sign out.';signOut(auth);return}$('#loginBox').hidden=true;$('#dashboard').hidden=false;loadQueue()}else{$('#loginBox').hidden=false;$('#dashboard').hidden=true}})}else $('#loginStatus').textContent='Configure Firebase in ../firebase-config.js first.';
-$('#login').onclick=async()=>{try{await signInWithEmailAndPassword(auth,$('#email').value.trim(),$('#password').value)}catch(e){$('#loginStatus').textContent=e.message}};$('#logout').onclick=()=>signOut(auth);$('#refresh').onclick=loadQueue;
-async function loadQueue(){if(!admin||admin.uid!==ADMIN_UID)return;const box=$('#requests');box.innerHTML='Loading…';try{const snap=await getDocs(query(collection(db,'houseRequests'),where('status','==','pending'),limit(100)));if(snap.empty){box.innerHTML='<p class="muted">No pending requests.</p>';return}box.innerHTML='';snap.forEach(s=>{const r=s.data(),el=document.createElement('article');el.className='request';el.innerHTML=`<h3>@${r.username||'unknown'} · ${r.type||'request'}</h3><p>${r.landmark||'No landmark'} — ${r.town||''}, ${r.district||''}</p><p class="muted">${r.email||''} · UID: ${r.uid||''}</p><span class="tag">${r.status}</span><div class="actions"><button class="primary" data-approve="${s.id}">Approve</button><button class="secondary" data-reject="${s.id}">Reject</button></div>`;box.appendChild(el)});box.querySelectorAll('[data-approve]').forEach(b=>b.onclick=()=>approve(b.dataset.approve));box.querySelectorAll('[data-reject]').forEach(b=>b.onclick=()=>reject(b.dataset.reject))}catch(e){box.textContent='Could not load queue: '+e.message}}
-async function approve(id){try{const reqRef=doc(db,'houseRequests',id),snap=await getDoc(reqRef);if(!snap.exists())throw Error('Request not found');const r=snap.data(),name=clean(r.username);if(!valid(name))throw Error('Invalid username');await runTransaction(db,async tx=>{const rr=await tx.get(reqRef),houseRef=doc(db,'houses',r.uid),userRef=doc(db,'usernames',name),house=await tx.get(houseRef),taken=await tx.get(userRef);if(!rr.exists()||rr.data().status!=='pending')throw Error('Request is no longer pending');if(house.exists())throw Error('This player already has a house.');if(taken.exists())throw Error('This Instagram username is already registered in this world.');tx.set(houseRef,{uid:r.uid,username:name,email:r.email||'',town:r.town,district:r.district,landmark:r.landmark,design:r.design||'Modern Villa',createdAt:serverTimestamp(),approvedAt:serverTimestamp(),createdBy:'player-request'});tx.set(userRef,{uid:r.uid,username:name,houseId:r.uid,createdAt:serverTimestamp()});tx.update(reqRef,{status:'approved',reviewedAt:serverTimestamp(),reviewedBy:admin.uid})});alert('House approved and added to the map.');loadQueue()}catch(e){alert('Could not approve: '+e.message)}}
-async function reject(id){try{await runTransaction(db,async tx=>{const r=doc(db,'houseRequests',id);tx.update(r,{status:'rejected',reviewedAt:serverTimestamp(),reviewedBy:admin.uid})});loadQueue()}catch(e){alert(e.message)}}
-$('#addManual').onclick=async()=>{const username=clean($('#mUser').value),town=$('#mTown').value,district=$('#mDistrict').value,landmark=$('#mLandmark').value.trim(),design=$('#mDesign').value,s=$('#manualStatus');if(!valid(username)||!landmark){s.textContent='Enter a valid username and landmark.';return}try{await runTransaction(db,async tx=>{const uref=doc(db,'usernames',username),us=await tx.get(uref);if(us.exists())throw Error('Username already exists in this world.');const id='manual_'+username.replace(/[^a-z0-9_-]/g,'_'),href=doc(db,'houses',id),hs=await tx.get(href);if(hs.exists())throw Error('Manual house already exists.');tx.set(href,{uid:null,username,town,district,landmark,design,createdAt:serverTimestamp(),approvedAt:serverTimestamp(),createdBy:'admin-manual'});tx.set(uref,{uid:null,username,houseId:id,createdAt:serverTimestamp()})});s.textContent='House added successfully.';$('#mUser').value='';$('#mLandmark').value='';}catch(e){s.textContent=e.message}};
+// ST Virtual World — Admin Dashboard
+// Strictly restricted to ADMIN_UID (8lcgTTcPxrOSAdyv2NTe2FwCUC93).
+
+import { firebaseConfig, ADMIN_UID } from '../firebase-config.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+import {
+  getFirestore, collection, getDocs, doc, updateDoc, runTransaction, serverTimestamp
+} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+
+import {
+  HOUSE_DESIGNS, validateInstagramUsername, isWithinAndhraBounds,
+  escapeHtml, formatCoord, formatTimestamp, sanitizePlaceType
+} from '../js/validation.js';
+import { initThemeSwitcher } from '../js/theme.js';
+
+const $ = (s) => document.querySelector(s);
+let auth = null, db = null, adminUser = null;
+let housesCache = [], requestsCache = [];
+
+initThemeSwitcher($('#adminThemeSelect'));
+
+// Populate design dropdown & districts
+$('#mDesign').innerHTML = HOUSE_DESIGNS.map((d) => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.id)}</option>`).join('');
+fetch('../data/andhra.json')
+  .then((r) => r.json())
+  .then((d) => {
+    $('#mDistrict').innerHTML = d.districts.map((x) => `<option value="${escapeHtml(x.d)}">${escapeHtml(x.d)}</option>`).join('');
+  })
+  .catch(() => {});
+
+const app = initializeApp(firebaseConfig);
+auth = getAuth(app);
+db = getFirestore(app);
+
+onAuthStateChanged(auth, (u) => {
+  if (u && u.uid === ADMIN_UID) {
+    adminUser = u;
+    $('#loginBox').hidden = true;
+    $('#dashboard').hidden = false;
+    $('#loginStatus').textContent = '';
+    loadAllData();
+  } else {
+    if (u && u.uid !== ADMIN_UID) {
+      $('#loginStatus').textContent = 'Access denied: this account is not the authorized ST Virtual World Admin UID.';
+      $('#loginStatus').className = 'status err';
+      signOut(auth);
+    }
+    adminUser = null;
+    $('#loginBox').hidden = false;
+    $('#dashboard').hidden = true;
+  }
+});
+
+$('#loginBtn').onclick = async () => {
+  $('#loginStatus').textContent = 'Signing in...';
+  $('#loginStatus').className = 'status';
+  try {
+    await signInWithEmailAndPassword(auth, $('#email').value.trim(), $('#password').value);
+  } catch (err) {
+    $('#loginStatus').textContent = err.message;
+    $('#loginStatus').className = 'status err';
+  }
+};
+
+$('#logoutBtn').onclick = () => signOut(auth);
+$('#refreshAllBtn').onclick = loadAllData;
+$('#houseSearchInput').addEventListener('input', renderHouses);
+
+async function loadAllData() {
+  if (!adminUser || adminUser.uid !== ADMIN_UID) return;
+  try {
+    const [housesSnap, usernamesSnap, playersSnap, requestsSnap] = await Promise.all([
+      getDocs(collection(db, 'houses')),
+      getDocs(collection(db, 'usernames')),
+      getDocs(collection(db, 'players')),
+      getDocs(collection(db, 'houseRequests'))
+    ]);
+
+    housesCache = housesSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    requestsCache = requestsSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+    $('#statHouses').textContent = String(housesCache.length);
+    $('#statUsernames').textContent = String(usernamesSnap.size);
+    $('#statPlayers').textContent = String(playersSnap.size);
+    $('#statRequests').textContent = String(requestsCache.filter((r) => r.status === 'pending').length);
+
+    renderHouses();
+    renderRequests();
+  } catch (err) {
+    alert('Failed to load admin data: ' + err.message);
+  }
+}
+
+function renderHouses() {
+  const q = $('#houseSearchInput').value.trim().toLowerCase();
+  const list = $('#housesList');
+  const filtered = housesCache.filter((h) => {
+    if (!q) return true;
+    return [h.normalizedUsername, h.displayUsername, h.placeName, h.district, h.houseDesign]
+      .some((v) => String(v || '').toLowerCase().includes(q));
+  });
+
+  if (!filtered.length) {
+    list.innerHTML = '<p class="muted">No houses found.</p>';
+    return;
+  }
+
+  list.innerHTML = filtered.map((h) => `
+    <article class="item-card">
+      <h3>@${escapeHtml(h.displayUsername || h.normalizedUsername)} <span class="badge">${escapeHtml(h.houseDesign)}</span></h3>
+      <p><b>${escapeHtml(h.placeName)}</b> (${escapeHtml(h.placeType || 'town')}), ${escapeHtml(h.district)} · Coords: ${formatCoord(h.latitude)}, ${formatCoord(h.longitude)}</p>
+      <p>Created: ${escapeHtml(formatTimestamp(h.createdAt))} · UID: <code>${escapeHtml(h.uid || h.id)}</code></p>
+      <div class="actions">
+        <button class="secondary sm" data-edit-house="${escapeHtml(h.id)}">Edit Position / Design</button>
+        <button class="danger-btn sm" data-del-house="${escapeHtml(h.id)}" data-del-user="${escapeHtml(h.normalizedUsername)}">Delete House</button>
+      </div>
+    </article>
+  `).join('');
+
+  list.querySelectorAll('[data-edit-house]').forEach((btn) => {
+    btn.onclick = () => editHousePrompt(btn.dataset.editHouse);
+  });
+  list.querySelectorAll('[data-del-house]').forEach((btn) => {
+    btn.onclick = () => deleteHouseAtomic(btn.dataset.delHouse, btn.dataset.delUser);
+  });
+}
+
+async function editHousePrompt(houseId) {
+  const h = housesCache.find((x) => x.id === houseId);
+  if (!h) return;
+  const newLat = prompt('Enter new Latitude (12.5 to 19.5):', String(h.latitude));
+  if (newLat === null) return;
+  const newLng = prompt('Enter new Longitude (76.5 to 85.0):', String(h.longitude));
+  if (newLng === null) return;
+  const newDesign = prompt(`Enter House Design (${HOUSE_DESIGNS.map((d) => d.id).join(', ')}):`, h.houseDesign);
+  if (newDesign === null) return;
+
+  if (!isWithinAndhraBounds(Number(newLat), Number(newLng))) {
+    alert('Coordinates must be within Andhra Pradesh bounds.');
+    return;
+  }
+  try {
+    await updateDoc(doc(db, 'houses', houseId), {
+      latitude: Number(Number(newLat).toFixed(6)),
+      longitude: Number(Number(newLng).toFixed(6)),
+      houseDesign: newDesign.trim() || h.houseDesign,
+      updatedAt: serverTimestamp()
+    });
+    alert('House updated.');
+    loadAllData();
+  } catch (err) {
+    alert('Update failed: ' + err.message);
+  }
+}
+
+async function deleteHouseAtomic(houseId, normalizedUsername) {
+  if (!confirm(`Delete house @${normalizedUsername} and release its username claim? This cannot be undone.`)) return;
+  try {
+    await runTransaction(db, async (tx) => {
+      const hRef = doc(db, 'houses', houseId);
+      const uRef = doc(db, 'usernames', normalizedUsername);
+      const pRef = doc(db, 'players', houseId);
+      const [hSnap, uSnap, pSnap] = await Promise.all([tx.get(hRef), tx.get(uRef), tx.get(pRef)]);
+      if (hSnap.exists()) tx.delete(hRef);
+      if (uSnap.exists() && uSnap.data().houseId === houseId) tx.delete(uRef);
+      if (pSnap.exists()) tx.update(pRef, { hasHouse: false, normalizedUsername: '', updatedAt: serverTimestamp() });
+    });
+    alert('House deleted and username claim released.');
+    loadAllData();
+  } catch (err) {
+    alert('Delete failed: ' + err.message);
+  }
+}
+
+function renderRequests() {
+  const list = $('#requestsList');
+  const pending = requestsCache.filter((r) => r.status === 'pending');
+  if (!pending.length) {
+    list.innerHTML = '<p class="muted">No pending second-house requests.</p>';
+    return;
+  }
+  list.innerHTML = pending.map((r) => `
+    <article class="item-card">
+      <h3>@${escapeHtml(r.requestedDisplayUsername || r.requestedNormalizedUsername)} <span class="badge">${escapeHtml(r.type || 'second-house-attempt')}</span></h3>
+      <p>Existing house: @${escapeHtml(r.existingUsername || 'unknown')} (UID: <code>${escapeHtml(r.uid)}</code>)</p>
+      <p>Requested: ${escapeHtml(r.houseDesign)} in ${escapeHtml(r.placeName)}, ${escapeHtml(r.district)} (${formatCoord(r.latitude)}, ${formatCoord(r.longitude)})</p>
+      <p>Submitted: ${escapeHtml(formatTimestamp(r.createdAt))}</p>
+      <div class="actions">
+        <button class="primary sm" data-resolve-req="${escapeHtml(r.id)}" data-status="resolved">Mark Resolved</button>
+        <button class="danger-btn sm" data-resolve-req="${escapeHtml(r.id)}" data-status="rejected">Reject</button>
+      </div>
+    </article>
+  `).join('');
+
+  list.querySelectorAll('[data-resolve-req]').forEach((btn) => {
+    btn.onclick = async () => {
+      if (!confirm(`Mark this request as ${btn.dataset.status}?`)) return;
+      try {
+        await updateDoc(doc(db, 'houseRequests', btn.dataset.resolveReq), {
+          status: btn.dataset.status,
+          reviewedBy: adminUser.uid,
+          reviewedAt: serverTimestamp()
+        });
+        loadAllData();
+      } catch (err) {
+        alert('Action failed: ' + err.message);
+      }
+    };
+  });
+}
+
+$('#addManualBtn').onclick = async () => {
+  const statusEl = $('#manualStatus');
+  const v = validateInstagramUsername($('#mUser').value);
+  const district = $('#mDistrict').value;
+  const placeName = $('#mPlace').value.trim();
+  const placeType = sanitizePlaceType($('#mPlaceType').value);
+  const lat = Number($('#mLat').value);
+  const lng = Number($('#mLng').value);
+  const houseDesign = $('#mDesign').value;
+
+  if (!v.valid) { statusEl.textContent = v.error; statusEl.className = 'status err'; return; }
+  if (!placeName || !isWithinAndhraBounds(lat, lng)) {
+    statusEl.textContent = 'Enter a valid place name and Andhra Pradesh coordinates.';
+    statusEl.className = 'status err';
+    return;
+  }
+
+  statusEl.textContent = 'Creating house...';
+  statusEl.className = 'status';
+  try {
+    const houseId = 'manual_' + v.normalized.replace(/[^a-z0-9_-]/g, '_');
+    await runTransaction(db, async (tx) => {
+      const uRef = doc(db, 'usernames', v.normalized);
+      const hRef = doc(db, 'houses', houseId);
+      const [uSnap, hSnap] = await Promise.all([tx.get(uRef), tx.get(hRef)]);
+      if (uSnap.exists()) throw new Error('Username already taken in ST Virtual World.');
+      if (hSnap.exists()) throw new Error('A manual house with this ID already exists.');
+      const now = serverTimestamp();
+      tx.set(uRef, { uid: houseId, normalizedUsername: v.normalized, displayUsername: v.display, houseId, createdAt: now, updatedAt: now });
+      tx.set(hRef, {
+        uid: houseId, normalizedUsername: v.normalized, displayUsername: v.display,
+        placeName, district, placeType, latitude: Number(lat.toFixed(6)), longitude: Number(lng.toFixed(6)),
+        houseDesign, createdAt: now, updatedAt: now
+      });
+    });
+    statusEl.textContent = `House @${v.display} added!`;
+    statusEl.className = 'status ok';
+    $('#mUser').value = '';
+    $('#mPlace').value = '';
+    loadAllData();
+  } catch (err) {
+    statusEl.textContent = err.message;
+    statusEl.className = 'status err';
+  }
+};
+
+$('#exportCsvBtn').onclick = () => {
+  if (!housesCache.length) { alert('No houses to export.'); return; }
+  const headers = ['id', 'uid', 'displayUsername', 'normalizedUsername', 'placeName', 'placeType', 'district', 'latitude', 'longitude', 'houseDesign', 'createdAt'];
+  const escCsv = (val) => `"${String(val ?? '').replace(/"/g, '""')}"`;
+  const rows = [headers.join(',')];
+  for (const h of housesCache) {
+    rows.push([
+      h.id, h.uid, h.displayUsername, h.normalizedUsername, h.placeName, h.placeType,
+      h.district, h.latitude, h.longitude, h.houseDesign, formatTimestamp(h.createdAt)
+    ].map(escCsv).join(','));
+  }
+  const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `st-virtual-world-houses-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+};

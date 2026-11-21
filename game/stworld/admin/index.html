@@ -1,1 +1,113 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#071827"><title>ST Virtual World · Admin</title><link rel="stylesheet" href="../css/style.css"><style>body{overflow:auto;min-height:100%;padding:18px 12px 40px}.admin-wrap{max-width:850px;margin:0 auto}.admin-card{padding:18px;margin:14px 0}.request{border:1px solid #ffffff25;border-radius:13px;padding:12px;margin:10px 0}.request h3{margin:0 0 5px;font-size:14px}.request p{margin:4px 0}.tag{color:var(--line);font-size:10px}.admin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}</style></head><body data-theme="classic"><main class="admin-wrap"><header class="glass admin-card"><h2>ST VIRTUAL WORLD · ADMIN</h2><p>Review player house requests and add houses manually.</p></header><section id="loginBox" class="glass admin-card"><h2>Admin sign in</h2><label class="field"><span>Admin email</span><input id="email" type="email"></label><label class="field"><span>Password</span><input id="password" type="password"></label><button class="primary" id="login">Sign in</button><div id="loginStatus" class="status"></div></section><section id="dashboard" hidden><section class="glass admin-card"><div class="admin-grid"><div><h2>Pending requests</h2><p class="muted">Approve a single house per player UID.</p></div><button class="secondary" id="refresh">Refresh queue</button></div><div id="requests"></div></section><section class="glass admin-card"><h2>Add a house manually</h2><p class="muted">Use this for admin-created community entries. Town-level position only; never add a private street address.</p><div class="admin-grid"><label class="field"><span>Instagram username</span><input id="mUser" maxlength="30"></label><label class="field"><span>District</span><select id="mDistrict"></select></label><label class="field"><span>Town</span><select id="mTown"></select></label><label class="field"><span>Landmark / house name</span><input id="mLandmark" maxlength="45"></label><label class="field"><span>House design</span><select id="mDesign"><option>Modern Villa</option><option>Classic Home</option><option>Glass Tower</option><option>Garden House</option><option>Royal Mansion</option></select></label></div><button class="primary" id="addManual">Add house</button><div id="manualStatus" class="status"></div></section><button class="secondary" id="logout">Sign out</button></section></main><script type="module" src="admin.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#071827">
+  <title>ST Virtual World · Admin Dashboard</title>
+  <link rel="icon" href="https://stgames.online/logo/logo.jpg">
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    html,body{overflow:auto;height:auto;min-height:100%}
+    body{padding:16px 12px 48px}
+    .admin-wrap{max-width:1040px;margin:0 auto}
+    .admin-card{padding:18px;margin:14px 0}
+    .admin-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+    .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin:12px 0}
+    .kpi{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:12px}
+    .kpi b{display:block;font-size:22px;color:var(--line)}
+    .kpi small{color:var(--muted);font-size:10px;letter-spacing:.08em}
+    .admin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+    .item-card{border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:12px;margin:10px 0;background:rgba(255,255,255,.03)}
+    .item-card h3{margin:0 0 4px;font-size:14px}
+    .item-card p{margin:3px 0;font-size:12px;color:var(--muted)}
+    .badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;border:1px solid var(--line);color:var(--line)}
+  </style>
+</head>
+<body data-theme="classic">
+  <main class="admin-wrap">
+    <header class="glass admin-card admin-top">
+      <div class="brand">
+        <img src="https://stgames.online/logo/logo.jpg" onerror="this.style.display='none'" alt="ST GAMES logo">
+        <div>
+          <b>ST VIRTUAL WORLD · ADMIN</b>
+          <small>AUTHORIZED UID ONLY · SEPARATE FROM PLAYER FLOW</small>
+        </div>
+      </div>
+      <div class="actions" style="margin:0">
+        <select id="adminThemeSelect" class="secondary" aria-label="Theme">
+          <option value="classic">Classic Blue</option>
+          <option value="gold">Royal Gold</option>
+          <option value="black">Deep Black</option>
+          <option value="neon">Neon Cyber</option>
+        </select>
+        <a class="secondary" href="../index.html">Player Map</a>
+      </div>
+    </header>
+
+    <section id="loginBox" class="glass admin-card">
+      <h2>Admin Sign In</h2>
+      <p class="muted">Only the authorized Firebase Admin UID can access administrative operations.</p>
+      <div class="admin-grid">
+        <label class="field"><span>Admin Email</span><input id="email" type="email" autocomplete="email"></label>
+        <label class="field"><span>Password</span><input id="password" type="password" autocomplete="current-password"></label>
+      </div>
+      <button class="primary" id="loginBtn" type="button">Sign In</button>
+      <div id="loginStatus" class="status"></div>
+    </section>
+
+    <section id="dashboard" hidden>
+      <section class="glass admin-card">
+        <div class="admin-top">
+          <h2>World Overview</h2>
+          <div class="actions" style="margin:0">
+            <button class="secondary" id="refreshAllBtn" type="button">Refresh Data</button>
+            <button class="secondary" id="exportCsvBtn" type="button">Export Houses CSV</button>
+            <button class="danger-btn" id="logoutBtn" type="button">Sign Out</button>
+          </div>
+        </div>
+        <div class="kpi-grid">
+          <div class="kpi"><b id="statHouses">0</b><small>TOTAL HOUSES</small></div>
+          <div class="kpi"><b id="statUsernames">0</b><small>CLAIMED USERNAMES</small></div>
+          <div class="kpi"><b id="statPlayers">0</b><small>ANONYMOUS PLAYERS</small></div>
+          <div class="kpi"><b id="statRequests">0</b><small>PENDING 2ND-HOUSE REQUESTS</small></div>
+        </div>
+      </section>
+
+      <section class="glass admin-card">
+        <h2>Manage Houses</h2>
+        <div class="admin-grid">
+          <label class="field">
+            <span>Search by @username, village, town, city, or district</span>
+            <input id="houseSearchInput" placeholder="Type to filter houses...">
+          </label>
+        </div>
+        <div id="housesList"></div>
+      </section>
+
+      <section class="glass admin-card">
+        <h2>Second-House Attempt Requests</h2>
+        <div id="requestsList"></div>
+      </section>
+
+      <section class="glass admin-card">
+        <h2>Add House Manually</h2>
+        <p class="muted">Admin-created entry. Atomically reserves the username and creates the house.</p>
+        <div class="admin-grid">
+          <label class="field"><span>Instagram Username (without @)</span><input id="mUser" maxlength="30" placeholder="username"></label>
+          <label class="field"><span>District</span><select id="mDistrict"></select></label>
+          <label class="field"><span>Place Name (Village/Town/City)</span><input id="mPlace" maxlength="80" placeholder="e.g., Vijayawada"></label>
+          <label class="field"><span>Place Type</span><select id="mPlaceType"><option value="town">Town</option><option value="city">City</option><option value="village">Village</option><option value="district">District</option></select></label>
+          <label class="field"><span>Latitude (12.5–19.5)</span><input id="mLat" type="number" step="0.00001" value="16.50620"></label>
+          <label class="field"><span>Longitude (76.5–85.0)</span><input id="mLng" type="number" step="0.00001" value="80.64800"></label>
+          <label class="field"><span>3D House Design</span><select id="mDesign"></select></label>
+        </div>
+        <button class="primary" id="addManualBtn" type="button">Add House</button>
+        <div id="manualStatus" class="status"></div>
+      </section>
+    </section>
+  </main>
+
+  <script type="module" src="admin.js"></script>
+</body>
+</html>
