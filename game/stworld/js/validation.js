@@ -3,9 +3,9 @@
 export const AP_BOUNDS = { minLat: 12.5, maxLat: 19.5, minLng: 76.5, maxLng: 85.0 };
 
 export const ADMIN_CONTACT = {
-  phoneDisplay: '6301798807',
-  phoneHref: 'tel:+916301798807',
-  whatsappHref: 'https://wa.me/916301798807?text=Hi%20Admin%2C%20I%20want%20to%20request%20an%20edit%20for%20my%20ST%20Virtual%20World%20house.',
+  phoneDisplay: '9281267188',
+  phoneHref: 'tel:+919281267188',
+  whatsappHref: 'https://wa.me/919281267188?text=Hi%20Admin%2C%20I%20want%20to%20request%20an%20edit%20for%20my%20ST%20Virtual%20World%20house.',
   email: 'satishkommana630@gmail.com',
   emailHref: 'mailto:satishkommana630@gmail.com?subject=ST%20Virtual%20World%20House%20Edit%20Request',
   instagram: '_satish_official_16',
