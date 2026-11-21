@@ -1,6 +1,8 @@
-// ST GAMES — ST Virtual World Firebase configuration
-// Firebase web configuration is intended to be used by the browser.
-// Keep Firestore Security Rules restrictive and never publish admin passwords.
+// ST GAMES — ST Virtual World Firebase Configuration
+// Uses existing friendsgame-872f5 Firebase project.
+// Never store admin passwords or service account private keys in frontend code.
+// Existing unrelated Realtime Database data is NOT modified by ST Virtual World.
+
 export const firebaseConfig = {
   apiKey: "AIzaSyBzLchy5M2fLne4c7Ghw1KNN8wVrlZdd8M",
   authDomain: "friendsgame-872f5.firebaseapp.com",
@@ -12,5 +14,5 @@ export const firebaseConfig = {
   measurementId: "G-PW5H3G97QR"
 };
 
-// Replace after creating your admin login. Use the same UID in firestore.rules.
 export const ADMIN_UID = "8lcgTTcPxrOSAdyv2NTe2FwCUC93";
+export const FIREBASE_SDK_VERSION = "10.14.1";

@@ -1,7 +1,13 @@
-# ST Virtual World
-See [SETUP.md](SETUP.md) for Firebase configuration, admin UID setup, deployment and workflow.
+# ST Virtual World (ST GAMES)
 
-Start with zero player accounts and zero houses. Firebase must be configured before registration, submission or admin features work.
+Interactive 3D virtual house world across Andhra Pradesh, deployed at `https://stgames.online/game/stworld/` with a separate admin dashboard at `https://stgames.online/game/stworld/admin/`.
 
+## Highlights
+- **Zero Player Login/Signup Screen:** Background Firebase Anonymous Authentication (`signInAnonymously`).
+- **Atomic Instagram-Style Username Claims:** Validates syntax, normalizes to lowercase, and reserves `usernames/{normalizedUsername}` + `houses/{uid}` together inside a Firestore transaction.
+- **Andhra Pradesh Location Search:** OpenStreetMap Nominatim + normalized local index (`data/andhra.json`) supporting villages, towns, cities, and optional District → Town/City → Village filtering.
+- **Interactive 3D Houses:** Real Three.js + `houses.glb` (12 variants `v0`–`v11`) with Meshopt decoding, mobile LOD, and procedural 3D fallback.
+- **4 ST GAMES Themes:** Classic Blue, Royal Gold, Deep Black, Neon Cyber (synced via `localStorage`).
+- **Admin Dashboard:** Restricted to Firebase Admin UID `8lcgTTcPxrOSAdyv2NTe2FwCUC93` in both UI and `firestore.rules`.
 
-Firebase is preconfigured with the Web App settings supplied for the existing `friendsgame-872f5` project. You must still enable Email/Password Authentication, create Firestore, and set your admin UID in both `firebase-config.js` and `firestore.rules` before launch. See `SETUP.md`.
+See [SETUP.md](SETUP.md) for Firebase Console steps, GitHub Pages deployment, and the testing checklist.

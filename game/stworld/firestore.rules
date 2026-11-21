@@ -1,37 +1,165 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedIn() { return request.auth != null; }
-    // Replace with the UID of your trusted admin Firebase account.
-    function isAdmin() { return signedIn() && request.auth.uid == '8lcgTTcPxrOSAdyv2NTe2FwCUC93'; }
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn() && request.auth.uid == '8lcgTTcPxrOSAdyv2NTe2FwCUC93';
+    }
+
+    function isValidNormalizedUsername(name) {
+      return name is string
+        && name.size() >= 1
+        && name.size() <= 30
+        && name.matches('^[a-z0-9._]{1,30}$')
+        && !name.matches('^\\..*')
+        && !name.matches('.*\\.$')
+        && !name.matches('.*\\.\\..*');
+    }
+
+    function isValidDisplayUsername(name) {
+      return name is string
+        && name.size() >= 1
+        && name.size() <= 30
+        && name.matches('^[A-Za-z0-9._]{1,30}$')
+        && !name.matches('^\\..*')
+        && !name.matches('.*\\.$')
+        && !name.matches('.*\\.\\..*');
+    }
+
+    function isValidCoords(lat, lng) {
+      return lat is number
+        && lng is number
+        && lat >= 12.5 && lat <= 19.5
+        && lng >= 76.5 && lng <= 85.0;
+    }
+
+    function isValidPlaceType(t) {
+      return t is string && t in ['village', 'town', 'city', 'district', 'custom'];
+    }
+
+    function isValidPublicHouse(data) {
+      return data.keys().hasOnly([
+          'uid', 'normalizedUsername', 'displayUsername',
+          'placeName', 'district', 'placeType',
+          'latitude', 'longitude', 'houseDesign',
+          'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasAll([
+          'uid', 'normalizedUsername', 'displayUsername',
+          'placeName', 'district', 'placeType',
+          'latitude', 'longitude', 'houseDesign',
+          'createdAt', 'updatedAt'
+        ])
+        && data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128
+        && isValidNormalizedUsername(data.normalizedUsername)
+        && isValidDisplayUsername(data.displayUsername)
+        && data.placeName is string && data.placeName.size() >= 1 && data.placeName.size() <= 80
+        && data.district is string && data.district.size() >= 1 && data.district.size() <= 60
+        && isValidPlaceType(data.placeType)
+        && isValidCoords(data.latitude, data.longitude)
+        && data.houseDesign is string && data.houseDesign.size() >= 2 && data.houseDesign.size() <= 40;
+    }
 
     match /players/{uid} {
-      allow create: if signedIn() && request.auth.uid == uid;
       allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
-      allow update: if signedIn() && request.auth.uid == uid
-                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','updatedAt']);
+      allow create: if signedIn()
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['uid', 'authType', 'hasHouse', 'normalizedUsername', 'createdAt', 'updatedAt'])
+        && request.resource.data.uid == uid
+        && request.resource.data.authType in ['anonymous', 'admin']
+        && request.resource.data.hasHouse is bool;
+      allow update: if isAdmin() || (
+        signedIn()
+        && request.auth.uid == uid
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hasHouse', 'normalizedUsername', 'updatedAt'])
+        && request.resource.data.hasHouse is bool
+      );
       allow delete: if isAdmin();
     }
-    match /houseRequests/{requestId} {
-      allow create: if signedIn()
+
+    match /usernames/{normalizedUsername} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create: if (
+        isAdmin()
+        && isValidNormalizedUsername(normalizedUsername)
+        && request.resource.data.normalizedUsername == normalizedUsername
+        && isValidDisplayUsername(request.resource.data.displayUsername)
+        && request.resource.data.houseId is string
+      ) || (
+        signedIn()
+        && isValidNormalizedUsername(normalizedUsername)
+        && !exists(/databases/$(database)/documents/houses/$(request.auth.uid))
+        && request.resource.data.keys().hasOnly(['uid', 'normalizedUsername', 'displayUsername', 'houseId', 'createdAt', 'updatedAt'])
         && request.resource.data.uid == request.auth.uid
-        && request.resource.data.status == 'pending'
-        && request.resource.data.username is string
-        && request.resource.data.username.size() >= 1
-        && request.resource.data.username.size() <= 30
-        && request.resource.data.town is string
-        && request.resource.data.district is string
-        && request.resource.data.landmark is string;
-      allow read: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+        && request.resource.data.houseId == request.auth.uid
+        && request.resource.data.normalizedUsername == normalizedUsername
+        && isValidDisplayUsername(request.resource.data.displayUsername)
+        && getAfter(/databases/$(database)/documents/houses/$(request.auth.uid)).data.normalizedUsername == normalizedUsername
+      );
       allow update, delete: if isAdmin();
     }
+
     match /houses/{houseId} {
       allow read: if true;
-      allow create, update, delete: if isAdmin();
+      allow create: if (
+        isAdmin() && isValidPublicHouse(request.resource.data)
+      ) || (
+        signedIn()
+        && houseId == request.auth.uid
+        && request.resource.data.uid == request.auth.uid
+        && isValidPublicHouse(request.resource.data)
+        && getAfter(/databases/$(database)/documents/usernames/$(request.resource.data.normalizedUsername)).data.uid == request.auth.uid
+        && getAfter(/databases/$(database)/documents/usernames/$(request.resource.data.normalizedUsername)).data.houseId == request.auth.uid
+      );
+      allow update: if (
+        isAdmin() && isValidPublicHouse(request.resource.data)
+      ) || (
+        signedIn()
+        && houseId == request.auth.uid
+        && resource.data.uid == request.auth.uid
+        && isValidPublicHouse(request.resource.data)
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.normalizedUsername == resource.data.normalizedUsername
+        && request.resource.data.displayUsername == resource.data.displayUsername
+        && request.resource.data.createdAt == resource.data.createdAt
+      );
+      allow delete: if isAdmin();
     }
-    match /usernames/{username} {
-      allow read: if true;
-      allow create, update, delete: if isAdmin();
+
+    match /houseRequests/{requestId} {
+      allow read: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly([
+          'uid', 'existingHouseId', 'existingUsername',
+          'requestedNormalizedUsername', 'requestedDisplayUsername',
+          'placeName', 'district', 'placeType',
+          'latitude', 'longitude', 'houseDesign',
+          'type', 'status', 'reason', 'createdAt'
+        ])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.existingHouseId == request.auth.uid
+        && request.resource.data.type == 'second-house-attempt'
+        && request.resource.data.status == 'pending'
+        && exists(/databases/$(database)/documents/houses/$(request.auth.uid))
+        && isValidNormalizedUsername(request.resource.data.requestedNormalizedUsername)
+        && isValidDisplayUsername(request.resource.data.requestedDisplayUsername)
+        && request.resource.data.placeName is string && request.resource.data.placeName.size() >= 1 && request.resource.data.placeName.size() <= 80
+        && request.resource.data.district is string && request.resource.data.district.size() >= 1 && request.resource.data.district.size() <= 60
+        && isValidPlaceType(request.resource.data.placeType)
+        && isValidCoords(request.resource.data.latitude, request.resource.data.longitude)
+        && request.resource.data.houseDesign is string && request.resource.data.houseDesign.size() >= 2 && request.resource.data.houseDesign.size() <= 40;
+      allow update, delete: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
