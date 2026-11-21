@@ -260,16 +260,21 @@ async function loadLandmarks() {
   renderLandmarkMarkers();
 }
 
-const MIN_MARKER_ZOOM = 11.5;
+const MIN_HOUSE_MARKER_ZOOM = 11.5;
+const MIN_LANDMARK_MARKER_ZOOM = 9.0;
 
 function updateMarkerVisibility() {
   if (!map) return;
-  const visible = map.getZoom() >= MIN_MARKER_ZOOM;
-  for (const m of [...houseMarkers, ...landmarkMarkers]) {
+  const z = map.getZoom();
+  const showHouses = z >= MIN_HOUSE_MARKER_ZOOM;
+  const showLandmarks = z >= MIN_LANDMARK_MARKER_ZOOM;
+  for (const m of houseMarkers) {
     const el = m.getElement();
-    if (el) {
-      el.classList.toggle('hidden-zoom', !visible);
-    }
+    if (el) el.classList.toggle('hidden-zoom', !showHouses);
+  }
+  for (const m of landmarkMarkers) {
+    const el = m.getElement();
+    if (el) el.classList.toggle('hidden-zoom', !showLandmarks);
   }
 }
 
@@ -1075,7 +1080,8 @@ async function boot() {
     } catch (e) {
       console.warn('3D layer skipped:', e);
     }
-    if (db) { loadHouses(); loadLandmarks(); }
+    loadLandmarks();
+    if (db) loadHouses();
   });
 
   map.on('zoom', updateMarkerVisibility);
