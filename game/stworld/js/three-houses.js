@@ -127,12 +127,33 @@ export function createThreeHouseLayer(map, getHousesFn, getPreviewFn, getLandmar
     }
 
     if (variant === 'lm_stadium') {
-      // Cricket Stadium (circular bowl + green pitch + floodlight towers)
-      g.add(cyl(8.5, 7.2, 3.5, 20, 0xe2e8f0, 0, 1.75, 0));
-      g.add(cyl(6.2, 6.2, 0.4, 20, 0x22c55e, 0, 3.55, 0));
-      for (const [x, z] of [[6.5, 6.5], [-6.5, 6.5], [6.5, -6.5], [-6.5, -6.5]]) {
-        g.add(cyl(0.25, 0.35, 8.5, 8, 0x94a3b8, x, 4.25, z));
-        g.add(box(1.4, 0.8, 0.6, 0xfef08a, x, 8.7, z));
+      // Detailed 3D Cricket Stadium (tiered bowl, green outfield, central pitch, canopy roof, scoreboard & 4 floodlight towers)
+      // Outer architectural base & facade
+      g.add(cyl(13.5, 12.2, 3.2, 28, 0xe2e8f0, 0, 1.6, 0, 0.5, 0.1));
+      g.add(cyl(13.8, 13.5, 0.6, 28, 0x0284c7, 0, 3.3, 0, 0.35, 0.25)); // Blue stadium accent ring
+
+      // Stepped seating tiers (upper, mid, lower stands)
+      g.add(cyl(12.6, 11.4, 2.2, 28, 0x1d4ed8, 0, 4.2, 0, 0.6, 0.05)); // Upper blue tier
+      g.add(cyl(10.8, 9.8, 1.4, 28, 0xf59e0b, 0, 3.4, 0, 0.6, 0.05));  // Mid amber tier
+      g.add(cyl(9.2, 8.6, 0.8, 28, 0xef4444, 0, 2.6, 0, 0.6, 0.05));   // Lower red tier
+
+      // Lush green cricket outfield + white boundary ring + central pitch strip
+      g.add(cyl(8.4, 8.4, 0.5, 28, 0x16a34a, 0, 2.25, 0, 0.8, 0.0));
+      g.add(cyl(7.6, 7.6, 0.54, 28, 0x22c55e, 0, 2.27, 0, 0.8, 0.0));
+      g.add(box(1.1, 0.62, 4.2, 0xd6b88d, 0, 2.3, 0, 0.85, 0.0)); // Cricket pitch
+
+      // Stadium canopy roof overhang (upper rim)
+      g.add(cyl(14.4, 13.4, 0.7, 28, 0xf8fafc, 0, 5.6, 0, 0.3, 0.2));
+
+      // Giant digital scoreboard on north end
+      g.add(box(5.6, 2.8, 0.6, 0x0f172a, 0, 7.2, -12.6, 0.2, 0.3));
+      g.add(box(4.8, 2.0, 0.7, 0x38bdf8, 0, 7.2, -12.5, 0.1, 0.1));
+
+      // 4 Tall Floodlight Towers with bright light banks
+      for (const [x, z] of [[10.2, 10.2], [-10.2, 10.2], [10.2, -10.2], [-10.2, -10.2]]) {
+        g.add(cyl(0.32, 0.52, 13.5, 10, 0x94a3b8, x, 6.75, z, 0.4, 0.4));
+        g.add(box(2.8, 1.8, 0.8, 0x1e293b, x, 13.8, z, 0.3, 0.3));
+        g.add(box(2.4, 1.3, 0.9, 0xfef08a, x, 13.8, z, 0.05, 0.05));
       }
       return g;
     }
@@ -276,7 +297,8 @@ export function createThreeHouseLayer(map, getHousesFn, getPreviewFn, getLandmar
           scene.add(mesh);
           landmarkMeshes.set(lm.id, mesh);
         }
-        mesh.matrix.copy(buildTransformMatrix(lm.longitude, lm.latitude, scaleMeters * 1.25));
+        const lmScaleMult = (lm.modelType === 'Cricket Stadium' || lm.modelType === 'Grand Shopping Mall') ? 2.4 : 1.75;
+        mesh.matrix.copy(buildTransformMatrix(lm.longitude, lm.latitude, scaleMeters * lmScaleMult));
       }
       for (const [id, mesh] of landmarkMeshes.entries()) {
         if (!visibleLandmarkIds.has(id)) {
@@ -298,7 +320,10 @@ export function createThreeHouseLayer(map, getHousesFn, getPreviewFn, getLandmar
           previewMesh.matrixAutoUpdate = false;
           scene.add(previewMesh);
         }
-        previewMesh.matrix.copy(buildTransformMatrix(preview.lng, preview.lat, scaleMeters * 1.2));
+        const prevMult = preview.isLandmark
+          ? ((preview.modelType === 'Cricket Stadium' || preview.modelType === 'Grand Shopping Mall') ? 2.4 : 1.75)
+          : 1.15;
+        previewMesh.matrix.copy(buildTransformMatrix(preview.lng, preview.lat, scaleMeters * prevMult));
       } else if (previewMesh) {
         scene.remove(previewMesh);
         previewMesh = null;

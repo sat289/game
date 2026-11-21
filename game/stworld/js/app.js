@@ -232,15 +232,32 @@ function renderLandmarkMarkers() {
   map.triggerRepaint();
 }
 
-async function loadLandmarks() {
-  if (!db) return;
+let builtinLandmarks = [];
+async function loadBuiltinLandmarks() {
+  if (builtinLandmarks.length) return builtinLandmarks;
   try {
-    const snap = await getDocs(collection(db, 'landmarks'));
-    allLandmarks = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-    renderLandmarkMarkers();
+    const resp = await fetch('./data/landmarks.json');
+    builtinLandmarks = await resp.json();
   } catch (err) {
-    console.warn('Could not load landmarks:', err?.message || err);
+    console.warn('Built-in landmarks load warning:', err?.message || err);
+    builtinLandmarks = [];
   }
+  return builtinLandmarks;
+}
+
+async function loadLandmarks() {
+  const builtins = await loadBuiltinLandmarks();
+  let custom = [];
+  if (db) {
+    try {
+      const snap = await getDocs(collection(db, 'landmarks'));
+      custom = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    } catch (err) {
+      console.warn('Could not load custom Firestore landmarks:', err?.message || err);
+    }
+  }
+  allLandmarks = [...custom, ...builtins];
+  renderLandmarkMarkers();
 }
 
 const MIN_MARKER_ZOOM = 11.5;
@@ -906,15 +923,19 @@ function bindSearchBar() {
   const btn = $('#searchBtn');
   const dropdown = $('#searchResults');
 
-  function runUsernameSearch(showEmptyMessage = false) {
+  function runTopSearch(showEmptyMessage = false) {
     const raw = input.value.trim().replace(/^@+/, '').toLowerCase();
     if (!raw) {
       if (showEmptyMessage) {
         dropdown.hidden = false;
-        if (!allHouses.length) {
-          dropdown.innerHTML = '<div class="sr-item muted">No player houses built yet.</div>';
+        const combined = [
+          ...allLandmarks.slice(0, 6).map((lm) => ({ kind: 'landmark', data: lm })),
+          ...allHouses.slice(0, 8).map((h) => ({ kind: 'house', data: h }))
+        ];
+        if (!combined.length) {
+          dropdown.innerHTML = '<div class="sr-item muted">No player houses or popular places yet.</div>';
         } else {
-          renderUsernameResults(allHouses.slice(0, 12));
+          renderSearchResults(combined);
         }
       } else {
         dropdown.hidden = true;
@@ -922,55 +943,79 @@ function bindSearchBar() {
       return;
     }
 
-    const matches = allHouses.filter((h) => {
+    const landmarkMatches = allLandmarks.filter((lm) => {
+      return [lm.name, lm.modelType, lm.category, lm.district, lm.description]
+        .some((v) => String(v || '').toLowerCase().includes(raw));
+    }).slice(0, 6).map((lm) => ({ kind: 'landmark', data: lm }));
+
+    const houseMatches = allHouses.filter((h) => {
       const norm = String(h.normalizedUsername || '').toLowerCase();
       const disp = String(h.displayUsername || '').toLowerCase();
       return norm.includes(raw) || disp.includes(raw);
-    }).slice(0, 12);
+    }).slice(0, 10).map((h) => ({ kind: 'house', data: h }));
 
+    const combined = [...landmarkMatches, ...houseMatches];
     dropdown.hidden = false;
-    if (!matches.length) {
-      dropdown.innerHTML = `<div class="sr-item muted">No player found matching "@${escapeHtml(raw)}".</div>`;
+    if (!combined.length) {
+      dropdown.innerHTML = `<div class="sr-item muted">No username or popular place found for "${escapeHtml(raw)}".</div>`;
       return;
     }
-    renderUsernameResults(matches);
+    renderSearchResults(combined);
   }
 
-  function renderUsernameResults(matches) {
-    dropdown.innerHTML = matches.map((h, idx) => `
-      <button type="button" class="sr-item" data-uidx="${idx}">
-        <b>@${escapeHtml(h.displayUsername || h.normalizedUsername)}</b>
-        <small>🏠 ${escapeHtml(h.houseDesign)} · ${escapeHtml(h.placeName)}, ${escapeHtml(h.district)}</small>
-      </button>
-    `).join('');
+  function renderSearchResults(items) {
+    dropdown.innerHTML = items.map((item, idx) => {
+      if (item.kind === 'landmark') {
+        const lm = item.data;
+        const meta = getLandmarkMeta(lm.modelType);
+        return `
+          <button type="button" class="sr-item" data-sidx="${idx}">
+            <b>${meta.icon} ${escapeHtml(lm.name)}</b>
+            <small>POPULAR PLACE · ${escapeHtml(lm.modelType)} · ${escapeHtml(lm.district || 'Andhra Pradesh')}</small>
+          </button>
+        `;
+      }
+      const h = item.data;
+      return `
+        <button type="button" class="sr-item" data-sidx="${idx}">
+          <b>@${escapeHtml(h.displayUsername || h.normalizedUsername)}</b>
+          <small>🏠 ${escapeHtml(h.houseDesign)} · ${escapeHtml(h.placeName)}, ${escapeHtml(h.district)}</small>
+        </button>
+      `;
+    }).join('');
 
-    dropdown.querySelectorAll('.sr-item[data-uidx]').forEach((el) => {
+    dropdown.querySelectorAll('.sr-item[data-sidx]').forEach((el) => {
       el.onclick = () => {
-        const house = matches[Number(el.dataset.uidx)];
-        input.value = '@' + (house.displayUsername || house.normalizedUsername);
+        const picked = items[Number(el.dataset.sidx)];
         dropdown.hidden = true;
         closePanel();
         stopPlacementMode();
-        if (map && Number.isFinite(house.latitude) && Number.isFinite(house.longitude)) {
-          map.flyTo({
-            center: [house.longitude, house.latitude],
-            zoom: 16.0,
-            pitch: 60,
-            duration: 1400
-          });
-          toast(`Visiting @${house.displayUsername || house.normalizedUsername}'s ${house.houseDesign}`);
+        if (picked.kind === 'landmark') {
+          const lm = picked.data;
+          input.value = lm.name;
+          if (map && Number.isFinite(lm.latitude) && Number.isFinite(lm.longitude)) {
+            map.flyTo({ center: [lm.longitude, lm.latitude], zoom: 16.0, pitch: 60, duration: 1400 });
+            toast(`Visiting ${lm.name}`);
+          }
+        } else {
+          const house = picked.data;
+          input.value = '@' + (house.displayUsername || house.normalizedUsername);
+          if (map && Number.isFinite(house.latitude) && Number.isFinite(house.longitude)) {
+            map.flyTo({ center: [house.longitude, house.latitude], zoom: 16.0, pitch: 60, duration: 1400 });
+            toast(`Visiting @${house.displayUsername || house.normalizedUsername}'s ${house.houseDesign}`);
+          }
         }
       };
     });
   }
 
-  btn.onclick = () => runUsernameSearch(true);
-  input.addEventListener('input', () => runUsernameSearch(false));
+  btn.onclick = () => runTopSearch(true);
+  input.addEventListener('input', () => runTopSearch(false));
   input.addEventListener('focus', () => {
-    if (input.value.trim().length > 0) runUsernameSearch(false);
+    if (input.value.trim().length > 0) runTopSearch(false);
   });
   input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') runUsernameSearch(true);
+    if (e.key === 'Enter') runTopSearch(true);
   });
   document.addEventListener('click', (e) => {
     if (!e.target.closest('.search-wrap')) dropdown.hidden = true;
