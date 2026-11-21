@@ -129,6 +129,11 @@ service cloud.firestore {
         && request.resource.data.normalizedUsername == resource.data.normalizedUsername
         && request.resource.data.displayUsername == resource.data.displayUsername
         && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.latitude == resource.data.latitude
+        && request.resource.data.longitude == resource.data.longitude
+        && request.resource.data.placeName == resource.data.placeName
+        && request.resource.data.district == resource.data.district
+        && request.resource.data.placeType == resource.data.placeType
       );
       allow delete: if isAdmin();
     }
@@ -156,6 +161,11 @@ service cloud.firestore {
         && isValidCoords(request.resource.data.latitude, request.resource.data.longitude)
         && request.resource.data.houseDesign is string && request.resource.data.houseDesign.size() >= 2 && request.resource.data.houseDesign.size() <= 40;
       allow update, delete: if isAdmin();
+    }
+
+        match /landmarks/{landmarkId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
     }
 
     match /{document=**} {
