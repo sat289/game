@@ -13,4 +13,4 @@ export const firebaseConfig = {
 };
 
 // Replace after creating your admin login. Use the same UID in firestore.rules.
-export const ADMIN_UID = "PASTE_ADMIN_AUTH_UID";
+export const ADMIN_UID = "8lcgTTcPxrOSAdyv2NTe2FwCUC93";
