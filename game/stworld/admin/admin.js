@@ -199,7 +199,13 @@ async function loadAllData() {
     ]);
 
     housesCache = housesSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
-    landmarksCache = landmarksSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    let builtinLm = [];
+    try {
+      const r = await fetch('../data/landmarks.json');
+      builtinLm = await r.json();
+    } catch {}
+    const customLm = landmarksSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    landmarksCache = [...customLm, ...builtinLm];
     requestsCache = requestsSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
 
     $('#statHouses').textContent = String(housesCache.length);
@@ -414,7 +420,9 @@ function renderLandmarks() {
         ${lm.description ? `<p>${escapeHtml(lm.description)}</p>` : ''}
         <div class="actions">
           <button class="secondary sm" data-view-lm="${escapeHtml(lm.id)}" type="button">Preview on 3D Map</button>
-          <button class="danger-btn sm" data-del-lm="${escapeHtml(lm.id)}" type="button">Delete Landmark</button>
+          ${lm.builtin
+            ? '<span class="badge">Built-in AP Landmark</span>'
+            : `<button class="danger-btn sm" data-del-lm="${escapeHtml(lm.id)}" type="button">Delete Landmark</button>`}
         </div>
       </article>
     `;
