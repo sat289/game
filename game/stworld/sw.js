@@ -1,8 +1,8 @@
-// ST Virtual World Service Worker v2.8.0
+// ST Virtual World Service Worker v2.9.0
 // Network-first for app code (HTML/JS/CSS/JSON) so deployments never leave stale JS cached.
 // Cache-first for immutable vendor/binary assets (fonts, maplibre, three-bundle, houses.glb).
 
-const CACHE_VERSION = 'st-virtual-world-v2.8.0';
+const CACHE_VERSION = 'st-virtual-world-v2.9.0';
 const STATIC_VENDOR_ASSETS = [
   './lib/maplibre-gl.css',
   './lib/maplibre-gl.js',
