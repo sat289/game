@@ -152,7 +152,7 @@ function renderHouseMarkers() {
     el.title = `@${h.displayUsername || h.normalizedUsername} · ${h.placeName}`;
     el.innerHTML = `<span class="house-tag">@${escapeHtml(h.displayUsername || h.normalizedUsername)}</span>`;
 
-    const marker = new maplibregl.Marker({ element: el, anchor: 'bottom', offset: [0, -54] })
+    const marker = new maplibregl.Marker({ element: el, anchor: 'center', offset: [0, 0] })
       .setLngLat([h.longitude, h.latitude])
       .addTo(map);
 
@@ -209,7 +209,7 @@ function renderLandmarkMarkers() {
     el.className = 'house-marker landmark-marker';
     el.innerHTML = `<span class="house-tag landmark-tag">${meta.icon} ${escapeHtml(lm.name)}</span>`;
 
-    const marker = new maplibregl.Marker({ element: el, anchor: 'bottom', offset: [0, -60] })
+    const marker = new maplibregl.Marker({ element: el, anchor: 'center', offset: [0, 0] })
       .setLngLat([lm.longitude, lm.latitude])
       .addTo(map);
 
@@ -250,7 +250,7 @@ async function loadLandmarks() {
 }
 
 const MIN_HOUSE_MARKER_ZOOM = 11.5;
-const MIN_LANDMARK_MARKER_ZOOM = 8.0;
+const MIN_LANDMARK_MARKER_ZOOM = 9.0;
 
 function updateMarkerVisibility() {
   if (!map) return;
