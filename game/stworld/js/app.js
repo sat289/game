@@ -11,7 +11,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 import {
-  HOUSE_DESIGNS, validateInstagramUsername, isWithinAndhraBounds, clampToAndhraBounds,
+  ADMIN_CONTACT, HOUSE_DESIGNS, getLandmarkMeta, validateInstagramUsername, isWithinAndhraBounds, clampToAndhraBounds,
   escapeHtml, formatCoord, sanitizePlaceType
 } from './validation.js';
 import { initThemeSwitcher } from './theme.js';
@@ -32,8 +32,10 @@ let currentUser = null;
 let map = null;
 let locationSearch = null;
 let allHouses = [];
+let allLandmarks = [];
 let myHouse = null;
 let houseMarkers = [];
+let landmarkMarkers = [];
 let selectedPlace = null;
 
 // Placement mode state
@@ -91,13 +93,20 @@ function updateSelectedPlaceBanner() {
         <b>${escapeHtml(selectedPlace.name)}</b>
         <small>${escapeHtml(typeTag)} · ${escapeHtml(selectedPlace.district)}, Andhra Pradesh</small>
       </div>
-      <button class="primary sm" id="bannerPlaceBtn" type="button">${myHouse ? 'Move My House' : 'Place My House'}</button>
+      ${myHouse
+        ? '<button class="secondary sm" id="bannerPlaceBtn" type="button">My House</button>'
+        : '<button class="primary sm" id="bannerPlaceBtn" type="button">Place My House</button>'}
     </div>
   `;
   banner.hidden = false;
   $('#bannerPlaceBtn').onclick = () => {
-    setActiveTab('build');
-    showBuildPanel();
+    if (myHouse) {
+      map.flyTo({ center: [myHouse.longitude, myHouse.latitude], zoom: 16.0, pitch: 60, duration: 1200 });
+      toast('Your house location is locked permanently.');
+    } else {
+      setActiveTab('build');
+      showBuildPanel();
+    }
   };
 }
 
@@ -143,7 +152,7 @@ function renderHouseMarkers() {
     el.title = `@${h.displayUsername || h.normalizedUsername} · ${h.placeName}`;
     el.innerHTML = `<span class="house-tag">@${escapeHtml(h.displayUsername || h.normalizedUsername)}</span>`;
 
-    const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+    const marker = new maplibregl.Marker({ element: el, anchor: 'bottom', offset: [0, -54] })
       .setLngLat([h.longitude, h.latitude])
       .addTo(map);
 
@@ -156,7 +165,7 @@ function renderHouseMarkers() {
         <div class="actions">
           <button class="secondary" id="flyHouseBtn" type="button">Zoom In 3D</button>
           <a class="secondary" href="https://www.instagram.com/${encodeURIComponent(h.normalizedUsername)}/" target="_blank" rel="noopener">Open Instagram</a>
-          ${isMine ? '<button class="primary" id="editMineFromPopup" type="button">Edit My House</button>' : ''}
+          ${isMine ? '<button class="primary" id="editMineFromPopup" type="button">Change 3D Design</button>' : ''}
         </div>
       `);
       $('#flyHouseBtn').onclick = () => map.flyTo({ center: [h.longitude, h.latitude], zoom: 15.8, pitch: 60, duration: 1200 });
@@ -166,7 +175,85 @@ function renderHouseMarkers() {
     });
     houseMarkers.push(marker);
   }
+  updateMarkerVisibility();
   map.triggerRepaint();
+}
+
+
+function renderAdminContactCard(username = '') {
+  const waText = encodeURIComponent(`Hi Admin, I want to edit my ST Virtual World house (@${username || 'my_house'}).`);
+  const mailSub = encodeURIComponent(`ST Virtual World House Edit Request (@${username || 'my_house'})`);
+  return `
+    <div class="contact-card">
+      <div class="contact-title">📞 Contact Admin to Edit Location</div>
+      <p class="muted tiny">House location is permanently locked after placement. Tap any contact below to call or message Admin directly:</p>
+      <div class="contact-links">
+        <a class="contact-btn" href="${ADMIN_CONTACT.phoneHref}">📞 Call: ${ADMIN_CONTACT.phoneDisplay}</a>
+        <a class="contact-btn" href="https://wa.me/91${ADMIN_CONTACT.phoneDisplay}?text=${waText}" target="_blank" rel="noopener">💬 WhatsApp: ${ADMIN_CONTACT.phoneDisplay}</a>
+        <a class="contact-btn" href="mailto:${ADMIN_CONTACT.email}?subject=${mailSub}">✉️ Email: ${ADMIN_CONTACT.email}</a>
+        <a class="contact-btn" href="${ADMIN_CONTACT.instagramHref}" target="_blank" rel="noopener">📸 Instagram: @${ADMIN_CONTACT.instagram}</a>
+      </div>
+    </div>
+  `;
+}
+
+function renderLandmarkMarkers() {
+  landmarkMarkers.forEach((m) => m.remove());
+  landmarkMarkers = [];
+  if (!map) return;
+
+  for (const lm of allLandmarks) {
+    if (!Number.isFinite(lm.latitude) || !Number.isFinite(lm.longitude)) continue;
+    const meta = getLandmarkMeta(lm.modelType);
+    const el = document.createElement('div');
+    el.className = 'house-marker landmark-marker';
+    el.innerHTML = `<span class="house-tag landmark-tag">${meta.icon} ${escapeHtml(lm.name)}</span>`;
+
+    const marker = new maplibregl.Marker({ element: el, anchor: 'bottom', offset: [0, -60] })
+      .setLngLat([lm.longitude, lm.latitude])
+      .addTo(map);
+
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openPanel(`
+        <h2>${meta.icon} ${escapeHtml(lm.name)}</h2>
+        <p><b>${escapeHtml(lm.modelType)}</b> · ${escapeHtml(lm.district || 'Andhra Pradesh')}</p>
+        ${lm.description ? `<p>${escapeHtml(lm.description)}</p>` : ''}
+        <p class="muted">Popular Landmark · ${formatCoord(lm.latitude)}, ${formatCoord(lm.longitude)}</p>
+        <div class="actions">
+          <button class="primary" id="flyLmBtn" type="button">Zoom In 3D</button>
+        </div>
+      `);
+      $('#flyLmBtn').onclick = () => map.flyTo({ center: [lm.longitude, lm.latitude], zoom: 16.2, pitch: 62, duration: 1200 });
+    });
+    landmarkMarkers.push(marker);
+  }
+  updateMarkerVisibility();
+  map.triggerRepaint();
+}
+
+async function loadLandmarks() {
+  if (!db) return;
+  try {
+    const snap = await getDocs(collection(db, 'landmarks'));
+    allLandmarks = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    renderLandmarkMarkers();
+  } catch (err) {
+    console.warn('Could not load landmarks:', err?.message || err);
+  }
+}
+
+const MIN_MARKER_ZOOM = 11.5;
+
+function updateMarkerVisibility() {
+  if (!map) return;
+  const visible = map.getZoom() >= MIN_MARKER_ZOOM;
+  for (const m of [...houseMarkers, ...landmarkMarkers]) {
+    const el = m.getElement();
+    if (el) {
+      el.classList.toggle('hidden-zoom', !visible);
+    }
+  }
 }
 
 async function loadHouses() {
@@ -293,21 +380,10 @@ async function confirmAndSaveHouse() {
   btn.textContent = 'Saving...';
 
   try {
-    // Editing existing house (same UID)
+    // Existing house location is permanently locked
     if (myHouse && !placementDraft.isSecondHouseAttempt) {
-      await updateDoc(doc(db, 'houses', currentUser.uid), {
-        placeName: placementDraft.placeName,
-        district: placementDraft.district,
-        placeType: sanitizePlaceType(placementDraft.placeType),
-        latitude: Number(placementDraft.lat.toFixed(6)),
-        longitude: Number(placementDraft.lng.toFixed(6)),
-        houseDesign: placementDraft.houseDesign,
-        updatedAt: serverTimestamp()
-      });
       stopPlacementMode();
-      await loadHouses();
-      toast('Your house position & design have been updated!');
-      map.flyTo({ center: [placementDraft.lng, placementDraft.lat], zoom: 15.6, pitch: 60, duration: 1000 });
+      toast('House location is permanent and cannot be moved.', true);
       return;
     }
 
@@ -371,7 +447,7 @@ async function confirmAndSaveHouse() {
     });
 
     stopPlacementMode();
-    await loadHouses();
+    await Promise.all([loadHouses(), loadLandmarks()]);
     toast(`House built for @${v.display}!`);
     map.flyTo({ center: [placementDraft.lng, placementDraft.lat], zoom: 15.6, pitch: 60, duration: 1200 });
   } catch (err) {
@@ -506,46 +582,81 @@ function showExplorePanel() {
 function showBuildPanel() {
   stopPlacementMode();
   const isEditing = Boolean(myHouse);
-  const districts = locationSearch ? locationSearch.getDistricts() : [];
 
   if (isEditing) {
-    placementDraft.displayUsername = myHouse.displayUsername || myHouse.normalizedUsername;
-    placementDraft.normalizedUsername = myHouse.normalizedUsername;
-    placementDraft.houseDesign = myHouse.houseDesign || HOUSE_DESIGNS[0].id;
-    placementDraft.isSecondHouseAttempt = false;
-    if (!selectedPlace) {
-      placementDraft.lat = myHouse.latitude;
-      placementDraft.lng = myHouse.longitude;
-      placementDraft.placeName = myHouse.placeName;
-      placementDraft.district = myHouse.district;
-      placementDraft.placeType = myHouse.placeType || 'town';
-    }
-  }
-
-  openPanel(`
-    <h2>${isEditing ? 'Edit Your Virtual House' : 'Build Your Virtual House'}</h2>
-    <p class="privacy-warn">⚠ Privacy: Pick a general or fictional map spot — do not publish your private home address.</p>
-
-    <div class="step-tag">STEP 1 · USERNAME</div>
-    ${isEditing ? `
+    openPanel(`
+      <h2>Your Virtual House</h2>
       <div class="info-box">
         <b>@${escapeHtml(myHouse.displayUsername || myHouse.normalizedUsername)}</b><br>
-        <small>Current: ${escapeHtml(myHouse.placeName)}, ${escapeHtml(myHouse.district)} (${formatCoord(myHouse.latitude)}, ${formatCoord(myHouse.longitude)})</small>
+        <small>📍 ${escapeHtml(myHouse.placeName)}, ${escapeHtml(myHouse.district)} (${formatCoord(myHouse.latitude)}, ${formatCoord(myHouse.longitude)})</small>
       </div>
-    ` : `
+      <p class="privacy-warn">🔒 <b>Location Locked:</b> Once a house is set in a place, it cannot be moved to another location.</p>
+
       <label class="field">
-        <span>Instagram Username</span>
-        <div class="at-input">
-          <span class="at-prefix">@</span>
-          <input id="igInput" maxlength="30" autocomplete="off" placeholder="your_username" value="${escapeHtml(placementDraft.displayUsername)}">
-        </div>
+        <span>Change 3D House Design (Same Location)</span>
+        <select id="designSelect">
+          ${HOUSE_DESIGNS.map((d) => `<option value="${escapeHtml(d.id)}" ${myHouse.houseDesign === d.id ? 'selected' : ''}>${escapeHtml(d.id)}</option>`).join('')}
+        </select>
       </label>
-      <div class="actions" style="margin-top:6px">
-        <button class="secondary sm" id="checkUsernameBtn" type="button">Check Availability</button>
+
+      <div class="actions">
+        <button class="primary" id="saveDesignOnlyBtn" type="button">Save 3D Design</button>
+        <button class="secondary" id="flyToMyHouseBtn" type="button">Fly to My House</button>
       </div>
-      <div id="usernameStatus" class="status"></div>
-      <p class="muted tiny">Checks availability inside <b>ST Virtual World</b> only (Instagram has no public availability API).</p>
-    `}
+      <div id="designStatus" class="status"></div>
+      ${renderAdminContactCard(myHouse.displayUsername || myHouse.normalizedUsername)}
+    `);
+
+    $('#flyToMyHouseBtn').onclick = () => {
+      closePanel();
+      map.flyTo({ center: [myHouse.longitude, myHouse.latitude], zoom: 16.0, pitch: 60, duration: 1200 });
+    };
+
+    $('#saveDesignOnlyBtn').onclick = async () => {
+      const btn = $('#saveDesignOnlyBtn');
+      const statusEl = $('#designStatus');
+      const newDesign = $('#designSelect').value;
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+      try {
+        await updateDoc(doc(db, 'houses', currentUser.uid), {
+          houseDesign: newDesign,
+          updatedAt: serverTimestamp()
+        });
+        await Promise.all([loadHouses(), loadLandmarks()]);
+        statusEl.textContent = '3D house design updated!';
+        statusEl.className = 'status ok';
+        toast('3D house design updated!');
+      } catch (err) {
+        statusEl.textContent = 'Update failed: ' + err.message;
+        statusEl.className = 'status err';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Save 3D Design';
+      }
+    };
+    return;
+  }
+
+  const districts = locationSearch ? locationSearch.getDistricts() : [];
+
+  openPanel(`
+    <h2>Build Your Virtual House</h2>
+    <p class="privacy-warn">⚠ <b>Note:</b> Pick a general or fictional map spot (not your private home address). <b>Once saved, your house location is permanent and cannot be moved.</b></p>
+
+    <div class="step-tag">STEP 1 · USERNAME</div>
+    <label class="field">
+      <span>Instagram Username</span>
+      <div class="at-input">
+        <span class="at-prefix">@</span>
+        <input id="igInput" maxlength="30" autocomplete="off" placeholder="your_username" value="${escapeHtml(placementDraft.displayUsername)}">
+      </div>
+    </label>
+    <div class="actions" style="margin-top:6px">
+      <button class="secondary sm" id="checkUsernameBtn" type="button">Check Availability</button>
+    </div>
+    <div id="usernameStatus" class="status"></div>
+    <p class="muted tiny">Checks availability inside <b>ST Virtual World</b> only (Instagram has no public availability API).</p>
 
     <div class="step-tag">STEP 2 · SELECT DISTRICT &amp; ZOOM TO YOUR PLACE</div>
     <label class="field">
@@ -588,15 +699,8 @@ function showBuildPanel() {
     </label>
 
     <div class="actions">
-      <button class="primary" id="startPlaceBtn" type="button">${isEditing ? 'Zoom &amp; Reposition House' : 'Zoom &amp; Place My House'}</button>
-      ${isEditing ? '<button class="secondary" id="flyToMyHouseBtn" type="button">Fly to My House</button>' : ''}
+      <button class="primary" id="startPlaceBtn" type="button">Zoom &amp; Place My House</button>
     </div>
-
-    ${isEditing ? `
-      <div class="divider"></div>
-      <p class="muted tiny">Each browser/device anonymous session can own one house. Need a second house? Request admin review:</p>
-      <button class="secondary sm" id="secondHouseReqBtn" type="button">Request Second House (Admin Review)</button>
-    ` : ''}
   `);
 
   const bDistrict = $('#bDistrict');
@@ -622,7 +726,6 @@ function showBuildPanel() {
 
   fillBuildTowns(bDistrict.value, placementDraft.placeName);
 
-  // Selecting a district zooms the map to that district & filters towns
   bDistrict.onchange = () => {
     const distName = bDistrict.value;
     fillBuildTowns(distName);
@@ -635,7 +738,6 @@ function showBuildPanel() {
     }
   };
 
-  // Selecting a town/city zooms directly to it & reveals villages only for that town
   bTown.onchange = () => {
     const opt = bTown.selectedOptions[0];
     const townName = bTown.value;
@@ -665,7 +767,6 @@ function showBuildPanel() {
     }
   };
 
-  // Selecting an optional village zooms right to that village
   bVillage.onchange = () => {
     const opt = bVillage.selectedOptions[0];
     if (!bVillage.value || !opt) return;
@@ -679,7 +780,6 @@ function showBuildPanel() {
     syncSelectedText();
   };
 
-  // Inline Nominatim + local place search inside Build panel
   async function runBuildSearch() {
     const q = bSearchInput.value.trim();
     if (q.length < 2) {
@@ -716,60 +816,44 @@ function showBuildPanel() {
 
   $('#designSelect').onchange = (e) => { placementDraft.houseDesign = e.target.value; };
 
-  if (!isEditing) {
-    const igInput = $('#igInput');
-    const statusEl = $('#usernameStatus');
+  const igInput = $('#igInput');
+  const statusEl = $('#usernameStatus');
 
-    const runCheck = async () => {
-      const v = validateInstagramUsername(igInput.value);
-      placementDraft.displayUsername = v.display;
-      placementDraft.normalizedUsername = v.normalized;
-      placementDraft.usernameVerified = false;
-      if (!v.valid) {
-        statusEl.textContent = v.error;
+  const runCheck = async () => {
+    const v = validateInstagramUsername(igInput.value);
+    placementDraft.displayUsername = v.display;
+    placementDraft.normalizedUsername = v.normalized;
+    placementDraft.usernameVerified = false;
+    if (!v.valid) {
+      statusEl.textContent = v.error;
+      statusEl.className = 'status err';
+      return false;
+    }
+    statusEl.textContent = 'Checking ST Virtual World...';
+    statusEl.className = 'status';
+    try {
+      const snap = await getDoc(doc(db, 'usernames', v.normalized));
+      if (snap.exists()) {
+        statusEl.textContent = 'Username already taken';
         statusEl.className = 'status err';
         return false;
       }
-      statusEl.textContent = 'Checking ST Virtual World...';
-      statusEl.className = 'status';
-      try {
-        const snap = await getDoc(doc(db, 'usernames', v.normalized));
-        if (snap.exists()) {
-          statusEl.textContent = 'Username already taken';
-          statusEl.className = 'status err';
-          return false;
-        }
-        statusEl.textContent = 'Username available';
-        statusEl.className = 'status ok';
-        placementDraft.usernameVerified = true;
-        return true;
-      } catch (err) {
-        statusEl.textContent = 'Check failed: ' + err.message;
-        statusEl.className = 'status err';
-        return false;
-      }
-    };
+      statusEl.textContent = 'Username available';
+      statusEl.className = 'status ok';
+      placementDraft.usernameVerified = true;
+      return true;
+    } catch (err) {
+      statusEl.textContent = 'Check failed: ' + err.message;
+      statusEl.className = 'status err';
+      return false;
+    }
+  };
 
-    $('#checkUsernameBtn').onclick = runCheck;
-    $('#startPlaceBtn').onclick = async () => {
-      const ok = await runCheck();
-      if (ok) startPlacementMode();
-    };
-  } else {
-    $('#startPlaceBtn').onclick = () => {
-      placementDraft.isSecondHouseAttempt = false;
-      startPlacementMode();
-    };
-    $('#flyToMyHouseBtn').onclick = () => {
-      closePanel();
-      map.flyTo({ center: [myHouse.longitude, myHouse.latitude], zoom: 15.8, pitch: 60, duration: 1200 });
-    };
-    $('#secondHouseReqBtn').onclick = () => {
-      placementDraft.isSecondHouseAttempt = true;
-      startPlacementMode();
-      toast('Position the marker and confirm to send a second-house request to admin.');
-    };
-  }
+  $('#checkUsernameBtn').onclick = runCheck;
+  $('#startPlaceBtn').onclick = async () => {
+    const ok = await runCheck();
+    if (ok) startPlacementMode();
+  };
 }
 
 function showMyHousePanel() {
@@ -793,8 +877,9 @@ function showMyHousePanel() {
        <b>Coordinates:</b> ${formatCoord(myHouse.latitude)}, ${formatCoord(myHouse.longitude)}</p>
     <div class="actions">
       <button class="primary" id="openMyCoords" type="button">Fly to My House</button>
-      <button class="secondary" id="editMyBtn" type="button">Edit Position / Design</button>
+      <button class="secondary" id="editMyBtn" type="button">Change 3D Design</button>
     </div>
+    ${renderAdminContactCard(myHouse.displayUsername || myHouse.normalizedUsername)}
   `);
   $('#openMyCoords').onclick = () => {
     closePanel();
@@ -821,37 +906,72 @@ function bindSearchBar() {
   const btn = $('#searchBtn');
   const dropdown = $('#searchResults');
 
-  async function runSearch() {
-    const q = input.value.trim();
-    if (q.length < 2) {
-      dropdown.hidden = true;
+  function runUsernameSearch(showEmptyMessage = false) {
+    const raw = input.value.trim().replace(/^@+/, '').toLowerCase();
+    if (!raw) {
+      if (showEmptyMessage) {
+        dropdown.hidden = false;
+        if (!allHouses.length) {
+          dropdown.innerHTML = '<div class="sr-item muted">No player houses built yet.</div>';
+        } else {
+          renderUsernameResults(allHouses.slice(0, 12));
+        }
+      } else {
+        dropdown.hidden = true;
+      }
       return;
     }
+
+    const matches = allHouses.filter((h) => {
+      const norm = String(h.normalizedUsername || '').toLowerCase();
+      const disp = String(h.displayUsername || '').toLowerCase();
+      return norm.includes(raw) || disp.includes(raw);
+    }).slice(0, 12);
+
     dropdown.hidden = false;
-    dropdown.innerHTML = '<div class="sr-item muted">Searching Andhra Pradesh...</div>';
-    const results = await locationSearch.search(q);
-    if (!results.length) {
-      dropdown.innerHTML = '<div class="sr-item muted">No Andhra Pradesh place found. Try another spelling.</div>';
+    if (!matches.length) {
+      dropdown.innerHTML = `<div class="sr-item muted">No player found matching "@${escapeHtml(raw)}".</div>`;
       return;
     }
-    dropdown.innerHTML = results.map((r, idx) => `
-      <button type="button" class="sr-item" data-idx="${idx}">
-        <b>${escapeHtml(r.name)}</b>
-        <small>${escapeHtml(r.placeType.toUpperCase())} · ${escapeHtml(r.district)}, Andhra Pradesh</small>
+    renderUsernameResults(matches);
+  }
+
+  function renderUsernameResults(matches) {
+    dropdown.innerHTML = matches.map((h, idx) => `
+      <button type="button" class="sr-item" data-uidx="${idx}">
+        <b>@${escapeHtml(h.displayUsername || h.normalizedUsername)}</b>
+        <small>🏠 ${escapeHtml(h.houseDesign)} · ${escapeHtml(h.placeName)}, ${escapeHtml(h.district)}</small>
       </button>
     `).join('');
-    dropdown.querySelectorAll('.sr-item[data-idx]').forEach((el) => {
+
+    dropdown.querySelectorAll('.sr-item[data-uidx]').forEach((el) => {
       el.onclick = () => {
-        const picked = results[Number(el.dataset.idx)];
-        input.value = picked.name;
+        const house = matches[Number(el.dataset.uidx)];
+        input.value = '@' + (house.displayUsername || house.normalizedUsername);
         dropdown.hidden = true;
-        flyToPlace(picked);
+        closePanel();
+        stopPlacementMode();
+        if (map && Number.isFinite(house.latitude) && Number.isFinite(house.longitude)) {
+          map.flyTo({
+            center: [house.longitude, house.latitude],
+            zoom: 16.0,
+            pitch: 60,
+            duration: 1400
+          });
+          toast(`Visiting @${house.displayUsername || house.normalizedUsername}'s ${house.houseDesign}`);
+        }
       };
     });
   }
 
-  btn.onclick = runSearch;
-  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') runSearch(); });
+  btn.onclick = () => runUsernameSearch(true);
+  input.addEventListener('input', () => runUsernameSearch(false));
+  input.addEventListener('focus', () => {
+    if (input.value.trim().length > 0) runUsernameSearch(false);
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') runUsernameSearch(true);
+  });
   document.addEventListener('click', (e) => {
     if (!e.target.closest('.search-wrap')) dropdown.hidden = true;
   });
@@ -902,14 +1022,19 @@ async function boot() {
       const threeLayer = createThreeHouseLayer(
         map,
         () => allHouses,
-        () => (placingMode ? placementDraft : null)
+        () => (placingMode ? placementDraft : null),
+        () => allLandmarks,
+        './houses.glb'
       );
       map.addLayer(threeLayer);
     } catch (e) {
       console.warn('3D layer skipped:', e);
     }
-    if (db) loadHouses();
+    if (db) { loadHouses(); loadLandmarks(); }
   });
+
+  map.on('zoom', updateMarkerVisibility);
+  map.on('zoomend', updateMarkerVisibility);
 
   map.on('click', (e) => {
     if (!placingMode) return;
@@ -933,7 +1058,7 @@ async function boot() {
       }
       currentUser = u;
       await ensurePlayerRecord(u);
-      await loadHouses();
+      await Promise.all([loadHouses(), loadLandmarks()]);
     });
   } catch (err) {
     console.error('Firebase init error:', err);
