@@ -1,9 +1,14 @@
 // ST Virtual World — Real Interactive Three.js + houses.glb 3D Map Layer
+// Lazy-loads lib/three-bundle.js and houses.glb (12 variants v0..v11 with MeshoptDecoder).
+// Preserves MapLibre's native WebGL viewport on high-DPI Android devices.
+
 import { getDesignMeta } from './validation.js';
 
 export function createThreeHouseLayer(map, getHousesFn, getPreviewFn) {
   let THREE = null;
-  let renderer = null, scene = null, camera = null;
+  let renderer = null;
+  let scene = null;
+  let camera = null;
   const prototypes = new Map();
   const houseMeshes = new Map();
   let previewMesh = null;
@@ -23,8 +28,15 @@ export function createThreeHouseLayer(map, getHousesFn, getPreviewFn) {
       dir.position.set(60, 130, 80);
       scene.add(dir);
 
-      renderer = new THREE.WebGLRenderer({ canvas: map.getCanvas(), context: gl, antialias: true });
+      // IMPORTANT: Do NOT call renderer.setPixelRatio() or renderer.setSize()
+      // because MapLibre owns the shared WebGL canvas & viewport dimensions.
+      renderer = new THREE.WebGLRenderer({
+        canvas: map.getCanvas(),
+        context: gl,
+        antialias: true
+      });
       renderer.autoClear = false;
+
       try {
         const pmrem = new THREE.PMREMGenerator(renderer);
         scene.environment = pmrem.fromScene(new THREE.RoomEnvironment(), 0.04).texture;
@@ -68,7 +80,9 @@ export function createThreeHouseLayer(map, getHousesFn, getPreviewFn) {
 
   function cloneVariant(designName) {
     const meta = getDesignMeta(designName);
-    if (glbReady && prototypes.has(meta.variant)) return prototypes.get(meta.variant).clone(true);
+    if (glbReady && prototypes.has(meta.variant)) {
+      return prototypes.get(meta.variant).clone(true);
+    }
     return createFallbackHouse(meta.accent);
   }
 
@@ -86,7 +100,9 @@ export function createThreeHouseLayer(map, getHousesFn, getPreviewFn) {
     id: 'st-3d-houses',
     type: 'custom',
     renderingMode: '3d',
-    onAdd(_map, gl) { initAssets(gl); },
+    onAdd(_map, gl) {
+      initAssets(gl);
+    },
     render(_gl, matrix) {
       if (!THREE || !renderer || !scene) return;
       const zoom = map.getZoom();
