@@ -1,0 +1,37 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    // Replace with the UID of your trusted admin Firebase account.
+    function isAdmin() { return signedIn() && request.auth.uid == 'PASTE_ADMIN_AUTH_UID'; }
+
+    match /players/{uid} {
+      allow create: if signedIn() && request.auth.uid == uid;
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow update: if signedIn() && request.auth.uid == uid
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','updatedAt']);
+      allow delete: if isAdmin();
+    }
+    match /houseRequests/{requestId} {
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.username is string
+        && request.resource.data.username.size() >= 1
+        && request.resource.data.username.size() <= 30
+        && request.resource.data.town is string
+        && request.resource.data.district is string
+        && request.resource.data.landmark is string;
+      allow read: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow update, delete: if isAdmin();
+    }
+    match /houses/{houseId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    match /usernames/{username} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+  }
+}
