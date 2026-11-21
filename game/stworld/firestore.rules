@@ -66,18 +66,12 @@ service cloud.firestore {
 
     match /players/{uid} {
       allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
-      allow create: if signedIn()
+      allow create, update: if isAdmin() || (
+        signedIn()
         && request.auth.uid == uid
         && request.resource.data.keys().hasOnly(['uid', 'authType', 'hasHouse', 'normalizedUsername', 'createdAt', 'updatedAt'])
         && request.resource.data.uid == uid
         && request.resource.data.authType in ['anonymous', 'admin']
-        && request.resource.data.hasHouse is bool;
-      allow update: if isAdmin() || (
-        signedIn()
-        && request.auth.uid == uid
-        && request.resource.data.uid == resource.data.uid
-        && request.resource.data.createdAt == resource.data.createdAt
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hasHouse', 'normalizedUsername', 'updatedAt'])
         && request.resource.data.hasHouse is bool
       );
       allow delete: if isAdmin();
