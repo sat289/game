@@ -1,34 +1,153 @@
-// ST Virtual World — Admin Dashboard
-// Strictly restricted to ADMIN_UID (8lcgTTcPxrOSAdyv2NTe2FwCUC93).
+// ST Virtual World — Admin Studio
+// Restricted to ADMIN_UID (8lcgTTcPxrOSAdyv2NTe2FwCUC93).
+// Features: Live 3D Map Preview, Username Search & Full Address/Design Editor,
+// Admin-only Popular Places (Temples, Lighthouses, Malls, etc.), Manual Add, CSV Export.
 
 import { firebaseConfig, ADMIN_UID } from '../firebase-config.js';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import {
-  getFirestore, collection, getDocs, doc, updateDoc, runTransaction, serverTimestamp
+  getFirestore, collection, getDocs, doc, addDoc, updateDoc, deleteDoc, runTransaction, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 import {
-  HOUSE_DESIGNS, validateInstagramUsername, isWithinAndhraBounds,
+  HOUSE_DESIGNS, LANDMARK_MODELS, getLandmarkMeta,
+  validateInstagramUsername, isWithinAndhraBounds, clampToAndhraBounds,
   escapeHtml, formatCoord, formatTimestamp, sanitizePlaceType
 } from '../js/validation.js';
 import { initThemeSwitcher } from '../js/theme.js';
+import { createThreeHouseLayer } from '../js/three-houses.js';
 
 const $ = (s) => document.querySelector(s);
 let auth = null, db = null, adminUser = null;
-let housesCache = [], requestsCache = [];
+let housesCache = [], landmarksCache = [], requestsCache = [];
+let editingHouseId = null;
+let activeTab = 'houses';
+
+// Live 3D Map Preview state
+let adminMap = null;
+let previewMarker = null;
+let previewState = null; // { lat, lng, isLandmark, houseDesign, modelType }
 
 initThemeSwitcher($('#adminThemeSelect'));
 
-// Populate design dropdown & districts
-$('#mDesign').innerHTML = HOUSE_DESIGNS.map((d) => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.id)}</option>`).join('');
+// Populate model selects
+const houseDesignOpts = HOUSE_DESIGNS.map((d) => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.id)}</option>`).join('');
+$('#mDesign').innerHTML = houseDesignOpts;
+$('#eDesign').innerHTML = houseDesignOpts;
+$('#lmModel').innerHTML = LANDMARK_MODELS.map((m) => `<option value="${escapeHtml(m.id)}">${m.icon} ${escapeHtml(m.id)}</option>`).join('');
+
 fetch('../data/andhra.json')
   .then((r) => r.json())
   .then((d) => {
-    $('#mDistrict').innerHTML = d.districts.map((x) => `<option value="${escapeHtml(x.d)}">${escapeHtml(x.d)}</option>`).join('');
+    const distOpts = d.districts.map((x) => `<option value="${escapeHtml(x.d)}">${escapeHtml(x.d)}</option>`).join('');
+    $('#mDistrict').innerHTML = distOpts;
+    $('#eDistrict').innerHTML = distOpts;
+    $('#lmDistrict').innerHTML = distOpts;
   })
   .catch(() => {});
 
+// Tab switching
+document.querySelectorAll('.tab-btn').forEach((btn) => {
+  btn.onclick = () => {
+    activeTab = btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach((b) => b.classList.toggle('active', b === btn));
+    document.querySelectorAll('.tab-pane').forEach((p) => { p.hidden = p.id !== `tab-${activeTab}`; });
+  };
+});
+
+function initAdminMap() {
+  if (adminMap) {
+    adminMap.resize();
+    return;
+  }
+  adminMap = new maplibregl.Map({
+    container: 'adminMap',
+    style: 'https://tiles.openfreemap.org/styles/liberty',
+    center: [80.648, 16.506],
+    zoom: 7.0,
+    pitch: 55,
+    bearing: -10,
+    maxPitch: 65
+  });
+  adminMap.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'bottom-right');
+
+  adminMap.on('load', () => {
+    adminMap.resize();
+    try {
+      const layer = createThreeHouseLayer(
+        adminMap,
+        () => housesCache,
+        () => previewState,
+        () => landmarksCache,
+        '../houses.glb'
+      );
+      adminMap.addLayer(layer);
+    } catch (e) {
+      console.warn('Admin 3D layer warning:', e);
+    }
+  });
+
+  adminMap.on('click', (e) => {
+    const c = clampToAndhraBounds(e.lngLat.lat, e.lngLat.lng);
+    applyPickedCoordsToActiveForm(c.lat, c.lng);
+  });
+}
+
+function setPreviewOnMap({ lat, lng, isLandmark = false, houseDesign = HOUSE_DESIGNS[0].id, modelType = LANDMARK_MODELS[0].id, fly = true }) {
+  if (!adminMap) initAdminMap();
+  const c = clampToAndhraBounds(lat, lng);
+  previewState = { lat: c.lat, lng: c.lng, isLandmark, houseDesign, modelType };
+
+  if (previewMarker) previewMarker.remove();
+  const el = document.createElement('div');
+  el.className = 'placement-pin';
+  el.innerHTML = isLandmark ? `<span>${getLandmarkMeta(modelType).icon}</span>` : '<span>🏠</span>';
+  previewMarker = new maplibregl.Marker({ element: el, draggable: true, anchor: 'bottom' })
+    .setLngLat([c.lng, c.lat])
+    .addTo(adminMap);
+
+  previewMarker.on('dragend', () => {
+    const ll = previewMarker.getLngLat();
+    const clamped = clampToAndhraBounds(ll.lat, ll.lng);
+    applyPickedCoordsToActiveForm(clamped.lat, clamped.lng, false);
+  });
+
+  $('#previewHud').textContent = `Preview (${isLandmark ? modelType : houseDesign}): ${formatCoord(c.lat)}, ${formatCoord(c.lng)}`;
+  if (fly) {
+    adminMap.flyTo({ center: [c.lng, c.lat], zoom: 15.8, pitch: 60, duration: 1000 });
+  }
+  adminMap.triggerRepaint();
+}
+
+function applyPickedCoordsToActiveForm(lat, lng, fly = false) {
+  const fLat = Number(lat).toFixed(5);
+  const fLng = Number(lng).toFixed(5);
+  if (activeTab === 'houses' && !$('#houseEditorBox').hidden) {
+    $('#eLat').value = fLat;
+    $('#eLng').value = fLng;
+    setPreviewOnMap({ lat, lng, isLandmark: false, houseDesign: $('#eDesign').value, fly });
+  } else if (activeTab === 'landmarks') {
+    $('#lmLat').value = fLat;
+    $('#lmLng').value = fLng;
+    setPreviewOnMap({ lat, lng, isLandmark: true, modelType: $('#lmModel').value, fly });
+  } else if (activeTab === 'manual') {
+    $('#mLat').value = fLat;
+    $('#mLng').value = fLng;
+    setPreviewOnMap({ lat, lng, isLandmark: false, houseDesign: $('#mDesign').value, fly });
+  } else {
+    setPreviewOnMap({ lat, lng, isLandmark: false, houseDesign: HOUSE_DESIGNS[0].id, fly });
+  }
+}
+
+$('#clearPreviewBtn').onclick = () => {
+  previewState = null;
+  if (previewMarker) { previewMarker.remove(); previewMarker = null; }
+  $('#previewHud').textContent = 'Preview Pin: Tap map to pick coordinates';
+  if (adminMap) adminMap.triggerRepaint();
+};
+
+// Firebase Init
 const app = initializeApp(firebaseConfig);
 auth = getAuth(app);
 db = getFirestore(app);
@@ -39,10 +158,11 @@ onAuthStateChanged(auth, (u) => {
     $('#loginBox').hidden = true;
     $('#dashboard').hidden = false;
     $('#loginStatus').textContent = '';
+    setTimeout(initAdminMap, 100);
     loadAllData();
   } else {
     if (u && u.uid !== ADMIN_UID) {
-      $('#loginStatus').textContent = 'Access denied: this account is not the authorized ST Virtual World Admin UID.';
+      $('#loginStatus').textContent = 'Access denied: this account is not the authorized Admin UID.';
       $('#loginStatus').className = 'status err';
       signOut(auth);
     }
@@ -70,30 +190,36 @@ $('#houseSearchInput').addEventListener('input', renderHouses);
 async function loadAllData() {
   if (!adminUser || adminUser.uid !== ADMIN_UID) return;
   try {
-    const [housesSnap, usernamesSnap, playersSnap, requestsSnap] = await Promise.all([
+    const [housesSnap, landmarksSnap, usernamesSnap, playersSnap, requestsSnap] = await Promise.all([
       getDocs(collection(db, 'houses')),
+      getDocs(collection(db, 'landmarks')).catch(() => ({ docs: [] })),
       getDocs(collection(db, 'usernames')),
       getDocs(collection(db, 'players')),
       getDocs(collection(db, 'houseRequests'))
     ]);
 
     housesCache = housesSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    landmarksCache = landmarksSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
     requestsCache = requestsSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
 
     $('#statHouses').textContent = String(housesCache.length);
+    $('#statLandmarks').textContent = String(landmarksCache.length);
     $('#statUsernames').textContent = String(usernamesSnap.size);
     $('#statPlayers').textContent = String(playersSnap.size);
     $('#statRequests').textContent = String(requestsCache.filter((r) => r.status === 'pending').length);
 
     renderHouses();
+    renderLandmarks();
     renderRequests();
+    if (adminMap) adminMap.triggerRepaint();
   } catch (err) {
     alert('Failed to load admin data: ' + err.message);
   }
 }
 
+// TAB 1: Houses Search & Inline Editor
 function renderHouses() {
-  const q = $('#houseSearchInput').value.trim().toLowerCase();
+  const q = $('#houseSearchInput').value.trim().replace(/^@+/, '').toLowerCase();
   const list = $('#housesList');
   const filtered = housesCache.filter((h) => {
     if (!q) return true;
@@ -102,60 +228,106 @@ function renderHouses() {
   });
 
   if (!filtered.length) {
-    list.innerHTML = '<p class="muted">No houses found.</p>';
+    list.innerHTML = '<p class="muted">No matching player houses found.</p>';
     return;
   }
 
   list.innerHTML = filtered.map((h) => `
     <article class="item-card">
       <h3>@${escapeHtml(h.displayUsername || h.normalizedUsername)} <span class="badge">${escapeHtml(h.houseDesign)}</span></h3>
-      <p><b>${escapeHtml(h.placeName)}</b> (${escapeHtml(h.placeType || 'town')}), ${escapeHtml(h.district)} · Coords: ${formatCoord(h.latitude)}, ${formatCoord(h.longitude)}</p>
+      <p><b>${escapeHtml(h.placeName)}</b> (${escapeHtml(h.placeType || 'town')}), ${escapeHtml(h.district)} · ${formatCoord(h.latitude)}, ${formatCoord(h.longitude)}</p>
       <p>Created: ${escapeHtml(formatTimestamp(h.createdAt))} · UID: <code>${escapeHtml(h.uid || h.id)}</code></p>
       <div class="actions">
-        <button class="secondary sm" data-edit-house="${escapeHtml(h.id)}">Edit Position / Design</button>
-        <button class="danger-btn sm" data-del-house="${escapeHtml(h.id)}" data-del-user="${escapeHtml(h.normalizedUsername)}">Delete House</button>
+        <button class="primary sm" data-edit-house="${escapeHtml(h.id)}" type="button">Edit Address &amp; 3D Model</button>
+        <button class="secondary sm" data-view-house="${escapeHtml(h.id)}" type="button">Preview on Map</button>
+        <button class="danger-btn sm" data-del-house="${escapeHtml(h.id)}" data-del-user="${escapeHtml(h.normalizedUsername)}" type="button">Delete</button>
       </div>
     </article>
   `).join('');
 
   list.querySelectorAll('[data-edit-house]').forEach((btn) => {
-    btn.onclick = () => editHousePrompt(btn.dataset.editHouse);
+    btn.onclick = () => openHouseEditor(btn.dataset.editHouse);
+  });
+  list.querySelectorAll('[data-view-house]').forEach((btn) => {
+    btn.onclick = () => {
+      const h = housesCache.find((x) => x.id === btn.dataset.viewHouse);
+      if (h) setPreviewOnMap({ lat: h.latitude, lng: h.longitude, isLandmark: false, houseDesign: h.houseDesign, fly: true });
+    };
   });
   list.querySelectorAll('[data-del-house]').forEach((btn) => {
     btn.onclick = () => deleteHouseAtomic(btn.dataset.delHouse, btn.dataset.delUser);
   });
 }
 
-async function editHousePrompt(houseId) {
+function openHouseEditor(houseId) {
   const h = housesCache.find((x) => x.id === houseId);
   if (!h) return;
-  const newLat = prompt('Enter new Latitude (12.5 to 19.5):', String(h.latitude));
-  if (newLat === null) return;
-  const newLng = prompt('Enter new Longitude (76.5 to 85.0):', String(h.longitude));
-  if (newLng === null) return;
-  const newDesign = prompt(`Enter House Design (${HOUSE_DESIGNS.map((d) => d.id).join(', ')}):`, h.houseDesign);
-  if (newDesign === null) return;
-
-  if (!isWithinAndhraBounds(Number(newLat), Number(newLng))) {
-    alert('Coordinates must be within Andhra Pradesh bounds.');
-    return;
-  }
-  try {
-    await updateDoc(doc(db, 'houses', houseId), {
-      latitude: Number(Number(newLat).toFixed(6)),
-      longitude: Number(Number(newLng).toFixed(6)),
-      houseDesign: newDesign.trim() || h.houseDesign,
-      updatedAt: serverTimestamp()
-    });
-    alert('House updated.');
-    loadAllData();
-  } catch (err) {
-    alert('Update failed: ' + err.message);
-  }
+  editingHouseId = houseId;
+  $('#editTargetUser').textContent = '@' + (h.displayUsername || h.normalizedUsername);
+  $('#ePlace').value = h.placeName || '';
+  $('#eDistrict').value = h.district || '';
+  $('#ePlaceType').value = h.placeType || 'town';
+  $('#eDesign').value = h.houseDesign || HOUSE_DESIGNS[0].id;
+  $('#eLat').value = Number(h.latitude).toFixed(5);
+  $('#eLng').value = Number(h.longitude).toFixed(5);
+  $('#editHouseStatus').textContent = '';
+  $('#houseEditorBox').hidden = false;
+  setPreviewOnMap({ lat: h.latitude, lng: h.longitude, isLandmark: false, houseDesign: h.houseDesign, fly: true });
 }
 
+$('#cancelEditHouseBtn').onclick = () => {
+  editingHouseId = null;
+  $('#houseEditorBox').hidden = true;
+};
+
+$('#previewEditBtn').onclick = () => {
+  setPreviewOnMap({
+    lat: Number($('#eLat').value),
+    lng: Number($('#eLng').value),
+    isLandmark: false,
+    houseDesign: $('#eDesign').value,
+    fly: true
+  });
+};
+
+$('#saveEditHouseBtn').onclick = async () => {
+  if (!editingHouseId) return;
+  const statusEl = $('#editHouseStatus');
+  const placeName = $('#ePlace').value.trim();
+  const district = $('#eDistrict').value;
+  const placeType = sanitizePlaceType($('#ePlaceType').value);
+  const houseDesign = $('#eDesign').value;
+  const lat = Number($('#eLat').value);
+  const lng = Number($('#eLng').value);
+
+  if (!placeName || !isWithinAndhraBounds(lat, lng)) {
+    statusEl.textContent = 'Enter a valid place name and Andhra Pradesh coordinates.';
+    statusEl.className = 'status err';
+    return;
+  }
+  statusEl.textContent = 'Saving...';
+  statusEl.className = 'status';
+  try {
+    await updateDoc(doc(db, 'houses', editingHouseId), {
+      placeName,
+      district,
+      placeType,
+      houseDesign,
+      latitude: Number(lat.toFixed(6)),
+      longitude: Number(lng.toFixed(6)),
+      updatedAt: serverTimestamp()
+    });
+    statusEl.textContent = 'Player house updated!';
+    statusEl.className = 'status ok';
+    await loadAllData();
+  } catch (err) {
+    statusEl.textContent = 'Update failed: ' + err.message;
+    statusEl.className = 'status err';
+  }
+};
+
 async function deleteHouseAtomic(houseId, normalizedUsername) {
-  if (!confirm(`Delete house @${normalizedUsername} and release its username claim? This cannot be undone.`)) return;
+  if (!confirm(`Delete house @${normalizedUsername} and release its username claim?`)) return;
   try {
     await runTransaction(db, async (tx) => {
       const hRef = doc(db, 'houses', houseId);
@@ -166,49 +338,117 @@ async function deleteHouseAtomic(houseId, normalizedUsername) {
       if (uSnap.exists() && uSnap.data().houseId === houseId) tx.delete(uRef);
       if (pSnap.exists()) tx.update(pRef, { hasHouse: false, normalizedUsername: '', updatedAt: serverTimestamp() });
     });
-    alert('House deleted and username claim released.');
+    if (editingHouseId === houseId) {
+      editingHouseId = null;
+      $('#houseEditorBox').hidden = true;
+    }
     loadAllData();
   } catch (err) {
     alert('Delete failed: ' + err.message);
   }
 }
 
-function renderRequests() {
-  const list = $('#requestsList');
-  const pending = requestsCache.filter((r) => r.status === 'pending');
-  if (!pending.length) {
-    list.innerHTML = '<p class="muted">No pending second-house requests.</p>';
+// TAB 2: Popular Places / Landmarks (Admin Only)
+$('#previewLandmarkBtn').onclick = () => {
+  setPreviewOnMap({
+    lat: Number($('#lmLat').value),
+    lng: Number($('#lmLng').value),
+    isLandmark: true,
+    modelType: $('#lmModel').value,
+    fly: true
+  });
+};
+
+$('#addLandmarkBtn').onclick = async () => {
+  const statusEl = $('#landmarkStatus');
+  const name = $('#lmName').value.trim();
+  const modelType = $('#lmModel').value;
+  const district = $('#lmDistrict').value;
+  const description = $('#lmDesc').value.trim();
+  const lat = Number($('#lmLat').value);
+  const lng = Number($('#lmLng').value);
+
+  if (!name || !isWithinAndhraBounds(lat, lng)) {
+    statusEl.textContent = 'Enter a landmark name and valid Andhra Pradesh coordinates.';
+    statusEl.className = 'status err';
     return;
   }
-  list.innerHTML = pending.map((r) => `
-    <article class="item-card">
-      <h3>@${escapeHtml(r.requestedDisplayUsername || r.requestedNormalizedUsername)} <span class="badge">${escapeHtml(r.type || 'second-house-attempt')}</span></h3>
-      <p>Existing house: @${escapeHtml(r.existingUsername || 'unknown')} (UID: <code>${escapeHtml(r.uid)}</code>)</p>
-      <p>Requested: ${escapeHtml(r.houseDesign)} in ${escapeHtml(r.placeName)}, ${escapeHtml(r.district)} (${formatCoord(r.latitude)}, ${formatCoord(r.longitude)})</p>
-      <p>Submitted: ${escapeHtml(formatTimestamp(r.createdAt))}</p>
-      <div class="actions">
-        <button class="primary sm" data-resolve-req="${escapeHtml(r.id)}" data-status="resolved">Mark Resolved</button>
-        <button class="danger-btn sm" data-resolve-req="${escapeHtml(r.id)}" data-status="rejected">Reject</button>
-      </div>
-    </article>
-  `).join('');
+  statusEl.textContent = 'Adding popular landmark...';
+  statusEl.className = 'status';
+  try {
+    await addDoc(collection(db, 'landmarks'), {
+      name,
+      modelType,
+      category: getLandmarkMeta(modelType).category,
+      district,
+      description,
+      latitude: Number(lat.toFixed(6)),
+      longitude: Number(lng.toFixed(6)),
+      createdBy: adminUser.uid,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    statusEl.textContent = `Added "${name}" (${modelType}) to the 3D map!`;
+    statusEl.className = 'status ok';
+    $('#lmName').value = '';
+    $('#lmDesc').value = '';
+    loadAllData();
+  } catch (err) {
+    statusEl.textContent = 'Failed: ' + err.message;
+    statusEl.className = 'status err';
+  }
+};
 
-  list.querySelectorAll('[data-resolve-req]').forEach((btn) => {
+function renderLandmarks() {
+  const list = $('#landmarksList');
+  if (!landmarksCache.length) {
+    list.innerHTML = '<p class="muted">No popular places added yet. Add Temples, Lighthouses, or Malls above.</p>';
+    return;
+  }
+  list.innerHTML = landmarksCache.map((lm) => {
+    const meta = getLandmarkMeta(lm.modelType);
+    return `
+      <article class="item-card">
+        <h3>${meta.icon} ${escapeHtml(lm.name)} <span class="badge">${escapeHtml(lm.modelType)}</span></h3>
+        <p>${escapeHtml(lm.district || 'Andhra Pradesh')} · ${formatCoord(lm.latitude)}, ${formatCoord(lm.longitude)}</p>
+        ${lm.description ? `<p>${escapeHtml(lm.description)}</p>` : ''}
+        <div class="actions">
+          <button class="secondary sm" data-view-lm="${escapeHtml(lm.id)}" type="button">Preview on 3D Map</button>
+          <button class="danger-btn sm" data-del-lm="${escapeHtml(lm.id)}" type="button">Delete Landmark</button>
+        </div>
+      </article>
+    `;
+  }).join('');
+
+  list.querySelectorAll('[data-view-lm]').forEach((btn) => {
+    btn.onclick = () => {
+      const lm = landmarksCache.find((x) => x.id === btn.dataset.viewLm);
+      if (lm) setPreviewOnMap({ lat: lm.latitude, lng: lm.longitude, isLandmark: true, modelType: lm.modelType, fly: true });
+    };
+  });
+  list.querySelectorAll('[data-del-lm]').forEach((btn) => {
     btn.onclick = async () => {
-      if (!confirm(`Mark this request as ${btn.dataset.status}?`)) return;
+      if (!confirm('Delete this popular place from the map?')) return;
       try {
-        await updateDoc(doc(db, 'houseRequests', btn.dataset.resolveReq), {
-          status: btn.dataset.status,
-          reviewedBy: adminUser.uid,
-          reviewedAt: serverTimestamp()
-        });
+        await deleteDoc(doc(db, 'landmarks', btn.dataset.delLm));
         loadAllData();
       } catch (err) {
-        alert('Action failed: ' + err.message);
+        alert('Delete failed: ' + err.message);
       }
     };
   });
 }
+
+// TAB 3: Add Manual House
+$('#previewManualBtn').onclick = () => {
+  setPreviewOnMap({
+    lat: Number($('#mLat').value),
+    lng: Number($('#mLng').value),
+    isLandmark: false,
+    houseDesign: $('#mDesign').value,
+    fly: true
+  });
+};
 
 $('#addManualBtn').onclick = async () => {
   const statusEl = $('#manualStatus');
@@ -256,6 +496,44 @@ $('#addManualBtn').onclick = async () => {
   }
 };
 
+// TAB 4: Second-House Requests
+function renderRequests() {
+  const list = $('#requestsList');
+  const pending = requestsCache.filter((r) => r.status === 'pending');
+  if (!pending.length) {
+    list.innerHTML = '<p class="muted">No pending second-house requests.</p>';
+    return;
+  }
+  list.innerHTML = pending.map((r) => `
+    <article class="item-card">
+      <h3>@${escapeHtml(r.requestedDisplayUsername || r.requestedNormalizedUsername)} <span class="badge">${escapeHtml(r.type || 'second-house-attempt')}</span></h3>
+      <p>Existing house: @${escapeHtml(r.existingUsername || 'unknown')} (UID: <code>${escapeHtml(r.uid)}</code>)</p>
+      <p>Requested: ${escapeHtml(r.houseDesign)} in ${escapeHtml(r.placeName)}, ${escapeHtml(r.district)} (${formatCoord(r.latitude)}, ${formatCoord(r.longitude)})</p>
+      <div class="actions">
+        <button class="primary sm" data-resolve-req="${escapeHtml(r.id)}" data-status="resolved" type="button">Mark Resolved</button>
+        <button class="danger-btn sm" data-resolve-req="${escapeHtml(r.id)}" data-status="rejected" type="button">Reject</button>
+      </div>
+    </article>
+  `).join('');
+
+  list.querySelectorAll('[data-resolve-req]').forEach((btn) => {
+    btn.onclick = async () => {
+      if (!confirm(`Mark this request as ${btn.dataset.status}?`)) return;
+      try {
+        await updateDoc(doc(db, 'houseRequests', btn.dataset.resolveReq), {
+          status: btn.dataset.status,
+          reviewedBy: adminUser.uid,
+          reviewedAt: serverTimestamp()
+        });
+        loadAllData();
+      } catch (err) {
+        alert('Action failed: ' + err.message);
+      }
+    };
+  });
+}
+
+// CSV Export
 $('#exportCsvBtn').onclick = () => {
   if (!housesCache.length) { alert('No houses to export.'); return; }
   const headers = ['id', 'uid', 'displayUsername', 'normalizedUsername', 'placeName', 'placeType', 'district', 'latitude', 'longitude', 'houseDesign', 'createdAt'];
