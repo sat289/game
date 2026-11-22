@@ -12,8 +12,9 @@ import {
 import {
   FollowerTownEngine,
   BUILDING_LABELS,
-  FOUR_PLOT_TYPES,
-  getBlockPlotIds
+  getRequiredSize,
+  getBlockPlotIds,
+  getEightPlotGroup
 } from "./world-engine.js";
 
 let isAdmin = false;
@@ -34,6 +35,8 @@ const adminDock = document.getElementById("admin-dock");
 const loginForm = document.getElementById("login-form");
 const loginError = document.getElementById("login-error");
 const plotCard = document.getElementById("plot-card");
+const editBtn = document.getElementById("card-edit-btn");
+const websiteBtn = document.getElementById("card-website-btn");
 
 const panels = {
   builder: document.getElementById("panel-builder"),
@@ -46,7 +49,7 @@ function showToast(msg) {
   t.textContent = msg;
   t.classList.remove("hidden");
   clearTimeout(showToast._timer);
-  showToast._timer = setTimeout(() => t.classList.add("hidden"), 2900);
+  showToast._timer = setTimeout(() => t.classList.add("hidden"), 3200);
 }
 
 function closeAllDrawers() {
@@ -60,17 +63,34 @@ const engine = new FollowerTownEngine(container, (plotId, data) => {
 });
 
 function openPlotCard(plotId, data) {
+  if (plotId === "ST_JUNCTION") {
+    document.getElementById("card-badge").textContent = "CITY CENTER LANDMARK";
+    document.getElementById("card-owner").textContent = "🗽 ST JUNCTION";
+    document.getElementById("card-role").textContent = "Fixed at City Center • Visitors click this to open stgames.online!";
+    document.getElementById("card-type").textContent = "stgames.online";
+    document.getElementById("card-day").textContent = "";
+    editBtn.classList.add("hidden");
+    websiteBtn.classList.remove("hidden");
+    plotCard.classList.remove("hidden");
+    return;
+  }
+
+  editBtn.classList.remove("hidden");
+  websiteBtn.classList.add("hidden");
+
   if (data && data.status === "built") {
     const label = BUILDING_LABELS[data.buildingType] || "TOWN BUILDING";
+    const size = data.size || getRequiredSize(data.buildingType);
     document.getElementById("card-badge").textContent = label;
     document.getElementById("card-owner").textContent = data.ownerName || label;
     document.getElementById("card-role").textContent = data.role || "Town Resident";
-    document.getElementById("card-type").textContent = data.size === 4 ? "4-PLOT MEGA LANDMARK" : "1-PLOT ROAD-FACING";
+    document.getElementById("card-type").textContent =
+      size === 8 ? "8-PLOT MEGA STADIUM" : size === 4 ? "4-PLOT LANDMARK" : "1-PLOT ROAD-FACING";
     document.getElementById("card-day").textContent = `Day ${data.builtDay || 1}`;
   } else {
     document.getElementById("card-badge").textContent = "AVAILABLE PLOT";
     document.getElementById("card-owner").textContent = "Open Land";
-    document.getElementById("card-role").textContent = "Tap Build to place a road-facing house or 4-plot landmark";
+    document.getElementById("card-role").textContent = "Tap Build to place a house, 4-plot landmark, or 8-plot stadium";
     document.getElementById("card-type").textContent = "OPEN";
     document.getElementById("card-day").textContent = "";
   }
@@ -82,7 +102,19 @@ function openPlotCard(plotId, data) {
   plotCard.classList.remove("hidden");
 }
 
-// Firebase Listeners
+function findNextFreePlotId(reservedSet, startNum = 1) {
+  let n = startNum;
+  while (true) {
+    const pid = `plot_${String(n).padStart(4, "0")}`;
+    const existing = allPlots[pid];
+    if (!reservedSet.has(pid) && (!existing || existing.status === "empty")) {
+      reservedSet.add(pid);
+      return { plotId: pid, nextNum: n + 1 };
+    }
+    n++;
+  }
+}
+
 const plotsRef = ref(db, "plots");
 const worldRef = ref(db, "worldSettings");
 let initialLoadDone = false;
@@ -99,7 +131,7 @@ onValue(plotsRef, (snapshot) => {
     if (data[k]?.status === "built") builtCount++;
   });
 
-  engine.ensureCapacity(maxIndex + 8);
+  engine.ensureCapacity(maxIndex + 12);
 
   keys.forEach((plotId) => {
     const changed = JSON.stringify(allPlots[plotId]) !== JSON.stringify(data[plotId]);
@@ -137,7 +169,6 @@ onValue(worldRef, (snapshot) => {
   document.getElementById("w-life").value = engine.lifeEnabled ? "on" : "off";
 });
 
-// Strict Admin UID Gate
 onAuthStateChanged(auth, (user) => {
   if (user && user.uid === ADMIN_UID) {
     isAdmin = true;
@@ -175,16 +206,16 @@ loginForm.addEventListener("submit", async (e) => {
 
 document.getElementById("btn-logout").addEventListener("click", () => signOut(auth));
 
-// Build / Demolish (Supports 4-Plot Mega Landmarks & 1-Plot Road-Facing Houses)
+// BUILD / DEMOLISH WITH AUTOMATIC HOUSE RELOCATION
 document.getElementById("btn-save-plot").addEventListener("click", async () => {
-  if (!isAdmin) return;
+  if (!isAdmin || selectedPlotId === "ST_JUNCTION") return;
   const type = document.getElementById("b-type").value;
   let ownerName = document.getElementById("b-owner").value.trim();
   const role = document.getElementById("b-role").value.trim();
   const builtDay = parseInt(document.getElementById("b-day").value, 10) || 1;
 
   const isHouse = type.startsWith("house_");
-  const isFourPlot = FOUR_PLOT_TYPES.has(type);
+  const newSize = type === "empty" ? 0 : getRequiredSize(type);
 
   if (type !== "empty" && isHouse && !ownerName) {
     showToast("Please enter an Instagram @username!");
@@ -194,15 +225,17 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
     ownerName = "@" + ownerName;
   }
 
-  const blockInfo = getBlockPlotIds(selectedPlotId);
   const currentData = allPlots[selectedPlotId];
-  const wasFourPlot = currentData && currentData.size === 4;
+  const oldSize = currentData?.status === "built" ? (currentData.size || getRequiredSize(currentData.buildingType)) : 1;
 
   const updates = {};
+  let relocatedCount = 0;
 
   if (type === "empty") {
-    // If demolishing a 4-plot landmark, free all 4 plots of that city block!
-    const toClear = wasFourPlot ? blockInfo.siblings : [selectedPlotId];
+    let toClear = [selectedPlotId];
+    if (oldSize === 8) toClear = getEightPlotGroup(selectedPlotId).siblings;
+    else if (oldSize === 4) toClear = getBlockPlotIds(selectedPlotId).siblings;
+
     toClear.forEach((pid) => {
       updates[`plots/${pid}`] = {
         status: "empty",
@@ -213,22 +246,41 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
         builtDay
       };
     });
-  } else if (isFourPlot) {
-    // Consume all 4 plots of this city block: anchor holds the landmark, 3 siblings are reserved
+  } else if (newSize === 4 || newSize === 8) {
+    const groupInfo = newSize === 8 ? getEightPlotGroup(selectedPlotId) : getBlockPlotIds(selectedPlotId);
+    const reservedSet = new Set(groupInfo.siblings);
+    let searchStart = 1;
+
+    for (const pid of groupInfo.siblings) {
+      const existing = allPlots[pid];
+      if (
+        existing &&
+        existing.status === "built" &&
+        (existing.size || getRequiredSize(existing.buildingType)) === 1 &&
+        pid !== selectedPlotId
+      ) {
+        const { plotId: newPid, nextNum } = findNextFreePlotId(reservedSet, searchStart);
+        searchStart = nextNum;
+        updates[`plots/${newPid}`] = { ...existing, size: 1 };
+        relocatedCount++;
+      }
+    }
+
     const anchorPayload = {
       status: "built",
-      ownerName: ownerName || BUILDING_LABELS[type] || "Mega Landmark",
-      role: role || "Public Town Landmark",
+      ownerName: ownerName || BUILDING_LABELS[type] || "Landmark",
+      role: role || (newSize === 8 ? "8-Plot Mega Stadium" : "4-Plot Town Landmark"),
       buildingType: type,
-      size: 4,
+      size: newSize,
       builtDay
     };
-    updates[`plots/${blockInfo.anchorId}`] = anchorPayload;
-    blockInfo.siblings.forEach((sibId) => {
-      if (sibId !== blockInfo.anchorId) {
+    updates[`plots/${groupInfo.anchorId}`] = anchorPayload;
+
+    groupInfo.siblings.forEach((sibId) => {
+      if (sibId !== groupInfo.anchorId) {
         updates[`plots/${sibId}`] = {
           status: "occupied_by_landmark",
-          parentPlot: blockInfo.anchorId,
+          parentPlot: groupInfo.anchorId,
           ownerName: "",
           role: "",
           buildingType: "none",
@@ -236,11 +288,12 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
         };
       }
     });
-    selectedPlotId = blockInfo.anchorId;
+
+    selectedPlotId = groupInfo.anchorId;
   } else {
-    // Converting a 4-plot landmark back to a 1-plot house frees the other 3 plots first
-    if (wasFourPlot) {
-      blockInfo.siblings.forEach((sibId) => {
+    if (oldSize === 8 || oldSize === 4) {
+      const oldSibs = oldSize === 8 ? getEightPlotGroup(selectedPlotId).siblings : getBlockPlotIds(selectedPlotId).siblings;
+      oldSibs.forEach((sibId) => {
         if (sibId !== selectedPlotId) {
           updates[`plots/${sibId}`] = {
             status: "empty",
@@ -265,13 +318,13 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
 
   try {
     await update(ref(db), updates);
-    showToast(
-      type === "empty"
-        ? "🚜 Land cleared!"
-        : isFourPlot
-        ? `🏛️ Constructing 4-Plot Mega Landmark!`
-        : `🔨 Constructing ${ownerName}'s house!`
-    );
+    if (type === "empty") {
+      showToast("🚜 Land cleared!");
+    } else if (relocatedCount > 0) {
+      showToast(`🏗️ Built! Moved ${relocatedCount} houses to free plots.`);
+    } else {
+      showToast(newSize === 8 ? "🏟️ Built 8-Plot Mega Stadium!" : newSize === 4 ? "🏛️ Built 4-Plot Landmark!" : `🔨 Built ${ownerName}'s house!`);
+    }
     closeAllDrawers();
     engine.focusPlot(selectedPlotId);
     openPlotCard(selectedPlotId, updates[`plots/${selectedPlotId}`]);
@@ -280,7 +333,74 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
   }
 });
 
-// Bulk @username House Builder (Skips occupied_by_landmark & already built plots!)
+// 1-TAP FIX & RELOCATE OVERLAPPING HOUSES
+document.getElementById("btn-fix-overlaps").addEventListener("click", async () => {
+  if (!isAdmin) return;
+  const updates = {};
+  const reservedSet = new Set();
+  const landmarks = [];
+
+  Object.entries(allPlots).forEach(([pid, p]) => {
+    if (p && p.status === "built") {
+      const reqSize = getRequiredSize(p.buildingType);
+      if (reqSize >= 4) {
+        landmarks.push({ pid, data: p, reqSize });
+      }
+    }
+  });
+
+  if (landmarks.length === 0) {
+    showToast("No multi-plot landmarks found to fix!");
+    return;
+  }
+
+  landmarks.forEach((lm) => {
+    const grp = lm.reqSize === 8 ? getEightPlotGroup(lm.pid) : getBlockPlotIds(lm.pid);
+    grp.siblings.forEach((s) => reservedSet.add(s));
+  });
+
+  let moved = 0;
+  let searchStart = 1;
+
+  for (const lm of landmarks) {
+    const grp = lm.reqSize === 8 ? getEightPlotGroup(lm.pid) : getBlockPlotIds(lm.pid);
+
+    for (const sibId of grp.siblings) {
+      if (sibId === lm.pid) continue;
+      const existing = allPlots[sibId];
+      if (existing && existing.status === "built" && getRequiredSize(existing.buildingType) === 1) {
+        const { plotId: newPid, nextNum } = findNextFreePlotId(reservedSet, searchStart);
+        searchStart = nextNum;
+        updates[`plots/${newPid}`] = { ...existing, size: 1 };
+        moved++;
+      }
+    }
+
+    updates[`plots/${grp.anchorId}`] = { ...lm.data, size: lm.reqSize };
+    grp.siblings.forEach((sibId) => {
+      if (sibId !== grp.anchorId) {
+        updates[`plots/${sibId}`] = {
+          status: "occupied_by_landmark",
+          parentPlot: grp.anchorId,
+          ownerName: "",
+          role: "",
+          buildingType: "none",
+          size: 0
+        };
+      }
+    });
+  }
+
+  try {
+    await update(ref(db), updates);
+    showToast(`🛠️ Fixed! Moved ${moved} overlapping houses to free plots.`);
+    closeAllDrawers();
+  } catch (err) {
+    showToast("Fix error: " + err.message);
+  }
+});
+
+// Bulk @username House Builder
 const HOUSE_STYLES = ["house_blue", "house_coral", "house_mint", "house_gold"];
 
 async function buildHousesForUsernames(rawList) {
@@ -292,7 +412,8 @@ async function buildHousesForUsernames(rawList) {
   });
 
   const updates = {};
-  let nextPlotNum = 1;
+  const reserved = new Set();
+  let searchStart = 1;
   let added = 0;
 
   for (const raw of rawList) {
@@ -301,23 +422,18 @@ async function buildHousesForUsernames(rawList) {
     const key = clean.toLowerCase();
     if (existing.has(key)) continue;
 
-    while (true) {
-      const candidate = allPlots[`plot_${String(nextPlotNum).padStart(4, "0")}`];
-      if (!candidate || candidate.status === "empty") break;
-      nextPlotNum++;
-    }
+    const { plotId, nextNum } = findNextFreePlotId(reserved, searchStart);
+    searchStart = nextNum;
 
-    const plotId = `plot_${String(nextPlotNum).padStart(4, "0")}`;
     updates[`plots/${plotId}`] = {
       status: "built",
       ownerName: `@${clean}`,
       role: "Follower Resident",
-      buildingType: HOUSE_STYLES[nextPlotNum % HOUSE_STYLES.length],
+      buildingType: HOUSE_STYLES[added % HOUSE_STYLES.length],
       size: 1,
       builtDay: worldSettings.dayNumber || 1
     };
     existing.add(key);
-    nextPlotNum++;
     added++;
   }
 
@@ -349,7 +465,6 @@ document.getElementById("btn-import-usernames").addEventListener("click", async 
   }
 });
 
-// Direct Instagram followers_1.html / followers_1.json Upload & New/Unfollow Diff
 document.getElementById("ig-file-input").addEventListener("change", async (e) => {
   const file = e.target.files?.[0];
   if (!file) return;
@@ -385,7 +500,7 @@ document.getElementById("ig-file-input").addEventListener("change", async (e) =>
 
   const townFollowers = new Map();
   Object.entries(allPlots).forEach(([plotId, p]) => {
-    if (p?.status === "built" && p.ownerName?.startsWith("@") && p.size !== 4) {
+    if (p?.status === "built" && p.ownerName?.startsWith("@") && getRequiredSize(p.buildingType) === 1) {
       townFollowers.set(p.ownerName.toLowerCase().replace(/^@/, ""), plotId);
     }
   });
@@ -456,7 +571,6 @@ document.getElementById("btn-build-diff-new").addEventListener("click", async ()
   }
 });
 
-// World Settings
 document.getElementById("btn-save-world").addEventListener("click", async () => {
   if (!isAdmin) return;
   try {
@@ -473,11 +587,16 @@ document.getElementById("btn-save-world").addEventListener("click", async () => 
   }
 });
 
-// Search, UI & 9:16 Reel Mode
 function runSearch() {
   const q = document.getElementById("search-input").value;
   const foundId = engine.findPlotByQuery(q);
-  if (foundId) {
+  if (foundId === "ST_JUNCTION") {
+    engine.cameraGoal = {
+      target: new THREE.Vector3(0, 3.5, 0),
+      camPos: new THREE.Vector3(24, 24, 24)
+    };
+    openPlotCard("ST_JUNCTION", null);
+  } else if (foundId) {
     selectedPlotId = foundId;
     engine.focusPlot(foundId);
     openPlotCard(foundId, allPlots[foundId]);

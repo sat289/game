@@ -1,9 +1,10 @@
 import { db, ref, onValue } from "./firebase-config.js";
-import { FollowerTownEngine, BUILDING_LABELS } from "./world-engine.js";
+import { FollowerTownEngine, BUILDING_LABELS, getRequiredSize } from "./world-engine.js";
 
 let allPlots = {};
 const container = document.getElementById("canvas-container");
 const plotCard = document.getElementById("plot-card");
+const websiteBtn = document.getElementById("card-website-btn");
 
 function showToast(msg) {
   const t = document.getElementById("toast");
@@ -14,16 +15,30 @@ function showToast(msg) {
 }
 
 const engine = new FollowerTownEngine(container, (plotId, data) => {
-  openPlotCard(data);
+  openPlotCard(plotId, data);
 });
 
-function openPlotCard(data) {
+function openPlotCard(plotId, data) {
+  if (plotId === "ST_JUNCTION") {
+    document.getElementById("card-badge").textContent = "CITY CENTER LANDMARK";
+    document.getElementById("card-owner").textContent = "🗽 ST JUNCTION";
+    document.getElementById("card-role").textContent = "Official Hub of Follower Nagaram • Play more games on ST Games!";
+    document.getElementById("card-type").textContent = "stgames.online";
+    document.getElementById("card-day").textContent = "";
+    websiteBtn.classList.remove("hidden");
+    plotCard.classList.remove("hidden");
+    return;
+  }
+
+  websiteBtn.classList.add("hidden");
   if (data && data.status === "built") {
     const label = BUILDING_LABELS[data.buildingType] || "TOWN BUILDING";
+    const size = data.size || getRequiredSize(data.buildingType);
     document.getElementById("card-badge").textContent = label;
     document.getElementById("card-owner").textContent = data.ownerName || label;
     document.getElementById("card-role").textContent = data.role || "Follower Nagaram Resident";
-    document.getElementById("card-type").textContent = data.size === 4 ? "4-PLOT MEGA LANDMARK" : "ROAD-FACING PLOT";
+    document.getElementById("card-type").textContent =
+      size === 8 ? "8-PLOT MEGA STADIUM" : size === 4 ? "4-PLOT LANDMARK" : "ROAD-FACING HOUSE";
     document.getElementById("card-day").textContent = `Day ${data.builtDay || 1}`;
   } else {
     document.getElementById("card-badge").textContent = "AVAILABLE PLOT";
@@ -48,7 +63,7 @@ onValue(ref(db, "plots"), (snapshot) => {
     if (data[k]?.status === "built") builtCount++;
   });
 
-  engine.ensureCapacity(maxIndex + 8);
+  engine.ensureCapacity(maxIndex + 12);
 
   keys.forEach((plotId) => {
     const changed = JSON.stringify(allPlots[plotId]) !== JSON.stringify(data[plotId]);
@@ -83,9 +98,15 @@ onValue(ref(db, "worldSettings"), (snapshot) => {
 function runSearch() {
   const q = document.getElementById("search-input").value;
   const foundId = engine.findPlotByQuery(q);
-  if (foundId) {
+  if (foundId === "ST_JUNCTION") {
+    engine.cameraGoal = {
+      target: new THREE.Vector3(0, 3.5, 0),
+      camPos: new THREE.Vector3(24, 24, 24)
+    };
+    openPlotCard("ST_JUNCTION", null);
+  } else if (foundId) {
     engine.focusPlot(foundId);
-    openPlotCard(allPlots[foundId]);
+    openPlotCard(foundId, allPlots[foundId]);
   } else {
     showToast("Not found in town yet!");
   }

@@ -21,7 +21,7 @@
     <div class="modal-content glass-card">
       <div class="plot-badge">RESTRICTED STUDIO</div>
       <h2>🔐 Admin Login</h2>
-      <p class="subtext">Sign in with your authorized Firebase Admin account to build 4-plot mega landmarks, road-facing follower houses, and record Reels.</p>
+      <p class="subtext">Sign in with your authorized Firebase Admin account to build 8-plot stadiums, 4-plot malls & landmarks, and manage ST Junction.</p>
       <form id="login-form">
         <label>Admin Email</label>
         <input type="email" id="admin-email" required placeholder="admin@example.com" />
@@ -47,24 +47,25 @@
     </div>
 
     <div class="search-box">
-      <input type="text" id="search-input" placeholder="Find @username or landmark..." autocomplete="off" />
+      <input type="text" id="search-input" placeholder="Find @username or mall..." autocomplete="off" />
       <button id="search-btn" title="Find">🔍</button>
     </div>
 
     <button id="btn-logout" class="icon-btn danger-outline" title="Sign Out">🚪</button>
   </header>
 
-  <!-- Selected Plot Card -->
+  <!-- Selected Plot / ST Junction Card -->
   <div id="plot-card" class="glass-card hidden hud-element">
     <button id="close-plot-card" class="close-x">✕</button>
     <div class="plot-badge" id="card-badge">AVAILABLE PLOT</div>
     <h3 id="card-owner">Open Land</h3>
-    <p id="card-role">Tap Build to place a follower house or 4-plot mega landmark</p>
+    <p id="card-role">Tap Build to place a follower house or landmark</p>
     <div class="card-meta">
       <span id="card-type">OPEN</span>
       <span id="card-day"></span>
     </div>
     <button id="card-edit-btn" class="primary-btn full-width">🛠️ Build / Edit Here</button>
+    <a id="card-website-btn" href="https://stgames.online/" target="_blank" rel="noopener" class="primary-btn full-width hidden" style="display:block;text-align:center;text-decoration:none;">🌐 Open stgames.online</a>
   </div>
 
   <!-- Admin Bottom Dock -->
@@ -85,21 +86,21 @@
     </div>
   </div>
 
-  <!-- Drawer 1: Single Plot & 4-Plot Mega Landmark Builder -->
+  <!-- Drawer 1: Single Plot, 4-Plot Landmark & 8-Plot Stadium Builder -->
   <div id="panel-builder" class="drawer glass-card hidden hud-element">
     <div class="drawer-header">
       <h3>🏗️ Build on Selected Plot</h3>
       <button class="close-drawer close-x">✕</button>
     </div>
-    <p class="hint" id="builder-size-hint">🏠 Houses use <b>1 Plot</b> (auto-facing the road). 🏛️ Big Landmarks consume <b>All 4 Plots</b> of the city block with multi-floor buildings & live characters!</p>
+    <p class="hint">Any existing follower houses on the selected block(s) will <b>automatically move to free plots</b>—zero overlaps!</p>
     <div class="form-grid">
       <div>
         <label>Instagram @username (or Chief)</label>
         <input type="text" id="b-owner" placeholder="e.g. @itzz_me_thrinesh._.2010" />
       </div>
       <div>
-        <label>Role / Designation</label>
-        <input type="text" id="b-role" placeholder="e.g. SI Police / Chief Doctor" />
+        <label>Role / Caption</label>
+        <input type="text" id="b-role" placeholder="e.g. Manager / SI / Captain" />
       </div>
       <div>
         <label>Building Type (Telugu + English)</label>
@@ -111,13 +112,20 @@
             <option value="house_gold">🏢 Golden Duplex House</option>
             <option value="shop">☕ Tea & Tiffin Shop (1 Plot)</option>
           </optgroup>
-          <optgroup label="🏛️ Mega Landmarks (Consumes 4 Plots • Multi-Level + NPCs)">
-            <option value="police_station">🚓 Police Headquarters (4 Plots • Police NPCs)</option>
-            <option value="hospital">🏥 Super Specialty Hospital (4 Plots • Doctors)</option>
+          <optgroup label="🏟️ Mega Stadium (8 Plots • Removes Middle Road)">
+            <option value="ground">🏏 Mega Cricket Stadium Ground (8 Plots • Kids Playing)</option>
+          </optgroup>
+          <optgroup label="🏛️ Public Town Landmarks (4 Plots • Real-Life Actions)">
+            <option value="police_station">🚓 Police HQ (4 Plots • Moving Police Patrol Car)</option>
+            <option value="hospital">🏥 Super Hospital (4 Plots • Road Accident + Ambulance Rescue)</option>
             <option value="school">🏫 Grand School Campus (4 Plots • Kids & Bus)</option>
-            <option value="bus_stand">🚌 RTC Bus Terminal (4 Plots • 3 Buses + Crowd)</option>
-            <option value="ground">🏏 Cricket Stadium Ground (4 Plots • Kids Playing)</option>
-            <option value="petrol_bunk">⛽ Highway Petrol Bunk (4 Plots • Workers)</option>
+            <option value="bus_stand">🚌 APSRTC Bus Stand (4 Plots • Buses & Boarding)</option>
+            <option value="petrol_bunk">⛽ Highway Petrol Bunk (4 Plots • Live Refueling)</option>
+          </optgroup>
+          <optgroup label="🛍️ Malls & Branded Stores (4 Plots)">
+            <option value="srmt_mall">🏬 SRMT Mall (4 Plots • Cinema & Shoppers)</option>
+            <option value="apple_store">🍎 Apple Store (4 Plots • Glass Flagship)</option>
+            <option value="reliance_store">🛒 Reliance Digital & Smart (4 Plots)</option>
           </optgroup>
           <optgroup label="🚜 Land Action">
             <option value="empty">🚜 Demolish / Clear Land</option>
@@ -129,7 +137,7 @@
         <input type="number" id="b-day" min="1" value="1" />
       </div>
     </div>
-    <button id="btn-save-plot" class="primary-btn full-width">🔨 Construct with Workers</button>
+    <button id="btn-save-plot" class="primary-btn full-width">🔨 Construct & Auto-Relocate</button>
   </div>
 
   <!-- Drawer 2: Instagram @Usernames Sync -->
@@ -141,7 +149,7 @@
 
     <div class="bulk-section">
       <label>Option A: Paste Instagram @usernames (1 per line)</label>
-      <textarea id="bulk-usernames" rows="4" placeholder="@itzz_me_thrinesh._.2010&#10;@k_dharma_raja&#10;@srinivas_tarun9&#10;...paste usernames here"></textarea>
+      <textarea id="bulk-usernames" rows="4" placeholder="@itzz_me_thrinesh._.2010&#10;@k_dharma_raja&#10;@srinivas_tarun9"></textarea>
       <button id="btn-import-usernames" class="primary-btn full-width">🏘️ Build Road-Facing Houses for New @Usernames</button>
     </div>
 
@@ -162,10 +170,10 @@
     </div>
   </div>
 
-  <!-- Drawer 3: World Settings -->
+  <!-- Drawer 3: World Settings + 1-Click Fix Overlaps -->
   <div id="panel-world" class="drawer glass-card hidden hud-element">
     <div class="drawer-header">
-      <h3>🌤️ World & Ring Road Settings</h3>
+      <h3>🌤️ World & City Maintenance</h3>
       <button class="close-drawer close-x">✕</button>
     </div>
     <div class="form-grid">
@@ -182,11 +190,11 @@
         <select id="w-time">
           <option value="day">☀️ Sunny Day</option>
           <option value="sunset">🌇 Golden Sunset</option>
-          <option value="night">🌙 Night Lights</option>
+          <option value="night">🌙 Night Lights (Headlights ON)</option>
         </select>
       </div>
       <div>
-        <label>Traffic, Kids & NPCs</label>
+        <label>Traffic, Postman & Rescue</label>
         <select id="w-life">
           <option value="on">🚗 Active</option>
           <option value="off">⏸️ Paused</option>
@@ -194,6 +202,10 @@
       </div>
     </div>
     <button id="btn-save-world" class="primary-btn full-width">💾 Save World Live</button>
+    <hr />
+    <label>City Layout Fixer</label>
+    <p class="hint">Moves any old overlapping houses out of landmarks/stadiums to free empty plots.</p>
+    <button id="btn-fix-overlaps" class="secondary-btn full-width">🛠️ Fix & Relocate Any Overlapping Houses</button>
   </div>
 
   <div id="toast" class="hidden"></div>
