@@ -9,7 +9,12 @@ import {
   signOut,
   onAuthStateChanged
 } from "./firebase-config.js";
-import { FollowerTownEngine, BUILDING_LABELS } from "./world-engine.js";
+import {
+  FollowerTownEngine,
+  BUILDING_LABELS,
+  FOUR_PLOT_TYPES,
+  getBlockPlotIds
+} from "./world-engine.js";
 
 let isAdmin = false;
 let selectedPlotId = "plot_0001";
@@ -41,7 +46,7 @@ function showToast(msg) {
   t.textContent = msg;
   t.classList.remove("hidden");
   clearTimeout(showToast._timer);
-  showToast._timer = setTimeout(() => t.classList.add("hidden"), 2800);
+  showToast._timer = setTimeout(() => t.classList.add("hidden"), 2900);
 }
 
 function closeAllDrawers() {
@@ -60,12 +65,12 @@ function openPlotCard(plotId, data) {
     document.getElementById("card-badge").textContent = label;
     document.getElementById("card-owner").textContent = data.ownerName || label;
     document.getElementById("card-role").textContent = data.role || "Town Resident";
-    document.getElementById("card-type").textContent = "BUILT";
+    document.getElementById("card-type").textContent = data.size === 4 ? "4-PLOT MEGA LANDMARK" : "1-PLOT ROAD-FACING";
     document.getElementById("card-day").textContent = `Day ${data.builtDay || 1}`;
   } else {
     document.getElementById("card-badge").textContent = "AVAILABLE PLOT";
-    document.getElementById("card-owner").textContent = "Empty Land";
-    document.getElementById("card-role").textContent = "Tap Build to place a follower house or landmark";
+    document.getElementById("card-owner").textContent = "Open Land";
+    document.getElementById("card-role").textContent = "Tap Build to place a road-facing house or 4-plot landmark";
     document.getElementById("card-type").textContent = "OPEN";
     document.getElementById("card-day").textContent = "";
   }
@@ -170,7 +175,7 @@ loginForm.addEventListener("submit", async (e) => {
 
 document.getElementById("btn-logout").addEventListener("click", () => signOut(auth));
 
-// Build / Demolish Single Plot (No Number System!)
+// Build / Demolish (Supports 4-Plot Mega Landmarks & 1-Plot Road-Facing Houses)
 document.getElementById("btn-save-plot").addEventListener("click", async () => {
   if (!isAdmin) return;
   const type = document.getElementById("b-type").value;
@@ -179,6 +184,8 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
   const builtDay = parseInt(document.getElementById("b-day").value, 10) || 1;
 
   const isHouse = type.startsWith("house_");
+  const isFourPlot = FOUR_PLOT_TYPES.has(type);
+
   if (type !== "empty" && isHouse && !ownerName) {
     showToast("Please enter an Instagram @username!");
     return;
@@ -187,28 +194,93 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
     ownerName = "@" + ownerName;
   }
 
-  const payload =
-    type === "empty"
-      ? { status: "empty", ownerName: "", role: "", buildingType: "empty", builtDay }
-      : {
-          status: "built",
-          ownerName: ownerName || BUILDING_LABELS[type] || "Landmark",
-          role: role || (isHouse ? "Follower Resident" : "Public Landmark"),
-          buildingType: type,
-          builtDay
+  const blockInfo = getBlockPlotIds(selectedPlotId);
+  const currentData = allPlots[selectedPlotId];
+  const wasFourPlot = currentData && currentData.size === 4;
+
+  const updates = {};
+
+  if (type === "empty") {
+    // If demolishing a 4-plot landmark, free all 4 plots of that city block!
+    const toClear = wasFourPlot ? blockInfo.siblings : [selectedPlotId];
+    toClear.forEach((pid) => {
+      updates[`plots/${pid}`] = {
+        status: "empty",
+        ownerName: "",
+        role: "",
+        buildingType: "empty",
+        size: 1,
+        builtDay
+      };
+    });
+  } else if (isFourPlot) {
+    // Consume all 4 plots of this city block: anchor holds the landmark, 3 siblings are reserved
+    const anchorPayload = {
+      status: "built",
+      ownerName: ownerName || BUILDING_LABELS[type] || "Mega Landmark",
+      role: role || "Public Town Landmark",
+      buildingType: type,
+      size: 4,
+      builtDay
+    };
+    updates[`plots/${blockInfo.anchorId}`] = anchorPayload;
+    blockInfo.siblings.forEach((sibId) => {
+      if (sibId !== blockInfo.anchorId) {
+        updates[`plots/${sibId}`] = {
+          status: "occupied_by_landmark",
+          parentPlot: blockInfo.anchorId,
+          ownerName: "",
+          role: "",
+          buildingType: "none",
+          size: 0
         };
+      }
+    });
+    selectedPlotId = blockInfo.anchorId;
+  } else {
+    // Converting a 4-plot landmark back to a 1-plot house frees the other 3 plots first
+    if (wasFourPlot) {
+      blockInfo.siblings.forEach((sibId) => {
+        if (sibId !== selectedPlotId) {
+          updates[`plots/${sibId}`] = {
+            status: "empty",
+            ownerName: "",
+            role: "",
+            buildingType: "empty",
+            size: 1,
+            builtDay
+          };
+        }
+      });
+    }
+    updates[`plots/${selectedPlotId}`] = {
+      status: "built",
+      ownerName: ownerName || BUILDING_LABELS[type] || "Shop",
+      role: role || (isHouse ? "Follower Resident" : "Local Business"),
+      buildingType: type,
+      size: 1,
+      builtDay
+    };
+  }
 
   try {
-    await update(ref(db, `plots/${selectedPlotId}`), payload);
-    showToast(type === "empty" ? "🚜 Plot demolished!" : `🔨 Constructing ${payload.ownerName}!`);
+    await update(ref(db), updates);
+    showToast(
+      type === "empty"
+        ? "🚜 Land cleared!"
+        : isFourPlot
+        ? `🏛️ Constructing 4-Plot Mega Landmark!`
+        : `🔨 Constructing ${ownerName}'s house!`
+    );
     closeAllDrawers();
-    openPlotCard(selectedPlotId, payload);
+    engine.focusPlot(selectedPlotId);
+    openPlotCard(selectedPlotId, updates[`plots/${selectedPlotId}`]);
   } catch (err) {
     showToast("Error: " + err.message);
   }
 });
 
-// Helper: Build Houses for an Array of @usernames
+// Bulk @username House Builder (Skips occupied_by_landmark & already built plots!)
 const HOUSE_STYLES = ["house_blue", "house_coral", "house_mint", "house_gold"];
 
 async function buildHousesForUsernames(rawList) {
@@ -229,15 +301,19 @@ async function buildHousesForUsernames(rawList) {
     const key = clean.toLowerCase();
     if (existing.has(key)) continue;
 
-    while (allPlots[`plot_${String(nextPlotNum).padStart(4, "0")}`]?.status === "built") {
+    while (true) {
+      const candidate = allPlots[`plot_${String(nextPlotNum).padStart(4, "0")}`];
+      if (!candidate || candidate.status === "empty") break;
       nextPlotNum++;
     }
+
     const plotId = `plot_${String(nextPlotNum).padStart(4, "0")}`;
     updates[`plots/${plotId}`] = {
       status: "built",
       ownerName: `@${clean}`,
       role: "Follower Resident",
       buildingType: HOUSE_STYLES[nextPlotNum % HOUSE_STYLES.length],
+      size: 1,
       builtDay: worldSettings.dayNumber || 1
     };
     existing.add(key);
@@ -251,10 +327,9 @@ async function buildHousesForUsernames(rawList) {
   }
 
   await update(ref(db), updates);
-  showToast(`🏘️ Built ${added} new follower houses!`);
+  showToast(`🏘️ Built ${added} road-facing follower houses!`);
 }
 
-// Option A: Paste Usernames
 document.getElementById("btn-import-usernames").addEventListener("click", async () => {
   if (!isAdmin) return;
   const names = document
@@ -274,7 +349,7 @@ document.getElementById("btn-import-usernames").addEventListener("click", async 
   }
 });
 
-// Option B: Direct Instagram followers_1.html / followers_1.json Upload & New/Unfollow Diff
+// Direct Instagram followers_1.html / followers_1.json Upload & New/Unfollow Diff
 document.getElementById("ig-file-input").addEventListener("change", async (e) => {
   const file = e.target.files?.[0];
   if (!file) return;
@@ -306,15 +381,11 @@ document.getElementById("ig-file-input").addEventListener("change", async (e) =>
     });
   }
 
-  if (extracted.size === 0) {
-    showToast("No Instagram usernames found in file!");
-    return;
-  }
+  if (extracted.size === 0) return showToast("No Instagram usernames found in file!");
 
-  // Compare against existing follower houses in Firebase
-  const townFollowers = new Map(); // lowerUsername -> plotId
+  const townFollowers = new Map();
   Object.entries(allPlots).forEach(([plotId, p]) => {
-    if (p?.status === "built" && p.ownerName?.startsWith("@")) {
+    if (p?.status === "built" && p.ownerName?.startsWith("@") && p.size !== 4) {
       townFollowers.set(p.ownerName.toLowerCase().replace(/^@/, ""), plotId);
     }
   });
@@ -351,8 +422,7 @@ document.getElementById("ig-file-input").addEventListener("change", async (e) =>
 
   listEl.querySelectorAll("[data-fly]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const pid = btn.getAttribute("data-fly");
-      engine.focusPlot(pid);
+      engine.focusPlot(btn.getAttribute("data-fly"));
       closeAllDrawers();
     });
   });
@@ -365,6 +435,7 @@ document.getElementById("ig-file-input").addEventListener("change", async (e) =>
         ownerName: "",
         role: "",
         buildingType: "empty",
+        size: 1,
         builtDay: worldSettings.dayNumber || 1
       });
       btn.closest(".unfollow-row").remove();

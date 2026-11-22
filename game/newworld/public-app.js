@@ -23,7 +23,7 @@ function openPlotCard(data) {
     document.getElementById("card-badge").textContent = label;
     document.getElementById("card-owner").textContent = data.ownerName || label;
     document.getElementById("card-role").textContent = data.role || "Follower Nagaram Resident";
-    document.getElementById("card-type").textContent = "BUILT";
+    document.getElementById("card-type").textContent = data.size === 4 ? "4-PLOT MEGA LANDMARK" : "ROAD-FACING PLOT";
     document.getElementById("card-day").textContent = `Day ${data.builtDay || 1}`;
   } else {
     document.getElementById("card-badge").textContent = "AVAILABLE PLOT";

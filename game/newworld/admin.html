@@ -21,7 +21,7 @@
     <div class="modal-content glass-card">
       <div class="plot-badge">RESTRICTED STUDIO</div>
       <h2>🔐 Admin Login</h2>
-      <p class="subtext">Sign in with your authorized Firebase Admin account to build Telugu/English town landmarks, assign Instagram @usernames, and record Reels.</p>
+      <p class="subtext">Sign in with your authorized Firebase Admin account to build 4-plot mega landmarks, road-facing follower houses, and record Reels.</p>
       <form id="login-form">
         <label>Admin Email</label>
         <input type="email" id="admin-email" required placeholder="admin@example.com" />
@@ -57,11 +57,11 @@
   <!-- Selected Plot Card -->
   <div id="plot-card" class="glass-card hidden hud-element">
     <button id="close-plot-card" class="close-x">✕</button>
-    <div class="plot-badge" id="card-badge">EMPTY PLOT</div>
-    <h3 id="card-owner">Available Plot</h3>
-    <p id="card-role">Tap Build to place a follower house or landmark</p>
+    <div class="plot-badge" id="card-badge">AVAILABLE PLOT</div>
+    <h3 id="card-owner">Open Land</h3>
+    <p id="card-role">Tap Build to place a follower house or 4-plot mega landmark</p>
     <div class="card-meta">
-      <span id="card-type">OPEN LAND</span>
+      <span id="card-type">OPEN</span>
       <span id="card-day"></span>
     </div>
     <button id="card-edit-btn" class="primary-btn full-width">🛠️ Build / Edit Here</button>
@@ -85,42 +85,42 @@
     </div>
   </div>
 
-  <!-- Drawer 1: Single Plot Builder (Telugu + English Realistic Buildings) -->
+  <!-- Drawer 1: Single Plot & 4-Plot Mega Landmark Builder -->
   <div id="panel-builder" class="drawer glass-card hidden hud-element">
     <div class="drawer-header">
       <h3>🏗️ Build on Selected Plot</h3>
       <button class="close-drawer close-x">✕</button>
     </div>
-    <p class="hint">Tap any plot in the 3D town first. Assign an Instagram <b>@username</b> (or landmark manager) and pick a realistic Telugu-state building.</p>
+    <p class="hint" id="builder-size-hint">🏠 Houses use <b>1 Plot</b> (auto-facing the road). 🏛️ Big Landmarks consume <b>All 4 Plots</b> of the city block with multi-floor buildings & live characters!</p>
     <div class="form-grid">
       <div>
-        <label>Instagram @username</label>
+        <label>Instagram @username (or Chief)</label>
         <input type="text" id="b-owner" placeholder="e.g. @itzz_me_thrinesh._.2010" />
       </div>
       <div>
-        <label>Role / Board Subtitle</label>
-        <input type="text" id="b-role" placeholder="e.g. Headmaster / SI / Doctor" />
+        <label>Role / Designation</label>
+        <input type="text" id="b-role" placeholder="e.g. SI Police / Chief Doctor" />
       </div>
       <div>
         <label>Building Type (Telugu + English)</label>
         <select id="b-type">
-          <optgroup label="🏘️ Follower Houses">
+          <optgroup label="🏘️ Follower Houses (1 Plot • Faces Road)">
             <option value="house_blue">🏠 Blue Terrace House</option>
             <option value="house_coral">🏠 Coral Modern House</option>
             <option value="house_mint">🏡 Mint Villa</option>
             <option value="house_gold">🏢 Golden Duplex House</option>
+            <option value="shop">☕ Tea & Tiffin Shop (1 Plot)</option>
           </optgroup>
-          <optgroup label="🏛️ Public Town Landmarks">
-            <option value="school">🏫 School (పాఠశాల / SCHOOL)</option>
-            <option value="hospital">🏥 Hospital (ఆసుపత్రి / HOSPITAL)</option>
-            <option value="bus_stand">🚌 Bus Stand (బస్ స్టాండ్ / RTC)</option>
-            <option value="ground">🏏 Cricket Ground (గ్రౌండ్ / GROUND)</option>
-            <option value="police_station">🚓 Police Station (పోలీస్ స్టేషన్)</option>
-            <option value="petrol_bunk">⛽ Petrol Bunk (పెట్రోల్ బంక్)</option>
-            <option value="shop">☕ Tea & Tiffin Shop (షాప్ / CAFE)</option>
+          <optgroup label="🏛️ Mega Landmarks (Consumes 4 Plots • Multi-Level + NPCs)">
+            <option value="police_station">🚓 Police Headquarters (4 Plots • Police NPCs)</option>
+            <option value="hospital">🏥 Super Specialty Hospital (4 Plots • Doctors)</option>
+            <option value="school">🏫 Grand School Campus (4 Plots • Kids & Bus)</option>
+            <option value="bus_stand">🚌 RTC Bus Terminal (4 Plots • 3 Buses + Crowd)</option>
+            <option value="ground">🏏 Cricket Stadium Ground (4 Plots • Kids Playing)</option>
+            <option value="petrol_bunk">⛽ Highway Petrol Bunk (4 Plots • Workers)</option>
           </optgroup>
           <optgroup label="🚜 Land Action">
-            <option value="empty">🚜 Demolish / Clear Plot</option>
+            <option value="empty">🚜 Demolish / Clear Land</option>
           </optgroup>
         </select>
       </div>
@@ -132,7 +132,7 @@
     <button id="btn-save-plot" class="primary-btn full-width">🔨 Construct with Workers</button>
   </div>
 
-  <!-- Drawer 2: Instagram @Usernames Sync (Zero Number System!) -->
+  <!-- Drawer 2: Instagram @Usernames Sync -->
   <div id="panel-bulk" class="drawer glass-card hidden hud-element">
     <div class="drawer-header">
       <h3>👥 Instagram @Usernames Sync</h3>
@@ -142,7 +142,7 @@
     <div class="bulk-section">
       <label>Option A: Paste Instagram @usernames (1 per line)</label>
       <textarea id="bulk-usernames" rows="4" placeholder="@itzz_me_thrinesh._.2010&#10;@k_dharma_raja&#10;@srinivas_tarun9&#10;...paste usernames here"></textarea>
-      <button id="btn-import-usernames" class="primary-btn full-width">🏘️ Build Houses for New @Usernames</button>
+      <button id="btn-import-usernames" class="primary-btn full-width">🏘️ Build Road-Facing Houses for New @Usernames</button>
     </div>
 
     <hr />
@@ -150,7 +150,7 @@
     <div class="bulk-section">
       <label>Option B: Upload Instagram followers_1.html or followers_1.json</label>
       <input type="file" id="ig-file-input" accept=".html,.htm,.json,.txt" />
-      <p class="hint">Auto-checks who newly followed you and who unfollowed you compared to your live town!</p>
+      <p class="hint">Auto-detects New Followers & Unfollowers compared to your live town!</p>
       <div id="diff-results" class="hidden">
         <div class="diff-stats">
           <span class="badge-new" id="diff-new-count">0 New</span>
@@ -186,7 +186,7 @@
         </select>
       </div>
       <div>
-        <label>Traffic & Workers</label>
+        <label>Traffic, Kids & NPCs</label>
         <select id="w-life">
           <option value="on">🚗 Active</option>
           <option value="off">⏸️ Paused</option>

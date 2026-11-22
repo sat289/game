@@ -1,12 +1,18 @@
-# Follower Nagaram 3D (v2 — Telugu/English Realistic Town + Ring Road)
+# Follower Nagaram 3D (v3 — 4-Plot Mega Landmarks, Road-Facing Houses & Live NPCs)
 
 Upload the `follower-town/` folder into your `sat289/game/` GitHub repository.
 
 ## Live URLs
-- **Public Read-Only Game:** `https://stgames.online/game/follower-town/`
-- **Private Admin Builder Studio:** `https://stgames.online/game/follower-town/admin.html` *(not linked anywhere on index.html)*
+- **Public Read-Only Game:** `https://stgames.online/game/follower-town/` *(no admin buttons or links)*
+- **Private Admin Builder Studio:** `https://stgames.online/game/follower-town/admin.html` *(locked to UID `8lcgTTcPxrOSAdyv2NTe2FwCUC93`)*
 
-## What's New in v2
-- **Zero Number System:** Only real Instagram `@usernames` (plus built-in `followers_1.html` / `followers_1.json` uploader that detects New Followers & Unfollowers with 1-click Build / Fly / Demolish).
-- **Outer Ring Road (ORR):** 4-lane highway encircling the entire town with green divider median, double-arm highway lights, fast highway traffic, palm trees, and a Telugu + English Welcome Arch (`స్వాగతం • OUTER RING ROAD`).
-- **Realistic Telugu-State Landmarks:** School (`పాఠశాల`), Hospital (`ఆసుపత్రి`) with ambulance, RTC Bus Stand (`బస్ స్టాండ్`) with parked buses, Cricket Ground (`గ్రౌండ్`) with floodlights, Police Station (`పోలీస్ స్టేషన్`) with flashing red/blue siren & jeep, Petrol Bunk, Tea & Tiffin Shop, and South Indian terrace houses.
+## What's New in v3
+- **4-Plot Mega Public Landmarks:** Placing a Police HQ, Super Specialty Hospital, Grand School Campus, RTC Bus Terminal, Cricket Stadium Ground, or Petrol Bunk automatically consumes all 4 plots of that city block and renders a massive multi-level building (4x bigger than houses!).
+- **Road-Facing Follower Houses:** Every 1-plot house & shop automatically rotates so its front door, porch, windows, and pathway face directly onto the road.
+- **Live Animated Characters Inside Landmarks:**
+  - **Cricket Ground:** Children playing cricket (batsman with bat, running bowler, fielders, and a bouncing red cricket ball).
+  - **Police HQ:** 2-story station + watchtower + flashing sirens + 2 jeeps + 4 patrolling/guarding khaki Police Officers.
+  - **Super Hospital:** 3-story hospital + rooftop helipad + 2 ambulances + walking Doctors/Nurses in white coats.
+  - **Grand School:** 2-story U-shaped campus + flagpole + yellow school bus + 6 uniformed school kids playing in the courtyard.
+  - **RTC Bus Terminal:** Grand shelter + 3 RTC buses (Express, Super Luxury, Palle Velugu) + walking passengers & conductors.
+  - **Fuel Plaza:** Dual-canopy 4-pump station + mart + refueling cars + uniformed petrol bunk workers.
