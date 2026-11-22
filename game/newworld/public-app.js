@@ -38,12 +38,12 @@ function openPlotCard(plotId, data) {
     document.getElementById("card-owner").textContent = data.ownerName || label;
     document.getElementById("card-role").textContent = data.role || "Follower Nagaram Resident";
     document.getElementById("card-type").textContent =
-      size === 8 ? "8-PLOT MEGA STADIUM" : size === 4 ? "4-PLOT LANDMARK" : "5–7 FLOOR MODERN TOWER";
+      size === 8 ? "8-PLOT MEGA STADIUM" : size === 4 ? "4-PLOT LANDMARK" : data.buildingType.startsWith("tower_") ? "5-FLOOR MODERN TOWER" : "CLASSIC HOUSE";
     document.getElementById("card-day").textContent = `Day ${data.builtDay || 1}`;
   } else {
     document.getElementById("card-badge").textContent = "AVAILABLE PLOT";
     document.getElementById("card-owner").textContent = "Open Land";
-    document.getElementById("card-role").textContent = "Follow on Instagram to get your tower built here!";
+    document.getElementById("card-role").textContent = "Follow on Instagram to get your house built here!";
     document.getElementById("card-type").textContent = "OPEN";
     document.getElementById("card-day").textContent = "";
   }
@@ -55,7 +55,6 @@ onValue(ref(db, "plots"), (snapshot) => {
   const data = snapshot.val() || {};
   const keys = Object.keys(data);
 
-  // Compute landmark footprints FIRST so overlapping 1-plot houses NEVER render on top of landmarks!
   engine.syncLandmarkFootprints(data);
 
   let maxIndex = 36;

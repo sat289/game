@@ -85,12 +85,12 @@ function openPlotCard(plotId, data) {
     document.getElementById("card-owner").textContent = data.ownerName || label;
     document.getElementById("card-role").textContent = data.role || "Town Resident";
     document.getElementById("card-type").textContent =
-      size === 8 ? "8-PLOT MEGA STADIUM" : size === 4 ? "4-PLOT LANDMARK" : "5–7 FLOOR MODERN TOWER";
+      size === 8 ? "8-PLOT MEGA STADIUM" : size === 4 ? "4-PLOT LANDMARK" : data.buildingType.startsWith("tower_") ? "5-FLOOR MODERN TOWER" : "CLASSIC HOUSE";
     document.getElementById("card-day").textContent = `Day ${data.builtDay || 1}`;
   } else {
     document.getElementById("card-badge").textContent = "AVAILABLE PLOT";
     document.getElementById("card-owner").textContent = "Open Land";
-    document.getElementById("card-role").textContent = "Tap Build to place a 5+ floor tower, 4-plot landmark, or 8-plot stadium";
+    document.getElementById("card-role").textContent = "Tap Build to place a house, 5-floor tower, or landmark";
     document.getElementById("card-type").textContent = "OPEN";
     document.getElementById("card-day").textContent = "";
   }
@@ -123,7 +123,6 @@ onValue(plotsRef, (snapshot) => {
   const data = snapshot.val() || {};
   const keys = Object.keys(data);
 
-  // ALWAYS compute landmark footprints FIRST so overlapping houses NEVER draw inside Police HQ / Stadium!
   engine.syncLandmarkFootprints(data);
 
   let maxIndex = 36;
@@ -207,7 +206,6 @@ loginForm.addEventListener("submit", async (e) => {
 
 document.getElementById("btn-logout").addEventListener("click", () => signOut(auth));
 
-// BUILD / DEMOLISH WITH AUTOMATIC HOUSE RELOCATION
 document.getElementById("btn-save-plot").addEventListener("click", async () => {
   if (!isAdmin || selectedPlotId === "ST_JUNCTION") return;
   const type = document.getElementById("b-type").value;
@@ -215,14 +213,14 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
   const role = document.getElementById("b-role").value.trim();
   const builtDay = parseInt(document.getElementById("b-day").value, 10) || 1;
 
-  const isHouse = type.startsWith("house_");
+  const isHouseOrTower = type.startsWith("house_") || type.startsWith("tower_");
   const newSize = type === "empty" ? 0 : getRequiredSize(type);
 
-  if (type !== "empty" && isHouse && !ownerName) {
+  if (type !== "empty" && isHouseOrTower && !ownerName) {
     showToast("Please enter an Instagram @username!");
     return;
   }
-  if (ownerName && isHouse && !ownerName.startsWith("@")) {
+  if (ownerName && isHouseOrTower && !ownerName.startsWith("@")) {
     ownerName = "@" + ownerName;
   }
 
@@ -310,7 +308,7 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
     updates[`plots/${selectedPlotId}`] = {
       status: "built",
       ownerName: ownerName || BUILDING_LABELS[type] || "Shop",
-      role: role || (isHouse ? "Follower Resident" : "Local Business"),
+      role: role || (isHouseOrTower ? "Follower Resident" : "Local Business"),
       buildingType: type,
       size: 1,
       builtDay
@@ -324,7 +322,7 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
     } else if (relocatedCount > 0) {
       showToast(`🏗️ Built! Moved ${relocatedCount} houses to free plots.`);
     } else {
-      showToast(newSize === 8 ? "🏟️ Built 8-Plot Mega Stadium!" : newSize === 4 ? "🏛️ Built 4-Plot Landmark!" : `🏙️ Built ${ownerName}'s tower!`);
+      showToast(newSize === 8 ? "🏟️ Built 8-Plot Mega Stadium!" : newSize === 4 ? "🏛️ Built 4-Plot Landmark!" : `🔨 Built ${ownerName}'s plot!`);
     }
     closeAllDrawers();
     engine.focusPlot(selectedPlotId);
@@ -334,7 +332,6 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
   }
 });
 
-// 1-TAP FIX & RELOCATE ALL OVERLAPPING HOUSES IN FIREBASE
 document.getElementById("btn-fix-overlaps").addEventListener("click", async () => {
   if (!isAdmin) return;
   const updates = {};
@@ -344,16 +341,11 @@ document.getElementById("btn-fix-overlaps").addEventListener("click", async () =
   Object.entries(allPlots).forEach(([pid, p]) => {
     if (p && p.status === "built") {
       const reqSize = getRequiredSize(p.buildingType);
-      if (reqSize >= 4) {
-        landmarks.push({ pid, data: p, reqSize });
-      }
+      if (reqSize >= 4) landmarks.push({ pid, data: p, reqSize });
     }
   });
 
-  if (landmarks.length === 0) {
-    showToast("No multi-plot landmarks found!");
-    return;
-  }
+  if (landmarks.length === 0) return showToast("No multi-plot landmarks found!");
 
   landmarks.forEach((lm) => {
     const grp = lm.reqSize === 8 ? getEightPlotGroup(lm.pid) : getBlockPlotIds(lm.pid);
@@ -401,7 +393,7 @@ document.getElementById("btn-fix-overlaps").addEventListener("click", async () =
   }
 });
 
-// Bulk @username House Builder
+// Bulk @username House Builder (Uses Classic Houses by default!)
 const HOUSE_STYLES = ["house_blue", "house_coral", "house_mint", "house_gold"];
 
 async function buildHousesForUsernames(rawList) {
@@ -438,13 +430,10 @@ async function buildHousesForUsernames(rawList) {
     added++;
   }
 
-  if (!added) {
-    showToast("All listed @usernames already have towers!");
-    return;
-  }
+  if (!added) return showToast("All listed @usernames already have houses!");
 
   await update(ref(db), updates);
-  showToast(`🏙️ Built ${added} modern 5–7 floor follower towers!`);
+  showToast(`🏘️ Built ${added} road-facing follower houses!`);
 }
 
 document.getElementById("btn-import-usernames").addEventListener("click", async () => {
@@ -481,8 +470,7 @@ document.getElementById("ig-file-input").addEventListener("change", async (e) =>
         if (u) extracted.add(u.trim().toLowerCase().replace(/^@/, ""));
       });
     } catch {
-      showToast("Invalid JSON file");
-      return;
+      return showToast("Invalid JSON file");
     }
   } else if (file.name.endsWith(".html") || file.name.endsWith(".htm")) {
     const doc = new DOMParser().parseFromString(text, "text/html");
@@ -516,7 +504,7 @@ document.getElementById("ig-file-input").addEventListener("change", async (e) =>
   const btnBuildNew = document.getElementById("btn-build-diff-new");
   if (pendingNewFollowers.length > 0) {
     btnBuildNew.classList.remove("hidden");
-    btnBuildNew.textContent = `➕ Build ${pendingNewFollowers.length} New Follower Towers`;
+    btnBuildNew.textContent = `➕ Build ${pendingNewFollowers.length} New Follower Houses`;
   } else {
     btnBuildNew.classList.add("hidden");
   }
@@ -555,7 +543,7 @@ document.getElementById("ig-file-input").addEventListener("change", async (e) =>
         builtDay: worldSettings.dayNumber || 1
       });
       btn.closest(".unfollow-row").remove();
-      showToast("🚜 Unfollower tower demolished!");
+      showToast("🚜 Unfollower house demolished!");
     });
   });
 });

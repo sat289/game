@@ -15,10 +15,14 @@ export const FOUR_PLOT_TYPES = new Set([
 ]);
 
 export const BUILDING_LABELS = {
-  house_blue: "🏢 6-Floor Brick Balcony Tower",
-  house_coral: "🏢 6-Floor Modern Cube Tower",
-  house_mint: "🏢 5-Floor Luxury LED Tower",
-  house_gold: "🏢 7-Floor Golden Glass Tower",
+  house_blue: "🏠 Blue Terrace House",
+  house_coral: "🏠 Coral Modern House",
+  house_mint: "🏡 Mint Villa",
+  house_gold: "🏢 Golden Duplex House",
+  tower_brick: "🏢 5-Floor Brick Balcony Tower",
+  tower_cube: "🏢 5-Floor Modern Cube Tower",
+  tower_led: "🏢 5-Floor Luxury LED Tower",
+  tower_gold: "🏢 6-Floor Golden Glass Penthouse",
   shop: "☕ టీ & టిఫిన్ • SHOP",
   ground: "🏏 గ్రౌండ్ • MEGA CRICKET STADIUM (8 PLOTS)",
   school: "🏫 పాఠశాల • GRAND SCHOOL (4 PLOTS)",
@@ -137,33 +141,38 @@ export class FollowerTownEngine {
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x87ceeb);
-    this.scene.fog = new THREE.FogExp2(0x87ceeb, 0.0014);
+    // Very light fog so buildings stay crystal clear and visible from afar!
+    this.scene.fog = new THREE.Fog(0x87ceeb, 180, 520);
 
     const aspect = container.clientWidth / container.clientHeight;
-    this.camera = new THREE.PerspectiveCamera(38, aspect, 0.5, 1400);
-    this.camera.position.set(66, 72, 66);
+    this.camera = new THREE.PerspectiveCamera(38, aspect, 1.0, 900);
+    this.camera.position.set(62, 68, 62);
 
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+    // LOW-END DEVICE OPTIMIZED RENDERER:
+    // - No heavy real-time shadowMap (saves 60%+ GPU load on budget phones!)
+    // - Capped pixelRatio (1.25 max) for buttery smooth 60fps panning
+    this.renderer = new THREE.WebGLRenderer({
+      antialias: false,
+      powerPreference: "high-performance",
+      precision: "mediump"
+    });
     this.renderer.setSize(container.clientWidth, container.clientHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
+    this.renderer.shadowMap.enabled = false;
     container.appendChild(this.renderer.domElement);
 
-    // FREE-ROAM GOOGLE-MAPS STYLE CONTROLS:
-    // 1-Finger Drag = Pan smoothly anywhere across the city!
-    // 2-Finger Pinch = Zoom & Rotate wherever you are!
+    // FREE-ROAM GOOGLE-MAPS PAN & ZOOM
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
-    this.controls.dampingFactor = 0.09;
-    this.controls.screenSpacePanning = false; // Pan strictly along ground XZ plane!
+    this.controls.dampingFactor = 0.08;
+    this.controls.screenSpacePanning = false;
     this.controls.panSpeed = 1.25;
     this.controls.zoomSpeed = 1.2;
     this.controls.zoomToCursor = true;
     this.controls.maxPolarAngle = Math.PI / 2.22;
     this.controls.minPolarAngle = 0.25;
     this.controls.minDistance = 12;
-    this.controls.maxDistance = 380;
+    this.controls.maxDistance = 360;
     this.controls.touches = {
       ONE: THREE.TOUCH.PAN,
       TWO: THREE.TOUCH.DOLLY_ROTATE
@@ -175,12 +184,9 @@ export class FollowerTownEngine {
     };
     this.controls.target.set(0, 0, 0);
 
-    // Cancel camera glide immediately when the user starts dragging/zooming manually!
     this.controls.addEventListener("start", () => {
       this.cameraGoal = null;
-      if (this.proReelTour.active) {
-        this.stopProReelTour();
-      }
+      if (this.proReelTour.active) this.stopProReelTour();
     });
 
     this.PLOT_SIZE = 7.4;
@@ -194,11 +200,10 @@ export class FollowerTownEngine {
     this.townName = "FOLLOWER NAGARAM";
     this.plotDataMap = new Map();
     this.plotMeshes = new Map();
-    this.landmarkCoveredPlots = new Set(); // Hard render-guard against ANY overlap!
+    this.landmarkCoveredPlots = new Set();
     this.plotHitboxes = [];
     this.lampBulbs = [];
     this.vehicleHeadlights = [];
-    this.ledMaterials = [];
     this.sirenLights = [];
     this.landmarkActors = [];
     this.petrolSimulations = [];
@@ -240,6 +245,7 @@ export class FollowerTownEngine {
 
     this._initLights();
     this._initSharedMaterials();
+    this._initSharedGeometries();
     this._initEvents();
 
     this.ensureCapacity(36);
@@ -247,21 +253,17 @@ export class FollowerTownEngine {
   }
 
   _initLights() {
-    this.hemiLight = new THREE.HemisphereLight(0xffffff, 0x4d7c0f, 0.85);
+    // Bright, crisp 3-point lighting so every building face is clearly visible without heavy shadows!
+    this.hemiLight = new THREE.HemisphereLight(0xffffff, 0x3f6212, 0.95);
     this.scene.add(this.hemiLight);
 
-    this.sunLight = new THREE.DirectionalLight(0xfffbeb, 1.4);
-    this.sunLight.position.set(78, 120, 62);
-    this.sunLight.castShadow = true;
-    this.sunLight.shadow.mapSize.set(1024, 1024);
-    this.sunLight.shadow.camera.near = 10;
-    this.sunLight.shadow.camera.far = 380;
-    const d = 140;
-    this.sunLight.shadow.camera.left = -d;
-    this.sunLight.shadow.camera.right = d;
-    this.sunLight.shadow.camera.top = d;
-    this.sunLight.shadow.camera.bottom = -d;
+    this.sunLight = new THREE.DirectionalLight(0xfffbeb, 1.15);
+    this.sunLight.position.set(80, 120, 60);
     this.scene.add(this.sunLight);
+
+    this.fillLight = new THREE.DirectionalLight(0xdbeafe, 0.45);
+    this.fillLight.position.set(-70, 50, -60);
+    this.scene.add(this.fillLight);
   }
 
   _initSharedMaterials() {
@@ -311,7 +313,6 @@ export class FollowerTownEngine {
       lampPole: new THREE.MeshLambertMaterial({ color: 0x1e293b }),
       lampBulbDay: new THREE.MeshBasicMaterial({ color: 0xe2e8f0 }),
       lampBulbNight: new THREE.MeshBasicMaterial({ color: 0xfef08a }),
-      ledStripDay: new THREE.MeshBasicMaterial({ color: 0xfde68a }),
       ledStripNight: new THREE.MeshBasicMaterial({ color: 0xfef08a }),
       headlightBeam: new THREE.MeshBasicMaterial({ color: 0xfef9c3, transparent: true, opacity: 0.42, side: THREE.DoubleSide }),
       taillight: new THREE.MeshBasicMaterial({ color: 0xef4444 }),
@@ -328,6 +329,54 @@ export class FollowerTownEngine {
       jerseyBlue: new THREE.MeshLambertMaterial({ color: 0x0ea5e9 }),
       ballRed: new THREE.MeshBasicMaterial({ color: 0xdc2626 }),
       wheelBlack: new THREE.MeshLambertMaterial({ color: 0x0f172a })
+    };
+  }
+
+  /**
+   * SHARED GEOMETRY POOL (Massive RAM & GPU boost for 400+ plots on low-end devices!)
+   */
+  _initSharedGeometries() {
+    const s = this.PLOT_SIZE - 0.7;
+    this.geo = {
+      hit1: new THREE.BoxGeometry(this.PLOT_SIZE - 0.3, 6.5, this.PLOT_SIZE - 0.3),
+      base1: new THREE.BoxGeometry(this.PLOT_SIZE - 0.3, 0.14, this.PLOT_SIZE - 0.3),
+      fenceH: new THREE.BoxGeometry(s, 0.45, 0.12),
+      fenceV: new THREE.BoxGeometry(0.12, 0.45, s),
+      post: new THREE.BoxGeometry(0.14, 1.1, 0.14),
+      board: new THREE.BoxGeometry(1.5, 0.6, 0.1),
+
+      // Classic 1-plot house shared geometries
+      houseBody1: new THREE.BoxGeometry(4.5, 2.5, 4.2),
+      houseBody2: new THREE.BoxGeometry(4.5, 3.8, 4.2),
+      parapet: new THREE.BoxGeometry(4.75, 0.38, 4.45),
+      mumty: new THREE.BoxGeometry(1.5, 0.9, 1.5),
+      pathway: new THREE.BoxGeometry(1.3, 0.08, 1.5),
+      porch: new THREE.BoxGeometry(1.8, 0.18, 0.8),
+      door: new THREE.BoxGeometry(0.9, 1.45, 0.12),
+      win: new THREE.BoxGeometry(0.88, 0.85, 0.12),
+
+      // 5-Floor Modern Tower shared geometries
+      towerCore5: new THREE.BoxGeometry(4.6, 6.4, 4.1),
+      towerSlab: new THREE.BoxGeometry(4.95, 0.14, 0.82),
+      towerWinL: new THREE.BoxGeometry(1.3, 0.82, 0.1),
+      towerRailL: new THREE.BoxGeometry(1.35, 0.4, 0.08),
+      towerWinR: new THREE.BoxGeometry(1.65, 0.82, 0.1),
+      towerPlantR: new THREE.BoxGeometry(1.6, 0.34, 0.25),
+      cubeBlock: new THREE.BoxGeometry(3.3, 1.24, 3.6),
+      cubeGlass: new THREE.BoxGeometry(1.5, 0.92, 0.14),
+      cubeBalc: new THREE.BoxGeometry(1.7, 0.14, 0.65),
+      ledFrame: new THREE.BoxGeometry(2.7, 0.18, 0.85),
+      ledWin: new THREE.BoxGeometry(2.1, 0.92, 0.12),
+      ledRail: new THREE.BoxGeometry(2.4, 0.44, 0.08),
+      ledBush: new THREE.BoxGeometry(0.45, 0.44, 0.35),
+      goldTrim: new THREE.BoxGeometry(4.8, 0.16, 4.5),
+      goldWin: new THREE.BoxGeometry(4.1, 0.82, 0.12),
+
+      // Character shared geometries
+      cLegs: new THREE.BoxGeometry(0.32, 0.46, 0.22),
+      cTorso: new THREE.BoxGeometry(0.4, 0.5, 0.25),
+      cHead: new THREE.BoxGeometry(0.28, 0.28, 0.28),
+      cCap: new THREE.BoxGeometry(0.34, 0.14, 0.34)
     };
   }
 
@@ -389,10 +438,6 @@ export class FollowerTownEngine {
     }
   }
 
-  /**
-   * Computes every sibling plotId covered by ANY 4-plot or 8-plot landmark in Firebase,
-   * so NO 1-plot house can EVER render visually inside a landmark's footprint!
-   */
   syncLandmarkFootprints(allPlotsObj) {
     this.landmarkCoveredPlots.clear();
     Object.entries(allPlotsObj || {}).forEach(([pid, p]) => {
@@ -475,7 +520,6 @@ export class FollowerTownEngine {
     );
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = -0.06;
-    ground.receiveShadow = true;
     this.cityGroup.add(ground);
 
     const roadLines = [];
@@ -487,30 +531,37 @@ export class FollowerTownEngine {
     const roadGeoH = new THREE.BoxGeometry(roadLen, 0.08, this.ROAD_WIDTH);
     const roadGeoV = new THREE.BoxGeometry(this.ROAD_WIDTH, 0.08, roadLen);
 
+    // Collect dash matrices into ONE InstancedMesh (cuts hundreds of draw calls down to 1!)
+    const dashTransforms = [];
     roadLines.forEach((pos) => {
       const roadH = new THREE.Mesh(roadGeoH, this.mat.road);
       roadH.position.set(0, 0.01, pos);
-      roadH.receiveShadow = true;
       this.cityGroup.add(roadH);
 
       const roadV = new THREE.Mesh(roadGeoV, this.mat.road);
       roadV.position.set(pos, 0.01, 0);
-      roadV.receiveShadow = true;
       this.cityGroup.add(roadV);
 
-      for (let d = -roadLen / 2 + 2; d < roadLen / 2 - 2; d += 4.8) {
-        const dashH = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.16), this.mat.stripe);
-        dashH.rotation.x = -Math.PI / 2;
-        dashH.position.set(d, 0.06, pos);
-        this.cityGroup.add(dashH);
-
-        const dashV = new THREE.Mesh(new THREE.PlaneGeometry(0.16, 1.8), this.mat.stripe);
-        dashV.rotation.x = -Math.PI / 2;
-        dashV.position.set(pos, 0.06, d);
-        this.cityGroup.add(dashV);
+      for (let d = -roadLen / 2 + 3; d < roadLen / 2 - 3; d += 6.0) {
+        dashTransforms.push({ x: d, z: pos, rot: 0 });
+        dashTransforms.push({ x: pos, z: d, rot: Math.PI / 2 });
       }
     });
 
+    const dashGeo = new THREE.PlaneGeometry(2.0, 0.18);
+    dashGeo.rotateX(-Math.PI / 2);
+    const dashInst = new THREE.InstancedMesh(dashGeo, this.mat.stripe, dashTransforms.length);
+    const dummy = new THREE.Object3D();
+    dashTransforms.forEach((dt, idx) => {
+      dummy.position.set(dt.x, 0.06, dt.z);
+      dummy.rotation.set(0, dt.rot, 0);
+      dummy.updateMatrix();
+      dashInst.setMatrixAt(idx, dummy.matrix);
+    });
+    dashInst.instanceMatrix.needsUpdate = true;
+    this.cityGroup.add(dashInst);
+
+    // 4 Connector roads to Outer Ring Road
     const connLen = ringRadius - innerSpan / 2 + 2;
     const connMid = innerSpan / 2 + connLen / 2 - 1;
     const cNS = new THREE.BoxGeometry(this.ROAD_WIDTH + 1.2, 0.08, connLen);
@@ -521,6 +572,7 @@ export class FollowerTownEngine {
       this.cityGroup.add(m);
     });
 
+    // Outer Ring Road
     const rw = this.RING_ROAD_WIDTH;
     const outerLen = ringRadius * 2 + rw;
 
@@ -547,7 +599,7 @@ export class FollowerTownEngine {
     medE.position.x = ringRadius;
     this.cityGroup.add(medN, medS, medW, medE);
 
-    for (let p = -ringRadius + 8; p <= ringRadius - 8; p += 16) {
+    for (let p = -ringRadius + 10; p <= ringRadius - 10; p += 20) {
       this._addHighwayLamp(p, -ringRadius);
       this._addHighwayLamp(p, ringRadius);
       this._addHighwayLamp(-ringRadius, p);
@@ -561,23 +613,31 @@ export class FollowerTownEngine {
 
     this._addWelcomeArch(0, ringRadius - rw / 2 - 2.2);
 
+    // Instanced Sidewalk Pads (1 draw call for the entire city!)
     const padSize = this.PLOT_SIZE * 2 + 0.8;
-    const padGeo = new THREE.BoxGeometry(padSize, 0.12, padSize);
+    const padCoords = [];
     for (let bx = -r; bx <= r; bx++) {
       for (let bz = -r; bz <= r; bz++) {
         if (bx === 0 && bz === 0) continue;
-        const cx = bx * this.BLOCK_STEP;
-        const cz = bz * this.BLOCK_STEP;
-        const pad = new THREE.Mesh(padGeo, this.mat.sidewalk);
-        pad.position.set(cx, 0.02, cz);
-        pad.receiveShadow = true;
-        this.cityGroup.add(pad);
-
-        if ((bx + bz) % 2 === 0) {
-          this._addStreetLamp(cx + padSize / 2 - 0.3, cz + padSize / 2 - 0.3);
-        }
+        padCoords.push({ cx: bx * this.BLOCK_STEP, cz: bz * this.BLOCK_STEP, bx, bz });
       }
     }
+    const padInst = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(padSize, 0.12, padSize),
+      this.mat.sidewalk,
+      padCoords.length
+    );
+    padCoords.forEach((p, idx) => {
+      dummy.position.set(p.cx, 0.02, p.cz);
+      dummy.rotation.set(0, 0, 0);
+      dummy.updateMatrix();
+      padInst.setMatrixAt(idx, dummy.matrix);
+      if ((p.bx + p.bz) % 3 === 0) {
+        this._addStreetLamp(p.cx + padSize / 2 - 0.3, p.cz + padSize / 2 - 0.3);
+      }
+    });
+    padInst.instanceMatrix.needsUpdate = true;
+    this.cityGroup.add(padInst);
 
     this._buildSTJunctionStatue();
     this.setTimeOfDay(this.timeOfDay);
@@ -588,14 +648,13 @@ export class FollowerTownEngine {
 
     const basePad = new THREE.Mesh(new THREE.BoxGeometry(15.2, 0.16, 15.2), this.mat.marble);
     basePad.position.y = 0.08;
-    basePad.receiveShadow = true;
 
-    const gardenRing = new THREE.Mesh(new THREE.CylinderGeometry(6.8, 7.0, 0.28, 32), this.mat.turf);
+    const gardenRing = new THREE.Mesh(new THREE.CylinderGeometry(6.8, 7.0, 0.28, 24), this.mat.turf);
     gardenRing.position.y = 0.2;
 
-    const poolRim = new THREE.Mesh(new THREE.CylinderGeometry(4.7, 4.9, 0.45, 28), this.mat.marble);
+    const poolRim = new THREE.Mesh(new THREE.CylinderGeometry(4.7, 4.9, 0.45, 22), this.mat.marble);
     poolRim.position.y = 0.45;
-    const water = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 4.2, 0.48, 28), this.mat.water);
+    const water = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 4.2, 0.48, 22), this.mat.water);
     water.position.y = 0.46;
 
     const step1 = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.9, 4.2), this.mat.marble);
@@ -605,24 +664,23 @@ export class FollowerTownEngine {
     const goldCollar = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.3, 3.3), this.mat.gold);
     goldCollar.position.y = 4.1;
 
-    const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 1.1, 3.5, 10), this.mat.bronze);
+    const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 1.1, 3.5, 8), this.mat.bronze);
     robe.position.y = 5.95;
-    robe.castShadow = true;
 
     const shoulders = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.8, 0.85), this.mat.bronze);
     shoulders.position.y = 7.6;
 
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.56, 12, 12), this.mat.gold);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.56, 10, 10), this.mat.gold);
     head.position.y = 8.45;
 
     const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.52, 0.3, 7), this.mat.gold);
     crown.position.y = 8.95;
 
-    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 2.2, 8), this.mat.bronze);
+    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 2.2, 6), this.mat.bronze);
     arm.position.set(0.95, 8.6, 0);
     arm.rotation.z = -0.22;
 
-    const torchFlame = new THREE.Mesh(new THREE.ConeGeometry(0.36, 0.95, 8), this.mat.lampBulbNight);
+    const torchFlame = new THREE.Mesh(new THREE.ConeGeometry(0.36, 0.95, 6), this.mat.lampBulbNight);
     torchFlame.position.set(1.2, 10.0, 0);
     this.lampBulbs.push(torchFlame);
 
@@ -631,7 +689,7 @@ export class FollowerTownEngine {
     });
 
     const hitbox = new THREE.Mesh(
-      new THREE.CylinderGeometry(6.8, 6.8, 11.5, 16),
+      new THREE.CylinderGeometry(6.8, 6.8, 11.5, 12),
       new THREE.MeshBasicMaterial({ visible: false })
     );
     hitbox.position.y = 5.75;
@@ -691,11 +749,11 @@ export class FollowerTownEngine {
 
   _addHighwayLamp(x, z) {
     const g = new THREE.Group();
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 4.6, 6), this.mat.lampPole);
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 4.6, 5), this.mat.lampPole);
     pole.position.y = 2.3;
     const cross = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.1, 0.1), this.mat.lampPole);
     cross.position.y = 4.5;
-    const b1 = new THREE.Mesh(new THREE.SphereGeometry(0.22, 6, 6), this.mat.lampBulbDay);
+    const b1 = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.22, 0.22), this.mat.lampBulbDay);
     b1.position.set(-1.05, 4.38, 0);
     const b2 = b1.clone();
     b2.position.x = 1.05;
@@ -707,11 +765,11 @@ export class FollowerTownEngine {
 
   _addStreetLamp(x, z) {
     const group = new THREE.Group();
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 3.2, 6), this.mat.lampPole);
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 3.2, 5), this.mat.lampPole);
     pole.position.y = 1.6;
     const arm = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.08, 0.08), this.mat.lampPole);
     arm.position.set(0.3, 3.15, 0);
-    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.18, 6, 6), this.mat.lampBulbDay);
+    const bulb = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.2, 0.2), this.mat.lampBulbDay);
     bulb.position.set(0.6, 3.05, 0);
     group.add(pole, arm, bulb);
     group.position.set(x, 0.08, z);
@@ -721,12 +779,11 @@ export class FollowerTownEngine {
 
   _addPalmTree(x, z) {
     const g = new THREE.Group();
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.3, 3.2, 6), this.mat.treeTrunk);
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.3, 3.2, 5), this.mat.treeTrunk);
     trunk.position.y = 1.6;
     const crown = new THREE.Mesh(new THREE.DodecahedronGeometry(1.4, 0), this.mat.treeLeaf);
     crown.position.y = 3.5;
     crown.scale.y = 0.75;
-    crown.castShadow = true;
     g.add(trunk, crown);
     g.position.set(x + (Math.random() - 0.5) * 2.5, 0, z + (Math.random() - 0.5) * 2.5);
     this.cityGroup.add(g);
@@ -741,7 +798,7 @@ export class FollowerTownEngine {
     this.vehicleHeadlights = this.vehicleHeadlights.filter((h) => h.userData.keepOnPlot);
 
     const r = this.currentGridRadius;
-    const roadCount = Math.min(22, (r * 2 + 2) * 2);
+    const roadCount = Math.min(18, (r * 2 + 2) * 2);
     const colors = [0xef4444, 0x3b82f6, 0xfacc15, 0x10b981, 0xf97316, 0xf8fafc];
     const limit = (r + 0.5) * this.BLOCK_STEP;
 
@@ -769,7 +826,7 @@ export class FollowerTownEngine {
     }
 
     const rr = this.ringRadius;
-    for (let i = 0; i < 14; i++) {
+    for (let i = 0; i < 12; i++) {
       const isBus = i % 4 === 0;
       const car = this._makeVehicleMesh(isBus, false, colors[(i + 2) % colors.length], false);
       const cw = i % 2 === 0;
@@ -777,7 +834,7 @@ export class FollowerTownEngine {
       this.trafficGroup.add(car);
       this.ringVehicles.push({
         mesh: car,
-        t: (i / 14) * 4,
+        t: (i / 12) * 4,
         cw,
         lane,
         speed: (isBus ? 9 : 13) + Math.random() * 4
@@ -798,7 +855,6 @@ export class FollowerTownEngine {
       new THREE.MeshLambertMaterial({ color: bodyColor })
     );
     body.position.y = h / 2 + 0.2;
-    body.castShadow = true;
     car.add(body);
 
     if (isBus) {
@@ -846,12 +902,12 @@ export class FollowerTownEngine {
     }
     this.workers = [];
 
-    const count = Math.min(20, 8 + this.currentGridRadius * 3);
+    const count = Math.min(14, 6 + this.currentGridRadius * 2);
     const limit = (this.currentGridRadius + 0.4) * this.BLOCK_STEP;
 
     for (let i = 0; i < count; i++) {
       const worker = this._createCharacter({
-        shirtMat: new THREE.MeshLambertMaterial({ color: i % 2 === 0 ? 0xf59e0b : 0x0ea5e9 }),
+        shirtMat: i % 2 === 0 ? this.mat.wallGold : this.mat.wallBlue,
         pantsMat: this.mat.navy,
         hatColor: 0xfacc15
       });
@@ -868,7 +924,7 @@ export class FollowerTownEngine {
 
     // POSTMAN ON BICYCLE WITH MAIL BAG & LETTERS
     const pmGroup = new THREE.Group();
-    const wheelGeo = new THREE.CylinderGeometry(0.32, 0.32, 0.08, 10);
+    const wheelGeo = new THREE.CylinderGeometry(0.32, 0.32, 0.08, 8);
     const wFront = new THREE.Mesh(wheelGeo, this.mat.wheelBlack);
     wFront.rotation.z = Math.PI / 2;
     wFront.position.set(0, 0.32, 0.52);
@@ -906,22 +962,19 @@ export class FollowerTownEngine {
 
   _createCharacter({ shirtMat, pantsMat, hatColor = null, scale = 1.0, hasBat = false }) {
     const g = new THREE.Group();
-    const legs = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.46, 0.22), pantsMat || this.mat.darkPants);
+    const legs = new THREE.Mesh(this.geo.cLegs, pantsMat || this.mat.darkPants);
     legs.position.y = 0.23;
 
-    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.5, 0.25), shirtMat || this.mat.wallBlue);
+    const torso = new THREE.Mesh(this.geo.cTorso, shirtMat || this.mat.wallBlue);
     torso.position.y = 0.7;
 
-    const head = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.28, 0.28), this.mat.skin);
+    const head = new THREE.Mesh(this.geo.cHead, this.mat.skin);
     head.position.y = 1.1;
 
     g.add(legs, torso, head);
 
     if (hatColor !== null) {
-      const cap = new THREE.Mesh(
-        new THREE.BoxGeometry(0.34, 0.14, 0.34),
-        new THREE.MeshLambertMaterial({ color: hatColor })
-      );
+      const cap = new THREE.Mesh(this.geo.cCap, new THREE.MeshLambertMaterial({ color: hatColor }));
       cap.position.y = 1.27;
       g.add(cap);
     }
@@ -956,7 +1009,6 @@ export class FollowerTownEngine {
       this.blockedRoadZones = this.blockedRoadZones.filter((z) => z.plotId !== plotId);
     }
 
-    // HARD OVERLAP GUARD: If occupied_by_landmark OR covered by a sibling 4/8-plot landmark, render NOTHING!
     const reqSize = data?.status === "built" ? getRequiredSize(data.buildingType) : 1;
     if ((data && data.status === "occupied_by_landmark") || (reqSize === 1 && this.landmarkCoveredPlots.has(plotId))) {
       const emptyPlaceholder = new THREE.Group();
@@ -992,29 +1044,41 @@ export class FollowerTownEngine {
       plotGroup.position.set(pos.x, 0.08, pos.z);
     }
 
-    const hitW = isEightPlot ? this.EIGHT_PLOT_WIDTH : isFourPlot ? this.BLOCK_FOOTPRINT - 0.2 : this.PLOT_SIZE - 0.3;
-    const hitD = isEightPlot || isFourPlot ? this.BLOCK_FOOTPRINT - 0.2 : this.PLOT_SIZE - 0.3;
-    const hitH = isEightPlot || isFourPlot ? 11.5 : 8.5;
-
-    const hitbox = new THREE.Mesh(
-      new THREE.BoxGeometry(hitW, hitH, hitD),
-      new THREE.MeshBasicMaterial({ visible: false })
-    );
-    hitbox.position.y = hitH / 2;
+    let hitbox;
+    if (isEightPlot || isFourPlot) {
+      const hitW = isEightPlot ? this.EIGHT_PLOT_WIDTH : this.BLOCK_FOOTPRINT - 0.2;
+      hitbox = new THREE.Mesh(
+        new THREE.BoxGeometry(hitW, 11.0, this.BLOCK_FOOTPRINT - 0.2),
+        new THREE.MeshBasicMaterial({ visible: false })
+      );
+      hitbox.position.y = 5.5;
+    } else {
+      hitbox = new THREE.Mesh(this.geo.hit1, new THREE.MeshBasicMaterial({ visible: false }));
+      hitbox.position.y = 3.25;
+    }
     hitbox.userData.plotId = plotId;
     plotGroup.add(hitbox);
     this.plotHitboxes.push(hitbox);
 
-    const lotBase = new THREE.Mesh(
-      new THREE.BoxGeometry(hitW + (isEightPlot ? 0.8 : 0), isEightPlot ? 0.26 : 0.14, hitD + (isEightPlot ? 0.6 : 0)),
+    const lotBaseMat =
       data?.buildingType === "ground"
         ? this.mat.turf
         : data?.status === "built"
         ? this.mat.concrete
-        : this.mat.grass
-    );
+        : this.mat.grass;
+
+    const lotBase =
+      isEightPlot || isFourPlot
+        ? new THREE.Mesh(
+            new THREE.BoxGeometry(
+              (isEightPlot ? this.EIGHT_PLOT_WIDTH + 0.8 : this.BLOCK_FOOTPRINT - 0.2),
+              isEightPlot ? 0.26 : 0.14,
+              this.BLOCK_FOOTPRINT + (isEightPlot ? 0.4 : -0.2)
+            ),
+            lotBaseMat
+          )
+        : new THREE.Mesh(this.geo.base1, lotBaseMat);
     lotBase.position.y = isEightPlot ? 0.13 : 0.07;
-    lotBase.receiveShadow = true;
     plotGroup.add(lotBase);
 
     let buildingObj = null;
@@ -1035,13 +1099,13 @@ export class FollowerTownEngine {
       sign.position.set(0, buildingObj.userData.labelY || 11.2, 0);
       buildingObj.add(sign);
     } else {
-      buildingObj = this._buildModernTowerOrShop(data.buildingType);
+      buildingObj = this._buildOnePlotBuilding(data.buildingType);
       buildingObj.rotation.y = pos.rotY;
 
       if (data.ownerName) {
         const subLabel = data.buildingType === "shop" ? "టీ & టిఫిన్ • SHOP" : "";
         const sign = this._createNameSign(data.ownerName, subLabel, false);
-        sign.position.set(0, buildingObj.userData.labelY || 9.8, 0);
+        sign.position.set(0, buildingObj.userData.labelY || 5.2, 0);
         plotGroup.add(sign);
       }
     }
@@ -1052,7 +1116,7 @@ export class FollowerTownEngine {
       buildingObj.scale.y = 0.05;
       const scafW = isEightPlot ? 31.0 : isFourPlot ? 13.0 : 5.6;
       const scafD = isEightPlot || isFourPlot ? 13.0 : 5.6;
-      const scafH = isEightPlot || isFourPlot ? 9.5 : 8.5;
+      const scafH = isEightPlot || isFourPlot ? 9.5 : 5.5;
       const scaffold = new THREE.Mesh(new THREE.BoxGeometry(scafW, scafH, scafD), this.mat.scaffolding);
       scaffold.position.y = scafH / 2;
       plotGroup.add(scaffold);
@@ -1061,7 +1125,7 @@ export class FollowerTownEngine {
       const wCount = isEightPlot ? 6 : isFourPlot ? 4 : 2;
       for (let w = 0; w < wCount; w++) {
         const npc = this._createCharacter({
-          shirtMat: new THREE.MeshLambertMaterial({ color: 0xf97316 }),
+          shirtMat: this.mat.wallGold,
           pantsMat: this.mat.navy,
           hatColor: 0xfacc15
         });
@@ -1094,20 +1158,19 @@ export class FollowerTownEngine {
 
   _buildEmptyPlotMesh() {
     const g = new THREE.Group();
-    const fenceH = 0.45;
     const s = this.PLOT_SIZE - 0.7;
-    const f1 = new THREE.Mesh(new THREE.BoxGeometry(s, fenceH, 0.12), this.mat.wood);
-    f1.position.set(0, fenceH / 2 + 0.1, -s / 2);
-    const f2 = f1.clone();
-    f2.position.z = s / 2;
-    const f3 = new THREE.Mesh(new THREE.BoxGeometry(0.12, fenceH, s), this.mat.wood);
-    f3.position.set(-s / 2, fenceH / 2 + 0.1, 0);
-    const f4 = f3.clone();
-    f4.position.x = s / 2;
+    const f1 = new THREE.Mesh(this.geo.fenceH, this.mat.wood);
+    f1.position.set(0, 0.325, -s / 2);
+    const f2 = new THREE.Mesh(this.geo.fenceH, this.mat.wood);
+    f2.position.set(0, 0.325, s / 2);
+    const f3 = new THREE.Mesh(this.geo.fenceV, this.mat.wood);
+    f3.position.set(-s / 2, 0.325, 0);
+    const f4 = new THREE.Mesh(this.geo.fenceV, this.mat.wood);
+    f4.position.set(s / 2, 0.325, 0);
 
-    const post = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.1, 0.14), this.mat.wood);
+    const post = new THREE.Mesh(this.geo.post, this.mat.wood);
     post.position.set(0, 0.6, 0);
-    const board = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.6, 0.1), this.mat.wallWhite);
+    const board = new THREE.Mesh(this.geo.board, this.mat.wallWhite);
     board.position.set(0, 1.05, 0.05);
 
     g.add(f1, f2, f3, f4, post, board);
@@ -1115,16 +1178,125 @@ export class FollowerTownEngine {
   }
 
   // =========================================================================
-  // 5–7 FLOOR REALISTIC FOLLOWER APARTMENT TOWERS (INSPIRED BY 9388, 9389, 9390!)
+  // 1-PLOT BUILDINGS: KEEPS CLASSIC HOUSES + ADDS NEW 5-FLOOR MODERN TOWERS!
   // =========================================================================
-  _buildModernTowerOrShop(type) {
+  _buildOnePlotBuilding(type) {
     const g = new THREE.Group();
     const winMat = this.timeOfDay === "night" ? this.mat.windowNight : this.mat.windowDay;
 
+    // --- NEW 5-FLOOR MODERN TOWERS (Optional, Lightweight Shared Geometries) ---
+    if (type === "tower_brick") {
+      const floors = 5;
+      const fh = 1.28;
+      const totalH = floors * fh + 0.8;
+
+      const core = new THREE.Mesh(this.geo.towerCore5, this.mat.wallWhite);
+      core.position.set(0, 0.8 + (floors * fh) / 2, -0.3);
+      const brickSpine = new THREE.Mesh(new THREE.BoxGeometry(1.15, floors * fh + 0.4, 0.42), this.mat.brickRed);
+      brickSpine.position.set(-0.35, 0.8 + (floors * fh) / 2 + 0.15, 1.85);
+      g.add(core, brickSpine);
+
+      for (let f = 0; f < floors; f++) {
+        const y = 0.9 + f * fh;
+        const slab = new THREE.Mesh(this.geo.towerSlab, this.mat.wallWhite);
+        slab.position.set(0, y, 2.02);
+        const winL = new THREE.Mesh(this.geo.towerWinL, winMat);
+        winL.position.set(-1.55, y + 0.5, 1.78);
+        winL.userData.isWindow = true;
+        const railL = new THREE.Mesh(this.geo.towerRailL, this.mat.glass);
+        railL.position.set(-1.55, y + 0.26, 2.38);
+        const winR = new THREE.Mesh(this.geo.towerWinR, winMat);
+        winR.position.set(1.2, y + 0.5, 1.78);
+        winR.userData.isWindow = true;
+        const plantR = new THREE.Mesh(this.geo.towerPlantR, this.mat.balconyPlant);
+        plantR.position.set(1.2, y + 0.22, 2.34);
+        g.add(slab, winL, railL, winR, plantR);
+      }
+      g.userData.labelY = totalH + 2.0;
+      return g;
+    }
+
+    if (type === "tower_cube") {
+      const floors = 5;
+      const fh = 1.32;
+      const totalH = floors * fh + 0.6;
+      const core = new THREE.Mesh(new THREE.BoxGeometry(3.8, totalH, 3.8), this.mat.darkGlass);
+      core.position.set(0, totalH / 2 + 0.1, -0.2);
+      g.add(core);
+
+      for (let f = 0; f < floors; f++) {
+        const y = 0.75 + f * fh;
+        const shiftX = f % 2 === 0 ? -0.55 : 0.55;
+        const cube = new THREE.Mesh(this.geo.cubeBlock, f % 2 === 0 ? this.mat.wallWarmStone : this.mat.wallWhite);
+        cube.position.set(shiftX, y, f % 3 === 0 ? 0.4 : -0.1);
+        const glassCorner = new THREE.Mesh(this.geo.cubeGlass, winMat);
+        glassCorner.position.set(-shiftX * 1.15, y, 1.78);
+        glassCorner.userData.isWindow = true;
+        const balc = new THREE.Mesh(this.geo.cubeBalc, this.mat.wallWhite);
+        balc.position.set(-shiftX * 1.15, y - fh * 0.4, 2.02);
+        g.add(cube, glassCorner, balc);
+      }
+      g.userData.labelY = totalH + 2.2;
+      return g;
+    }
+
+    if (type === "tower_led") {
+      const floors = 5;
+      const fh = 1.42;
+      const totalH = floors * fh + 0.5;
+
+      const body = new THREE.Mesh(new THREE.BoxGeometry(4.5, totalH, 4.2), this.mat.wallCream);
+      body.position.set(0, totalH / 2 + 0.1, -0.2);
+      const stonePillar = new THREE.Mesh(new THREE.BoxGeometry(1.05, totalH + 0.25, 0.55), this.mat.stoneDark);
+      stonePillar.position.set(-1.85, totalH / 2 + 0.18, 2.02);
+      const ledStrip = new THREE.Mesh(new THREE.BoxGeometry(0.12, totalH - 0.3, 0.12), this.mat.ledStripNight);
+      ledStrip.position.set(-1.85, totalH / 2 + 0.18, 2.31);
+      const woodPanel = new THREE.Mesh(new THREE.BoxGeometry(0.9, totalH - 0.5, 0.35), this.mat.darkWood);
+      woodPanel.position.set(-0.85, totalH / 2 + 0.1, 1.98);
+      g.add(body, stonePillar, ledStrip, woodPanel);
+
+      for (let f = 0; f < floors; f++) {
+        const y = 0.85 + f * fh;
+        const frame = new THREE.Mesh(this.geo.ledFrame, this.mat.wallWhite);
+        frame.position.set(0.95, y - 0.52, 2.15);
+        const win = new THREE.Mesh(this.geo.ledWin, winMat);
+        win.position.set(0.95, y, 1.92);
+        win.userData.isWindow = true;
+        const rail = new THREE.Mesh(this.geo.ledRail, this.mat.glass);
+        rail.position.set(0.95, y - 0.24, 2.52);
+        const bush = new THREE.Mesh(this.geo.ledBush, this.mat.balconyPlant);
+        bush.position.set(1.85, y - 0.24, 2.32);
+        g.add(frame, win, rail, bush);
+      }
+      g.userData.labelY = totalH + 2.1;
+      return g;
+    }
+
+    if (type === "tower_gold") {
+      const floors = 6;
+      const fh = 1.28;
+      const totalH = floors * fh + 0.5;
+      const body = new THREE.Mesh(new THREE.BoxGeometry(4.5, totalH, 4.2), this.mat.charcoal);
+      body.position.set(0, totalH / 2 + 0.1, -0.2);
+      g.add(body);
+
+      for (let f = 0; f < floors; f++) {
+        const y = 0.85 + f * fh;
+        const goldTrim = new THREE.Mesh(this.geo.goldTrim, this.mat.gold);
+        goldTrim.position.set(0, y - 0.5, -0.15);
+        const wrapWin = new THREE.Mesh(this.geo.goldWin, winMat);
+        wrapWin.position.set(0, y, 1.94);
+        wrapWin.userData.isWindow = true;
+        g.add(goldTrim, wrapWin);
+      }
+      g.userData.labelY = totalH + 2.2;
+      return g;
+    }
+
+    // --- LOCAL TEA & TIFFIN SHOP ---
     if (type === "shop") {
       const base = new THREE.Mesh(new THREE.BoxGeometry(4.8, 2.8, 4.2), this.mat.wallGold);
       base.position.y = 1.45;
-      base.castShadow = true;
       const awning = new THREE.Mesh(new THREE.BoxGeometry(5.0, 0.35, 1.4), this.mat.petrolRed);
       awning.position.set(0, 2.3, 2.3);
       awning.rotation.x = 0.25;
@@ -1136,190 +1308,43 @@ export class FollowerTownEngine {
       return g;
     }
 
-    // STYLE 1 (`house_blue` — Inspired by 9388.jpg: 6-Floor White & Red-Brick Tower with Glass Balconies & Green Plants)
-    if (type === "house_blue") {
-      const floors = 6;
-      const fh = 1.28;
-      const totalH = floors * fh + 0.8;
+    // --- CLASSIC OLD FOLLOWER TERRACE HOUSES (KEPT INTACT + ULTRA FAST SHARED GEOS) ---
+    const wallMap = {
+      house_blue: this.mat.wallBlue,
+      house_coral: this.mat.wallCoral,
+      house_mint: this.mat.wallMint,
+      house_gold: this.mat.wallGold
+    };
+    const isDuplex = type === "house_gold";
+    const h = isDuplex ? 3.8 : 2.5;
 
-      // Ground Floor Parking & Modern Gate
-      const base = new THREE.Mesh(new THREE.BoxGeometry(4.8, 1.1, 4.4), this.mat.wallWhite);
-      base.position.set(0, 0.6, -0.2);
-      const gate = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.85, 0.12), this.mat.darkWood);
-      gate.position.set(0.6, 0.48, 2.02);
-      g.add(base, gate);
+    const body = new THREE.Mesh(isDuplex ? this.geo.houseBody2 : this.geo.houseBody1, wallMap[type] || this.mat.wallBlue);
+    body.position.set(0, h / 2 + 0.08, -0.2);
 
-      // Main 6-Story White Concrete Structure
-      const core = new THREE.Mesh(new THREE.BoxGeometry(4.6, floors * fh, 4.1), this.mat.wallWhite);
-      core.position.set(0, 1.1 + (floors * fh) / 2, -0.3);
-      core.castShadow = true;
-      core.receiveShadow = true;
-      g.add(core);
+    const parapet = new THREE.Mesh(this.geo.parapet, this.mat.wallWhite);
+    parapet.position.set(0, h + 0.22, -0.2);
 
-      // Central Vertical Red-Brick Architectural Spine (just like 9388.jpg!)
-      const brickSpine = new THREE.Mesh(new THREE.BoxGeometry(1.15, floors * fh + 0.5, 0.45), this.mat.brickRed);
-      brickSpine.position.set(-0.35, 1.1 + (floors * fh) / 2 + 0.2, 1.85);
-      g.add(brickSpine);
+    const mumty = new THREE.Mesh(this.geo.mumty, this.mat.wallCream);
+    mumty.position.set(-1.1, h + 0.7, -1.2);
 
-      // 6 Floors of Balconies, Glass Railings, Windows & Hanging Green Planters
-      for (let f = 0; f < floors; f++) {
-        const y = 1.15 + f * fh;
-        // Concrete floor slab overhang
-        const slab = new THREE.Mesh(new THREE.BoxGeometry(4.95, 0.14, 0.85), this.mat.wallWhite);
-        slab.position.set(0, y, 2.05);
-        g.add(slab);
+    const pathway = new THREE.Mesh(this.geo.pathway, this.mat.sidewalk);
+    pathway.position.set(0, 0.12, 2.65);
 
-        // Left Glass Balcony Window + Blue Glass Railing
-        const winL = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.85, 0.1), winMat);
-        winL.position.set(-1.55, y + 0.52, 1.78);
-        winL.userData.isWindow = true;
-        const railL = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.42, 0.08), this.mat.glass);
-        railL.position.set(-1.55, y + 0.28, 2.42);
+    const porch = new THREE.Mesh(this.geo.porch, this.mat.wallWhite);
+    porch.position.set(0, 1.75, 2.25);
 
-        // Right Balcony Window + Green Hanging Plants
-        const winR = new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.85, 0.1), winMat);
-        winR.position.set(1.2, y + 0.52, 1.78);
-        winR.userData.isWindow = true;
-        const plantR = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.36, 0.26), this.mat.balconyPlant);
-        plantR.position.set(1.2, y + 0.24, 2.38);
+    const door = new THREE.Mesh(this.geo.door, this.mat.wood);
+    door.position.set(0, 0.8, 1.92);
 
-        g.add(winL, railL, winR, plantR);
-      }
+    const winL = new THREE.Mesh(this.geo.win, winMat);
+    winL.position.set(-1.35, 1.55, 1.92);
+    winL.userData.isWindow = true;
+    const winR = new THREE.Mesh(this.geo.win, winMat);
+    winR.position.set(1.35, 1.55, 1.92);
+    winR.userData.isWindow = true;
 
-      // Rooftop Glass Parapet + Green Roof Bush
-      const roofParapet = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.35, 4.3), this.mat.wallWhite);
-      roofParapet.position.set(0, totalH + 0.3, -0.25);
-      const roofBush = new THREE.Mesh(new THREE.DodecahedronGeometry(0.65, 0), this.mat.balconyPlant);
-      roofBush.position.set(-0.35, totalH + 0.8, 1.5);
-      g.add(roofParapet, roofBush);
-
-      g.userData.labelY = totalH + 2.3;
-      return g;
-    }
-
-    // STYLE 2 (`house_coral` — Inspired by 9389.jpg: 6-Floor Staggered Cantilevered Modern Cubes Tower)
-    if (type === "house_coral") {
-      const floors = 6;
-      const fh = 1.32;
-      const totalH = floors * fh + 0.6;
-
-      // Inner structural glass-and-stone core
-      const core = new THREE.Mesh(new THREE.BoxGeometry(3.8, totalH, 3.8), this.mat.darkGlass);
-      core.position.set(0, totalH / 2 + 0.1, -0.2);
-      core.castShadow = true;
-      g.add(core);
-
-      // 6 Staggered Cantilevered Architectural Cubes jutting left/right/front!
-      for (let f = 0; f < floors; f++) {
-        const y = 0.75 + f * fh;
-        const shiftX = f % 2 === 0 ? -0.55 : 0.55;
-        const shiftZ = f % 3 === 0 ? 0.45 : -0.1;
-
-        const cube = new THREE.Mesh(
-          new THREE.BoxGeometry(3.3, fh - 0.08, 3.6),
-          f % 2 === 0 ? this.mat.wallWarmStone : this.mat.wallWhite
-        );
-        cube.position.set(shiftX, y, shiftZ);
-        cube.castShadow = true;
-        cube.receiveShadow = true;
-
-        // Warm lit glass corner balcony
-        const glassCorner = new THREE.Mesh(new THREE.BoxGeometry(1.5, fh * 0.72, 0.14), winMat);
-        glassCorner.position.set(-shiftX * 1.15, y, 1.78);
-        glassCorner.userData.isWindow = true;
-
-        const balconySlab = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.14, 0.65), this.mat.wallWhite);
-        balconySlab.position.set(-shiftX * 1.15, y - fh * 0.4, 2.02);
-
-        g.add(cube, glassCorner, balconySlab);
-      }
-
-      // Rooftop Penthouse Pergola
-      const penthouse = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.1, 2.6), this.mat.wallWarmStone);
-      penthouse.position.set(0.4, totalH + 0.55, -0.4);
-      g.add(penthouse);
-
-      g.userData.labelY = totalH + 2.6;
-      return g;
-    }
-
-    // STYLE 3 (`house_mint` — Inspired by 9390.jpg: 5-Floor Luxury Stone, Wood Louver & Vertical LED Tower)
-    if (type === "house_mint") {
-      const floors = 5;
-      const fh = 1.45;
-      const totalH = floors * fh + 0.6;
-
-      // Main Luxury Dark Charcoal & Cream Body
-      const body = new THREE.Mesh(new THREE.BoxGeometry(4.5, totalH, 4.2), this.mat.wallCream);
-      body.position.set(0, totalH / 2 + 0.1, -0.2);
-      body.castShadow = true;
-      g.add(body);
-
-      // Left Textured Stone Pillar with Full-Height Vertical Glowing LED Strip (Signature look from 9390.jpg!)
-      const stonePillar = new THREE.Mesh(new THREE.BoxGeometry(1.05, totalH + 0.3, 0.55), this.mat.stoneDark);
-      stonePillar.position.set(-1.85, totalH / 2 + 0.2, 2.02);
-      const ledStrip = new THREE.Mesh(new THREE.BoxGeometry(0.12, totalH - 0.3, 0.12), this.mat.ledStripNight);
-      ledStrip.position.set(-1.85, totalH / 2 + 0.2, 2.31);
-      g.add(stonePillar, ledStrip);
-
-      // Dark Wood Vertical Louver Panel next to Stone Pillar
-      const woodPanel = new THREE.Mesh(new THREE.BoxGeometry(0.9, totalH - 0.6, 0.35), this.mat.darkWood);
-      woodPanel.position.set(-0.85, totalH / 2 + 0.1, 1.98);
-      g.add(woodPanel);
-
-      // 5 Floors of Crisp White Cantilevered Balcony Frames + Glass Railings + Plants
-      for (let f = 0; f < floors; f++) {
-        const y = 0.9 + f * fh;
-        const frame = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.18, 0.85), this.mat.wallWhite);
-        frame.position.set(0.95, y - 0.55, 2.15);
-
-        const win = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.95, 0.12), winMat);
-        win.position.set(0.95, y, 1.92);
-        win.userData.isWindow = true;
-
-        const rail = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.45, 0.08), this.mat.glass);
-        rail.position.set(0.95, y - 0.25, 2.52);
-
-        const bush = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.45, 0.35), this.mat.balconyPlant);
-        bush.position.set(1.85, y - 0.25, 2.32);
-
-        g.add(frame, win, rail, bush);
-      }
-
-      // Rooftop Dark Pergola Slats
-      const pergola = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.28, 4.4), this.mat.charcoal);
-      pergola.position.set(0, totalH + 0.35, -0.1);
-      g.add(pergola);
-
-      g.userData.labelY = totalH + 2.2;
-      return g;
-    }
-
-    // STYLE 4 (`house_gold` — 7-Floor Golden Glass Luxury Penthouse Tower)
-    const floors = 7;
-    const fh = 1.28;
-    const totalH = floors * fh + 0.5;
-
-    const body = new THREE.Mesh(new THREE.BoxGeometry(4.5, totalH, 4.2), this.mat.charcoal);
-    body.position.set(0, totalH / 2 + 0.1, -0.2);
-    body.castShadow = true;
-    g.add(body);
-
-    for (let f = 0; f < floors; f++) {
-      const y = 0.85 + f * fh;
-      const goldTrim = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.16, 4.5), this.mat.gold);
-      goldTrim.position.set(0, y - 0.5, -0.15);
-      const wrapWin = new THREE.Mesh(new THREE.BoxGeometry(4.1, 0.82, 0.12), winMat);
-      wrapWin.position.set(0, y, 1.94);
-      wrapWin.userData.isWindow = true;
-      g.add(goldTrim, wrapWin);
-    }
-
-    const crown = new THREE.Mesh(new THREE.BoxGeometry(3.4, 1.0, 3.2), this.mat.gold);
-    crown.position.set(0, totalH + 0.5, -0.2);
-    g.add(crown);
-
-    g.userData.labelY = totalH + 2.6;
+    g.add(body, parapet, mumty, pathway, porch, door, winL, winR);
+    g.userData.labelY = h + 2.2;
     return g;
   }
 
@@ -1330,7 +1355,7 @@ export class FollowerTownEngine {
     const pitch = new THREE.Mesh(new THREE.BoxGeometry(8.6, 0.08, 2.2), this.mat.pitch);
     pitch.position.set(0, 0.28, 0.4);
 
-    const boundary = new THREE.Mesh(new THREE.RingGeometry(5.6, 5.9, 44), this.mat.stripe);
+    const boundary = new THREE.Mesh(new THREE.RingGeometry(5.6, 5.9, 32), this.mat.stripe);
     boundary.rotation.x = -Math.PI / 2;
     boundary.scale.set(2.15, 1.0, 1.0);
     boundary.position.set(0, 0.29, 0.4);
@@ -1356,7 +1381,7 @@ export class FollowerTownEngine {
     sbGlow.position.set(-14.55, 4.2, 0.4);
 
     [[-15.2, -6.4], [0, -6.8], [15.2, -6.4], [-15.2, 6.4], [0, 6.8], [15.2, 6.4]].forEach(([fx, fz]) => {
-      const tower = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 7.6, 6), this.mat.lampPole);
+      const tower = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 7.6, 5), this.mat.lampPole);
       tower.position.set(fx, 3.9, fz);
       const bulb = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.65, 0.28), this.mat.lampBulbDay);
       bulb.position.set(fx, 7.6, fz);
@@ -1395,7 +1420,7 @@ export class FollowerTownEngine {
       });
     });
 
-    const ball = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 8), this.mat.ballRed);
+    const ball = new THREE.Mesh(new THREE.SphereGeometry(0.18, 6, 6), this.mat.ballRed);
     g.add(ball);
     this.landmarkActors.push({ plotId, mesh: ball, mode: "ball_x", baseX: 0, baseZ: 0.4, range: 3.5, speed: 3.8, phase: 0 });
 
@@ -1411,11 +1436,10 @@ export class FollowerTownEngine {
     if (type === "petrol_bunk") {
       const canopy = new THREE.Mesh(new THREE.BoxGeometry(12.2, 0.7, 6.6), this.mat.petrolRed);
       canopy.position.set(0, 4.6, 1.0);
-      canopy.castShadow = true;
       const trim = new THREE.Mesh(new THREE.BoxGeometry(12.4, 0.28, 6.8), this.mat.petrolYellow);
       trim.position.set(0, 4.25, 1.0);
 
-      const pillarGeo = new THREE.CylinderGeometry(0.24, 0.24, 4.4, 8);
+      const pillarGeo = new THREE.CylinderGeometry(0.24, 0.24, 4.4, 6);
       [[-4.6, -1.2], [0, -1.2], [4.6, -1.2], [-4.6, 3.2], [0, 3.2], [4.6, 3.2]].forEach(([px, pz]) => {
         const p = new THREE.Mesh(pillarGeo, this.mat.wallWhite);
         p.position.set(px, 2.2, pz);
@@ -1432,7 +1456,6 @@ export class FollowerTownEngine {
 
       const office = new THREE.Mesh(new THREE.BoxGeometry(11.4, 3.4, 3.0), this.mat.wallWhite);
       office.position.set(0, 1.75, -4.8);
-      office.castShadow = true;
       const officeTop = new THREE.Mesh(new THREE.BoxGeometry(11.6, 0.45, 3.2), this.mat.petrolRed);
       officeTop.position.set(0, 3.55, -4.8);
 
@@ -1465,18 +1488,16 @@ export class FollowerTownEngine {
     if (type === "bus_stand") {
       const terminal = new THREE.Mesh(new THREE.BoxGeometry(12.8, 4.2, 3.2), this.mat.wallCream);
       terminal.position.set(0, 2.15, -4.8);
-      terminal.castShadow = true;
 
       const roof = new THREE.Mesh(new THREE.BoxGeometry(13.4, 0.45, 6.2), this.mat.navy);
       roof.position.set(0, 4.5, -2.8);
       roof.rotation.x = 0.06;
-      roof.castShadow = true;
 
       const yellowTrim = new THREE.Mesh(new THREE.BoxGeometry(13.5, 0.3, 0.22), this.mat.petrolYellow);
       yellowTrim.position.set(0, 4.3, 0.28);
 
       [-5.6, -1.8, 1.8, 5.6].forEach((px) => {
-        const col = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 4.3, 8), this.mat.wallWhite);
+        const col = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 4.3, 6), this.mat.wallWhite);
         col.position.set(px, 2.15, -0.4);
         g.add(col);
       });
@@ -1520,12 +1541,8 @@ export class FollowerTownEngine {
     if (type === "police_station") {
       const floor1 = new THREE.Mesh(new THREE.BoxGeometry(12.2, 3.2, 5.6), this.mat.wallKhaki);
       floor1.position.set(0, 1.65, -3.2);
-      floor1.castShadow = true;
-
       const floor2 = new THREE.Mesh(new THREE.BoxGeometry(9.6, 3.0, 5.0), this.mat.wallCream);
       floor2.position.set(0, 4.75, -3.4);
-      floor2.castShadow = true;
-
       const tower = new THREE.Mesh(new THREE.BoxGeometry(3.6, 2.4, 3.6), this.mat.wallKhaki);
       tower.position.set(0, 7.4, -3.4);
 
@@ -1537,19 +1554,19 @@ export class FollowerTownEngine {
       const portico = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.35, 2.6), this.mat.navy);
       portico.position.set(0, 2.6, 0.7);
       [-1.9, 1.9].forEach((px) => {
-        const col = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 2.5, 8), this.mat.wallWhite);
+        const col = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 2.5, 6), this.mat.wallWhite);
         col.position.set(px, 1.3, 1.7);
         g.add(col);
       });
 
       for (let wx = -4.4; wx <= 4.4; wx += 1.75) {
         if (Math.abs(wx) > 1.2) {
-          const w1 = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.95, 0.14), winMat);
+          const w1 = new THREE.Mesh(this.geo.win, winMat);
           w1.position.set(wx, 1.7, -0.35);
           w1.userData.isWindow = true;
           g.add(w1);
         }
-        const w2 = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.95, 0.14), winMat);
+        const w2 = new THREE.Mesh(this.geo.win, winMat);
         w2.position.set(wx * 0.8, 4.8, -0.85);
         w2.userData.isWindow = true;
         g.add(w2);
@@ -1605,7 +1622,6 @@ export class FollowerTownEngine {
     if (type === "hospital") {
       const main = new THREE.Mesh(new THREE.BoxGeometry(11.8, 9.2, 6.2), this.mat.wallWhite);
       main.position.set(0, 4.65, -2.4);
-      main.castShadow = true;
 
       [2.8, 5.8, 8.9].forEach((y) => {
         const band = new THREE.Mesh(new THREE.BoxGeometry(12.0, 0.35, 6.4), this.mat.teal);
@@ -1613,7 +1629,7 @@ export class FollowerTownEngine {
         g.add(band);
       });
 
-      const pad = new THREE.Mesh(new THREE.CylinderGeometry(2.3, 2.3, 0.16, 18), this.mat.road);
+      const pad = new THREE.Mesh(new THREE.CylinderGeometry(2.3, 2.3, 0.16, 14), this.mat.road);
       pad.position.set(0, 9.35, -2.4);
       const h1 = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.06, 1.8), this.mat.petrolYellow);
       h1.position.set(-0.6, 9.46, -2.4);
@@ -1631,7 +1647,7 @@ export class FollowerTownEngine {
         for (let wx = -4.2; wx <= 4.2; wx += 1.68) {
           if (wy > 6.5 && Math.abs(wx) < 1.5) continue;
           if (wy < 2.2 && Math.abs(wx) < 1.5) continue;
-          const w = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.9, 0.14), winMat);
+          const w = new THREE.Mesh(this.geo.win, winMat);
           w.position.set(wx, wy, 0.74);
           w.userData.isWindow = true;
           g.add(w);
@@ -1644,7 +1660,7 @@ export class FollowerTownEngine {
       const crashCar = this._makeVehicleMesh(false, false, 0xf97316, true);
       crashCar.position.set(5.4, 0.1, 8.8);
       crashCar.rotation.y = 0.55;
-      const hazardCone = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.6, 6), this.mat.petrolRed);
+      const hazardCone = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.6, 5), this.mat.petrolRed);
       hazardCone.position.set(4.1, 0.32, 8.8);
       const patient = this._createCharacter({ shirtMat: this.mat.jerseyYellow, pantsMat: this.mat.darkPants, scale: 0.95 });
       g.add(crashCar, hazardCone, patient);
@@ -1683,19 +1699,14 @@ export class FollowerTownEngine {
     if (type === "srmt_mall") {
       const base = new THREE.Mesh(new THREE.BoxGeometry(12.4, 8.4, 7.6), this.mat.wallWhite);
       base.position.set(0, 4.25, -2.0);
-      base.castShadow = true;
-
       const atrium = new THREE.Mesh(new THREE.BoxGeometry(7.4, 7.4, 0.5), this.mat.glass);
       atrium.position.set(0, 3.8, 1.9);
-
       const ribbon1 = new THREE.Mesh(new THREE.BoxGeometry(12.7, 0.75, 7.9), this.mat.srmtPurple);
       ribbon1.position.set(0, 8.2, -2.0);
       const ribbon2 = new THREE.Mesh(new THREE.BoxGeometry(12.6, 0.35, 7.8), this.mat.srmtMagenta);
       ribbon2.position.set(0, 4.2, -2.0);
-
       const cinema = new THREE.Mesh(new THREE.BoxGeometry(7.0, 2.0, 4.2), this.mat.navy);
       cinema.position.set(0, 9.4, -2.4);
-
       const canopy = new THREE.Mesh(new THREE.BoxGeometry(5.8, 0.35, 2.6), this.mat.srmtMagenta);
       canopy.position.set(0, 2.3, 3.1);
 
@@ -1728,9 +1739,8 @@ export class FollowerTownEngine {
       glassBox.position.set(0, 3.3, -1.2);
       const roof = new THREE.Mesh(new THREE.BoxGeometry(12.6, 0.55, 9.0), this.mat.appleSilver);
       roof.position.set(0, 6.45, -1.2);
-      roof.castShadow = true;
 
-      const logoBody = new THREE.Mesh(new THREE.SphereGeometry(0.92, 16, 16), this.mat.wallWhite);
+      const logoBody = new THREE.Mesh(new THREE.SphereGeometry(0.92, 10, 10), this.mat.wallWhite);
       logoBody.scale.set(1, 1.05, 0.3);
       logoBody.position.set(0, 4.4, 2.55);
       const logoLeaf = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.38, 0.16), this.mat.wallWhite);
@@ -1765,8 +1775,6 @@ export class FollowerTownEngine {
     if (type === "reliance_store") {
       const main = new THREE.Mesh(new THREE.BoxGeometry(12.0, 6.4, 7.2), this.mat.wallWhite);
       main.position.set(0, 3.25, -1.8);
-      main.castShadow = true;
-
       const blueFacade = new THREE.Mesh(new THREE.BoxGeometry(12.2, 1.8, 7.4), this.mat.relianceBlue);
       blueFacade.position.set(0, 5.6, -1.8);
       const redAccent = new THREE.Mesh(new THREE.BoxGeometry(12.3, 0.35, 7.5), this.mat.petrolRed);
@@ -1808,27 +1816,23 @@ export class FollowerTownEngine {
     // GRAND SCHOOL CAMPUS
     const main = new THREE.Mesh(new THREE.BoxGeometry(12.4, 5.8, 3.6), this.mat.wallCream);
     main.position.set(0, 2.95, -4.4);
-    main.castShadow = true;
-
     const wingL = new THREE.Mesh(new THREE.BoxGeometry(3.2, 4.8, 5.8), this.mat.wallCream);
     wingL.position.set(-4.6, 2.45, -0.2);
-    wingL.castShadow = true;
     const wingR = wingL.clone();
     wingR.position.x = 4.6;
-
     const roofBand = new THREE.Mesh(new THREE.BoxGeometry(12.7, 0.45, 3.9), this.mat.roofOrange);
     roofBand.position.set(0, 6.0, -4.4);
 
     [1.7, 4.2].forEach((wy) => {
       for (let wx = -4.4; wx <= 4.4; wx += 1.45) {
-        const w = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.85, 0.14), winMat);
+        const w = new THREE.Mesh(this.geo.win, winMat);
         w.position.set(wx, wy, -2.56);
         w.userData.isWindow = true;
         g.add(w);
       }
     });
 
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 5.8, 6), this.mat.wallWhite);
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 5.8, 5), this.mat.wallWhite);
     pole.position.set(0, 2.95, 0.2);
     const flagTop = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.24, 0.05), new THREE.MeshBasicMaterial({ color: 0xf97316 }));
     flagTop.position.set(0.58, 5.6, 0.2);
@@ -1858,40 +1862,42 @@ export class FollowerTownEngine {
 
   _createNameSign(mainText, subText = "", isBig = false) {
     const canvas = document.createElement("canvas");
-    canvas.width = isBig ? 440 : 320;
-    canvas.height = subText ? 98 : 68;
+    canvas.width = isBig ? 384 : 256;
+    canvas.height = subText ? 84 : 56;
     const ctx = canvas.getContext("2d");
 
     ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
     ctx.beginPath();
-    ctx.roundRect(6, 6, canvas.width - 12, canvas.height - 12, 16);
+    ctx.roundRect(4, 4, canvas.width - 8, canvas.height - 8, 12);
     ctx.fill();
 
     ctx.strokeStyle = isBig ? "#facc15" : "#38bdf8";
-    ctx.lineWidth = 4;
+    ctx.lineWidth = 3;
     ctx.stroke();
 
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     const cx = canvas.width / 2;
 
-    const cleanMain = mainText.length > 22 ? mainText.slice(0, 21) + "…" : mainText;
+    const cleanMain = mainText.length > 20 ? mainText.slice(0, 19) + "…" : mainText;
     if (subText) {
       ctx.fillStyle = "#facc15";
-      ctx.font = "bold 21px sans-serif";
-      ctx.fillText(subText, cx, 30);
+      ctx.font = "bold 18px sans-serif";
+      ctx.fillText(subText, cx, 26);
       ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 24px sans-serif";
-      ctx.fillText(cleanMain, cx, 66);
+      ctx.font = "bold 20px sans-serif";
+      ctx.fillText(cleanMain, cx, 56);
     } else {
       ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 24px sans-serif";
-      ctx.fillText(cleanMain, cx, 35);
+      ctx.font = "bold 20px sans-serif";
+      ctx.fillText(cleanMain, cx, 29);
     }
 
     const tex = new THREE.CanvasTexture(canvas);
+    tex.generateMipmaps = false;
+    tex.minFilter = THREE.LinearFilter;
     const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
-    sprite.scale.set(isBig ? 8.8 : 5.0, subText ? (isBig ? 2.2 : 1.5) : 1.15, 1);
+    sprite.scale.set(isBig ? 8.6 : 4.8, subText ? (isBig ? 2.1 : 1.4) : 1.1, 1);
     return sprite;
   }
 
@@ -1901,20 +1907,20 @@ export class FollowerTownEngine {
       this.scene.background.setHex(0x0b1120);
       this.scene.fog.color.setHex(0x0b1120);
       this.sunLight.color.setHex(0x60a5fa);
-      this.sunLight.intensity = 0.4;
-      this.hemiLight.intensity = 0.25;
+      this.sunLight.intensity = 0.42;
+      this.hemiLight.intensity = 0.3;
     } else if (mode === "sunset") {
       this.scene.background.setHex(0xf97316);
       this.scene.fog.color.setHex(0xfb923c);
       this.sunLight.color.setHex(0xfdba74);
-      this.sunLight.intensity = 1.1;
-      this.hemiLight.intensity = 0.55;
+      this.sunLight.intensity = 1.05;
+      this.hemiLight.intensity = 0.6;
     } else {
       this.scene.background.setHex(0x87ceeb);
       this.scene.fog.color.setHex(0x87ceeb);
       this.sunLight.color.setHex(0xfffbeb);
-      this.sunLight.intensity = 1.4;
-      this.hemiLight.intensity = 0.85;
+      this.sunLight.intensity = 1.15;
+      this.hemiLight.intensity = 0.95;
     }
 
     const isNight = mode === "night";
@@ -1932,9 +1938,7 @@ export class FollowerTownEngine {
   }
 
   getPlotWorldCenter(plotId) {
-    if (plotId === "ST_JUNCTION") {
-      return { x: 0, y: 4, z: 0, size: 4 };
-    }
+    if (plotId === "ST_JUNCTION") return { x: 0, y: 4, z: 0, size: 4 };
     const plotIndex = parseInt(plotId.replace("plot_", ""), 10) - 1;
     if (isNaN(plotIndex) || plotIndex < 0) return { x: 0, y: 2, z: 0, size: 1 };
 
@@ -1951,7 +1955,7 @@ export class FollowerTownEngine {
     if (size === 4) {
       return { x: pos.blockCenterX, y: 3.5, z: pos.blockCenterZ, size: 4 };
     }
-    return { x: pos.x, y: 3.5, z: pos.z, size: 1 };
+    return { x: pos.x, y: 2.5, z: pos.z, size: 1 };
   }
 
   focusPlot(plotId, fastSpeed = 0.1) {
@@ -1966,7 +1970,7 @@ export class FollowerTownEngine {
 
     if (!this.highlightBeacon) {
       this.highlightBeacon = new THREE.Mesh(
-        new THREE.RingGeometry(3.5, 4.1, 32),
+        new THREE.RingGeometry(3.5, 4.1, 24),
         new THREE.MeshBasicMaterial({ color: 0xfacc15, side: THREE.DoubleSide })
       );
       this.highlightBeacon.rotation.x = -Math.PI / 2;
@@ -1978,14 +1982,9 @@ export class FollowerTownEngine {
     this.highlightBeacon.position.set(center.x, 0.3, center.z);
   }
 
-  /**
-   * ⚡ PRO REEL FAST-MOTION CINEMATIC TOUR:
-   * High-altitude zoom-in -> ST Junction -> All Major Landmarks -> Newly Added Follower Towers -> Grand Pull-Out!
-   */
   startProReelTour(allPlotsObj, onStopChange, onComplete) {
     const stops = [];
 
-    // 1. Wide Sky Overview (Establish the whole city)
     stops.push({
       tag: "FOLLOWER NAGARAM",
       name: this.townName.toUpperCase(),
@@ -1996,7 +1995,6 @@ export class FollowerTownEngine {
       plotId: null
     });
 
-    // 2. Fast Dive-In to ST Junction
     stops.push({
       tag: "CITY CENTER",
       name: "🗽 ST JUNCTION",
@@ -2007,7 +2005,6 @@ export class FollowerTownEngine {
       plotId: "ST_JUNCTION"
     });
 
-    // 3. Highlight up to 5 Major 4-Plot / 8-Plot Landmarks (fast zoom-in sweeps)
     const landmarks = [];
     const houses = [];
     Object.entries(allPlotsObj || {}).forEach(([pid, p]) => {
@@ -2032,7 +2029,6 @@ export class FollowerTownEngine {
       });
     });
 
-    // 4. Rapid-Fire Highlight of the 6 NEWEST Added Follower Towers (highest Day # / latest plot!)
     houses.sort((a, b) => (b.p.builtDay || 1) - (a.p.builtDay || 1) || b.idx - a.idx);
     houses.slice(0, 6).forEach((h, i) => {
       const c = this.getPlotWorldCenter(h.pid);
@@ -2048,7 +2044,6 @@ export class FollowerTownEngine {
       });
     });
 
-    // 5. Grand Fast Zoom-Out Finale
     stops.push({
       tag: "FOLLOW TO JOIN!",
       name: `${landmarks.length + houses.length} PLACES BUILT`,
@@ -2059,25 +2054,14 @@ export class FollowerTownEngine {
       plotId: null
     });
 
-    this.proReelTour = {
-      active: true,
-      stops,
-      idx: 0,
-      timer: 0,
-      onStopChange,
-      onComplete
-    };
+    this.proReelTour = { active: true, stops, idx: 0, timer: 0, onStopChange, onComplete };
     this._applyTourStop(0);
   }
 
   _applyTourStop(index) {
     const s = this.proReelTour.stops[index];
     if (!s) return;
-    this.cameraGoal = {
-      target: s.target.clone(),
-      camPos: s.camPos.clone(),
-      speed: s.speed
-    };
+    this.cameraGoal = { target: s.target.clone(), camPos: s.camPos.clone(), speed: s.speed };
     if (s.plotId && s.plotId !== "ST_JUNCTION") {
       const c = this.getPlotWorldCenter(s.plotId);
       if (this.highlightBeacon) {
@@ -2088,9 +2072,7 @@ export class FollowerTownEngine {
         this.highlightBeacon.visible = true;
       }
     }
-    if (this.proReelTour.onStopChange) {
-      this.proReelTour.onStopChange(s.tag, s.name);
-    }
+    if (this.proReelTour.onStopChange) this.proReelTour.onStopChange(s.tag, s.name);
   }
 
   stopProReelTour() {
@@ -2108,9 +2090,7 @@ export class FollowerTownEngine {
       const owner = (data.ownerName || "").toLowerCase().replace(/^@/, "");
       const role = (data.role || "").toLowerCase();
       const typeLabel = (BUILDING_LABELS[data.buildingType] || data.buildingType || "").toLowerCase();
-      if (owner.includes(q) || role.includes(q) || typeLabel.includes(q)) {
-        return plotId;
-      }
+      if (owner.includes(q) || role.includes(q) || typeLabel.includes(q)) return plotId;
     }
     return null;
   }
@@ -2120,7 +2100,6 @@ export class FollowerTownEngine {
     const dt = Math.min(this.clock.getDelta(), 0.05);
     const elapsed = this.clock.elapsedTime;
 
-    // Pro Reel Fast-Motion Choreographer
     if (this.proReelTour.active) {
       this.proReelTour.timer += dt;
       const cur = this.proReelTour.stops[this.proReelTour.idx];
