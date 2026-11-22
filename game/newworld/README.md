@@ -1,15 +1,12 @@
-# Follower Town 3D — ST Games (`sat289/game/`) Edition
+# Follower Nagaram 3D (v2 — Telugu/English Realistic Town + Ring Road)
 
-## Folder Structure for `sat289/game/`
-Upload the `follower-town/` folder directly into your `sat289/game` repository:
+Upload the `follower-town/` folder into your `sat289/game/` GitHub repository.
 
-- **Public Game URL (Share with Followers / Link on stgames.online):**
-  `https://stgames.online/game/follower-town/`
-  *(Zero admin buttons, zero login modals, zero links to admin.html)*
+## Live URLs
+- **Public Read-Only Game:** `https://stgames.online/game/follower-town/`
+- **Private Admin Builder Studio:** `https://stgames.online/game/follower-town/admin.html` *(not linked anywhere on index.html)*
 
-- **Private Admin Builder URL (Bookmark for Yourself Only):**
-  `https://stgames.online/game/follower-town/admin.html`
-  *(You can rename `admin.html` to any secret name like `studio-289.html` and it will still work!)*
-
-## Firebase Security Rules
-Paste `database.rules.json` into Firebase Console -> Realtime Database -> Rules -> Publish.
+## What's New in v2
+- **Zero Number System:** Only real Instagram `@usernames` (plus built-in `followers_1.html` / `followers_1.json` uploader that detects New Followers & Unfollowers with 1-click Build / Fly / Demolish).
+- **Outer Ring Road (ORR):** 4-lane highway encircling the entire town with green divider median, double-arm highway lights, fast highway traffic, palm trees, and a Telugu + English Welcome Arch (`స్వాగతం • OUTER RING ROAD`).
+- **Realistic Telugu-State Landmarks:** School (`పాఠశాల`), Hospital (`ఆసుపత్రి`) with ambulance, RTC Bus Stand (`బస్ స్టాండ్`) with parked buses, Cricket Ground (`గ్రౌండ్`) with floodlights, Police Station (`పోలీస్ స్టేషన్`) with flashing red/blue siren & jeep, Petrol Bunk, Tea & Tiffin Shop, and South Indian terrace houses.

@@ -1,8 +1,7 @@
 import { db, ref, onValue } from "./firebase-config.js";
-import { FollowerTownEngine } from "./world-engine.js";
+import { FollowerTownEngine, BUILDING_LABELS } from "./world-engine.js";
 
 let allPlots = {};
-
 const container = document.getElementById("canvas-container");
 const plotCard = document.getElementById("plot-card");
 
@@ -15,28 +14,27 @@ function showToast(msg) {
 }
 
 const engine = new FollowerTownEngine(container, (plotId, data) => {
-  openPlotCard(plotId, data);
+  openPlotCard(data);
 });
 
-function openPlotCard(plotId, data) {
-  const num = parseInt(plotId.replace("plot_", ""), 10);
-  document.getElementById("card-plot-id").textContent = `PLOT #${num}`;
-
+function openPlotCard(data) {
   if (data && data.status === "built") {
-    document.getElementById("card-owner").textContent = data.ownerName || `Follower #${num}`;
-    document.getElementById("card-role").textContent = data.role || "Town Resident";
-    document.getElementById("card-type").textContent = (data.buildingType || "house").replace("_", " ").toUpperCase();
-    document.getElementById("card-day").textContent = `Built Day ${data.builtDay || 1}`;
+    const label = BUILDING_LABELS[data.buildingType] || "TOWN BUILDING";
+    document.getElementById("card-badge").textContent = label;
+    document.getElementById("card-owner").textContent = data.ownerName || label;
+    document.getElementById("card-role").textContent = data.role || "Follower Nagaram Resident";
+    document.getElementById("card-type").textContent = "BUILT";
+    document.getElementById("card-day").textContent = `Day ${data.builtDay || 1}`;
   } else {
-    document.getElementById("card-owner").textContent = "Available Plot";
-    document.getElementById("card-role").textContent = "Follow to get your house built here!";
-    document.getElementById("card-type").textContent = "EMPTY";
+    document.getElementById("card-badge").textContent = "AVAILABLE PLOT";
+    document.getElementById("card-owner").textContent = "Open Land";
+    document.getElementById("card-role").textContent = "Follow on Instagram to get your building here!";
+    document.getElementById("card-type").textContent = "OPEN";
     document.getElementById("card-day").textContent = "";
   }
   plotCard.classList.remove("hidden");
 }
 
-// Realtime Read-Only Listeners
 let initialLoadDone = false;
 onValue(ref(db, "plots"), (snapshot) => {
   const data = snapshot.val() || {};
@@ -68,27 +66,28 @@ onValue(ref(db, "plots"), (snapshot) => {
 
   allPlots = data;
   initialLoadDone = true;
-  document.getElementById("stat-houses").textContent = `${builtCount} Houses`;
+  document.getElementById("stat-houses").textContent = `${builtCount} Places`;
 });
 
 onValue(ref(db, "worldSettings"), (snapshot) => {
   const val = snapshot.val();
   if (!val) return;
-  document.getElementById("town-title").textContent = val.townName || "FOLLOWER TOWN";
+  const name = val.townName || "FOLLOWER NAGARAM";
+  document.getElementById("town-title").textContent = name;
   document.getElementById("stat-day").textContent = `Day ${val.dayNumber || 1}`;
+  engine.setTownName(name);
   engine.setTimeOfDay(val.timeOfDay || "day");
   engine.lifeEnabled = val.lifeEnabled !== false;
 });
 
-// Username Search
 function runSearch() {
   const q = document.getElementById("search-input").value;
-  const foundId = engine.findPlotByUsername(q);
+  const foundId = engine.findPlotByQuery(q);
   if (foundId) {
     engine.focusPlot(foundId);
-    openPlotCard(foundId, allPlots[foundId]);
+    openPlotCard(allPlots[foundId]);
   } else {
-    showToast("Username not found in town yet!");
+    showToast("Not found in town yet!");
   }
 }
 

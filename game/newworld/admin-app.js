@@ -9,13 +9,14 @@ import {
   signOut,
   onAuthStateChanged
 } from "./firebase-config.js";
-import { FollowerTownEngine } from "./world-engine.js";
+import { FollowerTownEngine, BUILDING_LABELS } from "./world-engine.js";
 
 let isAdmin = false;
 let selectedPlotId = "plot_0001";
 let allPlots = {};
+let pendingNewFollowers = [];
 let worldSettings = {
-  townName: "FOLLOWER TOWN",
+  townName: "FOLLOWER NAGARAM",
   dayNumber: 1,
   timeOfDay: "day",
   lifeEnabled: true
@@ -54,22 +55,21 @@ const engine = new FollowerTownEngine(container, (plotId, data) => {
 });
 
 function openPlotCard(plotId, data) {
-  const num = parseInt(plotId.replace("plot_", ""), 10);
-  document.getElementById("card-plot-id").textContent = `PLOT #${num}`;
-
   if (data && data.status === "built") {
-    document.getElementById("card-owner").textContent = data.ownerName || `Follower #${num}`;
+    const label = BUILDING_LABELS[data.buildingType] || "TOWN BUILDING";
+    document.getElementById("card-badge").textContent = label;
+    document.getElementById("card-owner").textContent = data.ownerName || label;
     document.getElementById("card-role").textContent = data.role || "Town Resident";
-    document.getElementById("card-type").textContent = (data.buildingType || "house").replace("_", " ").toUpperCase();
-    document.getElementById("card-day").textContent = `Built Day ${data.builtDay || 1}`;
+    document.getElementById("card-type").textContent = "BUILT";
+    document.getElementById("card-day").textContent = `Day ${data.builtDay || 1}`;
   } else {
-    document.getElementById("card-owner").textContent = "Available Plot";
-    document.getElementById("card-role").textContent = "Tap Edit to build here";
-    document.getElementById("card-type").textContent = "EMPTY";
+    document.getElementById("card-badge").textContent = "AVAILABLE PLOT";
+    document.getElementById("card-owner").textContent = "Empty Land";
+    document.getElementById("card-role").textContent = "Tap Build to place a follower house or landmark";
+    document.getElementById("card-type").textContent = "OPEN";
     document.getElementById("card-day").textContent = "";
   }
 
-  document.getElementById("builder-plot-label").textContent = `Plot #${num}`;
   document.getElementById("b-owner").value = data?.ownerName || "";
   document.getElementById("b-role").value = data?.role || "";
   document.getElementById("b-type").value = data?.status === "built" ? data.buildingType : "house_blue";
@@ -112,19 +112,21 @@ onValue(plotsRef, (snapshot) => {
 
   allPlots = data;
   initialLoadDone = true;
-  document.getElementById("stat-houses").textContent = `${builtCount} Houses`;
+  document.getElementById("stat-houses").textContent = `${builtCount} Places`;
 });
 
 onValue(worldRef, (snapshot) => {
   const val = snapshot.val();
   if (!val) return;
   worldSettings = { ...worldSettings, ...val };
-  document.getElementById("town-title").textContent = `ADMIN • ${worldSettings.townName || "FOLLOWER TOWN"}`;
+  const name = worldSettings.townName || "FOLLOWER NAGARAM";
+  document.getElementById("town-title").textContent = `ADMIN • ${name}`;
   document.getElementById("stat-day").textContent = `Day ${worldSettings.dayNumber || 1}`;
+  engine.setTownName(name);
   engine.setTimeOfDay(worldSettings.timeOfDay || "day");
   engine.lifeEnabled = worldSettings.lifeEnabled !== false;
 
-  document.getElementById("w-name").value = worldSettings.townName || "FOLLOWER TOWN";
+  document.getElementById("w-name").value = name;
   document.getElementById("w-day").value = worldSettings.dayNumber || 1;
   document.getElementById("w-time").value = worldSettings.timeOfDay || "day";
   document.getElementById("w-life").value = engine.lifeEnabled ? "on" : "off";
@@ -168,28 +170,37 @@ loginForm.addEventListener("submit", async (e) => {
 
 document.getElementById("btn-logout").addEventListener("click", () => signOut(auth));
 
-// Build Single Plot
+// Build / Demolish Single Plot (No Number System!)
 document.getElementById("btn-save-plot").addEventListener("click", async () => {
   if (!isAdmin) return;
   const type = document.getElementById("b-type").value;
-  const ownerName = document.getElementById("b-owner").value.trim();
+  let ownerName = document.getElementById("b-owner").value.trim();
   const role = document.getElementById("b-role").value.trim();
   const builtDay = parseInt(document.getElementById("b-day").value, 10) || 1;
+
+  const isHouse = type.startsWith("house_");
+  if (type !== "empty" && isHouse && !ownerName) {
+    showToast("Please enter an Instagram @username!");
+    return;
+  }
+  if (ownerName && isHouse && !ownerName.startsWith("@")) {
+    ownerName = "@" + ownerName;
+  }
 
   const payload =
     type === "empty"
       ? { status: "empty", ownerName: "", role: "", buildingType: "empty", builtDay }
       : {
           status: "built",
-          ownerName: ownerName || `Resident ${selectedPlotId}`,
-          role: role || "Town Resident",
+          ownerName: ownerName || BUILDING_LABELS[type] || "Landmark",
+          role: role || (isHouse ? "Follower Resident" : "Public Landmark"),
           buildingType: type,
           builtDay
         };
 
   try {
     await update(ref(db, `plots/${selectedPlotId}`), payload);
-    showToast(type === "empty" ? "Plot cleared" : `Constructing ${payload.ownerName}'s plot!`);
+    showToast(type === "empty" ? "🚜 Plot demolished!" : `🔨 Constructing ${payload.ownerName}!`);
     closeAllDrawers();
     openPlotCard(selectedPlotId, payload);
   } catch (err) {
@@ -197,19 +208,10 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
   }
 });
 
-// 400+ Follower Auto-Expand Sync
+// Helper: Build Houses for an Array of @usernames
 const HOUSE_STYLES = ["house_blue", "house_coral", "house_mint", "house_gold"];
 
-document.getElementById("btn-import-usernames").addEventListener("click", async () => {
-  if (!isAdmin) return;
-  const names = document
-    .getElementById("bulk-usernames")
-    .value.split(/\r?\n/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-
-  if (!names.length) return showToast("Paste at least 1 username!");
-
+async function buildHousesForUsernames(rawList) {
   const existing = new Set();
   Object.values(allPlots).forEach((p) => {
     if (p?.status === "built" && p.ownerName) {
@@ -221,9 +223,11 @@ document.getElementById("btn-import-usernames").addEventListener("click", async 
   let nextPlotNum = 1;
   let added = 0;
 
-  for (const name of names) {
-    const cleanKey = name.toLowerCase().replace(/^@/, "");
-    if (existing.has(cleanKey)) continue;
+  for (const raw of rawList) {
+    const clean = raw.trim().replace(/^@/, "");
+    if (!clean) continue;
+    const key = clean.toLowerCase();
+    if (existing.has(key)) continue;
 
     while (allPlots[`plot_${String(nextPlotNum).padStart(4, "0")}`]?.status === "built") {
       nextPlotNum++;
@@ -231,65 +235,162 @@ document.getElementById("btn-import-usernames").addEventListener("click", async 
     const plotId = `plot_${String(nextPlotNum).padStart(4, "0")}`;
     updates[`plots/${plotId}`] = {
       status: "built",
-      ownerName: name.startsWith("@") ? name : `@${name}`,
+      ownerName: `@${clean}`,
       role: "Follower Resident",
       buildingType: HOUSE_STYLES[nextPlotNum % HOUSE_STYLES.length],
       builtDay: worldSettings.dayNumber || 1
     };
-    existing.add(cleanKey);
+    existing.add(key);
     nextPlotNum++;
     added++;
   }
 
-  if (!added) return showToast("All pasted usernames already have houses!");
-
-  try {
-    await update(ref(db), updates);
-    document.getElementById("bulk-usernames").value = "";
-    showToast(`🏘️ Built ${added} new follower houses!`);
-    closeAllDrawers();
-  } catch (err) {
-    showToast("Sync error: " + err.message);
+  if (!added) {
+    showToast("All listed @usernames already have houses!");
+    return;
   }
-});
 
-document.getElementById("btn-sync-count").addEventListener("click", async () => {
+  await update(ref(db), updates);
+  showToast(`🏘️ Built ${added} new follower houses!`);
+}
+
+// Option A: Paste Usernames
+document.getElementById("btn-import-usernames").addEventListener("click", async () => {
   if (!isAdmin) return;
-  const target = parseInt(document.getElementById("bulk-count").value, 10);
-  if (isNaN(target) || target < 1) return;
+  const names = document
+    .getElementById("bulk-usernames")
+    .value.split(/\r?\n/)
+    .map((s) => s.trim())
+    .filter(Boolean);
 
-  const updates = {};
-  let added = 0;
-  for (let i = 1; i <= target; i++) {
-    const plotId = `plot_${String(i).padStart(4, "0")}`;
-    if (allPlots[plotId]?.status !== "built") {
-      updates[`plots/${plotId}`] = {
-        status: "built",
-        ownerName: `Follower #${i}`,
-        role: "Town Citizen",
-        buildingType: HOUSE_STYLES[i % HOUSE_STYLES.length],
-        builtDay: worldSettings.dayNumber || 1
-      };
-      added++;
-    }
-  }
-
-  if (!added) return showToast(`Already have ${target}+ houses built!`);
+  if (!names.length) return showToast("Paste at least 1 Instagram @username!");
 
   try {
-    await update(ref(db), updates);
-    showToast(`⚡ Auto-built ${added} houses!`);
+    await buildHousesForUsernames(names);
+    document.getElementById("bulk-usernames").value = "";
     closeAllDrawers();
   } catch (err) {
     showToast("Sync error: " + err.message);
   }
 });
 
+// Option B: Direct Instagram followers_1.html / followers_1.json Upload & New/Unfollow Diff
+document.getElementById("ig-file-input").addEventListener("change", async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  const text = await file.text();
+  const extracted = new Set();
+
+  if (file.name.endsWith(".json")) {
+    try {
+      const parsed = JSON.parse(text);
+      const arr = Array.isArray(parsed) ? parsed : parsed.relationships_followers || [];
+      arr.forEach((item) => {
+        const u = item?.string_list_data?.[0]?.value || item?.username;
+        if (u) extracted.add(u.trim().toLowerCase().replace(/^@/, ""));
+      });
+    } catch {
+      showToast("Invalid JSON file");
+      return;
+    }
+  } else if (file.name.endsWith(".html") || file.name.endsWith(".htm")) {
+    const doc = new DOMParser().parseFromString(text, "text/html");
+    doc.querySelectorAll("a[href*='instagram.com/']").forEach((a) => {
+      const u = a.textContent.trim().replace(/^@/, "");
+      if (u) extracted.add(u.toLowerCase());
+    });
+  } else {
+    text.split(/\r?\n/).forEach((line) => {
+      const u = line.trim().replace(/^@/, "");
+      if (u) extracted.add(u.toLowerCase());
+    });
+  }
+
+  if (extracted.size === 0) {
+    showToast("No Instagram usernames found in file!");
+    return;
+  }
+
+  // Compare against existing follower houses in Firebase
+  const townFollowers = new Map(); // lowerUsername -> plotId
+  Object.entries(allPlots).forEach(([plotId, p]) => {
+    if (p?.status === "built" && p.ownerName?.startsWith("@")) {
+      townFollowers.set(p.ownerName.toLowerCase().replace(/^@/, ""), plotId);
+    }
+  });
+
+  pendingNewFollowers = [...extracted].filter((u) => !townFollowers.has(u));
+  const unfollowers = [...townFollowers.entries()].filter(([u]) => !extracted.has(u));
+
+  document.getElementById("diff-results").classList.remove("hidden");
+  document.getElementById("diff-new-count").textContent = `${pendingNewFollowers.length} New Followers`;
+  document.getElementById("diff-unfollow-count").textContent = `${unfollowers.length} Unfollowed`;
+
+  const btnBuildNew = document.getElementById("btn-build-diff-new");
+  if (pendingNewFollowers.length > 0) {
+    btnBuildNew.classList.remove("hidden");
+    btnBuildNew.textContent = `➕ Build ${pendingNewFollowers.length} New Follower Houses`;
+  } else {
+    btnBuildNew.classList.add("hidden");
+  }
+
+  const listEl = document.getElementById("unfollow-list");
+  listEl.innerHTML = "";
+  unfollowers.forEach(([uname, plotId]) => {
+    const row = document.createElement("div");
+    row.className = "unfollow-row";
+    row.innerHTML = `
+      <span>@${uname}</span>
+      <div class="unfollow-actions">
+        <button class="mini-btn" data-fly="${plotId}">👁️ Fly</button>
+        <button class="mini-btn del" data-del="${plotId}">🚜 Demolish</button>
+      </div>
+    `;
+    listEl.appendChild(row);
+  });
+
+  listEl.querySelectorAll("[data-fly]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const pid = btn.getAttribute("data-fly");
+      engine.focusPlot(pid);
+      closeAllDrawers();
+    });
+  });
+
+  listEl.querySelectorAll("[data-del]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const pid = btn.getAttribute("data-del");
+      await update(ref(db, `plots/${pid}`), {
+        status: "empty",
+        ownerName: "",
+        role: "",
+        buildingType: "empty",
+        builtDay: worldSettings.dayNumber || 1
+      });
+      btn.closest(".unfollow-row").remove();
+      showToast("🚜 Unfollower house demolished!");
+    });
+  });
+});
+
+document.getElementById("btn-build-diff-new").addEventListener("click", async () => {
+  if (!isAdmin || !pendingNewFollowers.length) return;
+  try {
+    await buildHousesForUsernames(pendingNewFollowers);
+    pendingNewFollowers = [];
+    document.getElementById("diff-results").classList.add("hidden");
+    closeAllDrawers();
+  } catch (err) {
+    showToast("Error: " + err.message);
+  }
+});
+
+// World Settings
 document.getElementById("btn-save-world").addEventListener("click", async () => {
   if (!isAdmin) return;
   try {
     await update(worldRef, {
-      townName: document.getElementById("w-name").value.trim() || "FOLLOWER TOWN",
+      townName: document.getElementById("w-name").value.trim() || "FOLLOWER NAGARAM",
       dayNumber: parseInt(document.getElementById("w-day").value, 10) || 1,
       timeOfDay: document.getElementById("w-time").value,
       lifeEnabled: document.getElementById("w-life").value === "on"
@@ -301,16 +402,16 @@ document.getElementById("btn-save-world").addEventListener("click", async () => 
   }
 });
 
-// UI & 9:16 Reel Controls
+// Search, UI & 9:16 Reel Mode
 function runSearch() {
   const q = document.getElementById("search-input").value;
-  const foundId = engine.findPlotByUsername(q);
+  const foundId = engine.findPlotByQuery(q);
   if (foundId) {
     selectedPlotId = foundId;
     engine.focusPlot(foundId);
     openPlotCard(foundId, allPlots[foundId]);
   } else {
-    showToast("Follower house not found!");
+    showToast("Username or landmark not found!");
   }
 }
 
