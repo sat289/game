@@ -38,12 +38,12 @@ function openPlotCard(plotId, data) {
     document.getElementById("card-owner").textContent = data.ownerName || label;
     document.getElementById("card-role").textContent = data.role || "Follower Nagaram Resident";
     document.getElementById("card-type").textContent =
-      size === 8 ? "8-PLOT MEGA STADIUM" : size === 4 ? "4-PLOT LANDMARK" : "ROAD-FACING HOUSE";
+      size === 8 ? "8-PLOT MEGA STADIUM" : size === 4 ? "4-PLOT LANDMARK" : "5–7 FLOOR MODERN TOWER";
     document.getElementById("card-day").textContent = `Day ${data.builtDay || 1}`;
   } else {
     document.getElementById("card-badge").textContent = "AVAILABLE PLOT";
     document.getElementById("card-owner").textContent = "Open Land";
-    document.getElementById("card-role").textContent = "Follow on Instagram to get your building here!";
+    document.getElementById("card-role").textContent = "Follow on Instagram to get your tower built here!";
     document.getElementById("card-type").textContent = "OPEN";
     document.getElementById("card-day").textContent = "";
   }
@@ -54,6 +54,9 @@ let initialLoadDone = false;
 onValue(ref(db, "plots"), (snapshot) => {
   const data = snapshot.val() || {};
   const keys = Object.keys(data);
+
+  // Compute landmark footprints FIRST so overlapping 1-plot houses NEVER render on top of landmarks!
+  engine.syncLandmarkFootprints(data);
 
   let maxIndex = 36;
   let builtCount = 0;
@@ -66,11 +69,8 @@ onValue(ref(db, "plots"), (snapshot) => {
   engine.ensureCapacity(maxIndex + 12);
 
   keys.forEach((plotId) => {
-    const changed = JSON.stringify(allPlots[plotId]) !== JSON.stringify(data[plotId]);
-    if (changed) {
-      const animate = initialLoadDone && data[plotId]?.status === "built";
-      engine.renderPlot(plotId, data[plotId], animate);
-    }
+    const animate = initialLoadDone && data[plotId]?.status === "built" && JSON.stringify(allPlots[plotId]) !== JSON.stringify(data[plotId]);
+    engine.renderPlot(plotId, data[plotId], animate);
   });
 
   Object.keys(allPlots).forEach((plotId) => {
@@ -99,10 +99,7 @@ function runSearch() {
   const q = document.getElementById("search-input").value;
   const foundId = engine.findPlotByQuery(q);
   if (foundId === "ST_JUNCTION") {
-    engine.cameraGoal = {
-      target: new THREE.Vector3(0, 3.5, 0),
-      camPos: new THREE.Vector3(24, 24, 24)
-    };
+    engine.focusPlot("ST_JUNCTION");
     openPlotCard("ST_JUNCTION", null);
   } else if (foundId) {
     engine.focusPlot(foundId);

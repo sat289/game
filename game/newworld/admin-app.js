@@ -66,7 +66,7 @@ function openPlotCard(plotId, data) {
   if (plotId === "ST_JUNCTION") {
     document.getElementById("card-badge").textContent = "CITY CENTER LANDMARK";
     document.getElementById("card-owner").textContent = "🗽 ST JUNCTION";
-    document.getElementById("card-role").textContent = "Fixed at City Center • Visitors click this to open stgames.online!";
+    document.getElementById("card-role").textContent = "Fixed at City Center • Visitors tap this to open stgames.online!";
     document.getElementById("card-type").textContent = "stgames.online";
     document.getElementById("card-day").textContent = "";
     editBtn.classList.add("hidden");
@@ -85,12 +85,12 @@ function openPlotCard(plotId, data) {
     document.getElementById("card-owner").textContent = data.ownerName || label;
     document.getElementById("card-role").textContent = data.role || "Town Resident";
     document.getElementById("card-type").textContent =
-      size === 8 ? "8-PLOT MEGA STADIUM" : size === 4 ? "4-PLOT LANDMARK" : "1-PLOT ROAD-FACING";
+      size === 8 ? "8-PLOT MEGA STADIUM" : size === 4 ? "4-PLOT LANDMARK" : "5–7 FLOOR MODERN TOWER";
     document.getElementById("card-day").textContent = `Day ${data.builtDay || 1}`;
   } else {
     document.getElementById("card-badge").textContent = "AVAILABLE PLOT";
     document.getElementById("card-owner").textContent = "Open Land";
-    document.getElementById("card-role").textContent = "Tap Build to place a house, 4-plot landmark, or 8-plot stadium";
+    document.getElementById("card-role").textContent = "Tap Build to place a 5+ floor tower, 4-plot landmark, or 8-plot stadium";
     document.getElementById("card-type").textContent = "OPEN";
     document.getElementById("card-day").textContent = "";
   }
@@ -122,6 +122,10 @@ let initialLoadDone = false;
 onValue(plotsRef, (snapshot) => {
   const data = snapshot.val() || {};
   const keys = Object.keys(data);
+
+  // ALWAYS compute landmark footprints FIRST so overlapping houses NEVER draw inside Police HQ / Stadium!
+  engine.syncLandmarkFootprints(data);
+
   let maxIndex = 36;
   let builtCount = 0;
 
@@ -134,11 +138,8 @@ onValue(plotsRef, (snapshot) => {
   engine.ensureCapacity(maxIndex + 12);
 
   keys.forEach((plotId) => {
-    const changed = JSON.stringify(allPlots[plotId]) !== JSON.stringify(data[plotId]);
-    if (changed) {
-      const animate = initialLoadDone && data[plotId]?.status === "built";
-      engine.renderPlot(plotId, data[plotId], animate);
-    }
+    const animate = initialLoadDone && data[plotId]?.status === "built" && JSON.stringify(allPlots[plotId]) !== JSON.stringify(data[plotId]);
+    engine.renderPlot(plotId, data[plotId], animate);
   });
 
   Object.keys(allPlots).forEach((plotId) => {
@@ -256,7 +257,7 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
       if (
         existing &&
         existing.status === "built" &&
-        (existing.size || getRequiredSize(existing.buildingType)) === 1 &&
+        getRequiredSize(existing.buildingType) === 1 &&
         pid !== selectedPlotId
       ) {
         const { plotId: newPid, nextNum } = findNextFreePlotId(reservedSet, searchStart);
@@ -323,7 +324,7 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
     } else if (relocatedCount > 0) {
       showToast(`🏗️ Built! Moved ${relocatedCount} houses to free plots.`);
     } else {
-      showToast(newSize === 8 ? "🏟️ Built 8-Plot Mega Stadium!" : newSize === 4 ? "🏛️ Built 4-Plot Landmark!" : `🔨 Built ${ownerName}'s house!`);
+      showToast(newSize === 8 ? "🏟️ Built 8-Plot Mega Stadium!" : newSize === 4 ? "🏛️ Built 4-Plot Landmark!" : `🏙️ Built ${ownerName}'s tower!`);
     }
     closeAllDrawers();
     engine.focusPlot(selectedPlotId);
@@ -333,7 +334,7 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
   }
 });
 
-// 1-TAP FIX & RELOCATE OVERLAPPING HOUSES
+// 1-TAP FIX & RELOCATE ALL OVERLAPPING HOUSES IN FIREBASE
 document.getElementById("btn-fix-overlaps").addEventListener("click", async () => {
   if (!isAdmin) return;
   const updates = {};
@@ -350,7 +351,7 @@ document.getElementById("btn-fix-overlaps").addEventListener("click", async () =
   });
 
   if (landmarks.length === 0) {
-    showToast("No multi-plot landmarks found to fix!");
+    showToast("No multi-plot landmarks found!");
     return;
   }
 
@@ -393,7 +394,7 @@ document.getElementById("btn-fix-overlaps").addEventListener("click", async () =
 
   try {
     await update(ref(db), updates);
-    showToast(`🛠️ Fixed! Moved ${moved} overlapping houses to free plots.`);
+    showToast(`🛠️ Relocated ${moved} overlapping houses to free plots!`);
     closeAllDrawers();
   } catch (err) {
     showToast("Fix error: " + err.message);
@@ -412,7 +413,7 @@ async function buildHousesForUsernames(rawList) {
   });
 
   const updates = {};
-  const reserved = new Set();
+  const reserved = new Set([...engine.landmarkCoveredPlots]);
   let searchStart = 1;
   let added = 0;
 
@@ -438,12 +439,12 @@ async function buildHousesForUsernames(rawList) {
   }
 
   if (!added) {
-    showToast("All listed @usernames already have houses!");
+    showToast("All listed @usernames already have towers!");
     return;
   }
 
   await update(ref(db), updates);
-  showToast(`🏘️ Built ${added} road-facing follower houses!`);
+  showToast(`🏙️ Built ${added} modern 5–7 floor follower towers!`);
 }
 
 document.getElementById("btn-import-usernames").addEventListener("click", async () => {
@@ -515,7 +516,7 @@ document.getElementById("ig-file-input").addEventListener("change", async (e) =>
   const btnBuildNew = document.getElementById("btn-build-diff-new");
   if (pendingNewFollowers.length > 0) {
     btnBuildNew.classList.remove("hidden");
-    btnBuildNew.textContent = `➕ Build ${pendingNewFollowers.length} New Follower Houses`;
+    btnBuildNew.textContent = `➕ Build ${pendingNewFollowers.length} New Follower Towers`;
   } else {
     btnBuildNew.classList.add("hidden");
   }
@@ -554,7 +555,7 @@ document.getElementById("ig-file-input").addEventListener("change", async (e) =>
         builtDay: worldSettings.dayNumber || 1
       });
       btn.closest(".unfollow-row").remove();
-      showToast("🚜 Unfollower house demolished!");
+      showToast("🚜 Unfollower tower demolished!");
     });
   });
 });
@@ -591,10 +592,7 @@ function runSearch() {
   const q = document.getElementById("search-input").value;
   const foundId = engine.findPlotByQuery(q);
   if (foundId === "ST_JUNCTION") {
-    engine.cameraGoal = {
-      target: new THREE.Vector3(0, 3.5, 0),
-      camPos: new THREE.Vector3(24, 24, 24)
-    };
+    engine.focusPlot("ST_JUNCTION");
     openPlotCard("ST_JUNCTION", null);
   } else if (foundId) {
     selectedPlotId = foundId;
@@ -628,18 +626,51 @@ document.getElementById("btn-open-world").addEventListener("click", () => {
 });
 document.querySelectorAll(".close-drawer").forEach((b) => b.addEventListener("click", closeAllDrawers));
 
+// 9:16 REEL MODE + ⚡ PRO REEL FAST-MOTION TOUR
 const reelControls = document.getElementById("reel-controls");
+const reelBanner = document.getElementById("reel-spotlight-banner");
+const reelTagText = document.getElementById("reel-tag-text");
+const reelNameText = document.getElementById("reel-name-text");
+const btnProTour = document.getElementById("reel-pro-tour");
+
 document.getElementById("btn-reel-mode").addEventListener("click", () => {
   closeAllDrawers();
   plotCard.classList.add("hidden");
   document.querySelectorAll(".hud-element").forEach((el) => el.classList.add("hidden"));
   reelControls.classList.remove("hidden");
-  showToast("🎬 9:16 Reel Mode Ready");
+  showToast("🎬 9:16 Reel Mode — Tap ⚡ Pro Reel to auto-shoot!");
+});
+
+btnProTour.addEventListener("click", () => {
+  if (engine.proReelTour.active) {
+    engine.stopProReelTour();
+    return;
+  }
+  btnProTour.classList.add("active");
+  btnProTour.textContent = "⏹ Stop Tour";
+  engine.startProReelTour(
+    allPlots,
+    (tag, name) => {
+      reelTagText.textContent = tag;
+      reelNameText.textContent = name;
+      reelBanner.classList.remove("hidden");
+      reelBanner.style.animation = "none";
+      void reelBanner.offsetWidth;
+      reelBanner.style.animation = "popIn 0.25s ease-out";
+    },
+    () => {
+      btnProTour.classList.remove("active");
+      btnProTour.textContent = "⚡ Pro Reel";
+      reelBanner.classList.add("hidden");
+    }
+  );
 });
 
 document.getElementById("reel-exit").addEventListener("click", () => {
+  engine.stopProReelTour();
   engine.autoSpin = false;
   reelControls.classList.add("hidden");
+  reelBanner.classList.add("hidden");
   topHud.classList.remove("hidden");
   adminDock.classList.remove("hidden");
 });
