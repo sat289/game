@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Town Builder Studio — Admin Only</title>
+  <link rel="stylesheet" href="./style.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <!-- Full-Screen Admin Lock Gate (Blocks Controls Until Verified Admin UID Logs In) -->
+  <div id="admin-gate" class="modal">
+    <div class="modal-content glass-card">
+      <div class="plot-badge">RESTRICTED STUDIO</div>
+      <h2>🔐 Admin Login</h2>
+      <p class="subtext">Sign in with your authorized Firebase Admin account to build plots, sync 400+ followers, and record Reels.</p>
+      <form id="login-form">
+        <label>Admin Email</label>
+        <input type="email" id="admin-email" required placeholder="admin@example.com" />
+        <label>Password</label>
+        <input type="password" id="admin-password" required placeholder="••••••••" />
+        <div id="login-error" class="error-text"></div>
+        <button type="submit" class="primary-btn full-width">Unlock Builder Studio</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="canvas-container"></div>
+
+  <!-- Admin Top HUD -->
+  <header id="top-hud" class="hud-element hidden">
+    <div class="brand-badge admin-badge">
+      <div class="brand-title" id="town-title">ADMIN STUDIO</div>
+      <div class="brand-stats">
+        <span id="stat-day">Day 1</span>
+        <span>•</span>
+        <span id="stat-houses">0 Houses</span>
+      </div>
+    </div>
+
+    <div class="search-box">
+      <input type="text" id="search-input" placeholder="Find @username..." autocomplete="off" />
+      <button id="search-btn" title="Find House">🔍</button>
+    </div>
+
+    <button id="btn-logout" class="icon-btn danger-outline" title="Sign Out">🚪</button>
+  </header>
+
+  <!-- Plot Info Card with Edit Button -->
+  <div id="plot-card" class="glass-card hidden hud-element">
+    <button id="close-plot-card" class="close-x">✕</button>
+    <div class="plot-badge" id="card-plot-id">PLOT #1</div>
+    <h3 id="card-owner">Available Plot</h3>
+    <p id="card-role">Empty land waiting for a follower</p>
+    <div class="card-meta">
+      <span id="card-type">EMPTY</span>
+      <span id="card-day"></span>
+    </div>
+    <button id="card-edit-btn" class="primary-btn full-width">🛠️ Build / Edit This Plot</button>
+  </div>
+
+  <!-- Admin Bottom Dock -->
+  <div id="admin-dock" class="hidden hud-element">
+    <button id="btn-open-builder" class="dock-btn">🏗️ Build</button>
+    <button id="btn-open-bulk" class="dock-btn">👥 400+ Sync</button>
+    <button id="btn-open-world" class="dock-btn">🌤️ World</button>
+    <button id="btn-reel-mode" class="dock-btn reel-btn">🎬 9:16 Reel</button>
+  </div>
+
+  <!-- 9:16 Reel Recording Overlay -->
+  <div id="reel-controls" class="hidden">
+    <div class="reel-frame-guide"></div>
+    <div class="reel-bar">
+      <button id="reel-day-toggle" class="mini-pill">☀️/🌙</button>
+      <button id="reel-orbit-toggle" class="mini-pill">🔄 Spin</button>
+      <button id="reel-exit" class="mini-pill danger">✕ Exit Reel</button>
+    </div>
+  </div>
+
+  <!-- Drawer 1: Single Plot Builder -->
+  <div id="panel-builder" class="drawer glass-card hidden hud-element">
+    <div class="drawer-header">
+      <h3>🏗️ Build on <span id="builder-plot-label">Plot #1</span></h3>
+      <button class="close-drawer close-x">✕</button>
+    </div>
+    <p class="hint">Tap any plot in the 3D town to select it, then customize and construct with live workers.</p>
+    <div class="form-grid">
+      <div>
+        <label>Follower Username</label>
+        <input type="text" id="b-owner" placeholder="e.g. @sameer_07" />
+      </div>
+      <div>
+        <label>Job / Role / Caption</label>
+        <input type="text" id="b-role" placeholder="e.g. Petrol Bunk Worker" />
+      </div>
+      <div>
+        <label>Building Type</label>
+        <select id="b-type">
+          <option value="house_blue">Blue Cozy House</option>
+          <option value="house_coral">Coral Modern House</option>
+          <option value="house_mint">Mint Villa</option>
+          <option value="house_gold">Golden Duplex</option>
+          <option value="petrol_bunk">Petrol Bunk</option>
+          <option value="shop">Local Shop / Cafe</option>
+          <option value="academy">Academy / Landmark</option>
+          <option value="empty">Clear Plot (Empty)</option>
+        </select>
+      </div>
+      <div>
+        <label>Built on Day #</label>
+        <input type="number" id="b-day" min="1" value="1" />
+      </div>
+    </div>
+    <button id="btn-save-plot" class="primary-btn full-width">🔨 Construct with Workers</button>
+  </div>
+
+  <!-- Drawer 2: 400+ Follower Auto-Grow & Bulk Sync -->
+  <div id="panel-bulk" class="drawer glass-card hidden hud-element">
+    <div class="drawer-header">
+      <h3>👥 Auto-Grow Followers (400+)</h3>
+      <button class="close-drawer close-x">✕</button>
+    </div>
+    <div class="bulk-section">
+      <label>Option A: Paste Follower Usernames (1 per line)</label>
+      <textarea id="bulk-usernames" rows="4" placeholder="@trinesh&#10;@raja_kkd&#10;@balaji&#10;...paste 400+ usernames here"></textarea>
+      <button id="btn-import-usernames" class="primary-btn full-width">🏘️ Build Houses for New Usernames</button>
+    </div>
+    <hr />
+    <div class="bulk-section">
+      <label>Option B: Quick Follower Count Auto-Fill</label>
+      <div class="inline-row">
+        <input type="number" id="bulk-count" min="1" max="2000" value="400" />
+        <button id="btn-sync-count" class="secondary-btn">⚡ Sync Count</button>
+      </div>
+      <p class="hint">Set 400 now; next time you update to 425, 25 new houses & outer roads auto-spawn without touching existing custom buildings.</p>
+    </div>
+  </div>
+
+  <!-- Drawer 3: World Settings -->
+  <div id="panel-world" class="drawer glass-card hidden hud-element">
+    <div class="drawer-header">
+      <h3>🌤️ World Settings</h3>
+      <button class="close-drawer close-x">✕</button>
+    </div>
+    <div class="form-grid">
+      <div>
+        <label>Town Name</label>
+        <input type="text" id="w-name" value="FOLLOWER TOWN" />
+      </div>
+      <div>
+        <label>Current Day #</label>
+        <input type="number" id="w-day" min="1" value="1" />
+      </div>
+      <div>
+        <label>Time of Day</label>
+        <select id="w-time">
+          <option value="day">☀️ Sunny Day</option>
+          <option value="sunset">🌇 Golden Sunset</option>
+          <option value="night">🌙 Night Lights</option>
+        </select>
+      </div>
+      <div>
+        <label>Traffic & Workers</label>
+        <select id="w-life">
+          <option value="on">🚗 Active</option>
+          <option value="off">⏸️ Paused</option>
+        </select>
+      </div>
+    </div>
+    <button id="btn-save-world" class="primary-btn full-width">💾 Save World Live</button>
+  </div>
+
+  <div id="toast" class="hidden"></div>
+
+  <script type="module" src="./admin-app.js"></script>
+</body>
+</html>
