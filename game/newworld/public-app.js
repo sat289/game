@@ -115,3 +115,65 @@ document.getElementById("search-input").addEventListener("keydown", (e) => {
 document.getElementById("close-plot-card").addEventListener("click", () => {
   plotCard.classList.add("hidden");
 });
+
+// =========================================================
+// IDEA #6: PUBLIC "REQUEST A JOB / BUILDING" FORM (FORMSPREE)
+// Replace YOUR_FORMSPREE_ID below with your Formspree form ID!
+// =========================================================
+const FORMSPREE_ENDPOINT = "https://formspree.io/f/YOUR_FORMSPREE_ID";
+
+const reqModal = document.getElementById("request-modal");
+const reqForm = document.getElementById("job-request-form");
+const reqSubmitBtn = document.getElementById("req-submit-btn");
+
+document.getElementById("btn-open-request").addEventListener("click", () => {
+  reqModal.classList.remove("hidden");
+});
+document.getElementById("close-request").addEventListener("click", () => {
+  reqModal.classList.add("hidden");
+});
+
+reqForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const uname = document.getElementById("req-username").value.trim();
+  const job = document.getElementById("req-job").value.trim();
+  const building = document.getElementById("req-building").value;
+  const note = document.getElementById("req-note").value.trim();
+
+  if (!uname || !job) return;
+
+  if (FORMSPREE_ENDPOINT.includes("YOUR_FORMSPREE_ID")) {
+    showToast("✅ Request preview ready! Add your Formspree ID in public-app.js.");
+    reqModal.classList.add("hidden");
+    reqForm.reset();
+    return;
+  }
+
+  reqSubmitBtn.disabled = true;
+  reqSubmitBtn.textContent = "Sending...";
+
+  try {
+    const res = await fetch(FORMSPREE_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        instagram_username: uname.startsWith("@") ? uname : `@${uname}`,
+        requested_job: job,
+        preferred_building: building,
+        note
+      })
+    });
+    if (res.ok) {
+      showToast("🎉 Request sent! Watch the next Reel!");
+      reqForm.reset();
+      reqModal.classList.add("hidden");
+    } else {
+      showToast("Could not send request. Try again!");
+    }
+  } catch {
+    showToast("Network error. Try again!");
+  } finally {
+    reqSubmitBtn.disabled = false;
+    reqSubmitBtn.textContent = "🚀 Send Request";
+  }
+});

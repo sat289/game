@@ -620,6 +620,7 @@ const reelBanner = document.getElementById("reel-spotlight-banner");
 const reelTagText = document.getElementById("reel-tag-text");
 const reelNameText = document.getElementById("reel-name-text");
 const btnProTour = document.getElementById("reel-pro-tour");
+const btnDroneView = document.getElementById("reel-drone-view");
 
 document.getElementById("btn-reel-mode").addEventListener("click", () => {
   closeAllDrawers();
@@ -654,8 +655,24 @@ btnProTour.addEventListener("click", () => {
   );
 });
 
+btnDroneView.addEventListener("click", () => {
+  if (engine.droneTour.active) {
+    engine.stopDroneView();
+    return;
+  }
+  btnDroneView.classList.add("active");
+  btnDroneView.textContent = "⏹ Stop Drone";
+  reelBanner.classList.add("hidden");
+  showToast("🚁 High-Speed Drone View Active!");
+  engine.startDroneView(() => {
+    btnDroneView.classList.remove("active");
+    btnDroneView.textContent = "🚁 Drone";
+  });
+});
+
 document.getElementById("reel-exit").addEventListener("click", () => {
   engine.stopProReelTour();
+  engine.stopDroneView();
   engine.autoSpin = false;
   reelControls.classList.add("hidden");
   reelBanner.classList.add("hidden");

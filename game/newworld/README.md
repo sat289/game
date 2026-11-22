@@ -1,8 +1,11 @@
-# Follower Nagaram 3D (v7 — Ultra-Lite Low-End Device Edition + Classic Houses + Optional 5-Floor Towers)
+# Follower Nagaram 3D (v8 — High-Speed Drone View + Public Job/Building Request Form)
 
 Upload the `follower-town/` folder into your `sat289/game/` GitHub repository.
 
-## What's New in v7
-- **Classic Houses Preserved:** All existing follower houses stay as classic terrace houses (`house_blue`, `house_coral`, `house_mint`, `house_gold`).
-- **Optional 5-Floor Modern Towers:** Added `tower_brick`, `tower_cube`, `tower_led`, and `tower_gold` as separate choices in `admin.html` so you can upgrade VIP followers or commenters whenever you want.
-- **Built for Very Low-End Devices:** Shared geometry pooling across all 400+ plots, `InstancedMesh` for roads & sidewalks, disabled heavy real-time shadow maps, capped pixelRatio (`1.25`), and bright 3-point lighting so every building is crisp and moves smoothly at high FPS.
+## What's New in v8
+1. **🚁 High-Speed Continuous Drone View (in 9:16 Reel Mode):**
+   - Open `admin.html` -> tap **🎬 9:16 Reel** -> tap **🚁 Drone**.
+   - The camera starts outside the South Welcome Arch, flies **right through the inside of the Welcome Board**, speeds down the main road **between the buildings** to **ST Junction Statue**, circles it, and continuously weaves through every street showing all houses & Instagram `@usernames`!
+2. **📝 Public "Request a Job / Building" Form (Idea #6):**
+   - Visitors on `index.html` see a **📝 Request Job / House** button where they can submit their Instagram `@username`, desired job (SI Police, Doctor, Bus Driver, VIP, etc.), and building type.
+   - **1-Line Setup:** Open `public-app.js`, find `FORMSPREE_ENDPOINT`, and replace `YOUR_FORMSPREE_ID` with your Formspree form ID.

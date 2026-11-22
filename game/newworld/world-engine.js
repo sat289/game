@@ -187,6 +187,7 @@ export class FollowerTownEngine {
     this.controls.addEventListener("start", () => {
       this.cameraGoal = null;
       if (this.proReelTour.active) this.stopProReelTour();
+      if (this.droneTour.active) this.stopDroneView();
     });
 
     this.PLOT_SIZE = 7.4;
@@ -224,6 +225,14 @@ export class FollowerTownEngine {
       timer: 0,
       onStopChange: null,
       onComplete: null
+    };
+
+    this.droneTour = {
+      active: false,
+      curve: null,
+      t: 0,
+      speed: 0.032,
+      onStop: null
     };
 
     this.cityGroup = new THREE.Group();
@@ -2081,6 +2090,78 @@ export class FollowerTownEngine {
     if (this.proReelTour.onComplete) this.proReelTour.onComplete();
   }
 
+  /**
+   * 🚁 HIGH-SPEED CONTINUOUS DRONE VIEW:
+   * 1. Starts outside South Welcome Arch -> flies RIGHT THROUGH the Welcome Arch!
+   * 2. Speeds between the buildings straight to ST Junction Statue at (0,0)
+   * 3. Circles ST Junction Statue
+   * 4. Continuously weaves down every street showing all houses & @usernames!
+   */
+  startDroneView(onStop = null) {
+    if (this.proReelTour.active) this.stopProReelTour();
+    this.cameraGoal = null;
+    this.autoSpin = false;
+
+    const rr = this.ringRadius || 40;
+    const r = Math.max(1, this.currentGridRadius);
+    const step = this.BLOCK_STEP;
+    const pts = [];
+
+    // 1. Approach & fly INSIDE through the South Welcome Arch (at x=0, z=rr - 5.8, arch height=6.2)
+    pts.push(new THREE.Vector3(0, 4.0, rr + 14));
+    pts.push(new THREE.Vector3(0, 3.6, rr - 5.8)); // Inside the Welcome Arch!
+    pts.push(new THREE.Vector3(0, 4.6, rr - 18));  // Speeding between buildings!
+
+    // 2. Fly straight down the central avenue toward ST Junction Statue (0,0)
+    pts.push(new THREE.Vector3(0, 5.4, 15));
+    pts.push(new THREE.Vector3(10.5, 6.2, 8.5));
+    pts.push(new THREE.Vector3(11.5, 6.8, -6.5));
+    pts.push(new THREE.Vector3(0, 7.2, -12.5));
+    pts.push(new THREE.Vector3(-11.5, 6.8, -4.0));
+
+    // 3. Continuous serpentine fly-through across ALL city streets so every house & @username is shown!
+    const span = r * step;
+    let dir = 1;
+    for (let row = -r; row <= r; row++) {
+      const roadZ = (row + 0.5) * step;
+      if (dir > 0) {
+        pts.push(new THREE.Vector3(-span, 8.5, roadZ));
+        pts.push(new THREE.Vector3(0, 7.8, roadZ));
+        pts.push(new THREE.Vector3(span, 8.5, roadZ));
+      } else {
+        pts.push(new THREE.Vector3(span, 8.5, roadZ));
+        pts.push(new THREE.Vector3(0, 7.8, roadZ));
+        pts.push(new THREE.Vector3(-span, 8.5, roadZ));
+      }
+      dir *= -1;
+    }
+
+    // 4. Loop smoothly back outside the South Welcome Arch for continuous playback
+    pts.push(new THREE.Vector3(-12, 9.0, rr + 12));
+
+    const curve = new THREE.CatmullRomCurve3(pts, true, "catmullrom", 0.35);
+    const totalLen = curve.getLength();
+    // High-speed drone velocity (~24 world units/second) regardless of city size!
+    const normalizedSpeed = 24 / Math.max(totalLen, 120);
+
+    this.droneTour = {
+      active: true,
+      curve,
+      t: 0,
+      speed: normalizedSpeed,
+      onStop
+    };
+  }
+
+  stopDroneView() {
+    this.droneTour.active = false;
+    if (this.droneTour.onStop) {
+      const cb = this.droneTour.onStop;
+      this.droneTour.onStop = null;
+      cb();
+    }
+  }
+
   findPlotByQuery(query) {
     const q = query.trim().toLowerCase().replace(/^@/, "");
     if (!q) return null;
@@ -2099,6 +2180,18 @@ export class FollowerTownEngine {
     requestAnimationFrame(() => this._animate());
     const dt = Math.min(this.clock.getDelta(), 0.05);
     const elapsed = this.clock.elapsedTime;
+
+    // 🚁 Continuous High-Speed Drone Camera Flight
+    if (this.droneTour.active && this.droneTour.curve) {
+      this.droneTour.t = (this.droneTour.t + dt * this.droneTour.speed) % 1;
+      const pos = this.droneTour.curve.getPointAt(this.droneTour.t);
+      const lookT = (this.droneTour.t + 0.018) % 1;
+      const lookPt = this.droneTour.curve.getPointAt(lookT);
+
+      this.camera.position.lerp(pos, 0.22);
+      // Slight downward tilt so houses & @username signs are framed clearly
+      this.controls.target.lerp(new THREE.Vector3(lookPt.x, Math.max(1.5, lookPt.y - 2.6), lookPt.z), 0.22);
+    }
 
     if (this.proReelTour.active) {
       this.proReelTour.timer += dt;
