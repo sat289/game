@@ -9,78 +9,47 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=4" />
 </head>
 <body>
 
   <!-- MASTER SIDEWAYS LANDSCAPE GAME STAGE -->
   <div id="gameStage">
 
-    <!-- Quick Controls: Sound + Sideways -->
-    <div class="fixed bottom-3 left-3 z-40 flex items-center gap-1.5">
-      <button
-        id="soundToggleBtn"
-        type="button"
-        aria-label="Toggle Sound"
-        class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-900/85 border border-cyan-400/35 text-cyan-300 hover:bg-slate-800 transition text-[11px] font-semibold backdrop-blur-md shadow-lg cursor-pointer"
-      >
-        <span id="soundIcon">🔊</span>
-        <span id="soundLabel">ON</span>
-      </button>
-      <button
-        id="sidewaysToggleBtn"
-        type="button"
-        aria-label="Toggle Sideways Orientation"
-        class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-900/85 border border-orange-400/35 text-orange-300 hover:bg-slate-800 transition text-[11px] font-semibold backdrop-blur-md shadow-lg cursor-pointer"
-      >
-        <span>📱</span>
-        <span>Sideways</span>
-      </button>
-    </div>
-
-    <!-- SCREEN 1 (DIRECT AUTO-START): 5-SECOND ANIMATED LOADING SCREEN -->
+    <!-- SCREEN 1 (DIRECT AUTO-START): SLEEK 5-SECOND LOADING SCREEN -->
     <section id="loadingScreen" class="screen visible-screen bg-black overflow-hidden">
       <div class="absolute inset-0 overflow-hidden">
         <img id="bgSlide1" src="assets/bg1.jpg" alt="Cyberpunk Highway Racing" class="bg-slide bg-pan-1 active" />
         <img id="bgSlide2" src="assets/bg2.jpg" alt="Canyon Sunset Supercar Drift" class="bg-slide bg-pan-2" />
-        <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/35 to-slate-950/60"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/25 to-slate-950/45"></div>
       </div>
       <canvas id="loadingCanvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
-      <div class="relative z-10 flex items-center justify-between px-5 pt-4">
-        <div class="flex items-center gap-3 bg-slate-950/65 border border-white/10 backdrop-blur-md px-3 py-1.5 rounded-2xl">
-          <img src="assets/logo.jpg" alt="Mini Logo" class="w-9 h-9 rounded-full object-cover" />
-          <div class="text-left">
-            <div class="font-display text-xs font-extrabold tracking-wider text-white">APEX NITRO</div>
-            <div class="text-[10px] text-cyan-300 font-semibold">Loading 3D Open City...</div>
-          </div>
+
+      <!-- Top Left Compact Logo Badge -->
+      <div class="relative z-10 flex items-center px-5 pt-4">
+        <div class="flex items-center gap-2.5 bg-slate-950/60 border border-white/10 backdrop-blur-md px-3 py-1.5 rounded-full">
+          <img src="assets/logo.jpg" alt="Mini Logo" class="w-8 h-8 rounded-full object-cover" />
+          <span class="font-display text-xs font-extrabold tracking-widest text-white">APEX NITRO</span>
         </div>
-        <button id="skipLoadBtn" type="button" class="px-3 py-1.5 rounded-xl bg-slate-950/70 border border-white/15 text-[11px] font-bold text-slate-200 hover:text-cyan-300 cursor-pointer">
-          Tap for Sound 🔊
-        </button>
       </div>
-      <div class="absolute inset-x-0 bottom-0 z-10 px-5 sm:px-10 pb-6">
-        <div class="max-w-3xl mx-auto bg-slate-950/75 border border-cyan-400/25 backdrop-blur-xl rounded-2xl p-4 shadow-2xl">
-          <div class="flex items-end justify-between gap-4 mb-2">
-            <div>
-              <div class="text-[10px] uppercase tracking-widest text-orange-400 font-bold mb-0.5">System Booting</div>
-              <div id="loadingStatusText" class="text-xs sm:text-base font-semibold text-slate-100">Igniting Twin-Turbo Engine...</div>
-            </div>
-            <span id="loadingPercent" class="font-display text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-white to-orange-400">0%</span>
+
+      <!-- Compact Slim Loading Bar (No bulky box, no 0/5s text) -->
+      <div class="absolute inset-x-0 bottom-6 z-10 flex flex-col items-center px-6">
+        <div class="w-full max-w-sm">
+          <div class="flex items-center justify-between mb-1.5 px-0.5">
+            <span id="loadingStatusText" class="text-[11px] font-semibold tracking-wide text-slate-200 drop-shadow">Loading City...</span>
+            <span id="loadingPercent" class="font-display text-sm font-black text-cyan-300 drop-shadow">0%</span>
           </div>
-          <div class="w-full h-3.5 bg-slate-900/90 rounded-full overflow-hidden border border-white/10 p-0.5">
+          <div class="w-full h-2 bg-slate-950/80 rounded-full overflow-hidden border border-white/20 shadow-lg">
             <div id="loadingBarFill" class="nitro-fill h-full rounded-full" style="width: 0%;"></div>
-          </div>
-          <div class="mt-2 flex items-center justify-between text-[11px] text-slate-400">
-            <span id="loadingTimerText">0.0s / 5.0s</span>
-            <span class="text-cyan-300/90 font-medium">Moving 3D Highway &amp; Canyon Scenes</span>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- SCREEN 2: MODEL 1 GARAGE INTERFACE -->
+    <!-- SCREEN 2: MODEL 1 GARAGE INTERFACE (CINEMATIC ENTRANCE) -->
     <section id="garageScreen" class="screen hidden-screen garage-bg flex flex-col justify-between overflow-hidden">
-      <header class="relative z-20 flex items-center justify-between gap-2 px-3 sm:px-5 py-2 bg-slate-950/80 border-b border-white/10 backdrop-blur-md">
+      <header class="garage-anim-top relative z-20 flex items-center justify-between gap-2 px-3 sm:px-5 py-2 bg-slate-950/80 border-b border-white/10 backdrop-blur-md">
         <div class="flex items-center gap-2">
           <img src="assets/logo.jpg" alt="Logo" class="w-7 h-7 rounded-full object-cover border border-cyan-400/40" />
           <span class="hidden sm:inline font-display text-xs font-black tracking-wider text-white">APEX NITRO</span>
@@ -106,7 +75,7 @@
       </header>
 
       <div class="relative z-10 flex-1 flex flex-row items-center justify-between px-3 sm:px-5 py-1.5 min-h-0">
-        <div class="relative flex-1 h-full flex flex-col items-center justify-center min-h-0 pr-2">
+        <div class="garage-anim-center relative flex-1 h-full flex flex-col items-center justify-center min-h-0 pr-2">
           <div class="w-full max-w-xl flex items-center justify-between gap-2 mb-1">
             <div>
               <div class="flex items-center gap-1.5">
@@ -143,7 +112,7 @@
           </div>
         </div>
 
-        <aside class="w-36 sm:w-52 shrink-0 flex flex-col gap-1.5 bg-slate-900/75 border border-cyan-400/25 backdrop-blur-xl rounded-2xl p-2 shadow-2xl">
+        <aside class="garage-anim-right w-36 sm:w-52 shrink-0 flex flex-col gap-1.5 bg-slate-900/75 border border-cyan-400/25 backdrop-blur-xl rounded-2xl p-2 shadow-2xl">
           <div class="flex items-center justify-between pb-1 border-b border-white/10">
             <span class="text-[10px] font-extrabold tracking-widest uppercase text-cyan-300">More Options</span>
           </div>
@@ -154,7 +123,7 @@
         </aside>
       </div>
 
-      <footer class="relative z-20 flex items-center gap-2.5 px-3 sm:px-5 py-2 bg-slate-950/90 border-t border-white/10 backdrop-blur-xl">
+      <footer class="garage-anim-bottom relative z-20 flex items-center gap-2.5 px-3 sm:px-5 py-2 bg-slate-950/90 border-t border-white/10 backdrop-blur-xl">
         <div class="flex-1 flex items-center gap-1.5 min-w-0">
           <button id="scrollLeftBtn" type="button" class="shrink-0 w-7 h-14 rounded-lg bg-slate-900 border border-white/15 text-slate-200 hover:bg-slate-800 font-bold cursor-pointer">&lsaquo;</button>
           <div id="vehicleCarousel" class="flex-1 flex items-center gap-2 overflow-x-auto hide-scrollbar py-0.5"></div>
@@ -267,9 +236,9 @@
 
   </div>
 
-  <script src="vehicles.js"></script>
-  <script src="audio.js"></script>
-  <script src="city3d.js"></script>
-  <script src="script.js"></script>
+  <script src="vehicles.js?v=4"></script>
+  <script src="audio.js?v=4"></script>
+  <script src="city3d.js?v=4"></script>
+  <script src="script.js?v=4"></script>
 </body>
 </html>
