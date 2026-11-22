@@ -20,65 +20,35 @@ html, body {
   font-family: 'Orbitron', 'Inter', sans-serif;
 }
 
-/* Sideways Landscape Stage (Auto-rotates 90deg in portrait like watching a movie sideways) */
+/* Always Landscape Stage: Automatically rotates 90deg sideways in portrait phones (like watching a movie sideways) */
 #gameStage {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
+  width: 100dvw;
+  height: 100dvh;
   overflow: hidden;
   transform-origin: top left;
 }
 
-#gameStage.rotated-sideways {
+@media (orientation: portrait) {
+  #gameStage:not(.force-straight) {
+    width: 100vh;
+    height: 100vw;
+    width: 100dvh;
+    height: 100dvw;
+    transform: rotate(90deg) translateY(-100%);
+  }
+}
+
+#gameStage.force-sideways {
   width: 100vh;
   height: 100vw;
+  width: 100dvh;
+  height: 100dvw;
   transform: rotate(90deg) translateY(-100%);
-}
-
-.splash-backdrop {
-  background:
-    radial-gradient(circle at 50% 45%, rgba(0, 240, 255, 0.16) 0%, rgba(255, 106, 0, 0.08) 35%, rgba(4, 7, 13, 0.96) 72%),
-    repeating-linear-gradient(45deg, rgba(255,255,255,0.018) 0px, rgba(255,255,255,0.018) 2px, transparent 2px, transparent 8px),
-    #04070d;
-}
-
-.logo-btn {
-  position: relative;
-  cursor: pointer;
-  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), filter 0.28s ease;
-  filter: drop-shadow(0 0 28px rgba(0, 240, 255, 0.45)) drop-shadow(0 0 55px rgba(255, 106, 0, 0.25));
-  animation: logoFloat 3.4s ease-in-out infinite;
-}
-
-.logo-btn:hover {
-  transform: scale(1.06);
-  filter: drop-shadow(0 0 42px rgba(0, 240, 255, 0.78)) drop-shadow(0 0 75px rgba(255, 106, 0, 0.45));
-}
-
-@keyframes logoFloat {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-7px); }
-}
-
-.pulse-ring {
-  position: absolute;
-  inset: -14px;
-  border-radius: 9999px;
-  border: 2px solid rgba(0, 240, 255, 0.45);
-  animation: ringPulse 2.4s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
-  pointer-events: none;
-}
-
-.pulse-ring-2 {
-  animation-delay: 1.2s;
-  border-color: rgba(255, 106, 0, 0.4);
-}
-
-@keyframes ringPulse {
-  0% { transform: scale(0.88); opacity: 0.85; }
-  100% { transform: scale(1.26); opacity: 0; }
 }
 
 .bg-slide {
