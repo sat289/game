@@ -68,6 +68,13 @@ self.addEventListener("fetch", event => {
 
     // Only handle requests from this website.
     if (url.origin !== self.location.origin) return;
+   // Always fetch the latest game catalog from the server.
+if (url.pathname === "/games.json") {
+    event.respondWith(
+        fetch(request, { cache: "no-store" })
+    );
+    return;
+}
 
     event.respondWith((async () => {
         try {
