@@ -1198,54 +1198,120 @@ body.dark-theme .game-details-link { background: #0b303b; color: #32ffdc; }
     const favoriteGames = new Set(safeReadJSON('st_favorite_games', []));
     const playedGames = new Set(safeReadJSON('st_played_games', []));
 
-    async function loadSharedGamesCatalog() {
-      let sourceList = FALLBACK_GAMES_CATALOG;
+    
+async function loadSharedGamesCatalog() {
+  const catalogUrl = `/games.json?v=${Date.now()}`;
+  let sourceList = FALLBACK_GAMES_CATALOG;
 
-      try {
-        const catalogUrl = ['games.json?t=', Date.now()].join('');
-        const res = await fetch(catalogUrl, { cache: 'no-store' });
-
-        if (res.ok) {
-          const sharedGames = await res.json();
-          if (Array.isArray(sharedGames) && sharedGames.length > 0) {
-            sourceList = sharedGames;
-            safeStorageSet('st_cached_catalog', JSON.stringify(sharedGames));
-          }
-        }
-      } catch (_) {
-        const cached = safeReadJSON('st_cached_catalog', null);
-        if (Array.isArray(cached) && cached.length > 0) {
-          sourceList = cached;
-        }
+  try {
+    const response = await fetch(catalogUrl, {
+      method: 'GET',
+      cache: 'no-store',
+      headers: {
+        'Accept': 'application/json'
       }
+    });
 
-      const seenIds = new Set();
-      const seenUrls = new Set();
-      const loaded = [];
-
-      sourceList.forEach(game => {
-        if (!game || !game.id || !game.title || !game.url || isRemovedGame(game)) return;
-        const id = String(game.id).trim();
-        const url = normalizeSiteUrl(game.url, true);
-        if (!id || !url || seenIds.has(id) || seenUrls.has(url)) return;
-        seenIds.add(id);
-        seenUrls.add(url);
-        loaded.push({
-          ...game,
-          id,
-          title: String(game.title),
-          url,
-          logo: game.logo ? normalizeSiteUrl(game.logo, false) : '',
-          categories: Array.isArray(game.categories)
-            ? game.categories.filter(category => typeof category === 'string')
-            : [typeof game.category === 'string' ? game.category : 'popular']
-        });
-      });
-
-      GAMES_DATA = loaded;
-      renderGames();
-      updateHeroStats();
+    if (!response.ok) {
+      throw new Error(`games.json returned HTTP ${response.status}`);
     }
+
+    const sharedGames = await response.json();
+
+    if (!Array.isArray(sharedGames)) {
+      throw new Error('Invalid games.json format');
+    }
+
+    if (sharedGames.length > 0) {
+      sourceList = sharedGames;
+      safeStorageSet(
+        'st_cached_catalog',
+        JSON.stringify(sharedGames)
+      );
+    }
+
+  } catch (error) {
+    console.warn('ST Games catalog loading error:', error);
+
+    const cached = safeReadJSON('st_cached_catalog', null);
+
+    if (Array.isArray(cached) && cached.length > 0) {
+      sourceList = cached;
+    }
+  }
+
+  const seenIds = new Set();
+  const seenUrls = new Set();
+  const loaded = [];
+
+  sourceList.forEach(game => {
+    if (!game || !game.id || !game.title || !game.url) {
+      return;
+    }
+
+    if (isRemovedGame(game)) {
+      return;
+    }
+
+    const id = String(game.id).trim();
+    const title = String(game.title).trim();
+    const url = normalizeSiteUrl(game.url, true);
+
+    if (!id || !title || !url) return;
+
+    const normalizedUrl = url.toLowerCase();
+
+    if (seenIds.has(id) || seenUrls.has(normalizedUrl)) {
+      return;
+    }
+
+    seenIds.add(id);
+    seenUrls.add(normalizedUrl);
+
+    let categories = [];
+
+    if (Array.isArray(game.categories)) {
+      categories = game.categories;
+    } else if (typeof game.category === 'string') {
+      categories = [game.category];
+    }
+
+    categories = [...new Set(
+      categories
+        .filter(category => typeof category === 'string')
+        .map(category => category.trim().toLowerCase())
+        .filter(Boolean)
+    )];
+
+    if (!categories.length) {
+      categories = ['popular'];
+    }
+
+    loaded.push({
+      ...game,
+      id,
+      title,
+      url,
+      logo: game.logo
+        ? normalizeSiteUrl(game.logo, false)
+        : '',
+      categories
+    });
+  });
+
+  // Update the actual homepage game collection.
+  GAMES_DATA = loaded;
+
+  // Re-render homepage cards and game count.
+  renderGames();
+  updateHeroStats();
+
+  console.log(
+    `ST GAMES: ${loaded.length} games loaded successfully.`,
+    loaded.map(game => game.title)
+  );
+}
+
 
     async function loadNotice() {
       try {
