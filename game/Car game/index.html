@@ -1,77 +1,291 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-  <title>Open World Car Game</title>
-  <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Apex Nitro — 3D Open-World Car Game</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <section id="splash" class="screen">
-    <div class="logo">🏁 CAR <span>WORLD</span></div>
-    <p>Preparing your world…</p>
-    <div class="progress"><i id="progressBar"></i></div>
-    <b id="progressText">0%</b>
-  </section>
 
-  <section id="menu" class="screen hidden">
-    <header class="topbar">
-      <div class="profile">PLAYER <b id="levelText">LEVEL 1 / 100</b></div>
-      <div class="wallet">🪙 <b id="coinsText">0</b>　💎 <b id="gemsText">0</b></div>
-    </header>
-    <div class="menuTitle">OPEN WORLD GARAGE</div>
-    <p class="sub">Beach • City • Village • Free Drive</p>
-    <div class="menuButtons">
-      <button id="playBtn" class="primary">PLAY</button>
-      <button id="garageBtn">GARAGE</button>
-      <button id="resetBtn" class="quie
-        t">RESET SAVE</button>
-    </div>
-    <p class="hint">Choose PLAY to enter the driving world.</p>
-  </section>
+  <!-- MASTER LANDSCAPE GAME STAGE -->
+  <div id="gameStage">
 
-  <main id="game" class="hidden">
-    <canvas id="world"></canvas>
-    <div class="hud">
-      <div class="hudLeft">
-        <div class="pill">🪙 <span id="hudCoins">0</span></div>
-        <div class="pill">💎 <span id="hudGems">0</span></div>
-        <div class="pill">❤️ Car: <span id="healthText">100</span>%</div>
-        <div class="pill">⭐ Level <span id="hudLevel">1</span>/100</div>
-      </div>
-      <div class="hudRight">
-        <button id="mapBtn">MAP</button>
-        <button id="garageReturnBtn">GARAGE</button>
-        <button id="homeBtn">HOME</button>
-      </div>
+    <!-- Quick Controls: Sound + Sideways -->
+    <div class="fixed bottom-3 left-3 z-40 flex items-center gap-1.5">
+      <button
+        id="soundToggleBtn"
+        type="button"
+        aria-label="Toggle Sound"
+        class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-900/85 border border-cyan-400/35 text-cyan-300 hover:bg-slate-800 transition text-[11px] font-semibold backdrop-blur-md shadow-lg cursor-pointer"
+      >
+        <span id="soundIcon">🔊</span>
+        <span id="soundLabel">ON</span>
+      </button>
+      <button
+        id="sidewaysToggleBtn"
+        type="button"
+        aria-label="Rotate Sideways Mode"
+        class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-900/85 border border-orange-400/35 text-orange-300 hover:bg-slate-800 transition text-[11px] font-semibold backdrop-blur-md shadow-lg cursor-pointer"
+      >
+        <span>📱</span>
+        <span>Sideways</span>
+      </button>
     </div>
-    <div id="mapPanel" class="mapPanel hidden">
-      <b>WORLD MAP</b>
-      <p>Beach → City → Village</p>
-      <p>Repair garages: North • East • South • West</p>
-      <button id="closeMap">CLOSE</button>
-    </div>
-    <div class="controls">
-      <div class="steer">
-        <button id="leftBtn">◀</button><button 
-  id="rightBtn">▶</button>
-      </div>
-      <div class="drive">
-        <button id="brakeBtn">BRAKE</button><button id="gasBtn" class="primary">GO</button>
-      </div>
-    </div>
-    <div id="garageNotice" class="notice hidden">Repair garage nearby — press GARAGE to repair for 100 coins.</div>
-  </main>
 
-  <section id="garage" class="screen hidden">
-    <h1>GARAGE</h1>
-    <p>Current vehicle: Red starter sports car</p>
-    <p>Car condition: <b id="garageHealth">100%</b></p>
-    <p>Repair cost: 100 coins</p>
-    <button id="repairBtn" class="primary">REPAIR — 100 COINS</button>
-    <button id="backToMenu">BACK</button>
-    <p class="hint">More licensed realistic 3D vehicle models can be added here.</p>
-  </section>
-  <script type="module" src="js/main.js"></script>
+    <!-- SCREEN 1: SPLASH / LOGO START -->
+    <section id="splashScreen" class="screen visible-screen splash-backdrop flex flex-col items-center justify-center px-4 text-center">
+      <canvas id="splashCanvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+      <div class="relative z-10 flex flex-col items-center max-w-md w-full">
+        <div class="mb-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-400/30 text-cyan-300 text-[11px] font-bold tracking-widest uppercase">
+          <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+          Sideways Landscape 3D City
+        </div>
+        <button id="logoStartBtn" type="button" aria-label="Click Logo to Start Game" class="logo-btn relative w-40 h-40 sm:w-56 sm:h-56 rounded-full p-2 bg-transparent border-0 focus:outline-none">
+          <span class="pulse-ring"></span>
+          <span class="pulse-ring pulse-ring-2"></span>
+          <img src="assets/logo.jpg" alt="Car Game Logo" class="w-full h-full object-contain rounded-full" />
+        </button>
+        <p class="mt-3 font-display text-base sm:text-xl font-extrabold tracking-wider text-white">TAP LOGO TO START</p>
+        <p class="text-xs text-slate-400 mt-1">Auto-Saved Progress &bull; 31 3D Vehicles &bull; Huge Morning City</p>
+      </div>
+    </section>
+
+    <!-- SCREEN 2: 5-SECOND ANIMATED LOADING SCREEN -->
+    <section id="loadingScreen" class="screen hidden-screen bg-black overflow-hidden">
+      <div class="absolute inset-0 overflow-hidden">
+        <img id="bgSlide1" src="assets/bg1.jpg" alt="Cyberpunk Highway Racing" class="bg-slide bg-pan-1 active" />
+        <img id="bgSlide2" src="assets/bg2.jpg" alt="Canyon Sunset Supercar Drift" class="bg-slide bg-pan-2" />
+        <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/35 to-slate-950/60"></div>
+      </div>
+      <canvas id="loadingCanvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+      <div class="relative z-10 flex items-center justify-between px-5 pt-4">
+        <div class="flex items-center gap-3 bg-slate-950/65 border border-white/10 backdrop-blur-md px-3 py-1.5 rounded-2xl">
+          <img src="assets/logo.jpg" alt="Mini Logo" class="w-9 h-9 rounded-full object-cover" />
+          <div class="text-left">
+            <div class="font-display text-xs font-extrabold tracking-wider text-white">APEX NITRO</div>
+            <div class="text-[10px] text-cyan-300 font-semibold">Loading Upgraded 3D Garage &amp; City...</div>
+          </div>
+        </div>
+      </div>
+      <div class="absolute inset-x-0 bottom-0 z-10 px-5 sm:px-10 pb-6">
+        <div class="max-w-3xl mx-auto bg-slate-950/75 border border-cyan-400/25 backdrop-blur-xl rounded-2xl p-4 shadow-2xl">
+          <div class="flex items-end justify-between gap-4 mb-2">
+            <div>
+              <div class="text-[10px] uppercase tracking-widest text-orange-400 font-bold mb-0.5">System Booting</div>
+              <div id="loadingStatusText" class="text-xs sm:text-base font-semibold text-slate-100">Igniting Twin-Turbo Engine...</div>
+            </div>
+            <span id="loadingPercent" class="font-display text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-white to-orange-400">0%</span>
+          </div>
+          <div class="w-full h-3.5 bg-slate-900/90 rounded-full overflow-hidden border border-white/10 p-0.5">
+            <div id="loadingBarFill" class="nitro-fill h-full rounded-full" style="width: 0%;"></div>
+          </div>
+          <div class="mt-2 flex items-center justify-between text-[11px] text-slate-400">
+            <span id="loadingTimerText">0.0s / 5.0s</span>
+            <span class="text-cyan-300/90 font-medium">Moving 3D Highway &amp; Canyon Scenes</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 3: MODEL 1 GARAGE INTERFACE -->
+    <section id="garageScreen" class="screen hidden-screen garage-bg flex flex-col justify-between overflow-hidden">
+      <header class="relative z-20 flex items-center justify-between gap-2 px-3 sm:px-5 py-2 bg-slate-950/80 border-b border-white/10 backdrop-blur-md">
+        <div class="flex items-center gap-2">
+          <button id="backToIntroBtn" type="button" title="Replay Intro" class="w-8 h-8 rounded-lg bg-slate-900 border border-white/15 text-cyan-300 hover:bg-slate-800 flex items-center justify-center font-bold cursor-pointer">&laquo;</button>
+          <img src="assets/logo.jpg" alt="Logo" class="w-7 h-7 rounded-full object-cover border border-cyan-400/40" />
+          <span class="hidden sm:inline font-display text-xs font-black tracking-wider text-white">APEX NITRO</span>
+        </div>
+
+        <nav class="flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-white/10" aria-label="Vehicle Categories">
+          <button type="button" data-cat="ALL" class="cat-tab px-2 sm:px-3 py-1 rounded-lg text-[11px] sm:text-xs font-extrabold transition cursor-pointer bg-cyan-500/20 text-cyan-300 border border-cyan-400/50">ALL (31)</button>
+          <button type="button" data-cat="CAR" class="cat-tab px-2 sm:px-3 py-1 rounded-lg text-[11px] sm:text-xs font-extrabold transition cursor-pointer text-slate-300 hover:text-white border border-transparent">CARS (13)</button>
+          <button type="button" data-cat="TRUCK" class="cat-tab px-2 sm:px-3 py-1 rounded-lg text-[11px] sm:text-xs font-extrabold transition cursor-pointer text-slate-300 hover:text-white border border-transparent">TRUCKS (9)</button>
+          <button type="button" data-cat="BIKE" class="cat-tab px-2 sm:px-3 py-1 rounded-lg text-[11px] sm:text-xs font-extrabold transition cursor-pointer text-slate-300 hover:text-white border border-transparent">BIKES (9)</button>
+        </nav>
+
+        <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-500/15 border border-amber-400/40">
+            <span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-gradient-to-br from-yellow-300 to-amber-500 text-slate-950 font-black text-[10px]">C</span>
+            <span id="coinsCountEl" class="font-display text-xs sm:text-sm font-black text-amber-300">25,000</span>
+          </div>
+          <div class="hidden sm:flex items-center gap-1 px-2 py-1 rounded-xl bg-slate-900 border border-white/15 text-[11px] font-bold text-slate-200">
+            <span class="text-cyan-400">Owned:</span>
+            <span id="ownedCountEl">1/31</span>
+          </div>
+        </div>
+      </header>
+
+      <div class="relative z-10 flex-1 flex flex-row items-center justify-between px-3 sm:px-5 py-1.5 min-h-0">
+        <div class="relative flex-1 h-full flex flex-col items-center justify-center min-h-0 pr-2">
+          <div class="w-full max-w-xl flex items-center justify-between gap-2 mb-1">
+            <div>
+              <div class="flex items-center gap-1.5">
+                <span id="stageCatBadge" class="px-2 py-0.5 rounded bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 text-[9px] font-extrabold uppercase">STARTER CAR</span>
+                <span id="stageStatusBadge" class="px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[9px] font-extrabold uppercase">EQUIPPED</span>
+              </div>
+              <h2 id="stageVehicleName" class="font-display text-base sm:text-xl font-black text-white tracking-wide">Civic Street Sedan</h2>
+            </div>
+            <button id="stageActionBtn" type="button" class="px-3.5 py-1.5 rounded-xl font-bold text-xs bg-emerald-500 text-slate-950 shadow-lg cursor-pointer transition">EQUIPPED</button>
+          </div>
+
+          <div class="relative w-full max-w-lg flex-1 flex items-center justify-center min-h-[100px] max-h-[220px]">
+            <div class="turntable-ring absolute bottom-1 w-[80%] h-20 sm:h-24 rounded-full pointer-events-none"></div>
+            <img id="stageVehicleImg" src="assets/car_starter.jpg" alt="Selected Vehicle" class="relative z-10 max-h-full max-w-[90%] object-contain rounded-xl drop-shadow-[0_14px_24px_rgba(0,0,0,0.85)]" />
+          </div>
+
+          <div class="w-full max-w-lg grid grid-cols-4 gap-1.5 mt-1">
+            <div class="bg-slate-900/75 border border-white/10 rounded-lg px-2 py-1">
+              <div class="flex justify-between text-[9px] text-slate-400 font-semibold"><span>SPD</span><span id="statSpeedVal" class="text-cyan-300">68</span></div>
+              <div class="w-full h-1 bg-slate-800 rounded-full mt-0.5"><div id="statSpeedBar" class="h-full bg-cyan-400 rounded-full" style="width:68%"></div></div>
+            </div>
+            <div class="bg-slate-900/75 border border-white/10 rounded-lg px-2 py-1">
+              <div class="flex justify-between text-[9px] text-slate-400 font-semibold"><span>ACC</span><span id="statAccelVal" class="text-orange-300">64</span></div>
+              <div class="w-full h-1 bg-slate-800 rounded-full mt-0.5"><div id="statAccelBar" class="h-full bg-orange-400 rounded-full" style="width:64%"></div></div>
+            </div>
+            <div class="bg-slate-900/75 border border-white/10 rounded-lg px-2 py-1">
+              <div class="flex justify-between text-[9px] text-slate-400 font-semibold"><span>HND</span><span id="statHandleVal" class="text-emerald-300">74</span></div>
+              <div class="w-full h-1 bg-slate-800 rounded-full mt-0.5"><div id="statHandleBar" class="h-full bg-emerald-400 rounded-full" style="width:74%"></div></div>
+            </div>
+            <div class="bg-slate-900/75 border border-white/10 rounded-lg px-2 py-1">
+              <div class="flex justify-between text-[9px] text-slate-400 font-semibold"><span>NIT</span><span id="statNitroVal" class="text-amber-300">60</span></div>
+              <div class="w-full h-1 bg-slate-800 rounded-full mt-0.5"><div id="statNitroBar" class="h-full bg-amber-400 rounded-full" style="width:60%"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <aside class="w-36 sm:w-52 shrink-0 flex flex-col gap-1.5 bg-slate-900/75 border border-cyan-400/25 backdrop-blur-xl rounded-2xl p-2 shadow-2xl">
+          <div class="flex items-center justify-between pb-1 border-b border-white/10">
+            <span class="text-[10px] font-extrabold tracking-widest uppercase text-cyan-300">More Options</span>
+          </div>
+          <button type="button" data-modal="customizeModal" class="more-opt-btn flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-slate-800/85 hover:bg-slate-700 border border-white/10 text-[10px] sm:text-[11px] font-bold text-slate-100 cursor-pointer"><span>CUSTOMIZE</span><span>🎨</span></button>
+          <button type="button" data-modal="dailyModal" class="more-opt-btn flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-slate-800/85 hover:bg-slate-700 border border-white/10 text-[10px] sm:text-[11px] font-bold text-slate-100 cursor-pointer"><span>DAILY REWARDS</span><span>🎁</span></button>
+          <button type="button" data-modal="upgradesModal" class="more-opt-btn flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-slate-800/85 hover:bg-slate-700 border border-white/10 text-[10px] sm:text-[11px] font-bold text-slate-100 cursor-pointer"><span>UPGRADES</span><span>🔧</span></button>
+          <button type="button" data-modal="settingsModal" class="more-opt-btn flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-slate-800/85 hover:bg-slate-700 border border-white/10 text-[10px] sm:text-[11px] font-bold text-slate-100 cursor-pointer"><span>SETTINGS</span><span>⚙️</span></button>
+        </aside>
+      </div>
+
+      <footer class="relative z-20 flex items-center gap-2.5 px-3 sm:px-5 py-2 bg-slate-950/90 border-t border-white/10 backdrop-blur-xl">
+        <div class="flex-1 flex items-center gap-1.5 min-w-0">
+          <button id="scrollLeftBtn" type="button" class="shrink-0 w-7 h-14 rounded-lg bg-slate-900 border border-white/15 text-slate-200 hover:bg-slate-800 font-bold cursor-pointer">&lsaquo;</button>
+          <div id="vehicleCarousel" class="flex-1 flex items-center gap-2 overflow-x-auto hide-scrollbar py-0.5"></div>
+          <button id="scrollRightBtn" type="button" class="shrink-0 w-7 h-14 rounded-lg bg-slate-900 border border-white/15 text-slate-200 hover:bg-slate-800 font-bold cursor-pointer">&rsaquo;</button>
+        </div>
+        <button id="playRaceBtn" type="button" class="w-28 sm:w-40 shrink-0 py-3 px-4 rounded-xl font-display font-black text-sm sm:text-base tracking-wider text-slate-950 bg-gradient-to-r from-amber-400 via-orange-500 to-cyan-400 hover:brightness-110 active:scale-95 transition shadow-[0_0_20px_rgba(255,106,0,0.45)] cursor-pointer">
+          PLAY &raquo;
+        </button>
+      </footer>
+    </section>
+
+    <!-- SCREEN 4: HUGE MORNING 3D OPEN-WORLD CITY -->
+    <section id="playScreen" class="screen hidden-screen bg-sky-300 overflow-hidden">
+      <div id="city3dContainer" class="absolute inset-0 w-full h-full"></div>
+      <div id="crashFlash" class="pointer-events-none absolute inset-0 bg-red-600/45 opacity-0 transition-opacity duration-150 z-10"></div>
+
+      <!-- TOP HUD -->
+      <div class="pointer-events-none absolute top-0 inset-x-0 z-20 flex items-start justify-between p-2.5 sm:p-3 gap-2">
+        <div class="flex flex-col gap-1.5">
+          <div class="pointer-events-auto bg-slate-950/75 border border-cyan-400/40 backdrop-blur-md rounded-xl px-3 py-1.5 max-w-[220px] sm:max-w-xs shadow-lg">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-[9px] font-extrabold uppercase tracking-wider text-cyan-300">City Task</span>
+              <span id="taskRewardBadge" class="text-[10px] font-bold text-amber-300">+500 C</span>
+            </div>
+            <div id="taskTitleEl" class="text-[11px] sm:text-xs font-bold text-white leading-snug">Collect 5 City Coins (0/5)</div>
+            <div class="w-full h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden">
+              <div id="taskProgressBar" class="h-full bg-gradient-to-r from-cyan-400 to-emerald-400 rounded-full transition-all duration-200" style="width: 0%;"></div>
+            </div>
+          </div>
+
+          <div class="bg-slate-950/75 border border-white/15 backdrop-blur-md rounded-xl px-3 py-1.5 max-w-[190px] shadow-lg">
+            <div class="flex items-center justify-between text-[10px] font-bold">
+              <span class="text-slate-200">CAR HEALTH</span>
+              <span id="healthPercentEl" class="text-emerald-300">100%</span>
+            </div>
+            <div class="w-full h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden">
+              <div id="healthBarFill" class="h-full bg-emerald-400 rounded-full transition-all duration-150" style="width: 100%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="driveAlertEl" class="opacity-0 transition-opacity duration-300 px-3.5 py-1.5 rounded-full bg-amber-500/95 text-slate-950 font-display text-xs font-black shadow-xl">
+          +100 COINS!
+        </div>
+
+        <div class="pointer-events-auto flex items-center gap-2">
+          <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-950/80 border border-amber-400/40 backdrop-blur-md">
+            <span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-slate-950 font-black text-[10px]">C</span>
+            <span id="driveCoinsEl" class="font-display text-xs sm:text-sm font-black text-amber-300">25,000</span>
+          </div>
+          <canvas id="miniMapCanvas" width="80" height="80" class="rounded-full border-2 border-cyan-400/70 bg-slate-950/85 shadow-lg"></canvas>
+          <button id="exitToGarageBtn" type="button" class="px-3 py-1.5 rounded-xl bg-slate-900/85 hover:bg-slate-800 border border-white/20 text-xs font-bold text-white backdrop-blur-md cursor-pointer">
+            Garage
+          </button>
+        </div>
+      </div>
+
+      <!-- BOTTOM LANDSCAPE CONTROLS -->
+      <div class="pointer-events-none absolute bottom-0 inset-x-0 z-20 flex items-end justify-between p-2.5 sm:p-4">
+        <div class="pointer-events-auto flex flex-col items-center">
+          <div id="steeringZone" class="relative w-24 h-24 sm:w-32 sm:h-32 flex items-center justify-center touch-none cursor-grab active:cursor-grabbing">
+            <svg id="steeringWheelSvg" viewBox="0 0 120 120" class="w-full h-full drop-shadow-[0_6px_14px_rgba(0,0,0,0.85)] transition-transform duration-75">
+              <circle cx="60" cy="60" r="50" fill="none" stroke="#1e293b" stroke-width="14" />
+              <circle cx="60" cy="60" r="50" fill="none" stroke="#38bdf8" stroke-width="3" stroke-dasharray="36 280" stroke-dashoffset="18" />
+              <circle cx="60" cy="60" r="50" fill="none" stroke="#f97316" stroke-width="4" stroke-dasharray="14 300" stroke-dashoffset="7" />
+              <path d="M16 60 L44 60 M76 60 L104 60 M60 76 L60 106" stroke="#334155" stroke-width="10" stroke-linecap="round" />
+              <circle cx="60" cy="60" r="18" fill="#0f172a" stroke="#38bdf8" stroke-width="2.5" />
+              <circle cx="60" cy="60" r="6" fill="#f97316" />
+            </svg>
+          </div>
+        </div>
+
+        <div class="flex flex-col items-center bg-slate-950/75 border border-white/15 backdrop-blur-md rounded-2xl px-4 py-1.5 shadow-xl">
+          <div class="flex items-baseline gap-1">
+            <span id="speedKmhEl" class="font-display text-2xl sm:text-3xl font-black text-cyan-300">0</span>
+            <span class="text-[10px] font-bold text-slate-400">KM/H</span>
+          </div>
+          <div class="w-24 sm:w-28 h-1.5 bg-slate-800 rounded-full overflow-hidden mt-1">
+            <div id="nitroHudBar" class="h-full bg-gradient-to-r from-cyan-400 to-orange-500 rounded-full" style="width: 100%;"></div>
+          </div>
+          <span class="text-[9px] text-slate-300 font-semibold mt-0.5">Green Bays = Repair Garage</span>
+        </div>
+
+        <div class="pointer-events-auto flex items-end gap-2">
+          <button id="pedalBrake" type="button" class="w-13 h-14 sm:w-16 sm:h-20 px-2 rounded-xl bg-rose-600/85 active:bg-rose-500 border-2 border-rose-300/60 text-white font-display font-black text-[10px] shadow-lg flex flex-col items-center justify-center cursor-pointer touch-none">
+            <span class="text-base">🛑</span>
+            <span>BRAKE</span>
+          </button>
+          <button id="pedalNitro" type="button" class="w-13 h-14 sm:w-16 sm:h-20 px-2 rounded-xl bg-cyan-500/85 active:bg-cyan-400 border-2 border-cyan-200/70 text-slate-950 font-display font-black text-[10px] shadow-[0_0_18px_rgba(0,240,255,0.45)] flex flex-col items-center justify-center cursor-pointer touch-none">
+            <span class="text-base">⚡</span>
+            <span>NITRO</span>
+          </button>
+          <button id="pedalGas" type="button" class="w-16 h-18 sm:w-20 sm:h-24 px-2 rounded-xl bg-emerald-500/90 active:bg-emerald-400 border-2 border-emerald-200/70 text-slate-950 font-display font-black text-xs shadow-lg flex flex-col items-center justify-center cursor-pointer touch-none">
+            <span class="text-lg">🚀</span>
+            <span>GAS</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- IN-PAGE MODALS -->
+    <div id="modalOverlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm px-4">
+      <div class="w-full max-w-md bg-slate-900 border border-cyan-400/35 rounded-2xl p-5 shadow-2xl relative">
+        <button id="closeModalBtn" type="button" class="absolute top-3.5 right-3.5 w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center font-bold cursor-pointer">&times;</button>
+        <div id="modalBody"></div>
+      </div>
+    </div>
+
+    <div id="toastEl" class="fixed top-14 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl bg-slate-900/95 border border-cyan-400/50 text-cyan-200 text-xs font-bold shadow-xl opacity-0 pointer-events-none transition-opacity duration-300"></div>
+
+  </div>
+
+  <script src="vehicles.js"></script>
+  <script src="audio.js"></script>
+  <script src="city3d.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
