@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+l<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -166,46 +166,51 @@ html, body {
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-</style>
+
+/* Direct Cinematic Entrance Curtain (Pure CSS, 1.1s, never blocks gameplay) */
+#introCurtain {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at center, rgba(0, 240, 255, 0.25) 0%, #04070d 72%);
+  animation: curtainFadeOut 1.15s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+#introCurtain img {
+  width: 112px;
+  height: 112px;
+  border-radius: 9999px;
+  box-shadow: 0 0 40px rgba(0, 240, 255, 0.7), 0 0 70px rgba(255, 106, 0, 0.45);
+  animation: logoZoomBurst 1.05s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes logoZoomBurst {
+  0% { transform: scale(0.7); opacity: 0.4; }
+  45% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1.85); opacity: 0; }
+}
+@keyframes curtainFadeOut {
+  0%, 60% { opacity: 1; visibility: visible; }
+  100% { opacity: 0; visibility: hidden; }
+}
+
+  </style>
 </head>
 <body>
 
   <!-- MASTER SIDEWAYS LANDSCAPE GAME STAGE -->
   <div id="gameStage">
 
-    <!-- SCREEN 1 (DIRECT AUTO-START): SLEEK 5-SECOND LOADING SCREEN -->
-    <section id="loadingScreen" class="screen visible-screen bg-black overflow-hidden">
-      <div class="absolute inset-0 overflow-hidden">
-        <img id="bgSlide1" src="assets/bg1.jpg" alt="Cyberpunk Highway Racing" class="bg-slide bg-pan-1 active" />
-        <img id="bgSlide2" src="assets/bg2.jpg" alt="Canyon Sunset Supercar Drift" class="bg-slide bg-pan-2" />
-        <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/25 to-slate-950/45"></div>
-      </div>
-      <canvas id="loadingCanvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+    <!-- PURE CSS 1.1s CINEMATIC ENTRANCE ANIMATION (NO 0-100% LOADING, NEVER BLOCKS) -->
+    <div id="introCurtain">
+      <img src="assets/logo.jpg" alt="Apex Nitro" />
+    </div>
 
-      <!-- Top Left Compact Logo Badge -->
-      <div class="relative z-10 flex items-center px-5 pt-4">
-        <div class="flex items-center gap-2.5 bg-slate-950/60 border border-white/10 backdrop-blur-md px-3 py-1.5 rounded-full">
-          <img src="assets/logo.jpg" alt="Mini Logo" class="w-8 h-8 rounded-full object-cover" />
-          <span class="font-display text-xs font-extrabold tracking-widest text-white">APEX NITRO</span>
-        </div>
-      </div>
-
-      <!-- Compact Slim Loading Bar (No bulky box, no 0/5s text) -->
-      <div class="absolute inset-x-0 bottom-6 z-10 flex flex-col items-center px-6">
-        <div class="w-full max-w-sm">
-          <div class="flex items-center justify-between mb-1.5 px-0.5">
-            <span id="loadingStatusText" class="text-[11px] font-semibold tracking-wide text-slate-200 drop-shadow">Loading City...</span>
-            <span id="loadingPercent" class="font-display text-sm font-black text-cyan-300 drop-shadow">0%</span>
-          </div>
-          <div class="w-full h-2 bg-slate-950/80 rounded-full overflow-hidden border border-white/20 shadow-lg">
-            <div id="loadingBarFill" class="nitro-fill h-full rounded-full" style="width: 0%;"></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- SCREEN 2: MODEL 1 GARAGE INTERFACE (CINEMATIC ENTRANCE) -->
-    <section id="garageScreen" class="screen hidden-screen garage-bg flex flex-col justify-between overflow-hidden">
+    <!-- SCREEN 1 (DIRECT IMMEDIATE ENTRY): MODEL 1 GARAGE INTERFACE -->
+    <section id="garageScreen" class="screen visible-screen garage-bg flex flex-col justify-between overflow-hidden">
       <header class="garage-anim-top relative z-20 flex items-center justify-between gap-2 px-3 sm:px-5 py-2 bg-slate-950/80 border-b border-white/10 backdrop-blur-md">
         <div class="flex items-center gap-2">
           <img src="assets/logo.jpg" alt="Logo" class="w-7 h-7 rounded-full object-cover border border-cyan-400/40" />
@@ -236,12 +241,12 @@ html, body {
           <div class="w-full max-w-xl flex items-center justify-between gap-2 mb-1">
             <div>
               <div class="flex items-center gap-1.5">
-                <span id="stageCatBadge" class="px-2 py-0.5 rounded bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 text-[9px] font-extrabold uppercase">STARTER CAR</span>
+                <span id="stageCatBadge" class="px-2 py-0.5 rounded bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 text-[9px] font-extrabold uppercase">NORMAL STARTER CAR</span>
                 <span id="stageStatusBadge" class="px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[9px] font-extrabold uppercase">EQUIPPED</span>
               </div>
               <h2 id="stageVehicleName" class="font-display text-base sm:text-xl font-black text-white tracking-wide">Civic Street Sedan</h2>
             </div>
-            <button id="stageActionBtn" type="button" class="px-3.5 py-1.5 rounded-xl font-bold text-xs bg-emerald-500 text-slate-950 shadow-lg cursor-pointer transition">EQUIPPED</button>
+            <button id="stageActionBtn" type="button" class="px-3.5 py-1.5 rounded-xl font-bold text-xs bg-emerald-500/25 border border-emerald-400 text-emerald-300 cursor-default">EQUIPPED</button>
           </div>
 
           <div class="relative w-full max-w-lg flex-1 flex items-center justify-center min-h-[100px] max-h-[220px]">
@@ -292,7 +297,7 @@ html, body {
       </footer>
     </section>
 
-    <!-- SCREEN 3: HUGE MORNING 3D OPEN-WORLD CITY -->
+    <!-- SCREEN 2: HUGE MORNING 3D OPEN-WORLD CITY -->
     <section id="playScreen" class="screen hidden-screen bg-sky-300 overflow-hidden">
       <div id="city3dContainer" class="absolute inset-0 w-full h-full"></div>
       <div id="crashFlash" class="pointer-events-none absolute inset-0 bg-red-600/45 opacity-0 transition-opacity duration-150 z-10"></div>
@@ -393,8 +398,7 @@ html, body {
 
   </div>
 
-  
-<script>
+  <script>
 try {
 // 31 Upgraded Realistic Vehicles with Curated Metallic Paint & Accent Colors
 const IMG_STARTER_CAR = 'assets/car_starter.jpg';
@@ -980,7 +984,6 @@ try {
   function resizeCanvases() {
     const w = isStageRotated() ? window.innerHeight : window.innerWidth;
     const h = isStageRotated() ? window.innerWidth : window.innerHeight;
-    if (loadingCanvas) { loadingCanvas.width = w; loadingCanvas.height = h; }
     if (renderer && camera) {
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
@@ -988,16 +991,9 @@ try {
     }
   }
 
-  const loadingScreen = document.getElementById('loadingScreen');
   const garageScreen = document.getElementById('garageScreen');
   const playScreen = document.getElementById('playScreen');
 
-  const loadingPercent = document.getElementById('loadingPercent');
-  const loadingBarFill = document.getElementById('loadingBarFill');
-  const loadingStatusText = document.getElementById('loadingStatusText');
-  const bgSlide1 = document.getElementById('bgSlide1');
-  const bgSlide2 = document.getElementById('bgSlide2');
-  const loadingCanvas = document.getElementById('loadingCanvas');
 
   const coinsCountEl = document.getElementById('coinsCountEl');
   const ownedCountEl = document.getElementById('ownedCountEl');
@@ -1025,17 +1021,6 @@ try {
   const closeModalBtn = document.getElementById('closeModalBtn');
   const toastEl = document.getElementById('toastEl');
 
-  let loadTimerId = null;
-  let bgCanvasRafId = null;
-  let slideIntervalId = null;
-  const LOAD_DURATION_MS = 5000;
-
-  const statusMessages = [
-    { at: 0, text: 'Igniting Engine...' },
-    { at: 25, text: 'Loading 3D Morning City...' },
-    { at: 55, text: 'Preparing 31 Vehicles...' },
-    { at: 85, text: 'Entering Garage...' }
-  ];
 
   function showToast(msg) {
     if (!toastEl) return;
@@ -1046,81 +1031,13 @@ try {
   }
 
   function showScreen(target) {
-    [loadingScreen, garageScreen, playScreen].forEach((el) => {
+    [garageScreen, playScreen].forEach((el) => {
       if (!el) return;
       el.classList.toggle('visible-screen', el === target);
       el.classList.toggle('hidden-screen', el !== target);
     });
   }
 
-  function startLoadingMotionOverlay() {
-    if (bgCanvasRafId) cancelAnimationFrame(bgCanvasRafId);
-    if (!loadingCanvas) return;
-    const ctx = loadingCanvas.getContext('2d');
-    const w = isStageRotated() ? window.innerHeight : window.innerWidth;
-    const h = isStageRotated() ? window.innerWidth : window.innerHeight;
-    loadingCanvas.width = w; loadingCanvas.height = h;
-    const streaks = Array.from({ length: 60 }, () => ({
-      angle: Math.random() * Math.PI * 2, dist: Math.random() * 200 + 20,
-      speed: Math.random() * 9 + 6, len: Math.random() * 40 + 18,
-      color: Math.random() > 0.4 ? 'rgba(0, 240, 255, 0.55)' : 'rgba(255, 140, 40, 0.55)'
-    }));
-    function renderStreaks() {
-      const cw = loadingCanvas.width, ch = loadingCanvas.height, cx = cw * 0.5, cy = ch * 0.46;
-      const maxDist = Math.hypot(cw, ch) * 0.65;
-      ctx.clearRect(0, 0, cw, ch);
-      for (const st of streaks) {
-        st.dist += st.speed * (1 + st.dist / 260);
-        if (st.dist > maxDist) { st.dist = Math.random() * 50 + 10; st.angle = Math.random() * Math.PI * 2; }
-        ctx.beginPath();
-        ctx.moveTo(cx + Math.cos(st.angle) * st.dist, cy + Math.sin(st.angle) * st.dist);
-        ctx.lineTo(cx + Math.cos(st.angle) * (st.dist + st.len), cy + Math.sin(st.angle) * (st.dist + st.len));
-        ctx.strokeStyle = st.color; ctx.lineWidth = Math.min(3, 0.8 + st.dist / 250); ctx.stroke();
-      }
-      bgCanvasRafId = requestAnimationFrame(renderStreaks);
-    }
-    renderStreaks();
-  }
-
-  function stopLoadingAnimations() {
-    if (loadTimerId) { clearInterval(loadTimerId); loadTimerId = null; }
-    if (bgCanvasRafId) { cancelAnimationFrame(bgCanvasRafId); bgCanvasRafId = null; }
-    if (slideIntervalId) { clearInterval(slideIntervalId); slideIntervalId = null; }
-  }
-
-  function startLoadingSequence() {
-    stopLoadingAnimations();
-    showScreen(loadingScreen);
-    if (bgSlide1) bgSlide1.classList.add('active');
-    if (bgSlide2) bgSlide2.classList.remove('active');
-    let showingFirst = true;
-    slideIntervalId = setInterval(() => {
-      showingFirst = !showingFirst;
-      if (bgSlide1) bgSlide1.classList.toggle('active', showingFirst);
-      if (bgSlide2) bgSlide2.classList.toggle('active', !showingFirst);
-    }, 2400);
-    startLoadingMotionOverlay();
-
-    const startTime = Date.now();
-    loadTimerId = setInterval(() => {
-      const elapsed = Date.now() - startTime;
-      const ratio = Math.min(1, elapsed / LOAD_DURATION_MS);
-      const pct = Math.floor(ratio * 100);
-      if (loadingPercent) loadingPercent.textContent = pct + '%';
-      if (loadingBarFill) loadingBarFill.style.width = (ratio * 100).toFixed(1) + '%';
-      if (loadingStatusText) {
-        for (let i = statusMessages.length - 1; i >= 0; i--) {
-          if (pct >= statusMessages[i].at) { loadingStatusText.textContent = statusMessages[i].text; break; }
-        }
-      }
-      if (ratio >= 1) {
-        stopLoadingAnimations();
-        if (Audio) Audio.playReadyChime();
-        renderGarage();
-        showScreen(garageScreen);
-      }
-    }, 35);
-  }
 
   function renderGarage() {
     if (!vehicles.length) return;
@@ -1891,11 +1808,10 @@ try {
   window.addEventListener('resize', resizeCanvases);
 
   // Immediately start 5-second loading screen with reliable setInterval timer
-  startLoadingSequence();
+  showScreen(garageScreen); renderGarage();
 })();
 
 } catch (e) { console.error('script init error:', e); }
-</script>
-
+  </script>
 </body>
 </html>
