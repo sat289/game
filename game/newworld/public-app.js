@@ -120,7 +120,7 @@ document.getElementById("close-plot-card").addEventListener("click", () => {
 // IDEA #6: PUBLIC "REQUEST A JOB / BUILDING" FORM (FORMSPREE)
 // Replace YOUR_FORMSPREE_ID below with your Formspree form ID!
 // =========================================================
-const FORMSPREE_ENDPOINT = "https://formspree.io/f/YOUR_FORMSPREE_ID";
+const FORMSPREE_ENDPOINT = "https://formspree.io/f/moedkwon";
 
 const reqModal = document.getElementById("request-modal");
 const reqForm = document.getElementById("job-request-form");
