@@ -1,5 +1,5 @@
-import { db, ref, onValue } from "./firebase-config.js";
-import { FollowerTownEngine, BUILDING_LABELS, getRequiredSize } from "./world-engine.js";
+import { db, ref, onValue } from "./firebase-config.js?v=14";
+import { FollowerTownEngine, BUILDING_LABELS, getRequiredSize } from "./world-engine.js?v=14";
 
 let allPlots = {};
 const container = document.getElementById("canvas-container");
@@ -26,11 +26,13 @@ function openPlotCard(plotId, data) {
     document.getElementById("card-type").textContent = "stgames.online";
     document.getElementById("card-day").textContent = "";
     websiteBtn.classList.remove("hidden");
+    if (sheru3dBtn) sheru3dBtn.classList.remove("hidden");
     plotCard.classList.remove("hidden");
     return;
   }
 
   websiteBtn.classList.add("hidden");
+  if (sheru3dBtn) sheru3dBtn.classList.add("hidden");
   if (data && data.status === "built") {
     const label = BUILDING_LABELS[data.buildingType] || "TOWN BUILDING";
     const size = data.size || getRequiredSize(data.buildingType);
@@ -177,3 +179,20 @@ reqForm.addEventListener("submit", async (e) => {
     reqSubmitBtn.textContent = "🚀 Send Request";
   }
 });
+
+// Lazy-load Sketchfab Sheru Bhai 3D Model ONLY when clicked (frees 100% RAM on close!)
+const SKETCHFAB_URL = "https://sketchfab.com/models/011d2f8f40e146ff8b2d7dfc70e939f8/embed?autostart=1&ui_theme=dark";
+const sheru3dBtn = document.getElementById("card-sheru3d-btn");
+const sketchfabModal = document.getElementById("sketchfab-modal");
+const sketchfabIframe = document.getElementById("sketchfab-iframe");
+
+if (sheru3dBtn && sketchfabModal && sketchfabIframe) {
+  sheru3dBtn.addEventListener("click", () => {
+    sketchfabIframe.src = SKETCHFAB_URL;
+    sketchfabModal.classList.remove("hidden");
+  });
+  document.getElementById("close-sketchfab").addEventListener("click", () => {
+    sketchfabModal.classList.add("hidden");
+    sketchfabIframe.src = "about:blank";
+  });
+}

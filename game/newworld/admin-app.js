@@ -8,14 +8,14 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged
-} from "./firebase-config.js";
+} from "./firebase-config.js?v=14";
 import {
   FollowerTownEngine,
   BUILDING_LABELS,
   getRequiredSize,
   getBlockPlotIds,
   getEightPlotGroup
-} from "./world-engine.js";
+} from "./world-engine.js?v=14";
 
 let isAdmin = false;
 let selectedPlotId = "plot_0001";
@@ -71,12 +71,14 @@ function openPlotCard(plotId, data) {
     document.getElementById("card-day").textContent = "";
     editBtn.classList.add("hidden");
     websiteBtn.classList.remove("hidden");
+    if (sheru3dBtn) sheru3dBtn.classList.remove("hidden");
     plotCard.classList.remove("hidden");
     return;
   }
 
   editBtn.classList.remove("hidden");
   websiteBtn.classList.add("hidden");
+  if (sheru3dBtn) sheru3dBtn.classList.add("hidden");
 
   if (data && data.status === "built") {
     const label = BUILDING_LABELS[data.buildingType] || "TOWN BUILDING";
@@ -716,3 +718,20 @@ document.getElementById("reel-day-toggle").addEventListener("click", () => {
   const order = ["day", "sunset", "night"];
   engine.setTimeOfDay(order[(order.indexOf(engine.timeOfDay) + 1) % order.length]);
 });
+
+// Lazy-load Sketchfab Sheru Bhai 3D Model ONLY when clicked (frees 100% RAM on close!)
+const SKETCHFAB_URL = "https://sketchfab.com/models/011d2f8f40e146ff8b2d7dfc70e939f8/embed?autostart=1&ui_theme=dark";
+const sheru3dBtn = document.getElementById("card-sheru3d-btn");
+const sketchfabModal = document.getElementById("sketchfab-modal");
+const sketchfabIframe = document.getElementById("sketchfab-iframe");
+
+if (sheru3dBtn && sketchfabModal && sketchfabIframe) {
+  sheru3dBtn.addEventListener("click", () => {
+    sketchfabIframe.src = SKETCHFAB_URL;
+    sketchfabModal.classList.remove("hidden");
+  });
+  document.getElementById("close-sketchfab").addEventListener("click", () => {
+    sketchfabModal.classList.add("hidden");
+    sketchfabIframe.src = "about:blank";
+  });
+}
