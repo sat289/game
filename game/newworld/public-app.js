@@ -21,7 +21,7 @@ const engine = new FollowerTownEngine(container, (plotId, data) => {
 function openPlotCard(plotId, data) {
   if (plotId === "ST_JUNCTION") {
     document.getElementById("card-badge").textContent = "CITY CENTER LANDMARK";
-    document.getElementById("card-owner").textContent = "🗽 ST JUNCTION";
+    document.getElementById("card-owner").textContent = "🗿 SHERU BHAI • ST JUNCTION";
     document.getElementById("card-role").textContent = "Official Hub of Follower Nagaram • Play more games on ST Games!";
     document.getElementById("card-type").textContent = "stgames.online";
     document.getElementById("card-day").textContent = "";

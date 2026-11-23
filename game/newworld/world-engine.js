@@ -16,10 +16,10 @@ export const FOUR_PLOT_TYPES = new Set([
 ]);
 
 export const BUILDING_LABELS = {
-  house_blue: "🏠 Blue Terrace House",
-  house_coral: "🏠 Coral Modern House",
-  house_mint: "🏡 Mint Villa",
-  house_gold: "🏢 Golden Duplex House",
+  house_blue: "🏡 Ivory & Slate Villa",
+  house_coral: "🏠 Terracotta & Cream Duplex",
+  house_mint: "🏡 Sage & Teak House",
+  house_gold: "🏢 Sandstone Luxury Duplex",
   tower_brick: "🏢 5-Floor Brick Balcony Tower",
   tower_cube: "🏢 5-Floor Modern Cube Tower",
   tower_led: "🏢 5-Floor Luxury LED Tower",
@@ -190,6 +190,7 @@ export class FollowerTownEngine {
       this.cameraGoal = null;
       if (this.proReelTour.active) this.stopProReelTour();
       if (this.droneTour.active) this.stopDroneView();
+      if (this.buildReelTour.active) this.stopBuildReelTour();
     });
 
     this.PLOT_SIZE = 7.4;
@@ -236,6 +237,15 @@ export class FollowerTownEngine {
       t: 0,
       speed: 0.032,
       onStop: null
+    };
+
+    this.buildReelTour = {
+      active: false,
+      stops: [],
+      idx: 0,
+      timer: 0,
+      onStopChange: null,
+      onComplete: null
     };
 
     this.cityGroup = new THREE.Group();
@@ -348,7 +358,20 @@ export class FollowerTownEngine {
       busWindshield: new THREE.MeshLambertMaterial({ color: 0x0f172a }),
       busLedBoard: new THREE.MeshBasicMaterial({ color: 0xf59e0b }),
       chrome: new THREE.MeshLambertMaterial({ color: 0xe2e8f0 }),
-      clothBlue: new THREE.MeshLambertMaterial({ color: 0x38bdf8 })
+      clothBlue: new THREE.MeshLambertMaterial({ color: 0x38bdf8 }),
+      stuccoIvory: new THREE.MeshLambertMaterial({ color: 0xf4efe6 }),
+      stuccoCream: new THREE.MeshLambertMaterial({ color: 0xf7eedc }),
+      stuccoSage: new THREE.MeshLambertMaterial({ color: 0xcbd5c0 }),
+      stuccoSandstone: new THREE.MeshLambertMaterial({ color: 0xe6d5b8 }),
+      plinthGrey: new THREE.MeshLambertMaterial({ color: 0x64748b }),
+      slateTrim: new THREE.MeshLambertMaterial({ color: 0x334155 }),
+      terracottaRoof: new THREE.MeshLambertMaterial({ color: 0x9a3412 }),
+      teakWood: new THREE.MeshLambertMaterial({ color: 0x7c4a21 }),
+      warmTaupe: new THREE.MeshLambertMaterial({ color: 0x9c8c79 }),
+      tankBlack: new THREE.MeshLambertMaterial({ color: 0x1f2937 }),
+      gateMetal: new THREE.MeshLambertMaterial({ color: 0x27272a }),
+      winFrame: new THREE.MeshLambertMaterial({ color: 0x475569 }),
+      sunglasses: new THREE.MeshBasicMaterial({ color: 0x09090b })
     };
   }
 
@@ -374,6 +397,19 @@ export class FollowerTownEngine {
       porch: new THREE.BoxGeometry(1.8, 0.18, 0.8),
       door: new THREE.BoxGeometry(0.9, 1.45, 0.12),
       win: new THREE.BoxGeometry(0.88, 0.85, 0.12),
+      winFrameGeo: new THREE.BoxGeometry(1.04, 1.0, 0.14),
+      chajjaGeo: new THREE.BoxGeometry(1.22, 0.1, 0.42),
+      plinthGeo: new THREE.BoxGeometry(4.95, 0.36, 4.55),
+      compWallFront: new THREE.BoxGeometry(2.1, 0.65, 0.14),
+      compWallSide: new THREE.BoxGeometry(0.14, 0.65, 6.2),
+      compWallBack: new THREE.BoxGeometry(6.4, 0.65, 0.14),
+      gatePillar: new THREE.BoxGeometry(0.32, 0.92, 0.32),
+      verandaCol: new THREE.BoxGeometry(0.22, 2.2, 0.22),
+      sintexTank: new THREE.CylinderGeometry(0.34, 0.34, 0.68, 8),
+      frontBush: new THREE.DodecahedronGeometry(0.36, 0),
+      slopedRoof: new THREE.ConeGeometry(3.65, 1.15, 4),
+      balconyRail: new THREE.BoxGeometry(2.3, 0.48, 0.08),
+      stepGeo: new THREE.BoxGeometry(1.4, 0.18, 0.45),
 
       // 5-Floor Modern Tower shared geometries
       towerCore5: new THREE.BoxGeometry(4.6, 6.4, 4.1),
@@ -663,6 +699,12 @@ export class FollowerTownEngine {
     this.setTimeOfDay(this.timeOfDay);
   }
 
+  /**
+   * GRAND "SHERU BHAI STATUE" at ST JUNCTION (0, 0) — Middle of the City!
+   * Features marble roundabout, blue water fountain, granite & gold pedestal with
+   * "SHERU BHAI" name plaque, heroic bronze/gold statue with cool sunglasses, stylish jacket
+   * & proud raised-hand salute! Clicking opens stgames.online popup.
+   */
   _buildSTJunctionStatue() {
     const g = new THREE.Group();
 
@@ -677,50 +719,104 @@ export class FollowerTownEngine {
     const water = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 4.2, 0.48, 22), this.mat.water);
     water.position.y = 0.46;
 
-    const step1 = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.9, 4.2), this.mat.marble);
+    // Monumental Stepped Granite & Gold Pedestal
+    const step1 = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.9, 4.4), this.mat.marble);
     step1.position.y = 1.05;
-    const step2 = new THREE.Mesh(new THREE.BoxGeometry(3.0, 2.5, 3.0), this.mat.concrete);
+    const step2 = new THREE.Mesh(new THREE.BoxGeometry(3.2, 2.5, 3.2), this.mat.charcoal);
     step2.position.y = 2.75;
-    const goldCollar = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.3, 3.3), this.mat.gold);
-    goldCollar.position.y = 4.1;
+    const goldCollar = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.32, 3.5), this.mat.gold);
+    goldCollar.position.y = 4.12;
 
-    const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 1.1, 3.5, 8), this.mat.bronze);
-    robe.position.y = 5.95;
+    // Engraved "SHERU BHAI" Gold Plaque on Pedestal Front & Back
+    const pCanvas = document.createElement("canvas");
+    pCanvas.width = 256;
+    pCanvas.height = 96;
+    const pCtx = pCanvas.getContext("2d");
+    pCtx.fillStyle = "#1e293b";
+    pCtx.fillRect(0, 0, 256, 96);
+    pCtx.strokeStyle = "#fbbf24";
+    pCtx.lineWidth = 6;
+    pCtx.strokeRect(4, 4, 248, 88);
+    pCtx.fillStyle = "#fbbf24";
+    pCtx.font = "bold 34px sans-serif";
+    pCtx.textAlign = "center";
+    pCtx.fillText("SHERU BHAI", 128, 48);
+    pCtx.fillStyle = "#f8fafc";
+    pCtx.font = "bold 18px sans-serif";
+    pCtx.fillText("ST JUNCTION", 128, 76);
+    const pTex = new THREE.CanvasTexture(pCanvas);
+    pTex.generateMipmaps = false;
+    const pMat = new THREE.MeshBasicMaterial({ map: pTex });
+    const plaqueF = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 0.95), pMat);
+    plaqueF.position.set(0, 2.8, 1.62);
+    const plaqueB = plaqueF.clone();
+    plaqueB.rotation.y = Math.PI;
+    plaqueB.position.z = -1.62;
+    g.add(plaqueF, plaqueB);
 
-    const shoulders = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.8, 0.85), this.mat.bronze);
-    shoulders.position.y = 7.6;
+    // HEROIC SHERU BHAI STATUE FIGURE (Bronze & Gold)
+    const statueBase = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.25, 0.35, 12), this.mat.gold);
+    statueBase.position.y = 4.45;
 
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.56, 10, 10), this.mat.gold);
-    head.position.y = 8.45;
+    // Heroic Stance Legs & Boots
+    const legL = new THREE.Mesh(new THREE.BoxGeometry(0.52, 1.85, 0.56), this.mat.bronze);
+    legL.position.set(-0.38, 5.5, 0);
+    const legR = legL.clone();
+    legR.position.x = 0.38;
 
-    const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.52, 0.3, 7), this.mat.gold);
-    crown.position.y = 8.95;
+    // Stylish Mass-Hero Jacket Torso + Gold Collar + Chest Emblem
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(1.52, 1.85, 0.84), this.mat.bronze);
+    torso.position.set(0, 7.25, 0);
+    const collar = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.36, 0.9), this.mat.gold);
+    collar.position.set(0, 8.15, 0);
+    const belt = new THREE.Mesh(new THREE.BoxGeometry(1.56, 0.22, 0.88), this.mat.gold);
+    belt.position.set(0, 6.42, 0);
 
-    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 2.2, 6), this.mat.bronze);
-    arm.position.set(0.95, 8.6, 0);
-    arm.rotation.z = -0.22;
+    // Left Arm on Hip + Right Arm Raised in Iconic Hero Salute!
+    const armL = new THREE.Mesh(new THREE.BoxGeometry(0.42, 1.55, 0.44), this.mat.bronze);
+    armL.position.set(-0.98, 7.15, 0);
+    armL.rotation.z = 0.18;
 
-    const torchFlame = new THREE.Mesh(new THREE.ConeGeometry(0.36, 0.95, 6), this.mat.lampBulbNight);
-    torchFlame.position.set(1.2, 10.0, 0);
-    this.lampBulbs.push(torchFlame);
+    const armR = new THREE.Mesh(new THREE.BoxGeometry(0.42, 1.75, 0.44), this.mat.bronze);
+    armR.position.set(1.02, 8.45, 0.15);
+    armR.rotation.z = -0.32;
+    const fistR = new THREE.Mesh(new THREE.SphereGeometry(0.28, 8, 8), this.mat.gold);
+    fistR.position.set(1.28, 9.35, 0.2);
+
+    // Head + Styled Hair + Iconic Cool Sunglasses!
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.54, 12, 12), this.mat.gold);
+    head.position.set(0, 8.75, 0);
+    const hair = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.36, 0.96), this.mat.bronze);
+    hair.position.set(0, 9.18, -0.04);
+    const shades = new THREE.Mesh(new THREE.BoxGeometry(0.84, 0.22, 0.16), this.mat.sunglasses);
+    shades.position.set(0, 8.82, 0.48);
+
+    // Glowing Spotlight Crown Aura at Night
+    const aura = new THREE.Mesh(new THREE.RingGeometry(1.3, 1.55, 18), this.mat.lampBulbNight);
+    aura.rotation.x = -Math.PI / 2;
+    aura.position.y = 4.32;
+    this.lampBulbs.push(aura);
 
     [[-6.4, -6.4], [6.4, -6.4], [-6.4, 6.4], [6.4, 6.4]].forEach(([lx, lz]) => {
       this._addStreetLamp(lx, lz);
     });
 
     const hitbox = new THREE.Mesh(
-      new THREE.CylinderGeometry(6.8, 6.8, 11.5, 12),
+      new THREE.CylinderGeometry(6.8, 6.8, 12.0, 12),
       new THREE.MeshBasicMaterial({ visible: false })
     );
-    hitbox.position.y = 5.75;
+    hitbox.position.y = 6.0;
     hitbox.userData.plotId = "ST_JUNCTION";
     g.add(hitbox);
     this.plotHitboxes.push(hitbox);
 
-    const sign = this._createNameSign("🗽 ST JUNCTION", "TAP TO OPEN stgames.online", true);
-    sign.position.set(0, 12.2, 0);
+    const sign = this._createNameSign("🗿 SHERU BHAI STATUE", "ST JUNCTION • stgames.online", true);
+    sign.position.set(0, 12.0, 0);
 
-    g.add(basePad, gardenRing, poolRim, water, step1, step2, goldCollar, robe, shoulders, head, crown, arm, torchFlame, sign);
+    g.add(
+      basePad, gardenRing, poolRim, water, step1, step2, goldCollar,
+      statueBase, legL, legR, torso, collar, belt, armL, armR, fistR, head, hair, shades, aura, sign
+    );
     this.cityGroup.add(g);
   }
 
@@ -1555,43 +1651,173 @@ export class FollowerTownEngine {
       return g;
     }
 
-    // --- CLASSIC OLD FOLLOWER TERRACE HOUSES (KEPT INTACT + ULTRA FAST SHARED GEOS) ---
-    const wallMap = {
-      house_blue: this.mat.wallBlue,
-      house_coral: this.mat.wallCoral,
-      house_mint: this.mat.wallMint,
-      house_gold: this.mat.wallGold
+    // --- REALISTIC INDIAN ARCHITECTURAL HOUSES (NO MORE PLAIN BOXES! SHARED GEOS FOR LOW-END SMOOTHNESS) ---
+    // Helper: Compound wall + gate pillars + front potted plants
+    const addCompoundAndYard = (wallMat) => {
+      const cwBack = new THREE.Mesh(this.geo.compWallBack, wallMat);
+      cwBack.position.set(0, 0.36, -3.05);
+      const cwL = new THREE.Mesh(this.geo.compWallSide, wallMat);
+      cwL.position.set(-3.15, 0.36, 0);
+      const cwR = new THREE.Mesh(this.geo.compWallSide, wallMat);
+      cwR.position.set(3.15, 0.36, 0);
+      const cwFL = new THREE.Mesh(this.geo.compWallFront, wallMat);
+      cwFL.position.set(-2.12, 0.36, 3.05);
+      const cwFR = new THREE.Mesh(this.geo.compWallFront, wallMat);
+      cwFR.position.set(2.12, 0.36, 3.05);
+      const pilL = new THREE.Mesh(this.geo.gatePillar, this.mat.plinthGrey);
+      pilL.position.set(-0.98, 0.5, 3.05);
+      const pilR = new THREE.Mesh(this.geo.gatePillar, this.mat.plinthGrey);
+      pilR.position.set(0.98, 0.5, 3.05);
+      const bushL = new THREE.Mesh(this.geo.frontBush, this.mat.balconyPlant);
+      bushL.position.set(-2.35, 0.42, 2.55);
+      const bushR = new THREE.Mesh(this.geo.frontBush, this.mat.balconyPlant);
+      bushR.position.set(2.35, 0.42, 2.55);
+      g.add(cwBack, cwL, cwR, cwFL, cwFR, pilL, pilR, bushL, bushR);
     };
-    const isDuplex = type === "house_gold";
-    const h = isDuplex ? 3.8 : 2.5;
 
-    const body = new THREE.Mesh(isDuplex ? this.geo.houseBody2 : this.geo.houseBody1, wallMap[type] || this.mat.wallBlue);
-    body.position.set(0, h / 2 + 0.08, -0.2);
+    // Helper: Recessed framed window + concrete sunshade chajja
+    const addWindowWithChajja = (x, y, z) => {
+      const frame = new THREE.Mesh(this.geo.winFrameGeo, this.mat.winFrame);
+      frame.position.set(x, y, z);
+      const glass = new THREE.Mesh(this.geo.win, winMat);
+      glass.position.set(x, y, z + 0.03);
+      glass.userData.isWindow = true;
+      const chajja = new THREE.Mesh(this.geo.chajjaGeo, this.mat.wallWhite);
+      chajja.position.set(x, y + 0.54, z + 0.18);
+      g.add(frame, glass, chajja);
+    };
 
-    const parapet = new THREE.Mesh(this.geo.parapet, this.mat.wallWhite);
-    parapet.position.set(0, h + 0.22, -0.2);
-
-    const mumty = new THREE.Mesh(this.geo.mumty, this.mat.wallCream);
-    mumty.position.set(-1.1, h + 0.7, -1.2);
-
+    // Raised stone foundation plinth + entrance steps
+    const plinth = new THREE.Mesh(this.geo.plinthGeo, this.mat.plinthGrey);
+    plinth.position.set(0, 0.22, -0.35);
+    const steps = new THREE.Mesh(this.geo.stepGeo, this.mat.concrete);
+    steps.position.set(0, 0.14, 2.1);
     const pathway = new THREE.Mesh(this.geo.pathway, this.mat.sidewalk);
-    pathway.position.set(0, 0.12, 2.65);
+    pathway.position.set(0, 0.09, 2.65);
+    g.add(plinth, steps, pathway);
 
-    const porch = new THREE.Mesh(this.geo.porch, this.mat.wallWhite);
-    porch.position.set(0, 1.75, 2.25);
+    // STYLE A: Ivory & Slate Modern Villa (`house_blue`)
+    if (type === "house_blue") {
+      addCompoundAndYard(this.mat.stuccoIvory);
+      const body = new THREE.Mesh(this.geo.houseBody1, this.mat.stuccoIvory);
+      body.position.set(0, 1.65, -0.35);
+      const accentBand = new THREE.Mesh(new THREE.BoxGeometry(4.62, 0.32, 4.32), this.mat.slateTrim);
+      accentBand.position.set(0, 2.95, -0.35);
+      const parapet = new THREE.Mesh(this.geo.parapet, this.mat.wallWhite);
+      parapet.position.set(0, 3.22, -0.35);
 
-    const door = new THREE.Mesh(this.geo.door, this.mat.wood);
-    door.position.set(0, 0.8, 1.92);
+      // Veranda porch + 2 front columns + teak door
+      const porch = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.2, 1.15), this.mat.slateTrim);
+      porch.position.set(0, 2.55, 2.15);
+      const colL = new THREE.Mesh(this.geo.verandaCol, this.mat.wallWhite);
+      colL.position.set(-0.95, 1.4, 2.55);
+      const colR = new THREE.Mesh(this.geo.verandaCol, this.mat.wallWhite);
+      colR.position.set(0.95, 1.4, 2.55);
+      const door = new THREE.Mesh(this.geo.door, this.mat.teakWood);
+      door.position.set(0, 1.12, 1.78);
 
-    const winL = new THREE.Mesh(this.geo.win, winMat);
-    winL.position.set(-1.35, 1.55, 1.92);
-    winL.userData.isWindow = true;
-    const winR = new THREE.Mesh(this.geo.win, winMat);
-    winR.position.set(1.35, 1.55, 1.92);
-    winR.userData.isWindow = true;
+      addWindowWithChajja(-1.45, 1.65, 1.76);
+      addWindowWithChajja(1.45, 1.65, 1.76);
 
-    g.add(body, parapet, mumty, pathway, porch, door, winL, winR);
-    g.userData.labelY = h + 2.2;
+      // Rooftop staircase mumty + black Sintex water tank!
+      const mumty = new THREE.Mesh(this.geo.mumty, this.mat.stuccoIvory);
+      mumty.position.set(-1.1, 3.78, -1.25);
+      const tank = new THREE.Mesh(this.geo.sintexTank, this.mat.tankBlack);
+      tank.position.set(-1.1, 4.55, -1.25);
+
+      g.add(body, accentBand, parapet, porch, colL, colR, door, mumty, tank);
+      g.userData.labelY = 5.7;
+      return g;
+    }
+
+    // STYLE B: Terracotta & Cream Duplex with Sloped Tiled Roof (`house_coral`)
+    if (type === "house_coral") {
+      addCompoundAndYard(this.mat.stuccoCream);
+      const body = new THREE.Mesh(this.geo.houseBody1, this.mat.stuccoCream);
+      body.position.set(0, 1.65, -0.35);
+      const brickPillar = new THREE.Mesh(new THREE.BoxGeometry(0.95, 2.65, 0.32), this.mat.brickRed);
+      brickPillar.position.set(-1.75, 1.72, 1.82);
+
+      // Sloped Terracotta Mangalore-Tile Roof!
+      const roof = new THREE.Mesh(this.geo.slopedRoof, this.mat.terracottaRoof);
+      roof.position.set(0, 3.48, -0.35);
+      roof.rotation.y = Math.PI / 4;
+
+      const porchRoof = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.22, 1.1), this.mat.terracottaRoof);
+      porchRoof.position.set(0.35, 2.38, 2.15);
+      porchRoof.rotation.x = 0.16;
+
+      const door = new THREE.Mesh(this.geo.door, this.mat.darkWood);
+      door.position.set(0.35, 1.12, 1.78);
+
+      addWindowWithChajja(-0.9, 1.65, 1.76);
+      addWindowWithChajja(1.55, 1.65, 1.76);
+
+      g.add(body, brickPillar, roof, porchRoof, door);
+      g.userData.labelY = 5.4;
+      return g;
+    }
+
+    // STYLE C: Sage & Teak Courtyard House (`house_mint`)
+    if (type === "house_mint") {
+      addCompoundAndYard(this.mat.stuccoSage);
+      const body = new THREE.Mesh(this.geo.houseBody1, this.mat.stuccoSage);
+      body.position.set(0, 1.65, -0.35);
+      const teakPanel = new THREE.Mesh(new THREE.BoxGeometry(1.15, 2.55, 0.22), this.mat.teakWood);
+      teakPanel.position.set(1.4, 1.68, 1.8);
+      const cornice = new THREE.Mesh(this.geo.parapet, this.mat.warmTaupe);
+      cornice.position.set(0, 3.05, -0.35);
+
+      const porch = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.18, 1.0), this.mat.wallWhite);
+      porch.position.set(-0.35, 2.38, 2.15);
+      const door = new THREE.Mesh(this.geo.door, this.mat.teakWood);
+      door.position.set(-0.35, 1.12, 1.78);
+
+      addWindowWithChajja(-1.55, 1.65, 1.76);
+      addWindowWithChajja(1.4, 1.65, 1.88);
+
+      const mumty = new THREE.Mesh(this.geo.mumty, this.mat.stuccoCream);
+      mumty.position.set(1.1, 3.62, -1.2);
+      const tank = new THREE.Mesh(this.geo.sintexTank, this.mat.tankBlack);
+      tank.position.set(1.1, 4.4, -1.2);
+
+      g.add(body, teakPanel, cornice, porch, door, mumty, tank);
+      g.userData.labelY = 5.6;
+      return g;
+    }
+
+    // STYLE D: Sandstone & Wood 2-Story Luxury Duplex (`house_gold`)
+    addCompoundAndYard(this.mat.stuccoSandstone);
+    const body = new THREE.Mesh(this.geo.houseBody2, this.mat.stuccoSandstone);
+    body.position.set(0, 2.3, -0.35);
+
+    const stoneCol = new THREE.Mesh(new THREE.BoxGeometry(0.95, 4.1, 0.36), this.mat.warmTaupe);
+    stoneCol.position.set(-1.78, 2.42, 1.82);
+
+    const midSlab = new THREE.Mesh(new THREE.BoxGeometry(4.85, 0.18, 4.75), this.mat.wallWhite);
+    midSlab.position.set(0, 2.45, -0.15);
+    const topSlab = new THREE.Mesh(this.geo.parapet, this.mat.slateTrim);
+    topSlab.position.set(0, 4.35, -0.35);
+
+    // 1st Floor Glass Balcony Railing
+    const balcRail = new THREE.Mesh(this.geo.balconyRail, this.mat.glass);
+    balcRail.position.set(0.75, 2.78, 2.18);
+
+    const door = new THREE.Mesh(this.geo.door, this.mat.darkWood);
+    door.position.set(0.15, 1.12, 1.78);
+
+    // Ground & First Floor Windows with Chajjas
+    addWindowWithChajja(1.45, 1.5, 1.76);
+    addWindowWithChajja(-0.55, 3.35, 1.76);
+    addWindowWithChajja(1.3, 3.35, 1.76);
+
+    const mumty = new THREE.Mesh(this.geo.mumty, this.mat.stuccoIvory);
+    mumty.position.set(-1.1, 4.92, -1.25);
+    const tank = new THREE.Mesh(this.geo.sintexTank, this.mat.tankBlack);
+    tank.position.set(-1.1, 5.7, -1.25);
+
+    g.add(body, stoneCol, midSlab, topSlab, balcRail, door, mumty, tank);
+    g.userData.labelY = 6.8;
     return g;
   }
 
@@ -2493,10 +2719,142 @@ export class FollowerTownEngine {
     }
   }
 
+  /**
+   * 🏗️ REPLAY CONSTRUCTION ANIMATION on any already-built plot!
+   * Re-renders the building with scaffolding, rising scale-up animation & construction workers.
+   */
+  replayPlotConstruction(plotId) {
+    const data = this.plotDataMap.get(plotId);
+    if (!data || data.status !== "built") return;
+    this.renderPlot(plotId, data, true);
+  }
+
+  /**
+   * 🏗️ BUILD REEL TOUR (Construction Showcase for Reels):
+   * Automatically picks the newest built buildings (current Day # first, up to 8 places),
+   * flies rapidly to each one, replays its live construction animation (scaffolding + workers + rising),
+   * and finishes with a sweep over Sheru Bhai Statue!
+   */
+  startBuildReelTour(allPlotsObj, onStopChange, onComplete) {
+    if (this.proReelTour.active) this.stopProReelTour();
+    if (this.droneTour.active) this.stopDroneView();
+    this.autoSpin = false;
+
+    const builtList = [];
+    Object.entries(allPlotsObj || {}).forEach(([pid, p]) => {
+      if (!p || p.status !== "built") return;
+      const sz = getRequiredSize(p.buildingType);
+      builtList.push({
+        pid,
+        p,
+        sz,
+        day: p.builtDay || 1,
+        idx: parseInt(pid.replace("plot_", ""), 10) || 0
+      });
+    });
+
+    if (builtList.length === 0) {
+      if (onComplete) onComplete();
+      return;
+    }
+
+    // Sort newest Day first, then Landmarks first, then highest plot index!
+    builtList.sort((a, b) => b.day - a.day || b.sz - a.sz || b.idx - a.idx);
+    const maxDay = builtList[0].day;
+    let featured = builtList.filter((item) => item.day === maxDay).slice(0, 8);
+    if (featured.length < 3) {
+      featured = builtList.slice(0, 6);
+    }
+
+    const stops = [];
+
+    // Opening shot on Sheru Bhai Statue
+    stops.push({
+      tag: `DAY ${maxDay} • NEW CONSTRUCTIONS`,
+      name: "🗿 SHERU BHAI • ST JUNCTION",
+      target: new THREE.Vector3(0, 4.5, 0),
+      camPos: new THREE.Vector3(24, 24, 24),
+      duration: 1.6,
+      speed: 0.16,
+      plotId: null,
+      triggerBuild: false
+    });
+
+    featured.forEach((item, i) => {
+      const c = this.getPlotWorldCenter(item.pid);
+      const d = item.sz === 8 ? 34 : item.sz === 4 ? 24 : 16;
+      const side = i % 2 === 0 ? 1 : -1;
+      stops.push({
+        tag: `🏗️ CONSTRUCTING • DAY ${item.day}`,
+        name: item.p.ownerName || BUILDING_LABELS[item.p.buildingType] || "New Building",
+        target: new THREE.Vector3(c.x, c.y, c.z),
+        camPos: new THREE.Vector3(c.x + d * side, d * 0.92, c.z + d),
+        duration: 2.9, // Enough time to watch scaffolding + building rise completely!
+        speed: 0.18,
+        plotId: item.pid,
+        triggerBuild: true
+      });
+    });
+
+    // Finale Zoom-Out
+    stops.push({
+      tag: "COMMENT TO BUILD YOURS!",
+      name: `${builtList.length} PLACES LIVE`,
+      target: new THREE.Vector3(0, 0, 0),
+      camPos: new THREE.Vector3(-110, 118, 110),
+      duration: 2.0,
+      speed: 0.11,
+      plotId: null,
+      triggerBuild: false
+    });
+
+    this.buildReelTour = {
+      active: true,
+      stops,
+      idx: 0,
+      timer: 0,
+      onStopChange,
+      onComplete
+    };
+    this._applyBuildReelStop(0);
+  }
+
+  _applyBuildReelStop(index) {
+    const s = this.buildReelTour.stops[index];
+    if (!s) return;
+    this.cameraGoal = {
+      target: s.target.clone(),
+      camPos: s.camPos.clone(),
+      speed: s.speed
+    };
+    if (s.plotId) {
+      const c = this.getPlotWorldCenter(s.plotId);
+      if (this.highlightBeacon) {
+        const sx = c.size === 8 ? 3.8 : c.size === 4 ? 2.0 : 1.05;
+        const sy = c.size >= 4 ? 2.0 : 1.05;
+        this.highlightBeacon.scale.set(sx, sy, 1);
+        this.highlightBeacon.position.set(c.x, 0.3, c.z);
+        this.highlightBeacon.visible = true;
+      }
+      if (s.triggerBuild) {
+        this.replayPlotConstruction(s.plotId);
+      }
+    }
+    if (this.buildReelTour.onStopChange) {
+      this.buildReelTour.onStopChange(s.tag, s.name);
+    }
+  }
+
+  stopBuildReelTour() {
+    this.buildReelTour.active = false;
+    this.cameraGoal = null;
+    if (this.buildReelTour.onComplete) this.buildReelTour.onComplete();
+  }
+
   findPlotByQuery(query) {
     const q = query.trim().toLowerCase().replace(/^@/, "");
     if (!q) return null;
-    if (q.includes("junction") || q.includes("statue") || q === "st") return "ST_JUNCTION";
+    if (q.includes("sheru") || q.includes("bhai") || q.includes("junction") || q.includes("statue") || q === "st") return "ST_JUNCTION";
     for (const [plotId, data] of this.plotDataMap.entries()) {
       if (!data || data.status !== "built") continue;
       const owner = (data.ownerName || "").toLowerCase().replace(/^@/, "");
@@ -2524,6 +2882,21 @@ export class FollowerTownEngine {
       this.controls.target.lerp(new THREE.Vector3(lookPt.x, Math.max(1.5, lookPt.y - 2.6), lookPt.z), 0.22);
     }
 
+    // 🏗️ Construction Replay Reel Choreographer
+    if (this.buildReelTour.active) {
+      this.buildReelTour.timer += dt;
+      const cur = this.buildReelTour.stops[this.buildReelTour.idx];
+      if (cur && this.buildReelTour.timer >= cur.duration) {
+        this.buildReelTour.timer = 0;
+        this.buildReelTour.idx++;
+        if (this.buildReelTour.idx >= this.buildReelTour.stops.length) {
+          this.stopBuildReelTour();
+        } else {
+          this._applyBuildReelStop(this.buildReelTour.idx);
+        }
+      }
+    }
+
     if (this.proReelTour.active) {
       this.proReelTour.timer += dt;
       const cur = this.proReelTour.stops[this.proReelTour.idx];
@@ -2542,7 +2915,7 @@ export class FollowerTownEngine {
       const spd = this.cameraGoal.speed || 0.1;
       this.controls.target.lerp(this.cameraGoal.target, spd);
       this.camera.position.lerp(this.cameraGoal.camPos, spd);
-      if (!this.proReelTour.active && this.camera.position.distanceTo(this.cameraGoal.camPos) < 0.45) {
+      if (!this.proReelTour.active && !this.buildReelTour.active && this.camera.position.distanceTo(this.cameraGoal.camPos) < 0.45) {
         this.cameraGoal = null;
       }
     }

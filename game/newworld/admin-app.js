@@ -65,7 +65,7 @@ const engine = new FollowerTownEngine(container, (plotId, data) => {
 function openPlotCard(plotId, data) {
   if (plotId === "ST_JUNCTION") {
     document.getElementById("card-badge").textContent = "CITY CENTER LANDMARK";
-    document.getElementById("card-owner").textContent = "🗽 ST JUNCTION";
+    document.getElementById("card-owner").textContent = "🗿 SHERU BHAI • ST JUNCTION";
     document.getElementById("card-role").textContent = "Fixed at City Center • Visitors tap this to open stgames.online!";
     document.getElementById("card-type").textContent = "stgames.online";
     document.getElementById("card-day").textContent = "";
@@ -621,6 +621,7 @@ const reelTagText = document.getElementById("reel-tag-text");
 const reelNameText = document.getElementById("reel-name-text");
 const btnProTour = document.getElementById("reel-pro-tour");
 const btnDroneView = document.getElementById("reel-drone-view");
+const btnBuildReel = document.getElementById("reel-build-tour");
 
 document.getElementById("btn-reel-mode").addEventListener("click", () => {
   closeAllDrawers();
@@ -670,9 +671,36 @@ btnDroneView.addEventListener("click", () => {
   });
 });
 
+btnBuildReel.addEventListener("click", () => {
+  if (engine.buildReelTour.active) {
+    engine.stopBuildReelTour();
+    return;
+  }
+  btnBuildReel.classList.add("active");
+  btnBuildReel.textContent = "⏹ Stop Build";
+  showToast("🏗️ Recording Construction Replay Reel!");
+  engine.startBuildReelTour(
+    allPlots,
+    (tag, name) => {
+      reelTagText.textContent = tag;
+      reelNameText.textContent = name;
+      reelBanner.classList.remove("hidden");
+      reelBanner.style.animation = "none";
+      void reelBanner.offsetWidth;
+      reelBanner.style.animation = "popIn 0.25s ease-out";
+    },
+    () => {
+      btnBuildReel.classList.remove("active");
+      btnBuildReel.textContent = "🏗️ Build Reel";
+      reelBanner.classList.add("hidden");
+    }
+  );
+});
+
 document.getElementById("reel-exit").addEventListener("click", () => {
   engine.stopProReelTour();
   engine.stopDroneView();
+  engine.stopBuildReelTour();
   engine.autoSpin = false;
   reelControls.classList.add("hidden");
   reelBanner.classList.add("hidden");
