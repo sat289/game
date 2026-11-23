@@ -8,6 +8,7 @@ export const FOUR_PLOT_TYPES = new Set([
   "hospital",
   "school",
   "bus_stand",
+  "auto_stand",
   "petrol_bunk",
   "srmt_mall",
   "apple_store",
@@ -28,6 +29,7 @@ export const BUILDING_LABELS = {
   school: "🏫 పాఠశాల • GRAND SCHOOL (4 PLOTS)",
   hospital: "🏥 ఆసుపత్రి • SUPER HOSPITAL (4 PLOTS)",
   bus_stand: "🚌 బస్ స్టాండ్ • APSRTC TERMINAL (4 PLOTS)",
+  auto_stand: "🛺 ఆటో స్టాండ్ • TRANSPORT OFFICE (4 PLOTS)",
   police_station: "🚓 పోలీస్ స్టేషన్ • POLICE HQ (4 PLOTS)",
   petrol_bunk: "⛽ పెట్రోల్ బంక్ • FUEL PLAZA (4 PLOTS)",
   srmt_mall: "🏬 SRMT మాల్ • SRMT MALL (4 PLOTS)",
@@ -209,6 +211,7 @@ export class FollowerTownEngine {
     this.landmarkActors = [];
     this.petrolSimulations = [];
     this.busSimulations = [];
+    this.autoSimulations = [];
     this.policeSimulations = [];
     this.ambulanceSimulations = [];
     this.blockedRoadZones = [];
@@ -337,7 +340,15 @@ export class FollowerTownEngine {
       jerseyYellow: new THREE.MeshLambertMaterial({ color: 0xfacc15 }),
       jerseyBlue: new THREE.MeshLambertMaterial({ color: 0x0ea5e9 }),
       ballRed: new THREE.MeshBasicMaterial({ color: 0xdc2626 }),
-      wheelBlack: new THREE.MeshLambertMaterial({ color: 0x0f172a })
+      wheelBlack: new THREE.MeshLambertMaterial({ color: 0x0f172a }),
+      rimSilver: new THREE.MeshLambertMaterial({ color: 0xcbd5e1 }),
+      autoYellow: new THREE.MeshLambertMaterial({ color: 0xfacc15 }),
+      autoGreen: new THREE.MeshLambertMaterial({ color: 0x15803d }),
+      autoCanopy: new THREE.MeshLambertMaterial({ color: 0x1e293b }),
+      busWindshield: new THREE.MeshLambertMaterial({ color: 0x0f172a }),
+      busLedBoard: new THREE.MeshBasicMaterial({ color: 0xf59e0b }),
+      chrome: new THREE.MeshLambertMaterial({ color: 0xe2e8f0 }),
+      clothBlue: new THREE.MeshLambertMaterial({ color: 0x38bdf8 })
     };
   }
 
@@ -852,32 +863,257 @@ export class FollowerTownEngine {
     this.setTimeOfDay(this.timeOfDay);
   }
 
+  /**
+   * Realistic 3D Indian 3-Wheeler Auto Rickshaw (AP/TS style)
+   * Features: 1 front wheel + mudguard, 2 rear wheels, tapered front nose, windshield,
+   * open passenger cabin with seats, driver seat + handlebar, roof canopy & night headlight!
+   */
+  _makeRealAutoMesh(keepOnPlot = true, includeSeatedPassengers = false) {
+    const auto = new THREE.Group();
+
+    // 3 Realistic Wheels (1 front center, 2 rear)
+    const wheelGeo = new THREE.CylinderGeometry(0.24, 0.24, 0.14, 10);
+    const rimGeo = new THREE.CylinderGeometry(0.11, 0.11, 0.16, 8);
+    const addWheel = (x, z) => {
+      const wg = new THREE.Group();
+      const tire = new THREE.Mesh(wheelGeo, this.mat.wheelBlack);
+      tire.rotation.z = Math.PI / 2;
+      const rim = new THREE.Mesh(rimGeo, this.mat.rimSilver);
+      rim.rotation.z = Math.PI / 2;
+      wg.add(tire, rim);
+      wg.position.set(x, 0.24, z);
+      auto.add(wg);
+    };
+    addWheel(0, 0.85);       // Single front wheel
+    addWheel(-0.52, -0.62);  // Rear left wheel
+    addWheel(0.52, -0.62);   // Rear right wheel
+
+    // Floor Chassis & Front Mudguard
+    const chassis = new THREE.Mesh(new THREE.BoxGeometry(1.04, 0.14, 1.85), this.mat.charcoal);
+    chassis.position.set(0, 0.34, 0.0);
+    const mudguard = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.16, 0.44), this.mat.autoYellow);
+    mudguard.position.set(0, 0.44, 0.88);
+    auto.add(chassis, mudguard);
+
+    // Tapered Front Nose / Shield (Yellow lower + green AP stripe)
+    const noseLower = new THREE.Mesh(new THREE.BoxGeometry(0.84, 0.56, 0.46), this.mat.autoYellow);
+    noseLower.position.set(0, 0.68, 0.72);
+    const noseTrim = new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.14, 0.48), this.mat.autoGreen);
+    noseTrim.position.set(0, 0.52, 0.72);
+
+    // Front Windshield Frame + Clear Glass
+    const windFrame = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.52, 0.1), this.mat.autoYellow);
+    windFrame.position.set(0, 1.18, 0.68);
+    windFrame.rotation.x = -0.18;
+    const windGlass = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.38, 0.12), this.mat.glass);
+    windGlass.position.set(0, 1.18, 0.69);
+    windGlass.rotation.x = -0.18;
+
+    // Rear Engine Body & Back Panel (Yellow + Green stripe)
+    const rearBody = new THREE.Mesh(new THREE.BoxGeometry(1.12, 0.72, 0.74), this.mat.autoYellow);
+    rearBody.position.set(0, 0.76, -0.58);
+    const rearStripe = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.18, 0.76), this.mat.autoGreen);
+    rearStripe.position.set(0, 0.54, -0.58);
+
+    // Rear Backrest + Side Half-Doors (Open Passenger Cabin!)
+    const rearBack = new THREE.Mesh(new THREE.BoxGeometry(1.08, 0.6, 0.14), this.mat.autoYellow);
+    rearBack.position.set(0, 1.16, -0.88);
+    const seatBack = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.42, 0.36), this.mat.charcoal);
+    seatBack.position.set(0, 0.65, -0.45);
+    const driverSeat = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.34, 0.32), this.mat.charcoal);
+    driverSeat.position.set(0, 0.62, 0.25);
+
+    // 4 Thin Roof Support Pillars + Curved Dark Canvas Roof Canopy
+    const pilGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.68, 5);
+    [[-0.4, 0.58], [0.4, 0.58], [-0.48, -0.82], [0.48, -0.82]].forEach(([px, pz]) => {
+      const pil = new THREE.Mesh(pilGeo, this.mat.charcoal);
+      pil.position.set(px, 1.24, pz);
+      auto.add(pil);
+    });
+    const canopy = new THREE.Mesh(new THREE.BoxGeometry(1.06, 0.18, 1.62), this.mat.autoCanopy);
+    canopy.position.set(0, 1.56, -0.12);
+    const canopyTop = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.1, 1.44), this.mat.autoYellow);
+    canopyTop.position.set(0, 1.66, -0.12);
+
+    // Single Round Center Headlight (classic auto look!)
+    const lampHousing = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.08, 8), this.mat.chrome);
+    lampHousing.rotation.x = Math.PI / 2;
+    lampHousing.position.set(0, 0.74, 0.96);
+
+    auto.add(noseLower, noseTrim, windFrame, windGlass, rearBody, rearStripe, rearBack, seatBack, driverSeat, canopy, canopyTop, lampHousing);
+
+    // Driver inside auto (optional toggleable passengers for live trips!)
+    const driver = this._createCharacter({ shirtMat: this.mat.khakiUniform, pantsMat: this.mat.darkPants, scale: 0.68 });
+    driver.position.set(0, 0.48, 0.22);
+    auto.add(driver);
+
+    if (includeSeatedPassengers) {
+      const paxGroup = new THREE.Group();
+      const p1 = this._createCharacter({ shirtMat: this.mat.wallCoral, pantsMat: this.mat.darkPants, scale: 0.65 });
+      p1.position.set(-0.24, 0.52, -0.42);
+      const p2 = this._createCharacter({ shirtMat: this.mat.wallBlue, pantsMat: this.mat.darkPants, scale: 0.65 });
+      p2.position.set(0.24, 0.52, -0.42);
+      paxGroup.add(p1, p2);
+      paxGroup.visible = false;
+      auto.add(paxGroup);
+      auto.userData.seatedPassengers = paxGroup;
+    }
+
+    // Night Headlight + Road Beam + Rear Taillights
+    const hlGroup = new THREE.Group();
+    hlGroup.userData.keepOnPlot = keepOnPlot;
+    const hlGlow = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.04, 8), this.mat.lampBulbNight);
+    hlGlow.rotation.x = Math.PI / 2;
+    hlGlow.position.set(0, 0.74, 1.0);
+    const tlGeo = new THREE.BoxGeometry(0.16, 0.12, 0.06);
+    const tlL = new THREE.Mesh(tlGeo, this.mat.taillight);
+    tlL.position.set(-0.38, 0.58, -0.96);
+    const tlR = tlL.clone();
+    tlR.position.x = 0.38;
+    const beam = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 2.8), this.mat.headlightBeam);
+    beam.rotation.x = -Math.PI / 2;
+    beam.position.set(0, 0.09, 2.35);
+
+    hlGroup.add(hlGlow, tlL, tlR, beam);
+    hlGroup.visible = this.timeOfDay === "night";
+    auto.add(hlGroup);
+    this.vehicleHeadlights.push(hlGroup);
+
+    return auto;
+  }
+
+  /**
+   * Realistic 3D Indian APSRTC / Express Bus
+   * Features: 6 wheels, sloped front windshield, amber LED destination board, side passenger windows,
+   * side mirrors, front grille & chrome bumper, rooftop luggage rack + AC unit, night headlights & window glow!
+   */
+  _makeRealBusMesh(color = 0xdc2626, keepOnPlot = true) {
+    const bus = new THREE.Group();
+    const len = 4.6;
+    const w = 1.48;
+    const h = 1.65;
+
+    // 4 Realistic Bus Wheels (front & rear axle)
+    const wheelGeo = new THREE.CylinderGeometry(0.32, 0.32, 0.2, 10);
+    const rimGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.22, 8);
+    [[-0.72, 1.45], [0.72, 1.45], [-0.72, -1.35], [0.72, -1.35]].forEach(([wx, wz]) => {
+      const tire = new THREE.Mesh(wheelGeo, this.mat.wheelBlack);
+      tire.rotation.z = Math.PI / 2;
+      tire.position.set(wx, 0.32, wz);
+      const rim = new THREE.Mesh(rimGeo, this.mat.rimSilver);
+      rim.rotation.z = Math.PI / 2;
+      rim.position.set(wx, 0.32, wz);
+      bus.add(tire, rim);
+    });
+
+    // Main Lower & Upper Bus Body
+    const bodyMat = new THREE.MeshLambertMaterial({ color });
+    const lowerBody = new THREE.Mesh(new THREE.BoxGeometry(w, 0.72, len), bodyMat);
+    lowerBody.position.set(0, 0.68, 0);
+
+    const whiteStripe = new THREE.Mesh(new THREE.BoxGeometry(w + 0.03, 0.24, len + 0.02), this.mat.wallWhite);
+    whiteStripe.position.set(0, 1.08, 0);
+
+    const upperBody = new THREE.Mesh(new THREE.BoxGeometry(w, 0.78, len - 0.1), bodyMat);
+    upperBody.position.set(0, 1.56, -0.02);
+
+    // Front Windshield + Amber LED Route Destination Board
+    const windshield = new THREE.Mesh(new THREE.BoxGeometry(w - 0.16, 0.62, 0.08), this.mat.busWindshield);
+    windshield.position.set(0, 1.48, len / 2 - 0.01);
+    windshield.rotation.x = -0.1;
+
+    const ledBoard = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.16, 0.08), this.mat.busLedBoard);
+    ledBoard.position.set(0, 1.84, len / 2 - 0.01);
+
+    // Front Grille & Chrome Bumper
+    const grille = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.26, 0.08), this.mat.charcoal);
+    grille.position.set(0, 0.68, len / 2 + 0.01);
+    const bumper = new THREE.Mesh(new THREE.BoxGeometry(w + 0.08, 0.18, 0.14), this.mat.chrome);
+    bumper.position.set(0, 0.42, len / 2 + 0.04);
+
+    // Side Mirrors
+    [-0.84, 0.84].forEach((mx) => {
+      const mirror = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.26, 0.12), this.mat.charcoal);
+      mirror.position.set(mx, 1.42, len / 2 - 0.12);
+      bus.add(mirror);
+    });
+
+    // Row of 5 Individual Side Passenger Windows on BOTH Sides + Rear Window
+    const winMat = this.timeOfDay === "night" ? this.mat.windowNight : this.mat.busWindshield;
+    const sideWinGeo = new THREE.BoxGeometry(0.06, 0.52, 0.64);
+    for (let wz = -1.65; wz <= 1.55; wz += 0.8) {
+      const wl = new THREE.Mesh(sideWinGeo, winMat);
+      wl.position.set(-w / 2 - 0.01, 1.52, wz);
+      wl.userData.isWindow = true;
+      const wr = new THREE.Mesh(sideWinGeo, winMat);
+      wr.position.set(w / 2 + 0.01, 1.52, wz);
+      wr.userData.isWindow = true;
+      bus.add(wl, wr);
+    }
+    const rearWin = new THREE.Mesh(new THREE.BoxGeometry(w - 0.22, 0.55, 0.08), winMat);
+    rearWin.position.set(0, 1.52, -len / 2 + 0.02);
+    rearWin.userData.isWindow = true;
+
+    // Rooftop AC Pod & Luggage Carrier Rail
+    const roofAc = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.22, 1.5), this.mat.wallWhite);
+    roofAc.position.set(0, 2.04, 0.2);
+    const rack = new THREE.Mesh(new THREE.BoxGeometry(w - 0.18, 0.14, 2.0), this.mat.chrome);
+    rack.position.set(0, 2.0, -1.1);
+
+    // Passenger Entry Door cutout on Left Side (+X / -X front)
+    const door = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.25, 0.58), this.mat.charcoal);
+    door.position.set(w / 2 + 0.01, 1.05, 1.72);
+
+    bus.add(lowerBody, whiteStripe, upperBody, windshield, ledBoard, grille, bumper, rearWin, roofAc, rack, door);
+
+    // Night Headlights + Dual Road Beams + Taillights
+    const hlGroup = new THREE.Group();
+    hlGroup.userData.keepOnPlot = keepOnPlot;
+    const hlGeo = new THREE.BoxGeometry(0.24, 0.16, 0.08);
+    const hlL = new THREE.Mesh(hlGeo, this.mat.lampBulbNight);
+    hlL.position.set(-0.52, 0.64, len / 2 + 0.03);
+    const hlR = hlL.clone();
+    hlR.position.x = 0.52;
+
+    const tlL = new THREE.Mesh(hlGeo, this.mat.taillight);
+    tlL.position.set(-0.52, 0.64, -len / 2 - 0.02);
+    const tlR = tlL.clone();
+    tlR.position.x = 0.52;
+
+    const beam = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 4.0), this.mat.headlightBeam);
+    beam.rotation.x = -Math.PI / 2;
+    beam.position.set(0, 0.09, len / 2 + 2.05);
+
+    hlGroup.add(hlL, hlR, tlL, tlR, beam);
+    hlGroup.visible = this.timeOfDay === "night";
+    bus.add(hlGroup);
+    this.vehicleHeadlights.push(hlGroup);
+
+    return bus;
+  }
+
   _makeVehicleMesh(isBus, isAuto, color, keepOnPlot = true) {
+    if (isAuto) return this._makeRealAutoMesh(keepOnPlot, false);
+    if (isBus) return this._makeRealBusMesh(color || 0xdc2626, keepOnPlot);
+
     const car = new THREE.Group();
-    const bodyColor = isAuto ? 0xfacc15 : isBus ? (color || 0xdc2626) : color;
-    const len = isBus ? 3.6 : isAuto ? 1.45 : 2.15;
-    const h = isBus ? 1.42 : isAuto ? 1.02 : 0.74;
-    const w = isBus ? 1.2 : isAuto ? 0.88 : 1.04;
+    const len = 2.15;
+    const h = 0.74;
+    const w = 1.04;
 
     const body = new THREE.Mesh(
       new THREE.BoxGeometry(w, h, len),
-      new THREE.MeshLambertMaterial({ color: bodyColor })
+      new THREE.MeshLambertMaterial({ color })
     );
     body.position.y = h / 2 + 0.2;
     car.add(body);
 
-    if (isBus) {
-      const stripe = new THREE.Mesh(new THREE.BoxGeometry(w + 0.04, 0.28, len + 0.02), this.mat.wallWhite);
-      stripe.position.y = h * 0.72;
-      car.add(stripe);
-    } else {
-      const cabin = new THREE.Mesh(
-        new THREE.BoxGeometry(w * 0.85, 0.45, len * 0.55),
-        new THREE.MeshLambertMaterial({ color: isAuto ? 0x15803d : 0xe2e8f0 })
-      );
-      cabin.position.y = h + 0.35;
-      car.add(cabin);
-    }
+    const cabin = new THREE.Mesh(
+      new THREE.BoxGeometry(w * 0.85, 0.45, len * 0.55),
+      new THREE.MeshLambertMaterial({ color: 0xe2e8f0 })
+    );
+    cabin.position.y = h + 0.35;
+    car.add(cabin);
 
     const hlGroup = new THREE.Group();
     hlGroup.userData.keepOnPlot = keepOnPlot;
@@ -1013,6 +1249,7 @@ export class FollowerTownEngine {
       this.landmarkActors = this.landmarkActors.filter((a) => a.plotId !== plotId);
       this.petrolSimulations = this.petrolSimulations.filter((s) => s.plotId !== plotId);
       this.busSimulations = this.busSimulations.filter((s) => s.plotId !== plotId);
+      this.autoSimulations = this.autoSimulations.filter((s) => s.plotId !== plotId);
       this.policeSimulations = this.policeSimulations.filter((s) => s.plotId !== plotId);
       this.ambulanceSimulations = this.ambulanceSimulations.filter((s) => s.plotId !== plotId);
       this.blockedRoadZones = this.blockedRoadZones.filter((z) => z.plotId !== plotId);
@@ -1155,6 +1392,7 @@ export class FollowerTownEngine {
       school: "పాఠశాల • GRAND SCHOOL",
       hospital: "ఆసుపత్రి • SUPER HOSPITAL",
       bus_stand: "బస్ స్టాండ్ • APSRTC TERMINAL",
+      auto_stand: "ఆటో స్టాండ్ • TRANSPORT OFFICE",
       ground: "గ్రౌండ్ • CRICKET STADIUM",
       police_station: "పోలీస్ స్టేషన్ • POLICE HQ",
       petrol_bunk: "పెట్రోల్ బంక్ • FUEL PLAZA",
@@ -1494,6 +1732,96 @@ export class FollowerTownEngine {
       return g;
     }
 
+    // 4-PLOT TRANSPORT OFFICE & AUTO STAND (Real 3-Wheeler Autos + Drivers Cleaning + Autos Driving Out With Passengers!)
+    if (type === "auto_stand") {
+      // Transport Office Building at Back
+      const office = new THREE.Mesh(new THREE.BoxGeometry(11.8, 3.8, 3.4), this.mat.wallCream);
+      office.position.set(0, 1.95, -4.6);
+      const officeRoof = new THREE.Mesh(new THREE.BoxGeometry(12.2, 0.4, 3.8), this.mat.navy);
+      officeRoof.position.set(0, 4.0, -4.6);
+      const yellowBand = new THREE.Mesh(new THREE.BoxGeometry(12.2, 0.28, 3.85), this.mat.autoYellow);
+      yellowBand.position.set(0, 3.65, -4.6);
+
+      // Office Front Counter & Windows
+      for (let wx = -3.8; wx <= 3.8; wx += 1.9) {
+        const w = new THREE.Mesh(this.geo.win, winMat);
+        w.position.set(wx, 2.2, -2.85);
+        w.userData.isWindow = true;
+        g.add(w);
+      }
+      const door = new THREE.Mesh(this.geo.door, this.mat.wood);
+      door.position.set(0, 0.8, -2.85);
+
+      // Sheltered Auto Stand Canopy (Left Bay for Cleaning & Parking)
+      const standRoof = new THREE.Mesh(new THREE.BoxGeometry(6.8, 0.24, 4.6), this.mat.autoGreen);
+      standRoof.position.set(-3.2, 2.9, 1.0);
+      const standTrim = new THREE.Mesh(new THREE.BoxGeometry(6.9, 0.16, 4.7), this.mat.autoYellow);
+      standTrim.position.set(-3.2, 2.76, 1.0);
+      [[-6.2, -1.0], [-0.2, -1.0], [-6.2, 3.0], [-0.2, 3.0]].forEach(([px, pz]) => {
+        const col = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 2.8, 6), this.mat.wallWhite);
+        col.position.set(px, 1.4, pz);
+        g.add(col);
+      });
+
+      // 2 Parked Real Autos in the Cleaning Bay + 2 Drivers ACTIVELY CLEANING THEM with blue cloths!
+      const parkedAuto1 = this._makeRealAutoMesh(true, false);
+      parkedAuto1.position.set(-4.6, 0.08, 1.1);
+      parkedAuto1.rotation.y = 0;
+      const parkedAuto2 = this._makeRealAutoMesh(true, false);
+      parkedAuto2.position.set(-1.8, 0.08, 1.1);
+      parkedAuto2.rotation.y = 0;
+
+      // Water bucket next to cleaning bay
+      const bucket = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.18, 0.36, 8), this.mat.wallBlue);
+      bucket.position.set(-3.2, 0.25, 2.4);
+
+      const makeCleanerDriver = (ax, az, phase) => {
+        const drv = this._createCharacter({ shirtMat: this.mat.khakiUniform, pantsMat: this.mat.darkPants, scale: 0.96 });
+        const cloth = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.16, 0.22), this.mat.clothBlue);
+        cloth.position.set(0.28, 0.78, 0.22);
+        drv.add(cloth);
+        g.add(drv);
+        this.landmarkActors.push({
+          plotId, mesh: drv, mode: "clean_auto",
+          baseX: ax, baseZ: az, range: 0.65, speed: 3.4, phase
+        });
+      };
+      makeCleanerDriver(-5.45, 1.2, 0);
+      makeCleanerDriver(-0.95, 1.2, 1.9);
+
+      // 2 LIVE REAL AUTOS THAT PICK UP PASSENGERS AT STAND -> DRIVE OUT ONTO CITY ROADS -> LOOP AROUND CITY -> RETURN!
+      const liveAuto1 = this._makeRealAutoMesh(true, true);
+      g.add(liveAuto1);
+      const pax1 = [this.mat.wallCoral, this.mat.wallBlue].map((sm) => {
+        const p = this._createCharacter({ shirtMat: sm, pantsMat: this.mat.darkPants, scale: 0.92 });
+        g.add(p);
+        return p;
+      });
+      this.autoSimulations.push({
+        plotId, auto: liveAuto1, passengers: pax1,
+        stopX: 2.2, stopZ: 2.0, waitX: 2.2, waitZ: -0.8,
+        roadLoopR: this.BLOCK_STEP, phaseOffset: 0
+      });
+
+      const liveAuto2 = this._makeRealAutoMesh(true, true);
+      g.add(liveAuto2);
+      const pax2 = [this.mat.wallGold, this.mat.wallMint].map((sm) => {
+        const p = this._createCharacter({ shirtMat: sm, pantsMat: this.mat.darkPants, scale: 0.92 });
+        g.add(p);
+        return p;
+      });
+      this.autoSimulations.push({
+        plotId, auto: liveAuto2, passengers: pax2,
+        stopX: 4.8, stopZ: 2.0, waitX: 4.8, waitZ: -0.8,
+        roadLoopR: this.BLOCK_STEP, phaseOffset: 10.0
+      });
+
+      g.add(office, officeRoof, yellowBand, door, standRoof, standTrim, parkedAuto1, parkedAuto2, bucket);
+      g.userData.labelY = 7.4;
+      return g;
+    }
+
+    // 4-PLOT APSRTC BUS TERMINAL (Real 3D Buses -> Wait until FULL -> Drive OUT onto City Roads around town -> Return!)
     if (type === "bus_stand") {
       const terminal = new THREE.Mesh(new THREE.BoxGeometry(12.8, 4.2, 3.2), this.mat.wallCream);
       terminal.position.set(0, 2.15, -4.8);
@@ -1511,35 +1839,38 @@ export class FollowerTownEngine {
         g.add(col);
       });
 
-      const parkedBus = this._makeVehicleMesh(true, false, 0x16a34a, true);
-      parkedBus.position.set(-4.6, 0.1, 4.8);
+      // Parked Green Palle Velugu Real Bus at side bay
+      const parkedBus = this._makeRealBusMesh(0x16a34a, true);
+      parkedBus.position.set(-4.2, 0.08, 4.8);
       parkedBus.rotation.y = Math.PI / 2;
       g.add(parkedBus);
 
-      const liveBus1 = this._makeVehicleMesh(true, false, 0xdc2626, true);
-      liveBus1.rotation.y = Math.PI / 2;
+      // LIVE REAL BUS 1 (Red APSRTC Express): Boards 3 passengers until FULL -> Drives OUT onto city roads around the city!
+      const liveBus1 = this._makeRealBusMesh(0xdc2626, true);
       g.add(liveBus1);
       const passengers1 = [this.mat.wallCoral, this.mat.wallBlue, this.mat.wallGold].map((sm) => {
-        const p = this._createCharacter({ shirtMat: sm, pantsMat: this.mat.darkPants, scale: 0.98 });
+        const p = this._createCharacter({ shirtMat: sm, pantsMat: this.mat.darkPants, scale: 0.96 });
         g.add(p);
         return p;
       });
       this.busSimulations.push({
         plotId, bus: liveBus1, passengers: passengers1,
-        laneZ: 1.6, stopX: 0.5, waitZ: -1.4, phaseOffset: 0
+        bayX: 0.4, bayZ: 2.0, waitZ: -1.3,
+        roadLoopR: this.BLOCK_STEP, phaseOffset: 0
       });
 
-      const liveBus2 = this._makeVehicleMesh(true, false, 0x2563eb, true);
-      liveBus2.rotation.y = Math.PI / 2;
+      // LIVE REAL BUS 2 (Blue APSRTC Super Luxury): Boards 3 passengers until FULL -> Drives OUT onto city roads!
+      const liveBus2 = this._makeRealBusMesh(0x2563eb, true);
       g.add(liveBus2);
-      const passengers2 = [this.mat.wallMint, this.mat.khakiUniform].map((sm) => {
-        const p = this._createCharacter({ shirtMat: sm, pantsMat: this.mat.darkPants, scale: 0.98 });
+      const passengers2 = [this.mat.wallMint, this.mat.khakiUniform, this.mat.wallCoral].map((sm) => {
+        const p = this._createCharacter({ shirtMat: sm, pantsMat: this.mat.darkPants, scale: 0.96 });
         g.add(p);
         return p;
       });
       this.busSimulations.push({
         plotId, bus: liveBus2, passengers: passengers2,
-        laneZ: 3.6, stopX: 1.2, waitZ: -1.4, phaseOffset: 5.5
+        bayX: 3.6, bayZ: 2.0, waitZ: -1.3,
+        roadLoopR: this.BLOCK_STEP, phaseOffset: 11.0
       });
 
       g.add(terminal, roof, yellowTrim);
@@ -2254,43 +2585,113 @@ export class FollowerTownEngine {
         }
       }
 
+      // Helper to drive a vehicle smoothly along the real city road loop outside a 4-plot stand!
+      // Local road rectangle around the 4-plot block & neighboring city street:
+      // South road z = +9.5, East road x = +9.5 (or +28.5), North road z = -9.5, West road x = -9.5
+      const driveCityRoadLoop = (mesh, progress, startX, startZ, loopW = 28.5, loopZ = 9.5) => {
+        // 0.00 -> 0.10: Exit bay onto South Road (+9.5 Z)
+        // 0.10 -> 0.35: Drive East along city road (+9.5 Z -> x = +loopW)
+        // 0.35 -> 0.55: Turn North along city road (x = +loopW, z: +9.5 -> -9.5)
+        // 0.55 -> 0.80: Drive West along city road (z = -9.5, x: +loopW -> -9.5)
+        // 0.80 -> 0.92: Drive South back to South Road (x = -9.5, z: -9.5 -> +9.5)
+        // 0.92 -> 1.00: Pull back into Stand Bay (startX, startZ)
+        mesh.visible = true;
+        if (progress < 0.1) {
+          const t = progress / 0.1;
+          mesh.position.set(startX, 0.08, THREE.MathUtils.lerp(startZ, loopZ, t));
+          mesh.rotation.y = 0;
+        } else if (progress < 0.35) {
+          const t = (progress - 0.1) / 0.25;
+          mesh.position.set(THREE.MathUtils.lerp(startX, loopW, t), 0.08, loopZ);
+          mesh.rotation.y = Math.PI / 2;
+        } else if (progress < 0.55) {
+          const t = (progress - 0.35) / 0.2;
+          mesh.position.set(loopW, 0.08, THREE.MathUtils.lerp(loopZ, -loopZ, t));
+          mesh.rotation.y = Math.PI;
+        } else if (progress < 0.8) {
+          const t = (progress - 0.55) / 0.25;
+          mesh.position.set(THREE.MathUtils.lerp(loopW, -9.5, t), 0.08, -loopZ);
+          mesh.rotation.y = -Math.PI / 2;
+        } else if (progress < 0.92) {
+          const t = (progress - 0.8) / 0.12;
+          mesh.position.set(-9.5, 0.08, THREE.MathUtils.lerp(-loopZ, loopZ, t));
+          mesh.rotation.y = 0;
+        } else {
+          const t = (progress - 0.92) / 0.08;
+          const midX = THREE.MathUtils.lerp(-9.5, startX, Math.min(1, t * 1.4));
+          const midZ = THREE.MathUtils.lerp(loopZ, startZ, Math.max(0, (t - 0.4) / 0.6));
+          mesh.position.set(midX, 0.08, midZ);
+          mesh.rotation.y = t < 0.5 ? Math.PI / 2 : Math.PI;
+        }
+      };
+
+      // LIVE APSRTC BUS STAND -> BOARD UNTIL FULL -> DRIVE OUT ONTO CITY ROADS!
       for (const bsim of this.busSimulations) {
-        const cycle = (elapsed + bsim.phaseOffset) % 11.0;
-        if (cycle < 2.4) {
-          const p = cycle / 2.4;
+        const cycle = (elapsed + bsim.phaseOffset) % 22.0; // 22-sec full city trip!
+        if (cycle < 6.5) {
+          // Bus parked in bay; passengers walk in one-by-one until bus is FULL!
           bsim.bus.visible = true;
-          bsim.bus.position.set(-6.5 + (bsim.stopX + 6.5) * p, 0.1, bsim.laneZ);
+          bsim.bus.position.set(bsim.bayX, 0.08, bsim.bayZ);
+          bsim.bus.rotation.y = 0;
           bsim.passengers.forEach((pax, i) => {
-            pax.visible = true;
-            pax.position.set(bsim.stopX - 1.2 + i * 1.1, 0.14, bsim.waitZ);
-            pax.rotation.y = 0;
-          });
-        } else if (cycle < 7.2) {
-          bsim.bus.visible = true;
-          bsim.bus.position.set(bsim.stopX, 0.1, bsim.laneZ);
-          const boardTime = cycle - 2.4;
-          bsim.passengers.forEach((pax, i) => {
-            const walkProg = (boardTime - i * 1.1) / 1.4;
+            const walkProg = (cycle - i * 1.5) / 1.8;
             if (walkProg < 0) {
               pax.visible = true;
-              pax.position.set(bsim.stopX - 1.2 + i * 1.1, 0.14, bsim.waitZ);
+              pax.position.set(bsim.bayX - 1.1 + i * 1.0, 0.14, bsim.waitZ);
+              pax.rotation.y = 0;
             } else if (walkProg < 1) {
               pax.visible = true;
-              const px = THREE.MathUtils.lerp(bsim.stopX - 1.2 + i * 1.1, bsim.stopX + 0.4, walkProg);
-              const pz = THREE.MathUtils.lerp(bsim.waitZ, bsim.laneZ, walkProg);
+              const px = THREE.MathUtils.lerp(bsim.bayX - 1.1 + i * 1.0, bsim.bayX + 0.7, walkProg);
+              const pz = THREE.MathUtils.lerp(bsim.waitZ, bsim.bayZ + 1.2, walkProg);
+              pax.position.set(px, 0.14 + Math.abs(Math.sin(elapsed * 10)) * 0.14, pz);
+            } else {
+              pax.visible = false; // Inside bus!
+            }
+          });
+        } else {
+          // Bus is FULL -> Drives OUT of Bus Stand onto City Roads and tours the city!
+          bsim.passengers.forEach((pax) => (pax.visible = false));
+          const roadProg = (cycle - 6.5) / 15.5;
+          driveCityRoadLoop(bsim.bus, roadProg, bsim.bayX, bsim.bayZ, 28.5, 9.5);
+        }
+      }
+
+      // LIVE TRANSPORT OFFICE & AUTO STAND -> PASSENGERS BOARD REAL AUTOS -> DRIVE OUT ONTO CITY ROADS!
+      for (const asim of this.autoSimulations) {
+        const cycle = (elapsed + asim.phaseOffset) % 20.0; // 20-sec full city passenger trip!
+        if (cycle < 5.0) {
+          // Auto parked at stand; passengers walk up and get INSIDE the open auto cabin!
+          asim.auto.visible = true;
+          asim.auto.position.set(asim.stopX, 0.08, asim.stopZ);
+          asim.auto.rotation.y = 0;
+          let boardedCount = 0;
+          asim.passengers.forEach((pax, i) => {
+            const walkProg = (cycle - i * 1.4) / 1.6;
+            if (walkProg < 0) {
+              pax.visible = true;
+              pax.position.set(asim.waitX - 0.5 + i * 1.0, 0.14, asim.waitZ);
+              pax.rotation.y = 0;
+            } else if (walkProg < 1) {
+              pax.visible = true;
+              const px = THREE.MathUtils.lerp(asim.waitX - 0.5 + i * 1.0, asim.stopX, walkProg);
+              const pz = THREE.MathUtils.lerp(asim.waitZ, asim.stopZ - 0.3, walkProg);
               pax.position.set(px, 0.14 + Math.abs(Math.sin(elapsed * 10)) * 0.14, pz);
             } else {
               pax.visible = false;
+              boardedCount++;
             }
           });
-        } else if (cycle < 10.0) {
-          const p = (cycle - 7.2) / 2.8;
-          bsim.bus.visible = true;
-          bsim.bus.position.set(bsim.stopX + (6.8 - bsim.stopX) * p, 0.1, bsim.laneZ);
-          bsim.passengers.forEach((pax) => (pax.visible = false));
+          if (asim.auto.userData.seatedPassengers) {
+            asim.auto.userData.seatedPassengers.visible = boardedCount > 0;
+          }
         } else {
-          bsim.bus.visible = false;
-          bsim.passengers.forEach((pax) => (pax.visible = false));
+          // Passengers seated inside -> Auto drives OUT of Auto Stand onto City Roads!
+          asim.passengers.forEach((pax) => (pax.visible = false));
+          if (asim.auto.userData.seatedPassengers) {
+            asim.auto.userData.seatedPassengers.visible = true;
+          }
+          const roadProg = (cycle - 5.0) / 15.0;
+          driveCityRoadLoop(asim.auto, roadProg, asim.stopX, asim.stopZ, 28.5, 9.5);
         }
       }
 
@@ -2408,6 +2809,11 @@ export class FollowerTownEngine {
         } else if (a.mode === "guard") {
           a.mesh.position.set(a.baseX, 0.2, a.baseZ);
           a.mesh.rotation.y = Math.sin(t * 0.6) * 0.5;
+        } else if (a.mode === "clean_auto") {
+          // Driver moves back and forth alongside the auto wiping it clean!
+          const dz = Math.sin(t * 0.65) * a.range;
+          a.mesh.position.set(a.baseX, 0.14 + Math.abs(Math.sin(t * 2.5)) * 0.08, a.baseZ + dz);
+          a.mesh.rotation.y = a.baseX < -3.0 ? Math.PI / 2 : -Math.PI / 2;
         } else if (a.mode === "ball_x") {
           const bx = a.baseX + Math.sin(t) * a.range;
           const by = 0.35 + Math.abs(Math.cos(t * 2)) * 1.3;
