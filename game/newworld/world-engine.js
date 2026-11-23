@@ -146,21 +146,30 @@ export class FollowerTownEngine {
     // Very light fog so buildings stay crystal clear and visible from afar!
     this.scene.fog = new THREE.Fog(0x87ceeb, 180, 520);
 
-    const aspect = container.clientWidth / container.clientHeight;
+    const initW = container.clientWidth || window.innerWidth || 360;
+    const initH = container.clientHeight || window.innerHeight || 640;
+    const aspect = initW / initH;
     this.camera = new THREE.PerspectiveCamera(38, aspect, 1.0, 900);
     this.camera.position.set(62, 68, 62);
 
     // LOW-END DEVICE OPTIMIZED RENDERER:
     // - No heavy real-time shadowMap (saves 60%+ GPU load on budget phones!)
     // - Capped pixelRatio (1.25 max) for buttery smooth 60fps panning
+    // AUTO LOW-RAM DETECTION (2GB–4GB phones get zero-crash ultra-lite mode automatically!)
+    const devMem = navigator.deviceMemory || 4;
+    const cpuCores = navigator.hardwareConcurrency || 4;
+    this.isLowRam = devMem <= 4 || cpuCores <= 4;
+
     this.renderer = new THREE.WebGLRenderer({
-      antialias: false,
+      antialias: !this.isLowRam,
       powerPreference: "high-performance",
       precision: "mediump"
     });
-    this.renderer.setSize(container.clientWidth, container.clientHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
+    this.renderer.setSize(initW, initH);
+    this.renderer.setPixelRatio(this.isLowRam ? 1.0 : Math.min(window.devicePixelRatio || 1, 1.35));
     this.renderer.shadowMap.enabled = false;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.08;
     container.appendChild(this.renderer.domElement);
 
     // FREE-ROAM GOOGLE-MAPS PAN & ZOOM
@@ -208,6 +217,11 @@ export class FollowerTownEngine {
     this.plotHitboxes = [];
     this.lampBulbs = [];
     this.vehicleHeadlights = [];
+    this.fountainJets = [];
+    this.plotSigns = [];      // Distance-culled sprites for low-RAM performance!
+    this.colorMatCache = new Map();
+    this.signTexCache = new Map();
+    this._cullAccum = 0;
     this.sirenLights = [];
     this.landmarkActors = [];
     this.petrolSimulations = [];
@@ -434,6 +448,58 @@ export class FollowerTownEngine {
       cHead: new THREE.BoxGeometry(0.28, 0.28, 0.28),
       cCap: new THREE.BoxGeometry(0.34, 0.14, 0.34)
     };
+  }
+
+  // Cached color material pool (prevents RAM bloat from creating duplicate MeshLambertMaterials)
+  _getColorMat(hex) {
+    if (!this.colorMatCache.has(hex)) {
+      this.colorMatCache.set(hex, new THREE.MeshLambertMaterial({ color: hex }));
+    }
+    return this.colorMatCache.get(hex);
+  }
+
+  // Creates a crisp, RAM-cached architectural facade signboard mounted right on landmark buildings!
+  _makeBuildingBoard(title, subtitle, bgHex = "#1e3a8a", accentHex = "#facc15", w = 6.4, h = 1.15) {
+    const key = `${title}|${subtitle}|${bgHex}|${accentHex}`;
+    let mat = this.signTexCache.get(key);
+    if (!mat) {
+      const c = document.createElement("canvas");
+      c.width = 256;
+      c.height = 64;
+      const ctx = c.getContext("2d");
+      ctx.fillStyle = bgHex;
+      ctx.fillRect(0, 0, 256, 64);
+      ctx.strokeStyle = accentHex;
+      ctx.lineWidth = 4;
+      ctx.strokeRect(3, 3, 250, 58);
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 22px sans-serif";
+      ctx.fillText(title, 128, subtitle ? 24 : 33);
+      if (subtitle) {
+        ctx.fillStyle = accentHex;
+        ctx.font = "bold 14px sans-serif";
+        ctx.fillText(subtitle, 128, 48);
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.generateMipmaps = false;
+      tex.minFilter = THREE.LinearFilter;
+      mat = new THREE.MeshBasicMaterial({ map: tex });
+      this.signTexCache.set(key, mat);
+    }
+    return new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+  }
+
+  // Properly frees GPU memory for unique sprite textures when a plot is rebuilt or demolished!
+  _disposePlotGroup(group) {
+    if (!group) return;
+    group.traverse((obj) => {
+      if (obj.isSprite && obj.material) {
+        if (obj.material.map) obj.material.map.dispose();
+        obj.material.dispose();
+      }
+    });
   }
 
   _initEvents() {
@@ -754,45 +820,145 @@ export class FollowerTownEngine {
     plaqueB.position.z = -1.62;
     g.add(plaqueF, plaqueB);
 
-    // HEROIC SHERU BHAI STATUE FIGURE (Bronze & Gold)
-    const statueBase = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.25, 0.35, 12), this.mat.gold);
-    statueBase.position.y = 4.45;
+    // WHITE MARBLE SHERU BHAI LION STATUE (Exact Match: White 3-Piece Suit, Lion Head & Mane, Black Sunglasses, Gold Chain & Lapel-Grip Pose!)
+    const statueBase = new THREE.Mesh(new THREE.CylinderGeometry(1.28, 1.38, 0.3, 16), this.mat.wallWhite);
+    statueBase.position.y = 4.44;
 
-    // Heroic Stance Legs & Boots
-    const legL = new THREE.Mesh(new THREE.BoxGeometry(0.52, 1.85, 0.56), this.mat.bronze);
-    legL.position.set(-0.38, 5.5, 0);
-    const legR = legL.clone();
-    legR.position.x = 0.38;
+    const marbleMat = this.mat.wallWhite;
+    const suitShadowMat = this.mat.marble; // Subtle off-white contrast for vest & lapels
 
-    // Stylish Mass-Hero Jacket Torso + Gold Collar + Chest Emblem
-    const torso = new THREE.Mesh(new THREE.BoxGeometry(1.52, 1.85, 0.84), this.mat.bronze);
-    torso.position.set(0, 7.25, 0);
-    const collar = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.36, 0.9), this.mat.gold);
-    collar.position.set(0, 8.15, 0);
-    const belt = new THREE.Mesh(new THREE.BoxGeometry(1.56, 0.22, 0.88), this.mat.gold);
-    belt.position.set(0, 6.42, 0);
+    const fallbackStatue = new THREE.Group();
 
-    // Left Arm on Hip + Right Arm Raised in Iconic Hero Salute!
-    const armL = new THREE.Mesh(new THREE.BoxGeometry(0.42, 1.55, 0.44), this.mat.bronze);
-    armL.position.set(-0.98, 7.15, 0);
-    armL.rotation.z = 0.18;
+    // 1. White Dress Shoes & Tall Trousers (confident stance)
+    const shoeGeo = new THREE.BoxGeometry(0.38, 0.24, 0.72);
+    const shoeL = new THREE.Mesh(shoeGeo, marbleMat);
+    shoeL.position.set(-0.46, 4.71, 0.14);
+    shoeL.rotation.y = 0.18;
+    const shoeR = new THREE.Mesh(shoeGeo, marbleMat);
+    shoeR.position.set(0.46, 4.71, 0.14);
+    shoeR.rotation.y = -0.18;
 
-    const armR = new THREE.Mesh(new THREE.BoxGeometry(0.42, 1.75, 0.44), this.mat.bronze);
-    armR.position.set(1.02, 8.45, 0.15);
-    armR.rotation.z = -0.32;
-    const fistR = new THREE.Mesh(new THREE.SphereGeometry(0.28, 8, 8), this.mat.gold);
-    fistR.position.set(1.28, 9.35, 0.2);
+    const legGeo = new THREE.CylinderGeometry(0.24, 0.2, 2.05, 8);
+    const legL = new THREE.Mesh(legGeo, marbleMat);
+    legL.position.set(-0.42, 5.82, 0);
+    legL.rotation.z = -0.05;
+    const legR = new THREE.Mesh(legGeo, marbleMat);
+    legR.position.set(0.42, 5.82, 0);
+    legR.rotation.z = 0.05;
 
-    // Head + Styled Hair + Iconic Cool Sunglasses!
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.54, 12, 12), this.mat.gold);
-    head.position.set(0, 8.75, 0);
-    const hair = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.36, 0.96), this.mat.bronze);
-    hair.position.set(0, 9.18, -0.04);
-    const shades = new THREE.Mesh(new THREE.BoxGeometry(0.84, 0.22, 0.16), this.mat.sunglasses);
-    shades.position.set(0, 8.82, 0.48);
+    // 2. White 3-Piece Suit Torso: Buttoned Waistcoat (Vest) + Open Blazer Jacket + Lapels
+    const hips = new THREE.Mesh(new THREE.BoxGeometry(1.16, 0.45, 0.62), marbleMat);
+    hips.position.set(0, 6.85, 0);
+
+    const vest = new THREE.Mesh(new THREE.BoxGeometry(1.12, 1.48, 0.62), suitShadowMat);
+    vest.position.set(0, 7.68, 0.04);
+
+    // 3 Vest Buttons down the center
+    const btnGeo = new THREE.SphereGeometry(0.055, 6, 6);
+    [7.25, 7.55, 7.85].forEach((by) => {
+      const btn = new THREE.Mesh(btnGeo, this.mat.plinthGrey);
+      btn.position.set(0, by, 0.37);
+      fallbackStatue.add(btn);
+    });
+
+    // Open Suit Jacket Sides & Broad Shoulders
+    const jacketBack = new THREE.Mesh(new THREE.BoxGeometry(1.42, 1.72, 0.48), marbleMat);
+    jacketBack.position.set(0, 7.62, -0.14);
+    const jacketL = new THREE.Mesh(new THREE.BoxGeometry(0.44, 1.65, 0.56), marbleMat);
+    jacketL.position.set(-0.52, 7.58, 0.14);
+    const jacketR = jacketL.clone();
+    jacketR.position.x = 0.52;
+
+    const lapelL = new THREE.Mesh(new THREE.BoxGeometry(0.22, 1.15, 0.12), marbleMat);
+    lapelL.position.set(-0.34, 7.85, 0.41);
+    lapelL.rotation.z = -0.14;
+    const lapelR = lapelL.clone();
+    lapelR.position.x = 0.34;
+    lapelR.rotation.z = 0.14;
+
+    const shoulders = new THREE.Mesh(new THREE.BoxGeometry(1.76, 0.42, 0.68), marbleMat);
+    shoulders.position.set(0, 8.32, 0);
+
+    // 3. Arms Bent at Elbows — Both Hands Gripping the Suit Jacket Lapels!
+    const upperArmGeo = new THREE.CylinderGeometry(0.2, 0.18, 0.92, 8);
+    const uArmL = new THREE.Mesh(upperArmGeo, marbleMat);
+    uArmL.position.set(-0.98, 7.9, 0.05);
+    uArmL.rotation.z = -0.38;
+    const uArmR = new THREE.Mesh(upperArmGeo, marbleMat);
+    uArmR.position.set(0.98, 7.9, 0.05);
+    uArmR.rotation.z = 0.38;
+
+    const foreArmGeo = new THREE.CylinderGeometry(0.17, 0.15, 0.85, 8);
+    const fArmL = new THREE.Mesh(foreArmGeo, marbleMat);
+    fArmL.position.set(-0.82, 7.45, 0.36);
+    fArmL.rotation.z = 1.15;
+    fArmL.rotation.x = 0.35;
+    const fArmR = new THREE.Mesh(foreArmGeo, marbleMat);
+    fArmR.position.set(0.82, 7.45, 0.36);
+    fArmR.rotation.z = -1.15;
+    fArmR.rotation.x = 0.35;
+
+    const handGeo = new THREE.SphereGeometry(0.2, 8, 8);
+    const handL = new THREE.Mesh(handGeo, marbleMat);
+    handL.position.set(-0.42, 7.42, 0.48);
+    const handR = handL.clone();
+    handR.position.x = 0.42;
+
+    // 4. Chunky Gold Chain Hanging Over the White Shirt/Vest!
+    const chain = new THREE.Mesh(new THREE.TorusGeometry(0.36, 0.065, 8, 16, Math.PI), this.mat.gold);
+    chain.rotation.z = Math.PI;
+    chain.position.set(0, 8.36, 0.41);
+
+    // 5. Sculpted White Marble LION HEAD + Full Mane + Black Nose + Cool Black Sunglasses!
+    const lionHead = new THREE.Mesh(new THREE.SphereGeometry(0.56, 12, 12), marbleMat);
+    lionHead.position.set(0, 9.18, 0.08);
+
+    // Lion Snout & Black Nose
+    const snout = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.34, 0.38), marbleMat);
+    snout.position.set(0, 9.04, 0.56);
+    const nose = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.14, 0.12), this.mat.sunglasses);
+    nose.position.set(0, 9.16, 0.74);
+
+    // Sculpted Full Lion Mane Ring (10 layered spikes around the head — ultra low-poly & dramatic!)
+    const maneGroup = new THREE.Group();
+    maneGroup.position.set(0, 9.18, -0.02);
+    const maneTuftGeo = new THREE.DodecahedronGeometry(0.38, 0);
+    for (let m = 0; m < 10; m++) {
+      const ang = (m / 10) * Math.PI * 2;
+      const tuft = new THREE.Mesh(maneTuftGeo, marbleMat);
+      tuft.position.set(Math.cos(ang) * 0.62, Math.sin(ang) * 0.65, -0.08);
+      tuft.scale.set(1.05, 1.15, 0.9);
+      maneGroup.add(tuft);
+    }
+    const maneBack = new THREE.Mesh(new THREE.SphereGeometry(0.76, 10, 10), marbleMat);
+    maneBack.position.set(0, 0.02, -0.22);
+    maneGroup.add(maneBack);
+
+    // Lion Ears peeking through the top of the mane
+    const earGeo = new THREE.SphereGeometry(0.16, 6, 6);
+    const earL = new THREE.Mesh(earGeo, marbleMat);
+    earL.position.set(-0.46, 9.72, 0.04);
+    const earR = earL.clone();
+    earR.position.x = 0.46;
+
+    // Iconic Black Wayfarer Sunglasses (2 lenses + bridge)
+    const lensGeo = new THREE.BoxGeometry(0.36, 0.22, 0.12);
+    const lensL = new THREE.Mesh(lensGeo, this.mat.sunglasses);
+    lensL.position.set(-0.24, 9.3, 0.58);
+    const lensR = lensL.clone();
+    lensR.position.x = 0.24;
+    const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.06, 0.12), this.mat.sunglasses);
+    bridge.position.set(0, 9.34, 0.59);
+
+    fallbackStatue.add(
+      shoeL, shoeR, legL, legR, hips, vest, jacketBack, jacketL, jacketR,
+      lapelL, lapelR, shoulders, uArmL, uArmR, fArmL, fArmR, handL, handR,
+      chain, lionHead, snout, nose, maneGroup, earL, earR, lensL, lensR, bridge
+    );
+    g.add(fallbackStatue);
 
     // Glowing Spotlight Crown Aura at Night
-    const aura = new THREE.Mesh(new THREE.RingGeometry(1.3, 1.55, 18), this.mat.lampBulbNight);
+    const aura = new THREE.Mesh(new THREE.RingGeometry(1.38, 1.65, 18), this.mat.lampBulbNight);
     aura.rotation.x = -Math.PI / 2;
     aura.position.y = 4.32;
     this.lampBulbs.push(aura);
@@ -802,21 +968,42 @@ export class FollowerTownEngine {
     });
 
     const hitbox = new THREE.Mesh(
-      new THREE.CylinderGeometry(6.8, 6.8, 12.0, 12),
+      new THREE.CylinderGeometry(6.8, 6.8, 12.2, 12),
       new THREE.MeshBasicMaterial({ visible: false })
     );
-    hitbox.position.y = 6.0;
+    hitbox.position.y = 6.1;
     hitbox.userData.plotId = "ST_JUNCTION";
     g.add(hitbox);
     this.plotHitboxes.push(hitbox);
 
-    const sign = this._createNameSign("🗿 SHERU BHAI STATUE", "ST JUNCTION • stgames.online", true);
+    // Self-contained sculpted White Marble Lion Sheru Bhai Statue (0 external files, instant load!)
+
+    // Animated Fountain Water Jets arcing around the pedestal!
+    this.fountainJets = [];
+    const dropGeo = new THREE.SphereGeometry(0.14, 5, 5);
+    for (let j = 0; j < 8; j++) {
+      const ang = (j / 8) * Math.PI * 2;
+      const drop = new THREE.Mesh(dropGeo, this.mat.wallWhite);
+      g.add(drop);
+      this.fountainJets.push({ mesh: drop, ang, phase: j * 0.45 });
+    }
+
+    // Colorful Flower Beds on the 4 corners of the garden ring
+    const flowerColors = [0xf43f5e, 0xfacc15, 0xa855f7, 0xf97316];
+    for (let f = 0; f < 8; f++) {
+      const ang = (f / 8) * Math.PI * 2 + 0.35;
+      const flower = new THREE.Mesh(
+        new THREE.DodecahedronGeometry(0.45, 0),
+        this._getColorMat(flowerColors[f % flowerColors.length])
+      );
+      flower.position.set(Math.cos(ang) * 5.7, 0.45, Math.sin(ang) * 5.7);
+      g.add(flower);
+    }
+
+    const sign = this._createNameSign("🗿 SHERU BHAI STATUE", "ST JUNCTION • TAP FOR 3D VIEW", true);
     sign.position.set(0, 12.0, 0);
 
-    g.add(
-      basePad, gardenRing, poolRim, water, step1, step2, goldCollar,
-      statueBase, legL, legR, torso, collar, belt, armL, armR, fistR, head, hair, shades, aura, sign
-    );
+    g.add(basePad, gardenRing, poolRim, water, step1, step2, goldCollar, statueBase, aura, sign);
     this.cityGroup.add(g);
   }
 
@@ -1103,7 +1290,7 @@ export class FollowerTownEngine {
     });
 
     // Main Lower & Upper Bus Body
-    const bodyMat = new THREE.MeshLambertMaterial({ color });
+    const bodyMat = this._getColorMat(color);
     const lowerBody = new THREE.Mesh(new THREE.BoxGeometry(w, 0.72, len), bodyMat);
     lowerBody.position.set(0, 0.68, 0);
 
@@ -1199,14 +1386,14 @@ export class FollowerTownEngine {
 
     const body = new THREE.Mesh(
       new THREE.BoxGeometry(w, h, len),
-      new THREE.MeshLambertMaterial({ color })
+      this._getColorMat(color)
     );
     body.position.y = h / 2 + 0.2;
     car.add(body);
 
     const cabin = new THREE.Mesh(
       new THREE.BoxGeometry(w * 0.85, 0.45, len * 0.55),
-      new THREE.MeshLambertMaterial({ color: 0xe2e8f0 })
+      this.mat.appleSilver
     );
     cabin.position.y = h + 0.35;
     car.add(cabin);
@@ -1339,7 +1526,9 @@ export class FollowerTownEngine {
 
     if (this.plotMeshes.has(plotId)) {
       const oldGroup = this.plotMeshes.get(plotId);
+      this._disposePlotGroup(oldGroup);
       this.plotsGroup.remove(oldGroup);
+      this.plotSigns = this.plotSigns.filter((s) => s.plotId !== plotId);
       this.plotHitboxes = this.plotHitboxes.filter((h) => h.userData.plotId !== plotId);
       this.sirenLights = this.sirenLights.filter((s) => s.userData.plotId !== plotId);
       this.landmarkActors = this.landmarkActors.filter((a) => a.plotId !== plotId);
@@ -1449,6 +1638,7 @@ export class FollowerTownEngine {
         const sign = this._createNameSign(data.ownerName, subLabel, false);
         sign.position.set(0, buildingObj.userData.labelY || 5.2, 0);
         plotGroup.add(sign);
+        this.plotSigns.push({ plotId, sprite: sign, x: pos.x, z: pos.z });
       }
     }
 
@@ -1850,7 +2040,8 @@ export class FollowerTownEngine {
     sbPole.position.set(-14.8, 2.2, 0.4);
     const sbScreen = new THREE.Mesh(new THREE.BoxGeometry(0.4, 2.4, 5.2), this.mat.highway);
     sbScreen.position.set(-14.6, 4.2, 0.4);
-    const sbGlow = new THREE.Mesh(new THREE.BoxGeometry(0.45, 1.9, 4.6), this.mat.windowNight);
+    const sbGlow = this._makeBuildingBoard("DREAM CITY 184/3", "OVERS 18.2 • LIVE MATCH", "#0f172a", "#4ade80", 4.6, 1.9);
+    sbGlow.rotation.y = Math.PI / 2;
     sbGlow.position.set(-14.55, 4.2, 0.4);
 
     [[-15.2, -6.4], [0, -6.8], [15.2, -6.4], [-15.2, 6.4], [0, 6.8], [15.2, 6.4]].forEach(([fx, fz]) => {
@@ -1953,7 +2144,9 @@ export class FollowerTownEngine {
         laneZ: -0.6, pumpX: 1.8, attendantHomeX: 2.2, attendantHomeZ: 0.4, phaseOffset: 4.5
       });
 
-      g.add(canopy, trim, office, officeTop);
+      const pbBoard = this._makeBuildingBoard("PETROL & DIESEL", "24/7 FUEL PLAZA", "#dc2626", "#facc15", 8.6, 1.1);
+      pbBoard.position.set(0, 4.6, 4.35);
+      g.add(canopy, trim, office, officeTop, pbBoard);
       g.userData.labelY = 7.4;
       return g;
     }
@@ -2042,7 +2235,11 @@ export class FollowerTownEngine {
         roadLoopR: this.BLOCK_STEP, phaseOffset: 10.0
       });
 
-      g.add(office, officeRoof, yellowBand, door, standRoof, standTrim, parkedAuto1, parkedAuto2, bucket);
+      const toBoard = this._makeBuildingBoard("TRANSPORT OFFICE", "AUTO STAND • AP", "#1e3a8a", "#facc15", 7.8, 1.15);
+      toBoard.position.set(0, 3.3, -2.84);
+      const bench = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.42, 0.65), this.mat.teakWood);
+      bench.position.set(3.5, 0.28, -1.8);
+      g.add(office, officeRoof, yellowBand, door, standRoof, standTrim, parkedAuto1, parkedAuto2, bucket, toBoard, bench);
       g.userData.labelY = 7.4;
       return g;
     }
@@ -2099,7 +2296,13 @@ export class FollowerTownEngine {
         roadLoopR: this.BLOCK_STEP, phaseOffset: 11.0
       });
 
-      g.add(terminal, roof, yellowTrim);
+      const rtcBoard = this._makeBuildingBoard("APSRTC BUS STAND", "EXPRESS • SUPER LUXURY", "#1e3a8a", "#facc15", 9.0, 1.2);
+      rtcBoard.position.set(0, 4.4, 0.42);
+      const bench1 = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.42, 0.6), this.mat.teakWood);
+      bench1.position.set(-3.2, 0.28, -2.2);
+      const bench2 = bench1.clone();
+      bench2.position.x = 3.2;
+      g.add(terminal, roof, yellowTrim, rtcBoard, bench1, bench2);
       g.userData.labelY = 7.4;
       return g;
     }
@@ -2180,7 +2383,9 @@ export class FollowerTownEngine {
         });
       }
 
-      g.add(floor1, floor2, tower, navyBand, redBand, portico, sirenRed, sirenBlue, jeep1);
+      const polBoard = this._makeBuildingBoard("POLICE STATION", "AP POLICE • DIAL 100", "#1e3a8a", "#ef4444", 7.6, 1.15);
+      polBoard.position.set(0, 3.6, -0.32);
+      g.add(floor1, floor2, tower, navyBand, redBand, portico, sirenRed, sirenBlue, jeep1, polBoard);
       g.userData.labelY = 11.2;
       return g;
     }
@@ -2257,7 +2462,9 @@ export class FollowerTownEngine {
         });
       }
 
-      g.add(main, pad, h1, h2, h3, crossV, crossH, canopy);
+      const hospBoard = this._makeBuildingBoard("SUPER HOSPITAL", "24/7 EMERGENCY • 108", "#0d9488", "#ffffff", 7.4, 1.1);
+      hospBoard.position.set(0, 2.75, 3.74);
+      g.add(main, pad, h1, h2, h3, crossV, crossH, canopy, hospBoard);
       g.userData.labelY = 11.6;
       return g;
     }
@@ -2293,7 +2500,9 @@ export class FollowerTownEngine {
         });
       }
 
-      g.add(base, atrium, ribbon1, ribbon2, cinema, canopy, c1, c2);
+      const mallBoard = this._makeBuildingBoard("SRMT MALL", "SHOPPING • MULTIPLEX", "#7e22ce", "#facc15", 8.6, 1.35);
+      mallBoard.position.set(0, 8.2, 2.02);
+      g.add(base, atrium, ribbon1, ribbon2, cinema, canopy, c1, c2, mallBoard);
       g.userData.labelY = 12.2;
       return g;
     }
@@ -2333,7 +2542,9 @@ export class FollowerTownEngine {
         });
       }
 
-      g.add(floor, glassBox, roof, logoBody, logoLeaf);
+      const appBoard = this._makeBuildingBoard("APPLE STORE", "iPhone • Mac • iPad", "#0f172a", "#e2e8f0", 6.2, 0.95);
+      appBoard.position.set(0, 6.45, 3.34);
+      g.add(floor, glassBox, roof, logoBody, logoLeaf, appBoard);
       g.userData.labelY = 9.2;
       return g;
     }
@@ -2374,7 +2585,9 @@ export class FollowerTownEngine {
         });
       }
 
-      g.add(main, blueFacade, redAccent, goldAccent, van, car);
+      const relBoard = this._makeBuildingBoard("RELIANCE DIGITAL", "SMART • ELECTRONICS", "#1d4ed8", "#facc15", 8.6, 1.3);
+      relBoard.position.set(0, 5.4, 1.94);
+      g.add(main, blueFacade, redAccent, goldAccent, van, car, relBoard);
       g.userData.labelY = 9.4;
       return g;
     }
@@ -2421,15 +2634,18 @@ export class FollowerTownEngine {
       });
     }
 
-    g.add(main, wingL, wingR, roofBand, pole, flagTop, flagMid, flagBot, schoolBus);
+    const schBoard = this._makeBuildingBoard("GRAND SCHOOL", "ENGLISH MEDIUM CAMPUS", "#c2410c", "#fef3c7", 8.2, 1.15);
+    schBoard.position.set(0, 5.2, -2.52);
+    g.add(main, wingL, wingR, roofBand, pole, flagTop, flagMid, flagBot, schoolBus, schBoard);
     g.userData.labelY = 8.6;
     return g;
   }
 
   _createNameSign(mainText, subText = "", isBig = false) {
     const canvas = document.createElement("canvas");
-    canvas.width = isBig ? 384 : 256;
-    canvas.height = subText ? 84 : 56;
+    const low = this.isLowRam && !isBig;
+    canvas.width = isBig ? 360 : low ? 192 : 240;
+    canvas.height = subText ? 80 : low ? 44 : 54;
     const ctx = canvas.getContext("2d");
 
     ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
@@ -3270,6 +3486,31 @@ export class FollowerTownEngine {
         c.plotGroup.remove(c.scaffold);
         c.siteWorkers.forEach((npc) => c.plotGroup.remove(npc));
         this.constructions.splice(i, 1);
+      }
+    }
+
+    // Animated Water Fountain Jets at Sheru Bhai Statue
+    if (this.lifeEnabled && this.fountainJets.length > 0) {
+      for (const jet of this.fountainJets) {
+        const p = (elapsed * 1.4 + jet.phase) % 1;
+        const rad = 1.8 + p * 2.1;
+        const h = 0.65 + Math.sin(p * Math.PI) * 1.65;
+        jet.mesh.position.set(Math.cos(jet.ang) * rad, h, Math.sin(jet.ang) * rad);
+      }
+    }
+
+    // Low-RAM Distance Sprite Culling (runs 4x/sec; hides far-away @username labels to keep 60fps!)
+    this._cullAccum += dt;
+    if (this._cullAccum > 0.25) {
+      this._cullAccum = 0;
+      const cx = this.camera.position.x;
+      const cz = this.camera.position.z;
+      const maxDistSq = this.isLowRam ? 105 * 105 : 145 * 145;
+      for (let i = 0; i < this.plotSigns.length; i++) {
+        const ps = this.plotSigns[i];
+        const dx = ps.x - cx;
+        const dz = ps.z - cz;
+        ps.sprite.visible = dx * dx + dz * dz < maxDistSq;
       }
     }
 

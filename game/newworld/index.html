@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Follower Nagaram 3D — ST Games</title>
-  <link rel="stylesheet" href="./style.css" />
+  <link rel="stylesheet" href="./style.css?v=15" />
   <script type="importmap">
     {
       "imports": {
-        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
       }
     }
   </script>
@@ -48,6 +48,7 @@
       <span id="card-day"></span>
     </div>
     <a id="card-website-btn" href="https://stgames.online/" target="_blank" rel="noopener" class="primary-btn full-width hidden" style="display:block;text-align:center;text-decoration:none;">🌐 Open stgames.online</a>
+    <button id="card-sheru3d-btn" class="secondary-btn full-width hidden" style="margin-top:8px;">🗿 Inspect 3D Sheru Bhai Model</button>
   </div>
 
   
@@ -80,8 +81,35 @@
     </div>
   </div>
 
+  
+  <!-- Lazy-Loaded 3D Sheru Bhai Sketchfab Modal (Zero RAM when closed!) -->
+  <div id="sketchfab-modal" class="modal hidden">
+    <div class="modal-content glass-card sketchfab-card" style="position:relative;">
+      <button id="close-sketchfab" class="close-x">✕</button>
+      <div class="plot-badge">3D STATUE INSPECTOR</div>
+      <h3>🗿 Sheru Bhai 3D Model</h3>
+      <p class="subtext">Interactive 3D view (by Mrchintu on Sketchfab). Closing frees 100% RAM.</p>
+      <div class="sketchfab-frame-wrap">
+        <iframe id="sketchfab-iframe" title="Sheru Bhai 3D Model" frameborder="0" allowfullscreen allow="autoplay; fullscreen; xr-spatial-tracking"></iframe>
+      </div>
+      <a href="https://stgames.online/" target="_blank" rel="noopener" class="primary-btn full-width" style="display:block;text-align:center;text-decoration:none;margin-top:10px;">🌐 Visit stgames.online</a>
+    </div>
+  </div>
+
   <div id="toast" class="hidden"></div>
 
-  <script type="module" src="./public-app.js"></script>
+  <script type="module" src="./public-app.js?v=15"></script>
+  <script>
+    window.addEventListener("error", function(e) {
+      var box = document.getElementById("err-banner");
+      if (!box) {
+        box = document.createElement("div");
+        box.id = "err-banner";
+        box.style.cssText = "position:fixed;bottom:10px;left:10px;right:10px;z-index:99999;background:#7f1d1d;color:#fff;padding:10px 14px;border-radius:10px;font:12px/1.4 sans-serif;box-shadow:0 4px 16px rgba(0,0,0,0.5);";
+        document.body.appendChild(box);
+      }
+      box.textContent = "Error: " + (e.message || "Failed to load script");
+    });
+  </script>
 </body>
 </html>
