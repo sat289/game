@@ -1,19 +1,28 @@
-// Upgraded Realistic Racing Audio Engine: V8/Superbike RPM + Sub-Bass + Gear Shifts + Nitro Jet Whoosh + Tire Screech + Metallic Crash
+// Realistic Automotive Audio Engine + Driving Synthwave Background Music Loop
 window.ApexAudio = (function () {
   let soundEnabled = true;
   let audioCtx = null;
   let noiseBuffer = null;
   let engineNodes = null;
+  let bgmTimerId = null;
+  let bgmStep = 0;
   let lastGear = 1;
+
+  function makeDistortionCurve(amount) {
+    const k = amount, n = 2048, curve = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      const x = (i * 2) / n - 1;
+      curve[i] = ((3 + k) * x * 20 * (Math.PI / 180)) / (Math.PI + k * Math.abs(x));
+    }
+    return curve;
+  }
 
   function init() {
     if (!audioCtx) {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (AC) audioCtx = new AC();
     }
-    if (audioCtx && audioCtx.state === 'suspended') {
-      audioCtx.resume().catch(() => {});
-    }
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
     if (audioCtx && !noiseBuffer) {
       const len = audioCtx.sampleRate * 1.5;
       noiseBuffer = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
@@ -22,26 +31,22 @@ window.ApexAudio = (function () {
     }
   }
 
-  // Unlock browser audio on first tap/click anywhere
-  function unlock() {
-    init();
-  }
-
+  function unlock() { init(); }
   function setEnabled(val) {
     soundEnabled = Boolean(val);
-    if (!soundEnabled && engineNodes && audioCtx) {
-      const now = audioCtx.currentTime;
-      engineNodes.masterGain.gain.setTargetAtTime(0, now, 0.04);
-      engineNodes.nitroGain.gain.setTargetAtTime(0, now, 0.04);
-      engineNodes.screechGain.gain.setTargetAtTime(0, now, 0.04);
+    if (!soundEnabled) {
+      stopMusic();
+      if (engineNodes && audioCtx) {
+        const now = audioCtx.currentTime;
+        engineNodes.masterGain.gain.setTargetAtTime(0, now, 0.04);
+        engineNodes.turboGain.gain.setTargetAtTime(0, now, 0.04);
+        engineNodes.screechGain.gain.setTargetAtTime(0, now, 0.04);
+      }
     }
   }
+  function isEnabled() { return soundEnabled; }
 
-  function isEnabled() {
-    return soundEnabled;
-  }
-
-  function playTone(freq, dur, type = 'triangle', vol = 0.08) {
+  function playTone(freq, dur, type = 'sine', vol = 0.08) {
     if (!soundEnabled) return;
     init();
     if (!audioCtx) return;
@@ -51,17 +56,151 @@ window.ApexAudio = (function () {
     osc.type = type;
     osc.frequency.setValueAtTime(freq, now);
     gain.gain.setValueAtTime(0.001, now);
-    gain.gain.linearRampToValueAtTime(vol, now + 0.015);
+    gain.gain.linearRampToValueAtTime(vol, now + 0.012);
     gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start(now);
-    osc.stop(now + dur + 0.02);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(now); osc.stop(now + dur + 0.02);
+  }
+
+  // Brand-New Smooth Modern Racing House Soundtrack (Warm Rhodes Chords + Punchy Kick + Crisp Shaker + Groovy Bass + Catchy Lead)
+  // Progression: Dm9 -> Bbmaj7 -> Fmaj7 -> Csus4/C (Clean, uplifting, zero harsh buzzing!)
+  const houseChords = [
+    [293.66, 349.23, 440.00, 523.25], // Dm7
+    [233.08, 293.66, 349.23, 440.00], // Bbmaj7
+    [261.63, 349.23, 440.00, 523.25], // Fmaj7
+    [261.63, 329.63, 392.00, 493.88]  // Cmaj7
+  ];
+  const grooveBass = [
+    [73.42, 73.42, 110.00, 73.42],   // D2
+    [58.27, 58.27, 87.31,  58.27],   // Bb1
+    [87.31, 87.31, 65.41,  87.31],   // F2
+    [65.41, 65.41, 98.00,  82.41]    // C2
+  ];
+  const melodyLine = [
+    [587.33, 0, 659.25, 698.46, 0, 587.33, 523.25, 0],
+    [587.33, 0, 523.25, 440.00, 0, 440.00, 523.25, 0],
+    [698.46, 0, 659.25, 587.33, 0, 523.25, 440.00, 0],
+    [523.25, 0, 587.33, 659.25, 0, 783.99, 659.25, 0]
+  ];
+
+  function playKick(now) {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(132, now);
+    osc.frequency.exponentialRampToValueAtTime(42, now + 0.12);
+    gain.gain.setValueAtTime(0.16, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.19);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(now); osc.stop(now + 0.21);
+  }
+
+  function playClap(now) {
+    if (!noiseBuffer) return;
+    const src = audioCtx.createBufferSource();
+    src.buffer = noiseBuffer;
+    const bp = audioCtx.createBiquadFilter();
+    bp.type = 'bandpass'; bp.frequency.value = 1650; bp.Q.value = 1.4;
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.042, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.095);
+    src.connect(bp); bp.connect(gain); gain.connect(audioCtx.destination);
+    src.start(now); src.stop(now + 0.11);
+  }
+
+  function playHat(now, accent) {
+    if (!noiseBuffer) return;
+    const src = audioCtx.createBufferSource();
+    src.buffer = noiseBuffer;
+    const hp = audioCtx.createBiquadFilter();
+    hp.type = 'highpass'; hp.frequency.value = 8800;
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(accent ? 0.024 : 0.010, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.036);
+    src.connect(hp); hp.connect(gain); gain.connect(audioCtx.destination);
+    src.start(now); src.stop(now + 0.045);
+  }
+
+  function playRhodesStab(now, notes, dur) {
+    const lp = audioCtx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(1450, now);
+    lp.frequency.exponentialRampToValueAtTime(520, now + dur);
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.001, now);
+    gain.gain.linearRampToValueAtTime(0.038, now + 0.025);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+    lp.connect(gain); gain.connect(audioCtx.destination);
+    notes.forEach((f) => {
+      const o = audioCtx.createOscillator();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(f, now);
+      o.connect(lp);
+      o.start(now); o.stop(now + dur + 0.03);
+    });
+  }
+
+  function startMusic() {
+    stopMusic();
+    if (!soundEnabled) return;
+    init();
+    bgmStep = 0;
+    bgmTimerId = setInterval(() => {
+      if (!soundEnabled || !audioCtx || audioCtx.state !== 'running') return;
+      const now = audioCtx.currentTime;
+      const step = bgmStep % 16;
+      const bar = Math.floor(bgmStep / 16) % 4;
+
+      // Syncopated Warm Rhodes Electric-Piano House Chords (Beats 1, 2.5, 4)
+      if (step === 0 || step === 6 || step === 12) {
+        playRhodesStab(now, houseChords[bar], step === 0 ? 0.65 : 0.42);
+      }
+
+      // Tight Modern House Beat
+      if (step % 4 === 0) playKick(now);
+      if (step === 4 || step === 12) playClap(now);
+      if (step % 2 === 1) playHat(now, step % 4 === 2);
+
+      // Warm Bouncy Bassline (Pure Sine + Soft Triangle)
+      if (step === 0 || step === 3 || step === 6 || step === 10 || step === 12) {
+        const bFreq = grooveBass[bar][Math.floor(step / 4) % 4];
+        const bOsc = audioCtx.createOscillator();
+        const bGain = audioCtx.createGain();
+        bOsc.type = 'sine';
+        bOsc.frequency.setValueAtTime(bFreq, now);
+        bGain.gain.setValueAtTime(0.105, now);
+        bGain.gain.exponentialRampToValueAtTime(0.001, now + 0.20);
+        bOsc.connect(bGain); bGain.connect(audioCtx.destination);
+        bOsc.start(now); bOsc.stop(now + 0.22);
+      }
+
+      // Catchy Sparkling Bell/Synth Lead Melody
+      if (step % 2 === 0) {
+        const mFreq = melodyLine[bar][(step / 2) % 8];
+        if (mFreq > 0) {
+          const mOsc = audioCtx.createOscillator();
+          const mGain = audioCtx.createGain();
+          mOsc.type = 'sine';
+          mOsc.frequency.setValueAtTime(mFreq, now);
+          mGain.gain.setValueAtTime(0.001, now);
+          mGain.gain.linearRampToValueAtTime(0.030, now + 0.015);
+          mGain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+          mOsc.connect(mGain); mGain.connect(audioCtx.destination);
+          mOsc.start(now); mOsc.stop(now + 0.30);
+        }
+      }
+
+      bgmStep++;
+    }, 121); // Crisp 124 BPM Modern Electronic House Groove
+  }
+
+  function stopMusic() {
+    if (bgmTimerId) { clearInterval(bgmTimerId); bgmTimerId = null; }
   }
 
   function playCoin() {
-    playTone(987.77, 0.08, 'sine', 0.11);
-    setTimeout(() => playTone(1318.51, 0.16, 'sine', 0.11), 55);
+    playTone(1046.5, 0.07, 'sine', 0.11);
+    setTimeout(() => playTone(1567.98, 0.16, 'sine', 0.10), 50);
   }
 
   function playIgnition() {
@@ -71,37 +210,34 @@ window.ApexAudio = (function () {
     const now = audioCtx.currentTime;
     const osc = audioCtx.createOscillator();
     const sub = audioCtx.createOscillator();
+    const shaper = audioCtx.createWaveShaper();
+    shaper.curve = makeDistortionCurve(18);
     const filter = audioCtx.createBiquadFilter();
     const gain = audioCtx.createGain();
-
-    osc.type = 'sawtooth';
-    sub.type = 'triangle';
-    osc.frequency.setValueAtTime(52, now);
-    osc.frequency.exponentialRampToValueAtTime(240, now + 0.38);
-    osc.frequency.exponentialRampToValueAtTime(95, now + 0.85);
-    sub.frequency.setValueAtTime(26, now);
-    sub.frequency.exponentialRampToValueAtTime(120, now + 0.38);
-    sub.frequency.exponentialRampToValueAtTime(48, now + 0.85);
-
+    osc.type = 'sawtooth'; sub.type = 'sine';
+    osc.frequency.setValueAtTime(42, now);
+    osc.frequency.exponentialRampToValueAtTime(168, now + 0.28);
+    osc.frequency.exponentialRampToValueAtTime(64, now + 0.82);
+    sub.frequency.setValueAtTime(24, now);
+    sub.frequency.exponentialRampToValueAtTime(84, now + 0.28);
+    sub.frequency.exponentialRampToValueAtTime(36, now + 0.82);
     filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(180, now);
-    filter.frequency.exponentialRampToValueAtTime(950, now + 0.35);
-    filter.frequency.exponentialRampToValueAtTime(260, now + 0.85);
-
+    filter.frequency.setValueAtTime(140, now);
+    filter.frequency.exponentialRampToValueAtTime(580, now + 0.25);
+    filter.frequency.exponentialRampToValueAtTime(190, now + 0.82);
     gain.gain.setValueAtTime(0.001, now);
-    gain.gain.linearRampToValueAtTime(0.16, now + 0.1);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.92);
-
-    osc.connect(filter); sub.connect(filter);
-    filter.connect(gain); gain.connect(audioCtx.destination);
+    gain.gain.linearRampToValueAtTime(0.15, now + 0.07);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.88);
+    osc.connect(shaper); shaper.connect(filter);
+    sub.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
     osc.start(now); sub.start(now);
-    osc.stop(now + 0.95); sub.stop(now + 0.95);
+    osc.stop(now + 0.9); sub.stop(now + 0.9);
   }
 
   function playReadyChime() {
     if (!soundEnabled) return;
     [523.25, 659.25, 783.99, 1046.5].forEach((f, idx) => {
-      setTimeout(() => playTone(f, 0.24, 'triangle', 0.09), idx * 65);
+      setTimeout(() => playTone(f, 0.22, 'sine', 0.08), idx * 60);
     });
   }
 
@@ -110,25 +246,18 @@ window.ApexAudio = (function () {
     init();
     if (!audioCtx || !noiseBuffer) return;
     const now = audioCtx.currentTime;
-
-    // Metallic crunch noise burst
     const src = audioCtx.createBufferSource();
     src.buffer = noiseBuffer;
-    const bp = audioCtx.createBiquadFilter();
-    bp.type = 'bandpass';
-    bp.frequency.setValueAtTime(420, now);
-    bp.frequency.exponentialRampToValueAtTime(90, now + 0.32);
-    bp.Q.value = 1.4;
-
+    const lp = audioCtx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(640, now);
+    lp.frequency.exponentialRampToValueAtTime(75, now + 0.38);
     const gain = audioCtx.createGain();
-    gain.gain.setValueAtTime(0.28, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
-
-    src.connect(bp); bp.connect(gain); gain.connect(audioCtx.destination);
-    src.start(now); src.stop(now + 0.4);
-
-    // Low thud impact
-    playTone(72, 0.28, 'sawtooth', 0.18);
+    gain.gain.setValueAtTime(0.35, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.44);
+    src.connect(lp); lp.connect(gain); gain.connect(audioCtx.destination);
+    src.start(now); src.stop(now + 0.45);
+    playTone(54, 0.3, 'triangle', 0.24);
   }
 
   function startEngine(modelType) {
@@ -139,60 +268,52 @@ window.ApexAudio = (function () {
     const osc1 = audioCtx.createOscillator();
     const osc2 = audioCtx.createOscillator();
     const sub = audioCtx.createOscillator();
+    const shaper = audioCtx.createWaveShaper();
+    shaper.curve = makeDistortionCurve(12);
     const filter = audioCtx.createBiquadFilter();
     const masterGain = audioCtx.createGain();
 
-    const baseFreq = modelType === 'truck' || modelType === 'heavy_truck' ? 40 : modelType === 'bike' ? 84 : 56;
-    osc1.type = 'sawtooth';
-    osc2.type = 'square';
-    sub.type = 'triangle';
-    osc1.frequency.value = baseFreq;
-    osc2.frequency.value = baseFreq * 1.5;
-    sub.frequency.value = baseFreq * 0.5;
+    const baseFreq = modelType === 'truck' || modelType === 'heavy_truck' ? 34 : modelType === 'bike' ? 74 : 48;
+    osc1.type = 'sawtooth'; osc2.type = 'triangle'; sub.type = 'sine';
+    osc1.frequency.value = baseFreq; osc2.frequency.value = baseFreq * 1.5; sub.frequency.value = baseFreq * 0.5;
 
-    const osc2Gain = audioCtx.createGain();
-    osc2Gain.gain.value = 0.28;
+    const g1 = audioCtx.createGain(); g1.gain.value = 0.36;
+    const g2 = audioCtx.createGain(); g2.gain.value = 0.3;
+    const gSub = audioCtx.createGain(); gSub.gain.value = 0.6;
+    filter.type = 'lowpass'; filter.frequency.value = 170; filter.Q.value = 1.4;
+    masterGain.gain.value = soundEnabled ? 0.055 : 0;
 
-    filter.type = 'lowpass';
-    filter.frequency.value = 240;
-    filter.Q.value = 2.5;
-    masterGain.gain.value = soundEnabled ? 0.05 : 0;
+    osc1.connect(g1); g1.connect(shaper);
+    osc2.connect(g2); g2.connect(shaper);
+    shaper.connect(filter);
+    sub.connect(gSub); gSub.connect(filter);
+    filter.connect(masterGain); masterGain.connect(audioCtx.destination);
 
-    osc1.connect(filter);
-    osc2.connect(osc2Gain); osc2Gain.connect(filter);
-    sub.connect(filter);
-    filter.connect(masterGain);
-    masterGain.connect(audioCtx.destination);
+    const turboOsc = audioCtx.createOscillator();
+    turboOsc.type = 'sine'; turboOsc.frequency.value = 640;
+    const turboSrc = audioCtx.createBufferSource();
+    turboSrc.buffer = noiseBuffer; turboSrc.loop = true;
+    const turboFilter = audioCtx.createBiquadFilter();
+    turboFilter.type = 'bandpass'; turboFilter.frequency.value = 1350; turboFilter.Q.value = 2.0;
+    const turboGain = audioCtx.createGain(); turboGain.gain.value = 0;
+    const tOscG = audioCtx.createGain(); tOscG.gain.value = 0.12;
+    turboOsc.connect(tOscG); tOscG.connect(turboGain);
+    turboSrc.connect(turboFilter); turboFilter.connect(turboGain);
+    turboGain.connect(audioCtx.destination);
 
-    // Nitro Jet Whoosh (Filtered White Noise)
-    const nitroSrc = audioCtx.createBufferSource();
-    nitroSrc.buffer = noiseBuffer;
-    nitroSrc.loop = true;
-    const nitroFilter = audioCtx.createBiquadFilter();
-    nitroFilter.type = 'bandpass';
-    nitroFilter.frequency.value = 1100;
-    nitroFilter.Q.value = 1.8;
-    const nitroGain = audioCtx.createGain();
-    nitroGain.gain.value = 0;
-    nitroSrc.connect(nitroFilter); nitroFilter.connect(nitroGain); nitroGain.connect(audioCtx.destination);
-
-    // Tire Screech (High-Q Bandpass Noise on braking / hard turns)
     const screechSrc = audioCtx.createBufferSource();
-    screechSrc.buffer = noiseBuffer;
-    screechSrc.loop = true;
+    screechSrc.buffer = noiseBuffer; screechSrc.loop = true;
     const screechFilter = audioCtx.createBiquadFilter();
-    screechFilter.type = 'bandpass';
-    screechFilter.frequency.value = 1850;
-    screechFilter.Q.value = 9.0;
-    const screechGain = audioCtx.createGain();
-    screechGain.gain.value = 0;
+    screechFilter.type = 'bandpass'; screechFilter.frequency.value = 1600; screechFilter.Q.value = 11.0;
+    const screechGain = audioCtx.createGain(); screechGain.gain.value = 0;
     screechSrc.connect(screechFilter); screechFilter.connect(screechGain); screechGain.connect(audioCtx.destination);
 
     osc1.start(); osc2.start(); sub.start();
-    nitroSrc.start(); screechSrc.start();
+    turboOsc.start(); turboSrc.start(); screechSrc.start();
 
     lastGear = 1;
-    engineNodes = { osc1, osc2, sub, filter, masterGain, nitroSrc, nitroGain, screechSrc, screechGain, baseFreq };
+    engineNodes = { osc1, osc2, sub, filter, masterGain, turboOsc, turboSrc, turboGain, screechSrc, screechGain, baseFreq };
+    startMusic();
   }
 
   function updateEngine(speedRatio, nitroOn, braking, steerAmt = 0) {
@@ -200,57 +321,44 @@ window.ApexAudio = (function () {
     const now = audioCtx.currentTime;
     if (!soundEnabled) {
       engineNodes.masterGain.gain.setTargetAtTime(0, now, 0.04);
-      engineNodes.nitroGain.gain.setTargetAtTime(0, now, 0.04);
+      engineNodes.turboGain.gain.setTargetAtTime(0, now, 0.04);
       engineNodes.screechGain.gain.setTargetAtTime(0, now, 0.04);
       return;
     }
-
-    // Simulated 5-gear RPM sawtooth curve
     const clamped = Math.max(0, Math.min(1.4, speedRatio));
-    const gear = Math.min(5, Math.max(1, Math.floor(clamped * 4.2) + 1));
+    const gear = Math.min(6, Math.max(1, Math.floor(clamped * 4.5) + 1));
     if (gear > lastGear && clamped > 0.25) {
-      playTone(engineNodes.baseFreq * 3.2, 0.06, 'triangle', 0.03);
+      playTone(360, 0.05, 'sine', 0.025);
+      setTimeout(() => playTone(280, 0.05, 'sine', 0.02), 45);
     }
     lastGear = gear;
-
-    const gearRpm = (clamped * 4.2) % 1;
-    const rpmFactor = 1.0 + (0.45 * gear) + (gearRpm * 0.95) + (nitroOn ? 0.55 : 0);
-
-    engineNodes.osc1.frequency.setTargetAtTime(engineNodes.baseFreq * rpmFactor, now, 0.05);
-    engineNodes.osc2.frequency.setTargetAtTime(engineNodes.baseFreq * 1.5 * rpmFactor, now, 0.05);
-    engineNodes.sub.frequency.setTargetAtTime(engineNodes.baseFreq * 0.5 * rpmFactor, now, 0.05);
-    engineNodes.filter.frequency.setTargetAtTime(240 + clamped * (nitroOn ? 1400 : 820), now, 0.05);
-    engineNodes.masterGain.gain.setTargetAtTime(braking ? 0.04 : (0.05 + Math.min(0.065, clamped * 0.055)), now, 0.05);
-
-    // Nitro Jet Whoosh Volume
-    engineNodes.nitroGain.gain.setTargetAtTime(nitroOn ? 0.095 : 0, now, 0.06);
-
-    // Tire Screech on hard cornering or braking at speed
-    const screeching = clamped > 0.35 && (braking || Math.abs(steerAmt) > 0.72);
-    engineNodes.screechGain.gain.setTargetAtTime(screeching ? 0.045 : 0, now, 0.05);
+    const gearRpm = (clamped * 4.5) % 1;
+    const rpmFactor = 1.0 + (0.35 * gear) + (gearRpm * 0.82) + (nitroOn ? 0.42 : 0);
+    engineNodes.osc1.frequency.setTargetAtTime(engineNodes.baseFreq * rpmFactor, now, 0.06);
+    engineNodes.osc2.frequency.setTargetAtTime(engineNodes.baseFreq * 1.5 * rpmFactor, now, 0.06);
+    engineNodes.sub.frequency.setTargetAtTime(engineNodes.baseFreq * 0.5 * rpmFactor, now, 0.06);
+    engineNodes.filter.frequency.setTargetAtTime(175 + clamped * (nitroOn ? 980 : 540), now, 0.06);
+    engineNodes.masterGain.gain.setTargetAtTime(braking ? 0.045 : (0.055 + Math.min(0.055, clamped * 0.05)), now, 0.06);
+    engineNodes.turboOsc.frequency.setTargetAtTime(580 + clamped * 740 + (nitroOn ? 420 : 0), now, 0.08);
+    engineNodes.turboGain.gain.setTargetAtTime(nitroOn ? 0.085 : (clamped > 0.7 ? 0.02 : 0), now, 0.07);
+    const screeching = clamped > 0.38 && (braking || Math.abs(steerAmt) > 0.72);
+    engineNodes.screechGain.gain.setTargetAtTime(screeching ? 0.036 : 0, now, 0.06);
   }
 
   function stopEngine() {
+    stopMusic();
     if (engineNodes) {
       try {
         engineNodes.osc1.stop(); engineNodes.osc2.stop(); engineNodes.sub.stop();
-        engineNodes.nitroSrc.stop(); engineNodes.screechSrc.stop();
+        engineNodes.turboOsc.stop(); engineNodes.turboSrc.stop(); engineNodes.screechSrc.stop();
       } catch (e) {}
       engineNodes = null;
     }
   }
 
   return {
-    unlock,
-    setEnabled,
-    isEnabled,
-    playTone,
-    playCoin,
-    playIgnition,
-    playReadyChime,
-    playCrash,
-    startEngine,
-    updateEngine,
-    stopEngine
+    unlock, setEnabled, isEnabled,
+    playTone, playCoin, playIgnition, playReadyChime, playCrash,
+    startEngine, updateEngine, stopEngine, startMusic, stopMusic
   };
 })();
