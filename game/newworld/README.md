@@ -1,8 +1,16 @@
-# Follower Nagaram 3D (v11 — 🏗️ Construction Replay Reel, Realistic Non-Box Houses & 🗿 Sheru Bhai Statue)
+# Dream City / Follower Nagaram 3D (v16 — Clean, Error-Free Upgrade)
 
 Upload the `follower-town/` folder into your `sat289/game/` GitHub repository.
 
-## What's New in v11
-1. **🏗️ Build Reel Mode (Construction Replay):** Inside **🎬 9:16 Reel**, tap **🏗️ Build Reel**. The camera automatically flies to your newest built buildings (current Day #) and **replays their live 3D construction** (scaffolding + rising building + workers + `@username` banner) so you can record Day 2 / Day 3 Reels effortlessly!
-2. **🏡 Realistic Architectural Houses (No More Plain Boxes):** All 4 follower house styles are upgraded with realistic Indian colors (Ivory stucco, Terracotta tile roofs, Sage plaster, Sandstone, Teak wood), compound walls, gate pillars, recessed framed windows with sunshade chajjas, veranda columns, balcony railings, front plants, and rooftop Sintex water tanks—all using shared geometries to stay smooth on low-end devices.
-3. **🗿 Sheru Bhai Statue in City Center:** Placed a bronze & gold **SHERU BHAI** monument statue (with cool sunglasses, heroic jacket, raised salute, engraved granite pedestal, and fountain roundabout) right at `(0, 0)` **ST Junction** (tapping it still opens `stgames.online`).
+## What's New in v16
+1. **🦁 White Marble Lion Sheru Bhai Statue (`(0, 0)` ST Junction):**
+   - Sculpted white marble lion head & full mane, black Wayfarer sunglasses, white 3-piece suit (buttoned vest, open blazer & lapels, both hands gripping lapels), chunky gold chain, animated arcing water fountain jets, and flower beds.
+   - Tap the statue -> **`🦁 Inspect 3D Sheru Bhai Model`** opens the interactive Sketchfab 3D view on demand and frees 100% RAM when closed.
+2. **🏛️ Upgraded Quality of All Places:**
+   - Crisp mounted architectural signboards on every landmark (`SRMT MALL`, `APPLE STORE`, `RELIANCE DIGITAL`, `SUPER HOSPITAL`, `POLICE STATION`, `APSRTC BUS STAND`, `TRANSPORT OFFICE`, `PETROL & DIESEL`, `GRAND SCHOOL`, and live scoreboard `DREAM CITY 184/3` at the Cricket Stadium) plus waiting benches & ACES Filmic lighting.
+3. **✨ Starry Night Sky + Drifting Sky Clouds:**
+   - Lightweight single-draw-call starfield in **🌙 Night Mode** and soft drifting clouds during **☀️ Day** & **🌇 Sunset**.
+4. **⚡ Visitor Quick-Jump Bar (`index.html`):**
+   - Added quick bottom-left buttons (`🦁 Sheru Bhai` & `☀️/🌙`) so visitors can jump right to the Sheru Bhai Statue or preview Night Mode lights anytime.
+5. **🛡️ Low-RAM Smoothness & Zero-Error Verification:**
+   - Auto low-RAM detection (`2GB–4GB` phones), distance sprite culling, material & texture caching, GPU disposal on rebuild, `cdn.jsdelivr.net` Three.js CDN, and `?v=16` cache-busting.

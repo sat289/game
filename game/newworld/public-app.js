@@ -1,10 +1,14 @@
-import { db, ref, onValue } from "./firebase-config.js";
-import { FollowerTownEngine, BUILDING_LABELS, getRequiredSize } from "./world-engine.js";
+import { db, ref, onValue } from "./firebase-config.js?v=16";
+import { FollowerTownEngine, BUILDING_LABELS, getRequiredSize } from "./world-engine.js?v=16";
 
 let allPlots = {};
 const container = document.getElementById("canvas-container");
 const plotCard = document.getElementById("plot-card");
 const websiteBtn = document.getElementById("card-website-btn");
+const sheru3dBtn = document.getElementById("card-sheru3d-btn");
+const sketchfabModal = document.getElementById("sketchfab-modal");
+const sketchfabIframe = document.getElementById("sketchfab-iframe");
+const SKETCHFAB_URL = "https://sketchfab.com/models/011d2f8f40e146ff8b2d7dfc70e939f8/embed?autostart=1&ui_theme=dark";
 
 function showToast(msg) {
   const t = document.getElementById("toast");
@@ -21,16 +25,18 @@ const engine = new FollowerTownEngine(container, (plotId, data) => {
 function openPlotCard(plotId, data) {
   if (plotId === "ST_JUNCTION") {
     document.getElementById("card-badge").textContent = "CITY CENTER LANDMARK";
-    document.getElementById("card-owner").textContent = "🗿 SHERU BHAI • ST JUNCTION";
+    document.getElementById("card-owner").textContent = "🦁 SHERU BHAI • ST JUNCTION";
     document.getElementById("card-role").textContent = "Official Hub of Follower Nagaram • Play more games on ST Games!";
     document.getElementById("card-type").textContent = "stgames.online";
     document.getElementById("card-day").textContent = "";
     websiteBtn.classList.remove("hidden");
+    if (sheru3dBtn) sheru3dBtn.classList.remove("hidden");
     plotCard.classList.remove("hidden");
     return;
   }
 
   websiteBtn.classList.add("hidden");
+  if (sheru3dBtn) sheru3dBtn.classList.add("hidden");
   if (data && data.status === "built") {
     const label = BUILDING_LABELS[data.buildingType] || "TOWN BUILDING";
     const size = data.size || getRequiredSize(data.buildingType);
@@ -177,3 +183,38 @@ reqForm.addEventListener("submit", async (e) => {
     reqSubmitBtn.textContent = "🚀 Send Request";
   }
 });
+
+// Lazy-load Sketchfab 3D Model ONLY when clicked (frees 100% RAM when closed!)
+if (sheru3dBtn && sketchfabModal && sketchfabIframe) {
+  sheru3dBtn.addEventListener("click", () => {
+    sketchfabIframe.src = SKETCHFAB_URL;
+    sketchfabModal.classList.remove("hidden");
+  });
+  const closeSf = document.getElementById("close-sketchfab");
+  if (closeSf) {
+    closeSf.addEventListener("click", () => {
+      sketchfabModal.classList.add("hidden");
+      sketchfabIframe.src = "about:blank";
+    });
+  }
+}
+
+// Visitor Quick-Jump to Sheru Bhai Statue & Local Day/Sunset/Night Toggle
+const btnJumpCenter = document.getElementById("btn-jump-center");
+if (btnJumpCenter) {
+  btnJumpCenter.addEventListener("click", () => {
+    engine.focusPlot("ST_JUNCTION");
+    openPlotCard("ST_JUNCTION", null);
+  });
+}
+
+const btnPublicTime = document.getElementById("btn-public-time");
+if (btnPublicTime) {
+  const modes = ["day", "sunset", "night"];
+  btnPublicTime.addEventListener("click", () => {
+    const nextIdx = (modes.indexOf(engine.timeOfDay) + 1) % modes.length;
+    const nextMode = modes[nextIdx];
+    engine.setTimeOfDay(nextMode);
+    showToast(nextMode === "night" ? "🌙 Night Mode" : nextMode === "sunset" ? "🌇 Sunset Mode" : "☀️ Day Mode");
+  });
+}

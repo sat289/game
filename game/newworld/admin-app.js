@@ -8,14 +8,14 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged
-} from "./firebase-config.js";
+} from "./firebase-config.js?v=16";
 import {
   FollowerTownEngine,
   BUILDING_LABELS,
   getRequiredSize,
   getBlockPlotIds,
   getEightPlotGroup
-} from "./world-engine.js";
+} from "./world-engine.js?v=16";
 
 let isAdmin = false;
 let selectedPlotId = "plot_0001";
@@ -37,6 +37,10 @@ const loginError = document.getElementById("login-error");
 const plotCard = document.getElementById("plot-card");
 const editBtn = document.getElementById("card-edit-btn");
 const websiteBtn = document.getElementById("card-website-btn");
+const sheru3dBtn = document.getElementById("card-sheru3d-btn");
+const sketchfabModal = document.getElementById("sketchfab-modal");
+const sketchfabIframe = document.getElementById("sketchfab-iframe");
+const SKETCHFAB_URL = "https://sketchfab.com/models/011d2f8f40e146ff8b2d7dfc70e939f8/embed?autostart=1&ui_theme=dark";
 
 const panels = {
   builder: document.getElementById("panel-builder"),
@@ -65,18 +69,20 @@ const engine = new FollowerTownEngine(container, (plotId, data) => {
 function openPlotCard(plotId, data) {
   if (plotId === "ST_JUNCTION") {
     document.getElementById("card-badge").textContent = "CITY CENTER LANDMARK";
-    document.getElementById("card-owner").textContent = "🗿 SHERU BHAI • ST JUNCTION";
+    document.getElementById("card-owner").textContent = "🦁 SHERU BHAI • ST JUNCTION";
     document.getElementById("card-role").textContent = "Fixed at City Center • Visitors tap this to open stgames.online!";
     document.getElementById("card-type").textContent = "stgames.online";
     document.getElementById("card-day").textContent = "";
     editBtn.classList.add("hidden");
     websiteBtn.classList.remove("hidden");
+    if (sheru3dBtn) sheru3dBtn.classList.remove("hidden");
     plotCard.classList.remove("hidden");
     return;
   }
 
   editBtn.classList.remove("hidden");
   websiteBtn.classList.add("hidden");
+  if (sheru3dBtn) sheru3dBtn.classList.add("hidden");
 
   if (data && data.status === "built") {
     const label = BUILDING_LABELS[data.buildingType] || "TOWN BUILDING";
@@ -716,3 +722,18 @@ document.getElementById("reel-day-toggle").addEventListener("click", () => {
   const order = ["day", "sunset", "night"];
   engine.setTimeOfDay(order[(order.indexOf(engine.timeOfDay) + 1) % order.length]);
 });
+
+// Lazy-load Sketchfab 3D Model ONLY when clicked (frees 100% RAM when closed!)
+if (sheru3dBtn && sketchfabModal && sketchfabIframe) {
+  sheru3dBtn.addEventListener("click", () => {
+    sketchfabIframe.src = SKETCHFAB_URL;
+    sketchfabModal.classList.remove("hidden");
+  });
+  const closeSf = document.getElementById("close-sketchfab");
+  if (closeSf) {
+    closeSf.addEventListener("click", () => {
+      sketchfabModal.classList.add("hidden");
+      sketchfabIframe.src = "about:blank";
+    });
+  }
+}
