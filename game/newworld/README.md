@@ -1,15 +1,21 @@
-# Sheru Bhai City 3D (v19 — Live Express Train + Mountain Tunnel + Grand Railway Station, ITI College, Entrance Cafe & Airport-Side House)
+# Sheru Bhai City 3D (v20 — Double-Track Hollow Tunnel, 2-Platform Railway Station w/ Steps & IN/OUT Parking, Night Statue Disco Lights, Interactive Airport/Beach Add Plot Mode, Crisp Names & Instagram DM Request)
 
 Upload the `follower-town/` folder into your `sat289/game/` GitHub repository.
 
-## What's New in v19
-1. **🚂 Live Indian Express Train + Mountain Tunnel + Grand Railway Station (`RAILWAY_STATION`):**
-   - Full rounded-square railway loop circling the entire city outside the Outer Ring Road (built with 2 InstancedMeshes for low-RAM 60fps smoothness!) + realistic railway level crossing gates at the Airport Highway & Beach Road.
-   - **Rocky Green Mountain Tunnel** at the South-West end of the city: the articulated 4-car Indian Express Train (Blue/Yellow WAP-7 Electric Locomotive + 3 Blue ICF Passenger Coaches with glowing night windows & headlight beam) emerges from the tunnel, circles the whole city, stops at **SHERU BHAI JN Railway Station** (North side) while 6 waiting passengers board inside, and circles back into the tunnel!
-   - Customizable Station Chief `@username` (defaults to `@_ur_bunny_108_`) in `admin.html` -> **🌤️ World**.
-2. **🏫 4-Plot ITI College & Technical Workshop (`iti_college`):**
-   - Built for `@mr_bablu_yadav_3078` / `@mr_bablu_yadav_3708`'s comment! Includes main campus building, industrial workshop shed, tricolor flag, students walking, and custom signboard.
-3. **☕ 1-Plot Modern Entrance Coffee Cafe (`cafe`):**
-   - Built for `@_mahi_0x7`'s email request! Features a giant 3D rooftop coffee cup sculpture, awning, outdoor café umbrella table, and `COFFEE CAFE` board.
-4. **🏡 Airport-Side Lush VIP House:**
-   - Built right beside the Airport Express Highway surrounded by greenery (for `@urs_bazigar` & `@harshith_singaraveni`), with editable `@username` in `admin.html` -> **🌤️ World**.
+## What's New in v20
+1. **⛰️ Real Hollowed Mountain Tunnel + 2 Railway Tracks + 2 Realistic 3D Trains:**
+   - Placed in the North-West outer corner! True open hollow arched concrete tunnel bore covered by rocky green hills so you can look straight inside.
+   - **Double Tracks:** Track 1 runs the **Blue/Yellow WAP-7 Indian Express (5 cars)** clockwise; Track 2 runs the **White/Orange Vande Bharat Aero Express (5 cars)** counter-clockwise — one train comes while the other goes!
+2. **🚉 Real 2-Platform Railway Station (`SHERU BHAI JN`) + Foot Overbridge Steps + Direct Road + IN/OUT Parking:**
+   - **Platform 1 (South/City side)** & **Platform 2 (North/Heritage Building side)** connected by an elevated **Foot Overbridge with real stepped staircases** & walking pedestrian.
+   - **Direct Road Connection** from Platform 1 straight through a dedicated **Station Parking Plaza** (with separate green `IN ⬆` & red `⬇ OUT` lanes + parked cars & autos) to the City Outer Ring Road.
+3. **🪩 Night Disco Lights for Sheru Bhai Statue:**
+   - In **🌙 Night Mode**, 6 rotating colorful disco spotlight beams, glowing RGB ground pods, pulsing dancefloor ring, and a color-cycling spotlight light up the White Marble Lion Sheru Bhai Statue!
+4. **➕ Interactive Airport & Beach `Add Plot` Mode (Zero Houses on Railway Tracks):**
+   - Removed the misplaced house near the railway track and expanded safe clearances around both railway tracks.
+   - Added glowing **`➕ ADD AIRPORT PLOT`** & **`➕ ADD BEACH PLOT`** pads + an **`➕ Add Plot`** mode button in `admin.html` so touching open Airport/Beach land spawns a buildable plot right there (automatically blocking railway tracks!).
+5. **🔤 Crisp Readable Names Everywhere:**
+   - Upgraded all floating name tags and building signboards to high-res mipmapped textures (`512x128` / `320x84`) with bold outlines and `maxWidth` auto-fitting.
+6. **📱 Normal User Mode (`index.html`) Fix + Direct Instagram DM:**
+   - Compacted bottom pills and moved the smaller **`➕ Add Building`** button cleanly above them so it is always visible.
+   - Added **`📸 Send via Instagram DM (@_satish_official_16)`** inside the modal—automatically copies the user's building request message and opens Instagram DM directly with their message!

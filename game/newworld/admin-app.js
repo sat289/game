@@ -8,7 +8,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged
-} from "./firebase-config.js?v=19";
+} from "./firebase-config.js?v=20";
 import {
   FollowerTownEngine,
   BUILDING_LABELS,
@@ -16,7 +16,7 @@ import {
   getTwoPlotGroup,
   getBlockPlotIds,
   getEightPlotGroup
-} from "./world-engine.js?v=19";
+} from "./world-engine.js?v=20";
 
 let isAdmin = false;
 let selectedPlotId = "plot_0001";
@@ -28,8 +28,7 @@ let worldSettings = {
   timeOfDay: "day",
   lifeEnabled: true,
   beachOwner: "@follower_beach",
-  railwayOwner: "@_ur_bunny_108_",
-  airportHouseOwner: "@urs_bazigar"
+  railwayOwner: "@_ur_bunny_108_"
 };
 
 const container = document.getElementById("canvas-container");
@@ -66,18 +65,87 @@ function closeAllDrawers() {
   Object.values(panels).forEach((p) => p.classList.add("hidden"));
 }
 
+async function spawnZonePlotAt(zone, offsetX, offsetZ, rotY = 0) {
+  if (!isAdmin) return;
+  const newPlotId = `zone_${zone}_${Date.now().toString(36)}`;
+  const payload = {
+    status: "empty",
+    isCustomZone: true,
+    zone,
+    offsetX: Number(offsetX.toFixed(2)),
+    offsetZ: Number(offsetZ.toFixed(2)),
+    customRotY: rotY,
+    ownerName: "",
+    role: "",
+    buildingType: "empty",
+    size: 1,
+    builtDay: worldSettings.dayNumber || 1
+  };
+  try {
+    await update(ref(db), { [`plots/${newPlotId}`]: payload });
+    selectedPlotId = newPlotId;
+    engine.focusPlot(newPlotId);
+    openPlotCard(newPlotId, payload);
+    showToast(zone === "airport" ? "✈️ New Airport Plot added! Tap Build to place a house/shop." : "🏖️ New Beach Plot added! Tap Build to place a house/shop.");
+  } catch (err) {
+    showToast("Error adding plot: " + err.message);
+  }
+}
+
+function getNextZoneSlot(zone) {
+  const existing = Object.values(allPlots).filter((p) => p && p.isCustomZone && p.zone === zone);
+  const count = existing.length;
+  if (zone === "airport") {
+    // Neat rows in lush green VIP Airport Colony safely South of Airport fence (clear of railway tracks!)
+    const col = count % 7;
+    const row = Math.floor(count / 7);
+    return {
+      offsetX: -30 + col * 9.2,
+      offsetZ: 56 + row * 9.5,
+      rotY: Math.PI
+    };
+  }
+  // Neat coastal strip along Golden Beach palm side facing the Ocean (-X)!
+  const row = count % 8;
+  const col = Math.floor(count / 8);
+  return {
+    offsetX: 22 + col * 9.0,
+    offsetZ: -34 + row * 9.4,
+    rotY: -Math.PI / 2
+  };
+}
+
 const engine = new FollowerTownEngine(container, (plotId, data) => {
   if (!isAdmin) return;
+  if (plotId === "ADD_AIRPORT_PLOT") {
+    const slot = getNextZoneSlot("airport");
+    spawnZonePlotAt("airport", slot.offsetX, slot.offsetZ, slot.rotY);
+    return;
+  }
+  if (plotId === "ADD_BEACH_PLOT") {
+    const slot = getNextZoneSlot("beach");
+    spawnZonePlotAt("beach", slot.offsetX, slot.offsetZ, slot.rotY);
+    return;
+  }
   selectedPlotId = plotId;
   openPlotCard(plotId, data);
 });
+
+engine.onAddPlotTap = (result) => {
+  if (!isAdmin) return;
+  if (result.blocked) {
+    showToast(result.reason || "🚫 Cannot place plot here!");
+    return;
+  }
+  spawnZonePlotAt(result.zone, result.offsetX, result.offsetZ, result.rotY);
+};
 
 function openPlotCard(plotId, data) {
         if (plotId === "RAILWAY_STATION") {
     const rOwner = worldSettings.railwayOwner || engine.railwayOwner || "@_ur_bunny_108_";
     document.getElementById("card-badge").textContent = "INDIAN RAILWAYS • LIVE EXPRESS";
     document.getElementById("card-owner").textContent = `🚂 ${rOwner} • SHERU BHAI JN`;
-    document.getElementById("card-role").textContent = "Express Train emerges from the Mountain Tunnel at the end of the city, circles the entire town, and stops here for passengers to board!";
+    document.getElementById("card-role").textContent = "2-Platform Railway Station with Foot Overbridge Steps, IN/OUT Station Parking, Direct City Road & 2 Real Trains (Coming & Going through Hollow Mountain Tunnel)!";
     document.getElementById("card-type").textContent = "RAILWAY STATION & TUNNEL";
     document.getElementById("card-day").textContent = "";
     editBtn.classList.add("hidden");
@@ -209,7 +277,11 @@ onValue(plotsRef, (snapshot) => {
 
   Object.keys(allPlots).forEach((plotId) => {
     if (!data[plotId]) {
-      engine.renderPlot(plotId, { status: "empty", buildingType: "empty" }, false);
+      if (plotId.startsWith("zone_")) {
+        engine.removeCustomPlot(plotId);
+      } else {
+        engine.renderPlot(plotId, { status: "empty", buildingType: "empty" }, false);
+      }
     }
   });
 
@@ -234,10 +306,7 @@ onValue(worldRef, (snapshot) => {
   engine.setRailwayOwner(rOwner);
   const railInput = document.getElementById("w-railway-owner");
   if (railInput) railInput.value = rOwner;
-  const ahOwner = worldSettings.airportHouseOwner || "@urs_bazigar";
-  engine.setAirportHouseOwner(ahOwner);
-  const ahInput = document.getElementById("w-airport-house-owner");
-  if (ahInput) ahInput.value = ahOwner;
+
   engine.setTimeOfDay(worldSettings.timeOfDay || "day");
   engine.lifeEnabled = worldSettings.lifeEnabled !== false;
 
@@ -303,6 +372,59 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
   }
 
   const currentData = allPlots[selectedPlotId];
+
+  // Special handling for Custom Airport / Beach Zone Plots (`zone_*`)
+  if (selectedPlotId.startsWith("zone_") || currentData?.isCustomZone) {
+    const zoneMeta = {
+      isCustomZone: true,
+      zone: currentData?.zone || (selectedPlotId.includes("beach") ? "beach" : "airport"),
+      offsetX: currentData?.offsetX || 0,
+      offsetZ: currentData?.offsetZ || 0,
+      customRotY: currentData?.customRotY || 0
+    };
+    const updates = {};
+    if (type === "empty") {
+      // If already empty, remove the custom plot completely; if built, clear back to empty plot!
+      if (!currentData || currentData.status !== "built") {
+        updates[`plots/${selectedPlotId}`] = null;
+      } else {
+        updates[`plots/${selectedPlotId}`] = {
+          ...zoneMeta,
+          status: "empty",
+          ownerName: "",
+          role: "",
+          buildingType: "empty",
+          size: 1,
+          builtDay
+        };
+      }
+    } else {
+      updates[`plots/${selectedPlotId}`] = {
+        ...zoneMeta,
+        status: "built",
+        ownerName: ownerName || BUILDING_LABELS[type] || "Building",
+        role: role || (zoneMeta.zone === "beach" ? "Beachfront Resident" : "Airport Colony Resident"),
+        buildingType: type,
+        size: newSize,
+        builtDay
+      };
+    }
+    try {
+      await update(ref(db), updates);
+      showToast(type === "empty" ? "🚜 Plot cleared!" : `🔨 Built ${ownerName || BUILDING_LABELS[type]} in ${zoneMeta.zone === "beach" ? "Beach" : "Airport"} Zone!`);
+      closeAllDrawers();
+      if (updates[`plots/${selectedPlotId}`]) {
+        engine.focusPlot(selectedPlotId);
+        openPlotCard(selectedPlotId, updates[`plots/${selectedPlotId}`]);
+      } else {
+        plotCard.classList.add("hidden");
+      }
+    } catch (err) {
+      showToast("Error: " + err.message);
+    }
+    return;
+  }
+
   const oldSize = currentData?.status === "built" ? (currentData.size || getRequiredSize(currentData.buildingType)) : 1;
 
   const updates = {};
@@ -680,7 +802,6 @@ document.getElementById("btn-save-world").addEventListener("click", async () => 
       townName: document.getElementById("w-name").value.trim() || "FOLLOWER NAGARAM",
       beachOwner: (document.getElementById("w-beach-owner")?.value.trim() || "@follower_beach"),
       railwayOwner: (document.getElementById("w-railway-owner")?.value.trim() || "@_ur_bunny_108_"),
-      airportHouseOwner: (document.getElementById("w-airport-house-owner")?.value.trim() || "@urs_bazigar"),
       dayNumber: parseInt(document.getElementById("w-day").value, 10) || 1,
       timeOfDay: document.getElementById("w-time").value,
       lifeEnabled: document.getElementById("w-life").value === "on"
@@ -935,4 +1056,29 @@ if (railwayEditBtn) {
     }
     showToast("✏️ Enter Railway Station @username & tap Save World Live!");
   });
+}
+
+// ➕ ADD PLOT MODE TOGGLE (Tap open land at Airport or Beach to spawn buildable plots!)
+const btnAddPlotMode = document.getElementById("btn-add-plot-mode");
+const addPlotBanner = document.getElementById("add-plot-banner");
+const btnExitAddPlot = document.getElementById("btn-exit-add-plot");
+
+function setAddPlotMode(active) {
+  engine.addPlotMode = active;
+  if (btnAddPlotMode) btnAddPlotMode.classList.toggle("active", active);
+  if (addPlotBanner) addPlotBanner.classList.toggle("hidden", !active);
+  if (active) {
+    closeAllDrawers();
+    plotCard.classList.add("hidden");
+    showToast("📍 Add Plot Mode ON: Tap Airport or Beach land (or glowing + pads)!");
+  }
+}
+
+if (btnAddPlotMode) {
+  btnAddPlotMode.addEventListener("click", () => {
+    setAddPlotMode(!engine.addPlotMode);
+  });
+}
+if (btnExitAddPlot) {
+  btnExitAddPlot.addEventListener("click", () => setAddPlotMode(false));
 }

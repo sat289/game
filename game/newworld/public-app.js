@@ -1,5 +1,5 @@
-import { db, ref, onValue } from "./firebase-config.js?v=19";
-import { FollowerTownEngine, BUILDING_LABELS, getRequiredSize } from "./world-engine.js?v=19";
+import { db, ref, onValue } from "./firebase-config.js?v=20";
+import { FollowerTownEngine, BUILDING_LABELS, getRequiredSize } from "./world-engine.js?v=20";
 
 let allPlots = {};
 const container = document.getElementById("canvas-container");
@@ -19,6 +19,11 @@ function showToast(msg) {
 }
 
 const engine = new FollowerTownEngine(container, (plotId, data) => {
+  if (plotId === "ADD_AIRPORT_PLOT" || plotId === "ADD_BEACH_PLOT") {
+    reqModal.classList.remove("hidden");
+    showToast(plotId === "ADD_AIRPORT_PLOT" ? "✈️ Request an Airport Zone plot here!" : "🏖️ Request a Beach Zone plot here!");
+    return;
+  }
   openPlotCard(plotId, data);
 });
 
@@ -27,7 +32,7 @@ function openPlotCard(plotId, data) {
     const rOwner = engine.railwayOwner || "@_ur_bunny_108_";
     document.getElementById("card-badge").textContent = "INDIAN RAILWAYS • LIVE EXPRESS";
     document.getElementById("card-owner").textContent = `🚂 ${rOwner} • SHERU BHAI JN`;
-    document.getElementById("card-role").textContent = "Express Train emerges from the Mountain Tunnel at the end of the city, circles the entire town, and stops here for passengers to board!";
+    document.getElementById("card-role").textContent = "2-Platform Railway Station with Foot Overbridge Steps, IN/OUT Station Parking, Direct City Road & 2 Real Trains (Coming & Going through Hollow Mountain Tunnel)!";
     document.getElementById("card-type").textContent = "RAILWAY STATION & TUNNEL";
     document.getElementById("card-day").textContent = "";
     websiteBtn.classList.add("hidden");
@@ -126,7 +131,11 @@ onValue(ref(db, "plots"), (snapshot) => {
 
   Object.keys(allPlots).forEach((plotId) => {
     if (!data[plotId]) {
-      engine.renderPlot(plotId, { status: "empty", buildingType: "empty" }, false);
+      if (plotId.startsWith("zone_")) {
+        engine.removeCustomPlot(plotId);
+      } else {
+        engine.renderPlot(plotId, { status: "empty", buildingType: "empty" }, false);
+      }
     }
   });
 
@@ -144,7 +153,6 @@ onValue(ref(db, "worldSettings"), (snapshot) => {
   engine.setTownName(name);
   if (val.beachOwner !== undefined) engine.setBeachOwner(val.beachOwner);
   if (val.railwayOwner !== undefined) engine.setRailwayOwner(val.railwayOwner);
-  if (val.airportHouseOwner !== undefined) engine.setAirportHouseOwner(val.airportHouseOwner);
   engine.setTimeOfDay(val.timeOfDay || "day");
   engine.lifeEnabled = val.lifeEnabled !== false;
 });
@@ -295,5 +303,45 @@ if (btnJumpRailway) {
     engine.focusPlot("RAILWAY_STATION");
     openPlotCard("RAILWAY_STATION", null);
     showToast("🚂 Sheru Bhai Jn • Live Train & Mountain Tunnel!");
+  });
+}
+
+// Direct Instagram DM Button inside "Add Building" Modal (@_satish_official_16)
+const INSTA_HANDLE = "_satish_official_16";
+const reqInstaDmBtn = document.getElementById("req-insta-dm-btn");
+if (reqInstaDmBtn) {
+  reqInstaDmBtn.addEventListener("click", async () => {
+    const uname = (document.getElementById("req-username")?.value || "").trim();
+    const job = (document.getElementById("req-job")?.value || "").trim();
+    const building = (document.getElementById("req-building")?.value || "Classic House").trim();
+    const note = (document.getElementById("req-note")?.value || "").trim();
+
+    if (!uname) {
+      showToast("Please enter your Instagram @username first!");
+      document.getElementById("req-username")?.focus();
+      return;
+    }
+
+    const handleFormatted = uname.startsWith("@") ? uname : `@${uname}`;
+    const msgLines = [
+      `Hi! Please add my building in Sheru Bhai City 🏙️`,
+      `Instagram: ${handleFormatted}`,
+      `Building: ${building}`,
+      job ? `Role/Job: ${job}` : "",
+      note ? `Note: ${note}` : ""
+    ].filter(Boolean);
+    const fullMsg = msgLines.join(" | ");
+
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(fullMsg);
+      }
+    } catch {
+      // Clipboard optional fallback
+    }
+
+    showToast("📋 Message copied! Opening Instagram DM...");
+    const dmUrl = `https://ig.me/m/${INSTA_HANDLE}?text=${encodeURIComponent(fullMsg)}`;
+    window.open(dmUrl, "_blank", "noopener");
   });
 }

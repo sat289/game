@@ -252,9 +252,16 @@ export class FollowerTownEngine {
     this.beachX = -108;
     this.beachOwner = "@follower_beach";
     this.railwaySim = null;
-    this.railwayZ = -65;
+    this.railwayZ = -88;
+    this.railRInner = 70;
+    this.railROuter = 73.8;
     this.railwayOwner = "@_ur_bunny_108_";
-    this.airportHouseOwner = "@urs_bazigar";
+    this.discoGroup = null;
+    this.discoCones = [];
+    this.discoPointLight = null;
+    this.discoRing = null;
+    this.addPlotMode = false;
+    this.onAddPlotTap = null;
     this.turntableRotors = [];
     this.studioFlashes = [];
     this.skyClouds = [];
@@ -501,7 +508,17 @@ export class FollowerTownEngine {
       stationRoof: new THREE.MeshLambertMaterial({ color: 0x0369a1 }),
       cafeBrown: new THREE.MeshLambertMaterial({ color: 0x451a03 }),
       cafeCream: new THREE.MeshLambertMaterial({ color: 0xfef3c7 }),
-      itiWorkshop: new THREE.MeshLambertMaterial({ color: 0x0284c7 })
+      itiWorkshop: new THREE.MeshLambertMaterial({ color: 0x0284c7 }),
+      // Vande Bharat Train, Foot Overbridge, Station Parking & Disco Light Materials
+      vbWhite: new THREE.MeshPhongMaterial({ color: 0xf8fafc, specular: 0xffffff, shininess: 95 }),
+      vbOrange: new THREE.MeshLambertMaterial({ color: 0xf97316 }),
+      vbBlue: new THREE.MeshLambertMaterial({ color: 0x0284c7 }),
+      fobSteel: new THREE.MeshLambertMaterial({ color: 0x64748b }),
+      parkingGreen: new THREE.MeshBasicMaterial({ color: 0x22c55e }),
+      parkingRed: new THREE.MeshBasicMaterial({ color: 0xef4444 }),
+      addPadGlow: new THREE.MeshBasicMaterial({ color: 0x22c55e, transparent: true, opacity: 0.78 }),
+      tunnelConcrete: new THREE.MeshLambertMaterial({ color: 0x94a3b8 }),
+      tunnelDarkWall: new THREE.MeshLambertMaterial({ color: 0x1e293b })
     };
   }
 
@@ -575,32 +592,35 @@ export class FollowerTownEngine {
   }
 
   // Crisp, RAM-cached architectural facade signboard mounted directly on landmark buildings!
+  // Crisp, RAM-cached architectural facade signboard (512x128 mipmapped for razor-sharp mobile reading!)
   _makeBuildingBoard(title, subtitle, bgHex = "#1e3a8a", accentHex = "#facc15", w = 6.4, h = 1.15) {
     const key = `${title}|${subtitle}|${bgHex}|${accentHex}`;
     let mat = this.signTexCache.get(key);
     if (!mat) {
       const c = document.createElement("canvas");
-      c.width = 256;
-      c.height = 64;
+      c.width = 512;
+      c.height = 128;
       const ctx = c.getContext("2d");
       ctx.fillStyle = bgHex;
-      ctx.fillRect(0, 0, 256, 64);
+      ctx.fillRect(0, 0, 512, 128);
       ctx.strokeStyle = accentHex;
-      ctx.lineWidth = 4;
-      ctx.strokeRect(3, 3, 250, 58);
+      ctx.lineWidth = 8;
+      ctx.strokeRect(6, 6, 500, 116);
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 22px sans-serif";
-      ctx.fillText(title, 128, subtitle ? 24 : 33);
+      ctx.font = "900 42px sans-serif";
+      ctx.fillText(title, 256, subtitle ? 46 : 66, 476);
       if (subtitle) {
         ctx.fillStyle = accentHex;
-        ctx.font = "bold 14px sans-serif";
-        ctx.fillText(subtitle, 128, 48);
+        ctx.font = "800 26px sans-serif";
+        ctx.fillText(subtitle, 256, 94, 476);
       }
       const tex = new THREE.CanvasTexture(c);
-      tex.generateMipmaps = false;
-      tex.minFilter = THREE.LinearFilter;
+      tex.generateMipmaps = true;
+      tex.minFilter = THREE.LinearMipmapLinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      tex.colorSpace = THREE.SRGBColorSpace;
       mat = new THREE.MeshBasicMaterial({ map: tex });
       this.signTexCache.set(key, mat);
     }
@@ -683,6 +703,38 @@ export class FollowerTownEngine {
       this.pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
       this.raycaster.setFromCamera(this.pointer, this.camera);
+
+      // ➕ ADD PLOT MODE: Touching open land in Airport or Beach spawns a new plot right there!
+      if (this.addPlotMode && this.onAddPlotTap) {
+        const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+        const hitPt = new THREE.Vector3();
+        if (this.raycaster.ray.intersectPlane(groundPlane, hitPt)) {
+          const wx = hitPt.x;
+          const wz = hitPt.z;
+          // Strictly block placing plots on the double railway track corridor!
+          if (this.isPointOnRailwayTrack(wx, wz)) {
+            this.onAddPlotTap({ blocked: true, reason: "🚫 Cannot place a plot on the Railway Track!" });
+            return;
+          }
+          // Airport Zone (East outside city, away from tracks)
+          if (wx > this.railROuter + 6) {
+            const ox = wx - this.airportX;
+            const oz = wz;
+            this.onAddPlotTap({ blocked: false, zone: "airport", offsetX: ox, offsetZ: oz, rotY: Math.PI });
+            return;
+          }
+          // Beach Zone (West outside city, away from tracks)
+          if (wx < -(this.railROuter + 6)) {
+            const ox = wx - this.beachX;
+            const oz = wz;
+            this.onAddPlotTap({ blocked: false, zone: "beach", offsetX: ox, offsetZ: oz, rotY: -Math.PI / 2 });
+            return;
+          }
+          this.onAddPlotTap({ blocked: true, reason: "📍 Tap open land near Airport (East) or Beach (West)!" });
+          return;
+        }
+      }
+
       const hits = this.raycaster.intersectObjects(this.plotHitboxes, false);
       if (hits.length > 0) {
         const plotId = hits[0].object.userData.plotId;
@@ -734,12 +786,29 @@ export class FollowerTownEngine {
     }
   }
 
-  setAirportHouseOwner(ownerName) {
-    const clean = (ownerName || "@urs_bazigar").trim();
-    if (clean !== this.airportHouseOwner) {
-      this.airportHouseOwner = clean;
-      if (this.currentGridRadius > 0) this._rebuildRoadsAndRingRoad();
+  isPointOnRailwayTrack(wx, wz) {
+    const m = Math.max(Math.abs(wx), Math.abs(wz));
+    // Double track corridor with generous safety margin so NO house ever touches a rail!
+    if (m >= this.railRInner - 5.5 && m <= this.railROuter + 5.5) return true;
+    // Also protect North Railway Station + Parking Plaza footprint
+    if (Math.abs(wx) < 26 && wz < -this.ringRadius && wz > -(this.railROuter + 18)) return true;
+    return false;
+  }
+
+  removeCustomPlot(plotId) {
+    this.plotDataMap.delete(plotId);
+    if (this.plotMeshes.has(plotId)) {
+      const oldGroup = this.plotMeshes.get(plotId);
+      this._disposePlotGroup(oldGroup);
+      this.plotsGroup.remove(oldGroup);
+      this.plotMeshes.delete(plotId);
     }
+    this.plotSigns = this.plotSigns.filter((s) => s.plotId !== plotId);
+    this.plotHitboxes = this.plotHitboxes.filter((h) => h.userData.plotId !== plotId);
+    this.sirenLights = this.sirenLights.filter((s) => s.plotId !== plotId);
+    this.landmarkActors = this.landmarkActors.filter((a) => a.plotId !== plotId);
+    this.turntableRotors = this.turntableRotors.filter((r) => r.plotId !== plotId);
+    this.studioFlashes = this.studioFlashes.filter((f) => f.plotId !== plotId);
   }
 
   syncLandmarkFootprints(allPlotsObj) {
@@ -810,10 +879,16 @@ export class FollowerTownEngine {
       this.cityGroup.remove(this.cityGroup.children[0]);
     }
     this.lampBulbs = [];
-    this.plotHitboxes = this.plotHitboxes.filter((h) => h.userData.plotId !== "ST_JUNCTION" && h.userData.plotId !== "AIRPORT" && h.userData.plotId !== "BEACH" && h.userData.plotId !== "RAILWAY_STATION");
+    this.plotHitboxes = this.plotHitboxes.filter(
+      (h) => !["ST_JUNCTION", "AIRPORT", "BEACH", "RAILWAY_STATION", "ADD_AIRPORT_PLOT", "ADD_BEACH_PLOT"].includes(h.userData.plotId)
+    );
     this.airportSim = null;
     this.beachSim = null;
     this.railwaySim = null;
+    this.discoGroup = null;
+    this.discoCones = [];
+    this.discoPointLight = null;
+    this.discoRing = null;
 
     const r = this.currentGridRadius;
     const gridCount = r * 2 + 1;
@@ -822,7 +897,7 @@ export class FollowerTownEngine {
     this.ringRadius = ringRadius;
 
     const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(ringRadius * 2 + 440, ringRadius * 2 + 260),
+      new THREE.PlaneGeometry(ringRadius * 2 + 520, ringRadius * 2 + 360),
       this.mat.grass
     );
     ground.rotation.x = -Math.PI / 2;
@@ -912,7 +987,7 @@ export class FollowerTownEngine {
       this._addHighwayLamp(-ringRadius, p);
       this._addHighwayLamp(ringRadius, p);
 
-      if (p < -10 || p > 10) this._addPalmTree(p, -(ringRadius + 7));
+      if (p < -20 || p > 20) this._addPalmTree(p, -(ringRadius + 7));
       this._addPalmTree(p, ringRadius + 7);
       if (p < -10 || p > 10) this._addPalmTree(-(ringRadius + 7), p);
       if (p < 8 || p > 28) this._addPalmTree(ringRadius + 7, p);
@@ -950,6 +1025,12 @@ export class FollowerTownEngine {
     this._buildInternationalAirport(ringRadius);
     this._buildSheruBhaiBeach(ringRadius);
     this._buildRailwaySystem(ringRadius);
+    // Keep any existing custom Airport / Beach zone plots positioned accurately!
+    for (const [pid, pdata] of this.plotDataMap.entries()) {
+      if (pdata && pdata.isCustomZone) {
+        this.renderPlot(pid, pdata, false);
+      }
+    }
     this.setTimeOfDay(this.timeOfDay);
   }
 
@@ -1144,11 +1225,60 @@ export class FollowerTownEngine {
     );
     g.add(lionStatue);
 
-    // Glowing Spotlight Crown Aura at Night
+    // Glowing Spotlight Crown Aura + 🪩 NIGHT MODE DISCO LIGHTS FOR SHERU BHAI STATUE!
     const aura = new THREE.Mesh(new THREE.RingGeometry(1.38, 1.65, 18), this.mat.lampBulbNight);
     aura.rotation.x = -Math.PI / 2;
     aura.position.y = 4.32;
     this.lampBulbs.push(aura);
+
+    const discoGroup = new THREE.Group();
+    const discoPalette = [0xec4899, 0x22d3ee, 0x4ade80, 0xfacc15, 0xa855f7, 0xef4444];
+    const coneGeo = new THREE.ConeGeometry(1.45, 7.6, 10, 1, true);
+    const podGeo = new THREE.SphereGeometry(0.28, 8, 8);
+    this.discoCones = [];
+    for (let d = 0; d < 6; d++) {
+      const ang = (d / 6) * Math.PI * 2;
+      const beamMat = new THREE.MeshBasicMaterial({
+        color: discoPalette[d],
+        transparent: true,
+        opacity: 0.34,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      });
+      const cone = new THREE.Mesh(coneGeo, beamMat);
+      cone.position.set(Math.cos(ang) * 3.1, 6.2, Math.sin(ang) * 3.1);
+      cone.lookAt(0, 9.2, 0);
+      cone.rotateX(Math.PI / 2);
+
+      const podMat = new THREE.MeshBasicMaterial({ color: discoPalette[d] });
+      const pod = new THREE.Mesh(podGeo, podMat);
+      pod.position.set(Math.cos(ang) * 4.5, 0.72, Math.sin(ang) * 4.5);
+
+      discoGroup.add(cone, pod);
+      this.discoCones.push({ cone, pod, beamMat, podMat, baseAng: ang, colorIdx: d });
+    }
+
+    const discoRingMat = new THREE.MeshBasicMaterial({
+      color: 0xec4899,
+      transparent: true,
+      opacity: 0.72,
+      side: THREE.DoubleSide
+    });
+    const discoRing = new THREE.Mesh(new THREE.RingGeometry(4.85, 5.55, 28), discoRingMat);
+    discoRing.rotation.x = -Math.PI / 2;
+    discoRing.position.y = 0.42;
+    discoGroup.add(discoRing);
+    this.discoRing = discoRing;
+
+    // 1 Lightweight Color-Cycling PointLight illuminating the White Marble Lion Statue at night!
+    const discoPt = new THREE.PointLight(0xec4899, 3.2, 24);
+    discoPt.position.set(0, 9.8, 3.4);
+    discoGroup.add(discoPt);
+    this.discoPointLight = discoPt;
+
+    discoGroup.visible = this.timeOfDay === "night";
+    g.add(discoGroup);
+    this.discoGroup = discoGroup;
 
     // Animated Water Fountain Jets arcing into the blue pool!
     this.fountainJets = [];
@@ -1554,7 +1684,7 @@ export class FollowerTownEngine {
    * - Live VIP Sheru Bhai (Lion in rich clothes + gold chains) arriving in his Sparkling Diamond Car inside the Airport right next to the VIP Helipad -> Walking into his Sparkling Diamond Helicopter -> Flying around the ENTIRE CITY!
    */
   _buildInternationalAirport(ringRadius) {
-    const ax = ringRadius + 62;
+    const ax = ringRadius + 78;
     this.airportX = ax;
 
     const ap = new THREE.Group();
@@ -1562,13 +1692,13 @@ export class FollowerTownEngine {
 
     const nightGlowMeshes = [];
 
-    // 1. Airport Express Highway connecting East Outer Ring Road -> Inside Airport VIP Gate (at z = 18)
-    const hwyLen = 28;
+    // 1. Airport Express Highway connecting East Outer Ring Road -> Crossing Double Tracks -> Inside Airport VIP Gate (at z = 18)
+    const hwyLen = 42;
     const expressHwy = new THREE.Mesh(new THREE.BoxGeometry(hwyLen, 0.1, 7.6), this.mat.highway);
-    expressHwy.position.set(-48, 0.02, 18);
+    expressHwy.position.set(-55, 0.02, 18);
     const hwyStripe = new THREE.Mesh(new THREE.PlaneGeometry(hwyLen - 2, 0.25), this.mat.petrolYellow);
     hwyStripe.rotation.x = -Math.PI / 2;
-    hwyStripe.position.set(-48, 0.09, 18);
+    hwyStripe.position.set(-55, 0.09, 18);
     ap.add(expressHwy, hwyStripe);
 
     // Airport Highway Entrance Gate Arch
@@ -1772,34 +1902,26 @@ export class FollowerTownEngine {
     diamondHeli.rotation.order = "YXZ";
     ap.add(diamondHeli);
 
-    // 9b. 🏡 AIRPORT-SIDE FOLLOWER VIP HOUSE & LUSH GARDEN (Right beside Airport Highway!)
-    const ahGroup = new THREE.Group();
-    ahGroup.position.set(-48, 0.08, 30);
-    const ahBase = new THREE.Mesh(new THREE.BoxGeometry(8.2, 0.2, 8.2), this.mat.turf);
-    ahBase.position.y = 0.06;
-    const ahPlinth = new THREE.Mesh(new THREE.BoxGeometry(5.8, 0.36, 5.2), this.mat.plinthGrey);
-    ahPlinth.position.set(0, 0.28, 0);
-    const ahBody = new THREE.Mesh(new THREE.BoxGeometry(5.4, 3.2, 4.8), this.mat.stuccoIvory);
-    ahBody.position.set(0, 2.0, 0);
-    const ahRoof = new THREE.Mesh(new THREE.BoxGeometry(6.0, 0.34, 5.4), this.mat.slateTrim);
-    ahRoof.position.set(0, 3.75, 0);
-    const ahDoor = new THREE.Mesh(this.geo.door, this.mat.teakWood);
-    ahDoor.position.set(0, 1.15, -2.42);
-    const ahWinL = new THREE.Mesh(this.geo.win, this.mat.windowDay);
-    ahWinL.position.set(-1.55, 1.85, -2.42);
-    const ahWinR = ahWinL.clone();
-    ahWinR.position.x = 1.55;
-    // Lush greenery around the Airport-Side House
-    [[-3.2, -3.2], [3.2, -3.2], [-3.2, 3.2], [3.2, 3.2]].forEach(([gx, gz]) => {
-      const bush = new THREE.Mesh(new THREE.DodecahedronGeometry(0.65, 0), this.mat.treeLeaf);
-      bush.position.set(gx, 0.65, gz);
-      ahGroup.add(bush);
-    });
-    const ahOwnerClean = (this.airportHouseOwner || "@urs_bazigar").trim();
-    const ahSign = this._createNameSign(`🏡 ${ahOwnerClean}`, "✈️ AIRPORT-SIDE VIP HOUSE", false);
-    ahSign.position.set(0, 5.8, 0);
-    ahGroup.add(ahBase, ahPlinth, ahBody, ahRoof, ahDoor, ahWinL, ahWinR, ahSign);
-    ap.add(ahGroup);
+    // 9b. ➕ AIRPORT COLONY PLOT ZONE (Safely South of Airport Fence — Zero Overlap with Railway Tracks!)
+    const apColonyRoad = new THREE.Mesh(new THREE.BoxGeometry(64, 0.08, 4.4), this.mat.road);
+    apColonyRoad.position.set(0, 0.03, 50.8);
+    ap.add(apColonyRoad);
+
+    const apAddPad = new THREE.Group();
+    apAddPad.position.set(-39, 0.12, 56);
+    const padBase = new THREE.Mesh(new THREE.BoxGeometry(7.0, 0.18, 7.0), this.mat.addPadGlow);
+    const plusH = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.22, 0.85), this.mat.wallWhite);
+    plusH.position.y = 0.05;
+    const plusV = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.22, 3.6), this.mat.wallWhite);
+    plusV.position.y = 0.05;
+    const padSign = this._createNameSign("➕ ADD AIRPORT PLOT", "TAP TO PLACE PLOT HERE", false);
+    padSign.position.set(0, 3.6, 0);
+    const padHit = new THREE.Mesh(new THREE.BoxGeometry(7.4, 5.0, 7.4), new THREE.MeshBasicMaterial({ visible: false }));
+    padHit.position.y = 2.5;
+    padHit.userData.plotId = "ADD_AIRPORT_PLOT";
+    apAddPad.add(padBase, plusH, plusV, padSign, padHit);
+    this.plotHitboxes.push(padHit);
+    ap.add(apAddPad);
 
     // 10. Floating Big Airport Sign + Clickable Hitbox
     const apSign = this._createNameSign("✈️ SHERU BHAI INTL AIRPORT", "20 ACRES • LIVE FLIGHTS & DIAMOND HELI", true);
@@ -1877,19 +1999,19 @@ export class FollowerTownEngine {
    *   customizable Follower @username mounted signboard + floating sign!
    */
   _buildSheruBhaiBeach(ringRadius) {
-    const bx = -(ringRadius + 58);
+    const bx = -(ringRadius + 76);
     this.beachX = bx;
 
     const bg = new THREE.Group();
     bg.position.set(bx, 0, 0);
 
-    // 1. Beach Boulevard Connector Road from West Outer Ring Road (East side of beach group: x = +48 -> +24)
-    const roadLen = 30;
+    // 1. Beach Boulevard Connector Road from West Outer Ring Road -> Across Double Tracks -> Beachfront
+    const roadLen = 46;
     const beachRoad = new THREE.Mesh(new THREE.BoxGeometry(roadLen, 0.1, 7.2), this.mat.road);
-    beachRoad.position.set(42, 0.02, 0);
+    beachRoad.position.set(50, 0.02, 0);
     const roadDash = new THREE.Mesh(new THREE.PlaneGeometry(roadLen - 2, 0.25), this.mat.stripe);
     roadDash.rotation.x = -Math.PI / 2;
-    roadDash.position.set(42, 0.08, 0);
+    roadDash.position.set(50, 0.08, 0);
     bg.add(beachRoad, roadDash);
 
     // Coastal Entrance Arch ("SHERU BHAI BEACH")
@@ -2119,6 +2241,23 @@ export class FollowerTownEngine {
     villa.add(deck, pool, vFloor1, vGlass1, vTeakClad, vSlab, vFloor2, vGlass2, vBalcRail, vRoof, villaBoardW, villaBoardE, villaSign);
     bg.add(villa);
 
+    // 6b. ➕ ADD BEACH PLOT PAD (Golden Palm Beachfront — Touch to Spawn New Buildable Beach Plots!)
+    const bAddPad = new THREE.Group();
+    bAddPad.position.set(22, 0.14, 16);
+    const bPadBase = new THREE.Mesh(new THREE.BoxGeometry(7.0, 0.18, 7.0), this.mat.addPadGlow);
+    const bPlusH = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.22, 0.85), this.mat.wallWhite);
+    bPlusH.position.y = 0.05;
+    const bPlusV = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.22, 3.6), this.mat.wallWhite);
+    bPlusV.position.y = 0.05;
+    const bPadSign = this._createNameSign("➕ ADD BEACH PLOT", "TAP TO PLACE BEACH PLOT", false);
+    bPadSign.position.set(0, 3.6, 0);
+    const bPadHit = new THREE.Mesh(new THREE.BoxGeometry(7.4, 5.0, 7.4), new THREE.MeshBasicMaterial({ visible: false }));
+    bPadHit.position.y = 2.5;
+    bPadHit.userData.plotId = "ADD_BEACH_PLOT";
+    bAddPad.add(bPadBase, bPlusH, bPlusV, bPadSign, bPadHit);
+    this.plotHitboxes.push(bPadHit);
+    bg.add(bAddPad);
+
     // 7. Clickable Hitbox for the Entire Beach & Beach House
     const hitbox = new THREE.Mesh(
       new THREE.BoxGeometry(84, 14, 96),
@@ -2138,369 +2277,630 @@ export class FollowerTownEngine {
 
 
   /**
-   * 🚂 REALISTIC INDIAN EXPRESS TRAIN (1 Blue/Yellow WAP-7 Electric Engine + 3 Blue ICF Passenger Coaches)
+   * 🚂 REALISTIC 3D INDIAN RAILWAYS WAP-7 ELECTRIC LOCOMOTIVE & ICF PASSENGER COACHES (Train 1)
    */
   _makeTrainLocomotive(nightLights) {
     const loco = new THREE.Group();
 
-    // Heavy Underframe & 4 Wheel Bogies
-    const chassis = new THREE.Mesh(new THREE.BoxGeometry(1.85, 0.45, 5.6), this.mat.charcoal);
+    // Heavy Bogie Underframe + 6 Steel Wheels + Buffers
+    const chassis = new THREE.Mesh(new THREE.BoxGeometry(1.92, 0.45, 5.9), this.mat.charcoal);
     chassis.position.set(0, 0.48, 0);
-    const whGeo = new THREE.CylinderGeometry(0.28, 0.28, 1.98, 8);
+    const whGeo = new THREE.CylinderGeometry(0.28, 0.28, 2.02, 8);
     whGeo.rotateZ(Math.PI / 2);
-    [-2.0, -1.1, 1.1, 2.0].forEach((wz) => {
+    [-2.2, -1.35, -0.55, 0.55, 1.35, 2.2].forEach((wz) => {
       const wh = new THREE.Mesh(whGeo, this.mat.wheelBlack);
       wh.position.set(0, 0.28, wz);
       loco.add(wh);
     });
 
-    // Iconic Blue & Yellow Indian Railways WAP-7 Engine Body
-    const body = new THREE.Mesh(new THREE.BoxGeometry(1.9, 1.55, 5.4), this.mat.trainBlue);
-    body.position.set(0, 1.48, 0);
-    const yellowBand = new THREE.Mesh(new THREE.BoxGeometry(1.95, 0.34, 5.44), this.mat.trainYellow);
-    yellowBand.position.set(0, 1.15, 0);
-    const roof = new THREE.Mesh(new THREE.BoxGeometry(1.72, 0.24, 5.0), this.mat.trainRoof);
-    roof.position.set(0, 2.36, 0);
+    // Aerodynamic Blue/White/Red/Yellow Indian Express WAP-7 Body
+    const body = new THREE.Mesh(new THREE.BoxGeometry(1.96, 1.55, 5.4), this.mat.trainBlue);
+    body.position.set(0, 1.48, -0.05);
+    const noseSlope = new THREE.Mesh(new THREE.BoxGeometry(1.88, 1.15, 0.9), this.mat.trainBlue);
+    noseSlope.position.set(0, 1.25, 2.85);
+    noseSlope.rotation.x = 0.22;
 
-    // Front Cab Windshield + Cattle Guard Cowcatcher
-    const wind = new THREE.Mesh(new THREE.BoxGeometry(1.52, 0.56, 0.1), this.mat.busWindshield);
-    wind.position.set(0, 1.78, 2.71);
-    const guard = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.34, 0.45), this.mat.trainYellow);
-    guard.position.set(0, 0.35, 2.9);
+    const yellowBand = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.34, 5.85), this.mat.trainYellow);
+    yellowBand.position.set(0, 1.12, 0.1);
+    const redTrim = new THREE.Mesh(new THREE.BoxGeometry(2.02, 0.14, 5.88), this.mat.petrolRed);
+    redTrim.position.set(0, 0.88, 0.1);
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(1.76, 0.26, 5.2), this.mat.trainRoof);
+    roof.position.set(0, 2.36, -0.05);
 
-    // Rooftop Electric Pantograph Frame
-    const panto1 = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.08, 0.8), this.mat.charcoal);
-    panto1.position.set(0, 2.85, -1.2);
-    const pantoPost = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.45, 0.6), this.mat.railSteel);
-    pantoPost.position.set(0, 2.62, -1.2);
+    // Split Cab Windshields + Chrome Front Buffers + Cowcatcher
+    const windL = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.56, 0.12), this.mat.busWindshield);
+    windL.position.set(-0.42, 1.82, 2.75);
+    windL.rotation.x = -0.18;
+    const windR = windL.clone();
+    windR.position.x = 0.42;
 
-    // Powerful Locomotive Headlight + Night Beam!
-    const hlBulb = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.12, 8), this.mat.lampBulbNight);
-    hlBulb.rotation.x = Math.PI / 2;
-    hlBulb.position.set(0, 1.38, 2.72);
-    const beam = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 8.5), this.mat.headlightBeam);
+    const guard = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.36, 0.52), this.mat.trainYellow);
+    guard.position.set(0, 0.34, 3.15);
+    [-0.65, 0.65].forEach((bx) => {
+      const buf = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.36, 6), this.mat.chrome);
+      buf.rotation.x = Math.PI / 2;
+      buf.position.set(bx, 0.68, 3.18);
+      loco.add(buf);
+    });
+
+    // Detailed Rooftop Electric Pantograph + AC Unit
+    const acPod = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.24, 1.4), this.mat.wallWhite);
+    acPod.position.set(0, 2.58, 1.1);
+    const pantoArm1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.6, 0.1), this.mat.petrolRed);
+    pantoArm1.position.set(0, 2.72, -1.2);
+    pantoArm1.rotation.x = 0.45;
+    const pantoBar = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.08, 0.35), this.mat.chrome);
+    pantoBar.position.set(0, 3.04, -1.35);
+
+    // Twin Bright Locomotive Headlights + Long Night Beam!
+    const hlTop = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.12, 8), this.mat.lampBulbNight);
+    hlTop.rotation.x = Math.PI / 2;
+    hlTop.position.set(0, 2.18, 2.68);
+    const hlLowL = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.12, 8), this.mat.lampBulbNight);
+    hlLowL.rotation.x = Math.PI / 2;
+    hlLowL.position.set(-0.58, 1.15, 3.05);
+    const hlLowR = hlLowL.clone();
+    hlLowR.position.x = 0.58;
+
+    const beam = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 9.5), this.mat.headlightBeam);
     beam.rotation.x = -Math.PI / 2;
-    beam.position.set(0, 0.22, 7.0);
+    beam.position.set(0, 0.24, 7.6);
     beam.visible = this.timeOfDay === "night";
     nightLights.push(beam);
 
-    loco.add(chassis, body, yellowBand, roof, wind, guard, panto1, pantoPost, hlBulb, beam);
+    loco.add(chassis, body, noseSlope, yellowBand, redTrim, roof, windL, windR, guard, acPod, pantoArm1, pantoBar, hlTop, hlLowL, hlLowR, beam);
     return loco;
   }
 
   _makeTrainCoach(trainWindows) {
     const coach = new THREE.Group();
 
-    const chassis = new THREE.Mesh(new THREE.BoxGeometry(1.82, 0.4, 5.6), this.mat.charcoal);
+    const chassis = new THREE.Mesh(new THREE.BoxGeometry(1.88, 0.42, 5.75), this.mat.charcoal);
     chassis.position.set(0, 0.46, 0);
-    const whGeo = new THREE.CylinderGeometry(0.26, 0.26, 1.94, 8);
+    const whGeo = new THREE.CylinderGeometry(0.26, 0.26, 1.98, 8);
     whGeo.rotateZ(Math.PI / 2);
-    [-2.0, -1.2, 1.2, 2.0].forEach((wz) => {
+    [-2.1, -1.3, 1.3, 2.1].forEach((wz) => {
       const wh = new THREE.Mesh(whGeo, this.mat.wheelBlack);
       wh.position.set(0, 0.26, wz);
       coach.add(wh);
     });
 
-    // Classic Blue ICF Express Coach + White Stripe + Grey Curved Roof
-    const body = new THREE.Mesh(new THREE.BoxGeometry(1.88, 1.48, 5.5), this.mat.trainDarkBlue);
-    body.position.set(0, 1.42, 0);
-    const stripe = new THREE.Mesh(new THREE.BoxGeometry(1.92, 0.18, 5.52), this.mat.wallWhite);
+    // Classic Blue LHB/ICF Express Coach + White & Yellow Stripes + Rooftop AC Pods
+    const body = new THREE.Mesh(new THREE.BoxGeometry(1.94, 1.52, 5.65), this.mat.trainDarkBlue);
+    body.position.set(0, 1.44, 0);
+    const stripe = new THREE.Mesh(new THREE.BoxGeometry(1.98, 0.18, 5.68), this.mat.wallWhite);
     stripe.position.set(0, 1.02, 0);
-    const roof = new THREE.Mesh(new THREE.BoxGeometry(1.76, 0.22, 5.4), this.mat.trainRoof);
-    roof.position.set(0, 2.26, 0);
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.24, 5.55), this.mat.trainRoof);
+    roof.position.set(0, 2.3, 0);
+    const ac1 = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.2, 1.15), this.mat.wallWhite);
+    ac1.position.set(0, 2.48, 1.3);
+    const ac2 = ac1.clone();
+    ac2.position.z = -1.3;
+
+    // Inter-coach rubber vestibule coupler
+    const coupler = new THREE.Mesh(new THREE.BoxGeometry(1.25, 1.32, 0.45), this.mat.charcoal);
+    coupler.position.set(0, 1.36, 2.95);
 
     // 5 Passenger Windows on BOTH Sides (Glow warm yellow in Night Mode!)
     const winMat = this.timeOfDay === "night" ? this.mat.windowNight : this.mat.busWindshield;
-    const winGeo = new THREE.BoxGeometry(0.06, 0.48, 0.72);
+    const winGeo = new THREE.BoxGeometry(0.06, 0.5, 0.72);
     for (let wz = -1.9; wz <= 1.9; wz += 0.95) {
       const wL = new THREE.Mesh(winGeo, winMat);
-      wL.position.set(-0.95, 1.56, wz);
+      wL.position.set(-0.98, 1.58, wz);
       const wR = new THREE.Mesh(winGeo, winMat);
-      wR.position.set(0.95, 1.56, wz);
+      wR.position.set(0.98, 1.58, wz);
       coach.add(wL, wR);
       trainWindows.push(wL, wR);
     }
 
-    // Coach Door Cutouts at Ends
-    const doorGeo = new THREE.BoxGeometry(0.07, 1.28, 0.48);
-    [-2.42, 2.42].forEach((dz) => {
-      const dL = new THREE.Mesh(doorGeo, this.mat.charcoal);
-      dL.position.set(-0.95, 1.32, dz);
+    const doorGeo = new THREE.BoxGeometry(0.08, 1.32, 0.5);
+    [-2.48, 2.48].forEach((dz) => {
+      const dL = new THREE.Mesh(doorGeo, this.mat.chrome);
+      dL.position.set(-0.98, 1.34, dz);
       const dR = dL.clone();
-      dR.position.x = 0.95;
+      dR.position.x = 0.98;
       coach.add(dL, dR);
     });
 
-    coach.add(chassis, body, stripe, roof);
+    coach.add(chassis, body, stripe, roof, ac1, ac2, coupler);
     return coach;
   }
 
   /**
-   * 🚂 FULL CITY RAILWAY LOOP + MOUNTAIN TUNNEL AT END OF CITY + GRAND RAILWAY STATION
-   * - Runs cleanly around the entire city outside the Outer Ring Road (railR = ringRadius + 12.2)
-   * - Uses InstancedMesh for sleepers & rails (only 2 draw calls for the whole city loop!)
-   * - Mountain Tunnel at South-West end of the city: Train emerges from the tunnel, circles the whole city,
-   *   stops at the North Grand Railway Station while 6 passengers board INSIDE, then circles back into the tunnel!
+   * 🚄 REALISTIC 3D VANDE BHARAT AERO EXPRESS (Train 2 — Running Opposite Direction on Track 2!)
+   */
+  _makeVandeBharatCar(isLead, isTail, trainWindows, nightLights) {
+    const car = new THREE.Group();
+
+    const chassis = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.42, 5.75), this.mat.charcoal);
+    chassis.position.set(0, 0.46, 0);
+    const whGeo = new THREE.CylinderGeometry(0.26, 0.26, 1.98, 8);
+    whGeo.rotateZ(Math.PI / 2);
+    [-2.0, -1.2, 1.2, 2.0].forEach((wz) => {
+      const wh = new THREE.Mesh(whGeo, this.mat.wheelBlack);
+      wh.position.set(0, 0.26, wz);
+      car.add(wh);
+    });
+
+    const body = new THREE.Mesh(new THREE.BoxGeometry(1.96, 1.52, 5.6), this.mat.vbWhite);
+    body.position.set(0, 1.44, 0);
+    const orangeStripe = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.28, 5.65), this.mat.vbOrange);
+    orangeStripe.position.set(0, 1.02, 0);
+    const blueSkirt = new THREE.Mesh(new THREE.BoxGeometry(1.98, 0.22, 5.62), this.mat.vbBlue);
+    blueSkirt.position.set(0, 0.72, 0);
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(1.78, 0.22, 5.45), this.mat.vbWhite);
+    roof.position.set(0, 2.28, 0);
+
+    // Continuous Panoramic Dark Window Band on BOTH sides (glows at night!)
+    const winMat = this.timeOfDay === "night" ? this.mat.windowNight : this.mat.busWindshield;
+    const bandL = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.54, 4.9), winMat);
+    bandL.position.set(-0.99, 1.62, 0);
+    const bandR = bandL.clone();
+    bandR.position.x = 0.99;
+    trainWindows.push(bandL, bandR);
+    car.add(bandL, bandR);
+
+    if (isLead || isTail) {
+      const dir = isLead ? 1 : -1;
+      const aeroNose = new THREE.Mesh(new THREE.ConeGeometry(1.06, 1.95, 6), this.mat.vbWhite);
+      aeroNose.rotation.x = dir * Math.PI / 2;
+      aeroNose.scale.set(0.95, 1.0, 0.72);
+      aeroNose.position.set(0, 1.26, dir * 3.55);
+      const aeroGlass = new THREE.Mesh(new THREE.BoxGeometry(1.56, 0.58, 0.72), this.mat.busWindshield);
+      aeroGlass.position.set(0, 1.82, dir * 2.95);
+      aeroGlass.rotation.x = -dir * 0.45;
+      car.add(aeroNose, aeroGlass);
+
+      if (isLead) {
+        const hlL = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.14, 0.14), this.mat.lampBulbNight);
+        hlL.position.set(-0.56, 1.08, 3.65);
+        const hlR = hlL.clone();
+        hlR.position.x = 0.56;
+        const beam = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 9.5), this.mat.headlightBeam);
+        beam.rotation.x = -Math.PI / 2;
+        beam.position.set(0, 0.24, 8.2);
+        beam.visible = this.timeOfDay === "night";
+        nightLights.push(beam);
+        car.add(hlL, hlR, beam);
+      }
+    }
+
+    car.add(chassis, body, orangeStripe, blueSkirt, roof);
+    return car;
+  }
+
+  /**
+   * 🚂 DOUBLE-TRACK CITY RAILWAY LOOP + REAL HOLLOWED MOUNTAIN TUNNEL (NW MARKED CORNER)
+   *    + GRAND 2-PLATFORM RAILWAY STATION + FOOT OVERBRIDGE STEPS + STATION PARKING (IN/OUT)!
+   * - Track 1 (Inner): Train 1 (Blue/Yellow WAP-7 Express) runs Clockwise -> emerges from Hollow Tunnel -> stops at Platform 1!
+   * - Track 2 (Outer): Train 2 (White/Orange Vande Bharat Express) runs Counter-Clockwise -> leaves Platform 2 -> enters Hollow Tunnel!
    */
   _buildRailwaySystem(ringRadius) {
-    const railR = ringRadius + 12.2;
-    const cornerR = 11.0;
-    const stationZ = -(railR + 6.8);
-    this.railwayZ = stationZ;
+    const railRInner = ringRadius + 24.0;
+    const railROuter = ringRadius + 27.8;
+    const railRMid = (railRInner + railROuter) / 2;
+    this.railRInner = railRInner;
+    this.railROuter = railROuter;
+    this.railwayZ = -railRMid;
 
     const rg = new THREE.Group();
     const nightLights = [];
     const trainWindows = [];
 
-    // 1. Build Smooth Closed Rounded-Square Track Spline Around the Entire City
-    //    t = 0.0 starts right at the Mountain Tunnel on the South-West end of the city!
-    //    Direction: Clockwise (South-East -> North along East/Airport -> West along North/Station -> South along West/Beach -> back into Tunnel!)
-    const pts = [];
-    const inner = railR - cornerR;
-    // South straight (from Tunnel at x = -inner*0.45 heading East toward SE corner)
-    const tunnelX = -Math.min(inner * 0.48, 28);
-    pts.push(new THREE.Vector3(tunnelX, 0.14, railR));
-    pts.push(new THREE.Vector3(0, 0.14, railR));
-    pts.push(new THREE.Vector3(inner, 0.14, railR));
-    // SE rounded corner
-    pts.push(new THREE.Vector3(railR - 2.2, 0.14, railR - 2.2));
-    // East straight (runs right between Outer Ring Road and 20-Acre Airport!)
-    pts.push(new THREE.Vector3(railR, 0.14, inner));
-    pts.push(new THREE.Vector3(railR, 0.14, 0));
-    pts.push(new THREE.Vector3(railR, 0.14, -inner));
-    // NE rounded corner
-    pts.push(new THREE.Vector3(railR - 2.2, 0.14, -railR + 2.2));
-    // North straight (passes RIGHT THROUGH Grand Railway Station Platform 1 at x=0, z=-railR!)
-    pts.push(new THREE.Vector3(inner, 0.14, -railR));
-    pts.push(new THREE.Vector3(0, 0.14, -railR));
-    pts.push(new THREE.Vector3(-inner, 0.14, -railR));
-    // NW rounded corner
-    pts.push(new THREE.Vector3(-railR + 2.2, 0.14, -railR + 2.2));
-    // West straight (runs right between Outer Ring Road and Sheru Bhai Golden Beach!)
-    pts.push(new THREE.Vector3(-railR, 0.14, -inner));
-    pts.push(new THREE.Vector3(-railR, 0.14, 0));
-    pts.push(new THREE.Vector3(-railR, 0.14, inner));
-    // SW rounded corner leading straight back into the Mountain Tunnel!
-    pts.push(new THREE.Vector3(-railR + 2.2, 0.14, railR - 2.2));
-    pts.push(new THREE.Vector3(-inner, 0.14, railR));
+    // Helper: Build smooth rounded-square closed loop spline at radius R (clockwise if dir=1, counter-clockwise if dir=-1)
+    const makeLoopCurve = (R, dir = 1) => {
+      const cornerR = 12.0;
+      const inner = R - cornerR;
+      const raw = [
+        // Start right at the North-West Hollowed Mountain Tunnel (x = -inner*0.58, z = -R) heading East toward Station!
+        new THREE.Vector3(-inner * 0.58, 0.14, -R),
+        new THREE.Vector3(0, 0.14, -R), // Platform 1 / Platform 2!
+        new THREE.Vector3(inner, 0.14, -R),
+        new THREE.Vector3(R - 2.4, 0.14, -R + 2.4),
+        new THREE.Vector3(R, 0.14, -inner),
+        new THREE.Vector3(R, 0.14, 0),
+        new THREE.Vector3(R, 0.14, inner),
+        new THREE.Vector3(R - 2.4, 0.14, R - 2.4),
+        new THREE.Vector3(inner, 0.14, R),
+        new THREE.Vector3(0, 0.14, R),
+        new THREE.Vector3(-inner, 0.14, R),
+        new THREE.Vector3(-R + 2.4, 0.14, R - 2.4),
+        new THREE.Vector3(-R, 0.14, inner),
+        new THREE.Vector3(-R, 0.14, 0),
+        new THREE.Vector3(-R, 0.14, -inner),
+        new THREE.Vector3(-R + 2.4, 0.14, -R + 2.4),
+        new THREE.Vector3(-inner, 0.14, -R)
+      ];
+      if (dir < 0) raw.reverse();
+      return new THREE.CatmullRomCurve3(raw, true, "catmullrom", 0.35);
+    };
 
-    const trackCurve = new THREE.CatmullRomCurve3(pts, true, "catmullrom", 0.35);
-    const totalLen = trackCurve.getLength();
+    const track1Curve = makeLoopCurve(railRInner, 1);  // Train 1: Coming from NW Tunnel -> East into Platform 1 -> around City!
+    const track2Curve = makeLoopCurve(railROuter, -1); // Train 2: Going from Platform 2 -> West into NW Tunnel -> around City!
 
-    // Find exact curve parameter `stationT` closest to Platform 1 (0, -railR)
-    let stationT = 0.5;
-    let bestD = Infinity;
-    for (let s = 0; s < 400; s++) {
-      const tt = s / 400;
-      const p = trackCurve.getPointAt(tt);
-      const d = p.x * p.x + (p.z + railR) * (p.z + railR);
-      if (d < bestD) {
-        bestD = d;
-        stationT = tt;
+    const len1 = track1Curve.getLength();
+    const len2 = track2Curve.getLength();
+
+    // Find exact stationT on each track closest to x=0, z=-R
+    const findNearestT = (curve, tx, tz) => {
+      let bestT = 0;
+      let bestD = Infinity;
+      for (let i = 0; i < 400; i++) {
+        const tt = i / 400;
+        const p = curve.getPointAt(tt);
+        const d = (p.x - tx) * (p.x - tx) + (p.z - tz) * (p.z - tz);
+        if (d < bestD) {
+          bestD = d;
+          bestT = tt;
+        }
       }
-    }
+      return bestT;
+    };
+    const stationT1 = findNearestT(track1Curve, 0, -railRInner);
+    const stationT2 = findNearestT(track2Curve, 0, -railROuter);
 
-    // 2. Render Railway Track Ballast, Wooden Sleepers & Dual Steel Rails using InstancedMesh (Ultra Low-RAM!)
-    const sleeperCount = Math.min(360, Math.floor(totalLen / 1.8));
-    const sleeperGeo = new THREE.BoxGeometry(2.8, 0.1, 0.42);
-    const sleeperInst = new THREE.InstancedMesh(sleeperGeo, this.mat.railSleeper, sleeperCount);
+    // 1. Render BOTH Parallel Railway Tracks (Ballast + Sleepers + 4 Steel Rails) using Ultra-Fast InstancedMesh!
+    const buildInstancedTrack = (curve, totalLen) => {
+      const count = Math.min(340, Math.floor(totalLen / 2.0));
+      const sleeperGeo = new THREE.BoxGeometry(2.65, 0.1, 0.42);
+      const sleeperInst = new THREE.InstancedMesh(sleeperGeo, this.mat.railSleeper, count);
+      const railGeo = new THREE.BoxGeometry(0.14, 0.12, (totalLen / count) * 1.15);
+      const railInst = new THREE.InstancedMesh(railGeo, this.mat.railSteel, count * 2);
 
-    const railSegGeo = new THREE.BoxGeometry(0.14, 0.12, (totalLen / sleeperCount) * 1.15);
-    const railInst = new THREE.InstancedMesh(railSegGeo, this.mat.railSteel, sleeperCount * 2);
+      const dummy = new THREE.Object3D();
+      const up = new THREE.Vector3(0, 1, 0);
+      const rightV = new THREE.Vector3();
+      for (let i = 0; i < count; i++) {
+        const u = i / count;
+        const p = curve.getPointAt(u);
+        const tan = curve.getTangentAt(u).normalize();
+        const yaw = Math.atan2(tan.x, tan.z);
 
-    const dummy = new THREE.Object3D();
-    const up = new THREE.Vector3(0, 1, 0);
-    const rightVec = new THREE.Vector3();
-    for (let i = 0; i < sleeperCount; i++) {
-      const u = i / sleeperCount;
-      const p = trackCurve.getPointAt(u);
-      const tan = trackCurve.getTangentAt(u).normalize();
-      const yaw = Math.atan2(tan.x, tan.z);
+        dummy.position.set(p.x, 0.08, p.z);
+        dummy.rotation.set(0, yaw, 0);
+        dummy.updateMatrix();
+        sleeperInst.setMatrixAt(i, dummy.matrix);
 
-      dummy.position.set(p.x, 0.08, p.z);
-      dummy.rotation.set(0, yaw, 0);
-      dummy.updateMatrix();
-      sleeperInst.setMatrixAt(i, dummy.matrix);
+        rightV.crossVectors(up, tan).normalize();
+        dummy.position.set(p.x - rightV.x * 0.8, 0.16, p.z - rightV.z * 0.8);
+        dummy.rotation.set(0, yaw, 0);
+        dummy.updateMatrix();
+        railInst.setMatrixAt(i * 2, dummy.matrix);
 
-      rightVec.crossVectors(up, tan).normalize();
-      // Left steel rail
-      dummy.position.set(p.x - rightVec.x * 0.82, 0.16, p.z - rightVec.z * 0.82);
-      dummy.rotation.set(0, yaw, 0);
-      dummy.updateMatrix();
-      railInst.setMatrixAt(i * 2, dummy.matrix);
-      // Right steel rail
-      dummy.position.set(p.x + rightVec.x * 0.82, 0.16, p.z + rightVec.z * 0.82);
-      dummy.rotation.set(0, yaw, 0);
-      dummy.updateMatrix();
-      railInst.setMatrixAt(i * 2 + 1, dummy.matrix);
-    }
-    sleeperInst.instanceMatrix.needsUpdate = true;
-    railInst.instanceMatrix.needsUpdate = true;
-    rg.add(sleeperInst, railInst);
+        dummy.position.set(p.x + rightV.x * 0.8, 0.16, p.z + rightV.z * 0.8);
+        dummy.rotation.set(0, yaw, 0);
+        dummy.updateMatrix();
+        railInst.setMatrixAt(i * 2 + 1, dummy.matrix);
+      }
+      sleeperInst.instanceMatrix.needsUpdate = true;
+      railInst.instanceMatrix.needsUpdate = true;
+      rg.add(sleeperInst, railInst);
+    };
+    buildInstancedTrack(track1Curve, len1);
+    buildInstancedTrack(track2Curve, len2);
 
-    // 3. Railway Level Crossing Gates where Track meets Airport Highway (East) & Beach Road (West)!
-    const addCrossingPost = (cx, cz) => {
-      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 2.8, 6), this.mat.trainYellow);
-      post.position.set(cx, 1.4, cz);
+    // 2. Railway Crossing Warning Posts at East Airport Highway & West Beach Road
+    const addCrossing = (cx, cz) => {
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 3.0, 6), this.mat.trainYellow);
+      post.position.set(cx, 1.5, cz);
       const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.24, 6, 6), this.mat.beaconRed);
-      lamp.position.set(cx, 2.95, cz);
+      lamp.position.set(cx, 3.1, cz);
       rg.add(post, lamp);
     };
-    addCrossingPost(railR - 2.4, 13.5);
-    addCrossingPost(railR + 2.4, 22.5);
-    addCrossingPost(-railR - 2.4, -4.5);
-    addCrossingPost(-railR + 2.4, 4.5);
+    addCrossing(railRInner - 2.4, 13.5);
+    addCrossing(railROuter + 2.4, 22.5);
+    addCrossing(-railRInner + 2.4, -4.5);
+    addCrossing(-railROuter - 2.4, 4.5);
 
-    // 4. ⛰️ ROCKY GREEN MOUNTAIN & STONE RAILWAY TUNNEL (At the South-West End of the City!)
+    // 3. ⛰️ REAL HOLLOWED ARCHED MOUNTAIN TUNNEL (Right in the Marked North-West Corner!)
+    //    Spans BOTH parallel tracks cleanly so you can look straight THROUGH the open hollow arch!
+    const tunnelX = -(railRInner - 12.0) * 0.58;
+    const tunLen = 22.0;
     const tunGroup = new THREE.Group();
-    tunGroup.position.set(tunnelX, 0, railR);
+    tunGroup.position.set(tunnelX, 0, -railRMid);
 
-    // Massive Sculpted Rocky Mountain Hill Covering the Tunnel (16 units long!)
-    const peakMain = new THREE.Mesh(new THREE.DodecahedronGeometry(9.6, 0), this.mat.mountainRock);
-    peakMain.scale.set(1.45, 0.92, 0.95);
-    peakMain.position.set(0, 6.2, 0.8);
-    const peakTop = new THREE.Mesh(new THREE.DodecahedronGeometry(6.8, 0), this.mat.mountainGreen);
-    peakTop.scale.set(1.35, 0.72, 0.9);
-    peakTop.position.set(-1.5, 9.6, 1.0);
-    const peakL = new THREE.Mesh(new THREE.DodecahedronGeometry(6.2, 0), this.mat.mountainRock);
-    peakL.position.set(-9.5, 4.2, 0.5);
-    const peakR = new THREE.Mesh(new THREE.DodecahedronGeometry(5.8, 0), this.mat.mountainGreen);
-    peakR.position.set(8.5, 4.0, 0.8);
-    tunGroup.add(peakMain, peakTop, peakL, peakR);
+    // Hollowed Double-Track Concrete Tunnel Walls (Left/South Wall + Right/North Wall — COMPLETELY OPEN INSIDE!)
+    const wallS = new THREE.Mesh(new THREE.BoxGeometry(tunLen, 4.4, 1.1), this.mat.tunnelDarkWall);
+    wallS.position.set(0, 2.2, 4.3);
+    const wallN = new THREE.Mesh(new THREE.BoxGeometry(tunLen, 4.4, 1.1), this.mat.tunnelDarkWall);
+    wallN.position.set(0, 2.2, -4.3);
+    tunGroup.add(wallS, wallN);
 
-    // Concrete Stone Tunnel Portals on BOTH Ends (East Exit & West Entry) + Pitch-Black Tunnel Interior!
-    [-9.2, 9.2].forEach((px) => {
-      const archWall = new THREE.Mesh(new THREE.BoxGeometry(0.9, 5.2, 6.2), this.mat.concrete);
-      archWall.position.set(px, 2.6, 0);
-      const voidMouth = new THREE.Mesh(new THREE.BoxGeometry(1.1, 3.6, 3.6), this.mat.tunnelVoid);
-      voidMouth.position.set(px, 1.85, 0);
-      const trim = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.55, 6.4), this.mat.trainYellow);
-      trim.position.set(px, 5.2, 0);
-      tunGroup.add(archWall, voidMouth, trim);
+    // Curved Hollow Arched Vault Roof (5 angled concrete slabs forming a genuine hollow semicircular arch over BOTH tracks!)
+    const vaultAngles = [-0.88, -0.44, 0, 0.44, 0.88];
+    const vaultR = 4.6;
+    vaultAngles.forEach((va) => {
+      const slab = new THREE.Mesh(new THREE.BoxGeometry(tunLen, 0.75, 2.3), this.mat.tunnelDarkWall);
+      slab.position.set(0, 3.8 + Math.cos(va) * 2.1, Math.sin(va) * vaultR);
+      slab.rotation.x = va;
+      tunGroup.add(slab);
     });
-    // Dark tunnel roof sleeve inside the mountain so train disappears cleanly inside
-    const tunSleeve = new THREE.Mesh(new THREE.BoxGeometry(18.2, 3.9, 4.2), this.mat.tunnelVoid);
-    tunSleeve.position.set(0, 2.0, 0);
-    const tunSign = this._createNameSign("⛰️ MOUNTAIN TUNNEL", "RAILWAY END OF CITY", false);
-    tunSign.position.set(0, 14.5, 0);
-    tunGroup.add(tunSleeve, tunSign);
+
+    // Concrete Stone Arched Entrance & Exit Portals on BOTH Ends (+X & -X) — Open Hollow Mouths!
+    [-tunLen / 2, tunLen / 2].forEach((px) => {
+      const pS = new THREE.Mesh(new THREE.BoxGeometry(1.2, 5.8, 2.4), this.mat.tunnelConcrete);
+      pS.position.set(px, 2.9, 5.2);
+      const pN = pS.clone();
+      pN.position.z = -5.2;
+      const pHeader = new THREE.Mesh(new THREE.BoxGeometry(1.3, 1.9, 12.8), this.mat.tunnelConcrete);
+      pHeader.position.set(px, 6.2, 0);
+      const pYellow = new THREE.Mesh(new THREE.BoxGeometry(1.38, 0.42, 13.0), this.mat.trainYellow);
+      pYellow.position.set(px, 5.3, 0);
+      // Green & Red Tunnel Signal Lights above the portal
+      const sigG = new THREE.Mesh(new THREE.SphereGeometry(0.26, 6, 6), this.mat.beaconGreen);
+      sigG.position.set(px + (px > 0 ? 0.72 : -0.72), 6.2, 2.2);
+      const sigR = new THREE.Mesh(new THREE.SphereGeometry(0.26, 6, 6), this.mat.beaconRed);
+      sigR.position.set(px + (px > 0 ? 0.72 : -0.72), 6.2, -2.2);
+      tunGroup.add(pS, pN, pHeader, pYellow, sigG, sigR);
+    });
+
+    // Sculpted Green & Rocky Mountain Ridges OVER & BESIDE the Hollow Tunnel (NEVER blocking the inside bore!)
+    const mTop1 = new THREE.Mesh(new THREE.DodecahedronGeometry(7.2, 0), this.mat.mountainGreen);
+    mTop1.scale.set(1.65, 0.65, 1.35);
+    mTop1.position.set(0, 9.6, 0);
+    const mTop2 = new THREE.Mesh(new THREE.DodecahedronGeometry(5.6, 0), this.mat.mountainRock);
+    mTop2.scale.set(1.4, 0.65, 1.15);
+    mTop2.position.set(-4.5, 11.2, -1.2);
+    const mSideN = new THREE.Mesh(new THREE.DodecahedronGeometry(6.8, 0), this.mat.mountainRock);
+    mSideN.scale.set(1.55, 0.9, 0.85);
+    mSideN.position.set(0, 4.6, -10.2);
+    const mSideS = new THREE.Mesh(new THREE.DodecahedronGeometry(5.8, 0), this.mat.mountainGreen);
+    mSideS.scale.set(1.45, 0.82, 0.78);
+    mSideS.position.set(0, 3.8, 9.8);
+    const mFarNW = new THREE.Mesh(new THREE.DodecahedronGeometry(8.4, 0), this.mat.mountainGreen);
+    mFarNW.scale.set(1.3, 0.95, 1.2);
+    mFarNW.position.set(-14.5, 5.2, -11.5);
+    tunGroup.add(mTop1, mTop2, mSideN, mSideS, mFarNW);
+
+    const tunSign = this._createNameSign("⛰️ HOLLOW RAILWAY TUNNEL", "2 TRACKS • IN & OUT TRAINS", true);
+    tunSign.position.set(0, 16.5, 0);
+    tunGroup.add(tunSign);
     rg.add(tunGroup);
 
-    // 5. 🚉 GRAND INDIAN RAILWAY STATION ("SHERU BHAI JN") on North Side (0, -railR - 6.8)
+    // 4. 🚉 GRAND 2-PLATFORM RAILWAY STATION ("SHERU BHAI JN") + FOOT OVERBRIDGE STEPS + STATION PARKING (IN / OUT)
     const stGroup = new THREE.Group();
-    stGroup.position.set(0, 0, -railR);
+    stGroup.position.set(0, 0, -railRMid);
 
-    // Road connecting North Outer Ring Road -> Railway Station Front
-    const stRoad = new THREE.Mesh(new THREE.BoxGeometry(7.2, 0.08, 12.0), this.mat.road);
-    stRoad.position.set(0, 0.02, 5.5);
-    rg.add(stRoad);
-
-    // Raised Long Concrete Platform 1 right beside the Track!
-    const platform = new THREE.Mesh(new THREE.BoxGeometry(34.0, 0.85, 5.2), this.mat.concrete);
-    platform.position.set(0, 0.42, -4.1);
-    const yellowEdge = new THREE.Mesh(new THREE.BoxGeometry(34.0, 0.08, 0.35), this.mat.trainYellow);
-    yellowEdge.position.set(0, 0.87, -1.65);
-
-    // Covered Arched Platform Shed + Steel Pillars + Platform Lamps
-    const shedRoof = new THREE.Mesh(new THREE.BoxGeometry(28.0, 0.32, 5.8), this.mat.stationRoof);
-    shedRoof.position.set(0, 4.85, -4.4);
-    shedRoof.rotation.x = 0.08;
-    for (let px = -12; px <= 12; px += 6) {
-      const pil = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 4.2, 6), this.mat.wallWhite);
-      pil.position.set(px, 2.8, -3.2);
-      stGroup.add(pil);
-      const pLight = new THREE.Mesh(new THREE.SphereGeometry(0.22, 6, 6), this.mat.lampBulbNight);
-      pLight.position.set(px, 4.55, -2.5);
-      pLight.visible = this.timeOfDay === "night";
-      stGroup.add(pLight);
-      nightLights.push(pLight);
+    // --- A. PLATFORM 1 (South / City Side at local z = +4.4, right beside Track 1 at local z = +1.9) ---
+    const pf1 = new THREE.Mesh(new THREE.BoxGeometry(36.0, 0.9, 4.6), this.mat.concrete);
+    pf1.position.set(0, 0.45, 5.0);
+    const pf1Edge = new THREE.Mesh(new THREE.BoxGeometry(36.0, 0.08, 0.36), this.mat.trainYellow);
+    pf1Edge.position.set(0, 0.92, 2.85);
+    const pf1Roof = new THREE.Mesh(new THREE.BoxGeometry(26.0, 0.28, 4.8), this.mat.stationRoof);
+    pf1Roof.position.set(-2, 4.5, 5.0);
+    for (let px = -12; px <= 8; px += 5) {
+      const col = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 3.6, 6), this.mat.wallWhite);
+      col.position.set(px, 2.7, 5.2);
+      stGroup.add(col);
+      const pl = new THREE.Mesh(new THREE.SphereGeometry(0.22, 6, 6), this.mat.lampBulbNight);
+      pl.position.set(px, 4.2, 3.8);
+      pl.visible = this.timeOfDay === "night";
+      stGroup.add(pl);
+      nightLights.push(pl);
     }
 
-    // Platform Waiting Benches
-    [-8, 0, 8].forEach((bx) => {
-      const bench = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.42, 0.65), this.mat.trainBlue);
-      bench.position.set(bx, 1.05, -4.8);
-      stGroup.add(bench);
-    });
+    // --- B. PLATFORM 2 (North / Main Building Side at local z = -5.0, right beside Track 2 at local z = -1.9) ---
+    const pf2 = new THREE.Mesh(new THREE.BoxGeometry(36.0, 0.9, 4.8), this.mat.concrete);
+    pf2.position.set(0, 0.45, -5.0);
+    const pf2Edge = new THREE.Mesh(new THREE.BoxGeometry(36.0, 0.08, 0.36), this.mat.trainYellow);
+    pf2Edge.position.set(0, 0.92, -2.75);
+    const pf2Roof = new THREE.Mesh(new THREE.BoxGeometry(26.0, 0.28, 5.0), this.mat.stationRoof);
+    pf2Roof.position.set(-2, 4.5, -5.0);
+    for (let px = -12; px <= 8; px += 5) {
+      const col = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 3.6, 6), this.mat.wallWhite);
+      col.position.set(px, 2.7, -5.2);
+      stGroup.add(col);
+      const pl = new THREE.Mesh(new THREE.SphereGeometry(0.22, 6, 6), this.mat.lampBulbNight);
+      pl.position.set(px, 4.2, -3.8);
+      pl.visible = this.timeOfDay === "night";
+      stGroup.add(pl);
+      nightLights.push(pl);
+    }
 
-    // Iconic Yellow Indian Railways Station Nameboards at BOTH Platform Ends!
+    // Platform Benches & Iconic Yellow Indian Railways Station Nameboards on BOTH Platforms!
+    [-9, -2, 4].forEach((bx) => {
+      const b1 = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.4, 0.6), this.mat.trainBlue);
+      b1.position.set(bx, 1.1, 5.6);
+      const b2 = b1.clone();
+      b2.position.z = -5.6;
+      stGroup.add(b1, b2);
+    });
+    const irPF1 = this._makeBuildingBoard("SHERU BHAI JN", "PLATFORM 1 • INCOMING", "#facc15", "#111827", 5.8, 1.25);
+    irPF1.position.set(-15.0, 2.4, 4.8);
+    const irPF2 = this._makeBuildingBoard("SHERU BHAI JN", "PLATFORM 2 • OUTGOING", "#facc15", "#111827", 5.8, 1.25);
+    irPF2.position.set(-15.0, 2.4, -4.8);
+    stGroup.add(irPF1, irPF2);
+
+    // --- C. FOOT OVERBRIDGE (FOB) WITH REAL STEPS CONNECTING PLATFORM 1 <-> PLATFORM 2 OVER BOTH TRACKS! ---
+    const fobX = 12.6;
+    // Elevated Bridge Span cleanly above both trains (y = 4.65; trains are 3.05 tall!)
+    const fobDeck = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.34, 11.4), this.mat.concrete);
+    fobDeck.position.set(fobX, 4.65, 0);
+    const fobRailL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.1, 11.4), this.mat.fobSteel);
+    fobRailL.position.set(fobX - 1.52, 5.35, 0);
+    const fobRailR = fobRailL.clone();
+    fobRailR.position.x = fobX + 1.52;
+    const fobRoof = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.22, 11.6), this.mat.stationRoof);
+    fobRoof.position.set(fobX, 6.45, 0);
+    // Support Steel Columns on Platform 1 & Platform 2
+    [[-1.4, 4.2], [1.4, 4.2], [-1.4, -4.2], [1.4, -4.2]].forEach(([dx, dz]) => {
+      const col = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 4.6, 6), this.mat.fobSteel);
+      col.position.set(fobX + dx, 2.5, dz);
+      stGroup.add(col);
+    });
+    // REAL STEPPED STAIRCASES going down onto Platform 1 (facing West along platform) AND Platform 2!
+    for (let st = 0; st < 8; st++) {
+      const sx = fobX - 1.8 - st * 0.56;
+      const sy = 4.45 - st * 0.44;
+      const step1 = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.24, 1.85), this.mat.concrete);
+      step1.position.set(sx, sy, 5.2);
+      const step2 = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.24, 1.85), this.mat.concrete);
+      step2.position.set(sx, sy, -5.2);
+      stGroup.add(step1, step2);
+    }
+    // Staircase Handrails on both staircases
+    const stairRail1 = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.16, 0.14), this.mat.trainYellow);
+    stairRail1.position.set(fobX - 3.8, 3.6, 4.35);
+    stairRail1.rotation.z = 0.66;
+    const stairRail2 = stairRail1.clone();
+    stairRail2.position.z = -4.35;
+    stGroup.add(fobDeck, fobRailL, fobRailR, fobRoof, stairRail1, stairRail2);
+
+    // Animated Pedestrian Crossing the Foot Overbridge between Platform 1 & Platform 2!
+    const bridgeWalker = this._createCharacter({ shirtMat: this.mat.wallGold, pantsMat: this.mat.darkPants, scale: 0.92 });
+    bridgeWalker.position.set(fobX, 4.86, 0);
+    stGroup.add(bridgeWalker);
+
+    // --- D. DIRECT ROAD CONNECTION FROM PLATFORM 1 <-> STATION PARKING (IN / OUT) <-> NORTH OUTER RING ROAD! ---
+    // Note: Outer Ring Road is at world z = -ringRadius, which in stGroup local coords is local z = +railRMid - ringRadius (~ +25.9)!
+    const distToRing = railRMid - ringRadius; // ~25.9
+    const parkingZ = 14.2; // Sits neatly between Platform 1 (z=7.3) and North Outer Ring Road (z=22.3)!
+
+    // Pedestrian Entrance Gate & Steps connecting Platform 1 directly to Station Parking Walkway!
+    const pf1Steps = new THREE.Mesh(new THREE.BoxGeometry(6.8, 0.48, 1.8), this.mat.sidewalk);
+    pf1Steps.position.set(0, 0.24, 8.1);
+    const gateArch = new THREE.Mesh(new THREE.BoxGeometry(7.2, 0.9, 0.6), this.mat.navy);
+    gateArch.position.set(0, 3.4, 8.2);
+    const gColL = new THREE.Mesh(new THREE.BoxGeometry(0.45, 3.4, 0.45), this.mat.wallWhite);
+    gColL.position.set(-3.3, 1.7, 8.2);
+    const gColR = gColL.clone();
+    gColR.position.x = 3.3;
+    const gateBoard = this._makeBuildingBoard("PLATFORM 1 ENTRY", "TICKET COUNTER", "#1e3a8a", "#facc15", 6.2, 0.85);
+    gateBoard.position.set(0, 3.4, 8.55);
+    stGroup.add(pf1Steps, gateArch, gColL, gColR, gateBoard);
+
+    // Paved Station Parking Plaza (28 x 11.5 units) with Marked Bays & Parked Cars/Autos!
+    const parkLot = new THREE.Mesh(new THREE.BoxGeometry(28.0, 0.1, 11.6), this.mat.tarmacGrey);
+    parkLot.position.set(0, 0.05, parkingZ);
+    const parkWalkway = new THREE.Mesh(new THREE.BoxGeometry(28.0, 0.14, 1.6), this.mat.sidewalk);
+    parkWalkway.position.set(0, 0.07, 8.9);
+    stGroup.add(parkLot, parkWalkway);
+
+    // Marked White Parking Bay Lines + Parked Vehicles (Cars & Autos!)
+    for (let px = -11; px <= 11; px += 3.2) {
+      if (Math.abs(px) < 3.6) continue; // Keep center passenger drop-off clear!
+      const line = new THREE.Mesh(new THREE.PlaneGeometry(0.14, 3.8), this.mat.stripe);
+      line.rotation.x = -Math.PI / 2;
+      line.position.set(px, 0.12, 12.2);
+      stGroup.add(line);
+    }
+    const pCar1 = this._makeVehicleMesh(false, false, 0xef4444, false);
+    pCar1.position.set(-9.4, 0.1, 12.2);
+    const pCar2 = this._makeVehicleMesh(false, false, 0x3b82f6, false);
+    pCar2.position.set(-6.2, 0.1, 12.2);
+    const pAuto1 = this._makeRealAutoMesh(false, false);
+    pAuto1.position.set(6.4, 0.1, 12.2);
+    const pCar3 = this._makeVehicleMesh(false, false, 0x22c55e, false);
+    pCar3.position.set(9.6, 0.1, 12.2);
+    stGroup.add(pCar1, pCar2, pAuto1, pCar3);
+
+    // SEPARATE "IN ➔" ENTRY ROAD (Left) & "⬅ OUT" EXIT ROAD (Right) Directly Connected to North Outer Ring Road!
+    const connLen = Math.max(4.5, distToRing - 19.2);
+    const connZ = 19.6 + connLen / 2;
+    const roadIn = new THREE.Mesh(new THREE.BoxGeometry(5.4, 0.1, connLen + 2.5), this.mat.road);
+    roadIn.position.set(-8.5, 0.04, connZ);
+    const roadOut = new THREE.Mesh(new THREE.BoxGeometry(5.4, 0.1, connLen + 2.5), this.mat.road);
+    roadOut.position.set(8.5, 0.04, connZ);
+
+    // Clear "IN ➔" (Green) & "⬅ OUT" (Red) Road Lane Markers + Overhead Signboards!
+    const inStrip = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 3.2), this.mat.parkingGreen);
+    inStrip.rotation.x = -Math.PI / 2;
+    inStrip.position.set(-8.5, 0.12, 19.5);
+    const outStrip = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 3.2), this.mat.parkingRed);
+    outStrip.rotation.x = -Math.PI / 2;
+    outStrip.position.set(8.5, 0.12, 19.5);
+
+    const inSign = this._makeBuildingBoard("IN ⬆", "STATION PARKING", "#15803d", "#ffffff", 4.6, 1.0);
+    inSign.position.set(-8.5, 2.8, 19.8);
+    const inP = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 2.6, 6), this.mat.chrome);
+    inP.position.set(-10.7, 1.3, 19.8);
+
+    const outSign = this._makeBuildingBoard("⬇ OUT", "TO CITY ROAD", "#b91c1c", "#ffffff", 4.6, 1.0);
+    outSign.position.set(8.5, 2.8, 19.8);
+    const outP = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 2.6, 6), this.mat.chrome);
+    outP.position.set(10.7, 1.3, 19.8);
+
+    stGroup.add(roadIn, roadOut, inStrip, outStrip, inSign, inP, outSign, outP);
+
+    // --- E. GRAND HERITAGE RAILWAY STATION MAIN BUILDING + CLOCK TOWER DOME (Behind Platform 2) ---
     const cleanRailOwner = (this.railwayOwner || "@_ur_bunny_108_").trim();
-    const irBoardL = this._makeBuildingBoard("SHERU BHAI JN", "రైల్వే స్టేషన్ • PF 1", "#facc15", "#111827", 5.6, 1.3);
-    irBoardL.position.set(-14.2, 2.4, -3.2);
-    const irBoardR = irBoardL.clone();
-    irBoardR.position.x = 14.2;
-    [-14.2, 14.2].forEach((bx) => {
-      const bp = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.6, 0.18), this.mat.charcoal);
-      bp.position.set(bx, 1.4, -3.2);
-      stGroup.add(bp);
-    });
-
-    // Grand Heritage Railway Station Main Building + Central Clock Tower Dome!
-    const stMain = new THREE.Mesh(new THREE.BoxGeometry(24.0, 5.6, 6.4), this.mat.stuccoCream);
-    stMain.position.set(0, 3.2, -9.8);
-    const stTrim = new THREE.Mesh(new THREE.BoxGeometry(24.4, 0.45, 6.8), this.mat.terracottaRoof);
-    stTrim.position.set(0, 6.1, -9.8);
+    const stMain = new THREE.Mesh(new THREE.BoxGeometry(26.0, 5.8, 6.4), this.mat.stuccoCream);
+    stMain.position.set(0, 3.3, -10.8);
+    const stTrim = new THREE.Mesh(new THREE.BoxGeometry(26.4, 0.45, 6.8), this.mat.terracottaRoof);
+    stTrim.position.set(0, 6.3, -10.8);
     const clockBase = new THREE.Mesh(new THREE.BoxGeometry(4.8, 3.2, 4.2), this.mat.stuccoCream);
-    clockBase.position.set(0, 7.6, -9.8);
+    clockBase.position.set(0, 7.8, -10.8);
     const clockDome = new THREE.Mesh(new THREE.SphereGeometry(2.2, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), this.mat.terracottaRoof);
-    clockDome.position.set(0, 9.2, -9.8);
+    clockDome.position.set(0, 9.4, -10.8);
     const clockFace = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.14, 12), this.mat.wallWhite);
     clockFace.rotation.x = Math.PI / 2;
-    clockFace.position.set(0, 7.8, -7.65);
+    clockFace.position.set(0, 8.0, -8.65);
 
-    // Big Main Station Facade Signboard (Shows Station Name + Station Chief @username!)
-    const mainBoard = this._makeBuildingBoard("RAILWAY STATION", `${cleanRailOwner.toUpperCase()} • SHERU BHAI JN`, "#1e3a8a", "#facc15", 13.5, 1.8);
-    mainBoard.position.set(0, 5.6, -6.5);
+    const mainBoard = this._makeBuildingBoard("RAILWAY STATION", `${cleanRailOwner.toUpperCase()} • SHERU BHAI JN`, "#1e3a8a", "#facc15", 15.0, 2.0);
+    mainBoard.position.set(0, 5.7, -7.5);
 
-    // Floating Station Name Sign
-    const stFloatSign = this._createNameSign(`🚂 SHERU BHAI JN • ${cleanRailOwner}`, "రైల్వే స్టేషన్ • LIVE EXPRESS TRAIN", true);
-    stFloatSign.position.set(0, 13.8, -9.5);
+    const stFloatSign = this._createNameSign(`🚂 SHERU BHAI JN • ${cleanRailOwner}`, "2 PLATFORMS • PARKING • EXPRESS TRAINS", true);
+    stFloatSign.position.set(0, 14.5, -9.8);
 
-    // 6 Live Waiting Passengers on Platform 1 who board INSIDE the Express Train!
-    const stationPassengers = [
-      this.mat.wallCoral, this.mat.wallGold, this.mat.wallMint,
-      this.mat.wallBlue, this.mat.richVelvetRed, this.mat.khakiUniform
-    ].map((sm, i) => {
-      const p = this._createCharacter({ shirtMat: sm, pantsMat: this.mat.darkPants, scale: 0.95 });
-      p.position.set(-7.5 + i * 3.0, 0.92, -4.0);
-      stGroup.add(p);
-      return p;
-    });
+    // 5 Passengers on Platform 1 (for Train 1) + 5 Passengers on Platform 2 (for Train 2)!
+    const makePlatformPax = (zPos) =>
+      [this.mat.wallCoral, this.mat.wallGold, this.mat.wallMint, this.mat.wallBlue, this.mat.richVelvetRed].map((sm, i) => {
+        const p = this._createCharacter({ shirtMat: sm, pantsMat: this.mat.darkPants, scale: 0.94 });
+        p.position.set(-7.5 + i * 3.4, 0.95, zPos);
+        stGroup.add(p);
+        return p;
+      });
+    const paxPF1 = makePlatformPax(4.4);
+    const paxPF2 = makePlatformPax(-4.4);
 
     // Clickable Hitbox for Railway Station
     const stHitbox = new THREE.Mesh(
-      new THREE.BoxGeometry(36, 14, 18),
+      new THREE.BoxGeometry(38, 15, 28),
       new THREE.MeshBasicMaterial({ visible: false })
     );
-    stHitbox.position.set(0, 7, -6.5);
+    stHitbox.position.set(0, 7.5, 2.0);
     stHitbox.userData.plotId = "RAILWAY_STATION";
     stGroup.add(stHitbox);
     this.plotHitboxes.push(stHitbox);
 
-    stGroup.add(platform, yellowEdge, shedRoof, irBoardL, irBoardR, stMain, stTrim, clockBase, clockDome, clockFace, mainBoard, stFloatSign);
+    stGroup.add(pf1, pf1Edge, pf1Roof, pf2, pf2Edge, pf2Roof, stMain, stTrim, clockBase, clockDome, clockFace, mainBoard, stFloatSign);
     rg.add(stGroup);
 
-    // 6. Spawn Articulated 4-Car Indian Express Train (1 Locomotive + 3 Passenger Coaches)
-    const trainCars = [];
-    const loco = this._makeTrainLocomotive(nightLights);
-    rg.add(loco);
-    trainCars.push(loco);
-    for (let c = 0; c < 3; c++) {
+    // 5. SPAWN 2 REALISTIC 3D TRAINS (Opposite Directions on Track 1 & Track 2!)
+    // Train 1 (Blue/Yellow WAP-7 Electric Engine + 4 Passenger Coaches on Track 1)
+    const train1Cars = [];
+    const loco1 = this._makeTrainLocomotive(nightLights);
+    rg.add(loco1);
+    train1Cars.push(loco1);
+    for (let c = 0; c < 4; c++) {
       const coach = this._makeTrainCoach(trainWindows);
       rg.add(coach);
-      trainCars.push(coach);
+      train1Cars.push(coach);
+    }
+
+    // Train 2 (White/Orange Vande Bharat Aero Express — 5 Cars on Track 2 going Opposite Direction!)
+    const train2Cars = [];
+    for (let c = 0; c < 5; c++) {
+      const vbCar = this._makeVandeBharatCar(c === 0, c === 4, trainWindows, nightLights);
+      rg.add(vbCar);
+      train2Cars.push(vbCar);
     }
 
     this.cityGroup.add(rg);
 
     this.railwaySim = {
-      trackCurve,
-      totalLen,
-      stationT,
-      tunnelX,
-      railR,
-      trainCars,
-      stationPassengers,
+      track1Curve,
+      track2Curve,
+      len1,
+      len2,
+      stationT1,
+      stationT2,
+      train1Cars,
+      train2Cars,
+      paxPF1,
+      paxPF2,
+      bridgeWalker,
+      fobX,
       nightLights,
       trainWindows
     };
@@ -3018,8 +3418,9 @@ export class FollowerTownEngine {
   }
 
   renderPlot(plotId, data, animateBuild = false) {
-    const plotIndex = parseInt(plotId.replace("plot_", ""), 10) - 1;
-    if (isNaN(plotIndex) || plotIndex < 0) return;
+    const isCustom = Boolean(data?.isCustomZone || plotId.startsWith("zone_"));
+    const plotIndex = isCustom ? -1 : parseInt(plotId.replace("plot_", ""), 10) - 1;
+    if (!isCustom && (isNaN(plotIndex) || plotIndex < 0)) return;
 
     this.plotDataMap.set(plotId, data);
 
@@ -3049,14 +3450,22 @@ export class FollowerTownEngine {
       return;
     }
 
-    const pos = this.getPlotPosition(plotIndex);
+    const customWorldX = isCustom
+      ? (data.zone === "beach" ? this.beachX : this.airportX) + (data.offsetX || 0)
+      : 0;
+    const customWorldZ = isCustom ? (data.offsetZ || 0) : 0;
+    const pos = isCustom
+      ? { x: customWorldX, z: customWorldZ, blockCenterX: customWorldX, blockCenterZ: customWorldZ, rotY: data.customRotY || 0 }
+      : this.getPlotPosition(plotIndex);
     const size = data?.status === "built" ? (data.size || reqSize) : 1;
-    const isEightPlot = size === 8;
-    const isFourPlot = size === 4;
-    const isTwoPlot = size === 2;
+    const isEightPlot = !isCustom && size === 8;
+    const isFourPlot = !isCustom && size === 4;
+    const isTwoPlot = !isCustom && size === 2;
 
     const plotGroup = new THREE.Group();
-    if (isEightPlot) {
+    if (isCustom) {
+      plotGroup.position.set(customWorldX, 0.08, customWorldZ);
+    } else if (isEightPlot) {
       const groupInfo = getEightPlotGroup(plotId);
       const leftCoord = blockIdxToCoord(groupInfo.leftBlockIdx);
       const rightCoord = blockIdxToCoord(groupInfo.rightBlockIdx);
@@ -3164,7 +3573,17 @@ export class FollowerTownEngine {
       sign.position.set(0, buildingObj.userData.labelY || 7.6, 0);
       plotGroup.add(sign);
     } else {
-      buildingObj = this._buildOnePlotBuilding(data.buildingType);
+      if (isCustom && size === 8) {
+        buildingObj = data.buildingType === "audi_showroom"
+          ? this._buildEightPlotAudiShowroom(plotId, data.ownerName)
+          : this._buildEightPlotCricketStadium(plotId);
+      } else if (isCustom && size === 4) {
+        buildingObj = this._buildFourPlotLandmark(data.buildingType, plotId, data.ownerName);
+      } else if (isCustom && size === 2) {
+        buildingObj = this._buildTwoPlotBuilding(data.buildingType, plotId, data.ownerName);
+      } else {
+        buildingObj = this._buildOnePlotBuilding(data.buildingType);
+      }
       buildingObj.rotation.y = pos.rotY;
 
       if (data.ownerName) {
@@ -4666,45 +5085,59 @@ export class FollowerTownEngine {
     return g;
   }
 
+  // ULTRA-CRISP FLOATING NAME SIGNS (High-Contrast Mipmapped Canvas + Auto-Fit maxWidth!)
   _createNameSign(mainText, subText = "", isBig = false) {
     const canvas = document.createElement("canvas");
-    const low = this.isLowRam && !isBig;
-    canvas.width = isBig ? 360 : low ? 192 : 240;
-    canvas.height = subText ? 80 : low ? 44 : 54;
+    canvas.width = isBig ? 512 : 320;
+    canvas.height = subText ? (isBig ? 136 : 96) : (isBig ? 96 : 72);
     const ctx = canvas.getContext("2d");
 
-    ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
+    ctx.fillStyle = "rgba(8, 15, 32, 0.94)";
     ctx.beginPath();
-    ctx.roundRect(4, 4, canvas.width - 8, canvas.height - 8, 12);
+    ctx.roundRect(6, 6, canvas.width - 12, canvas.height - 12, 18);
     ctx.fill();
 
     ctx.strokeStyle = isBig ? "#facc15" : "#38bdf8";
-    ctx.lineWidth = 3;
+    ctx.lineWidth = isBig ? 6 : 4;
     ctx.stroke();
 
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     const cx = canvas.width / 2;
+    const maxW = canvas.width - 32;
 
-    const cleanMain = mainText.length > 20 ? mainText.slice(0, 19) + "…" : mainText;
+    const cleanMain = mainText.length > 26 ? mainText.slice(0, 25) + "…" : mainText;
+    ctx.lineJoin = "round";
     if (subText) {
+      ctx.font = isBig ? "800 24px sans-serif" : "800 18px sans-serif";
+      ctx.strokeStyle = "#020617";
+      ctx.lineWidth = 4;
+      ctx.strokeText(subText, cx, canvas.height * 0.3, maxW);
       ctx.fillStyle = "#facc15";
-      ctx.font = "bold 18px sans-serif";
-      ctx.fillText(subText, cx, 26);
+      ctx.fillText(subText, cx, canvas.height * 0.3, maxW);
+
+      ctx.font = isBig ? "900 36px sans-serif" : "900 26px sans-serif";
+      ctx.strokeText(cleanMain, cx, canvas.height * 0.68, maxW);
       ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 20px sans-serif";
-      ctx.fillText(cleanMain, cx, 56);
+      ctx.fillText(cleanMain, cx, canvas.height * 0.68, maxW);
     } else {
+      ctx.font = isBig ? "900 36px sans-serif" : "900 28px sans-serif";
+      ctx.strokeStyle = "#020617";
+      ctx.lineWidth = 4;
+      ctx.strokeText(cleanMain, cx, canvas.height * 0.52, maxW);
       ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 20px sans-serif";
-      ctx.fillText(cleanMain, cx, 29);
+      ctx.fillText(cleanMain, cx, canvas.height * 0.52, maxW);
     }
 
     const tex = new THREE.CanvasTexture(canvas);
-    tex.generateMipmaps = false;
-    tex.minFilter = THREE.LinearFilter;
+    tex.generateMipmaps = true;
+    tex.minFilter = THREE.LinearMipmapLinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    tex.colorSpace = THREE.SRGBColorSpace;
+
     const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
-    sprite.scale.set(isBig ? 8.6 : 4.8, subText ? (isBig ? 2.1 : 1.4) : 1.1, 1);
+    sprite.renderOrder = 5;
+    sprite.scale.set(isBig ? 13.0 : 6.2, subText ? (isBig ? 3.4 : 1.9) : (isBig ? 2.4 : 1.45), 1);
     return sprite;
   }
 
@@ -4747,6 +5180,7 @@ export class FollowerTownEngine {
     if (this.airportSim && this.airportSim.nightGlowMeshes) {
       this.airportSim.nightGlowMeshes.forEach((m) => { m.visible = isNight; });
     }
+    if (this.discoGroup) this.discoGroup.visible = isNight;
     if (this.railwaySim) {
       if (this.railwaySim.nightLights) {
         this.railwaySim.nightLights.forEach((m) => { m.visible = isNight; });
@@ -4768,7 +5202,16 @@ export class FollowerTownEngine {
     if (plotId === "ST_JUNCTION") return { x: 0, y: 4, z: 0, size: 4 };
     if (plotId === "AIRPORT") return { x: this.airportX - 4, y: 5, z: 4, size: 12 };
     if (plotId === "BEACH") return { x: this.beachX + 6, y: 4, z: -2, size: 12 };
-    if (plotId === "RAILWAY_STATION") return { x: 0, y: 4, z: this.railwayZ, size: 12 };
+    if (plotId === "RAILWAY_STATION") return { x: 0, y: 5, z: this.railwayZ, size: 12 };
+    if (plotId === "ADD_AIRPORT_PLOT") return { x: this.airportX - 39, y: 2, z: 56, size: 1 };
+    if (plotId === "ADD_BEACH_PLOT") return { x: this.beachX + 22, y: 2, z: 16, size: 1 };
+    const customData = this.plotDataMap.get(plotId);
+    if (customData && customData.isCustomZone) {
+      const cx = (customData.zone === "beach" ? this.beachX : this.airportX) + (customData.offsetX || 0);
+      const cz = customData.offsetZ || 0;
+      const sz = customData.status === "built" ? (customData.size || getRequiredSize(customData.buildingType)) : 1;
+      return { x: cx, y: 2.5, z: cz, size: sz };
+    }
     const plotIndex = parseInt(plotId.replace("plot_", ""), 10) - 1;
     if (isNaN(plotIndex) || plotIndex < 0) return { x: 0, y: 2, z: 0, size: 1 };
 
@@ -5158,8 +5601,7 @@ export class FollowerTownEngine {
     if (q.includes("beach") || q.includes("ocean") || q.includes("sea") || (beachClean && beachClean.includes(q))) return "BEACH";
     const railClean = (this.railwayOwner || "").toLowerCase().replace(/^@/, "");
     if (q.includes("train") || q.includes("rail") || q.includes("station") || q.includes("tunnel") || (railClean && railClean.includes(q))) return "RAILWAY_STATION";
-    const ahClean = (this.airportHouseOwner || "").toLowerCase().replace(/^@/, "");
-    if (ahClean && ahClean.includes(q)) return "AIRPORT";
+
     if (q.includes("sheru") || q.includes("bhai") || q.includes("junction") || q.includes("statue") || q === "st") return "ST_JUNCTION";
     for (const [plotId, data] of this.plotDataMap.entries()) {
       if (!data || data.status !== "built") continue;
@@ -5822,67 +6264,100 @@ export class FollowerTownEngine {
 
 
 
-    // 🚂 LIVE INDIAN EXPRESS TRAIN + MOUNTAIN TUNNEL + STATION PASSENGER BOARDING (34s loop)
+    // 🚂 DOUBLE-TRACK LIVE 3D TRAINS (Train 1 Coming + Train 2 Going Through Hollow Tunnel & 2-Platform Station!)
     if (this.lifeEnabled && this.railwaySim) {
       const rsim = this.railwaySim;
-      const cycle = elapsed % 34.0;
-      let headT = 0;
 
-      // 0..13s: Emerges from South-West Mountain Tunnel -> speeds East (past Welcome Arch & Airport) -> pulls smoothly into North Railway Station!
-      // 13..20s: STOPPED AT RAILWAY STATION PLATFORM 1 -> 6 Passengers walk forward & board INSIDE the Express Coaches!
-      // 20..34s: Departs Railway Station -> circles West side (past Sheru Bhai Beach!) -> dives straight back into Mountain Tunnel!
-      if (cycle < 13.0) {
-        const p = cycle / 13.0;
-        // Smooth deceleration as train approaches Railway Station
-        const eased = p < 0.78 ? p / 0.78 * 0.88 : 0.88 + (1 - Math.pow(1 - (p - 0.78) / 0.22, 2)) * 0.12;
-        headT = eased * rsim.stationT;
-      } else if (cycle < 20.0) {
-        headT = rsim.stationT;
-      } else {
-        const p = (cycle - 20.0) / 14.0;
-        // Smooth acceleration leaving Railway Station back toward Mountain Tunnel!
-        const eased = p < 0.22 ? Math.pow(p / 0.22, 2) * 0.12 : 0.12 + ((p - 0.22) / 0.78) * 0.88;
-        headT = rsim.stationT + eased * (1.0 - rsim.stationT);
-      }
+      const updateTrainLoop = (cycleOffset, curve, totalLen, stationT, cars, paxList, pfZ, doorZ, faceRotY) => {
+        const cycle = (elapsed + cycleOffset) % 34.0;
+        let loopProg = 0;
 
-      // Position Locomotive & 3 Express Coaches cleanly along the spline (each bends around corners!)
-      const carSpacingT = 6.1 / Math.max(rsim.totalLen, 100);
-      rsim.trainCars.forEach((car, idx) => {
-        const carT = (headT - idx * carSpacingT + 1.0) % 1.0;
-        const pos = rsim.trackCurve.getPointAt(carT);
-        const ahead = rsim.trackCurve.getPointAt((carT + 0.008) % 1.0);
-        car.position.set(pos.x, 0.16, pos.z);
-        car.lookAt(ahead.x, 0.16, ahead.z);
-      });
-
-      // Animate 6 Railway Station Passengers on Platform 1
-      if (cycle >= 13.0 && cycle < 20.0) {
-        const boardElapsed = cycle - 13.0;
-        rsim.stationPassengers.forEach((pax, i) => {
-          const wp = (boardElapsed - i * 0.65) / 2.0;
-          if (wp < 0) {
-            pax.visible = true;
-            pax.position.set(-7.5 + i * 3.0, 0.92, -3.8);
-            pax.rotation.y = 0;
-          } else if (wp < 1) {
-            pax.visible = true;
-            pax.position.set(
-              -7.5 + i * 3.0,
-              0.92 + Math.abs(Math.sin(elapsed * 12 + i)) * 0.12,
-              THREE.MathUtils.lerp(-3.8, -0.6, wp)
-            );
-            pax.rotation.y = 0;
+        // 0..6.5s: Stopped cleanly at Station Platform while 5 Passengers board INSIDE!
+        // 6.5..34.0s: Smooth acceleration -> steady cruise around the entire city & through Hollow Mountain Tunnel -> smooth braking into Platform!
+        if (cycle < 6.5) {
+          loopProg = 0;
+        } else {
+          const runT = (cycle - 6.5) / 27.5; // 0..1 around entire loop
+          if (runT < 0.08) {
+            const a = runT / 0.08;
+            loopProg = 0.04 * a * a;
+          } else if (runT < 0.92) {
+            loopProg = 0.04 + ((runT - 0.08) / 0.84) * 0.92;
           } else {
-            pax.visible = false; // Boarded inside Express Train!
+            const b = (runT - 0.92) / 0.08;
+            loopProg = 0.96 + 0.04 * (1 - (1 - b) * (1 - b));
           }
+        }
+
+        const headT = (stationT + loopProg) % 1.0;
+        const spacingT = 6.2 / Math.max(totalLen, 120);
+        cars.forEach((car, idx) => {
+          const carT = (headT - idx * spacingT + 1.0) % 1.0;
+          const pos = curve.getPointAt(carT);
+          const ahead = curve.getPointAt((carT + 0.008) % 1.0);
+          car.position.set(pos.x, 0.18, pos.z);
+          car.lookAt(ahead.x, 0.18, ahead.z);
         });
-      } else {
-        // Next group of passengers waiting on Platform 1 for the train to return!
-        rsim.stationPassengers.forEach((pax, i) => {
-          pax.visible = cycle < 13.0 || cycle > 25.0;
-          pax.position.set(-7.5 + i * 3.0, 0.92, -3.8);
-          pax.rotation.y = 0;
-        });
+
+        if (cycle < 6.5) {
+          paxList.forEach((pax, i) => {
+            const wp = (cycle - i * 0.72) / 2.0;
+            if (wp < 0) {
+              pax.visible = true;
+              pax.position.set(-7.5 + i * 3.4, 0.95, pfZ);
+              pax.rotation.y = faceRotY;
+            } else if (wp < 1) {
+              pax.visible = true;
+              pax.position.set(
+                -7.5 + i * 3.4,
+                0.95 + Math.abs(Math.sin(elapsed * 12 + i)) * 0.12,
+                THREE.MathUtils.lerp(pfZ, doorZ, wp)
+              );
+              pax.rotation.y = faceRotY;
+            } else {
+              pax.visible = false;
+            }
+          });
+        } else {
+          // Fresh waiting passengers gather on the platform before the train returns!
+          paxList.forEach((pax, i) => {
+            pax.visible = cycle > 14.0;
+            pax.position.set(-7.5 + i * 3.4, 0.95, pfZ);
+            pax.rotation.y = faceRotY;
+          });
+        }
+      };
+
+      // Train 1 (Incoming Clockwise on Track 1 -> Platform 1)
+      updateTrainLoop(0.0, rsim.track1Curve, rsim.len1, rsim.stationT1, rsim.train1Cars, rsim.paxPF1, 4.6, 2.2, Math.PI);
+      // Train 2 (Outgoing Counter-Clockwise Vande Bharat on Track 2 -> Platform 2, offset by 17s so both trains cross & run continuously!)
+      updateTrainLoop(17.0, rsim.track2Curve, rsim.len2, rsim.stationT2, rsim.train2Cars, rsim.paxPF2, -4.6, -2.2, 0);
+
+      // Animate Pedestrian crossing the Foot Overbridge between Platform 1 & Platform 2!
+      if (rsim.bridgeWalker) {
+        const bz = Math.sin(elapsed * 0.9) * 4.2;
+        rsim.bridgeWalker.position.set(rsim.fobX, 4.86 + Math.abs(Math.sin(elapsed * 7)) * 0.1, bz);
+        rsim.bridgeWalker.rotation.y = Math.cos(elapsed * 0.9) >= 0 ? 0 : Math.PI;
+      }
+    }
+
+    // 🪩 SHERU BHAI STATUE NIGHT DISCO LIGHTS (Rotating Beams + RGB Color Cycling!)
+    if (this.timeOfDay === "night" && this.discoGroup && this.discoGroup.visible) {
+      const discoHex = [0xec4899, 0x22d3ee, 0x4ade80, 0xfacc15, 0xa855f7, 0xef4444];
+      this.discoGroup.rotation.y = elapsed * 0.95;
+      const stepIdx = Math.floor(elapsed * 2.2);
+      for (let d = 0; d < this.discoCones.length; d++) {
+        const dc = this.discoCones[d];
+        const col = discoHex[(stepIdx + dc.colorIdx) % discoHex.length];
+        dc.beamMat.color.setHex(col);
+        dc.podMat.color.setHex(col);
+        dc.beamMat.opacity = 0.24 + Math.abs(Math.sin(elapsed * 4.5 + d)) * 0.26;
+      }
+      if (this.discoRing) {
+        this.discoRing.material.color.setHex(discoHex[stepIdx % discoHex.length]);
+      }
+      if (this.discoPointLight) {
+        this.discoPointLight.color.setHex(discoHex[stepIdx % discoHex.length]);
       }
     }
 
