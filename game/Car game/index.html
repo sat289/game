@@ -7,6 +7,8 @@
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet" />
@@ -358,6 +360,38 @@ html, body {
   100% { transform: translateX(-140px) translateY(45px); }
 }
 
+  
+/* ST GAMES AAA Skewed Glossy Entrance Buttons (Exact match to 4212.png) */
+.st-skew-btn {
+  transform: skewX(-10deg);
+  transition: transform 0.14s ease, filter 0.14s ease, box-shadow 0.14s ease;
+}
+.st-skew-btn > * {
+  transform: skewX(10deg);
+}
+.st-skew-btn:hover {
+  filter: brightness(1.14);
+  transform: skewX(-10deg) scale(1.03);
+}
+.st-skew-btn:active {
+  transform: skewX(-10deg) scale(0.95);
+}
+.st-play-btn {
+  background: linear-gradient(180deg, #ffe64d 0%, #ffb703 55%, #f48c06 100%);
+  border: 2.5px solid #fff3b0;
+  box-shadow: 0 6px 22px rgba(255, 183, 3, 0.55), inset 0 2px 4px rgba(255,255,255,0.65);
+}
+.st-blue-btn {
+  background: linear-gradient(180deg, #1d4ed8 0%, #0f2573 60%, #081448 100%);
+  border: 2px solid #38bdf8;
+  box-shadow: 0 4px 16px rgba(0, 180, 255, 0.35), inset 0 1.5px 3px rgba(147,197,253,0.45);
+}
+.st-red-btn {
+  background: linear-gradient(180deg, #ef4444 0%, #b91c1c 60%, #7f1d1d 100%);
+  border: 2px solid #fca5a5;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.45), inset 0 1.5px 3px rgba(255,255,255,0.35);
+}
+
   </style>
 </head>
 <body>
@@ -378,8 +412,50 @@ html, body {
       <div class="intro-beam"></div>
     </div>
 
-    <!-- SCREEN 1 (DIRECT IMMEDIATE ENTRY): MODEL 1 GARAGE INTERFACE -->
-    <section id="garageScreen" class="screen visible-screen garage-bg flex flex-col justify-between overflow-hidden">
+    <!-- SCREEN 0 (ST GAMES ENTRANCE SCREEN — 100% PIXEL-PERFECT 4212.png + LIVE INTERACTIVE BUTTONS) -->
+    <section id="homeScreen" class="screen visible-screen w-full h-full overflow-hidden bg-slate-950">
+      <img src="assets/entrance_bg.jpg" alt="ST Games Drive Race Enjoy" class="absolute inset-0 w-full h-full object-fill select-none pointer-events-none" />
+
+      <!-- LIVE COINS NUMBER OVERLAY (Replaces static 125,750 with live LocalStorage coins + clickable + button!) -->
+      <div class="absolute top-[2.5%] left-[67.5%] w-[9.2%] h-[5.2%] z-20 flex items-center justify-center rounded bg-[#0c2159] pointer-events-none">
+        <span id="homeCoinsEl" class="font-display text-[11px] sm:text-sm font-black text-white tracking-tight">25,000</span>
+      </div>
+      <button type="button" data-modal="dailyModal" aria-label="Daily Rewards" class="more-opt-btn absolute top-[1.8%] left-[76.4%] w-[3.5%] h-[6.5%] z-20 rounded-lg bg-transparent hover:bg-white/20 active:scale-95 transition cursor-pointer"></button>
+
+      <!-- LIVE GEMS NUMBER OVERLAY (Replaces static 2,350 with live gems + clickable + button!) -->
+      <div class="absolute top-[2.5%] left-[84.3%] w-[6.2%] h-[5.2%] z-20 flex items-center justify-center rounded bg-[#0c2159] pointer-events-none">
+        <span id="homeGemsEl" class="font-display text-[11px] sm:text-sm font-black text-white tracking-tight">400</span>
+      </div>
+      <button type="button" data-modal="upgradesModal" aria-label="Upgrades" class="more-opt-btn absolute top-[1.8%] left-[90.4%] w-[3.4%] h-[6.5%] z-20 rounded-lg bg-transparent hover:bg-white/20 active:scale-95 transition cursor-pointer"></button>
+
+      <!-- TOP-RIGHT SETTINGS GEAR HOTSPOT -->
+      <button type="button" data-modal="settingsModal" aria-label="Settings" class="more-opt-btn absolute top-[1.2%] right-[0.6%] w-[5.2%] h-[8.5%] z-20 rounded-xl bg-transparent hover:bg-white/20 active:scale-95 transition cursor-pointer"></button>
+
+      <!-- SAVED VEHICLE PILL (Subtle pill above STORE showing LocalStorage active car) -->
+      <div class="absolute bottom-[19%] left-[1.6%] z-20 flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-950/80 border border-cyan-400/60 backdrop-blur-md shadow-lg pointer-events-none">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span id="homeLevelEl" class="font-display text-[9px] sm:text-[10px] font-black text-cyan-300">LV 1</span>
+        <span class="text-slate-500 text-[10px]">|</span>
+        <span id="homeEquippedName" class="font-display text-[9px] sm:text-xs font-black text-white">2025 Koenigsegg Gemera</span>
+      </div>
+
+      <!-- RIGHT VERTICAL BUTTON HOTSPOTS (Aligned 100% over painted PLAY / GARAGE / SETTINGS / MENU / EXIT) -->
+      <button id="homePlayBtn" type="button" aria-label="Play" class="absolute top-[26.8%] left-[79.2%] w-[20.2%] h-[14.5%] z-20 rounded-xl bg-transparent hover:bg-white/15 active:scale-95 transition cursor-pointer"></button>
+      <button id="homeGarageBtn" type="button" aria-label="Garage" class="absolute top-[42.8%] left-[79.8%] w-[19.5%] h-[11.2%] z-20 rounded-xl bg-transparent hover:bg-cyan-300/20 active:scale-95 transition cursor-pointer"></button>
+      <button type="button" data-modal="settingsModal" aria-label="Settings" class="more-opt-btn absolute top-[55.2%] left-[80.0%] w-[19.3%] h-[10.8%] z-20 rounded-xl bg-transparent hover:bg-cyan-300/20 active:scale-95 transition cursor-pointer"></button>
+      <button id="homeMenuBtn" type="button" aria-label="Menu" class="absolute top-[66.8%] left-[80.2%] w-[19.1%] h-[10.4%] z-20 rounded-xl bg-transparent hover:bg-cyan-300/20 active:scale-95 transition cursor-pointer"></button>
+      <button id="homeExitBtn" type="button" aria-label="Exit" class="absolute top-[77.8%] left-[80.2%] w-[19.1%] h-[10.2%] z-20 rounded-xl bg-transparent hover:bg-rose-400/25 active:scale-95 transition cursor-pointer"></button>
+
+      <!-- BOTTOM HORIZONTAL BUTTON HOTSPOTS (Aligned 100% over painted STORE / MISSIONS / ACHIEVEMENTS / LEADERBOARD / MORE GAMES) -->
+      <button id="homeStoreBtn" type="button" aria-label="Store" class="absolute bottom-[2.2%] left-[1.0%] w-[13.5%] h-[15.2%] z-20 rounded-xl bg-transparent hover:bg-cyan-300/20 active:scale-95 transition cursor-pointer"></button>
+      <button id="homeMissionsBtn" type="button" aria-label="Missions" class="absolute bottom-[2.2%] left-[15.2%] w-[14.0%] h-[15.2%] z-20 rounded-xl bg-transparent hover:bg-cyan-300/20 active:scale-95 transition cursor-pointer"></button>
+      <button id="homeAchievementsBtn" type="button" aria-label="Achievements" class="absolute bottom-[2.2%] left-[30.2%] w-[14.5%] h-[15.2%] z-20 rounded-xl bg-transparent hover:bg-cyan-300/20 active:scale-95 transition cursor-pointer"></button>
+      <button id="homeLeaderboardBtn" type="button" aria-label="Leaderboard" class="absolute bottom-[2.2%] left-[45.8%] w-[14.8%] h-[15.2%] z-20 rounded-xl bg-transparent hover:bg-cyan-300/20 active:scale-95 transition cursor-pointer"></button>
+      <button id="homeMoreGamesBtn" type="button" aria-label="More Games" class="absolute bottom-[2.2%] left-[61.6%] w-[15.4%] h-[15.2%] z-20 rounded-xl bg-transparent hover:bg-cyan-300/20 active:scale-95 transition cursor-pointer"></button>
+    </section>
+
+    <!-- SCREEN 1: MODEL 1 GARAGE INTERFACE -->
+    <section id="garageScreen" class="screen hidden-screen garage-bg flex flex-col justify-between overflow-hidden">
       <div id="launchBgLayer">
         <img src="assets/bg1.jpg" alt="Launch City Highway" />
         <div class="launch-streaks"></div>
@@ -388,14 +464,14 @@ html, body {
       <header class="garage-anim-top relative z-20 flex items-center justify-between gap-2 px-3 sm:px-5 py-2 bg-slate-950/80 border-b border-white/10 backdrop-blur-md">
         <div class="flex items-center gap-2">
           <img src="assets/logo.jpg" alt="Logo" class="w-7 h-7 rounded-full object-cover border border-cyan-400/40" />
-          <span class="hidden sm:inline font-display text-xs font-black tracking-wider text-white">APEX NITRO</span>
+          <button id="backToHomeBtn" type="button" class="px-2.5 py-1 rounded-lg bg-slate-800/90 hover:bg-slate-700 border border-white/15 text-[11px] font-extrabold text-cyan-300 cursor-pointer">&larr; MENU</button>
         </div>
 
         <nav class="flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-white/10" aria-label="Vehicle Categories">
-          <button type="button" data-cat="ALL" class="cat-tab px-2 sm:px-3 py-1 rounded-lg text-[11px] sm:text-xs font-extrabold transition cursor-pointer bg-cyan-500/20 text-cyan-300 border border-cyan-400/50">ALL (46)</button>
-          <button type="button" data-cat="CAR" class="cat-tab px-2 sm:px-3 py-1 rounded-lg text-[11px] sm:text-xs font-extrabold transition cursor-pointer text-slate-300 hover:text-white border border-transparent">CARS (21)</button>
-          <button type="button" data-cat="TRUCK" class="cat-tab px-2 sm:px-3 py-1 rounded-lg text-[11px] sm:text-xs font-extrabold transition cursor-pointer text-slate-300 hover:text-white border border-transparent">TRUCKS (13)</button>
-          <button type="button" data-cat="BIKE" class="cat-tab px-2 sm:px-3 py-1 rounded-lg text-[11px] sm:text-xs font-extrabold transition cursor-pointer text-slate-300 hover:text-white border border-transparent">BIKES (12)</button>
+          <button type="button" data-cat="ALL" class="cat-tab px-2 sm:px-3 py-1 rounded-lg text-[11px] sm:text-xs font-extrabold transition cursor-pointer bg-cyan-500/20 text-cyan-300 border border-cyan-400/50">ALL (15)</button>
+          <button type="button" data-cat="CAR" class="cat-tab px-2 sm:px-3 py-1 rounded-lg text-[11px] sm:text-xs font-extrabold transition cursor-pointer text-slate-300 hover:text-white border border-transparent">CARS (5)</button>
+          <button type="button" data-cat="TRUCK" class="cat-tab px-2 sm:px-3 py-1 rounded-lg text-[11px] sm:text-xs font-extrabold transition cursor-pointer text-slate-300 hover:text-white border border-transparent">TRUCKS (5)</button>
+          <button type="button" data-cat="BIKE" class="cat-tab px-2 sm:px-3 py-1 rounded-lg text-[11px] sm:text-xs font-extrabold transition cursor-pointer text-slate-300 hover:text-white border border-transparent">BIKES (5)</button>
         </nav>
 
         <div class="flex items-center gap-2">
@@ -406,7 +482,7 @@ html, body {
           </div>
           <div class="hidden sm:flex items-center gap-1 px-2 py-1 rounded-xl bg-slate-900 border border-white/15 text-[11px] font-bold text-slate-200">
             <span class="text-cyan-400">Owned:</span>
-            <span id="ownedCountEl">1/46</span>
+            <span id="ownedCountEl">1/15</span>
           </div>
         </div>
       </header>
@@ -419,7 +495,7 @@ html, body {
                 <span id="stageCatBadge" class="px-2 py-0.5 rounded bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 text-[9px] font-extrabold uppercase">NORMAL STARTER CAR</span>
                 <span id="stageStatusBadge" class="px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[9px] font-extrabold uppercase">EQUIPPED</span>
               </div>
-              <h2 id="stageVehicleName" class="font-display text-base sm:text-xl font-black text-white tracking-wide">Civic Street Sedan</h2>
+              <h2 id="stageVehicleName" class="font-display text-base sm:text-xl font-black text-white tracking-wide">2025 Koenigsegg Gemera</h2>
             </div>
             <button id="stageActionBtn" type="button" class="px-3.5 py-1.5 rounded-xl font-bold text-xs bg-emerald-500/25 border border-emerald-400 text-emerald-300 cursor-default">EQUIPPED</button>
           </div>
@@ -482,49 +558,62 @@ html, body {
       <div id="city3dContainer" class="absolute inset-0 w-full h-full"></div>
       <div id="crashFlash" class="pointer-events-none absolute inset-0 bg-red-600/45 opacity-0 transition-opacity duration-150 z-10"></div>
 
-      <!-- TOP HUD -->
-      <div class="pointer-events-none absolute top-0 inset-x-0 z-20 flex items-start justify-between p-2.5 sm:p-3 gap-2">
-        <div class="flex flex-col gap-1.5">
-          <div class="pointer-events-auto bg-slate-950/75 border border-cyan-400/40 backdrop-blur-md rounded-xl px-3 py-1.5 max-w-[220px] sm:max-w-xs shadow-lg">
-            <div class="flex items-center justify-between gap-2">
-              <span class="text-[9px] font-extrabold uppercase tracking-wider text-cyan-300">City Task</span>
-              <span id="taskRewardBadge" class="text-[10px] font-bold text-amber-300">+500 C</span>
-            </div>
-            <div id="taskTitleEl" class="text-[11px] sm:text-xs font-bold text-white leading-snug">Collect 5 City Coins (0/5)</div>
-            <div class="w-full h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden">
-              <div id="taskProgressBar" class="h-full bg-gradient-to-r from-cyan-400 to-emerald-400 rounded-full transition-all duration-200" style="width: 0%;"></div>
-            </div>
+      <!-- TOP HUD: Left Side = Box GPS Map + Task + Health | Right Side = Coins + Neat Aligned Options Row -->
+      <div class="pointer-events-none absolute top-0 inset-x-0 z-20 flex items-start justify-between p-2 sm:p-3 gap-2">
+        <!-- LEFT SIDE: Box GPS Map + Stacked Task & Health -->
+        <div class="pointer-events-auto flex items-start gap-2">
+          <div class="flex flex-col items-center bg-slate-950/90 border-2 border-cyan-400/75 rounded-xl p-1 shadow-xl shrink-0">
+            <canvas id="miniMapCanvas" width="112" height="80" class="rounded-lg bg-slate-950"></canvas>
+            <div class="text-[7px] font-bold text-slate-300 tracking-wide mt-0.5"><span class="text-rose-400">H</span>:Hosp <span class="text-emerald-400">D</span>:DMart <span class="text-purple-400">M</span>:Mall <span class="text-sky-400">O</span>:Office</div>
           </div>
-
-          <div class="bg-slate-950/75 border border-white/15 backdrop-blur-md rounded-xl px-3 py-1.5 max-w-[190px] shadow-lg">
-            <div class="flex items-center justify-between text-[10px] font-bold">
-              <span class="text-slate-200">CAR HEALTH</span>
-              <span id="healthPercentEl" class="text-emerald-300">100%</span>
+          <div class="flex flex-col gap-1.5">
+            <div class="bg-slate-950/80 border border-cyan-400/40 backdrop-blur-md rounded-xl px-2.5 py-1.5 max-w-[190px] sm:max-w-[220px] shadow-lg">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[9px] font-extrabold uppercase tracking-wider text-cyan-300">City Task</span>
+                <span id="taskRewardBadge" class="text-[10px] font-bold text-amber-300">+500 C</span>
+              </div>
+              <div id="taskTitleEl" class="text-[10px] sm:text-xs font-bold text-white leading-snug">Collect 5 City Coins (0/5)</div>
+              <div class="w-full h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden">
+                <div id="taskProgressBar" class="h-full bg-gradient-to-r from-cyan-400 to-emerald-400 rounded-full transition-all duration-200" style="width: 0%;"></div>
+              </div>
             </div>
-            <div class="w-full h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden">
-              <div id="healthBarFill" class="h-full bg-emerald-400 rounded-full transition-all duration-150" style="width: 100%;"></div>
+            <div class="bg-slate-950/80 border border-white/15 backdrop-blur-md rounded-xl px-2.5 py-1 max-w-[190px] shadow-lg">
+              <div class="flex items-center justify-between text-[9px] font-bold">
+                <span class="text-slate-200">CAR HEALTH</span>
+                <span id="healthPercentEl" class="text-emerald-300">100%</span>
+              </div>
+              <div class="w-full h-1.5 bg-slate-800 rounded-full mt-0.5 overflow-hidden">
+                <div id="healthBarFill" class="h-full bg-emerald-400 rounded-full transition-all duration-150" style="width: 100%;"></div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div id="driveAlertEl" class="opacity-0 transition-opacity duration-300 px-3.5 py-1.5 rounded-full bg-amber-500/95 text-slate-950 font-display text-xs font-black shadow-xl">
+        <!-- CENTER ALERT BANNER -->
+        <div id="driveAlertEl" class="opacity-0 transition-opacity duration-300 px-3 py-1 rounded-full bg-amber-500/95 text-slate-950 font-display text-[11px] font-black shadow-xl text-center">
           +100 COINS!
         </div>
 
-        <div class="pointer-events-auto flex items-center gap-2">
-          <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-950/80 border border-amber-400/40 backdrop-blur-md">
-            <span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-slate-950 font-black text-[10px]">C</span>
-            <span id="driveCoinsEl" class="font-display text-xs sm:text-sm font-black text-amber-300">25,000</span>
+        <!-- RIGHT SIDE: Coins + Neat Organized Options Column -->
+        <div class="pointer-events-auto flex flex-col items-end gap-1.5">
+          <div class="flex items-center gap-1.5">
+            <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-950/85 border border-amber-400/50 backdrop-blur-md shadow">
+              <span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-slate-950 font-black text-[10px]">C</span>
+              <span id="driveCoinsEl" class="font-display text-xs font-black text-amber-300">25,000</span>
+            </div>
+            <button id="exitToGarageBtn" type="button" class="px-3 py-1 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-white/25 text-[11px] font-extrabold text-white backdrop-blur-md cursor-pointer shadow">
+              Garage
+            </button>
           </div>
-          <canvas id="miniMapCanvas" width="80" height="80" class="rounded-full border-2 border-cyan-400/70 bg-slate-950/85 shadow-lg"></canvas>
-          <button id="exitToGarageBtn" type="button" class="px-3 py-1.5 rounded-xl bg-slate-900/85 hover:bg-slate-800 border border-white/20 text-xs font-bold text-white backdrop-blur-md cursor-pointer">
-            Garage
-          </button>
+          <div class="flex items-center gap-1 bg-slate-950/80 border border-white/15 rounded-xl p-1 backdrop-blur-md shadow-lg">
+            <button id="camToggleBtn" type="button" class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-cyan-400/35 text-[9px] font-extrabold text-cyan-200 cursor-pointer">CAM: CHASE</button>
+            <button id="skyToggleBtn" type="button" class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-amber-400/35 text-[9px] font-extrabold text-amber-200 cursor-pointer">☀️ DAY</button>
+          </div>
         </div>
       </div>
 
       <!-- BOTTOM LANDSCAPE CONTROLS: Left = Steering + NITRO Boost | Right = BRAKE + GAS -->
-      <div class="pointer-events-none absolute bottom-0 inset-x-0 z-20 flex items-end justify-between p-2.5 sm:p-4">
+      <div id="carControlsBar" class="pointer-events-none absolute bottom-0 inset-x-0 z-20 flex items-end justify-between p-2.5 sm:p-4">
         <div class="pointer-events-auto flex items-end gap-3">
           <div id="steeringZone" class="relative w-36 h-36 sm:w-40 sm:h-40 flex items-center justify-center touch-none cursor-grab active:cursor-grabbing">
             <svg id="steeringWheelSvg" viewBox="0 0 140 140" class="w-full h-full drop-shadow-[0_8px_18px_rgba(0,0,0,0.92)]">
@@ -569,6 +658,8 @@ html, body {
               <text x="70" y="73" text-anchor="middle" fill="#00f0ff" font-size="8.5" font-weight="900" font-family="Orbitron, sans-serif">APEX</text>
             </svg>
           </div>
+          <button id="exitCarBtn" type="button" class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-indigo-500/95 active:bg-indigo-400 border-2 border-indigo-200/80 text-white font-display font-black text-[8px] sm:text-[9px] shadow-lg flex flex-col items-center justify-center cursor-pointer touch-none leading-tight"><span>🚪</span><span>EXIT CAR</span></button>
+          <button id="hornBtn" type="button" class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-amber-400/90 active:bg-amber-300 border-2 border-amber-100/80 text-slate-950 font-display font-black text-[9px] shadow-lg flex flex-col items-center justify-center cursor-pointer touch-none"><span class="text-base">🔊</span><span>HORN</span></button>
           <button id="pedalNitro" type="button" class="w-16 h-16 sm:w-18 sm:h-20 px-2 rounded-2xl bg-cyan-500/90 active:bg-cyan-400 border-2 border-cyan-200/80 text-slate-950 font-display font-black text-[10px] shadow-[0_0_20px_rgba(0,240,255,0.5)] flex flex-col items-center justify-center cursor-pointer touch-none">
             <span class="text-lg">⚡</span>
             <span>NITRO</span>
@@ -646,6 +737,36 @@ html, body {
           </button>
         </div>
       </div>
+
+      <!-- DEDICATED ON-FOOT HUMAN CONTROLS (Shown ONLY after tapping EXIT CAR — NO car steering or gas!) -->
+      <div id="onFootControlsBar" class="hidden pointer-events-none absolute bottom-0 inset-x-0 z-20 items-end justify-between p-3 sm:p-5">
+        <!-- LEFT: Smooth 360° Human Walk/Run Analog Joystick -->
+        <div class="pointer-events-auto flex items-end gap-3">
+          <div id="humanJoyZone" class="relative w-32 h-32 sm:w-36 sm:h-36 rounded-full bg-slate-950/65 border-2 border-cyan-400/60 backdrop-blur-md flex items-center justify-center touch-none shadow-2xl">
+            <div class="text-[8px] font-bold text-cyan-300/60 absolute top-2">▲</div>
+            <div class="text-[8px] font-bold text-cyan-300/60 absolute bottom-2">▼</div>
+            <div class="text-[8px] font-bold text-cyan-300/60 absolute left-2.5">◀</div>
+            <div class="text-[8px] font-bold text-cyan-300/60 absolute right-2.5">▶</div>
+            <div id="humanJoyKnob" class="w-14 h-14 rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 border-2 border-white shadow-[0_0_20px_rgba(0,240,255,0.7)] pointer-events-none transition-transform duration-75"></div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Dynamic ENTER CAR (visible ONLY near any car!) + JUMP + RUN -->
+        <div class="pointer-events-auto flex items-end gap-2.5">
+          <button id="enterNearCarBtn" type="button" class="hidden w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 active:scale-95 border-2 border-white text-slate-950 font-display font-black text-[9px] sm:text-[10px] shadow-[0_0_22px_rgba(255,106,0,0.75)] flex-col items-center justify-center cursor-pointer touch-none animate-pulse">
+            <span class="text-xl">🚗</span>
+            <span>ENTER CAR</span>
+          </button>
+          <button id="humanJumpBtn" type="button" class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-cyan-500/90 active:bg-cyan-400 active:scale-95 border-2 border-white/90 text-slate-950 font-display font-black text-[10px] sm:text-xs shadow-xl flex flex-col items-center justify-center cursor-pointer touch-none">
+            <span class="text-lg">⬆️</span>
+            <span>JUMP</span>
+          </button>
+          <button id="humanRunBtn" type="button" class="w-16 h-20 sm:w-20 sm:h-24 rounded-2xl bg-emerald-500/90 active:bg-emerald-400 active:scale-95 border-2 border-emerald-200/90 text-slate-950 font-display font-black text-[10px] sm:text-xs shadow-xl flex flex-col items-center justify-center cursor-pointer touch-none">
+            <span class="text-xl">🏃</span>
+            <span>RUN</span>
+          </button>
+        </div>
+      </div>
     </section>
 
     <!-- IN-PAGE MODALS -->
@@ -669,57 +790,21 @@ const IMG_TRUCK = 'assets/truck.jpg';
 const IMG_BIKE = 'assets/bike.jpg';
 
 window.APEX_VEHICLES = [
-  // 21 DISTINCT CARS (Each has unique bodyStyle: sedan, touring, sport_sedan, coupe_gt, widebody, muscle_blower, spyder_open, hyper_fin, formula_track, rally_hatch, classic_gt, etc.)
-  { id: 0, name: 'Civic Street Sedan', cat: 'CAR', modelType: 'car', bodyStyle: 'sedan', colorHex: 0xe2e8f0, accentHex: 0x0ea5e9, starter: true, price: 0, img: IMG_STARTER_CAR, hue: 0, speed: 68, accel: 64, handle: 74, nitro: 60 },
-  { id: 1, name: 'Accord GT Touring', cat: 'CAR', modelType: 'car', bodyStyle: 'fastback', colorHex: 0x0284c7, accentHex: 0xf8fafc, price: 4500, img: IMG_STARTER_CAR, hue: 200, speed: 74, accel: 70, handle: 76, nitro: 65 },
-  { id: 2, name: 'Camry Sport TRD', cat: 'CAR', modelType: 'car', bodyStyle: 'sport_sedan', colorHex: 0xe11d48, accentHex: 0x111827, price: 6200, img: IMG_STARTER_CAR, hue: 345, speed: 77, accel: 74, handle: 79, nitro: 69 },
-  { id: 3, name: 'Skyline Coupe RS', cat: 'CAR', modelType: 'car', bodyStyle: 'jdm_coupe', colorHex: 0x1d4ed8, accentHex: 0x38bdf8, price: 7500, img: IMG_SUPER_CAR, hue: 210, speed: 80, accel: 78, handle: 82, nitro: 74 },
-  { id: 4, name: 'BMW M4 Competition', cat: 'CAR', modelType: 'car', bodyStyle: 'widebody', colorHex: 0x15803d, accentHex: 0xfacc15, price: 9500, img: IMG_SUPER_CAR, hue: 135, speed: 83, accel: 81, handle: 85, nitro: 76 },
-  { id: 5, name: 'Veloce Crimson GT', cat: 'CAR', modelType: 'car', bodyStyle: 'exotic_low', colorHex: 0xdc2626, accentHex: 0xfacc15, price: 11000, img: IMG_SUPER_CAR, hue: 0, speed: 84, accel: 82, handle: 80, nitro: 78 },
-  { id: 6, name: 'Mustang Apex V8', cat: 'CAR', modelType: 'car', bodyStyle: 'muscle_blower', colorHex: 0xea580c, accentHex: 0x111827, price: 14000, img: IMG_SUPER_CAR, hue: 35, speed: 86, accel: 85, handle: 76, nitro: 82 },
-  { id: 7, name: 'Audi R8 V10 Spyder', cat: 'CAR', modelType: 'car', bodyStyle: 'spyder_open', colorHex: 0xf8fafc, accentHex: 0xef4444, price: 16500, img: IMG_SUPER_CAR, hue: 190, speed: 87, accel: 86, handle: 87, nitro: 83 },
-  { id: 8, name: 'Supra Turbo MK5', cat: 'CAR', modelType: 'car', bodyStyle: 'drift_wing', colorHex: 0x059669, accentHex: 0x34d399, price: 18500, img: IMG_SUPER_CAR, hue: 145, speed: 88, accel: 87, handle: 84, nitro: 85 },
-  { id: 9, name: 'Nissan GT-R Nismo', cat: 'CAR', modelType: 'car', bodyStyle: 'gt_racer', colorHex: 0x475569, accentHex: 0xef4444, price: 21500, img: IMG_SUPER_CAR, hue: 220, speed: 89, accel: 89, handle: 86, nitro: 86 },
-  { id: 10, name: 'Porsche 911 Carrera', cat: 'CAR', modelType: 'car', bodyStyle: 'sloped_gt', colorHex: 0x0891b2, accentHex: 0xe2e8f0, price: 24000, img: IMG_SUPER_CAR, hue: 185, speed: 90, accel: 89, handle: 90, nitro: 84 },
-  { id: 11, name: 'Mercedes AMG GT-R', cat: 'CAR', modelType: 'car', bodyStyle: 'long_hood', colorHex: 0x10b981, accentHex: 0x0f172a, price: 28000, img: IMG_SUPER_CAR, hue: 155, speed: 91, accel: 90, handle: 89, nitro: 87 },
-  { id: 12, name: 'Huracan Evo Spyder', cat: 'CAR', modelType: 'car', bodyStyle: 'wedge_spyder', colorHex: 0xfacc15, accentHex: 0x0f172a, price: 32000, img: IMG_SUPER_CAR, hue: 48, speed: 93, accel: 91, handle: 88, nitro: 88 },
-  { id: 13, name: 'Aston Martin Valkyrie', cat: 'CAR', modelType: 'car', bodyStyle: 'hyper_fin', colorHex: 0x0f766e, accentHex: 0x2dd4bf, price: 37500, img: IMG_SUPER_CAR, hue: 170, speed: 94, accel: 92, handle: 91, nitro: 89 },
-  { id: 14, name: 'McLaren 720S Track', cat: 'CAR', modelType: 'car', bodyStyle: 'teardrop_hyper', colorHex: 0x7c3aed, accentHex: 0xf97316, price: 42000, img: IMG_SUPER_CAR, hue: 270, speed: 95, accel: 93, handle: 92, nitro: 90 },
-  { id: 15, name: 'Pagani Huayra BC', cat: 'CAR', modelType: 'car', bodyStyle: 'quad_pipe_gt', colorHex: 0x0284c7, accentHex: 0xfde047, price: 48500, img: IMG_SUPER_CAR, hue: 205, speed: 95, accel: 94, handle: 93, nitro: 91 },
-  { id: 16, name: 'Ferrari SF90 Stradale', cat: 'CAR', modelType: 'car', bodyStyle: 'italian_mid', colorHex: 0xb91c1c, accentHex: 0xfde047, price: 55000, img: IMG_SUPER_CAR, hue: 350, speed: 96, accel: 95, handle: 93, nitro: 92 },
-  { id: 17, name: 'Aventador SVJ Nitro', cat: 'CAR', modelType: 'car', bodyStyle: 'stealth_wedge', colorHex: 0x16a34a, accentHex: 0x111827, price: 70000, img: IMG_SUPER_CAR, hue: 120, speed: 97, accel: 96, handle: 91, nitro: 95 },
-  { id: 18, name: 'Rimac Nevera Hyper', cat: 'CAR', modelType: 'car', bodyStyle: 'ev_hyper', colorHex: 0x06b6d4, accentHex: 0xf8fafc, price: 82000, img: IMG_SUPER_CAR, hue: 190, speed: 98, accel: 99, handle: 94, nitro: 96 },
-  { id: 19, name: 'Koenigsegg Jesko', cat: 'CAR', modelType: 'car', bodyStyle: 'swan_wing', colorHex: 0xf8fafc, accentHex: 0x06b6d4, price: 95000, img: IMG_SUPER_CAR, hue: 195, speed: 99, accel: 98, handle: 94, nitro: 97 },
-  { id: 20, name: 'Bugatti Chiron Super', cat: 'CAR', modelType: 'car', bodyStyle: 'bugatti_arch', colorHex: 0x1e3a8a, accentHex: 0x38bdf8, price: 120000, img: IMG_SUPER_CAR, hue: 230, speed: 100, accel: 99, handle: 95, nitro: 100 },
-
-  // 13 DISTINCT TRUCKS & SUVs (pickup, desert_rollbar, jeep_open, raptor_wide, flat_bed, ram_hood, safari_suv, armored_6x6, baja_trophy, gwagon_box, hummer_ev, monster_giant, cyber_wedge)
-  { id: 21, name: 'Ranger 4x4 Pickup', cat: 'TRUCK', modelType: 'truck', bodyStyle: 'pickup', colorHex: 0x334155, accentHex: 0xf97316, price: 6000, img: IMG_TRUCK, hue: 0, speed: 66, accel: 65, handle: 68, nitro: 70 },
-  { id: 22, name: 'Hilux Desert Runner', cat: 'TRUCK', modelType: 'truck', bodyStyle: 'desert_rollbar', colorHex: 0xb45309, accentHex: 0xfef08a, price: 8500, img: IMG_TRUCK, hue: 30, speed: 70, accel: 68, handle: 72, nitro: 72 },
-  { id: 23, name: 'Jeep Wrangler Rubicon', cat: 'TRUCK', modelType: 'truck', bodyStyle: 'jeep_open', colorHex: 0xdc2626, accentHex: 0x111827, price: 10500, img: IMG_TRUCK, hue: 350, speed: 72, accel: 71, handle: 75, nitro: 74 },
-  { id: 24, name: 'F-150 Raptor SVT', cat: 'TRUCK', modelType: 'truck', bodyStyle: 'raptor_wide', colorHex: 0x0369a1, accentHex: 0x0f172a, price: 12500, img: IMG_TRUCK, hue: 190, speed: 75, accel: 74, handle: 73, nitro: 76 },
-  { id: 25, name: 'Chevy Silverado ZR2', cat: 'TRUCK', modelType: 'truck', bodyStyle: 'flat_bed', colorHex: 0xf59e0b, accentHex: 0x0f172a, price: 15000, img: IMG_TRUCK, hue: 42, speed: 77, accel: 76, handle: 72, nitro: 79 },
-  { id: 26, name: 'RAM TRX Hellcat', cat: 'TRUCK', modelType: 'truck', bodyStyle: 'ram_hood', colorHex: 0x991b1b, accentHex: 0x1e293b, price: 17000, img: IMG_TRUCK, hue: 340, speed: 80, accel: 79, handle: 70, nitro: 82 },
-  { id: 27, name: 'Defender V8 Safari', cat: 'TRUCK', modelType: 'truck', bodyStyle: 'safari_suv', colorHex: 0x15803d, accentHex: 0xf8fafc, price: 20500, img: IMG_TRUCK, hue: 130, speed: 81, accel: 78, handle: 76, nitro: 80 },
-  { id: 28, name: 'Titan Armored 6x6', cat: 'TRUCK', modelType: 'heavy_truck', bodyStyle: 'armored_6x6', colorHex: 0x166534, accentHex: 0xfacc15, price: 23000, img: IMG_TRUCK, hue: 120, speed: 77, accel: 76, handle: 66, nitro: 85 },
-  { id: 29, name: 'Baja Trophy Beast', cat: 'TRUCK', modelType: 'truck', bodyStyle: 'baja_trophy', colorHex: 0xca8a04, accentHex: 0x0f172a, price: 30000, img: IMG_TRUCK, hue: 45, speed: 84, accel: 82, handle: 78, nitro: 86 },
-  { id: 30, name: 'G-Wagon 4x4 Squared', cat: 'TRUCK', modelType: 'heavy_truck', bodyStyle: 'gwagon_box', colorHex: 0x1e1b4b, accentHex: 0x38bdf8, price: 40000, img: IMG_TRUCK, hue: 220, speed: 85, accel: 84, handle: 80, nitro: 84 },
-  { id: 31, name: 'Hummer EV Supertruck', cat: 'TRUCK', modelType: 'heavy_truck', bodyStyle: 'hummer_ev', colorHex: 0xf8fafc, accentHex: 0x06b6d4, price: 46000, img: IMG_TRUCK, hue: 185, speed: 87, accel: 89, handle: 76, nitro: 90 },
-  { id: 32, name: 'Monster Titan Crusher', cat: 'TRUCK', modelType: 'heavy_truck', bodyStyle: 'monster_giant', colorHex: 0x6b21a8, accentHex: 0xf97316, price: 52000, img: IMG_TRUCK, hue: 280, speed: 82, accel: 85, handle: 69, nitro: 92 },
-  { id: 33, name: 'Cyber Heavy Hauler', cat: 'TRUCK', modelType: 'heavy_truck', bodyStyle: 'cyber_wedge', colorHex: 0x0f766e, accentHex: 0x2dd4bf, price: 68000, img: IMG_TRUCK, hue: 170, speed: 89, accel: 88, handle: 77, nitro: 95 },
-
-  // 12 DISTINCT BIKES (naked_street, cafe_racer, ninja_sport, triple_street, r1_track, gsx_aero, cbr_wings, bmw_asym, ducati_v4, aprilia_gp, h2r_supercharged, ev_tron)
-  { id: 34, name: 'Duke 390 Street', cat: 'BIKE', modelType: 'bike', bodyStyle: 'naked_street', colorHex: 0xf97316, accentHex: 0x0f172a, price: 3500, img: IMG_BIKE, hue: 25, speed: 76, accel: 80, handle: 88, nitro: 70 },
-  { id: 35, name: 'Royal GT 650 Cafe', cat: 'BIKE', modelType: 'bike', bodyStyle: 'cafe_racer', colorHex: 0xb91c1c, accentHex: 0xfacc15, price: 5000, img: IMG_BIKE, hue: 355, speed: 79, accel: 81, handle: 89, nitro: 73 },
-  { id: 36, name: 'Ninja ZX-6R', cat: 'BIKE', modelType: 'bike', bodyStyle: 'ninja_sport', colorHex: 0x16a34a, accentHex: 0x0f172a, price: 6500, img: IMG_BIKE, hue: 130, speed: 82, accel: 84, handle: 90, nitro: 76 },
-  { id: 37, name: 'Triumph Speed Triple', cat: 'BIKE', modelType: 'bike', bodyStyle: 'triple_street', colorHex: 0xeab308, accentHex: 0x111827, price: 8800, img: IMG_BIKE, hue: 50, speed: 85, accel: 86, handle: 91, nitro: 79 },
-  { id: 38, name: 'Yamaha R1M Carbon', cat: 'BIKE', modelType: 'bike', bodyStyle: 'r1_track', colorHex: 0x1d4ed8, accentHex: 0xe2e8f0, price: 10500, img: IMG_BIKE, hue: 210, speed: 87, accel: 88, handle: 92, nitro: 82 },
-  { id: 39, name: 'GSX-R1000R Pro', cat: 'BIKE', modelType: 'bike', bodyStyle: 'gsx_aero', colorHex: 0x0284c7, accentHex: 0xfacc15, price: 15000, img: IMG_BIKE, hue: 185, speed: 89, accel: 90, handle: 91, nitro: 84 },
-  { id: 40, name: 'Honda CBR1000RR-R', cat: 'BIKE', modelType: 'bike', bodyStyle: 'cbr_wings', colorHex: 0xdc2626, accentHex: 0x2563eb, price: 18500, img: IMG_BIKE, hue: 345, speed: 91, accel: 92, handle: 93, nitro: 85 },
-  { id: 41, name: 'BMW S1000RR', cat: 'BIKE', modelType: 'bike', bodyStyle: 'bmw_asym', colorHex: 0xf1f5f9, accentHex: 0xef4444, price: 21000, img: IMG_BIKE, hue: 240, speed: 92, accel: 93, handle: 94, nitro: 86 },
-  { id: 42, name: 'Ducati Panigale V4R', cat: 'BIKE', modelType: 'bike', bodyStyle: 'ducati_v4', colorHex: 0xdc2626, accentHex: 0x111827, price: 29000, img: IMG_BIKE, hue: 350, speed: 94, accel: 95, handle: 95, nitro: 89 },
-  { id: 43, name: 'Aprilia RSV4 Factory', cat: 'BIKE', modelType: 'bike', bodyStyle: 'aprilia_gp', colorHex: 0x6d28d9, accentHex: 0xf97316, price: 38000, img: IMG_BIKE, hue: 280, speed: 95, accel: 96, handle: 96, nitro: 91 },
-  { id: 44, name: 'Kawasaki Ninja H2R', cat: 'BIKE', modelType: 'bike', bodyStyle: 'h2r_supercharged', colorHex: 0x047857, accentHex: 0x22d3ee, price: 54000, img: IMG_BIKE, hue: 165, speed: 99, accel: 98, handle: 93, nitro: 97 },
-  { id: 45, name: 'Lightning LS-218 EV', cat: 'BIKE', modelType: 'bike', bodyStyle: 'ev_tron', colorHex: 0xfacc15, accentHex: 0x06b6d4, price: 75000, img: IMG_BIKE, hue: 50, speed: 100, accel: 100, handle: 96, nitro: 100 }
+  { id: 0,  name: '2025 Koenigsegg Gemera', cat: 'CAR',   modelType: 'car',         bodyStyle: 'gemera_hyper',     isRealFBX: true, fbxPath: 'assets/gemera/FINAL_MODEL_G.fbx', resourcePath: 'assets/gemera/', colorHex: 0x0c1018, accentHex: 0xef4444, starter: true, price: 0,      img: IMG_STARTER_CAR, hue: 0,   speed: 78, accel: 76, handle: 82, nitro: 74 },
+  { id: 1,  name: 'Yamaha R15 V4 Racing',   cat: 'BIKE',  modelType: 'bike',        bodyStyle: 'r15_v4',           colorHex: 0x1d4ed8, accentHex: 0x38bdf8, price: 20000,  img: IMG_BIKE,        hue: 350, speed: 82, accel: 85, handle: 90, nitro: 78 },
+  { id: 2,  name: 'F-150 Raptor SVT',       cat: 'TRUCK', modelType: 'truck',       bodyStyle: 'raptor_wide',      colorHex: 0x2563eb, accentHex: 0x38bdf8, price: 30000,  img: IMG_TRUCK,       hue: 210, speed: 78, accel: 79, handle: 76, nitro: 80 },
+  { id: 3,  name: 'Ferrari SF90 Stradale',  cat: 'CAR',   modelType: 'car',         bodyStyle: 'italian_mid',      colorHex: 0xe11d48, accentHex: 0xfde047, price: 40000,  img: IMG_SUPER_CAR,   hue: 350, speed: 86, accel: 85, handle: 88, nitro: 82 },
+  { id: 4,  name: 'Kawasaki Ninja H2R',     cat: 'BIKE',  modelType: 'bike',        bodyStyle: 'h2r_supercharged', colorHex: 0x10b981, accentHex: 0x00f0ff, price: 50000,  img: IMG_BIKE,        hue: 155, speed: 88, accel: 90, handle: 91, nitro: 85 },
+  { id: 5,  name: 'Jeep Wrangler Rubicon',  cat: 'TRUCK', modelType: 'truck',       bodyStyle: 'jeep_open',        colorHex: 0xea580c, accentHex: 0xfde047, price: 60000,  img: IMG_TRUCK,       hue: 25,  speed: 80, accel: 82, handle: 82, nitro: 83 },
+  { id: 6,  name: 'Huracan Evo Spyder',     cat: 'CAR',   modelType: 'car',         bodyStyle: 'wedge_spyder',     colorHex: 0xfacc15, accentHex: 0x0f172a, price: 70000,  img: IMG_SUPER_CAR,   hue: 48,  speed: 91, accel: 90, handle: 90, nitro: 87 },
+  { id: 7,  name: 'Ducati Panigale V4R',    cat: 'BIKE',  modelType: 'bike',        bodyStyle: 'ducati_v4',        colorHex: 0xdc2626, accentHex: 0xfacc15, price: 80000,  img: IMG_BIKE,        hue: 205, speed: 92, accel: 93, handle: 94, nitro: 88 },
+  { id: 8,  name: 'G-Wagon 4x4 Squared',    cat: 'TRUCK', modelType: 'heavy_truck', bodyStyle: 'gwagon_box',       colorHex: 0x4f46e5, accentHex: 0x38bdf8, price: 90000,  img: IMG_TRUCK,       hue: 235, speed: 86, accel: 86, handle: 84, nitro: 88 },
+  { id: 9,  name: 'McLaren 720S Track',     cat: 'CAR',   modelType: 'car',         bodyStyle: 'teardrop_hyper',   colorHex: 0x7c3aed, accentHex: 0xf97316, price: 100000, img: IMG_SUPER_CAR,   hue: 270, speed: 95, accel: 94, handle: 93, nitro: 92 },
+  { id: 10, name: 'Royal Cafe GT 650',      cat: 'BIKE',  modelType: 'bike',        bodyStyle: 'cafe_racer',       colorHex: 0xd97706, accentHex: 0xfef08a, price: 110000, img: IMG_BIKE,        hue: 40,  speed: 95, accel: 96, handle: 95, nitro: 93 },
+  { id: 11, name: 'Titan Armored 6x6',      cat: 'TRUCK', modelType: 'heavy_truck', bodyStyle: 'armored_6x6',      colorHex: 0x15803d, accentHex: 0xfacc15, price: 120000, img: IMG_TRUCK,       hue: 130, speed: 89, accel: 89, handle: 80, nitro: 94 },
+  { id: 12, name: 'Bugatti Chiron Super',   cat: 'CAR',   modelType: 'car',         bodyStyle: 'bugatti_arch',     colorHex: 0x1d4ed8, accentHex: 0x38bdf8, price: 130000, img: IMG_SUPER_CAR,   hue: 220, speed: 99, accel: 99, handle: 96, nitro: 98 },
+  { id: 13, name: 'Lightning LS-218 EV',    cat: 'BIKE',  modelType: 'bike',        bodyStyle: 'ev_tron',          colorHex: 0x06b6d4, accentHex: 0xfacc15, price: 140000, img: IMG_BIKE,        hue: 185, speed: 100, accel: 100, handle: 98, nitro: 99 },
+  { id: 14, name: 'Monster Titan Crusher',  cat: 'TRUCK', modelType: 'heavy_truck', bodyStyle: 'monster_giant',    colorHex: 0x9333ea, accentHex: 0xf97316, price: 150000, img: IMG_TRUCK,       hue: 280, speed: 96, accel: 97, handle: 86, nitro: 100 }
 ];
 
 } catch (e) { console.error('vehicles init error:', e); }
@@ -788,81 +873,58 @@ window.ApexAudio = (function () {
     osc.start(now); osc.stop(now + dur + 0.02);
   }
 
-  // Brand-New Smooth Modern Racing House Soundtrack (Warm Rhodes Chords + Punchy Kick + Crisp Shaker + Groovy Bass + Catchy Lead)
-  // Progression: Dm9 -> Bbmaj7 -> Fmaj7 -> Csus4/C (Clean, uplifting, zero harsh buzzing!)
-  const houseChords = [
-    [293.66, 349.23, 440.00, 523.25], // Dm7
-    [233.08, 293.66, 349.23, 440.00], // Bbmaj7
-    [261.63, 349.23, 440.00, 523.25], // Fmaj7
-    [261.63, 329.63, 392.00, 493.88]  // Cmaj7
+  // Ultra-Smooth Deep Chill Cinematic Driving Groove (Warm Deep Sub + Soft Kick + Muted Ambient Chords — Zero Harsh Beeps!)
+  const chillChords = [
+    [146.83, 220.00, 261.63, 329.63], // Dm9 low warm voicing
+    [116.54, 174.61, 220.00, 293.66], // Bbmaj9
+    [130.81, 196.00, 246.94, 329.63], // Cmaj9
+    [110.00, 164.81, 196.00, 261.63]  // Am7
   ];
-  const grooveBass = [
-    [73.42, 73.42, 110.00, 73.42],   // D2
-    [58.27, 58.27, 87.31,  58.27],   // Bb1
-    [87.31, 87.31, 65.41,  87.31],   // F2
-    [65.41, 65.41, 98.00,  82.41]    // C2
-  ];
-  const melodyLine = [
-    [587.33, 0, 659.25, 698.46, 0, 587.33, 523.25, 0],
-    [587.33, 0, 523.25, 440.00, 0, 440.00, 523.25, 0],
-    [698.46, 0, 659.25, 587.33, 0, 523.25, 440.00, 0],
-    [523.25, 0, 587.33, 659.25, 0, 783.99, 659.25, 0]
-  ];
+  const deepBass = [73.42, 58.27, 65.41, 55.00];
 
   function playKick(now) {
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(132, now);
-    osc.frequency.exponentialRampToValueAtTime(42, now + 0.12);
-    gain.gain.setValueAtTime(0.16, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.19);
+    osc.frequency.setValueAtTime(105, now);
+    osc.frequency.exponentialRampToValueAtTime(36, now + 0.14);
+    gain.gain.setValueAtTime(0.14, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
     osc.connect(gain); gain.connect(audioCtx.destination);
-    osc.start(now); osc.stop(now + 0.21);
+    osc.start(now); osc.stop(now + 0.24);
   }
 
-  function playClap(now) {
+  function playSoftRim(now) {
     if (!noiseBuffer) return;
     const src = audioCtx.createBufferSource();
     src.buffer = noiseBuffer;
     const bp = audioCtx.createBiquadFilter();
-    bp.type = 'bandpass'; bp.frequency.value = 1650; bp.Q.value = 1.4;
+    bp.type = 'bandpass'; bp.frequency.value = 1100; bp.Q.value = 2.5;
     const gain = audioCtx.createGain();
-    gain.gain.setValueAtTime(0.042, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.095);
+    gain.gain.setValueAtTime(0.032, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
     src.connect(bp); bp.connect(gain); gain.connect(audioCtx.destination);
-    src.start(now); src.stop(now + 0.11);
+    src.start(now); src.stop(now + 0.07);
   }
 
-  function playHat(now, accent) {
-    if (!noiseBuffer) return;
-    const src = audioCtx.createBufferSource();
-    src.buffer = noiseBuffer;
-    const hp = audioCtx.createBiquadFilter();
-    hp.type = 'highpass'; hp.frequency.value = 8800;
-    const gain = audioCtx.createGain();
-    gain.gain.setValueAtTime(accent ? 0.024 : 0.010, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.036);
-    src.connect(hp); hp.connect(gain); gain.connect(audioCtx.destination);
-    src.start(now); src.stop(now + 0.045);
-  }
-
-  function playRhodesStab(now, notes, dur) {
+  function playWarmAtmosphere(now, notes) {
     const lp = audioCtx.createBiquadFilter();
     lp.type = 'lowpass';
-    lp.frequency.setValueAtTime(1450, now);
-    lp.frequency.exponentialRampToValueAtTime(520, now + dur);
+    lp.frequency.setValueAtTime(420, now);
+    lp.frequency.linearRampToValueAtTime(640, now + 1.1);
+    lp.frequency.linearRampToValueAtTime(360, now + 2.2);
     const gain = audioCtx.createGain();
     gain.gain.setValueAtTime(0.001, now);
-    gain.gain.linearRampToValueAtTime(0.038, now + 0.025);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+    gain.gain.linearRampToValueAtTime(0.032, now + 0.35);
+    gain.gain.setValueAtTime(0.028, now + 1.6);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 2.3);
     lp.connect(gain); gain.connect(audioCtx.destination);
     notes.forEach((f) => {
       const o = audioCtx.createOscillator();
       o.type = 'sine';
       o.frequency.setValueAtTime(f, now);
       o.connect(lp);
-      o.start(now); o.stop(now + dur + 0.03);
+      o.start(now); o.stop(now + 2.35);
     });
   }
 
@@ -877,47 +939,23 @@ window.ApexAudio = (function () {
       const step = bgmStep % 16;
       const bar = Math.floor(bgmStep / 16) % 4;
 
-      // Syncopated Warm Rhodes Electric-Piano House Chords (Beats 1, 2.5, 4)
-      if (step === 0 || step === 6 || step === 12) {
-        playRhodesStab(now, houseChords[bar], step === 0 ? 0.65 : 0.42);
-      }
+      if (step === 0) playWarmAtmosphere(now, chillChords[bar]);
+      if (step === 0 || step === 6 || step === 10) playKick(now);
+      if (step === 4 || step === 12) playSoftRim(now);
 
-      // Tight Modern House Beat
-      if (step % 4 === 0) playKick(now);
-      if (step === 4 || step === 12) playClap(now);
-      if (step % 2 === 1) playHat(now, step % 4 === 2);
-
-      // Warm Bouncy Bassline (Pure Sine + Soft Triangle)
-      if (step === 0 || step === 3 || step === 6 || step === 10 || step === 12) {
-        const bFreq = grooveBass[bar][Math.floor(step / 4) % 4];
+      if (step === 0 || step === 8) {
         const bOsc = audioCtx.createOscillator();
         const bGain = audioCtx.createGain();
         bOsc.type = 'sine';
-        bOsc.frequency.setValueAtTime(bFreq, now);
-        bGain.gain.setValueAtTime(0.105, now);
-        bGain.gain.exponentialRampToValueAtTime(0.001, now + 0.20);
+        bOsc.frequency.setValueAtTime(deepBass[bar], now);
+        bGain.gain.setValueAtTime(0.085, now);
+        bGain.gain.exponentialRampToValueAtTime(0.001, now + 0.52);
         bOsc.connect(bGain); bGain.connect(audioCtx.destination);
-        bOsc.start(now); bOsc.stop(now + 0.22);
-      }
-
-      // Catchy Sparkling Bell/Synth Lead Melody
-      if (step % 2 === 0) {
-        const mFreq = melodyLine[bar][(step / 2) % 8];
-        if (mFreq > 0) {
-          const mOsc = audioCtx.createOscillator();
-          const mGain = audioCtx.createGain();
-          mOsc.type = 'sine';
-          mOsc.frequency.setValueAtTime(mFreq, now);
-          mGain.gain.setValueAtTime(0.001, now);
-          mGain.gain.linearRampToValueAtTime(0.030, now + 0.015);
-          mGain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
-          mOsc.connect(mGain); mGain.connect(audioCtx.destination);
-          mOsc.start(now); mOsc.stop(now + 0.30);
-        }
+        bOsc.start(now); bOsc.stop(now + 0.55);
       }
 
       bgmStep++;
-    }, 121); // Crisp 124 BPM Modern Electronic House Groove
+    }, 148); // Relaxed ~101 BPM smooth cinematic night-drive groove
   }
 
   function stopMusic() {
@@ -965,6 +1003,100 @@ window.ApexAudio = (function () {
     [523.25, 659.25, 783.99, 1046.5].forEach((f, idx) => {
       setTimeout(() => playTone(f, 0.22, 'sine', 0.08), idx * 60);
     });
+  }
+
+
+
+  function playSiren() {
+    if (!soundEnabled) return;
+    init();
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    // Realistic Fire Engine / Ambulance Wee-Woo Emergency Siren (2 cycles)
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(660, now);
+    osc.frequency.linearRampToValueAtTime(980, now + 0.45);
+    osc.frequency.linearRampToValueAtTime(640, now + 0.90);
+    osc.frequency.linearRampToValueAtTime(980, now + 1.35);
+    osc.frequency.linearRampToValueAtTime(620, now + 1.80);
+    gain.gain.setValueAtTime(0.001, now);
+    gain.gain.linearRampToValueAtTime(0.085, now + 0.08);
+    gain.gain.setValueAtTime(0.08, now + 1.55);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 1.88);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(now); osc.stop(now + 1.92);
+  }
+
+  // 100% RELIABLE LOUD 2000Hz-PEAK "TEERAN! TEERAN! TEERAN!" AIR-HORN (Direct Synchronous Web Audio — Works in ALL Mobile & Sandboxed Browsers!)
+  let hornStopTimer = null;
+  function stopHorn() {
+    clearTimeout(hornStopTimer);
+  }
+
+  function startHorn() {
+    if (!soundEnabled) return;
+    init();
+    if (!audioCtx) return;
+    const fireTeran = () => {
+      const now = audioCtx.currentTime;
+      const bursts = [[0.0, 0.19], [0.24, 0.43], [0.48, 0.76]];
+      const master = audioCtx.createGain();
+      master.gain.value = 0.52; // LOUD & CLEAR over engine & music!
+      const lp = audioCtx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 2600;
+      const shaper = audioCtx.createWaveShaper();
+      shaper.curve = makeDistortionCurve(16);
+      shaper.connect(lp); lp.connect(master); master.connect(audioCtx.destination);
+
+      bursts.forEach(([s, e]) => {
+        [500, 665, 1000, 2000].forEach((freq, idx) => {
+          const osc = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+          osc.type = idx < 2 ? 'sawtooth' : 'triangle';
+          osc.frequency.setValueAtTime(freq, now + s);
+          osc.frequency.linearRampToValueAtTime(freq * 1.03, now + (s + e) * 0.5);
+          osc.frequency.linearRampToValueAtTime(freq, now + e);
+          g.gain.setValueAtTime(0.001, now + s);
+          g.gain.linearRampToValueAtTime(idx === 3 ? 0.28 : 0.24, now + s + 0.015);
+          g.gain.setValueAtTime(idx === 3 ? 0.25 : 0.22, now + e - 0.025);
+          g.gain.exponentialRampToValueAtTime(0.001, now + e);
+          osc.connect(g); g.connect(shaper);
+          osc.start(now + s);
+          osc.stop(now + e + 0.02);
+        });
+      });
+    };
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume().then(fireTeran).catch(fireTeran);
+    } else {
+      fireTeran();
+    }
+  }
+
+  function playHorn() {
+    startHorn();
+  }
+
+  function playTurboPshh() {
+    if (!soundEnabled) return;
+    init();
+    if (!audioCtx || !noiseBuffer) return;
+    const now = audioCtx.currentTime;
+    const src = audioCtx.createBufferSource();
+    src.buffer = noiseBuffer;
+    const bp = audioCtx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.setValueAtTime(3200, now);
+    bp.frequency.exponentialRampToValueAtTime(1100, now + 0.24);
+    bp.Q.value = 2.4;
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.08, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.26);
+    src.connect(bp); bp.connect(gain); gain.connect(audioCtx.destination);
+    src.start(now); src.stop(now + 0.28);
   }
 
   function playCrash() {
@@ -1184,14 +1316,14 @@ window.ApexCity3D = (function () {
     const ctx = c.getContext('2d');
     // 8 Light Vibrant Colorful Building Palettes + TRANSPARENT Glass Windows Showing Interior Chairs/Desks/Rooms!
     const palettes = [
-      { wall: '#541b08', trim: '#240a03', frame: '#141210', lobby: '#381105', cols: 5, rows: 12 }, // Deep Dark Terracotta
-      { wall: '#0b193d', trim: '#050c20', frame: '#0a101d', lobby: '#112252', cols: 6, rows: 14 }, // Deep Midnight Navy
-      { wall: '#072e2c', trim: '#031817', frame: '#091114', lobby: '#0b423f', cols: 6, rows: 13 }, // Deep Obsidian Teal
-      { wall: '#522307', trim: '#240e02', frame: '#14110f', lobby: '#612a08', cols: 5, rows: 12 }, // Deep Dark Bronze
-      { wall: '#240b4f', trim: '#110429', frame: '#15102b', lobby: '#381275', cols: 6, rows: 14 }, // Deep Midnight Plum
-      { wall: '#470a1c', trim: '#21040c', frame: '#121215', lobby: '#660e28', cols: 5, rows: 12 }, // Deep Dark Burgundy
-      { wall: '#0f1624', trim: '#070b12', frame: '#151f30', lobby: '#172236', cols: 6, rows: 14 }, // Obsidian Charcoal Slate
-      { wall: '#082917', trim: '#03140b', frame: '#0d1a12', lobby: '#0e3d23', cols: 5, rows: 13 }  // Deep Forest Pine
+      { wall: '#c0266e', trim: '#831843', frame: '#4c0519', lobby: '#9d174d', cols: 4, rows: 4 },  // 0: Vibrant Pink House
+      { wall: '#b85028', trim: '#7c2d12', frame: '#431407', lobby: '#9a3412', cols: 4, rows: 3 },  // 1: Warm Terracotta Villa
+      { wall: '#1d4085', trim: '#0f2354', frame: '#0a1738', lobby: '#1e3a8a', cols: 6, rows: 12 }, // 2: Rich Royal Blue Tower
+      { wall: '#0f766e', trim: '#115e59', frame: '#042f2e', lobby: '#0d9488', cols: 5, rows: 6 },  // 3: Bright Emerald Apartment
+      { wall: '#b46914', trim: '#78350f', frame: '#451a03', lobby: '#d97706', cols: 4, rows: 3 },  // 4: Warm Golden Village House
+      { wall: '#6b21a8', trim: '#3b0764', frame: '#2e1065', lobby: '#7e22ce', cols: 5, rows: 9 },  // 5: Royal Purple Mansion
+      { wall: '#9f1d3a', trim: '#5c0a1d', frame: '#3b0714', lobby: '#be123c', cols: 5, rows: 5 },  // 6: Rich Crimson Townhouse
+      { wall: '#0369a1', trim: '#0c4a6e', frame: '#082f49', lobby: '#0284c7', cols: 6, rows: 14 }  // 7: Ocean Azure Skyscraper
     ];
     const p = palettes[styleIdx % palettes.length];
     const wg = ctx.createLinearGradient(0, 0, 0, 512);
@@ -1219,17 +1351,21 @@ window.ApexCity3D = (function () {
         ctx.fillStyle = p.frame;
         ctx.fillRect(x - 1.5, y - 1.5, w + 3, h + 3);
 
-        // 1. Interior Room Depth (Warm sunlit room backdrop behind transparent glass)
-        const roomType = (r * 7 + col * 5 + styleIdx) % 4;
+        // 1. Vibrant Colorful Glowing Glass Windows + Interior Depth!
+        const roomType = (r * 7 + col * 5 + styleIdx * 3) % 6;
         const roomGrad = ctx.createLinearGradient(x, y, x, y + h);
         if (roomType === 0) {
-          roomGrad.addColorStop(0, '#fef3c7'); roomGrad.addColorStop(1, '#d6c3a5'); // Warm sunlit office
+          roomGrad.addColorStop(0, '#38bdf8'); roomGrad.addColorStop(1, '#0284c7'); // Bright Sky Cyan Glass
         } else if (roomType === 1) {
-          roomGrad.addColorStop(0, '#e0f2fe'); roomGrad.addColorStop(1, '#94a3b8'); // Cool daylight studio
+          roomGrad.addColorStop(0, '#fde047'); roomGrad.addColorStop(1, '#f59e0b'); // Warm Golden Sunlit Window
         } else if (roomType === 2) {
-          roomGrad.addColorStop(0, '#fde68a'); roomGrad.addColorStop(1, '#a8a29e'); // Cozy apartment room
+          roomGrad.addColorStop(0, '#5eead4'); roomGrad.addColorStop(1, '#0d9488'); // Mint Aqua Glass
+        } else if (roomType === 3) {
+          roomGrad.addColorStop(0, '#f9a8d4'); roomGrad.addColorStop(1, '#db2777'); // Rosy Pink Window Glow
+        } else if (roomType === 4) {
+          roomGrad.addColorStop(0, '#c4b5fd'); roomGrad.addColorStop(1, '#7c3aed'); // Soft Lavender Glass
         } else {
-          roomGrad.addColorStop(0, '#cbd5e1'); roomGrad.addColorStop(1, '#64748b'); // Shaded modern lounge
+          roomGrad.addColorStop(0, '#fed7aa'); roomGrad.addColorStop(1, '#ea580c'); // Warm Peach Sunset Glass
         }
         ctx.fillStyle = roomGrad;
         ctx.fillRect(x, y, w, h);
@@ -1354,17 +1490,18 @@ window.ApexCity3D = (function () {
     const frontWheelPivots = [];
     const flames = [];
 
-    const mainColor = vehicleObj.id === 0 ? 0xffffff : (vehicleObj.colorHex || 0xdc2626);
+    const mainColor = vehicleObj.colorHex || 0xb8c2cc;
     const accentColor = vehicleObj.accentHex || 0x0f172a;
     const style = vehicleObj.bodyStyle || 'sedan';
     const vid = vehicleObj.id || 0;
 
     const isVeryLight = mainColor === 0xffffff || mainColor === 0xf8fafc || mainColor === 0xf1f5f9 || mainColor === 0xe2e8f0;
+    const isShinyBlack = mainColor === 0x0c1018 || mainColor === 0x111827;
     const bodyMat = new THREE.MeshStandardMaterial({
       color: mainColor,
-      metalness: isVeryLight ? 0.26 : 0.76,
-      roughness: isVeryLight ? 0.12 : 0.14,
-      envMapIntensity: 1.5
+      metalness: isShinyBlack ? 0.92 : (vehicleObj.modelType === 'truck' || vehicleObj.modelType === 'heavy_truck') ? 0.35 : isVeryLight ? 0.26 : 0.74,
+      roughness: isShinyBlack ? 0.06 : (vehicleObj.modelType === 'truck' || vehicleObj.modelType === 'heavy_truck') ? 0.22 : isVeryLight ? 0.10 : 0.11,
+      envMapIntensity: isShinyBlack ? 2.3 : 1.75
     });
     const accentMat = new THREE.MeshStandardMaterial({ color: accentColor, metalness: 0.55, roughness: 0.22 });
     const glossyBlackMat = new THREE.MeshStandardMaterial({ color: 0x0b0f17, metalness: 0.65, roughness: 0.16 });
@@ -1374,12 +1511,14 @@ window.ApexCity3D = (function () {
     const tireMat = new THREE.MeshStandardMaterial({ color: 0x141619, roughness: 0.85, metalness: 0.05 });
     const caliperMat = new THREE.MeshStandardMaterial({ color: 0xef4444, metalness: 0.45, roughness: 0.28 });
     const glassMat = new THREE.MeshStandardMaterial({
-      color: 0x071526,
-      metalness: 0.94,
-      roughness: 0.04,
-      envMapIntensity: 1.9,
+      color: 0x1b4965,
+      emissive: 0x0b2545,
+      emissiveIntensity: 0.22,
+      metalness: 0.88,
+      roughness: 0.06,
+      envMapIntensity: 2.1,
       transparent: true,
-      opacity: 0.9
+      opacity: 0.54
     });
     const headMat = new THREE.MeshBasicMaterial({ color: 0xe0f7ff });
     const drlMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
@@ -1390,29 +1529,49 @@ window.ApexCity3D = (function () {
       const pivot = new THREE.Group();
       pivot.position.set(wx, wy, wz);
       const wg = new THREE.Group();
-      const tire = new THREE.Mesh(new THREE.CylinderGeometry(r, r, width, 24), tireMat);
+      const sideSign = wx < 0 ? -1 : 1;
+
+      // Sculpted Wide Performance Rubber Tire + Raised Tread Shoulder Rings
+      const tire = new THREE.Mesh(new THREE.CylinderGeometry(r, r, width, 28), tireMat);
       tire.rotation.z = Math.PI / 2;
-      const rim = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.7, r * 0.7, width + 0.015, 20), chromeMat);
+      const treadL = new THREE.Mesh(new THREE.TorusGeometry(r * 0.95, 0.042, 8, 28), tireMat);
+      treadL.rotation.y = Math.PI / 2; treadL.position.x = -width * 0.36;
+      const treadR = treadL.clone(); treadR.position.x = width * 0.36;
+
+      // Deep-Dish Glossy Rim Barrel + Metallic Rotor + Colored Accent Rim Lip
+      const rim = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.72, r * 0.72, width + 0.015, 24), chromeMat);
       rim.rotation.z = Math.PI / 2;
-      const inner = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.56, r * 0.56, width + 0.02, 16), glossyBlackMat);
+      const inner = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.58, r * 0.58, width + 0.022, 18), glossyBlackMat);
       inner.rotation.z = Math.PI / 2;
-      const rotor = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.50, r * 0.50, width + 0.01, 16), chromeMat);
+      const rotor = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.50, r * 0.50, width + 0.012, 16), chromeMat);
       rotor.rotation.z = Math.PI / 2;
-      const cal = new THREE.Mesh(new THREE.BoxGeometry(width * 0.62, r * 0.34, r * 0.24), caliperMat);
+      const cal = new THREE.Mesh(new THREE.BoxGeometry(width * 0.64, r * 0.36, r * 0.26), caliperMat);
       cal.position.set(0, r * 0.26, -r * 0.26);
-      // Deep-dish outer alloy lip + crisp 10-spoke Y-pattern sport rim
-      const outerLip = new THREE.Mesh(new THREE.TorusGeometry(r * 0.69, 0.032, 8, 24), chromeMat);
+
+      // Sleek Colored Alloy Outer Rim Ring (gives supercar/truck beadlock pop!)
+      const accentRingMat = new THREE.MeshStandardMaterial({
+        color: accentColor === 0x0f172a || accentColor === 0x111827 ? 0x38bdf8 : accentColor,
+        metalness: 0.78,
+        roughness: 0.18
+      });
+      const outerLip = new THREE.Mesh(new THREE.TorusGeometry(r * 0.71, 0.036, 10, 28), accentRingMat);
       outerLip.rotation.y = Math.PI / 2;
-      outerLip.position.x = (wx < 0 ? -1 : 1) * (width * 0.48);
-      wg.add(outerLip);
+      outerLip.position.x = sideSign * (width * 0.49);
+
+      // Center Alloy Hub Cap
+      const hubCap = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.19, r * 0.19, width + 0.055, 14), accentRingMat);
+      hubCap.rotation.z = Math.PI / 2;
+
+      // Crisp 10-Spoke Twin-Y Performance Alloy Spokes
       for (let sp = 0; sp < 5; sp++) {
-        const spoke = new THREE.Mesh(new THREE.BoxGeometry(width + 0.04, r * 1.32, 0.045), chromeMat);
-        spoke.rotation.x = (sp / 5) * Math.PI;
-        const spoke2 = new THREE.Mesh(new THREE.BoxGeometry(width + 0.03, r * 1.24, 0.028), glossyBlackMat);
-        spoke2.rotation.x = (sp / 5) * Math.PI + 0.16;
+        const ang = (sp / 5) * Math.PI;
+        const spoke = new THREE.Mesh(new THREE.BoxGeometry(width + 0.042, r * 1.34, 0.042), chromeMat);
+        spoke.rotation.x = ang;
+        const spoke2 = new THREE.Mesh(new THREE.BoxGeometry(width + 0.036, r * 1.30, 0.032), chromeMat);
+        spoke2.rotation.x = ang + 0.15;
         wg.add(spoke, spoke2);
       }
-      wg.add(tire, rim, inner, rotor, cal);
+      wg.add(tire, treadL, treadR, rim, inner, rotor, cal, outerLip, hubCap);
       pivot.add(wg);
       group.add(pivot);
       wheels.push(wg);
@@ -1454,13 +1613,27 @@ window.ApexCity3D = (function () {
       tailCowl.rotation.x = Math.PI / 2.25; tailCowl.position.set(0, isCafe ? 0.96 : 1.08, 0.94);
 
       // Front Suspension Forks + Handlebars
-      const forkMat = (hasWings || style === 'r1_track') ? goldForkMat : chromeMat;
+      const isR15 = style === 'r15_v4';
+      const forkMat = (hasWings || style === 'r1_track' || isR15) ? goldForkMat : chromeMat;
       const forkL = new THREE.Mesh(new THREE.CylinderGeometry(0.044, 0.036, 0.96, 10), forkMat);
       forkL.position.set(-0.16, 0.78, -wb + 0.18); forkL.rotation.x = isCafe ? -0.40 : -0.32;
       const forkR = forkL.clone(); forkR.position.x = 0.16;
       const clipBar = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, isNaked ? 0.96 : 0.84, 8), glossyBlackMat);
       clipBar.rotation.z = Math.PI / 2; clipBar.position.set(0, isNaked || isCafe ? 1.18 : 1.08, -0.62);
-      chassis.add(frameL, frameR, swingL, swingR, engineCore, tank, seat, tailCowl, forkL, forkR, clipBar);
+      // Sculpted Digital Bike Dash Console + Chain Guard + Rear Mudguard + Distinct Ducati Under-Seat Pipes
+      const dashConsole = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.10, 0.14), new THREE.MeshBasicMaterial({ color: 0x00f0ff }));
+      dashConsole.position.set(0, isNaked || isCafe ? 1.24 : 1.15, -0.68); dashConsole.rotation.x = -0.45;
+      const chainGuard = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.16, 0.85), carbonMat);
+      chainGuard.position.set(-0.22, 0.48, 0.42);
+      const rearHugger = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.46, 0.34, 14, 1, true, -0.6, 1.3), bodyMat);
+      rearHugger.rotation.z = Math.PI / 2; rearHugger.position.set(0, 0.44, wb);
+      chassis.add(frameL, frameR, swingL, swingR, engineCore, tank, seat, tailCowl, forkL, forkR, clipBar, dashConsole, chainGuard, rearHugger);
+      if (style === 'ducati_v4') {
+        const ducPipeL = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.065, 0.45, 10), chromeMat);
+        ducPipeL.rotation.x = Math.PI / 2; ducPipeL.position.set(-0.12, 1.00, 1.12);
+        const ducPipeR = ducPipeL.clone(); ducPipeR.position.x = 0.12;
+        chassis.add(ducPipeL, ducPipeR);
+      }
 
       if (isCafe) {
         // Retro Chrome Round Headlight + Cafe Bubble Cowl + Twin Low Chrome Exhausts
@@ -1490,6 +1663,22 @@ window.ApexCity3D = (function () {
         visor.scale.set(0.80, 1.0, 1.48); visor.position.set(0, 1.05, -0.72);
         chassis.add(nose, sideFairL, sideFairR, bellyPan, visor);
       }
+      if (isR15) {
+        // Authentic Yamaha R15 V4 Signature Styling: Central M-Duct Projector + Sharp Twin Eyebrow DRLs + Stepped Split-Seat + Sculpted Side Gill Fairing!
+        const mDuct = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.095, 0.18, 12), glossyBlackMat);
+        mDuct.rotation.x = Math.PI / 2; mDuct.position.set(0, 0.94, -1.32);
+        const r15Eye = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 10), headMat);
+        r15Eye.position.set(0, 0.94, -1.38);
+        const drlBrowL = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.035, 0.08), drlMat);
+        drlBrowL.position.set(-0.18, 1.00, -1.24); drlBrowL.rotation.z = -0.26;
+        const drlBrowR = drlBrowL.clone(); drlBrowR.position.x = 0.18; drlBrowR.rotation.z = 0.26;
+        const r15GillL = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.24, 0.78), accentMat);
+        r15GillL.position.set(-0.27, 0.72, -0.32);
+        const r15GillR = r15GillL.clone(); r15GillR.position.x = 0.27;
+        const r15Tail = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.14, 0.56), bodyMat);
+        r15Tail.position.set(0, 1.06, 0.86); r15Tail.rotation.x = 0.28;
+        chassis.add(mDuct, r15Eye, drlBrowL, drlBrowR, r15GillL, r15GillR, r15Tail);
+      }
       if (hasWings) {
         // MotoGP Dual Downforce Carbon Winglets
         const winglet = new THREE.Mesh(new THREE.BoxGeometry(1.06, 0.05, 0.26), carbonMat);
@@ -1510,48 +1699,55 @@ window.ApexCity3D = (function () {
         chassis.add(neonArc, ringF, ringR);
       }
 
-      // REAL 3D HUMAN RIDER SITTING ON THE BIKE (Helmet + Visor + Racing Jacket + Arms on Handlebar + Bent Legs on Footpegs!)
+      // CRYSTAL-CLEAR HIGH-CONTRAST 3D HUMAN RIDER AVATAR SITTING ON THE BIKE!
       const rider = new THREE.Group();
-      const suitMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.55, metalness: 0.15 });
-      const riderAccent = new THREE.MeshStandardMaterial({ color: isVeryLight ? 0xef4444 : mainColor, roughness: 0.35, metalness: 0.45 });
-      const skinMat = new THREE.MeshStandardMaterial({ color: 0xf1c27d, roughness: 0.7 });
+      const jacketMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.45, metalness: 0.12 }); // Crisp White Racing Jacket (Stands out clearly!)
+      const pantsMat = new THREE.MeshStandardMaterial({ color: 0x1d4ed8, roughness: 0.72 }); // Clear Denim-Blue Riding Pants
+      const riderAccent = new THREE.MeshStandardMaterial({ color: isVeryLight ? 0xef4444 : mainColor, roughness: 0.25, metalness: 0.55 });
+      const helmetMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.18, metalness: 0.55 }); // High-Vis Glossy Racing Gold/Yellow Helmet!
+      const visorGlowMat = new THREE.MeshStandardMaterial({ color: 0x00f0ff, emissive: 0x0284c7, emissiveIntensity: 0.45, metalness: 0.9, roughness: 0.08 });
+      const skinMat = new THREE.MeshStandardMaterial({ color: 0xe0ac69, roughness: 0.65 });
       const upright = isCafe || isNaked;
-      const leanX = upright ? -0.32 : -0.68;
+      const leanX = upright ? -0.18 : -0.42;
 
-      // Torso (Racing Jacket + Colorful Racing Stripe)
-      const torso = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.58, 0.26), suitMat);
-      torso.position.set(0, upright ? 1.36 : 1.28, upright ? 0.28 : 0.18);
+      // Clear Upright Sculpted Torso + Colored Shoulder Pads + Back Racing Number Stripe
+      const torso = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.66, 0.30), jacketMat);
+      torso.position.set(0, upright ? 1.46 : 1.38, upright ? 0.30 : 0.24);
       torso.rotation.x = leanX;
-      const chestPad = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.24, 0.28), riderAccent);
-      chestPad.position.set(0, upright ? 1.44 : 1.33, upright ? 0.24 : 0.12);
-      chestPad.rotation.x = leanX;
-      // Racing Helmet + Reflective Dark Visor
-      const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.19, 16, 14), riderAccent);
-      helmet.position.set(0, upright ? 1.78 : 1.58, upright ? 0.14 : -0.10);
-      const hVisor = new THREE.Mesh(new THREE.SphereGeometry(0.175, 14, 10, -Math.PI * 0.35, Math.PI * 0.7, Math.PI * 0.28, Math.PI * 0.34), glassMat);
+      const chestStripe = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.24, 0.32), riderAccent);
+      chestStripe.position.set(0, upright ? 1.54 : 1.44, upright ? 0.27 : 0.20);
+      chestStripe.rotation.x = leanX;
+      // Neck + Large Clear Glossy Racing Helmet + Bright Cyan Visor
+      const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.095, 0.14, 10), skinMat);
+      neck.position.set(0, upright ? 1.80 : 1.68, upright ? 0.22 : 0.08);
+      const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.24, 18, 16), helmetMat);
+      helmet.position.set(0, upright ? 1.98 : 1.84, upright ? 0.20 : 0.04);
+      const hVisor = new THREE.Mesh(new THREE.SphereGeometry(0.225, 16, 12, -Math.PI * 0.38, Math.PI * 0.76, Math.PI * 0.28, Math.PI * 0.36), visorGlowMat);
       hVisor.position.copy(helmet.position);
       hVisor.rotation.y = Math.PI;
-      // Arms reaching forward to grip the handlebars
+      // Arms with Bright Shoulder Pads & Gloves Gripping Handlebars + Blue Riding Legs & Boots
       [-1, 1].forEach((s) => {
-        const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.055, 0.62, 8), suitMat);
-        arm.position.set(s * 0.28, upright ? 1.34 : 1.24, -0.22);
-        arm.rotation.x = upright ? 1.15 : 1.32;
-        arm.rotation.z = s * 0.22;
-        const glove = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), riderAccent);
-        glove.position.set(s * 0.36, upright ? 1.18 : 1.08, -0.60);
-        // Bent Thigh + Lower Leg + Boot resting on footpeg
-        const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.075, 0.48, 8), suitMat);
-        thigh.position.set(s * 0.22, 0.88, 0.22);
-        thigh.rotation.x = 0.88;
-        const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.06, 0.46, 8), suitMat);
-        shin.position.set(s * 0.23, 0.60, 0.16);
-        shin.rotation.x = -0.35;
-        const boot = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.10, 0.24), riderAccent);
-        boot.position.set(s * 0.24, 0.40, 0.14);
-        rider.add(arm, glove, thigh, shin, boot);
+        const shoulder = new THREE.Mesh(new THREE.SphereGeometry(0.105, 10, 10), riderAccent);
+        shoulder.position.set(s * 0.30, upright ? 1.66 : 1.54, upright ? 0.22 : 0.12);
+        const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.065, 0.68, 10), jacketMat);
+        arm.position.set(s * 0.32, upright ? 1.44 : 1.34, -0.20);
+        arm.rotation.x = upright ? 1.10 : 1.25;
+        arm.rotation.z = s * 0.18;
+        const glove = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 10), riderAccent);
+        glove.position.set(s * 0.38, upright ? 1.20 : 1.10, -0.60);
+        const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.09, 0.52, 10), pantsMat);
+        thigh.position.set(s * 0.24, 0.94, 0.24);
+        thigh.rotation.x = 0.85;
+        const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.075, 0.48, 10), pantsMat);
+        shin.position.set(s * 0.25, 0.64, 0.18);
+        shin.rotation.x = -0.32;
+        const boot = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.12, 0.26), riderAccent);
+        boot.position.set(s * 0.26, 0.42, 0.14);
+        rider.add(shoulder, arm, glove, thigh, shin, boot);
       });
-      rider.add(torso, chestPad, helmet, hVisor);
+      rider.add(torso, chestStripe, neck, helmet, hVisor);
       chassis.add(rider);
+      group.userData.rider = rider;
 
       // Exhausts & Lights
       const exR = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.088, 0.94, 12), isCafe ? chromeMat : carbonMat);
@@ -1643,6 +1839,26 @@ window.ApexCity3D = (function () {
       bodyMesh.position.y = liftY;
       chassis.add(bodyMesh);
 
+      // TWO-TONE HALF-BODY CONTRAST LIVERY ON EVERY TRUCK (Lower Half Metallic Contrast + Side Accent Band + Hood Trim!)
+      const truckLowerMat = new THREE.MeshStandardMaterial({
+        color: isMonster ? 0xfacc15 : isGWagon ? 0xe2e8f0 : isRaptor ? 0x0f172a : isJeep ? 0x1e293b : 0x334155,
+        metalness: 0.62,
+        roughness: 0.24,
+        envMapIntensity: 1.4
+      });
+      const lowerHalfPanel = new THREE.Mesh(new THREE.BoxGeometry(bodyW + 0.14, 0.44, 4.75 * lenScale), truckLowerMat);
+      lowerHalfPanel.position.set(0, 0.72 + liftY, 0);
+      const beltStripeL = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.09, 4.65 * lenScale), accentMat);
+      beltStripeL.position.set(-bodyW / 2 - 0.08, 0.96 + liftY, 0);
+      const beltStripeR = beltStripeL.clone(); beltStripeR.position.x = bodyW / 2 + 0.08;
+      // Sleek Two-Tone Roof Cap Accent on Truck Cab
+      if (!isJeep) {
+        const cabRoofAccent = new THREE.Mesh(new THREE.BoxGeometry(bodyW * 0.92, 0.08, isSUV ? 2.8 : 1.45), truckLowerMat);
+        cabRoofAccent.position.set(0, (isSUV ? 2.24 : 2.18) + liftY, isSUV ? 0.42 : -0.36);
+        chassis.add(cabRoofAccent);
+      }
+      chassis.add(lowerHalfPanel, beltStripeL, beltStripeR);
+
       // Cabin Windows (or Open Roll Cage + Seats for Jeep!)
       if (isJeep) {
         const cageBarL = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.8, 8), glossyBlackMat);
@@ -1656,12 +1872,91 @@ window.ApexCity3D = (function () {
         const jSeatR = jSeatL.clone(); jSeatR.position.x = 0.48;
         chassis.add(cageBarL, cageBarR, postL, postR, jSeatL, jSeatR);
       } else {
-        const glassCab = new THREE.Mesh(new THREE.BoxGeometry(bodyW + 0.06, 0.56, isSUV ? 2.75 : is6x6 ? 1.85 : 1.52), glassMat);
+        // Transparent Front/Side Cab Glass + VISIBLE 3D HUMAN DRIVER INSIDE + CLEAR SIDE DOOR SEAMS!
+        const cabGlassMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.45, roughness: 0.08, transparent: true, opacity: 0.46 });
+        const glassCab = new THREE.Mesh(new THREE.BoxGeometry(bodyW + 0.06, 0.56, isSUV ? 2.75 : is6x6 ? 1.85 : 1.52), cabGlassMat);
         glassCab.position.set(0, 1.80 + liftY, isSUV ? 0.42 : -0.34);
-        chassis.add(glassCab);
+        // Visible Human Driver (Head + Shoulders + Steering Wheel inside Truck Cab!)
+        const tDriver = new THREE.Group();
+        const dHead = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 10), new THREE.MeshStandardMaterial({ color: 0xe0ac69, roughness: 0.65 }));
+        dHead.position.set(-0.42, 1.92 + liftY, -0.45);
+        const dHair = new THREE.Mesh(new THREE.SphereGeometry(0.23, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.5), new THREE.MeshStandardMaterial({ color: 0x111827 }));
+        dHair.position.set(-0.42, 1.96 + liftY, -0.45);
+        const dBody = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.42, 0.28), new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.6 }));
+        dBody.position.set(-0.42, 1.58 + liftY, -0.42);
+        tDriver.add(dHead, dHair, dBody);
+        chassis.add(glassCab, tDriver);
+        group.userData.rider = tDriver;
+
+        // Clear Visible Side Door Seams + Chrome Handles on BOTH Truck Sides!
+        [-1, 1].forEach((side) => {
+          const sx = side * (bodyW / 2 + 0.085);
+          const seamF = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.88, 0.04), glossyBlackMat);
+          seamF.position.set(sx, 1.15 + liftY, -1.05);
+          const seamR = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.88, 0.04), glossyBlackMat);
+          seamR.position.set(sx, 1.15 + liftY, 0.35);
+          const dHandle = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.06, 0.24), chromeMat);
+          dHandle.position.set(sx, 1.38 + liftY, 0.08);
+          chassis.add(seamF, seamR, dHandle);
+        });
+
+        // HOLLOW OPEN REAR CARGO BED on Pickup / Raptor / Monster Trucks (Raised Side Walls + Recessed Empty Bed Floor!)
+        if (!isSUV && !isCyber) {
+          const bedFloor = new THREE.Mesh(new THREE.BoxGeometry(bodyW - 0.32, 0.08, 1.95 * lenScale), new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.85 }));
+          bedFloor.position.set(0, 1.37 + liftY, 1.48 * lenScale);
+          const bedWallL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.36, 2.02 * lenScale), bodyMat);
+          bedWallL.position.set(-(bodyW / 2 - 0.08), 1.54 + liftY, 1.48 * lenScale);
+          const bedWallR = bedWallL.clone(); bedWallR.position.x = (bodyW / 2 - 0.08);
+          const tailGate = new THREE.Mesh(new THREE.BoxGeometry(bodyW, 0.36, 0.16), bodyMat);
+          tailGate.position.set(0, 1.54 + liftY, 2.46 * lenScale);
+          chassis.add(bedFloor, bedWallL, bedWallR, tailGate);
+        }
       }
 
-      // Archetype-Specific Signature 3D Truck Accessories!
+      // Archetype-Specific Signature 3D Truck Accessories — EVERY SINGLE TRUCK HAS ITS OWN UNIQUE 3D BUILD!
+      const isFlatbed = style === 'flat_bed';
+      const isRam = style === 'ram_hood';
+      if (isFlatbed) {
+        // Heavy Utility Flatbed Deck + Steel Headache Rack + Strapped Cargo Crates!
+        const bedDeck = new THREE.Mesh(new THREE.BoxGeometry(bodyW + 0.16, 0.18, 2.35), new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.85 }));
+        bedDeck.position.set(0, 1.38 + liftY, 1.48 * lenScale);
+        const rackBar = new THREE.Mesh(new THREE.BoxGeometry(bodyW + 0.08, 0.92, 0.14), chromeMat);
+        rackBar.position.set(0, 1.86 + liftY, 0.42);
+        const crate1 = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.68, 0.95), accentMat);
+        crate1.position.set(-0.42, 1.80 + liftY, 1.35 * lenScale);
+        const crate2 = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.54, 0.82), new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.6 }));
+        crate2.position.set(0.46, 1.73 + liftY, 1.65 * lenScale);
+        chassis.add(bedDeck, rackBar, crate1, crate2);
+      }
+      if (isRam) {
+        // RAM TRX Giant Hood Power-Bulge + Red Off-Road Front Skid Plate!
+        const bulge = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.24, 1.28), bodyMat);
+        bulge.position.set(0, 1.54 + liftY, -1.68 * lenScale);
+        const skid = new THREE.Mesh(new THREE.BoxGeometry(bodyW * 0.72, 0.22, 0.48), new THREE.MeshStandardMaterial({ color: 0xdc2626, metalness: 0.5, roughness: 0.35 }));
+        skid.position.set(0, 0.44 + liftY, -2.42 * lenScale); skid.rotation.x = 0.45;
+        chassis.add(bulge, skid);
+      }
+      if (isSafari) {
+        // Expedition A-Pillar Snorkel Intake
+        const snorkel = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 1.25, 8), glossyBlackMat);
+        snorkel.position.set(bodyW / 2 + 0.08, 1.65 + liftY, -1.05);
+        chassis.add(snorkel);
+      }
+      if (isGWagon) {
+        // Iconic Chrome Side Exhaust Pipes + Signature Chrome Spare Tire Cover
+        const sideExL = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.6, 8), chromeMat);
+        sideExL.rotation.x = Math.PI / 2; sideExL.position.set(-bodyW / 2 - 0.14, 0.48 + liftY, 0.25);
+        const sideExR = sideExL.clone(); sideExR.position.x = bodyW / 2 + 0.14;
+        const spareCap = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.36, 18), chromeMat);
+        spareCap.rotation.x = Math.PI / 2; spareCap.position.set(0, 1.32 + liftY, 2.54 * lenScale);
+        chassis.add(sideExL, sideExR, spareCap);
+      }
+      if (isBaja) {
+        // High-Speed Baja Rear Aero Wing + Twin Rear Spare Tires
+        const bWing = new THREE.Mesh(new THREE.BoxGeometry(bodyW + 0.2, 0.08, 0.44), accentMat);
+        bWing.position.set(0, 2.28 + liftY, 2.25 * lenScale);
+        chassis.add(bWing);
+      }
       if (isMonster) {
         // Exposed Orange Coil Suspension Shocks + Chrome Hood Supercharger Blower!
         const shockMat = new THREE.MeshStandardMaterial({ color: 0xf97316, metalness: 0.7, roughness: 0.25 });
@@ -1823,6 +2118,15 @@ window.ApexCity3D = (function () {
       const lowerMesh = new THREE.Mesh(lowerExt, bodyMat);
       chassis.add(lowerMesh);
 
+      // Sleek Two-Tone Supercar Lower Body Trim + Side Character Accent Line (Makes Every Car Pop!)
+      const carAccentTrimL = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.055, 2.35 * lenMul), accentMat);
+      carAccentTrimL.position.set(-bodyW / 2 - 0.025, 0.36, 0);
+      const carAccentTrimR = carAccentTrimL.clone(); carAccentTrimR.position.x = bodyW / 2 + 0.025;
+      const lowerBeltL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.14, 2.45 * lenMul), glossyBlackMat);
+      lowerBeltL.position.set(-bodyW / 2 - 0.02, 0.27, 0);
+      const lowerBeltR = lowerBeltL.clone(); lowerBeltR.position.x = bodyW / 2 + 0.02;
+      chassis.add(carAccentTrimL, carAccentTrimR, lowerBeltL, lowerBeltR);
+
       // 2. Sculpted Flared Fender Haunches & Dark Wheel Wells
       const archPositions = [[-1.36 * lenMul, 0.42], [1.36 * lenMul, 0.42]];
       archPositions.forEach(([az, ay]) => {
@@ -1867,6 +2171,28 @@ window.ApexCity3D = (function () {
         glassExt.rotateY(-Math.PI / 2);
         const glassMesh = new THREE.Mesh(glassExt, glassMat);
         chassis.add(glassMesh);
+
+        // Visible 3D Human Driver Inside Car Front Window + Clear Side Door Lines!
+        const cDriver = new THREE.Group();
+        const cdHead = new THREE.Mesh(new THREE.SphereGeometry(0.19, 12, 10), new THREE.MeshStandardMaterial({ color: 0xe0ac69, roughness: 0.65 }));
+        cdHead.position.set(-0.36, hoodH + 0.36, 0.02 * lenMul);
+        const cdHair = new THREE.Mesh(new THREE.SphereGeometry(0.20, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.5), new THREE.MeshStandardMaterial({ color: 0x111827 }));
+        cdHair.position.set(-0.36, hoodH + 0.39, 0.02 * lenMul);
+        const cdTorso = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.36, 0.24), new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.6 }));
+        cdTorso.position.set(-0.36, hoodH + 0.08, 0.06 * lenMul);
+        cDriver.add(cdHead, cdHair, cdTorso);
+        chassis.add(cDriver);
+        group.userData.rider = cDriver;
+
+        // Crisp Side Door Panel Lines on BOTH Car Sides!
+        [-1, 1].forEach((side) => {
+          const sx = side * (bodyW / 2 + 0.022);
+          const cSeamF = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.50, 0.03), glossyBlackMat);
+          cSeamF.position.set(sx, 0.56, -0.78 * lenMul);
+          const cSeamR = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.50, 0.03), glossyBlackMat);
+          cSeamR.position.set(sx, 0.56, 0.68 * lenMul);
+          chassis.add(cSeamF, cSeamR);
+        });
 
         // Visible Interior Sport Cabin (Twin Bucket Seats + Dashboard visible through tinted glass!)
         const seatMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7 });
@@ -1940,14 +2266,13 @@ window.ApexCity3D = (function () {
       const fogL = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.05, 0.08), drlMat);
       fogL.position.set(-bodyW * 0.36, 0.33, -2.33 * lenMul);
       const fogR = fogL.clone(); fogR.position.x = bodyW * 0.36;
-      // Sleek Ambient Underglow Shadow/Neon Pool under car
-      const underGlow = new THREE.Mesh(
-        new THREE.PlaneGeometry(bodyW + 0.55, 4.9 * lenMul),
-        new THREE.MeshBasicMaterial({ color: vid === 0 ? 0x00f0ff : 0x000000, transparent: true, opacity: vid === 0 ? 0.22 : 0.35, depthWrite: false })
-      );
-      underGlow.rotation.x = -Math.PI / 2;
-      underGlow.position.y = 0.06;
-      chassis.add(canardL, canardR, handleL, handleR, rainLight, fogL, fogR, underGlow);
+      // Upgraded Glowing Front Headlight Beams + Glossy Rear Trunk Trim
+      const beamMat = new THREE.MeshBasicMaterial({ color: 0xe0f7ff, transparent: true, opacity: 0.22, depthWrite: false });
+      const beamL = new THREE.Mesh(new THREE.ConeGeometry(0.42, 2.4, 10, 1, true), beamMat);
+      beamL.rotation.x = -Math.PI / 2; beamL.position.set(-bodyW * 0.32, 0.48, -3.55 * lenMul); beamL.visible = false;
+      const beamR = beamL.clone(); beamR.position.x = bodyW * 0.32; beamR.visible = false;
+      chassis.add(canardL, canardR, handleL, handleR, rainLight, fogL, fogR, beamL, beamR);
+      group.userData.headBeams = [beamL, beamR];
 
       // Sculpted Recessed Headlight Housings + Dual LED Projectors & Sharp Cyan DRLs
       [-bodyW * 0.32, bodyW * 0.32].forEach((hx) => {
@@ -1986,9 +2311,9 @@ window.ApexCity3D = (function () {
         tip.rotation.x = Math.PI / 2; tip.position.set(exX, 0.31, 2.36 * lenMul);
         chassis.add(tip);
       });
-      // Sculpted Hood Power-Bulge & Twin Aero Vents
-      const hoodVentL = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.04, 0.48), glossyBlackMat);
-      hoodVentL.position.set(-0.42, hoodH + 0.03, -1.52 * lenMul); hoodVentL.rotation.x = 0.14;
+      // Sleek Flush Body-Colored Aerodynamic Hood Contours (NO black dome or raised vents!)
+      const hoodVentL = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.015, 0.56), bodyMat);
+      hoodVentL.position.set(-0.42, hoodH + 0.01, -1.52 * lenMul); hoodVentL.rotation.x = 0.14;
       const hoodVentR = hoodVentL.clone(); hoodVentR.position.x = 0.42;
 
       // Side Door Aero Air-Scoops & Chrome Window Trim Accent
@@ -2007,38 +2332,15 @@ window.ApexCity3D = (function () {
 
       chassis.add(grille, splitter, diffuser, mL, mR, hl1, hl2, drl1, drl2, tlBar, hoodVentL, hoodVentR, scoopL, scoopR, intakeStrip);
 
-      // Attractive Colorful Racing Stripes & Glowing Trim (Especially Eye-Catching on Pearl White Starter Car #0!)
+      // Clean Flush Koenigsegg Gemera Styling on Starter Car #0 (Light Nardo Cement Grey — ZERO protruding stripes!)
       if (vid === 0) {
-        const cyanStripeMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff });
-        const orangeStripeMat = new THREE.MeshBasicMaterial({ color: 0xff6a00 });
-        // Hood twin colorful stripes
-        const hS1 = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.025, 1.25), cyanStripeMat);
-        hS1.position.set(-0.11, hoodH + 0.045, -1.62 * lenMul); hS1.rotation.x = 0.14;
-        const hS2 = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.025, 1.25), orangeStripeMat);
-        hS2.position.set(0.11, hoodH + 0.045, -1.62 * lenMul); hS2.rotation.x = 0.14;
-        // Roof twin colorful stripes
-        const rS1 = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.025, 1.06), cyanStripeMat);
-        rS1.position.set(-0.11, roofH + 0.052, 0.14 * lenMul);
-        const rS2 = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.025, 1.06), orangeStripeMat);
-        rS2.position.set(0.11, roofH + 0.052, 0.14 * lenMul);
-        // Side colorful accent blades + glowing cyan underglow neon strip
-        const sideNeonL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.05, 2.2), cyanStripeMat);
-        sideNeonL.position.set(-bodyW / 2 - 0.08, 0.24, 0);
-        const sideNeonR = sideNeonL.clone(); sideNeonR.position.x = bodyW / 2 + 0.08;
-        const sideOrangeL = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.06, 1.55), orangeStripeMat);
-        sideOrangeL.position.set(-bodyW / 2 - 0.03, 0.62, 0.15);
-        const sideOrangeR = sideOrangeL.clone(); sideOrangeR.position.x = bodyW / 2 + 0.03;
-        // Sport GT Rear Wing for Starter Car #0
-        const sWing = new THREE.Mesh(new THREE.BoxGeometry(bodyW + 0.08, 0.05, 0.28), carbonMat);
-        sWing.position.set(0, deckH + 0.24, 2.12 * lenMul);
-        const sEndL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.16, 0.32), cyanStripeMat);
-        sEndL.position.set(-(bodyW + 0.08) / 2, deckH + 0.24, 2.12 * lenMul);
-        const sEndR = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.16, 0.32), orangeStripeMat);
-        sEndR.position.set((bodyW + 0.08) / 2, deckH + 0.24, 2.12 * lenMul);
-        const sStL = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.22, 0.12), carbonMat);
-        sStL.position.set(-0.52, deckH + 0.12, 2.12 * lenMul);
-        const sStR = sStL.clone(); sStR.position.x = 0.52;
-        chassis.add(hS1, hS2, rS1, rS2, sideNeonL, sideNeonR, sideOrangeL, sideOrangeR, sWing, sEndL, sEndR, sStL, sStR);
+        const gemeraTrimMat = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.72, roughness: 0.22 });
+        const sillL = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.05, 1.95), gemeraTrimMat);
+        sillL.position.set(-bodyW / 2 - 0.02, 0.30, 0);
+        const sillR = sillL.clone(); sillR.position.x = bodyW / 2 + 0.02;
+        const rearLip = new THREE.Mesh(new THREE.BoxGeometry(bodyW * 0.92, 0.05, 0.22), carbonMat);
+        rearLip.position.set(0, deckH + 0.04, 2.18 * lenMul);
+        chassis.add(sillL, sillR, rearLip);
       } else {
         // Sleek chrome door-handle & racing side-accent trim on all other cars
         const trimL = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.045, 1.45 * lenMul), chromeMat);
@@ -2051,6 +2353,31 @@ window.ApexCity3D = (function () {
         const blower = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.28, 0.76), chromeMat);
         blower.position.set(0, hoodH + 0.14, -1.35 * lenMul);
         chassis.add(blower);
+      }
+      // Extra Per-Car Archetype Signature Styling (So ALL 21 Cars look unmistakably unique!)
+      if (style === 'bugatti_arch') {
+        [-bodyW / 2 - 0.03, bodyW / 2 + 0.03].forEach((cx) => {
+          const cArch = new THREE.Mesh(new THREE.TorusGeometry(0.56, 0.055, 8, 20, Math.PI * 1.15), chromeMat);
+          cArch.rotation.y = Math.PI / 2; cArch.rotation.z = -Math.PI * 0.55;
+          cArch.position.set(cx, 0.84, 0.18 * lenMul);
+          chassis.add(cArch);
+        });
+      }
+      if (style === 'quad_pipe_gt' || style === 'italian_mid' || style === 'teardrop_hyper') {
+        const roofScoop = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.15, 0.72), carbonMat);
+        roofScoop.position.set(0, roofH + 0.09, 0.18 * lenMul);
+        chassis.add(roofScoop);
+      }
+      if (style === 'ev_hyper') {
+        const evBarF = new THREE.Mesh(new THREE.BoxGeometry(bodyW - 0.18, 0.06, 0.12), drlMat);
+        evBarF.position.set(0, 0.56, -2.33 * lenMul);
+        chassis.add(evBarF);
+      }
+      if (style === 'jdm_coupe' || style === 'sport_sedan' || style === 'fastback') {
+        // Distinct Racing Hood Stripe matching each car's accentHex
+        const stM = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.025, 1.35), accentMat);
+        stM.position.set(0, hoodH + 0.045, -1.56 * lenMul); stM.rotation.x = 0.14;
+        chassis.add(stM);
       }
       if (isHyperFin) {
         const fin = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.38, 1.35), accentMat);
@@ -2154,8 +2481,8 @@ try {
       const parsed = JSON.parse(raw);
       return {
         coins: typeof parsed.coins === 'number' ? parsed.coins : 25000,
-        ownedIds: new Set(Array.isArray(parsed.ownedIds) ? parsed.ownedIds : [0]),
-        equippedId: typeof parsed.equippedId === 'number' ? parsed.equippedId : 0,
+        ownedIds: new Set((Array.isArray(parsed.ownedIds) ? parsed.ownedIds : [0]).filter((id) => id >= 0 && id < 15).concat([0])),
+        equippedId: (typeof parsed.equippedId === 'number' && parsed.equippedId >= 0 && parsed.equippedId < 15) ? parsed.equippedId : 0,
         dailyClaimedDate: parsed.dailyClaimedDate || null,
         upgradeLevels: parsed.upgradeLevels || { engine: 1, nitro: 1, tires: 1 },
         customPaintHex: parsed.customPaintHex !== undefined ? parsed.customPaintHex : null,
@@ -2235,8 +2562,15 @@ try {
     }
   }
 
+  const homeScreen = document.getElementById('homeScreen');
   const garageScreen = document.getElementById('garageScreen');
   const playScreen = document.getElementById('playScreen');
+  const homePlayBtn = document.getElementById('homePlayBtn');
+  const homeGarageBtn = document.getElementById('homeGarageBtn');
+  const backToHomeBtn = document.getElementById('backToHomeBtn');
+  const homeEquippedName = document.getElementById('homeEquippedName');
+  const homeCoinsEl = document.getElementById('homeCoinsEl');
+  const homeLevelEl = document.getElementById('homeLevelEl');
 
 
   const coinsCountEl = document.getElementById('coinsCountEl');
@@ -2275,11 +2609,13 @@ try {
   }
 
   function showScreen(target) {
-    [garageScreen, playScreen].forEach((el) => {
+    [homeScreen, garageScreen, playScreen].forEach((el) => {
       if (!el) return;
       el.classList.toggle('visible-screen', el === target);
       el.classList.toggle('hidden-screen', el !== target);
     });
+    if (target === homeScreen) setTimeout(() => mountShowroomCanvas('home3dHost'), 30);
+    else if (target === garageScreen) setTimeout(() => { mountShowroomCanvas('garage3dHost'); if (!thumbsGenerated) generateAll3DThumbnails(); if (gemeraMaster) captureGemeraStoreThumb(); }, 40);
   }
 
 
@@ -2289,7 +2625,143 @@ try {
   const launchBanner = document.getElementById('launchBanner');
   let gScene = null, gCam = null, gRen = null, gCarWrap = null, gWheels = [], gFlames = [];
   let gRafId = null, gRotY = 0.65, gDragging = false, gLastPointer = 0, gDragPointerId = null;
+  const vehicleThumbCache = {};
+  let thumbsGenerated = false;
   let gLaunching = false, gLaunchStart = 0;
+
+
+  // ================= REAL 3D MODEL LOADER (ONLY FOR VEHICLE #0: 2025 KOENIGSEGG GEMERA FBX) =================
+  let gemeraMaster = null;
+  let gemeraLoading = false;
+  const gemeraCallbacks = [];
+
+  function cloneGemeraBuild() {
+    if (!gemeraMaster) return null;
+    const group = new THREE.Group();
+    const chassis = gemeraMaster.clone(true);
+    group.add(chassis);
+    const flames = [];
+    const flameMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.92 });
+    [-0.44, 0.44].forEach((fx) => {
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.15, 1.15, 10), flameMat);
+      cone.rotation.x = Math.PI / 2;
+      cone.position.set(fx, 0.42, 2.55);
+      cone.visible = false;
+      chassis.add(cone);
+      flames.push(cone);
+    });
+    return { group, chassis, wheels: [], frontWheelPivots: [], flames };
+  }
+
+  function loadGemeraFBX(cb) {
+    if (gemeraMaster) { if (cb) cb(cloneGemeraBuild()); return; }
+    if (cb) gemeraCallbacks.push(cb);
+    if (gemeraLoading) return;
+    if (typeof THREE === 'undefined' || !THREE.FBXLoader || window.location.protocol === 'about:' || window.location.protocol === 'file:' || window.location.hostname === 'unused.url') return;
+    gemeraLoading = true;
+    try {
+      const loader = new THREE.FBXLoader();
+      loader.setResourcePath('assets/gemera/');
+      loader.load('assets/gemera/FINAL_MODEL_G.fbx', (fbx) => {
+        // Auto-normalize real-world scale & road fit (4.9m length, centered X/Z, tires flush on y=0)
+        const box1 = new THREE.Box3().setFromObject(fbx);
+        const sz1 = new THREE.Vector3();
+        box1.getSize(sz1);
+        if (sz1.x > sz1.z * 1.15) {
+          fbx.rotation.y = Math.PI / 2;
+        }
+        const box2 = new THREE.Box3().setFromObject(fbx);
+        const sz2 = new THREE.Vector3();
+        box2.getSize(sz2);
+        const maxDim = Math.max(sz2.x, sz2.y, sz2.z) || 1;
+        const normScale = 4.9 / maxDim;
+        fbx.scale.multiplyScalar(normScale);
+
+        const box3 = new THREE.Box3().setFromObject(fbx);
+        const center = new THREE.Vector3();
+        box3.getCenter(center);
+        fbx.position.x -= center.x;
+        fbx.position.z -= center.z;
+        fbx.position.y -= box3.min.y;
+
+        fbx.traverse((child) => {
+          if (child.isMesh) {
+            const mats = Array.isArray(child.material) ? child.material : [child.material];
+            mats.forEach((m) => {
+              if (!m) return;
+              if ('envMapIntensity' in m) m.envMapIntensity = 1.45;
+              m.needsUpdate = true;
+            });
+          }
+        });
+
+        const masterWrap = new THREE.Group();
+        masterWrap.add(fbx);
+        gemeraMaster = masterWrap;
+        gemeraLoading = false;
+
+        // Capture real 3D snapshot of the loaded Gemera FBX for Store Card #00!
+        captureGemeraStoreThumb();
+
+        while (gemeraCallbacks.length) {
+          const fn = gemeraCallbacks.shift();
+          try { fn(cloneGemeraBuild()); } catch (e) {}
+        }
+      }, undefined, () => {
+        gemeraLoading = false;
+      });
+    } catch (e) {
+      gemeraLoading = false;
+    }
+  }
+
+  function captureGemeraStoreThumb() {
+    if (!gemeraMaster || !gRen || !gScene || !gCam) return;
+    const prevWrap = gCarWrap;
+    if (prevWrap) gScene.remove(prevWrap);
+    const prevPos = gCam.position.clone();
+    const prevBg = gScene.background;
+    gScene.background = new THREE.Color(0x0b1526);
+    gCam.position.set(-4.3, 2.0, -4.6);
+    gCam.lookAt(0, 0.8, 0);
+    const built = cloneGemeraBuild();
+    if (built) {
+      gScene.add(built.group);
+      gRen.render(gScene, gCam);
+      try {
+        const snap = document.createElement('canvas');
+        snap.width = 192; snap.height = 108;
+        snap.getContext('2d').drawImage(gRen.domElement, 0, 0, 192, 108);
+        vehicleThumbCache[0] = snap.toDataURL('image/jpeg', 0.82);
+        const card0 = document.querySelector('.veh-card[data-vid="0"] img');
+        if (card0 && vehicleThumbCache[0]) {
+          card0.src = vehicleThumbCache[0];
+          card0.style.filter = 'none';
+        }
+      } catch (e) {}
+      gScene.remove(built.group);
+    }
+    gScene.background = prevBg;
+    gCam.position.copy(prevPos);
+    gCam.lookAt(0, 0.75, 0);
+    if (prevWrap) gScene.add(prevWrap);
+    gRen.render(gScene, gCam);
+  }
+
+  function mountShowroomCanvas(targetId) {
+    if (!gRen) return;
+    const host = document.getElementById(targetId);
+    if (!host) return;
+    if (gRen.domElement.parentElement !== host) {
+      host.innerHTML = '';
+      host.appendChild(gRen.domElement);
+    }
+    const w = host.clientWidth || 380;
+    const h = host.clientHeight || 200;
+    gCam.aspect = w / h;
+    gCam.updateProjectionMatrix();
+    gRen.setSize(w, h);
+  }
 
   function initGarage3D() {
     if (gRen || !garage3dHost || typeof THREE === 'undefined' || !City3D) return;
@@ -2300,7 +2772,7 @@ try {
     gCam.position.set(0, 2.25, 6.4);
     gCam.lookAt(0, 0.75, 0);
 
-    gRen = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    gRen = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
     gRen.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     gRen.setSize(w, h);
     gRen.toneMapping = THREE.ACESFilmicToneMapping;
@@ -2359,7 +2831,7 @@ try {
 
     function animateGarage3D(now) {
       gRafId = requestAnimationFrame(animateGarage3D);
-      if (!gRen || garageScreen.classList.contains('hidden-screen')) return;
+      if (!gRen || (garageScreen.classList.contains('hidden-screen') && (!homeScreen || homeScreen.classList.contains('hidden-screen')))) return;
       if (gCarWrap) {
         if (gLaunching) {
           const el = (now - gLaunchStart) / 1000;
@@ -2420,6 +2892,57 @@ try {
     gRafId = requestAnimationFrame(animateGarage3D);
   }
 
+
+  function generateAll3DThumbnails() {
+    if (thumbsGenerated || !gRen || !gScene || !gCam || !City3D || !vehicles.length) return;
+    thumbsGenerated = true;
+    const prevWrap = gCarWrap;
+    if (prevWrap) gScene.remove(prevWrap);
+
+    const prevPos = gCam.position.clone();
+    const prevBg = gScene.background;
+    gScene.background = new THREE.Color(0x0b1526);
+    gCam.position.set(-4.3, 2.05, -4.6);
+    gCam.lookAt(0, 0.85, 0);
+
+    const snapCanvas = document.createElement('canvas');
+    snapCanvas.width = 192;
+    snapCanvas.height = 108;
+    const snapCtx = snapCanvas.getContext('2d');
+
+    for (let i = 0; i < vehicles.length; i++) {
+      const v = vehicles[i];
+      const built = City3D.buildVehicleMesh(v, null);
+      const grp = built.group;
+      const sc = v.modelType === 'bike' ? 1.48 : (v.modelType === 'heavy_truck' ? 0.80 : 1.02);
+      grp.scale.setScalar(sc);
+      gScene.add(grp);
+      gRen.render(gScene, gCam);
+      try {
+        snapCtx.clearRect(0, 0, 192, 108);
+        snapCtx.drawImage(gRen.domElement, 0, 0, 192, 108);
+        vehicleThumbCache[v.id] = snapCanvas.toDataURL('image/jpeg', 0.78);
+      } catch (e) {}
+      gScene.remove(grp);
+    }
+
+    gScene.background = prevBg;
+    gCam.position.copy(prevPos);
+    gCam.lookAt(0, 0.75, 0);
+    if (prevWrap) gScene.add(prevWrap);
+    gRen.render(gScene, gCam);
+
+    // Immediately swap all visible store card thumbnails to the exact 3D vehicle models!
+    document.querySelectorAll('.veh-card').forEach((card) => {
+      const vid = Number(card.dataset.vid);
+      const imgEl = card.querySelector('img');
+      if (imgEl && vehicleThumbCache[vid]) {
+        imgEl.src = vehicleThumbCache[vid];
+        imgEl.style.filter = 'none';
+      }
+    });
+  }
+
   function updateGarage3DModel(vehicleObj) {
     if (typeof THREE === 'undefined' || !City3D) {
       setTimeout(() => updateGarage3DModel(vehicleObj), 300);
@@ -2429,18 +2952,36 @@ try {
     if (!gScene) return;
     if (gCarWrap) gScene.remove(gCarWrap);
     const paint = null;
+    const applyModelToTurntable = (builtObj, isFbx) => {
+      if (gCarWrap) gScene.remove(gCarWrap);
+      gCarWrap = builtObj.group;
+      gWheels = builtObj.wheels || [];
+      gFlames = builtObj.flames || [];
+      const sc = isFbx ? 1.02 : (vehicleObj.modelType === 'bike' ? 1.35 : (vehicleObj.modelType === 'heavy_truck' ? 0.84 : 0.96));
+      gCarWrap.scale.setScalar(sc);
+      gScene.add(gCarWrap);
+      if (homeScreen && !homeScreen.classList.contains('hidden-screen')) mountShowroomCanvas('home3dHost');
+      else if (!garageScreen.classList.contains('hidden-screen')) mountShowroomCanvas('garage3dHost');
+    };
     const built = City3D.buildVehicleMesh(vehicleObj, paint);
-    gCarWrap = built.group;
-    gWheels = built.wheels || [];
-    gFlames = built.flames || [];
-    const sc = vehicleObj.modelType === 'bike' ? 1.35 : (vehicleObj.modelType === 'heavy_truck' ? 0.84 : 0.96);
-    gCarWrap.scale.setScalar(sc);
-    gScene.add(gCarWrap);
+    applyModelToTurntable(built, false);
+    if (vehicleObj.id === 0 && vehicleObj.isRealFBX) {
+      loadGemeraFBX((fbxBuilt) => {
+        if (fbxBuilt && (selectedId === 0 || (homeScreen && !homeScreen.classList.contains('hidden-screen') && state.equippedId === 0))) {
+          applyModelToTurntable(fbxBuilt, true);
+        }
+      });
+    }
   }
 
   function renderGarage() {
     if (!vehicles.length) return;
     coinsCountEl.textContent = state.coins.toLocaleString();
+    if (homeCoinsEl) homeCoinsEl.textContent = state.coins.toLocaleString();
+    if (typeof syncHomeExtraHUD === 'function') syncHomeExtraHUD();
+    if (homeLevelEl) homeLevelEl.textContent = 'LV ' + (state.level || 1);
+    const eqHome = vehicles.find((item) => item.id === state.equippedId) || vehicles[0];
+    if (homeEquippedName && eqHome) homeEquippedName.textContent = eqHome.name;
     const lvEl = document.getElementById('playerLevelEl');
     if (lvEl) lvEl.textContent = 'LV ' + (state.level || 1);
     ownedCountEl.textContent = `${state.ownedIds.size}/${vehicles.length}`;
@@ -2496,7 +3037,7 @@ try {
             <span class="${equipped ? 'text-emerald-300' : owned ? 'text-cyan-300' : 'text-amber-300'}">${equipped ? 'ACTIVE' : owned ? 'OWNED' : 'LOCKED'}</span>
           </div>
           <div class="w-full h-11 rounded-lg overflow-hidden bg-slate-950 mb-1">
-            <img src="${item.img}" alt="${item.name}" style="filter: hue-rotate(${item.hue}deg);" class="w-full h-full object-cover" />
+            <img src="${vehicleThumbCache[item.id] || item.img}" alt="${item.name}" style="${vehicleThumbCache[item.id] ? '' : 'filter: hue-rotate(' + item.hue + 'deg);'}" class="w-full h-full object-cover" />
           </div>
           <div class="text-[11px] font-extrabold text-white truncate">${item.name}</div>
           <div class="text-[10px] font-bold ${owned ? 'text-emerald-300' : 'text-amber-300'}">
@@ -2505,6 +3046,7 @@ try {
         </button>
       `;
     }).join('');
+    if (!thumbsGenerated && gRen) generateAll3DThumbnails();
   }
 
   vehicleCarousel.addEventListener('click', (e) => {
@@ -2733,13 +3275,22 @@ try {
   let cityRafId = null;
   let scene, camera, renderer;
   let playerGroup, playerChassis = null, playerWheels = [], playerFrontPivots = [], nitroFlames = [];
-  let coinMeshes = [], trafficCars = [], walkingHumans = [];
+  let playerAvatar = null;
+  let isOnFoot = false;
+  let parkedCarPos = { x: 0, z: 0, heading: 0 };
+  let nearbyVehicleRef = null; // { type: 'own' } or { type: 'traffic', car: tc }
+  let hijackedTrafficCar = null;
+  const footState = { joyX: 0, joyY: 0, running: false, vy: 0, y: 0.22, jumping: false };
+  let coinMeshes = [], trafficCars = [], walkingHumans = [], stuntRamps = [], trafficSignals = [], cityLandmarks = [], emergencyEvents = [];
+  let camModeIdx = 0; // 0: Chase, 1: Hood, 2: Far
+  let skyModeIdx = 0; // 0: Morning, 1: Sunset, 2: Neon Night
+  let sunLightRef = null, hemiLightRef = null;
   let buildingColliders = [], lakeZones = [], serviceGarages = [], animatedFacadeMats = [], animatedTrees = [];
   let animRoadTex = null, animCanalTex = null;
   let checkpointBeam = null;
 
-  const CITY_BOUND = 1144;
-  const BLOCK_STEP = 52;
+  const CITY_BOUND = 1104;
+  const BLOCK_STEP = 46;
   let totalKmDriven = 0;
   let colliderGrid = new Map();
 
@@ -2749,7 +3300,8 @@ try {
     gas: false, brake: false, boost: false,
     keys: { w: false, s: false, a: false, d: false, shift: false },
     wheelDragging: false, lastCrashAt: 0,
-    camOrbitYaw: 0, camOrbitPitch: 0.34, camDragging: false
+    camOrbitYaw: 0, camOrbitPitch: 0.34, camDragging: false,
+    y: 0, vy: 0, airborne: false, lastStuntAt: 0
   };
 
   const cityTasks = [
@@ -2784,12 +3336,12 @@ try {
       cityInitialized = true;
       scene = new THREE.Scene();
       scene.background = new THREE.Color(0x87ceeb);
-      scene.fog = new THREE.FogExp2(0xe0f2fe, 0.0011);
+      scene.fog = new THREE.FogExp2(0xe0f2fe, 0.0022);
 
       const w = isStageRotated() ? window.innerHeight : window.innerWidth;
       const h = isStageRotated() ? window.innerWidth : window.innerHeight;
-      camera = new THREE.PerspectiveCamera(62, w / h, 0.5, 650);
-      renderer = new THREE.WebGLRenderer({ antialias: true });
+      camera = new THREE.PerspectiveCamera(62, w / h, 0.5, 340);
+      renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       renderer.setSize(w, h);
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -2799,10 +3351,11 @@ try {
       const envTex = City3D.createSkyEnvMap(renderer);
       if (envTex) scene.environment = envTex;
 
-      scene.add(new THREE.HemisphereLight(0xffffff, 0x64748b, 1.15));
-      const sun = new THREE.DirectionalLight(0xfffbeb, 1.25);
-      sun.position.set(140, 220, 100);
-      scene.add(sun);
+      hemiLightRef = new THREE.HemisphereLight(0xffffff, 0x64748b, 1.15);
+      scene.add(hemiLightRef);
+      sunLightRef = new THREE.DirectionalLight(0xfffbeb, 1.25);
+      sunLightRef.position.set(140, 220, 100);
+      scene.add(sunLightRef);
 
       const roadTex = City3D.createRoadTexture();
       animRoadTex = roadTex;
@@ -2829,18 +3382,25 @@ try {
       const trunkMat = new THREE.MeshStandardMaterial({ color: 0x78350f });
       const leafMat = new THREE.MeshStandardMaterial({ color: 0x16a34a });
 
-      const blockSize = 36;
+      const blockSize = 34;
       const sandMat = new THREE.MeshStandardMaterial({ color: 0xd6c7a9, roughness: 0.9 });
       const woodMat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b, roughness: 0.8 });
       const reflectiveWaterMat = new THREE.MeshStandardMaterial({ color: 0x0ea5e9, map: animCanalTex, roughness: 0.12, metalness: 0.55, envMapIntensity: 1.5 });
 
       // Collect transforms for 1,400+ Real Cement Buildings across a MASSIVE 24x24 Open World (InstancedMesh = 60 FPS!)
-      const bldgLists = [[], [], [], [], [], [], [], []]; // 8 vibrant colorful 3D building styles
+      const bldgLists = [[], [], [], [], [], [], [], []]; // 8 vibrant colorful 3D house & building styles (including Pink House!)
+      const pitchedRoofTerracotta = []; // Real 3D sloped roofs for 1-floor & 2-floor houses!
+      const pitchedRoofDarkBlue = [];   // Real 3D sloped slate/blue roofs for villas & pink houses!
+      const bigCrownList = [];          // Stepped penthouse crowns for big multi-floor mansions & towers!
       const padMatrices = [];
+      const treeTrunkMatrices = [];
+      const treeLeafLowMatrices = [];
+      const treeLeafMidMatrices = [];
+      const treeLeafTopMatrices = [];
       const dummy = new THREE.Object3D();
 
-      for (let gx = -22; gx <= 21; gx++) {
-        for (let gz = -22; gz <= 21; gz++) {
+      for (let gx = -24; gx <= 23; gx++) {
+        for (let gz = -24; gz <= 23; gz++) {
           if (gx === 0 && gz === 0) continue;
           const cx = gx * BLOCK_STEP + BLOCK_STEP / 2;
           const cz = gz * BLOCK_STEP + BLOCK_STEP / 2;
@@ -2888,7 +3448,7 @@ try {
             const fenceRailMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.65, roughness: 0.25 });
             const fencePostMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.75, roughness: 0.3 });
             const canalColliders = [];
-            const fenceLen = BLOCK_STEP - 18; // Leaves clean open gap right at each road bridge!
+            const fenceLen = BLOCK_STEP - 11; // Leaves clean open gap right at each road bridge!
             if (isCanalNS) {
               [-8.9, 8.9].forEach((ox) => {
                 const wall = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.7, fenceLen), wallMat);
@@ -2952,47 +3512,162 @@ try {
             dummy.updateMatrix();
             padMatrices.push(dummy.matrix.clone());
 
-            const style = Math.abs(gx * 5 + gz * 3) % 8;
-            const isDowntown = Math.abs(gx) <= 4 && Math.abs(gz) <= 4;
-
-            // 3 Distinct Cement Buildings per block => 560+ blocks * 3 = 1,680+ REAL 3D CEMENT BUILDINGS!
-            const bh1 = isDowntown ? (26 + ((Math.abs(gx * 7 + gz * 13) * 11) % 44)) : (12 + ((Math.abs(gx * 5 + gz * 9) * 7) % 24));
-            const b1x = cx - 8.0, b1z = cz - 8.0;
-            dummy.position.set(b1x, bh1 / 2 + 0.3, b1z);
-            dummy.scale.set(15.5, bh1, 15.5);
-            dummy.updateMatrix();
-            bldgLists[style].push(dummy.matrix.clone());
-
-            const bh2 = 9 + ((Math.abs(gx + gz * 2) * 5) % 18);
-            const b2x = cx + 8.5, b2z = cz + 7.5;
-            dummy.position.set(b2x, bh2 / 2 + 0.3, b2z);
-            dummy.scale.set(13.5, bh2, 14.5);
-            dummy.updateMatrix();
-            bldgLists[(style + 3) % 8].push(dummy.matrix.clone());
-
-            const bh3 = 8 + ((Math.abs(gx * 3 - gz) * 4) % 14);
-            const b3x = cx + 8.5, b3z = cz - 8.5;
-            dummy.position.set(b3x, bh3 / 2 + 0.3, b3z);
-            dummy.scale.set(12.5, bh3, 12.5);
-            dummy.updateMatrix();
-            bldgLists[(style + 5) % 8].push(dummy.matrix.clone());
-
-
-
-            // Exact Tight Per-Building Colliders stored in O(1) Spatial Grid (60 FPS even with 5,500+ buildings!)
+            const seed = Math.abs(gx * 13 + gz * 7 + gx * gz + gx * 31);
+            const isDowntown = Math.abs(gx) <= 5 && Math.abs(gz) <= 5;
+            const cellColliders = [];
             const carMargin = 0.85;
-            const cellColliders = [
-              { minX: b1x - 7.75 - carMargin, maxX: b1x + 7.75 + carMargin, minZ: b1z - 7.75 - carMargin, maxZ: b1z + 7.75 + carMargin },
-              { minX: b2x - 6.75 - carMargin, maxX: b2x + 6.75 + carMargin, minZ: b2z - 7.25 - carMargin, maxZ: b2z + 7.25 + carMargin },
-              { minX: b3x - 6.25 - carMargin, maxX: b3x + 6.25 + carMargin, minZ: b3z - 6.25 - carMargin, maxZ: b3z + 6.25 + carMargin }
-            ];
+
+            // Check if this block is a special BRANDED LANDMARK (Hospital, D-Mart, Mega Mall, Office Park, Petrol Bunk, Cafe Plaza!)
+            const landmarkMap = {
+              '0,-1':  { kind: 'dmart',    title: 'D-MART',     sub: 'SUPERMARKET', bg: '#15803d', fg: '#fde047', wall: 0x166534, mapTag: 'D', mapCol: '#22c55e' },
+              '-1,0':  { kind: 'hospital', title: '+ HOSPITAL', sub: '24x7 EMERGENCY', bg: '#dc2626', fg: '#ffffff', wall: 0xe2e8f0, mapTag: 'H', mapCol: '#ef4444' },
+              '1,0':   { kind: 'mall',     title: 'MEGA MALL',  sub: 'SHOPS & CINEMA', bg: '#6d28d9', fg: '#38bdf8', wall: 0x3b0764, mapTag: 'M', mapCol: '#a855f7' },
+              '0,1':   { kind: 'office',   title: 'TECH OFFICE',sub: 'IT TOWER', bg: '#0284c7', fg: '#ffffff', wall: 0x0f2354, mapTag: 'O', mapCol: '#38bdf8' },
+              '-1,-1': { kind: 'fuel',     title: 'FUEL STATION',sub: 'PETROL & EV', bg: '#ea580c', fg: '#fef08a', wall: 0x9a3412, mapTag: 'F', mapCol: '#f97316' },
+              '1,1':   { kind: 'cafe',     title: 'ROYAL CAFE', sub: 'BAKERY & SHOPS', bg: '#be185d', fg: '#fde68a', wall: 0x831843, mapTag: 'S', mapCol: '#ec4899' },
+              '-3,-1': { kind: 'dmart',    title: 'D-MART',     sub: 'HYPERMARKET', bg: '#15803d', fg: '#fde047', wall: 0x166534, mapTag: 'D', mapCol: '#22c55e' },
+              '3,2':   { kind: 'hospital', title: '+ HOSPITAL', sub: 'CITY CARE', bg: '#dc2626', fg: '#ffffff', wall: 0xe2e8f0, mapTag: 'H', mapCol: '#ef4444' },
+              '-2,3':  { kind: 'mall',     title: 'ST PLAZA',   sub: 'SHOPPING MART', bg: '#0369a1', fg: '#fde047', wall: 0x0c3b52, mapTag: 'M', mapCol: '#a855f7' },
+              '3,-3':  { kind: 'office',   title: 'CITY OFFICE',sub: 'CORPORATE HQ', bg: '#1e3a8a', fg: '#7dd3fc', wall: 0x0a1738, mapTag: 'O', mapCol: '#38bdf8' }
+            };
+            const lm = landmarkMap[`${gx},${gz}`];
+
+            if (lm) {
+              // Build Distinct 3D Branded Landmark (Hospital / D-Mart / Mega Mall / Office / Petrol Bunk / Cafe!)
+              const lmH = lm.kind === 'office' ? 32 : lm.kind === 'mall' ? 20 : lm.kind === 'hospital' ? 16 : lm.kind === 'fuel' ? 6.5 : 11;
+              const lmW = lm.kind === 'fuel' ? 18 : 26;
+              const lmD = lm.kind === 'fuel' ? 14 : 22;
+              const lmMat = new THREE.MeshStandardMaterial({ color: lm.wall, roughness: 0.45, metalness: 0.25 });
+              const mainB = new THREE.Mesh(new THREE.BoxGeometry(lmW, lmH, lmD), lmMat);
+              mainB.position.set(cx, lmH / 2 + 0.22, cz);
+              scene.add(mainB);
+
+              // Glowing Front Glass Storefront + Colored Awning Canopy
+              const glassF = new THREE.Mesh(new THREE.BoxGeometry(lmW * 0.82, Math.min(4.6, lmH * 0.45), lmD + 0.35), new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.35, roughness: 0.12, metalness: 0.8 }));
+              glassF.position.set(cx, 2.5, cz);
+              const canopy = new THREE.Mesh(new THREE.BoxGeometry(lmW + 1.8, 0.7, lmD + 2.2), new THREE.MeshStandardMaterial({ color: lm.bg, roughness: 0.4 }));
+              canopy.position.set(cx, 5.1, cz);
+              scene.add(glassF, canopy);
+
+              // Crisp 3D Rooftop Signboard Texture (D-MART, + HOSPITAL, MEGA MALL, TECH OFFICE, FUEL STATION, ROYAL CAFE!)
+              const sc = document.createElement('canvas'); sc.width = 512; sc.height = 160;
+              const sctx = sc.getContext('2d');
+              sctx.fillStyle = lm.bg; sctx.fillRect(0, 0, 512, 160);
+              sctx.strokeStyle = lm.fg; sctx.lineWidth = 8; sctx.strokeRect(8, 8, 496, 144);
+              sctx.fillStyle = lm.fg; sctx.font = '900 62px Inter, sans-serif'; sctx.textAlign = 'center';
+              sctx.fillText(lm.title, 256, 86);
+              sctx.fillStyle = '#ffffff'; sctx.font = '700 28px Inter, sans-serif';
+              sctx.fillText(lm.sub, 256, 132);
+              const signTex = new THREE.CanvasTexture(sc);
+              const signMat = new THREE.MeshBasicMaterial({ map: signTex });
+              const signBox = new THREE.Mesh(new THREE.BoxGeometry(16, 4.6, 1.0), [lmMat, lmMat, lmMat, lmMat, signMat, signMat]);
+              signBox.position.set(cx, lmH + 2.6, cz);
+              scene.add(signBox);
+
+              cellColliders.push({
+                minX: cx - lmW / 2 - carMargin, maxX: cx + lmW / 2 + carMargin,
+                minZ: cz - lmD / 2 - carMargin, maxZ: cz + lmD / 2 + carMargin
+              });
+              cityLandmarks.push({ x: cx, z: cz, tag: lm.mapTag, color: lm.mapCol, title: lm.title });
+            } else {
+              // ORGANIC IRREGULAR VILLAGE & CITY CLUSTERS (4 to 5 varied houses/shops/apartments per block — NOT identical grid boxes!)
+              const clusterCount = 3 + (seed % 3); // 3, 4, or 5 irregular buildings per block!
+              const presets = [
+                [-9.5, -8.5, 11.5, 11.0],
+                [8.8,  -9.0, 10.8, 10.5],
+                [-8.8,  8.6, 12.2, 11.4],
+                [8.5,   8.2, 11.8, 12.0],
+                [0.2,  -0.4, 9.2,  9.5]
+              ];
+              for (let k = 0; k < clusterCount; k++) {
+                const subSeed = seed + k * 29;
+                const pr = presets[k];
+                // Organic jitter offset & varied footprint so every street feels like a real bustling town!
+                const jx = ((subSeed % 5) - 2) * 0.9;
+                const jz = (((subSeed >> 2) % 5) - 2) * 0.9;
+                const bx = cx + pr[0] + jx;
+                const bz = cz + pr[1] + jz;
+                const bw = pr[2] * (0.78 + (subSeed % 4) * 0.11);
+                const bd = pr[3] * (0.78 + ((subSeed + 1) % 4) * 0.11);
+
+                const styleIdx = (subSeed * 3 + k) % 8;
+                const isTall = isDowntown ? (subSeed % 3 === 0) : (subSeed % 7 === 0);
+                const bh = isTall ? (18 + (subSeed * 7) % 28) : (4.8 + (subSeed % 4) * 2.8); // 1-floor shops (4.8m), 2-floor pink houses (7.6m), 3-floor homes (10.4m), tall towers (18-46m)!
+
+                dummy.position.set(bx, bh / 2 + 0.22, bz);
+                dummy.scale.set(bw, bh, bd);
+                dummy.rotation.set(0, 0, 0);
+                dummy.updateMatrix();
+                bldgLists[styleIdx].push(dummy.matrix.clone());
+
+                if (bh < 11) {
+                  dummy.position.set(bx, bh + 1.9, bz);
+                  dummy.scale.set(bw + 1.1, 3.6, bd + 1.1);
+                  dummy.rotation.set(0, Math.PI / 4, 0);
+                  dummy.updateMatrix();
+                  (styleIdx === 0 || styleIdx === 3 ? pitchedRoofDarkBlue : pitchedRoofTerracotta).push(dummy.matrix.clone());
+                  dummy.rotation.set(0, 0, 0);
+                } else {
+                  bigCrownList.push(dummy.matrix.clone());
+                }
+
+                // Mount Real Rooftop House Name Board on prominent village/city homes (KUMAR NILAYAM, RAVI VILLA, etc.!)
+                if (k === 0 && Math.abs(gx) <= 4 && Math.abs(gz) <= 4) {
+                  const houseNames = [
+                    'KUMAR NILAYAM', 'RAVI VILLA', 'SAI RESIDENCY', 'PRASAD HOUSE',
+                    'KIRAN MANSION', 'SURESH HOME', 'LAKSHMI NIVAS', 'ANITHA VILLA',
+                    'VENKAT HOMES', 'RAMESH PALACE', 'ARJUN HEIGHTS', 'DEVI NILAYAM',
+                    'SRINIVAS HOME', 'GANESH VILLA', 'SHIVA RESIDENCY', 'MANI HOUSE'
+                  ];
+                  const hLabel = houseNames[Math.abs(gx * 5 + gz * 3 + seed) % houseNames.length];
+                  const hc = document.createElement('canvas'); hc.width = 384; hc.height = 96;
+                  const hctx = hc.getContext('2d');
+                  hctx.fillStyle = '#0f172a'; hctx.fillRect(0, 0, 384, 96);
+                  hctx.strokeStyle = '#facc15'; hctx.lineWidth = 6; hctx.strokeRect(5, 5, 374, 86);
+                  hctx.fillStyle = '#fde047'; hctx.font = '900 34px Inter, sans-serif'; hctx.textAlign = 'center'; hctx.textBaseline = 'middle';
+                  hctx.fillText(hLabel, 192, 50);
+                  const hSignTex = new THREE.CanvasTexture(hc);
+                  const hSignMat = new THREE.MeshBasicMaterial({ map: hSignTex });
+                  const hBoard = new THREE.Mesh(new THREE.BoxGeometry(7.6, 1.9, 0.35), [roofMat, roofMat, roofMat, roofMat, hSignMat, hSignMat]);
+                  hBoard.position.set(bx, bh + (bh < 11 ? 3.8 : 2.2), bz);
+                  scene.add(hBoard);
+                }
+
+                cellColliders.push({
+                  minX: bx - bw / 2 - carMargin, maxX: bx + bw / 2 + carMargin,
+                  minZ: bz - bd / 2 - carMargin, maxZ: bz + bd / 2 + carMargin
+                });
+              }
+            }
             colliderGrid.set(`${gx},${gz}`, cellColliders);
 
-            // Realistic Roadside Natural Green Trees along main corridors (strictly on outer sidewalk edge!)
-            if (Math.abs(gx) <= 6 && Math.abs(gz) <= 6 && (gx + gz) % 2 === 0) {
-              const realTree = City3D.createRealisticTree((gx + gz) % 4 === 0 ? 'palm' : 'oak');
-              realTree.position.set(cx - 16.8, 0.3, cz + 16.8);
-              scene.add(realTree); animatedTrees.push(realTree);
+            // REALISTIC MULTI-LAYERED 3D TREES via 4 GPU InstancedMeshes (Organic Bark Trunk + 3 Layered Leaf Canopies — NOT Toy Balls!)
+            if (Math.abs(gx) <= 9 && Math.abs(gz) <= 9) {
+              const treeSpots = [[cx - 16.4, cz + 16.4]];
+              if ((gx * 3 + gz) % 2 === 0) treeSpots.push([cx + 16.4, cz - 16.4]);
+              treeSpots.forEach(([tx, tz], ti) => {
+                const tRot = ((gx * 7 + gz * 13 + ti * 5) % 6) * 0.52;
+                const tH = 3.6 + ((Math.abs(gx + gz + ti) % 3) * 0.55);
+                // Tapered natural bark trunk
+                dummy.position.set(tx, tH * 0.5, tz); dummy.scale.set(0.55, tH, 0.55); dummy.rotation.set(0, tRot, 0); dummy.updateMatrix();
+                treeTrunkMatrices.push(dummy.matrix.clone());
+                // Layer 1: Wide deep-green lower leaf boughs
+                dummy.position.set(tx + Math.cos(tRot) * 0.45, tH + 0.55, tz + Math.sin(tRot) * 0.45);
+                dummy.scale.set(2.55, 1.35, 2.35); dummy.rotation.set(0.08, tRot, -0.06); dummy.updateMatrix();
+                treeLeafLowMatrices.push(dummy.matrix.clone());
+                // Layer 2: Offset lush mid-green foliage cluster
+                dummy.position.set(tx - Math.cos(tRot) * 0.52, tH + 1.15, tz - Math.sin(tRot) * 0.48);
+                dummy.scale.set(2.15, 1.45, 2.05); dummy.rotation.set(-0.07, tRot + 1.1, 0.08); dummy.updateMatrix();
+                treeLeafMidMatrices.push(dummy.matrix.clone());
+                // Layer 3: Sunlit fresh-green upper crown
+                dummy.position.set(tx, tH + 1.85, tz);
+                dummy.scale.set(1.65, 1.25, 1.58); dummy.rotation.set(0.05, tRot + 2.2, 0.04); dummy.updateMatrix();
+                treeLeafTopMatrices.push(dummy.matrix.clone());
+                dummy.rotation.set(0, 0, 0);
+
+                // SOLID TREE COLLIDER: Car & Avatar stop cleanly outside every tree trunk!
+                cellColliders.push({ minX: tx - 1.35, maxX: tx + 1.35, minZ: tz - 1.35, maxZ: tz + 1.35 });
+              });
             }
           }
         }
@@ -3003,32 +3678,158 @@ try {
       const padIM = new THREE.InstancedMesh(unitBox, sidewalkMat, padMatrices.length);
       padMatrices.forEach((m, idx) => padIM.setMatrixAt(idx, m));
       scene.add(padIM);
+      if (treeTrunkMatrices.length) {
+        const tBarkMat = new THREE.MeshStandardMaterial({ color: 0x4a2f1d, roughness: 0.94 });
+        const tLeafLowMat = new THREE.MeshStandardMaterial({ color: 0x14532d, roughness: 0.84 });
+        const tLeafMidMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.80 });
+        const tLeafTopMat = new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.76 });
+        const tTrunkIM = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.28, 0.52, 1, 10), tBarkMat, treeTrunkMatrices.length);
+        const foliageGeo = new THREE.IcosahedronGeometry(0.92, 1);
+        const tLowIM = new THREE.InstancedMesh(foliageGeo, tLeafLowMat, treeLeafLowMatrices.length);
+        const tMidIM = new THREE.InstancedMesh(foliageGeo, tLeafMidMat, treeLeafMidMatrices.length);
+        const tTopIM = new THREE.InstancedMesh(foliageGeo, tLeafTopMat, treeLeafTopMatrices.length);
+        treeTrunkMatrices.forEach((m, i) => tTrunkIM.setMatrixAt(i, m));
+        treeLeafLowMatrices.forEach((m, i) => tLowIM.setMatrixAt(i, m));
+        treeLeafMidMatrices.forEach((m, i) => tMidIM.setMatrixAt(i, m));
+        treeLeafTopMatrices.forEach((m, i) => tTopIM.setMatrixAt(i, m));
+        scene.add(tTrunkIM, tLowIM, tMidIM, tTopIM);
+      }
 
-      const crownGeo = new THREE.BoxGeometry(0.68, 0.16, 0.68);
-      crownGeo.translate(0, 0.58, 0);
+      const crownGeo = new THREE.BoxGeometry(0.66, 0.15, 0.66);
+      crownGeo.translate(0, 0.57, 0);
       const crownMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.55, roughness: 0.28 });
       bldgLists.forEach((list, sIdx) => {
         if (!list.length) return;
         const mat = facadeMats[sIdx];
         const im = new THREE.InstancedMesh(unitBox, [mat, mat, roofMat, roofMat, mat, mat], list.length);
-        const crownIM = new THREE.InstancedMesh(crownGeo, crownMat, list.length);
-        list.forEach((m, idx) => { im.setMatrixAt(idx, m); crownIM.setMatrixAt(idx, m); });
-        scene.add(im, crownIM);
+        list.forEach((m, idx) => { im.setMatrixAt(idx, m); });
+        scene.add(im);
       });
+      if (bigCrownList.length) {
+        const crownIM = new THREE.InstancedMesh(crownGeo, crownMat, bigCrownList.length);
+        bigCrownList.forEach((m, idx) => crownIM.setMatrixAt(idx, m));
+        scene.add(crownIM);
+      }
+      // Real 3D Sloped Pitched Villa Roofs (Terracotta Red-Tile & Royal Slate Blue!)
+      const pitchedGeo = new THREE.ConeGeometry(0.76, 1, 4);
+      if (pitchedRoofTerracotta.length) {
+        const roofTerraMat = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.72, metalness: 0.12 });
+        const pr1 = new THREE.InstancedMesh(pitchedGeo, roofTerraMat, pitchedRoofTerracotta.length);
+        pitchedRoofTerracotta.forEach((m, idx) => pr1.setMatrixAt(idx, m));
+        scene.add(pr1);
+      }
+      if (pitchedRoofDarkBlue.length) {
+        const roofSlateMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.62, metalness: 0.28 });
+        const pr2 = new THREE.InstancedMesh(pitchedGeo, roofSlateMat, pitchedRoofDarkBlue.length);
+        pitchedRoofDarkBlue.forEach((m, idx) => pr2.setMatrixAt(idx, m));
+        scene.add(pr2);
+      }
 
       const whiteLineMat = new THREE.MeshBasicMaterial({ color: 0xf8fafc });
       const yellowLineMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
       const poleMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.7, roughness: 0.3 });
       const lampGlowMat = new THREE.MeshBasicMaterial({ color: 0xfef9c3 });
 
-      // Wide 4-Lane Expressway Straight Continuous White Lines across the entire 44x44 Massive Metropolis
-      for (let g = -22; g <= 22; g++) {
-        const pos = g * BLOCK_STEP;
-        const lineZ = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 3450), whiteLineMat);
-        lineZ.rotation.x = -Math.PI / 2; lineZ.position.set(pos, 0.04, 0);
-        const lineX = new THREE.Mesh(new THREE.PlaneGeometry(3450, 0.5), whiteLineMat);
-        lineX.rotation.x = -Math.PI / 2; lineX.position.set(0, 0.04, pos);
-        scene.add(lineZ, lineX);
+      // AUTHENTIC DASHED WHITE RECTANGULAR LANE MARKINGS + ZEBRA CROSSINGS AT EVERY INTERSECTION (InstancedMesh = 60 FPS!)
+      const dashMatrices = [];
+      const zebraMatrices = [];
+      const dObj = new THREE.Object3D();
+
+      // Dashed white rectangular road center markings along main avenues (leaving intersections clean for zebra crossings!)
+      for (let g = -12; g <= 12; g++) {
+        const roadCoord = g * BLOCK_STEP;
+        for (let seg = -12; seg <= 11; seg++) {
+          const segStart = seg * BLOCK_STEP + 11;
+          for (let step = 0; step < 3; step++) {
+            const along = segStart + step * 11 + 4;
+            // Z-axis road dashes
+            dObj.position.set(roadCoord, 0.045, along);
+            dObj.rotation.set(-Math.PI / 2, 0, 0);
+            dObj.scale.set(0.42, 4.6, 1);
+            dObj.updateMatrix();
+            dashMatrices.push(dObj.matrix.clone());
+            // X-axis road dashes
+            dObj.position.set(along, 0.045, roadCoord);
+            dObj.rotation.set(-Math.PI / 2, 0, Math.PI / 2);
+            dObj.scale.set(0.42, 4.6, 1);
+            dObj.updateMatrix();
+            dashMatrices.push(dObj.matrix.clone());
+          }
+        }
+      }
+
+      // Crisp White ZEBRA CROSSINGS on all 4 sides of city intersections!
+      for (let ix = -5; ix <= 5; ix++) {
+        for (let iz = -5; iz <= 5; iz++) {
+          const rx = ix * BLOCK_STEP;
+          const rz = iz * BLOCK_STEP;
+          for (let bar = -2; bar <= 2; bar++) {
+            const off = bar * 2.2;
+            // North & South Zebra Crossings across Z-road
+            [-8.8, 8.8].forEach((zOff) => {
+              dObj.position.set(rx + off, 0.048, rz + zOff);
+              dObj.rotation.set(-Math.PI / 2, 0, 0);
+              dObj.scale.set(0.95, 3.2, 1);
+              dObj.updateMatrix();
+              zebraMatrices.push(dObj.matrix.clone());
+            });
+            // East & West Zebra Crossings across X-road
+            [-8.8, 8.8].forEach((xOff) => {
+              dObj.position.set(rx + xOff, 0.048, rz + off);
+              dObj.rotation.set(-Math.PI / 2, 0, Math.PI / 2);
+              dObj.scale.set(0.95, 3.2, 1);
+              dObj.updateMatrix();
+              zebraMatrices.push(dObj.matrix.clone());
+            });
+          }
+        }
+      }
+
+      const unitPlane = new THREE.PlaneGeometry(1, 1);
+      if (dashMatrices.length) {
+        const dashIM = new THREE.InstancedMesh(unitPlane, whiteLineMat, dashMatrices.length);
+        dashMatrices.forEach((m, i) => dashIM.setMatrixAt(i, m));
+        scene.add(dashIM);
+      }
+      if (zebraMatrices.length) {
+        const zebraIM = new THREE.InstancedMesh(unitPlane, whiteLineMat, zebraMatrices.length);
+        zebraMatrices.forEach((m, i) => zebraIM.setMatrixAt(i, m));
+        scene.add(zebraIM);
+      }
+
+      // ORGANIC DIAGONAL AVENUES + CURVED RING-ROAD BOULEVARD (Breaks box grid into a real bustling city!)
+      const diagRoadMat = new THREE.MeshStandardMaterial({ color: 0x05070a, roughness: 0.64 });
+      [Math.PI / 4, -Math.PI / 4].forEach((ang) => {
+        const dRoad = new THREE.Mesh(new THREE.PlaneGeometry(16, 620), diagRoadMat);
+        dRoad.rotation.x = -Math.PI / 2; dRoad.rotation.z = ang; dRoad.position.y = 0.025;
+        const dLine = new THREE.Mesh(new THREE.PlaneGeometry(0.45, 620), whiteLineMat);
+        dLine.rotation.x = -Math.PI / 2; dLine.rotation.z = ang; dLine.position.y = 0.045;
+        scene.add(dRoad, dLine);
+      });
+
+      // REAL WORKING 3D TRAFFIC SIGNALS AT CITY INTERSECTIONS (Red / Yellow / Green!)
+      const sigPoleMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.75, roughness: 0.3 });
+      const sigBoxMat = new THREE.MeshStandardMaterial({ color: 0x090d14, roughness: 0.5 });
+      for (let sx = -3; sx <= 3; sx++) {
+        for (let sz = -3; sz <= 3; sz++) {
+          if ((Math.abs(sx) + Math.abs(sz)) % 2 !== 0) continue;
+          const ix = sx * BLOCK_STEP;
+          const iz = sz * BLOCK_STEP;
+          const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.24, 6.2, 8), sigPoleMat);
+          pole.position.set(ix + 6.2, 3.1, iz + 6.2);
+          const arm = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.18, 0.18), sigPoleMat);
+          arm.position.set(ix + 4.4, 5.8, iz + 6.2);
+          const housing = new THREE.Mesh(new THREE.BoxGeometry(0.75, 2.0, 0.75), sigBoxMat);
+          housing.position.set(ix + 3.2, 5.5, iz + 6.2);
+          const rMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+          const yMat = new THREE.MeshBasicMaterial({ color: 0x3f3f46 });
+          const gMat = new THREE.MeshBasicMaterial({ color: 0x22c55e });
+          const lRed = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 8), rMat); lRed.position.set(ix + 3.2, 6.1, iz + 6.2);
+          const lYel = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 8), yMat); lYel.position.set(ix + 3.2, 5.5, iz + 6.2);
+          const lGrn = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 8), gMat); lGrn.position.set(ix + 3.2, 4.9, iz + 6.2);
+          scene.add(pole, arm, housing, lRed, lYel, lGrn);
+          trafficSignals.push({ x: ix, z: iz, rMat, yMat, gMat, phaseOffset: (Math.abs(sx + sz) % 2) * 8 });
+        }
       }
 
       // Sweeping Curved Ring-Road Boulevard & Scenic Turnings (Dubai / Hyderabad Outer Ring Road Style!)
@@ -3088,6 +3889,8 @@ try {
         scene.add(cg); coinMeshes.push(cg);
       }
 
+      // All stunt jump ramps removed — roads are 100% clean, flat & smooth!
+
       checkpointBeam = new THREE.Mesh(
         new THREE.CylinderGeometry(2.8, 2.8, 30, 20, 1, true),
         new THREE.MeshBasicMaterial({ color: 0x06b6d4, transparent: true, opacity: 0.42, side: THREE.DoubleSide })
@@ -3105,7 +3908,7 @@ try {
       ];
       // Spawn 36 Animated 3D Walking Humans strolling along City Footpaths!
       if (City3D.createWalkingHuman) {
-        for (let p = 0; p < 36; p++) {
+        for (let p = 0; p < 18; p++) {
           const human = City3D.createWalkingHuman(p);
           const axis = p % 2 === 0 ? 'z' : 'x';
           const dir = (p % 4 < 2) ? 1 : -1;
@@ -3124,14 +3927,20 @@ try {
         }
       }
 
-      for (let t = 0; t < 18; t++) {
+      // Spawn 42 Commuter AI Cars grouped in realistic 2-3 car platoons on signalized roads so 2-3 cars wait at Red Signals!
+      const signalLanes = [-3, -2, -1, 0, 1, 2, 3];
+      for (let t = 0; t < 20; t++) {
         const builtAI = City3D.buildVehicleMesh(aiModels[t % aiModels.length], null);
         const tMesh = builtAI.group;
         const axis = t % 2 === 0 ? 'z' : 'x';
-        const dir = (t % 4 < 2) ? 1 : -1; // Opposite traffic directions!
-        const laneOffset = dir > 0 ? 4.8 : -4.8;
-        const lane = ((t % 9) - 4) * BLOCK_STEP + laneOffset;
-        const startAlong = -260 + t * 30;
+        const dir = (t % 4 < 2) ? 1 : -1;
+        const laneOffset = dir > 0 ? 2.75 : -2.75;
+        const laneGrid = signalLanes[Math.floor(t / 6) % signalLanes.length];
+        const lane = laneGrid * BLOCK_STEP + laneOffset;
+        // Group cars in 2-3 car convoys ~11m apart so they queue up cleanly at Red Signals!
+        const convoyIdx = t % 3;
+        const baseAlong = -160 + (Math.floor(t / 3) * 34) % 320;
+        const startAlong = baseAlong - convoyIdx * 10.5 * dir;
         if (axis === 'z') {
           tMesh.position.set(lane, 0, startAlong);
           tMesh.rotation.y = dir > 0 ? Math.PI : 0;
@@ -3140,7 +3949,7 @@ try {
           tMesh.rotation.y = dir > 0 ? -Math.PI / 2 : Math.PI / 2;
         }
         scene.add(tMesh);
-        trafficCars.push({ mesh: tMesh, wheels: builtAI.wheels, axis, dir, speed: 15 + (t % 4) * 4 });
+        trafficCars.push({ mesh: tMesh, wheels: builtAI.wheels, axis, dir, maxSpeed: 12 + (t % 4) * 2.5, curSpeed: 10 });
       }
     }
 
@@ -3153,34 +3962,30 @@ try {
     playerFrontPivots = built.frontWheelPivots || [];
     nitroFlames = built.flames;
     scene.add(playerGroup);
+    if (!playerAvatar && City3D.createWalkingHuman) {
+      playerAvatar = City3D.createWalkingHuman(1);
+      playerAvatar.scale.setScalar(1.08);
+      playerAvatar.visible = false;
+      scene.add(playerAvatar);
+    }
+    isOnFoot = false;
+    if (playerAvatar) playerAvatar.visible = false;
+    if (typeof setControlModeUI === 'function') setControlModeUI(false);
 
-    // If real 3D GLB model is available on GitHub Pages (assets/custom_car.glb) and player selected a CAR, swap in the real 3D GLB!
-    if (eq.cat === 'CAR' && typeof THREE !== 'undefined' && THREE.GLTFLoader && window.location.protocol !== 'about:') {
-      try {
-        const loader = new THREE.GLTFLoader();
-        loader.load('assets/custom_car.glb', (gltf) => {
-          const model = gltf.scene;
-          const box = new THREE.Box3().setFromObject(model);
-          const size = new THREE.Vector3();
-          box.getSize(size);
-          const maxDim = Math.max(size.x, size.y, size.z) || 1;
-          const scale = 4.6 / maxDim;
-          model.scale.setScalar(scale);
-          const box2 = new THREE.Box3().setFromObject(model);
-          const center = new THREE.Vector3();
-          box2.getCenter(center);
-          model.position.x -= center.x;
-          model.position.z -= center.z;
-          model.position.y -= box2.min.y;
-          model.rotation.y = Math.PI;
-          const wrap = new THREE.Group();
-          wrap.add(model);
-          if (playerGroup) scene.remove(playerGroup);
-          playerGroup = wrap;
-          playerWheels = [];
-          scene.add(playerGroup);
-        }, undefined, () => {});
-      } catch (e) {}
+    // ONLY for Vehicle #0 (2025 Koenigsegg Gemera): load & drive the exact real 3D FBX model in the 3D City!
+    if (eq.id === 0 && eq.isRealFBX) {
+      loadGemeraFBX((fbxBuilt) => {
+        if (!fbxBuilt || state.equippedId !== 0) return;
+        if (playerGroup) scene.remove(playerGroup);
+        playerGroup = fbxBuilt.group;
+        playerChassis = fbxBuilt.chassis;
+        playerWheels = fbxBuilt.wheels;
+        playerFrontPivots = fbxBuilt.frontWheelPivots;
+        nitroFlames = fbxBuilt.flames;
+        playerGroup.position.set(driveState.x, driveState.y || 0, driveState.z);
+        playerGroup.rotation.y = driveState.heading;
+        scene.add(playerGroup);
+      });
     }
 
     driveState.x = 0; driveState.z = 0; driveState.heading = 0;
@@ -3188,6 +3993,159 @@ try {
     driveState.nitro = 100; driveState.health = 100; driveState.wrecked = false;
     updateHealthHUD();
     updateTaskUI();
+  }
+
+
+  // ================= REAL 3D ACCIDENT + FIRE ENGINE + AMBULANCE HOSPITAL RESCUE SYSTEM =================
+  function buildFireEngine3D() {
+    const g = new THREE.Group();
+    const redMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, metalness: 0.45, roughness: 0.25 });
+    const whiteMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.35 });
+    const chromeMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.9, roughness: 0.12 });
+    const glassMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.85, roughness: 0.1 });
+    const tireMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.85 });
+
+    const body = new THREE.Mesh(new THREE.BoxGeometry(2.5, 2.2, 7.0), redMat); body.position.y = 1.55;
+    const stripe = new THREE.Mesh(new THREE.BoxGeometry(2.56, 0.26, 7.05), whiteMat); stripe.position.y = 1.35;
+    const ws = new THREE.Mesh(new THREE.BoxGeometry(2.35, 0.85, 0.2), glassMat); ws.position.set(0, 2.05, -3.45);
+    const ladder = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.22, 5.4), chromeMat); ladder.position.set(0, 2.82, 0.55);
+    const beaconR = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.24, 0.32), new THREE.MeshBasicMaterial({ color: 0xff1e1e }));
+    beaconR.position.set(-0.55, 2.80, -2.5);
+    const beaconB = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.24, 0.32), new THREE.MeshBasicMaterial({ color: 0x00f0ff }));
+    beaconB.position.set(0.55, 2.80, -2.5);
+    g.add(body, stripe, ws, ladder, beaconR, beaconB);
+    [[-1.3, -2.1], [1.3, -2.1], [-1.3, 2.1], [1.3, 2.1]].forEach(([wx, wz]) => {
+      const w = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.42, 16), tireMat);
+      w.rotation.z = Math.PI / 2; w.position.set(wx, 0.55, wz); g.add(w);
+    });
+    g.userData = { beaconR, beaconB };
+    return g;
+  }
+
+  function buildAmbulance3D() {
+    const g = new THREE.Group();
+    const whiteMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.25, roughness: 0.25 });
+    const redMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.3 });
+    const glassMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.85, roughness: 0.1 });
+    const tireMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.85 });
+
+    const body = new THREE.Mesh(new THREE.BoxGeometry(2.3, 2.1, 5.8), whiteMat); body.position.y = 1.48;
+    const redBand = new THREE.Mesh(new THREE.BoxGeometry(2.36, 0.28, 5.85), redMat); redBand.position.y = 1.12;
+    const crossH = new THREE.Mesh(new THREE.BoxGeometry(2.40, 0.22, 0.85), redMat); crossH.position.set(0, 1.85, 0.6);
+    const crossV = new THREE.Mesh(new THREE.BoxGeometry(2.40, 0.85, 0.22), redMat); crossV.position.set(0, 1.85, 0.6);
+    const ws = new THREE.Mesh(new THREE.BoxGeometry(2.15, 0.78, 0.2), glassMat); ws.position.set(0, 1.92, -2.85);
+    const beaconR = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.24, 0.3), new THREE.MeshBasicMaterial({ color: 0xff1e1e }));
+    beaconR.position.set(-0.5, 2.66, -1.8);
+    const beaconB = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.24, 0.3), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
+    beaconB.position.set(0.5, 2.66, -1.8);
+    g.add(body, redBand, crossH, crossV, ws, beaconR, beaconB);
+    [[-1.2, -1.7], [1.2, -1.7], [-1.2, 1.7], [1.2, 1.7]].forEach(([wx, wz]) => {
+      const w = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.48, 0.38, 16), tireMat);
+      w.rotation.z = Math.PI / 2; w.position.set(wx, 0.48, wz); g.add(w);
+    });
+    g.userData = { beaconR, beaconB };
+    return g;
+  }
+
+  function triggerTrafficAccident(trafficCar, now) {
+    if (trafficCar.wrecked) return;
+    trafficCar.wrecked = true;
+    trafficCar.curSpeed = 0;
+
+    // Knock the hit AI car sideways onto the road & tilt it realistically!
+    const ax = trafficCar.mesh.position.x + (Math.random() > 0.5 ? 2.4 : -2.4);
+    const az = trafficCar.mesh.position.z + (Math.random() > 0.5 ? 2.4 : -2.4);
+    trafficCar.mesh.position.set(ax, 0.22, az);
+    trafficCar.mesh.rotation.z = 0.58; // Tilted accident wreck!
+    trafficCar.mesh.rotation.y += 0.7;
+
+    // 1. Live 3D Burning Fire Flames + Rising Smoke Cloud on the wrecked car!
+    const fireGroup = new THREE.Group();
+    fireGroup.position.set(ax, 0.9, az);
+    const flames = [];
+    const flameColors = [0xff4500, 0xff8c00, 0xfacc15];
+    for (let f = 0; f < 6; f++) {
+      const cone = new THREE.Mesh(
+        new THREE.ConeGeometry(0.55 + (f % 3) * 0.22, 2.2 + (f % 2) * 0.9, 8),
+        new THREE.MeshBasicMaterial({ color: flameColors[f % 3], transparent: true, opacity: 0.88 })
+      );
+      cone.position.set((f - 2.5) * 0.35, 0.8, ((f % 3) - 1) * 0.4);
+      fireGroup.add(cone);
+      flames.push(cone);
+    }
+    const smokeMat = new THREE.MeshBasicMaterial({ color: 0x1e293b, transparent: true, opacity: 0.55 });
+    const smokePuffs = [];
+    for (let s = 0; s < 4; s++) {
+      const puff = new THREE.Mesh(new THREE.SphereGeometry(0.75 + s * 0.18, 8, 8), smokeMat);
+      puff.position.set((s - 1.5) * 0.3, 2.4 + s * 0.9, 0);
+      fireGroup.add(puff);
+      smokePuffs.push(puff);
+    }
+    scene.add(fireGroup);
+
+    // 2. Fallen Injured 3D Human beside the wrecked car!
+    const victim = City3D.createWalkingHuman ? City3D.createWalkingHuman(Math.floor(Math.random() * 8)) : new THREE.Group();
+    const vx = ax + 3.4, vz = az + 1.8;
+    victim.position.set(vx, 0.35, vz);
+    victim.rotation.x = Math.PI / 2; // Lying fallen beside the car!
+    scene.add(victim);
+
+    // 3. Dispatch 3D Fire Engine & 3D Ambulance with CLEAN STRAIGHT ROAD WAYPOINTS (ZERO Glitch / ZERO Oscillation!)
+    const roadX = Math.round(ax / BLOCK_STEP) * BLOCK_STEP;
+    const roadZ = Math.round(az / BLOCK_STEP) * BLOCK_STEP;
+    const alongZ = Math.abs(ax - roadX) <= Math.abs(az - roadZ);
+
+    const fireTruck = buildFireEngine3D();
+    const ftStart = alongZ ? { x: roadX - 2.6, z: az - 54 } : { x: ax - 54, z: roadZ - 2.6 };
+    const ftStop  = alongZ ? { x: roadX - 2.6, z: az - 6.8 } : { x: ax - 6.8, z: roadZ - 2.6 };
+    const ftExit  = alongZ ? { x: roadX - 2.6, z: az + 85 } : { x: ax + 85, z: roadZ - 2.6 };
+    fireTruck.position.set(ftStart.x, 0, ftStart.z);
+    scene.add(fireTruck);
+
+    const waterJet = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.14, 0.42, 6.2, 8),
+      new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.82 })
+    );
+    waterJet.rotation.z = alongZ ? 0 : Math.PI / 2;
+    waterJet.rotation.x = alongZ ? Math.PI / 2 : 0;
+    waterJet.position.set((ftStop.x + ax) * 0.5, 1.8, (ftStop.z + az) * 0.5);
+    waterJet.visible = false;
+    scene.add(waterJet);
+
+    const ambulance = buildAmbulance3D();
+    const ambStart = alongZ ? { x: roadX + 2.6, z: az + 58 } : { x: ax + 58, z: roadZ + 2.6 };
+    const ambStop  = alongZ ? { x: roadX + 2.6, z: az + 5.8 } : { x: ax + 5.8, z: roadZ + 2.6 };
+    ambulance.position.set(ambStart.x, 0, ambStart.z);
+    scene.add(ambulance);
+
+    // Find nearest + HOSPITAL road intersection for clean L-shaped road delivery!
+    let hospitalTarget = { x: -BLOCK_STEP, z: 0 };
+    let bestD = Infinity;
+    for (let l = 0; l < cityLandmarks.length; l++) {
+      if (cityLandmarks[l].tag === 'H') {
+        const hx = Math.round(cityLandmarks[l].x / BLOCK_STEP) * BLOCK_STEP;
+        const hz = Math.round(cityLandmarks[l].z / BLOCK_STEP) * BLOCK_STEP;
+        const d = Math.hypot(hx - ax, hz - az);
+        if (d < bestD) { bestD = d; hospitalTarget = { x: hx, z: hz }; }
+      }
+    }
+    // Clean 2-step L-shaped road waypoints from accident to Hospital (NEVER cuts through walls, NEVER oscillates!)
+    const ambWaypoints = alongZ
+      ? [{ x: roadX + 2.6, z: hospitalTarget.z }, { x: hospitalTarget.x, z: hospitalTarget.z }]
+      : [{ x: hospitalTarget.x, z: roadZ + 2.6 }, { x: hospitalTarget.x, z: hospitalTarget.z }];
+
+    if (Audio) { Audio.playCrash(); if (Audio.playSiren) Audio.playSiren(); }
+    showDriveAlert('CAR ACCIDENT! FIRE ENGINE & AMBULANCE ON THE WAY! 🚒🚑', 'bg-rose-600 text-white');
+
+    emergencyEvents.push({
+      trafficCar, ax, az, vx, vz,
+      fireGroup, flames, smokePuffs, waterJet,
+      victim, fireTruck, ambulance, hospitalTarget,
+      ftStop, ftExit, ambStop, ambWaypoints, ambWpIdx: 0,
+      phase: 'dispatch',
+      phaseTimer: 0,
+      fireScale: 1.0
+    });
   }
 
   function updateTaskUI() {
@@ -3230,36 +4188,100 @@ try {
     const ctx = miniMapCanvas.getContext('2d');
     const w = miniMapCanvas.width, h = miniMapCanvas.height;
     ctx.clearRect(0, 0, w, h);
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+    ctx.fillStyle = '#090f1d';
     ctx.fillRect(0, 0, w, h);
-    const scale = 0.14, cx = w / 2, cy = h / 2;
+    const scale = 0.20, cx = w / 2, cy = h / 2;
 
+    // Draw City Road Grid Lines on Box GPS Map
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.25)';
+    ctx.lineWidth = 2;
+    const baseGX = Math.floor(driveState.x / BLOCK_STEP);
+    const baseGZ = Math.floor(driveState.z / BLOCK_STEP);
+    for (let g = -5; g <= 5; g++) {
+      const rx = cx + ((baseGX + g) * BLOCK_STEP - driveState.x) * scale;
+      const rz = cy + ((baseGZ + g) * BLOCK_STEP - driveState.z) * scale;
+      ctx.beginPath(); ctx.moveTo(rx, 0); ctx.lineTo(rx, h); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, rz); ctx.lineTo(w, rz); ctx.stroke();
+    }
+
+    // Lakes
     ctx.fillStyle = '#0ea5e9';
     for (const lk of lakeZones) {
       const dx = (lk.cx - driveState.x) * scale, dz = (lk.cz - driveState.z) * scale;
-      if (Math.hypot(dx, dz) < 36) { ctx.beginPath(); ctx.arc(cx + dx, cy + dz, 3, 0, Math.PI * 2); ctx.fill(); }
+      if (Math.abs(dx) < cx + 6 && Math.abs(dz) < cy + 6) {
+        ctx.beginPath(); ctx.arc(cx + dx, cy + dz, 4, 0, Math.PI * 2); ctx.fill();
+      }
     }
-    ctx.fillStyle = '#34d399';
+
+    // Repair Garages (Green squares)
+    ctx.fillStyle = '#10b981';
     for (const g of serviceGarages) {
-      const dx = Math.max(-34, Math.min(34, (g.x - driveState.x) * scale));
-      const dz = Math.max(-34, Math.min(34, (g.z - driveState.z) * scale));
-      ctx.fillRect(cx + dx - 2.5, cy + dz - 2.5, 5, 5);
+      const dx = (g.x - driveState.x) * scale, dz = (g.z - driveState.z) * scale;
+      if (Math.abs(dx) < cx && Math.abs(dz) < cy) ctx.fillRect(cx + dx - 3, cy + dz - 3, 6, 6);
     }
+
+    // Branded Shops & Landmarks on GPS Map (H=Hospital, D=D-Mart, M=Mall, O=Office, F=Fuel, S=Cafe)
+    ctx.font = 'bold 8px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (const lm of cityLandmarks) {
+      const dx = Math.max(-cx + 8, Math.min(cx - 8, (lm.x - driveState.x) * scale));
+      const dz = Math.max(-cy + 8, Math.min(cy - 8, (lm.z - driveState.z) * scale));
+      ctx.fillStyle = lm.color;
+      ctx.fillRect(cx + dx - 5.5, cy + dz - 5.5, 11, 11);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(lm.tag, cx + dx, cy + dz + 0.5);
+    }
+
+    // Live Traffic Signal Dots (Red/Green)
+    for (const sg of trafficSignals) {
+      const dx = (sg.x - driveState.x) * scale, dz = (sg.z - driveState.z) * scale;
+      if (Math.abs(dx) < cx && Math.abs(dz) < cy) {
+        ctx.fillStyle = sg.zGreen ? '#22c55e' : '#ef4444';
+        ctx.fillRect(cx + dx - 1.5, cy + dz - 1.5, 3, 3);
+      }
+    }
+
+    // AI Commuter Traffic Dots
+    ctx.fillStyle = '#cbd5e1';
+    for (const tc of trafficCars) {
+      const dx = (tc.mesh.position.x - driveState.x) * scale, dz = (tc.mesh.position.z - driveState.z) * scale;
+      if (Math.abs(dx) < cx && Math.abs(dz) < cy) ctx.fillRect(cx + dx - 1.5, cy + dz - 1.5, 3, 3);
+    }
+
+    // Coins
     ctx.fillStyle = '#facc15';
     for (const c of coinMeshes) {
       if (!c.userData.active) continue;
       const dx = (c.position.x - driveState.x) * scale, dz = (c.position.z - driveState.z) * scale;
-      if (Math.hypot(dx, dz) < 36) { ctx.beginPath(); ctx.arc(cx + dx, cy + dz, 1.8, 0, Math.PI * 2); ctx.fill(); }
+      if (Math.abs(dx) < cx && Math.abs(dz) < cy) {
+        ctx.beginPath(); ctx.arc(cx + dx, cy + dz, 1.8, 0, Math.PI * 2); ctx.fill();
+      }
     }
+
+    // Checkpoint Beacon
     if (checkpointBeam) {
-      const dx = Math.max(-34, Math.min(34, (checkpointBeam.position.x - driveState.x) * scale));
-      const dz = Math.max(-34, Math.min(34, (checkpointBeam.position.z - driveState.z) * scale));
+      const dx = Math.max(-cx + 6, Math.min(cx - 6, (checkpointBeam.position.x - driveState.x) * scale));
+      const dz = Math.max(-cy + 6, Math.min(cy - 6, (checkpointBeam.position.z - driveState.z) * scale));
       ctx.fillStyle = '#00f0ff';
-      ctx.beginPath(); ctx.arc(cx + dx, cy + dz, 3.8, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx + dx, cy + dz, 4, 0, Math.PI * 2); ctx.fill();
     }
+
+    // Live Fire Engine (Red) & Ambulance (White-Red) icons on Box GPS Map!
+    for (const ev of emergencyEvents) {
+      const fdx = (ev.fireTruck.position.x - driveState.x) * scale, fdz = (ev.fireTruck.position.z - driveState.z) * scale;
+      if (Math.abs(fdx) < cx && Math.abs(fdz) < cy) { ctx.fillStyle = '#ff1e1e'; ctx.fillRect(cx + fdx - 3, cy + fdz - 3, 6, 6); }
+      const adx = (ev.ambulance.position.x - driveState.x) * scale, adz = (ev.ambulance.position.z - driveState.z) * scale;
+      if (Math.abs(adx) < cx && Math.abs(adz) < cy) { ctx.fillStyle = '#ffffff'; ctx.fillRect(cx + adx - 3, cy + adz - 3, 6, 6); }
+    }
+
+    // Player Car Direction Arrow
     ctx.save(); ctx.translate(cx, cy); ctx.rotate(-driveState.heading);
     ctx.fillStyle = '#f97316';
-    ctx.beginPath(); ctx.moveTo(0, -6); ctx.lineTo(4.5, 5); ctx.lineTo(-4.5, 5); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(0, -6.5); ctx.lineTo(5, 5.5); ctx.lineTo(-5, 5.5); ctx.closePath();
+    ctx.fill(); ctx.stroke();
     ctx.restore();
   }
 
@@ -3276,24 +4298,26 @@ try {
     }
 
     const eq = vehicles.find((v) => v.id === state.equippedId) || vehicles[0];
-    const lvBonus = ((state.level || 1) - 1) * 3.5;
-    const maxSpeed = 36 + ((eq.speed + (state.upgradeLevels.engine - 1) * 3) / 100) * 34 + lvBonus;
-    const accelRate = 24 + ((eq.accel + (state.upgradeLevels.engine - 1) * 3) / 100) * 24 + lvBonus * 0.6;
-    const turnRate = 2.0 + ((eq.handle + (state.upgradeLevels.tires - 1) * 4) / 100) * 1.15;
+    const lvBonus = ((state.level || 1) - 1) * 2.5;
+    const maxSpeed = isOnFoot ? 11 : (28 + ((eq.speed + (state.upgradeLevels.engine - 1) * 2.5) / 100) * 24 + lvBonus);
+    const accelRate = 19 + ((eq.accel + (state.upgradeLevels.engine - 1) * 2.5) / 100) * 18 + lvBonus * 0.45;
+    // Speed-sensitive precision steering (tight turns at low speed, rock-steady stability at highway speed!)
+    const speedRatio = Math.min(1, Math.abs(driveState.speed) / maxSpeed);
+    const turnRate = (2.15 + ((eq.handle + (state.upgradeLevels.tires - 1) * 3) / 100) * 0.85) * (1.05 - speedRatio * 0.32);
 
-    const gasOn = driveState.gas || driveState.keys.w;
-    const brakeOn = driveState.brake || driveState.keys.s;
+    const gasOn = !isOnFoot && (driveState.gas || driveState.keys.w);
+    const brakeOn = !isOnFoot && (driveState.brake || driveState.keys.s);
     const nitroOn = (driveState.boost || driveState.keys.shift) && driveState.nitro > 4 && gasOn;
 
-    if (nitroOn) driveState.nitro = Math.max(0, driveState.nitro - 28 * dt);
-    else driveState.nitro = Math.min(100, driveState.nitro + 12 * dt);
+    if (nitroOn) { driveState.nitro = Math.max(0, driveState.nitro - 26 * dt); driveState._wasNitro = true; }
+    else { if (driveState._wasNitro && Audio && Audio.playTurboPshh) Audio.playTurboPshh(); driveState._wasNitro = false; driveState.nitro = Math.min(100, driveState.nitro + 14 * dt); }
 
     for (const f of nitroFlames) {
       f.visible = nitroOn;
       if (nitroOn) f.scale.y = 0.8 + Math.random() * 0.6;
     }
 
-    const nitroMult = 1.36 + Math.min(0.38, ((state.upgradeLevels.nitro - 1) * 0.04) + ((state.level || 1) - 1) * 0.04);
+    const nitroMult = 1.30 + Math.min(0.32, ((state.upgradeLevels.nitro - 1) * 0.03) + ((state.level || 1) - 1) * 0.03);
     const effectiveMax = nitroOn ? maxSpeed * nitroMult : maxSpeed;
     if (gasOn) driveState.speed += (nitroOn ? accelRate * 1.65 : accelRate) * dt;
     else if (brakeOn) driveState.speed -= accelRate * 1.5 * dt;
@@ -3307,7 +4331,7 @@ try {
     if (driveState.keys.a) keySteer += 1;
     if (driveState.keys.d) keySteer -= 1;
     const desiredSteer = driveState.wheelDragging ? driveState.targetSteer : keySteer;
-    driveState.steerInput += (desiredSteer - driveState.steerInput) * Math.min(1, 10 * dt);
+    driveState.steerInput += (desiredSteer - driveState.steerInput) * Math.min(1, (driveState.wheelDragging ? 14 : 9) * dt);
     // Smooth return to 0° ONLY after finger is released! While holding, stays at exact full-rotation wheelAngleDeg!
     if (!driveState.wheelDragging) {
       driveState.wheelAngleDeg = (driveState.wheelAngleDeg || 0) * Math.pow(0.015, dt);
@@ -3316,7 +4340,7 @@ try {
     const visualWheelDeg = driveState.wheelDragging ? (driveState.wheelAngleDeg || 0) : (driveState.wheelAngleDeg || (-driveState.steerInput * 110));
     steeringWheelSvg.style.transform = `rotate(${visualWheelDeg.toFixed(1)}deg)`;
 
-    if (Audio) Audio.updateEngine(Math.abs(driveState.speed) / maxSpeed, nitroOn, brakeOn, driveState.steerInput);
+    if (Audio && !isOnFoot) Audio.updateEngine(Math.abs(driveState.speed) / maxSpeed, nitroOn, brakeOn, driveState.steerInput);
 
     if (Math.abs(driveState.speed) > 0.5) {
       const dirSign = driveState.speed >= 0 ? 1 : -1;
@@ -3335,19 +4359,23 @@ try {
     if (nextZ > CITY_BOUND) nextZ -= CITY_BOUND * 2;
     else if (nextZ < -CITY_BOUND) nextZ += CITY_BOUND * 2;
 
-    // O(1) Spatial Grid Collision Check (checks only current block -> locked 60 FPS!)
+    // 3x3 Spatial Grid Collision Check (Zero clipping through trees, buildings, or canal fences across cell borders!)
     let collided = false;
     const cellX = Math.floor(nextX / BLOCK_STEP);
     const cellZ = Math.floor(nextZ / BLOCK_STEP);
-    const nearby = colliderGrid.get(`${cellX},${cellZ}`);
-    if (nearby) {
-      for (let i = 0; i < nearby.length; i++) {
-        const b = nearby[i];
-        if (nextX > b.minX && nextX < b.maxX && nextZ > b.minZ && nextZ < b.maxZ) {
-          collided = true;
-          if (prevX <= b.minX || prevX >= b.maxX) nextX = prevX;
-          if (prevZ <= b.minZ || prevZ >= b.maxZ) nextZ = prevZ;
-          break;
+    outerColl:
+    for (let ox = -1; ox <= 1; ox++) {
+      for (let oz = -1; oz <= 1; oz++) {
+        const nearby = colliderGrid.get(`${cellX + ox},${cellZ + oz}`);
+        if (!nearby) continue;
+        for (let i = 0; i < nearby.length; i++) {
+          const b = nearby[i];
+          if (nextX > b.minX && nextX < b.maxX && nextZ > b.minZ && nextZ < b.maxZ) {
+            collided = true;
+            if (prevX <= b.minX || prevX >= b.maxX) nextX = prevX;
+            if (prevZ <= b.minZ || prevZ >= b.maxZ) nextZ = prevZ;
+            break outerColl;
+          }
         }
       }
     }
@@ -3403,8 +4431,121 @@ try {
     const odoEl = document.getElementById('odometerKmEl');
     if (odoEl) odoEl.textContent = totalKmDriven.toFixed(1) + ' KM / 100+ KM';
 
-    playerGroup.position.set(driveState.x, 0, driveState.z);
-    playerGroup.rotation.y = driveState.heading;
+    // SOLID COLLISION WITH FIRE ENGINE & AMBULANCE (Player NEVER passes through emergency vehicles!)
+    for (let eIdx = 0; eIdx < emergencyEvents.length; eIdx++) {
+      const ev = emergencyEvents[eIdx];
+      [ev.fireTruck, ev.ambulance].forEach((emVeh) => {
+        if (!emVeh || !emVeh.visible) return;
+        const dEm = Math.hypot(driveState.x - emVeh.position.x, driveState.z - emVeh.position.z);
+        if (dEm < 4.2) {
+          const ang = Math.atan2(driveState.x - emVeh.position.x, driveState.z - emVeh.position.z);
+          driveState.x = emVeh.position.x + Math.sin(ang) * 4.4;
+          driveState.z = emVeh.position.z + Math.cos(ang) * 4.4;
+          driveState.speed = -driveState.speed * 0.35;
+        }
+      });
+    }
+
+    if (isOnFoot && playerAvatar) {
+      // DEDICATED HUMAN ON-FOOT CONTROLS (Joystick 360° + RUN Sprint + JUMP Gravity — NO car steering or gas!)
+      let inX = footState.joyX;
+      let inY = footState.joyY; // -1 forward, +1 backward
+      if (driveState.keys.w) inY -= 1;
+      if (driveState.keys.s) inY += 1;
+      if (driveState.keys.a) inX -= 1;
+      if (driveState.keys.d) inX += 1;
+      const mag = Math.min(1, Math.hypot(inX, inY));
+      const moveSpd = (footState.running || driveState.keys.shift) ? 14.5 : 6.8;
+
+      if (mag > 0.08) {
+        // Move relative to current camera yaw so pushing joystick UP always runs forward on screen!
+        const camYaw = driveState.heading + driveState.camOrbitYaw;
+        const moveAng = camYaw + Math.atan2(-inX, -inY);
+        const fdx = -Math.sin(moveAng) * moveSpd * mag * dt;
+        const fdz = -Math.cos(moveAng) * moveSpd * mag * dt;
+        let fx = driveState.x + fdx;
+        let fz = driveState.z + fdz;
+        // Solid 3x3 collision check for running human against buildings, trees, canal fences & ALL traffic cars!
+        const cX = Math.floor(fx / BLOCK_STEP), cZ = Math.floor(fz / BLOCK_STEP);
+        footCollLoop:
+        for (let ox = -1; ox <= 1; ox++) {
+          for (let oz = -1; oz <= 1; oz++) {
+            const nb = colliderGrid.get(`${cX + ox},${cZ + oz}`);
+            if (!nb) continue;
+            for (let bi = 0; bi < nb.length; bi++) {
+              const b = nb[bi];
+              if (fx > b.minX && fx < b.maxX && fz > b.minZ && fz < b.maxZ) {
+                if (driveState.x <= b.minX || driveState.x >= b.maxX) fx = driveState.x;
+                if (driveState.z <= b.minZ || driveState.z >= b.maxZ) fz = driveState.z;
+                break footCollLoop;
+              }
+            }
+          }
+        }
+        // Prevent human from walking through any AI traffic car!
+        for (let ti = 0; ti < trafficCars.length; ti++) {
+          const tc = trafficCars[ti];
+          const dCar = Math.hypot(fx - tc.mesh.position.x, fz - tc.mesh.position.z);
+          if (dCar < 2.6) {
+            const pa = Math.atan2(fx - tc.mesh.position.x, fz - tc.mesh.position.z);
+            fx = tc.mesh.position.x + Math.sin(pa) * 2.65;
+            fz = tc.mesh.position.z + Math.cos(pa) * 2.65;
+          }
+        }
+        driveState.x = fx;
+        driveState.z = fz;
+        playerAvatar.rotation.y = moveAng + Math.PI;
+      }
+
+      // JUMP Physics with Gravity!
+      if (footState.jumping) {
+        footState.y += footState.vy * dt;
+        footState.vy -= 26 * dt;
+        if (footState.y <= 0.22) {
+          footState.y = 0.22; footState.vy = 0; footState.jumping = false;
+        }
+      }
+      playerAvatar.position.set(driveState.x, footState.y, driveState.z);
+      const u = playerAvatar.userData;
+      if (u && u.legL) {
+        const freq = footState.running ? 0.017 : 0.011;
+        const amp = footState.jumping ? 0.45 : (mag > 0.08 ? (footState.running ? 0.85 : 0.52) : 0);
+        const sw = footState.jumping ? 0.45 : (mag > 0.08 ? Math.sin(now * freq) * amp : 0);
+        u.legL.rotation.x = sw; u.legR.rotation.x = -sw;
+        u.armL.rotation.x = -sw * 0.9; u.armR.rotation.x = sw * 0.9;
+      }
+
+      // DYNAMIC NEAREST-CAR PROXIMITY CHECK: Show ENTER CAR button ONLY when within 5.5m of YOUR parked car OR ANY AI traffic car!
+      nearbyVehicleRef = null;
+      let bestDist = 7.8;
+      const dOwn = Math.hypot(driveState.x - parkedCarPos.x, driveState.z - parkedCarPos.z);
+      if (dOwn < bestDist) {
+        bestDist = dOwn;
+        nearbyVehicleRef = { type: 'own' };
+      }
+      for (let ti = 0; ti < trafficCars.length; ti++) {
+        const tc = trafficCars[ti];
+        if (tc.wrecked) continue;
+        const dT = Math.hypot(driveState.x - tc.mesh.position.x, driveState.z - tc.mesh.position.z);
+        if (dT < bestDist) {
+          bestDist = dT;
+          nearbyVehicleRef = { type: 'traffic', car: tc };
+          if (dT < 6.5) tc.curSpeed *= 0.75; // Car slows down so player can easily hop in!
+        }
+      }
+      const enterNearBtn = document.getElementById('enterNearCarBtn');
+      if (enterNearBtn) {
+        enterNearBtn.classList.toggle('hidden', !nearbyVehicleRef);
+        enterNearBtn.classList.toggle('flex', Boolean(nearbyVehicleRef));
+      }
+
+      // Keep parked car at its exact spot
+      playerGroup.position.set(parkedCarPos.x, 0, parkedCarPos.z);
+      playerGroup.rotation.y = parkedCarPos.heading;
+    } else {
+      playerGroup.position.set(driveState.x, 0, driveState.z);
+      playerGroup.rotation.y = driveState.heading;
+    }
     const spdNorm = Math.min(1, Math.abs(driveState.speed) / 28);
     if (eq.modelType === 'bike') {
       playerGroup.rotation.z = driveState.steerInput * 0.28 * spdNorm;
@@ -3421,7 +4562,7 @@ try {
     for (const w of playerWheels) w.rotation.x -= driveState.speed * dt * 0.85;
 
     // 360-Degree Screen-Drag Camera Orbit around the Car (Car stays/drives normally while camera orbits 360°!)
-    const camDist = eq.modelType === 'heavy_truck' ? 11.8 : 9.4;
+    const camDist = isOnFoot ? 6.2 : (camModeIdx === 1 ? 1.8 : camModeIdx === 2 ? 14.5 : (eq.modelType === 'heavy_truck' ? 11.8 : 9.4));
     const totalCamYaw = driveState.heading + driveState.camOrbitYaw;
     const camPitch = Math.max(0.14, Math.min(0.95, driveState.camOrbitPitch));
     const horizDist = Math.cos(camPitch) * camDist;
@@ -3437,7 +4578,7 @@ try {
       camera.fov += (targetFov - camera.fov) * Math.min(1, 5 * dt);
       camera.updateProjectionMatrix();
     }
-    camera.lookAt(driveState.x, 1.3, driveState.z);
+    if (camModeIdx === 1 && !driveState.camDragging) { camera.position.set(driveState.x - Math.sin(driveState.heading) * 0.6, (driveState.y || 0) + 1.65, driveState.z - Math.cos(driveState.heading) * 0.6); camera.lookAt(driveState.x - Math.sin(driveState.heading) * 30, (driveState.y || 0) + 1.4, driveState.z - Math.cos(driveState.heading) * 30); } else { camera.lookAt(driveState.x, (driveState.y || 0) + 1.3, driveState.z); }
 
     for (const c of coinMeshes) {
       if (!c.userData.active) {
@@ -3461,19 +4602,82 @@ try {
       }
     }
 
-    for (const t of trafficCars) {
-      const step = t.speed * t.dir * dt;
+    // Update Real 3D Traffic Signals (16s cycle: 0-6.5s Z-Green/X-Red, 6.5-8s Yellow, 8-14.5s X-Green/Z-Red, 14.5-16s Yellow)
+    const sigTime = now * 0.001;
+    for (let s = 0; s < trafficSignals.length; s++) {
+      const sg = trafficSignals[s];
+      const cyc = (sigTime + sg.phaseOffset) % 16;
+      sg.zGreen = cyc < 6.5;
+      sg.xGreen = cyc >= 8 && cyc < 14.5;
+      const isYel = (cyc >= 6.5 && cyc < 8) || cyc >= 14.5;
+      sg.rMat.color.setHex(!sg.zGreen && !isYel ? 0xff1e1e : 0x3b0a0a);
+      sg.yMat.color.setHex(isYel ? 0xfacc15 : 0x3b3008);
+      sg.gMat.color.setHex(sg.zGreen ? 0x22c55e : 0x0a3b1a);
+    }
+
+    // Smart Commuter AI Vehicles: Stop & Wait cleanly at Red Traffic Signals + Keep safe spacing, then drive on Green!
+    for (let i = 0; i < trafficCars.length; i++) {
+      const t = trafficCars[i];
+      if (t.wrecked) continue;
+      let shouldStop = false;
+      const tx = t.mesh.position.x, tz = t.mesh.position.z;
+
+      // Check upcoming Traffic Signal ahead of this vehicle
+      for (let s = 0; s < trafficSignals.length; s++) {
+        const sg = trafficSignals[s];
+        if (t.axis === 'z') {
+          if (Math.abs(tx - sg.x) < 8) {
+            const ahead = (sg.z - tz) * t.dir;
+            if (ahead > 9.5 && ahead < 19.5 && !sg.zGreen) { shouldStop = true; break; }
+          }
+        } else {
+          if (Math.abs(tz - sg.z) < 8) {
+            const ahead = (sg.x - tx) * t.dir;
+            if (ahead > 9.5 && ahead < 19.5 && !sg.xGreen) { shouldStop = true; break; }
+          }
+        }
+      }
+      // Also avoid rear-ending a waiting car ahead in the same lane!
+      if (!shouldStop) {
+        for (let j = 0; j < trafficCars.length; j++) {
+          if (i === j) continue;
+          const o = trafficCars[j];
+          if (o.axis !== t.axis || o.dir !== t.dir) continue;
+          if (t.axis === 'z' && Math.abs(o.mesh.position.x - tx) < 2.2) {
+            const gap = (o.mesh.position.z - tz) * t.dir;
+            if (gap > 0 && gap < 8.4) { shouldStop = true; break; }
+          } else if (t.axis === 'x' && Math.abs(o.mesh.position.z - tz) < 2.2) {
+            const gap = (o.mesh.position.x - tx) * t.dir;
+            if (gap > 0 && gap < 8.4) { shouldStop = true; break; }
+          }
+        }
+      }
+
+      const targetSpd = shouldStop ? 0 : t.maxSpeed;
+      t.curSpeed += (targetSpd - t.curSpeed) * Math.min(1, (shouldStop ? 7 : 3.5) * dt);
+      const step = t.curSpeed * t.dir * dt;
+      if (t.yieldSide) {
+        const wantSide = (t.yieldUntil && now < t.yieldUntil) ? t.yieldSide : 0;
+        t.curYield = t.curYield || 0;
+        const deltaY = (wantSide - t.curYield) * Math.min(1, 4.5 * dt);
+        t.curYield += deltaY;
+        if (t.axis === 'z') t.mesh.position.x += deltaY;
+        else t.mesh.position.z += deltaY;
+        if (wantSide === 0 && Math.abs(t.curYield) < 0.05) { t.yieldSide = 0; t.curYield = 0; }
+      }
       if (t.axis === 'z') {
         t.mesh.position.z += step;
-        if (t.mesh.position.z > CITY_BOUND) t.mesh.position.z = -CITY_BOUND;
-        if (t.mesh.position.z < -CITY_BOUND) t.mesh.position.z = CITY_BOUND;
+        const relZ = t.mesh.position.z - driveState.z;
+        if (relZ > 300) t.mesh.position.z = driveState.z - 290;
+        else if (relZ < -300) t.mesh.position.z = driveState.z + 290;
       } else {
         t.mesh.position.x += step;
-        if (t.mesh.position.x > CITY_BOUND) t.mesh.position.x = -CITY_BOUND;
-        if (t.mesh.position.x < -CITY_BOUND) t.mesh.position.x = CITY_BOUND;
+        const relX = t.mesh.position.x - driveState.x;
+        if (relX > 300) t.mesh.position.x = driveState.x - 290;
+        else if (relX < -300) t.mesh.position.x = driveState.x + 290;
       }
-      if (t.wheels) {
-        for (const tw of t.wheels) tw.rotation.x -= t.speed * dt * 0.75;
+      if (t.wheels && t.curSpeed > 0.2) {
+        for (const tw of t.wheels) tw.rotation.x -= t.curSpeed * dt * 0.75;
       }
     }
 
@@ -3510,6 +4714,123 @@ try {
       checkpointBeam.rotation.y += 1.5 * dt;
       if (Math.hypot(checkpointBeam.position.x - driveState.x, checkpointBeam.position.z - driveState.z) < 5.5) {
         completeCurrentTask();
+      }
+    }
+
+    // REAL PLAYER-VS-TRAFFIC CAR COLLISION (No passing through cars -> Triggers Accident + Fire + Fire Engine + Ambulance!)
+    for (let i = 0; i < trafficCars.length; i++) {
+      const tc = trafficCars[i];
+      if (tc.wrecked) continue;
+      const distT = Math.hypot(tc.mesh.position.x - driveState.x, tc.mesh.position.z - driveState.z);
+      if (distT < 3.4) {
+        // Physically push player car back so it NEVER clips through the other car!
+        const pushAng = Math.atan2(driveState.x - tc.mesh.position.x, driveState.z - tc.mesh.position.z);
+        driveState.x = tc.mesh.position.x + Math.sin(pushAng) * 3.8;
+        driveState.z = tc.mesh.position.z + Math.cos(pushAng) * 3.8;
+        const impact = Math.abs(driveState.speed);
+        driveState.speed = -driveState.speed * 0.45;
+        if (impact > 7 && now - driveState.lastCrashAt > 650) {
+          driveState.lastCrashAt = now;
+          const dmg = Math.min(25, Math.max(8, Math.round(impact * 0.45)));
+          driveState.health = Math.max(0, driveState.health - dmg);
+          updateHealthHUD();
+          crashFlash.style.opacity = '1';
+          setTimeout(() => { crashFlash.style.opacity = '0'; }, 180);
+          triggerTrafficAccident(tc, now);
+        }
+        break;
+      }
+    }
+
+    // UPDATE ACTIVE 3D EMERGENCY RESCUES (Fire Engine extinguishes fire -> Ambulance picks up fallen person -> drives to Hospital!)
+    for (let eIdx = emergencyEvents.length - 1; eIdx >= 0; eIdx--) {
+      const ev = emergencyEvents[eIdx];
+      // Flash emergency beacons on Fire Engine & Ambulance
+      const flash = Math.floor(now / 180) % 2 === 0;
+      if (ev.fireTruck.userData) {
+        ev.fireTruck.userData.beaconR.material.color.setHex(flash ? 0xff1e1e : 0x330505);
+        ev.fireTruck.userData.beaconB.material.color.setHex(!flash ? 0x00f0ff : 0x052233);
+      }
+      if (ev.ambulance.userData) {
+        ev.ambulance.userData.beaconR.material.color.setHex(flash ? 0xff1e1e : 0x330505);
+        ev.ambulance.userData.beaconB.material.color.setHex(!flash ? 0x38bdf8 : 0x052233);
+      }
+      // Flicker fire flames & rise smoke while burning
+      if (ev.fireGroup.visible) {
+        for (let f = 0; f < ev.flames.length; f++) {
+          ev.flames[f].scale.set(ev.fireScale, ev.fireScale * (0.85 + Math.random() * 0.45), ev.fireScale);
+        }
+        for (let s = 0; s < ev.smokePuffs.length; s++) {
+          ev.smokePuffs[s].position.y = 2.0 + ((now * 0.002 + s * 0.8) % 3.2);
+          ev.smokePuffs[s].scale.setScalar(ev.fireScale);
+        }
+      }
+
+      // Rock-Solid Linear Waypoint Follower (Zero oscillation, zero wall clipping, zero jitter!)
+      const stepToPoint = (obj, tx, tz, spd) => {
+        const dxM = tx - obj.position.x, dzM = tz - obj.position.z;
+        const distM = Math.hypot(dxM, dzM);
+        if (distM <= spd * dt + 0.35) {
+          obj.position.x = tx; obj.position.z = tz;
+          return true;
+        }
+        obj.position.x += (dxM / distM) * spd * dt;
+        obj.position.z += (dzM / distM) * spd * dt;
+        obj.rotation.y = Math.atan2(-dxM, -dzM);
+        return false;
+      };
+
+      if (ev.phase === 'dispatch') {
+        const ftArr = stepToPoint(ev.fireTruck, ev.ftStop.x, ev.ftStop.z, 22);
+        stepToPoint(ev.ambulance, ev.ambStop.x, ev.ambStop.z, 19);
+        if (ftArr) {
+          ev.phase = 'extinguishing';
+          ev.phaseTimer = 0;
+          ev.waterJet.visible = true;
+          showDriveAlert('FIRE ENGINE SPRAYING WATER! 🚒💦', 'bg-sky-400 text-slate-950');
+        }
+      } else if (ev.phase === 'extinguishing') {
+        stepToPoint(ev.ambulance, ev.ambStop.x, ev.ambStop.z, 19);
+        ev.phaseTimer += dt;
+        ev.waterJet.scale.y = 0.9 + Math.random() * 0.25;
+        ev.fireScale = Math.max(0.01, 1.0 - ev.phaseTimer / 3.0);
+        if (ev.phaseTimer >= 3.0) {
+          ev.fireGroup.visible = false;
+          ev.waterJet.visible = false;
+          ev.phase = 'rescue';
+          ev.phaseTimer = 0;
+          showDriveAlert('FIRE OUT! AMBULANCE RESCUING PATIENT! 🚑', 'bg-emerald-400 text-slate-950');
+        }
+      } else if (ev.phase === 'rescue') {
+        const ambHere = stepToPoint(ev.ambulance, ev.ambStop.x, ev.ambStop.z, 19);
+        if (ambHere) {
+          ev.phaseTimer += dt;
+          if (ev.phaseTimer > 1.2) {
+            ev.victim.visible = false;
+            ev.phase = 'to_hospital';
+            if (Audio && Audio.playSiren) Audio.playSiren();
+            showDriveAlert('PATIENT ONBOARD → DRIVING TO HOSPITAL! 🚑🏥', 'bg-amber-400 text-slate-950');
+          }
+        }
+      } else if (ev.phase === 'to_hospital') {
+        // Fire Engine cleanly leaves straight down the road & hides once away (NEVER glitches!)
+        if (ev.fireTruck.visible) {
+          const ftDone = stepToPoint(ev.fireTruck, ev.ftExit.x, ev.ftExit.z, 22);
+          if (ftDone) ev.fireTruck.visible = false;
+        }
+        // Ambulance follows clean 2-step road waypoints straight to + HOSPITAL!
+        const wp = ev.ambWaypoints[ev.ambWpIdx];
+        if (wp && stepToPoint(ev.ambulance, wp.x, wp.z, 24)) {
+          ev.ambWpIdx++;
+        }
+        if (ev.ambWpIdx >= ev.ambWaypoints.length) {
+          showDriveAlert('PATIENT SAFELY AT HOSPITAL! 🏥✅', 'bg-emerald-500 text-slate-950');
+          scene.remove(ev.fireGroup, ev.waterJet, ev.victim, ev.fireTruck, ev.ambulance);
+          ev.trafficCar.wrecked = false;
+          ev.trafficCar.mesh.rotation.z = 0;
+          ev.trafficCar.mesh.position.set(ev.trafficCar.axis === 'z' ? ev.trafficCar.mesh.position.x : driveState.x - 240, 0, ev.trafficCar.axis === 'z' ? driveState.z - 240 : ev.trafficCar.mesh.position.z);
+          emergencyEvents.splice(eIdx, 1);
+        }
       }
     }
 
@@ -3583,7 +4904,8 @@ try {
       if (can) can.rotation.z = Math.sin(tSec * 1.6 + i * 0.7) * 0.035;
     }
 
-    drawMiniMap();
+    driveState._frame = ((driveState._frame || 0) + 1) % 2;
+    if (driveState._frame === 0) drawMiniMap();
     renderer.render(scene, camera);
   }
 
@@ -3626,7 +4948,7 @@ try {
     lastWheelPtrAngle = curAng;
     driveState.wheelAngleDeg = Math.max(-450, Math.min(450, (driveState.wheelAngleDeg || 0) + diff));
     // Clockwise (+) turns car right (-steer), Counter-clockwise (-) turns car left (+steer)
-    const norm = Math.max(-1, Math.min(1, -driveState.wheelAngleDeg / 160));
+    const norm = Math.max(-1, Math.min(1, -driveState.wheelAngleDeg / 180));
     driveState.targetSteer = Math.abs(driveState.wheelAngleDeg) < 4 ? 0 : norm;
   });
 
@@ -3690,6 +5012,8 @@ try {
     if (k === 'a' || k === 'arrowleft') driveState.keys.a = true;
     if (k === 'd' || k === 'arrowright') driveState.keys.d = true;
     if (e.key === 'Shift') driveState.keys.shift = true;
+    if (k === 'h') triggerHorn();
+    if (k === 'e') toggleExitEnterCar();
   });
   window.addEventListener('keyup', (e) => {
     const k = e.key.toLowerCase();
@@ -3732,8 +5056,373 @@ try {
     }, 3000);
   });
 
+  function launchDirectIntoCity() {
+    if (Audio) { Audio.unlock(); Audio.playIgnition(); Audio.startMusic(); }
+    showScreen(playScreen);
+    initCityWorld();
+    const eq = vehicles.find((v) => v.id === state.equippedId) || vehicles[0];
+    if (Audio) Audio.startEngine(eq.modelType);
+    lastFrameTime = performance.now();
+    if (cityRafId) cancelAnimationFrame(cityRafId);
+    cityRafId = requestAnimationFrame(cityLoop);
+  }
+
+  if (homePlayBtn) {
+    homePlayBtn.addEventListener('click', () => {
+      // Directly launch 3D City using the already equipped vehicle saved in LocalStorage!
+      launchDirectIntoCity();
+    });
+  }
+  if (homeGarageBtn) {
+    homeGarageBtn.addEventListener('click', () => {
+      if (Audio) { Audio.unlock(); Audio.playTone(620, 0.08); }
+      showScreen(garageScreen);
+      renderGarage();
+    });
+  }
+  if (backToHomeBtn) {
+    backToHomeBtn.addEventListener('click', () => {
+      if (Audio) Audio.playTone(500, 0.07);
+      showScreen(homeScreen);
+      renderGarage();
+    });
+  }
+
+
+  const hornBtn = document.getElementById('hornBtn');
+  let headlightsOn = false; // OFF during Day, turns ON automatically at Night!
+  let hornDownAt = 0;
+  const startCarHorn = () => {
+    hornDownAt = performance.now();
+    if (Audio) {
+      Audio.unlock();
+      if (Audio.startHorn) Audio.startHorn();
+      else if (Audio.playHorn) Audio.playHorn();
+    }
+    // Smart Horn Yielding: Nearby AI traffic cars (ahead OR behind!) smoothly pull aside!
+    let yielded = false;
+    for (let i = 0; i < trafficCars.length; i++) {
+      const tc = trafficCars[i];
+      if (tc.wrecked) continue;
+      const dist = Math.hypot(tc.mesh.position.x - driveState.x, tc.mesh.position.z - driveState.z);
+      if (dist < 30) {
+        tc.yieldSide = (tc.yieldSide || 0) === 0 ? (tc.dir > 0 ? 3.0 : -3.0) : tc.yieldSide;
+        tc.yieldUntil = performance.now() + 4000;
+        yielded = true;
+      }
+    }
+    showDriveAlert(yielded ? 'HORN! CAR MOVING ASIDE! 🔊' : 'BEEP! BEEP! 🔊', 'bg-amber-400 text-slate-950');
+  };
+  const stopCarHorn = () => {
+    const held = performance.now() - hornDownAt;
+    const delay = held < 220 ? (220 - held) : 0;
+    setTimeout(() => { if (Audio && Audio.stopHorn) Audio.stopHorn(); }, delay);
+  };
+  const triggerHorn = () => { startCarHorn(); stopCarHorn(); };
+  if (hornBtn) {
+    const fireHornOnce = (e) => {
+      if (e) { e.preventDefault(); e.stopPropagation(); }
+      if (performance.now() - hornDownAt < 260) return;
+      startCarHorn();
+    };
+    hornBtn.addEventListener('touchstart', fireHornOnce, { passive: false });
+    hornBtn.addEventListener('mousedown', fireHornOnce);
+    hornBtn.addEventListener('click', fireHornOnce);
+  }
+
+
+
+  const exitCarBtn = document.getElementById('exitCarBtn');
+  const carControlsBar = document.getElementById('carControlsBar');
+  const onFootControlsBar = document.getElementById('onFootControlsBar');
+  const enterNearCarBtn = document.getElementById('enterNearCarBtn');
+  const humanRunBtn = document.getElementById('humanRunBtn');
+  const humanJumpBtn = document.getElementById('humanJumpBtn');
+  const humanJoyZone = document.getElementById('humanJoyZone');
+  const humanJoyKnob = document.getElementById('humanJoyKnob');
+
+  function setControlModeUI(onFoot) {
+    if (carControlsBar) { carControlsBar.classList.toggle('hidden', onFoot); carControlsBar.classList.toggle('flex', !onFoot); }
+    if (onFootControlsBar) { onFootControlsBar.classList.toggle('hidden', !onFoot); onFootControlsBar.classList.toggle('flex', onFoot); }
+    if (!onFoot && enterNearCarBtn) { enterNearCarBtn.classList.add('hidden'); enterNearCarBtn.classList.remove('flex'); }
+  }
+
+  const exitCurrentCar = () => {
+    if (!playerGroup || !playerAvatar || isOnFoot) return;
+    isOnFoot = true;
+    parkedCarPos = { x: driveState.x, z: driveState.z, heading: driveState.heading };
+    driveState.x += Math.cos(driveState.heading) * 2.8;
+    driveState.z -= Math.sin(driveState.heading) * 2.8;
+    driveState.speed = 0; driveState.gas = false; driveState.brake = false; driveState.boost = false;
+    footState.y = 0.22; footState.vy = 0; footState.jumping = false; footState.joyX = 0; footState.joyY = 0;
+    if (playerGroup && playerGroup.userData && playerGroup.userData.rider) playerGroup.userData.rider.visible = false;
+    playerAvatar.visible = true;
+    setControlModeUI(true);
+    if (Audio) { Audio.stopEngine(); Audio.playTone(540, 0.08); }
+    showDriveAlert('ON FOOT! USE JOYSTICK, RUN & JUMP! 🏃', 'bg-emerald-400 text-slate-950');
+  };
+
+  const enterNearbyCar = () => {
+    if (!isOnFoot || !nearbyVehicleRef) return;
+    if (nearbyVehicleRef.type === 'traffic' && nearbyVehicleRef.car) {
+      // STEAL / DRIVE ANY AI TRAFFIC CAR ON THE STREET!
+      const tc = nearbyVehicleRef.car;
+      // Leave previous car parked as a static scene vehicle or swap it with the AI car!
+      const idx = trafficCars.indexOf(tc);
+      if (idx !== -1) trafficCars.splice(idx, 1);
+      // Park our old playerGroup as a static car in the world, and take control of tc.mesh!
+      playerGroup = tc.mesh;
+      playerChassis = tc.mesh;
+      playerWheels = tc.wheels || [];
+      playerFrontPivots = [];
+      nitroFlames = [];
+      driveState.x = tc.mesh.position.x;
+      driveState.z = tc.mesh.position.z;
+      driveState.heading = tc.mesh.rotation.y;
+      showDriveAlert('ENTERED STREET CAR! DRIVE IT! 🚗🔥', 'bg-amber-400 text-slate-950');
+    } else {
+      driveState.x = parkedCarPos.x;
+      driveState.z = parkedCarPos.z;
+      driveState.heading = parkedCarPos.heading;
+      showDriveAlert('BACK IN YOUR VEHICLE! 🚗', 'bg-cyan-400 text-slate-950');
+    }
+    isOnFoot = false;
+    driveState.speed = 0;
+    if (playerGroup && playerGroup.userData && playerGroup.userData.rider) playerGroup.userData.rider.visible = true;
+    playerAvatar.visible = false;
+    setControlModeUI(false);
+    const eqNow = vehicles.find((v) => v.id === state.equippedId) || vehicles[0];
+    if (Audio) { Audio.startEngine(eqNow.modelType); Audio.playIgnition(); }
+  };
+
+  const toggleExitEnterCar = () => { if (!isOnFoot) exitCurrentCar(); else enterNearbyCar(); };
+  if (exitCarBtn) exitCarBtn.addEventListener('click', (e) => { e.preventDefault(); exitCurrentCar(); });
+  if (enterNearCarBtn) enterNearCarBtn.addEventListener('click', (e) => { e.preventDefault(); enterNearbyCar(); });
+
+  // Bind Dedicated Human RUN & JUMP Buttons!
+  if (humanRunBtn) {
+    humanRunBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); footState.running = true; });
+    const stopRun = () => { footState.running = false; };
+    humanRunBtn.addEventListener('pointerup', stopRun); humanRunBtn.addEventListener('pointercancel', stopRun); humanRunBtn.addEventListener('pointerleave', stopRun);
+  }
+  if (humanJumpBtn) {
+    humanJumpBtn.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      if (!footState.jumping) {
+        footState.jumping = true;
+        footState.vy = 11.2;
+        if (Audio) Audio.playTone(420, 0.09, 'sine', 0.1);
+      }
+    });
+  }
+
+  // Bind Dedicated 360° Human Analog Thumb Joystick (supports sideways portrait phone rotation!)
+  let joyPtrId = null;
+  const updateHumanJoy = (e) => {
+    const rect = humanJoyZone.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+    let dx = e.clientX - cx, dy = e.clientY - cy;
+    if (isStageRotated()) { const rx = dy; const ry = -dx; dx = rx; dy = ry; }
+    const maxR = Math.max(36, rect.width * 0.38);
+    const dist = Math.hypot(dx, dy);
+    const clamped = Math.min(maxR, dist);
+    const ang = Math.atan2(dy, dx);
+    const nx = (Math.cos(ang) * clamped) / maxR;
+    const ny = (Math.sin(ang) * clamped) / maxR;
+    footState.joyX = Math.abs(nx) < 0.08 ? 0 : nx;
+    footState.joyY = Math.abs(ny) < 0.08 ? 0 : ny;
+    if (humanJoyKnob) humanJoyKnob.style.transform = `translate(${(nx * 32).toFixed(1)}px, ${(ny * 32).toFixed(1)}px)`;
+  };
+  if (humanJoyZone) {
+    humanJoyZone.addEventListener('pointerdown', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      joyPtrId = e.pointerId;
+      try { humanJoyZone.setPointerCapture(e.pointerId); } catch (err) {}
+      updateHumanJoy(e);
+    });
+    humanJoyZone.addEventListener('pointermove', (e) => {
+      if (e.pointerId === joyPtrId) updateHumanJoy(e);
+    });
+    const resetJoy = (e) => {
+      if (!e || e.pointerId === joyPtrId) {
+        joyPtrId = null; footState.joyX = 0; footState.joyY = 0;
+        if (humanJoyKnob) humanJoyKnob.style.transform = 'translate(0px, 0px)';
+      }
+    };
+    humanJoyZone.addEventListener('pointerup', resetJoy);
+    humanJoyZone.addEventListener('pointercancel', resetJoy);
+  }
+
+  const camToggleBtn = document.getElementById('camToggleBtn');
+  if (camToggleBtn) {
+    const camLabels = ['CAM: CHASE', 'CAM: HOOD', 'CAM: FAR'];
+    camToggleBtn.addEventListener('click', () => {
+      camModeIdx = (camModeIdx + 1) % 3;
+      driveState.camOrbitYaw = 0;
+      camToggleBtn.textContent = camLabels[camModeIdx];
+      if (Audio) Audio.playTone(680, 0.06);
+    });
+  }
+
+  const skyToggleBtn = document.getElementById('skyToggleBtn');
+  if (skyToggleBtn) {
+    const skyThemes = [
+      { label: '☀️ DAY', bg: 0x87ceeb, fog: 0xe0f2fe, sunC: 0xfffbeb, sunI: 1.25, hemiI: 1.15 },
+      { label: '🌇 SUNSET', bg: 0xf97316, fog: 0xfdba74, sunC: 0xffedd5, sunI: 1.1, hemiI: 0.92 },
+      { label: '🌙 NIGHT', bg: 0x060b18, fog: 0x0f172a, sunC: 0x38bdf8, sunI: 0.65, hemiI: 0.65 }
+    ];
+    skyToggleBtn.addEventListener('click', () => {
+      skyModeIdx = (skyModeIdx + 1) % 3;
+      const th = skyThemes[skyModeIdx];
+      skyToggleBtn.textContent = th.label;
+      if (scene) {
+        scene.background = new THREE.Color(th.bg);
+        scene.fog = new THREE.FogExp2(th.fog, 0.0022);
+      }
+      if (sunLightRef) { sunLightRef.color.setHex(th.sunC); sunLightRef.intensity = th.sunI; }
+      if (hemiLightRef) hemiLightRef.intensity = th.hemiI;
+      // Headlight beams turn ON automatically ONLY in Night mode, OFF during Day & Sunset!
+      headlightsOn = (skyModeIdx === 2);
+      if (playerGroup && playerGroup.userData && playerGroup.userData.headBeams) {
+        playerGroup.userData.headBeams.forEach((b) => { b.visible = headlightsOn; });
+      }
+      if (Audio) Audio.playTone(580, 0.06);
+    });
+  }
+
+
+  // ================= ST GAMES ENTRANCE SCREEN BUTTON HANDLERS =================
+  const homeStoreBtn = document.getElementById('homeStoreBtn');
+  const homeMissionsBtn = document.getElementById('homeMissionsBtn');
+  const homeAchievementsBtn = document.getElementById('homeAchievementsBtn');
+  const homeLeaderboardBtn = document.getElementById('homeLeaderboardBtn');
+  const homeMoreGamesBtn = document.getElementById('homeMoreGamesBtn');
+  const homeMenuBtn = document.getElementById('homeMenuBtn');
+  const homeExitBtn = document.getElementById('homeExitBtn');
+  const homeGemsEl = document.getElementById('homeGemsEl');
+
+  function syncHomeExtraHUD() {
+    if (homeGemsEl) homeGemsEl.textContent = ((state.level || 1) * 250 + state.ownedIds.size * 150).toLocaleString();
+  }
+  syncHomeExtraHUD();
+
+  if (homeStoreBtn) {
+    homeStoreBtn.addEventListener('click', () => {
+      if (Audio) { Audio.unlock(); Audio.playTone(660, 0.08); }
+      showScreen(garageScreen);
+      renderGarage();
+    });
+  }
+  if (homeMissionsBtn) {
+    homeMissionsBtn.addEventListener('click', () => {
+      if (Audio) { Audio.unlock(); Audio.playTone(600, 0.07); }
+      openModal(`
+        <h3 class="font-display text-lg font-black text-amber-300 mb-2">CITY MISSIONS</h3>
+        <div class="space-y-2 max-h-60 overflow-y-auto pr-1">
+          ${cityTasks.map((t, idx) => {
+            const done = idx < (state.taskIndex % cityTasks.length);
+            const cur = idx === (state.taskIndex % cityTasks.length);
+            return `<div class="flex items-center justify-between px-3 py-2 rounded-xl border ${cur ? 'bg-cyan-500/20 border-cyan-400' : done ? 'bg-emerald-500/15 border-emerald-400/40' : 'bg-slate-800/80 border-white/10'}">
+              <div class="text-xs font-bold text-white">${done ? '✅ ' : cur ? '🎯 ' : '• '}${t.label}</div>
+              <span class="text-[11px] font-black text-amber-300">+${t.reward} C</span>
+            </div>`;
+          }).join('')}
+        </div>
+      `);
+    });
+  }
+  if (homeAchievementsBtn) {
+    homeAchievementsBtn.addEventListener('click', () => {
+      if (Audio) { Audio.unlock(); Audio.playTone(640, 0.07); }
+      const achs = [
+        { title: 'First Keys', desc: 'Own your starter supercar', done: state.ownedIds.size >= 1 },
+        { title: 'Collector', desc: 'Unlock 3+ Vehicles in Garage', done: state.ownedIds.size >= 3 },
+        { title: 'Rich Racer', desc: 'Hold 25,000+ Gold Coins', done: state.coins >= 25000 },
+        { title: 'Pro Driver', desc: 'Reach Driver Level 2+', done: (state.level || 1) >= 2 },
+        { title: 'Tuned Machine', desc: 'Upgrade Engine, Nitro or Tires', done: (state.upgradeLevels.engine + state.upgradeLevels.nitro + state.upgradeLevels.tires) > 3 }
+      ];
+      openModal(`
+        <h3 class="font-display text-lg font-black text-yellow-300 mb-2">ACHIEVEMENTS</h3>
+        <div class="space-y-2">
+          ${achs.map((a) => `
+            <div class="flex items-center justify-between px-3 py-2 rounded-xl bg-slate-800/90 border ${a.done ? 'border-emerald-400/50' : 'border-white/10'}">
+              <div><div class="text-xs font-extrabold text-white">${a.title}</div><div class="text-[10px] text-slate-400">${a.desc}</div></div>
+              <span class="text-xs font-black ${a.done ? 'text-emerald-300' : 'text-slate-500'}">${a.done ? '🏆 UNLOCKED' : 'LOCKED'}</span>
+            </div>
+          `).join('')}
+        </div>
+      `);
+    });
+  }
+  if (homeLeaderboardBtn) {
+    homeLeaderboardBtn.addEventListener('click', () => {
+      if (Audio) { Audio.unlock(); Audio.playTone(620, 0.07); }
+      const rows = [
+        { name: 'ST_King_99', lv: 18, coins: 245000 },
+        { name: 'Hyd_Nitro_X', lv: 14, coins: 182400 },
+        { name: 'Apex_Veloce', lv: 11, coins: 134900 },
+        { name: 'YOU (Player)', lv: state.level || 1, coins: state.coins, me: true }
+      ].sort((a, b) => b.coins - a.coins);
+      openModal(`
+        <h3 class="font-display text-lg font-black text-cyan-300 mb-2">ST GAMES LEADERBOARD</h3>
+        <div class="space-y-2">
+          ${rows.map((r, i) => `
+            <div class="flex items-center justify-between px-3 py-2 rounded-xl border ${r.me ? 'bg-cyan-500/20 border-cyan-400' : 'bg-slate-800/90 border-white/10'}">
+              <div class="flex items-center gap-2"><span class="font-display text-xs font-black text-amber-300">#${i + 1}</span><span class="text-xs font-extrabold text-white">${r.name}</span><span class="text-[10px] text-cyan-300">LV ${r.lv}</span></div>
+              <span class="font-display text-xs font-black text-amber-300">${r.coins.toLocaleString()} C</span>
+            </div>
+          `).join('')}
+        </div>
+      `);
+    });
+  }
+  if (homeMenuBtn) {
+    homeMenuBtn.addEventListener('click', () => {
+      if (Audio) { Audio.unlock(); Audio.playTone(580, 0.07); }
+      const eqM = vehicles.find((v) => v.id === state.equippedId) || vehicles[0];
+      openModal(`
+        <h3 class="font-display text-lg font-black text-cyan-300 mb-2">GAME MENU</h3>
+        <div class="space-y-2 text-xs text-slate-200">
+          <div class="bg-slate-800/90 p-3 rounded-xl border border-white/10 flex justify-between"><span>Saved Active Vehicle</span><span class="font-bold text-emerald-300">${eqM.name}</span></div>
+          <div class="bg-slate-800/90 p-3 rounded-xl border border-white/10 flex justify-between"><span>Vehicles Owned</span><span class="font-bold text-cyan-300">${state.ownedIds.size} / ${vehicles.length}</span></div>
+          <div class="bg-slate-800/90 p-3 rounded-xl border border-white/10"><div class="font-bold text-amber-300 mb-1">Controls</div><div>Left: 360° Steering Wheel + Nitro ⚡ | Right: Brake 🛑 + Gas 🚀 | Drag Screen: 360° Camera</div></div>
+          <button id="menuQuickPlayBtn" type="button" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-display font-black text-xs cursor-pointer">DRIVE NOW &raquo;</button>
+        </div>
+      `);
+      const qp = document.getElementById('menuQuickPlayBtn');
+      if (qp) qp.addEventListener('click', () => { closeModal(); launchDirectIntoCity(); });
+    });
+  }
+  if (homeMoreGamesBtn) {
+    homeMoreGamesBtn.addEventListener('click', () => {
+      if (Audio) { Audio.unlock(); Audio.playTone(620, 0.07); }
+      openModal(`
+        <h3 class="font-display text-lg font-black text-cyan-300 mb-2">MORE ST GAMES</h3>
+        <p class="text-xs text-slate-300 mb-3">Play more free HTML5 &amp; 3D web games on ST Games!</p>
+        <a href="https://stgames.online" target="_blank" rel="noopener" class="block w-full text-center py-3 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 font-display font-black text-xs">VISIT STGAMES.ONLINE &raquo;</a>
+      `);
+    });
+  }
+  if (homeExitBtn) {
+    homeExitBtn.addEventListener('click', () => {
+      if (Audio) { Audio.unlock(); Audio.playTone(320, 0.1, 'triangle', 0.08); }
+      openModal(`
+        <div class="text-center">
+          <h3 class="font-display text-lg font-black text-rose-400 mb-2">EXIT GAME?</h3>
+          <p class="text-xs text-slate-300 mb-4">Your coins &amp; unlocked vehicles are automatically saved in LocalStorage.</p>
+          <div class="grid grid-cols-2 gap-2">
+            <button id="cancelExitBtn" type="button" class="py-2.5 rounded-xl bg-slate-800 border border-white/15 text-white font-bold text-xs cursor-pointer">STAY &amp; PLAY</button>
+            <a href="https://stgames.online" class="py-2.5 rounded-xl bg-rose-600 text-white font-bold text-xs flex items-center justify-center">GO TO ST GAMES</a>
+          </div>
+        </div>
+      `);
+      const ce = document.getElementById('cancelExitBtn');
+      if (ce) ce.addEventListener('click', closeModal);
+    });
+  }
+
   exitToGarageBtn.addEventListener('click', () => {
-    if (Audio) { Audio.stopEngine(); Audio.stopMusic(); }
+    if (Audio) { Audio.stopEngine(); Audio.stopMusic(); if (Audio.stopHorn) Audio.stopHorn(); }
     if (cityRafId) { cancelAnimationFrame(cityRafId); cityRafId = null; }
     showScreen(garageScreen);
     renderGarage();
@@ -3741,8 +5430,9 @@ try {
 
   window.addEventListener('resize', resizeCanvases);
 
-  // Immediately start 5-second loading screen with reliable setInterval timer
-  showScreen(garageScreen); renderGarage();
+  // Open on the Entrance Page (PLAY / GARAGE / SETTINGS) with saved LocalStorage car ready!
+  showScreen(homeScreen);
+  renderGarage();
 })();
 
 } catch (e) { console.error('script init error:', e); }

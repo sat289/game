@@ -91,14 +91,14 @@ window.ApexCity3D = (function () {
     const ctx = c.getContext('2d');
     // 8 Light Vibrant Colorful Building Palettes + TRANSPARENT Glass Windows Showing Interior Chairs/Desks/Rooms!
     const palettes = [
-      { wall: '#541b08', trim: '#240a03', frame: '#141210', lobby: '#381105', cols: 5, rows: 12 }, // Deep Dark Terracotta
-      { wall: '#0b193d', trim: '#050c20', frame: '#0a101d', lobby: '#112252', cols: 6, rows: 14 }, // Deep Midnight Navy
-      { wall: '#072e2c', trim: '#031817', frame: '#091114', lobby: '#0b423f', cols: 6, rows: 13 }, // Deep Obsidian Teal
-      { wall: '#522307', trim: '#240e02', frame: '#14110f', lobby: '#612a08', cols: 5, rows: 12 }, // Deep Dark Bronze
-      { wall: '#240b4f', trim: '#110429', frame: '#15102b', lobby: '#381275', cols: 6, rows: 14 }, // Deep Midnight Plum
-      { wall: '#470a1c', trim: '#21040c', frame: '#121215', lobby: '#660e28', cols: 5, rows: 12 }, // Deep Dark Burgundy
-      { wall: '#0f1624', trim: '#070b12', frame: '#151f30', lobby: '#172236', cols: 6, rows: 14 }, // Obsidian Charcoal Slate
-      { wall: '#082917', trim: '#03140b', frame: '#0d1a12', lobby: '#0e3d23', cols: 5, rows: 13 }  // Deep Forest Pine
+      { wall: '#c0266e', trim: '#831843', frame: '#4c0519', lobby: '#9d174d', cols: 4, rows: 4 },  // 0: Vibrant Pink House
+      { wall: '#b85028', trim: '#7c2d12', frame: '#431407', lobby: '#9a3412', cols: 4, rows: 3 },  // 1: Warm Terracotta Villa
+      { wall: '#1d4085', trim: '#0f2354', frame: '#0a1738', lobby: '#1e3a8a', cols: 6, rows: 12 }, // 2: Rich Royal Blue Tower
+      { wall: '#0f766e', trim: '#115e59', frame: '#042f2e', lobby: '#0d9488', cols: 5, rows: 6 },  // 3: Bright Emerald Apartment
+      { wall: '#b46914', trim: '#78350f', frame: '#451a03', lobby: '#d97706', cols: 4, rows: 3 },  // 4: Warm Golden Village House
+      { wall: '#6b21a8', trim: '#3b0764', frame: '#2e1065', lobby: '#7e22ce', cols: 5, rows: 9 },  // 5: Royal Purple Mansion
+      { wall: '#9f1d3a', trim: '#5c0a1d', frame: '#3b0714', lobby: '#be123c', cols: 5, rows: 5 },  // 6: Rich Crimson Townhouse
+      { wall: '#0369a1', trim: '#0c4a6e', frame: '#082f49', lobby: '#0284c7', cols: 6, rows: 14 }  // 7: Ocean Azure Skyscraper
     ];
     const p = palettes[styleIdx % palettes.length];
     const wg = ctx.createLinearGradient(0, 0, 0, 512);
@@ -126,17 +126,21 @@ window.ApexCity3D = (function () {
         ctx.fillStyle = p.frame;
         ctx.fillRect(x - 1.5, y - 1.5, w + 3, h + 3);
 
-        // 1. Interior Room Depth (Warm sunlit room backdrop behind transparent glass)
-        const roomType = (r * 7 + col * 5 + styleIdx) % 4;
+        // 1. Vibrant Colorful Glowing Glass Windows + Interior Depth!
+        const roomType = (r * 7 + col * 5 + styleIdx * 3) % 6;
         const roomGrad = ctx.createLinearGradient(x, y, x, y + h);
         if (roomType === 0) {
-          roomGrad.addColorStop(0, '#fef3c7'); roomGrad.addColorStop(1, '#d6c3a5'); // Warm sunlit office
+          roomGrad.addColorStop(0, '#38bdf8'); roomGrad.addColorStop(1, '#0284c7'); // Bright Sky Cyan Glass
         } else if (roomType === 1) {
-          roomGrad.addColorStop(0, '#e0f2fe'); roomGrad.addColorStop(1, '#94a3b8'); // Cool daylight studio
+          roomGrad.addColorStop(0, '#fde047'); roomGrad.addColorStop(1, '#f59e0b'); // Warm Golden Sunlit Window
         } else if (roomType === 2) {
-          roomGrad.addColorStop(0, '#fde68a'); roomGrad.addColorStop(1, '#a8a29e'); // Cozy apartment room
+          roomGrad.addColorStop(0, '#5eead4'); roomGrad.addColorStop(1, '#0d9488'); // Mint Aqua Glass
+        } else if (roomType === 3) {
+          roomGrad.addColorStop(0, '#f9a8d4'); roomGrad.addColorStop(1, '#db2777'); // Rosy Pink Window Glow
+        } else if (roomType === 4) {
+          roomGrad.addColorStop(0, '#c4b5fd'); roomGrad.addColorStop(1, '#7c3aed'); // Soft Lavender Glass
         } else {
-          roomGrad.addColorStop(0, '#cbd5e1'); roomGrad.addColorStop(1, '#64748b'); // Shaded modern lounge
+          roomGrad.addColorStop(0, '#fed7aa'); roomGrad.addColorStop(1, '#ea580c'); // Warm Peach Sunset Glass
         }
         ctx.fillStyle = roomGrad;
         ctx.fillRect(x, y, w, h);
@@ -261,17 +265,18 @@ window.ApexCity3D = (function () {
     const frontWheelPivots = [];
     const flames = [];
 
-    const mainColor = vehicleObj.id === 0 ? 0xffffff : (vehicleObj.colorHex || 0xdc2626);
+    const mainColor = vehicleObj.colorHex || 0xb8c2cc;
     const accentColor = vehicleObj.accentHex || 0x0f172a;
     const style = vehicleObj.bodyStyle || 'sedan';
     const vid = vehicleObj.id || 0;
 
     const isVeryLight = mainColor === 0xffffff || mainColor === 0xf8fafc || mainColor === 0xf1f5f9 || mainColor === 0xe2e8f0;
+    const isShinyBlack = mainColor === 0x0c1018 || mainColor === 0x111827;
     const bodyMat = new THREE.MeshStandardMaterial({
       color: mainColor,
-      metalness: isVeryLight ? 0.26 : 0.76,
-      roughness: isVeryLight ? 0.12 : 0.14,
-      envMapIntensity: 1.5
+      metalness: isShinyBlack ? 0.92 : (vehicleObj.modelType === 'truck' || vehicleObj.modelType === 'heavy_truck') ? 0.35 : isVeryLight ? 0.26 : 0.74,
+      roughness: isShinyBlack ? 0.06 : (vehicleObj.modelType === 'truck' || vehicleObj.modelType === 'heavy_truck') ? 0.22 : isVeryLight ? 0.10 : 0.11,
+      envMapIntensity: isShinyBlack ? 2.3 : 1.75
     });
     const accentMat = new THREE.MeshStandardMaterial({ color: accentColor, metalness: 0.55, roughness: 0.22 });
     const glossyBlackMat = new THREE.MeshStandardMaterial({ color: 0x0b0f17, metalness: 0.65, roughness: 0.16 });
@@ -281,12 +286,14 @@ window.ApexCity3D = (function () {
     const tireMat = new THREE.MeshStandardMaterial({ color: 0x141619, roughness: 0.85, metalness: 0.05 });
     const caliperMat = new THREE.MeshStandardMaterial({ color: 0xef4444, metalness: 0.45, roughness: 0.28 });
     const glassMat = new THREE.MeshStandardMaterial({
-      color: 0x071526,
-      metalness: 0.94,
-      roughness: 0.04,
-      envMapIntensity: 1.9,
+      color: 0x1b4965,
+      emissive: 0x0b2545,
+      emissiveIntensity: 0.22,
+      metalness: 0.88,
+      roughness: 0.06,
+      envMapIntensity: 2.1,
       transparent: true,
-      opacity: 0.9
+      opacity: 0.54
     });
     const headMat = new THREE.MeshBasicMaterial({ color: 0xe0f7ff });
     const drlMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
@@ -297,29 +304,49 @@ window.ApexCity3D = (function () {
       const pivot = new THREE.Group();
       pivot.position.set(wx, wy, wz);
       const wg = new THREE.Group();
-      const tire = new THREE.Mesh(new THREE.CylinderGeometry(r, r, width, 24), tireMat);
+      const sideSign = wx < 0 ? -1 : 1;
+
+      // Sculpted Wide Performance Rubber Tire + Raised Tread Shoulder Rings
+      const tire = new THREE.Mesh(new THREE.CylinderGeometry(r, r, width, 28), tireMat);
       tire.rotation.z = Math.PI / 2;
-      const rim = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.7, r * 0.7, width + 0.015, 20), chromeMat);
+      const treadL = new THREE.Mesh(new THREE.TorusGeometry(r * 0.95, 0.042, 8, 28), tireMat);
+      treadL.rotation.y = Math.PI / 2; treadL.position.x = -width * 0.36;
+      const treadR = treadL.clone(); treadR.position.x = width * 0.36;
+
+      // Deep-Dish Glossy Rim Barrel + Metallic Rotor + Colored Accent Rim Lip
+      const rim = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.72, r * 0.72, width + 0.015, 24), chromeMat);
       rim.rotation.z = Math.PI / 2;
-      const inner = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.56, r * 0.56, width + 0.02, 16), glossyBlackMat);
+      const inner = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.58, r * 0.58, width + 0.022, 18), glossyBlackMat);
       inner.rotation.z = Math.PI / 2;
-      const rotor = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.50, r * 0.50, width + 0.01, 16), chromeMat);
+      const rotor = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.50, r * 0.50, width + 0.012, 16), chromeMat);
       rotor.rotation.z = Math.PI / 2;
-      const cal = new THREE.Mesh(new THREE.BoxGeometry(width * 0.62, r * 0.34, r * 0.24), caliperMat);
+      const cal = new THREE.Mesh(new THREE.BoxGeometry(width * 0.64, r * 0.36, r * 0.26), caliperMat);
       cal.position.set(0, r * 0.26, -r * 0.26);
-      // Deep-dish outer alloy lip + crisp 10-spoke Y-pattern sport rim
-      const outerLip = new THREE.Mesh(new THREE.TorusGeometry(r * 0.69, 0.032, 8, 24), chromeMat);
+
+      // Sleek Colored Alloy Outer Rim Ring (gives supercar/truck beadlock pop!)
+      const accentRingMat = new THREE.MeshStandardMaterial({
+        color: accentColor === 0x0f172a || accentColor === 0x111827 ? 0x38bdf8 : accentColor,
+        metalness: 0.78,
+        roughness: 0.18
+      });
+      const outerLip = new THREE.Mesh(new THREE.TorusGeometry(r * 0.71, 0.036, 10, 28), accentRingMat);
       outerLip.rotation.y = Math.PI / 2;
-      outerLip.position.x = (wx < 0 ? -1 : 1) * (width * 0.48);
-      wg.add(outerLip);
+      outerLip.position.x = sideSign * (width * 0.49);
+
+      // Center Alloy Hub Cap
+      const hubCap = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.19, r * 0.19, width + 0.055, 14), accentRingMat);
+      hubCap.rotation.z = Math.PI / 2;
+
+      // Crisp 10-Spoke Twin-Y Performance Alloy Spokes
       for (let sp = 0; sp < 5; sp++) {
-        const spoke = new THREE.Mesh(new THREE.BoxGeometry(width + 0.04, r * 1.32, 0.045), chromeMat);
-        spoke.rotation.x = (sp / 5) * Math.PI;
-        const spoke2 = new THREE.Mesh(new THREE.BoxGeometry(width + 0.03, r * 1.24, 0.028), glossyBlackMat);
-        spoke2.rotation.x = (sp / 5) * Math.PI + 0.16;
+        const ang = (sp / 5) * Math.PI;
+        const spoke = new THREE.Mesh(new THREE.BoxGeometry(width + 0.042, r * 1.34, 0.042), chromeMat);
+        spoke.rotation.x = ang;
+        const spoke2 = new THREE.Mesh(new THREE.BoxGeometry(width + 0.036, r * 1.30, 0.032), chromeMat);
+        spoke2.rotation.x = ang + 0.15;
         wg.add(spoke, spoke2);
       }
-      wg.add(tire, rim, inner, rotor, cal);
+      wg.add(tire, treadL, treadR, rim, inner, rotor, cal, outerLip, hubCap);
       pivot.add(wg);
       group.add(pivot);
       wheels.push(wg);
@@ -361,13 +388,27 @@ window.ApexCity3D = (function () {
       tailCowl.rotation.x = Math.PI / 2.25; tailCowl.position.set(0, isCafe ? 0.96 : 1.08, 0.94);
 
       // Front Suspension Forks + Handlebars
-      const forkMat = (hasWings || style === 'r1_track') ? goldForkMat : chromeMat;
+      const isR15 = style === 'r15_v4';
+      const forkMat = (hasWings || style === 'r1_track' || isR15) ? goldForkMat : chromeMat;
       const forkL = new THREE.Mesh(new THREE.CylinderGeometry(0.044, 0.036, 0.96, 10), forkMat);
       forkL.position.set(-0.16, 0.78, -wb + 0.18); forkL.rotation.x = isCafe ? -0.40 : -0.32;
       const forkR = forkL.clone(); forkR.position.x = 0.16;
       const clipBar = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, isNaked ? 0.96 : 0.84, 8), glossyBlackMat);
       clipBar.rotation.z = Math.PI / 2; clipBar.position.set(0, isNaked || isCafe ? 1.18 : 1.08, -0.62);
-      chassis.add(frameL, frameR, swingL, swingR, engineCore, tank, seat, tailCowl, forkL, forkR, clipBar);
+      // Sculpted Digital Bike Dash Console + Chain Guard + Rear Mudguard + Distinct Ducati Under-Seat Pipes
+      const dashConsole = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.10, 0.14), new THREE.MeshBasicMaterial({ color: 0x00f0ff }));
+      dashConsole.position.set(0, isNaked || isCafe ? 1.24 : 1.15, -0.68); dashConsole.rotation.x = -0.45;
+      const chainGuard = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.16, 0.85), carbonMat);
+      chainGuard.position.set(-0.22, 0.48, 0.42);
+      const rearHugger = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.46, 0.34, 14, 1, true, -0.6, 1.3), bodyMat);
+      rearHugger.rotation.z = Math.PI / 2; rearHugger.position.set(0, 0.44, wb);
+      chassis.add(frameL, frameR, swingL, swingR, engineCore, tank, seat, tailCowl, forkL, forkR, clipBar, dashConsole, chainGuard, rearHugger);
+      if (style === 'ducati_v4') {
+        const ducPipeL = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.065, 0.45, 10), chromeMat);
+        ducPipeL.rotation.x = Math.PI / 2; ducPipeL.position.set(-0.12, 1.00, 1.12);
+        const ducPipeR = ducPipeL.clone(); ducPipeR.position.x = 0.12;
+        chassis.add(ducPipeL, ducPipeR);
+      }
 
       if (isCafe) {
         // Retro Chrome Round Headlight + Cafe Bubble Cowl + Twin Low Chrome Exhausts
@@ -397,6 +438,22 @@ window.ApexCity3D = (function () {
         visor.scale.set(0.80, 1.0, 1.48); visor.position.set(0, 1.05, -0.72);
         chassis.add(nose, sideFairL, sideFairR, bellyPan, visor);
       }
+      if (isR15) {
+        // Authentic Yamaha R15 V4 Signature Styling: Central M-Duct Projector + Sharp Twin Eyebrow DRLs + Stepped Split-Seat + Sculpted Side Gill Fairing!
+        const mDuct = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.095, 0.18, 12), glossyBlackMat);
+        mDuct.rotation.x = Math.PI / 2; mDuct.position.set(0, 0.94, -1.32);
+        const r15Eye = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 10), headMat);
+        r15Eye.position.set(0, 0.94, -1.38);
+        const drlBrowL = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.035, 0.08), drlMat);
+        drlBrowL.position.set(-0.18, 1.00, -1.24); drlBrowL.rotation.z = -0.26;
+        const drlBrowR = drlBrowL.clone(); drlBrowR.position.x = 0.18; drlBrowR.rotation.z = 0.26;
+        const r15GillL = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.24, 0.78), accentMat);
+        r15GillL.position.set(-0.27, 0.72, -0.32);
+        const r15GillR = r15GillL.clone(); r15GillR.position.x = 0.27;
+        const r15Tail = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.14, 0.56), bodyMat);
+        r15Tail.position.set(0, 1.06, 0.86); r15Tail.rotation.x = 0.28;
+        chassis.add(mDuct, r15Eye, drlBrowL, drlBrowR, r15GillL, r15GillR, r15Tail);
+      }
       if (hasWings) {
         // MotoGP Dual Downforce Carbon Winglets
         const winglet = new THREE.Mesh(new THREE.BoxGeometry(1.06, 0.05, 0.26), carbonMat);
@@ -417,48 +474,55 @@ window.ApexCity3D = (function () {
         chassis.add(neonArc, ringF, ringR);
       }
 
-      // REAL 3D HUMAN RIDER SITTING ON THE BIKE (Helmet + Visor + Racing Jacket + Arms on Handlebar + Bent Legs on Footpegs!)
+      // CRYSTAL-CLEAR HIGH-CONTRAST 3D HUMAN RIDER AVATAR SITTING ON THE BIKE!
       const rider = new THREE.Group();
-      const suitMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.55, metalness: 0.15 });
-      const riderAccent = new THREE.MeshStandardMaterial({ color: isVeryLight ? 0xef4444 : mainColor, roughness: 0.35, metalness: 0.45 });
-      const skinMat = new THREE.MeshStandardMaterial({ color: 0xf1c27d, roughness: 0.7 });
+      const jacketMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.45, metalness: 0.12 }); // Crisp White Racing Jacket (Stands out clearly!)
+      const pantsMat = new THREE.MeshStandardMaterial({ color: 0x1d4ed8, roughness: 0.72 }); // Clear Denim-Blue Riding Pants
+      const riderAccent = new THREE.MeshStandardMaterial({ color: isVeryLight ? 0xef4444 : mainColor, roughness: 0.25, metalness: 0.55 });
+      const helmetMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.18, metalness: 0.55 }); // High-Vis Glossy Racing Gold/Yellow Helmet!
+      const visorGlowMat = new THREE.MeshStandardMaterial({ color: 0x00f0ff, emissive: 0x0284c7, emissiveIntensity: 0.45, metalness: 0.9, roughness: 0.08 });
+      const skinMat = new THREE.MeshStandardMaterial({ color: 0xe0ac69, roughness: 0.65 });
       const upright = isCafe || isNaked;
-      const leanX = upright ? -0.32 : -0.68;
+      const leanX = upright ? -0.18 : -0.42;
 
-      // Torso (Racing Jacket + Colorful Racing Stripe)
-      const torso = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.58, 0.26), suitMat);
-      torso.position.set(0, upright ? 1.36 : 1.28, upright ? 0.28 : 0.18);
+      // Clear Upright Sculpted Torso + Colored Shoulder Pads + Back Racing Number Stripe
+      const torso = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.66, 0.30), jacketMat);
+      torso.position.set(0, upright ? 1.46 : 1.38, upright ? 0.30 : 0.24);
       torso.rotation.x = leanX;
-      const chestPad = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.24, 0.28), riderAccent);
-      chestPad.position.set(0, upright ? 1.44 : 1.33, upright ? 0.24 : 0.12);
-      chestPad.rotation.x = leanX;
-      // Racing Helmet + Reflective Dark Visor
-      const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.19, 16, 14), riderAccent);
-      helmet.position.set(0, upright ? 1.78 : 1.58, upright ? 0.14 : -0.10);
-      const hVisor = new THREE.Mesh(new THREE.SphereGeometry(0.175, 14, 10, -Math.PI * 0.35, Math.PI * 0.7, Math.PI * 0.28, Math.PI * 0.34), glassMat);
+      const chestStripe = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.24, 0.32), riderAccent);
+      chestStripe.position.set(0, upright ? 1.54 : 1.44, upright ? 0.27 : 0.20);
+      chestStripe.rotation.x = leanX;
+      // Neck + Large Clear Glossy Racing Helmet + Bright Cyan Visor
+      const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.095, 0.14, 10), skinMat);
+      neck.position.set(0, upright ? 1.80 : 1.68, upright ? 0.22 : 0.08);
+      const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.24, 18, 16), helmetMat);
+      helmet.position.set(0, upright ? 1.98 : 1.84, upright ? 0.20 : 0.04);
+      const hVisor = new THREE.Mesh(new THREE.SphereGeometry(0.225, 16, 12, -Math.PI * 0.38, Math.PI * 0.76, Math.PI * 0.28, Math.PI * 0.36), visorGlowMat);
       hVisor.position.copy(helmet.position);
       hVisor.rotation.y = Math.PI;
-      // Arms reaching forward to grip the handlebars
+      // Arms with Bright Shoulder Pads & Gloves Gripping Handlebars + Blue Riding Legs & Boots
       [-1, 1].forEach((s) => {
-        const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.055, 0.62, 8), suitMat);
-        arm.position.set(s * 0.28, upright ? 1.34 : 1.24, -0.22);
-        arm.rotation.x = upright ? 1.15 : 1.32;
-        arm.rotation.z = s * 0.22;
-        const glove = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), riderAccent);
-        glove.position.set(s * 0.36, upright ? 1.18 : 1.08, -0.60);
-        // Bent Thigh + Lower Leg + Boot resting on footpeg
-        const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.075, 0.48, 8), suitMat);
-        thigh.position.set(s * 0.22, 0.88, 0.22);
-        thigh.rotation.x = 0.88;
-        const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.06, 0.46, 8), suitMat);
-        shin.position.set(s * 0.23, 0.60, 0.16);
-        shin.rotation.x = -0.35;
-        const boot = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.10, 0.24), riderAccent);
-        boot.position.set(s * 0.24, 0.40, 0.14);
-        rider.add(arm, glove, thigh, shin, boot);
+        const shoulder = new THREE.Mesh(new THREE.SphereGeometry(0.105, 10, 10), riderAccent);
+        shoulder.position.set(s * 0.30, upright ? 1.66 : 1.54, upright ? 0.22 : 0.12);
+        const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.065, 0.68, 10), jacketMat);
+        arm.position.set(s * 0.32, upright ? 1.44 : 1.34, -0.20);
+        arm.rotation.x = upright ? 1.10 : 1.25;
+        arm.rotation.z = s * 0.18;
+        const glove = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 10), riderAccent);
+        glove.position.set(s * 0.38, upright ? 1.20 : 1.10, -0.60);
+        const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.09, 0.52, 10), pantsMat);
+        thigh.position.set(s * 0.24, 0.94, 0.24);
+        thigh.rotation.x = 0.85;
+        const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.075, 0.48, 10), pantsMat);
+        shin.position.set(s * 0.25, 0.64, 0.18);
+        shin.rotation.x = -0.32;
+        const boot = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.12, 0.26), riderAccent);
+        boot.position.set(s * 0.26, 0.42, 0.14);
+        rider.add(shoulder, arm, glove, thigh, shin, boot);
       });
-      rider.add(torso, chestPad, helmet, hVisor);
+      rider.add(torso, chestStripe, neck, helmet, hVisor);
       chassis.add(rider);
+      group.userData.rider = rider;
 
       // Exhausts & Lights
       const exR = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.088, 0.94, 12), isCafe ? chromeMat : carbonMat);
@@ -550,6 +614,26 @@ window.ApexCity3D = (function () {
       bodyMesh.position.y = liftY;
       chassis.add(bodyMesh);
 
+      // TWO-TONE HALF-BODY CONTRAST LIVERY ON EVERY TRUCK (Lower Half Metallic Contrast + Side Accent Band + Hood Trim!)
+      const truckLowerMat = new THREE.MeshStandardMaterial({
+        color: isMonster ? 0xfacc15 : isGWagon ? 0xe2e8f0 : isRaptor ? 0x0f172a : isJeep ? 0x1e293b : 0x334155,
+        metalness: 0.62,
+        roughness: 0.24,
+        envMapIntensity: 1.4
+      });
+      const lowerHalfPanel = new THREE.Mesh(new THREE.BoxGeometry(bodyW + 0.14, 0.44, 4.75 * lenScale), truckLowerMat);
+      lowerHalfPanel.position.set(0, 0.72 + liftY, 0);
+      const beltStripeL = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.09, 4.65 * lenScale), accentMat);
+      beltStripeL.position.set(-bodyW / 2 - 0.08, 0.96 + liftY, 0);
+      const beltStripeR = beltStripeL.clone(); beltStripeR.position.x = bodyW / 2 + 0.08;
+      // Sleek Two-Tone Roof Cap Accent on Truck Cab
+      if (!isJeep) {
+        const cabRoofAccent = new THREE.Mesh(new THREE.BoxGeometry(bodyW * 0.92, 0.08, isSUV ? 2.8 : 1.45), truckLowerMat);
+        cabRoofAccent.position.set(0, (isSUV ? 2.24 : 2.18) + liftY, isSUV ? 0.42 : -0.36);
+        chassis.add(cabRoofAccent);
+      }
+      chassis.add(lowerHalfPanel, beltStripeL, beltStripeR);
+
       // Cabin Windows (or Open Roll Cage + Seats for Jeep!)
       if (isJeep) {
         const cageBarL = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.8, 8), glossyBlackMat);
@@ -563,12 +647,91 @@ window.ApexCity3D = (function () {
         const jSeatR = jSeatL.clone(); jSeatR.position.x = 0.48;
         chassis.add(cageBarL, cageBarR, postL, postR, jSeatL, jSeatR);
       } else {
-        const glassCab = new THREE.Mesh(new THREE.BoxGeometry(bodyW + 0.06, 0.56, isSUV ? 2.75 : is6x6 ? 1.85 : 1.52), glassMat);
+        // Transparent Front/Side Cab Glass + VISIBLE 3D HUMAN DRIVER INSIDE + CLEAR SIDE DOOR SEAMS!
+        const cabGlassMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.45, roughness: 0.08, transparent: true, opacity: 0.46 });
+        const glassCab = new THREE.Mesh(new THREE.BoxGeometry(bodyW + 0.06, 0.56, isSUV ? 2.75 : is6x6 ? 1.85 : 1.52), cabGlassMat);
         glassCab.position.set(0, 1.80 + liftY, isSUV ? 0.42 : -0.34);
-        chassis.add(glassCab);
+        // Visible Human Driver (Head + Shoulders + Steering Wheel inside Truck Cab!)
+        const tDriver = new THREE.Group();
+        const dHead = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 10), new THREE.MeshStandardMaterial({ color: 0xe0ac69, roughness: 0.65 }));
+        dHead.position.set(-0.42, 1.92 + liftY, -0.45);
+        const dHair = new THREE.Mesh(new THREE.SphereGeometry(0.23, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.5), new THREE.MeshStandardMaterial({ color: 0x111827 }));
+        dHair.position.set(-0.42, 1.96 + liftY, -0.45);
+        const dBody = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.42, 0.28), new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.6 }));
+        dBody.position.set(-0.42, 1.58 + liftY, -0.42);
+        tDriver.add(dHead, dHair, dBody);
+        chassis.add(glassCab, tDriver);
+        group.userData.rider = tDriver;
+
+        // Clear Visible Side Door Seams + Chrome Handles on BOTH Truck Sides!
+        [-1, 1].forEach((side) => {
+          const sx = side * (bodyW / 2 + 0.085);
+          const seamF = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.88, 0.04), glossyBlackMat);
+          seamF.position.set(sx, 1.15 + liftY, -1.05);
+          const seamR = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.88, 0.04), glossyBlackMat);
+          seamR.position.set(sx, 1.15 + liftY, 0.35);
+          const dHandle = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.06, 0.24), chromeMat);
+          dHandle.position.set(sx, 1.38 + liftY, 0.08);
+          chassis.add(seamF, seamR, dHandle);
+        });
+
+        // HOLLOW OPEN REAR CARGO BED on Pickup / Raptor / Monster Trucks (Raised Side Walls + Recessed Empty Bed Floor!)
+        if (!isSUV && !isCyber) {
+          const bedFloor = new THREE.Mesh(new THREE.BoxGeometry(bodyW - 0.32, 0.08, 1.95 * lenScale), new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.85 }));
+          bedFloor.position.set(0, 1.37 + liftY, 1.48 * lenScale);
+          const bedWallL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.36, 2.02 * lenScale), bodyMat);
+          bedWallL.position.set(-(bodyW / 2 - 0.08), 1.54 + liftY, 1.48 * lenScale);
+          const bedWallR = bedWallL.clone(); bedWallR.position.x = (bodyW / 2 - 0.08);
+          const tailGate = new THREE.Mesh(new THREE.BoxGeometry(bodyW, 0.36, 0.16), bodyMat);
+          tailGate.position.set(0, 1.54 + liftY, 2.46 * lenScale);
+          chassis.add(bedFloor, bedWallL, bedWallR, tailGate);
+        }
       }
 
-      // Archetype-Specific Signature 3D Truck Accessories!
+      // Archetype-Specific Signature 3D Truck Accessories — EVERY SINGLE TRUCK HAS ITS OWN UNIQUE 3D BUILD!
+      const isFlatbed = style === 'flat_bed';
+      const isRam = style === 'ram_hood';
+      if (isFlatbed) {
+        // Heavy Utility Flatbed Deck + Steel Headache Rack + Strapped Cargo Crates!
+        const bedDeck = new THREE.Mesh(new THREE.BoxGeometry(bodyW + 0.16, 0.18, 2.35), new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.85 }));
+        bedDeck.position.set(0, 1.38 + liftY, 1.48 * lenScale);
+        const rackBar = new THREE.Mesh(new THREE.BoxGeometry(bodyW + 0.08, 0.92, 0.14), chromeMat);
+        rackBar.position.set(0, 1.86 + liftY, 0.42);
+        const crate1 = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.68, 0.95), accentMat);
+        crate1.position.set(-0.42, 1.80 + liftY, 1.35 * lenScale);
+        const crate2 = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.54, 0.82), new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.6 }));
+        crate2.position.set(0.46, 1.73 + liftY, 1.65 * lenScale);
+        chassis.add(bedDeck, rackBar, crate1, crate2);
+      }
+      if (isRam) {
+        // RAM TRX Giant Hood Power-Bulge + Red Off-Road Front Skid Plate!
+        const bulge = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.24, 1.28), bodyMat);
+        bulge.position.set(0, 1.54 + liftY, -1.68 * lenScale);
+        const skid = new THREE.Mesh(new THREE.BoxGeometry(bodyW * 0.72, 0.22, 0.48), new THREE.MeshStandardMaterial({ color: 0xdc2626, metalness: 0.5, roughness: 0.35 }));
+        skid.position.set(0, 0.44 + liftY, -2.42 * lenScale); skid.rotation.x = 0.45;
+        chassis.add(bulge, skid);
+      }
+      if (isSafari) {
+        // Expedition A-Pillar Snorkel Intake
+        const snorkel = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 1.25, 8), glossyBlackMat);
+        snorkel.position.set(bodyW / 2 + 0.08, 1.65 + liftY, -1.05);
+        chassis.add(snorkel);
+      }
+      if (isGWagon) {
+        // Iconic Chrome Side Exhaust Pipes + Signature Chrome Spare Tire Cover
+        const sideExL = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.6, 8), chromeMat);
+        sideExL.rotation.x = Math.PI / 2; sideExL.position.set(-bodyW / 2 - 0.14, 0.48 + liftY, 0.25);
+        const sideExR = sideExL.clone(); sideExR.position.x = bodyW / 2 + 0.14;
+        const spareCap = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.36, 18), chromeMat);
+        spareCap.rotation.x = Math.PI / 2; spareCap.position.set(0, 1.32 + liftY, 2.54 * lenScale);
+        chassis.add(sideExL, sideExR, spareCap);
+      }
+      if (isBaja) {
+        // High-Speed Baja Rear Aero Wing + Twin Rear Spare Tires
+        const bWing = new THREE.Mesh(new THREE.BoxGeometry(bodyW + 0.2, 0.08, 0.44), accentMat);
+        bWing.position.set(0, 2.28 + liftY, 2.25 * lenScale);
+        chassis.add(bWing);
+      }
       if (isMonster) {
         // Exposed Orange Coil Suspension Shocks + Chrome Hood Supercharger Blower!
         const shockMat = new THREE.MeshStandardMaterial({ color: 0xf97316, metalness: 0.7, roughness: 0.25 });
@@ -730,6 +893,15 @@ window.ApexCity3D = (function () {
       const lowerMesh = new THREE.Mesh(lowerExt, bodyMat);
       chassis.add(lowerMesh);
 
+      // Sleek Two-Tone Supercar Lower Body Trim + Side Character Accent Line (Makes Every Car Pop!)
+      const carAccentTrimL = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.055, 2.35 * lenMul), accentMat);
+      carAccentTrimL.position.set(-bodyW / 2 - 0.025, 0.36, 0);
+      const carAccentTrimR = carAccentTrimL.clone(); carAccentTrimR.position.x = bodyW / 2 + 0.025;
+      const lowerBeltL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.14, 2.45 * lenMul), glossyBlackMat);
+      lowerBeltL.position.set(-bodyW / 2 - 0.02, 0.27, 0);
+      const lowerBeltR = lowerBeltL.clone(); lowerBeltR.position.x = bodyW / 2 + 0.02;
+      chassis.add(carAccentTrimL, carAccentTrimR, lowerBeltL, lowerBeltR);
+
       // 2. Sculpted Flared Fender Haunches & Dark Wheel Wells
       const archPositions = [[-1.36 * lenMul, 0.42], [1.36 * lenMul, 0.42]];
       archPositions.forEach(([az, ay]) => {
@@ -774,6 +946,28 @@ window.ApexCity3D = (function () {
         glassExt.rotateY(-Math.PI / 2);
         const glassMesh = new THREE.Mesh(glassExt, glassMat);
         chassis.add(glassMesh);
+
+        // Visible 3D Human Driver Inside Car Front Window + Clear Side Door Lines!
+        const cDriver = new THREE.Group();
+        const cdHead = new THREE.Mesh(new THREE.SphereGeometry(0.19, 12, 10), new THREE.MeshStandardMaterial({ color: 0xe0ac69, roughness: 0.65 }));
+        cdHead.position.set(-0.36, hoodH + 0.36, 0.02 * lenMul);
+        const cdHair = new THREE.Mesh(new THREE.SphereGeometry(0.20, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.5), new THREE.MeshStandardMaterial({ color: 0x111827 }));
+        cdHair.position.set(-0.36, hoodH + 0.39, 0.02 * lenMul);
+        const cdTorso = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.36, 0.24), new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.6 }));
+        cdTorso.position.set(-0.36, hoodH + 0.08, 0.06 * lenMul);
+        cDriver.add(cdHead, cdHair, cdTorso);
+        chassis.add(cDriver);
+        group.userData.rider = cDriver;
+
+        // Crisp Side Door Panel Lines on BOTH Car Sides!
+        [-1, 1].forEach((side) => {
+          const sx = side * (bodyW / 2 + 0.022);
+          const cSeamF = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.50, 0.03), glossyBlackMat);
+          cSeamF.position.set(sx, 0.56, -0.78 * lenMul);
+          const cSeamR = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.50, 0.03), glossyBlackMat);
+          cSeamR.position.set(sx, 0.56, 0.68 * lenMul);
+          chassis.add(cSeamF, cSeamR);
+        });
 
         // Visible Interior Sport Cabin (Twin Bucket Seats + Dashboard visible through tinted glass!)
         const seatMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7 });
@@ -847,14 +1041,13 @@ window.ApexCity3D = (function () {
       const fogL = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.05, 0.08), drlMat);
       fogL.position.set(-bodyW * 0.36, 0.33, -2.33 * lenMul);
       const fogR = fogL.clone(); fogR.position.x = bodyW * 0.36;
-      // Sleek Ambient Underglow Shadow/Neon Pool under car
-      const underGlow = new THREE.Mesh(
-        new THREE.PlaneGeometry(bodyW + 0.55, 4.9 * lenMul),
-        new THREE.MeshBasicMaterial({ color: vid === 0 ? 0x00f0ff : 0x000000, transparent: true, opacity: vid === 0 ? 0.22 : 0.35, depthWrite: false })
-      );
-      underGlow.rotation.x = -Math.PI / 2;
-      underGlow.position.y = 0.06;
-      chassis.add(canardL, canardR, handleL, handleR, rainLight, fogL, fogR, underGlow);
+      // Upgraded Glowing Front Headlight Beams + Glossy Rear Trunk Trim
+      const beamMat = new THREE.MeshBasicMaterial({ color: 0xe0f7ff, transparent: true, opacity: 0.22, depthWrite: false });
+      const beamL = new THREE.Mesh(new THREE.ConeGeometry(0.42, 2.4, 10, 1, true), beamMat);
+      beamL.rotation.x = -Math.PI / 2; beamL.position.set(-bodyW * 0.32, 0.48, -3.55 * lenMul); beamL.visible = false;
+      const beamR = beamL.clone(); beamR.position.x = bodyW * 0.32; beamR.visible = false;
+      chassis.add(canardL, canardR, handleL, handleR, rainLight, fogL, fogR, beamL, beamR);
+      group.userData.headBeams = [beamL, beamR];
 
       // Sculpted Recessed Headlight Housings + Dual LED Projectors & Sharp Cyan DRLs
       [-bodyW * 0.32, bodyW * 0.32].forEach((hx) => {
@@ -893,9 +1086,9 @@ window.ApexCity3D = (function () {
         tip.rotation.x = Math.PI / 2; tip.position.set(exX, 0.31, 2.36 * lenMul);
         chassis.add(tip);
       });
-      // Sculpted Hood Power-Bulge & Twin Aero Vents
-      const hoodVentL = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.04, 0.48), glossyBlackMat);
-      hoodVentL.position.set(-0.42, hoodH + 0.03, -1.52 * lenMul); hoodVentL.rotation.x = 0.14;
+      // Sleek Flush Body-Colored Aerodynamic Hood Contours (NO black dome or raised vents!)
+      const hoodVentL = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.015, 0.56), bodyMat);
+      hoodVentL.position.set(-0.42, hoodH + 0.01, -1.52 * lenMul); hoodVentL.rotation.x = 0.14;
       const hoodVentR = hoodVentL.clone(); hoodVentR.position.x = 0.42;
 
       // Side Door Aero Air-Scoops & Chrome Window Trim Accent
@@ -914,38 +1107,15 @@ window.ApexCity3D = (function () {
 
       chassis.add(grille, splitter, diffuser, mL, mR, hl1, hl2, drl1, drl2, tlBar, hoodVentL, hoodVentR, scoopL, scoopR, intakeStrip);
 
-      // Attractive Colorful Racing Stripes & Glowing Trim (Especially Eye-Catching on Pearl White Starter Car #0!)
+      // Clean Flush Koenigsegg Gemera Styling on Starter Car #0 (Light Nardo Cement Grey — ZERO protruding stripes!)
       if (vid === 0) {
-        const cyanStripeMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff });
-        const orangeStripeMat = new THREE.MeshBasicMaterial({ color: 0xff6a00 });
-        // Hood twin colorful stripes
-        const hS1 = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.025, 1.25), cyanStripeMat);
-        hS1.position.set(-0.11, hoodH + 0.045, -1.62 * lenMul); hS1.rotation.x = 0.14;
-        const hS2 = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.025, 1.25), orangeStripeMat);
-        hS2.position.set(0.11, hoodH + 0.045, -1.62 * lenMul); hS2.rotation.x = 0.14;
-        // Roof twin colorful stripes
-        const rS1 = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.025, 1.06), cyanStripeMat);
-        rS1.position.set(-0.11, roofH + 0.052, 0.14 * lenMul);
-        const rS2 = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.025, 1.06), orangeStripeMat);
-        rS2.position.set(0.11, roofH + 0.052, 0.14 * lenMul);
-        // Side colorful accent blades + glowing cyan underglow neon strip
-        const sideNeonL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.05, 2.2), cyanStripeMat);
-        sideNeonL.position.set(-bodyW / 2 - 0.08, 0.24, 0);
-        const sideNeonR = sideNeonL.clone(); sideNeonR.position.x = bodyW / 2 + 0.08;
-        const sideOrangeL = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.06, 1.55), orangeStripeMat);
-        sideOrangeL.position.set(-bodyW / 2 - 0.03, 0.62, 0.15);
-        const sideOrangeR = sideOrangeL.clone(); sideOrangeR.position.x = bodyW / 2 + 0.03;
-        // Sport GT Rear Wing for Starter Car #0
-        const sWing = new THREE.Mesh(new THREE.BoxGeometry(bodyW + 0.08, 0.05, 0.28), carbonMat);
-        sWing.position.set(0, deckH + 0.24, 2.12 * lenMul);
-        const sEndL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.16, 0.32), cyanStripeMat);
-        sEndL.position.set(-(bodyW + 0.08) / 2, deckH + 0.24, 2.12 * lenMul);
-        const sEndR = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.16, 0.32), orangeStripeMat);
-        sEndR.position.set((bodyW + 0.08) / 2, deckH + 0.24, 2.12 * lenMul);
-        const sStL = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.22, 0.12), carbonMat);
-        sStL.position.set(-0.52, deckH + 0.12, 2.12 * lenMul);
-        const sStR = sStL.clone(); sStR.position.x = 0.52;
-        chassis.add(hS1, hS2, rS1, rS2, sideNeonL, sideNeonR, sideOrangeL, sideOrangeR, sWing, sEndL, sEndR, sStL, sStR);
+        const gemeraTrimMat = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.72, roughness: 0.22 });
+        const sillL = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.05, 1.95), gemeraTrimMat);
+        sillL.position.set(-bodyW / 2 - 0.02, 0.30, 0);
+        const sillR = sillL.clone(); sillR.position.x = bodyW / 2 + 0.02;
+        const rearLip = new THREE.Mesh(new THREE.BoxGeometry(bodyW * 0.92, 0.05, 0.22), carbonMat);
+        rearLip.position.set(0, deckH + 0.04, 2.18 * lenMul);
+        chassis.add(sillL, sillR, rearLip);
       } else {
         // Sleek chrome door-handle & racing side-accent trim on all other cars
         const trimL = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.045, 1.45 * lenMul), chromeMat);
@@ -958,6 +1128,31 @@ window.ApexCity3D = (function () {
         const blower = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.28, 0.76), chromeMat);
         blower.position.set(0, hoodH + 0.14, -1.35 * lenMul);
         chassis.add(blower);
+      }
+      // Extra Per-Car Archetype Signature Styling (So ALL 21 Cars look unmistakably unique!)
+      if (style === 'bugatti_arch') {
+        [-bodyW / 2 - 0.03, bodyW / 2 + 0.03].forEach((cx) => {
+          const cArch = new THREE.Mesh(new THREE.TorusGeometry(0.56, 0.055, 8, 20, Math.PI * 1.15), chromeMat);
+          cArch.rotation.y = Math.PI / 2; cArch.rotation.z = -Math.PI * 0.55;
+          cArch.position.set(cx, 0.84, 0.18 * lenMul);
+          chassis.add(cArch);
+        });
+      }
+      if (style === 'quad_pipe_gt' || style === 'italian_mid' || style === 'teardrop_hyper') {
+        const roofScoop = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.15, 0.72), carbonMat);
+        roofScoop.position.set(0, roofH + 0.09, 0.18 * lenMul);
+        chassis.add(roofScoop);
+      }
+      if (style === 'ev_hyper') {
+        const evBarF = new THREE.Mesh(new THREE.BoxGeometry(bodyW - 0.18, 0.06, 0.12), drlMat);
+        evBarF.position.set(0, 0.56, -2.33 * lenMul);
+        chassis.add(evBarF);
+      }
+      if (style === 'jdm_coupe' || style === 'sport_sedan' || style === 'fastback') {
+        // Distinct Racing Hood Stripe matching each car's accentHex
+        const stM = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.025, 1.35), accentMat);
+        stM.position.set(0, hoodH + 0.045, -1.56 * lenMul); stM.rotation.x = 0.14;
+        chassis.add(stM);
       }
       if (isHyperFin) {
         const fin = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.38, 1.35), accentMat);

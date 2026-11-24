@@ -62,81 +62,58 @@ window.ApexAudio = (function () {
     osc.start(now); osc.stop(now + dur + 0.02);
   }
 
-  // Brand-New Smooth Modern Racing House Soundtrack (Warm Rhodes Chords + Punchy Kick + Crisp Shaker + Groovy Bass + Catchy Lead)
-  // Progression: Dm9 -> Bbmaj7 -> Fmaj7 -> Csus4/C (Clean, uplifting, zero harsh buzzing!)
-  const houseChords = [
-    [293.66, 349.23, 440.00, 523.25], // Dm7
-    [233.08, 293.66, 349.23, 440.00], // Bbmaj7
-    [261.63, 349.23, 440.00, 523.25], // Fmaj7
-    [261.63, 329.63, 392.00, 493.88]  // Cmaj7
+  // Ultra-Smooth Deep Chill Cinematic Driving Groove (Warm Deep Sub + Soft Kick + Muted Ambient Chords — Zero Harsh Beeps!)
+  const chillChords = [
+    [146.83, 220.00, 261.63, 329.63], // Dm9 low warm voicing
+    [116.54, 174.61, 220.00, 293.66], // Bbmaj9
+    [130.81, 196.00, 246.94, 329.63], // Cmaj9
+    [110.00, 164.81, 196.00, 261.63]  // Am7
   ];
-  const grooveBass = [
-    [73.42, 73.42, 110.00, 73.42],   // D2
-    [58.27, 58.27, 87.31,  58.27],   // Bb1
-    [87.31, 87.31, 65.41,  87.31],   // F2
-    [65.41, 65.41, 98.00,  82.41]    // C2
-  ];
-  const melodyLine = [
-    [587.33, 0, 659.25, 698.46, 0, 587.33, 523.25, 0],
-    [587.33, 0, 523.25, 440.00, 0, 440.00, 523.25, 0],
-    [698.46, 0, 659.25, 587.33, 0, 523.25, 440.00, 0],
-    [523.25, 0, 587.33, 659.25, 0, 783.99, 659.25, 0]
-  ];
+  const deepBass = [73.42, 58.27, 65.41, 55.00];
 
   function playKick(now) {
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(132, now);
-    osc.frequency.exponentialRampToValueAtTime(42, now + 0.12);
-    gain.gain.setValueAtTime(0.16, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.19);
+    osc.frequency.setValueAtTime(105, now);
+    osc.frequency.exponentialRampToValueAtTime(36, now + 0.14);
+    gain.gain.setValueAtTime(0.14, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
     osc.connect(gain); gain.connect(audioCtx.destination);
-    osc.start(now); osc.stop(now + 0.21);
+    osc.start(now); osc.stop(now + 0.24);
   }
 
-  function playClap(now) {
+  function playSoftRim(now) {
     if (!noiseBuffer) return;
     const src = audioCtx.createBufferSource();
     src.buffer = noiseBuffer;
     const bp = audioCtx.createBiquadFilter();
-    bp.type = 'bandpass'; bp.frequency.value = 1650; bp.Q.value = 1.4;
+    bp.type = 'bandpass'; bp.frequency.value = 1100; bp.Q.value = 2.5;
     const gain = audioCtx.createGain();
-    gain.gain.setValueAtTime(0.042, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.095);
+    gain.gain.setValueAtTime(0.032, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
     src.connect(bp); bp.connect(gain); gain.connect(audioCtx.destination);
-    src.start(now); src.stop(now + 0.11);
+    src.start(now); src.stop(now + 0.07);
   }
 
-  function playHat(now, accent) {
-    if (!noiseBuffer) return;
-    const src = audioCtx.createBufferSource();
-    src.buffer = noiseBuffer;
-    const hp = audioCtx.createBiquadFilter();
-    hp.type = 'highpass'; hp.frequency.value = 8800;
-    const gain = audioCtx.createGain();
-    gain.gain.setValueAtTime(accent ? 0.024 : 0.010, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.036);
-    src.connect(hp); hp.connect(gain); gain.connect(audioCtx.destination);
-    src.start(now); src.stop(now + 0.045);
-  }
-
-  function playRhodesStab(now, notes, dur) {
+  function playWarmAtmosphere(now, notes) {
     const lp = audioCtx.createBiquadFilter();
     lp.type = 'lowpass';
-    lp.frequency.setValueAtTime(1450, now);
-    lp.frequency.exponentialRampToValueAtTime(520, now + dur);
+    lp.frequency.setValueAtTime(420, now);
+    lp.frequency.linearRampToValueAtTime(640, now + 1.1);
+    lp.frequency.linearRampToValueAtTime(360, now + 2.2);
     const gain = audioCtx.createGain();
     gain.gain.setValueAtTime(0.001, now);
-    gain.gain.linearRampToValueAtTime(0.038, now + 0.025);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+    gain.gain.linearRampToValueAtTime(0.032, now + 0.35);
+    gain.gain.setValueAtTime(0.028, now + 1.6);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 2.3);
     lp.connect(gain); gain.connect(audioCtx.destination);
     notes.forEach((f) => {
       const o = audioCtx.createOscillator();
       o.type = 'sine';
       o.frequency.setValueAtTime(f, now);
       o.connect(lp);
-      o.start(now); o.stop(now + dur + 0.03);
+      o.start(now); o.stop(now + 2.35);
     });
   }
 
@@ -151,47 +128,23 @@ window.ApexAudio = (function () {
       const step = bgmStep % 16;
       const bar = Math.floor(bgmStep / 16) % 4;
 
-      // Syncopated Warm Rhodes Electric-Piano House Chords (Beats 1, 2.5, 4)
-      if (step === 0 || step === 6 || step === 12) {
-        playRhodesStab(now, houseChords[bar], step === 0 ? 0.65 : 0.42);
-      }
+      if (step === 0) playWarmAtmosphere(now, chillChords[bar]);
+      if (step === 0 || step === 6 || step === 10) playKick(now);
+      if (step === 4 || step === 12) playSoftRim(now);
 
-      // Tight Modern House Beat
-      if (step % 4 === 0) playKick(now);
-      if (step === 4 || step === 12) playClap(now);
-      if (step % 2 === 1) playHat(now, step % 4 === 2);
-
-      // Warm Bouncy Bassline (Pure Sine + Soft Triangle)
-      if (step === 0 || step === 3 || step === 6 || step === 10 || step === 12) {
-        const bFreq = grooveBass[bar][Math.floor(step / 4) % 4];
+      if (step === 0 || step === 8) {
         const bOsc = audioCtx.createOscillator();
         const bGain = audioCtx.createGain();
         bOsc.type = 'sine';
-        bOsc.frequency.setValueAtTime(bFreq, now);
-        bGain.gain.setValueAtTime(0.105, now);
-        bGain.gain.exponentialRampToValueAtTime(0.001, now + 0.20);
+        bOsc.frequency.setValueAtTime(deepBass[bar], now);
+        bGain.gain.setValueAtTime(0.085, now);
+        bGain.gain.exponentialRampToValueAtTime(0.001, now + 0.52);
         bOsc.connect(bGain); bGain.connect(audioCtx.destination);
-        bOsc.start(now); bOsc.stop(now + 0.22);
-      }
-
-      // Catchy Sparkling Bell/Synth Lead Melody
-      if (step % 2 === 0) {
-        const mFreq = melodyLine[bar][(step / 2) % 8];
-        if (mFreq > 0) {
-          const mOsc = audioCtx.createOscillator();
-          const mGain = audioCtx.createGain();
-          mOsc.type = 'sine';
-          mOsc.frequency.setValueAtTime(mFreq, now);
-          mGain.gain.setValueAtTime(0.001, now);
-          mGain.gain.linearRampToValueAtTime(0.030, now + 0.015);
-          mGain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
-          mOsc.connect(mGain); mGain.connect(audioCtx.destination);
-          mOsc.start(now); mOsc.stop(now + 0.30);
-        }
+        bOsc.start(now); bOsc.stop(now + 0.55);
       }
 
       bgmStep++;
-    }, 121); // Crisp 124 BPM Modern Electronic House Groove
+    }, 148); // Relaxed ~101 BPM smooth cinematic night-drive groove
   }
 
   function stopMusic() {
@@ -239,6 +192,100 @@ window.ApexAudio = (function () {
     [523.25, 659.25, 783.99, 1046.5].forEach((f, idx) => {
       setTimeout(() => playTone(f, 0.22, 'sine', 0.08), idx * 60);
     });
+  }
+
+
+
+  function playSiren() {
+    if (!soundEnabled) return;
+    init();
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    // Realistic Fire Engine / Ambulance Wee-Woo Emergency Siren (2 cycles)
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(660, now);
+    osc.frequency.linearRampToValueAtTime(980, now + 0.45);
+    osc.frequency.linearRampToValueAtTime(640, now + 0.90);
+    osc.frequency.linearRampToValueAtTime(980, now + 1.35);
+    osc.frequency.linearRampToValueAtTime(620, now + 1.80);
+    gain.gain.setValueAtTime(0.001, now);
+    gain.gain.linearRampToValueAtTime(0.085, now + 0.08);
+    gain.gain.setValueAtTime(0.08, now + 1.55);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 1.88);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(now); osc.stop(now + 1.92);
+  }
+
+  // 100% RELIABLE LOUD 2000Hz-PEAK "TEERAN! TEERAN! TEERAN!" AIR-HORN (Direct Synchronous Web Audio — Works in ALL Mobile & Sandboxed Browsers!)
+  let hornStopTimer = null;
+  function stopHorn() {
+    clearTimeout(hornStopTimer);
+  }
+
+  function startHorn() {
+    if (!soundEnabled) return;
+    init();
+    if (!audioCtx) return;
+    const fireTeran = () => {
+      const now = audioCtx.currentTime;
+      const bursts = [[0.0, 0.19], [0.24, 0.43], [0.48, 0.76]];
+      const master = audioCtx.createGain();
+      master.gain.value = 0.52; // LOUD & CLEAR over engine & music!
+      const lp = audioCtx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 2600;
+      const shaper = audioCtx.createWaveShaper();
+      shaper.curve = makeDistortionCurve(16);
+      shaper.connect(lp); lp.connect(master); master.connect(audioCtx.destination);
+
+      bursts.forEach(([s, e]) => {
+        [500, 665, 1000, 2000].forEach((freq, idx) => {
+          const osc = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+          osc.type = idx < 2 ? 'sawtooth' : 'triangle';
+          osc.frequency.setValueAtTime(freq, now + s);
+          osc.frequency.linearRampToValueAtTime(freq * 1.03, now + (s + e) * 0.5);
+          osc.frequency.linearRampToValueAtTime(freq, now + e);
+          g.gain.setValueAtTime(0.001, now + s);
+          g.gain.linearRampToValueAtTime(idx === 3 ? 0.28 : 0.24, now + s + 0.015);
+          g.gain.setValueAtTime(idx === 3 ? 0.25 : 0.22, now + e - 0.025);
+          g.gain.exponentialRampToValueAtTime(0.001, now + e);
+          osc.connect(g); g.connect(shaper);
+          osc.start(now + s);
+          osc.stop(now + e + 0.02);
+        });
+      });
+    };
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume().then(fireTeran).catch(fireTeran);
+    } else {
+      fireTeran();
+    }
+  }
+
+  function playHorn() {
+    startHorn();
+  }
+
+  function playTurboPshh() {
+    if (!soundEnabled) return;
+    init();
+    if (!audioCtx || !noiseBuffer) return;
+    const now = audioCtx.currentTime;
+    const src = audioCtx.createBufferSource();
+    src.buffer = noiseBuffer;
+    const bp = audioCtx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.setValueAtTime(3200, now);
+    bp.frequency.exponentialRampToValueAtTime(1100, now + 0.24);
+    bp.Q.value = 2.4;
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.08, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.26);
+    src.connect(bp); bp.connect(gain); gain.connect(audioCtx.destination);
+    src.start(now); src.stop(now + 0.28);
   }
 
   function playCrash() {
