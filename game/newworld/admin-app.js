@@ -8,14 +8,14 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged
-} from "./firebase-config.js?v=16";
+} from "./firebase-config.js?v=17";
 import {
   FollowerTownEngine,
   BUILDING_LABELS,
   getRequiredSize,
   getBlockPlotIds,
   getEightPlotGroup
-} from "./world-engine.js?v=16";
+} from "./world-engine.js?v=17";
 
 let isAdmin = false;
 let selectedPlotId = "plot_0001";
@@ -67,6 +67,19 @@ const engine = new FollowerTownEngine(container, (plotId, data) => {
 });
 
 function openPlotCard(plotId, data) {
+    if (plotId === "AIRPORT") {
+    document.getElementById("card-badge").textContent = "20-ACRE INTERNATIONAL AIRPORT";
+    document.getElementById("card-owner").textContent = "✈️ SHERU BHAI INTL AIRPORT";
+    document.getElementById("card-role").textContent = "Outside City (20 Acres) • Live Shuttle Buses, Passenger Flights & Sheru Bhai arriving in Diamond Car to fly his Diamond Helicopter!";
+    document.getElementById("card-type").textContent = "20 ACRES • LIVE FLIGHTS";
+    document.getElementById("card-day").textContent = "";
+    editBtn.classList.add("hidden");
+    websiteBtn.classList.add("hidden");
+    if (sheru3dBtn) sheru3dBtn.classList.add("hidden");
+    plotCard.classList.remove("hidden");
+    return;
+  }
+
   if (plotId === "ST_JUNCTION") {
     document.getElementById("card-badge").textContent = "CITY CENTER LANDMARK";
     document.getElementById("card-owner").textContent = "🦁 SHERU BHAI • ST JUNCTION";
@@ -736,4 +749,25 @@ if (sheru3dBtn && sketchfabModal && sketchfabIframe) {
       sketchfabIframe.src = "about:blank";
     });
   }
+}
+
+// Admin Dock + Reel Mode Quick-Jump to 20-Acre Airport
+const btnJumpAirport = document.getElementById("btn-jump-airport");
+if (btnJumpAirport) {
+  btnJumpAirport.addEventListener("click", () => {
+    engine.focusPlot("AIRPORT");
+    openPlotCard("AIRPORT", null);
+    showToast("✈️ 20-Acre Airport • Live Plane & Sheru Bhai Diamond Heli!");
+  });
+}
+
+const btnReelAirport = document.getElementById("reel-airport-cam");
+if (btnReelAirport) {
+  btnReelAirport.addEventListener("click", () => {
+    engine.stopProReelTour();
+    engine.stopDroneView();
+    engine.stopBuildReelTour();
+    engine.focusPlot("AIRPORT", 0.14);
+    showToast("✈️ Airport Reel Cam Active!");
+  });
 }

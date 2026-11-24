@@ -1,5 +1,5 @@
-import { db, ref, onValue } from "./firebase-config.js?v=16";
-import { FollowerTownEngine, BUILDING_LABELS, getRequiredSize } from "./world-engine.js?v=16";
+import { db, ref, onValue } from "./firebase-config.js?v=17";
+import { FollowerTownEngine, BUILDING_LABELS, getRequiredSize } from "./world-engine.js?v=17";
 
 let allPlots = {};
 const container = document.getElementById("canvas-container");
@@ -23,6 +23,18 @@ const engine = new FollowerTownEngine(container, (plotId, data) => {
 });
 
 function openPlotCard(plotId, data) {
+    if (plotId === "AIRPORT") {
+    document.getElementById("card-badge").textContent = "20-ACRE INTERNATIONAL AIRPORT";
+    document.getElementById("card-owner").textContent = "✈️ SHERU BHAI INTL AIRPORT";
+    document.getElementById("card-role").textContent = "Outside City (20 Acres) • Live Shuttle Buses, Passenger Flights & Sheru Bhai arriving in Diamond Car to fly his Diamond Helicopter!";
+    document.getElementById("card-type").textContent = "20 ACRES • LIVE FLIGHTS";
+    document.getElementById("card-day").textContent = "";
+    websiteBtn.classList.add("hidden");
+    if (sheru3dBtn) sheru3dBtn.classList.add("hidden");
+    plotCard.classList.remove("hidden");
+    return;
+  }
+
   if (plotId === "ST_JUNCTION") {
     document.getElementById("card-badge").textContent = "CITY CENTER LANDMARK";
     document.getElementById("card-owner").textContent = "🦁 SHERU BHAI • ST JUNCTION";
@@ -216,5 +228,15 @@ if (btnPublicTime) {
     const nextMode = modes[nextIdx];
     engine.setTimeOfDay(nextMode);
     showToast(nextMode === "night" ? "🌙 Night Mode" : nextMode === "sunset" ? "🌇 Sunset Mode" : "☀️ Day Mode");
+  });
+}
+
+// Visitor Quick-Jump to 20-Acre International Airport
+const btnJumpAirport = document.getElementById("btn-jump-airport");
+if (btnJumpAirport) {
+  btnJumpAirport.addEventListener("click", () => {
+    engine.focusPlot("AIRPORT");
+    openPlotCard("AIRPORT", null);
+    showToast("✈️ Welcome to 20-Acre Sheru Bhai Airport!");
   });
 }

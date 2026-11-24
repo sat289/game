@@ -144,12 +144,12 @@ export class FollowerTownEngine {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x87ceeb);
     // Very light fog so buildings stay crystal clear and visible from afar!
-    this.scene.fog = new THREE.Fog(0x87ceeb, 180, 520);
+    this.scene.fog = new THREE.Fog(0x87ceeb, 320, 920);
 
     const initW = container.clientWidth || window.innerWidth || 360;
     const initH = container.clientHeight || window.innerHeight || 640;
     const aspect = initW / initH;
-    this.camera = new THREE.PerspectiveCamera(38, aspect, 1.0, 900);
+    this.camera = new THREE.PerspectiveCamera(38, aspect, 1.0, 1450);
     this.camera.position.set(62, 68, 62);
 
     // AUTO LOW-RAM DETECTION (2GB–4GB phones get zero-crash ultra-lite mode automatically!)
@@ -180,7 +180,7 @@ export class FollowerTownEngine {
     this.controls.maxPolarAngle = Math.PI / 2.22;
     this.controls.minPolarAngle = 0.25;
     this.controls.minDistance = 12;
-    this.controls.maxDistance = 360;
+    this.controls.maxDistance = 480;
     this.controls.touches = {
       ONE: THREE.TOUCH.PAN,
       TWO: THREE.TOUCH.DOLLY_ROTATE
@@ -215,6 +215,8 @@ export class FollowerTownEngine {
     this.lampBulbs = [];
     this.vehicleHeadlights = [];
     this.fountainJets = [];
+    this.airportSim = null;
+    this.airportX = 110;
     this.skyClouds = [];
     this.cloudMat = null;
     this.starField = null;
@@ -386,7 +388,46 @@ export class FollowerTownEngine {
       tankBlack: new THREE.MeshLambertMaterial({ color: 0x1f2937 }),
       gateMetal: new THREE.MeshLambertMaterial({ color: 0x27272a }),
       winFrame: new THREE.MeshLambertMaterial({ color: 0x475569 }),
-      sunglasses: new THREE.MeshBasicMaterial({ color: 0x09090b })
+      sunglasses: new THREE.MeshBasicMaterial({ color: 0x09090b }),
+      // Airport, Diamond Vehicle & Live Sheru Bhai Royal Materials
+      diamondCrystal: new THREE.MeshPhongMaterial({
+        color: 0xe0f2fe,
+        emissive: 0x0284c7,
+        emissiveIntensity: 0.3,
+        specular: 0xffffff,
+        shininess: 145,
+        flatShading: true
+      }),
+      diamondAccent: new THREE.MeshPhongMaterial({
+        color: 0x7dd3fc,
+        emissive: 0x38bdf8,
+        emissiveIntensity: 0.5,
+        specular: 0xffffff,
+        shininess: 160,
+        flatShading: true
+      }),
+      diamondGlow: new THREE.MeshBasicMaterial({ color: 0x67e8f9 }),
+      richVelvetRed: new THREE.MeshLambertMaterial({ color: 0x991b1b }),
+      richRoyalPurple: new THREE.MeshLambertMaterial({ color: 0x581c87 }),
+      richGoldTrim: new THREE.MeshPhongMaterial({
+        color: 0xfacc15,
+        emissive: 0xb45309,
+        emissiveIntensity: 0.28,
+        specular: 0xffffff,
+        shininess: 120
+      }),
+      lionFurGold: new THREE.MeshLambertMaterial({ color: 0xf5c06b }),
+      lionManeRich: new THREE.MeshLambertMaterial({ color: 0x92400e }),
+      runwayAsphalt: new THREE.MeshLambertMaterial({ color: 0x1e293b }),
+      tarmacGrey: new THREE.MeshLambertMaterial({ color: 0x334155 }),
+      runwayBlueLight: new THREE.MeshBasicMaterial({ color: 0x38bdf8 }),
+      beaconRed: new THREE.MeshBasicMaterial({ color: 0xef4444 }),
+      beaconGreen: new THREE.MeshBasicMaterial({ color: 0x22c55e }),
+      vipCarpet: new THREE.MeshLambertMaterial({ color: 0xb91c1c }),
+      heliGlass: new THREE.MeshLambertMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.45 }),
+      planeWhite: new THREE.MeshLambertMaterial({ color: 0xf8fafc }),
+      planeBlue: new THREE.MeshLambertMaterial({ color: 0x0284c7 }),
+      rotorBlade: new THREE.MeshLambertMaterial({ color: 0x0f172a })
     };
   }
 
@@ -671,7 +712,8 @@ export class FollowerTownEngine {
       this.cityGroup.remove(this.cityGroup.children[0]);
     }
     this.lampBulbs = [];
-    this.plotHitboxes = this.plotHitboxes.filter((h) => h.userData.plotId !== "ST_JUNCTION");
+    this.plotHitboxes = this.plotHitboxes.filter((h) => h.userData.plotId !== "ST_JUNCTION" && h.userData.plotId !== "AIRPORT");
+    this.airportSim = null;
 
     const r = this.currentGridRadius;
     const gridCount = r * 2 + 1;
@@ -680,11 +722,11 @@ export class FollowerTownEngine {
     this.ringRadius = ringRadius;
 
     const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(ringRadius * 2 + 130, ringRadius * 2 + 130),
+      new THREE.PlaneGeometry(ringRadius * 2 + 340, ringRadius * 2 + 240),
       this.mat.grass
     );
     ground.rotation.x = -Math.PI / 2;
-    ground.position.y = -0.06;
+    ground.position.set(55, -0.06, 0);
     this.cityGroup.add(ground);
 
     const roadLines = [];
@@ -773,7 +815,7 @@ export class FollowerTownEngine {
       this._addPalmTree(p, -(ringRadius + 7));
       this._addPalmTree(p, ringRadius + 7);
       this._addPalmTree(-(ringRadius + 7), p);
-      this._addPalmTree(ringRadius + 7, p);
+      if (p < 8 || p > 28) this._addPalmTree(ringRadius + 7, p);
     }
 
     this._addWelcomeArch(0, ringRadius - rw / 2 - 2.2);
@@ -805,6 +847,7 @@ export class FollowerTownEngine {
     this.cityGroup.add(padInst);
 
     this._buildSTJunctionStatue();
+    this._buildInternationalAirport(ringRadius);
     this.setTimeOfDay(this.timeOfDay);
   }
 
@@ -1046,6 +1089,650 @@ export class FollowerTownEngine {
     g.add(basePad, gardenRing, poolRim, water, step1, step2, goldCollar, statueBase, aura, sign);
     this.cityGroup.add(g);
   }
+
+  /**
+   * 🦁 LIVE ANIMATED SHERU BHAI LION CHARACTER (Rich Royal Clothes + Multiple Gold Chains + Sunglasses!)
+   */
+  _makeLiveSheruBhai(scale = 1.0, seated = false) {
+    const sb = new THREE.Group();
+
+    // Rich tailored trousers & polished gold-trimmed shoes (shortened if seated)
+    if (!seated) {
+      const legGeo = new THREE.BoxGeometry(0.24, 0.72, 0.24);
+      const legL = new THREE.Mesh(legGeo, this.mat.charcoal);
+      legL.position.set(-0.15, 0.38, 0);
+      const legR = legL.clone();
+      legR.position.x = 0.15;
+      const shoeGeo = new THREE.BoxGeometry(0.26, 0.12, 0.38);
+      const shoeL = new THREE.Mesh(shoeGeo, this.mat.richGoldTrim);
+      shoeL.position.set(-0.15, 0.06, 0.06);
+      const shoeR = shoeL.clone();
+      shoeR.position.x = 0.15;
+      sb.add(legL, legR, shoeL, shoeR);
+    }
+
+    const baseY = seated ? 0.15 : 0.74;
+
+    // Rich Royal Crimson Velvet Suit Coat + White Silk Shirt + Gold Lapels & Buttons
+    const coat = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.84, 0.42), this.mat.richVelvetRed);
+    coat.position.set(0, baseY + 0.42, 0);
+    const shirt = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.74, 0.44), this.mat.wallWhite);
+    shirt.position.set(0, baseY + 0.44, 0.01);
+    const lapelL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.62, 0.06), this.mat.richGoldTrim);
+    lapelL.position.set(-0.19, baseY + 0.5, 0.22);
+    lapelL.rotation.z = -0.14;
+    const lapelR = lapelL.clone();
+    lapelR.position.x = 0.19;
+    lapelR.rotation.z = 0.14;
+
+    // Gold Belt Buckle
+    const belt = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.1, 0.45), this.mat.richGoldTrim);
+    belt.position.set(0, baseY + 0.05, 0);
+
+    // MULTIPLE CHUNKY GLITTERING GOLD CHAINS on his chest!
+    const chain1 = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.036, 6, 12, Math.PI), this.mat.richGoldTrim);
+    chain1.rotation.z = Math.PI;
+    chain1.position.set(0, baseY + 0.78, 0.24);
+    const chain2 = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.032, 6, 12, Math.PI), this.mat.richGoldTrim);
+    chain2.rotation.z = Math.PI;
+    chain2.position.set(0, baseY + 0.72, 0.25);
+    const pendant = new THREE.Mesh(new THREE.OctahedronGeometry(0.08, 0), this.mat.diamondGlow);
+    pendant.position.set(0, baseY + 0.48, 0.27);
+
+    // Arms with gold cuffs
+    const armGeo = new THREE.BoxGeometry(0.2, 0.68, 0.2);
+    const armL = new THREE.Mesh(armGeo, this.mat.richVelvetRed);
+    armL.position.set(-0.48, baseY + 0.44, seated ? 0.18 : 0);
+    if (seated) armL.rotation.x = -0.9;
+    const armR = armL.clone();
+    armR.position.x = 0.48;
+    const cuffGeo = new THREE.BoxGeometry(0.22, 0.09, 0.22);
+    const cuffL = new THREE.Mesh(cuffGeo, this.mat.richGoldTrim);
+    cuffL.position.set(-0.48, baseY + 0.14, seated ? 0.34 : 0);
+    const cuffR = cuffL.clone();
+    cuffR.position.x = 0.48;
+
+    // Sculpted Royal Lion Head + Full Mane + Black Sunglasses + Mini Gold Crown Pin!
+    const headY = baseY + 1.12;
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.32, 10, 10), this.mat.lionFurGold);
+    head.position.set(0, headY, 0.05);
+    const snout = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.18, 0.22), this.mat.lionFurGold);
+    snout.position.set(0, headY - 0.08, 0.32);
+    const nose = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, 0.08), this.mat.sunglasses);
+    nose.position.set(0, headY - 0.02, 0.42);
+
+    // Rich Lion Mane Ring
+    const maneGeo = new THREE.DodecahedronGeometry(0.21, 0);
+    for (let m = 0; m < 8; m++) {
+      const ang = (m / 8) * Math.PI * 2;
+      const tuft = new THREE.Mesh(maneGeo, this.mat.lionManeRich);
+      tuft.position.set(Math.cos(ang) * 0.34, headY + Math.sin(ang) * 0.34, -0.05);
+      sb.add(tuft);
+    }
+    const maneBack = new THREE.Mesh(new THREE.SphereGeometry(0.42, 8, 8), this.mat.lionManeRich);
+    maneBack.position.set(0, headY, -0.14);
+
+    // Cool Black Sunglasses
+    const shades = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.13, 0.1), this.mat.sunglasses);
+    shades.position.set(0, headY + 0.06, 0.34);
+
+    sb.add(coat, shirt, lapelL, lapelR, belt, chain1, chain2, pendant, armL, armR, cuffL, cuffR, head, snout, nose, maneBack, shades);
+    sb.scale.setScalar(scale);
+    return sb;
+  }
+
+  /**
+   * 💎 SPARKLING DIAMOND VIP SUPERCAR (Sheru Bhai's Arrival Car!)
+   */
+  _makeDiamondCarMesh() {
+    const car = new THREE.Group();
+
+    // 4 Luxury Wheels with Gold Alloy Rims
+    const wheelGeo = new THREE.CylinderGeometry(0.32, 0.32, 0.22, 10);
+    const rimGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.24, 8);
+    [[-0.86, 1.3], [0.86, 1.3], [-0.86, -1.25], [0.86, -1.25]].forEach(([wx, wz]) => {
+      const tire = new THREE.Mesh(wheelGeo, this.mat.wheelBlack);
+      tire.rotation.z = Math.PI / 2;
+      tire.position.set(wx, 0.32, wz);
+      const rim = new THREE.Mesh(rimGeo, this.mat.richGoldTrim);
+      rim.rotation.z = Math.PI / 2;
+      rim.position.set(wx, 0.32, wz);
+      car.add(tire, rim);
+    });
+
+    // Faceted Sparkling Diamond Supercar Body (low-slung luxury coupe)
+    const lowerBody = new THREE.Mesh(new THREE.BoxGeometry(1.76, 0.56, 4.15), this.mat.diamondCrystal);
+    lowerBody.position.set(0, 0.56, 0);
+
+    const hood = new THREE.Mesh(new THREE.BoxGeometry(1.66, 0.24, 1.45), this.mat.diamondAccent);
+    hood.position.set(0, 0.88, 1.25);
+    hood.rotation.x = 0.08;
+
+    const rearDeck = new THREE.Mesh(new THREE.BoxGeometry(1.68, 0.28, 1.1), this.mat.diamondAccent);
+    rearDeck.position.set(0, 0.9, -1.35);
+
+    // Crystal Hood Ornament Diamond + Gold Front Grille
+    const grille = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.32, 0.12), this.mat.richGoldTrim);
+    grille.position.set(0, 0.54, 2.08);
+    const hoodGem = new THREE.Mesh(new THREE.OctahedronGeometry(0.18, 0), this.mat.diamondGlow);
+    hoodGem.position.set(0, 1.12, 1.9);
+
+    // Open-View Glass Cabin so Sheru Bhai Lion is clearly visible sitting inside!
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.12, 1.55), this.mat.diamondCrystal);
+    roof.position.set(0, 1.58, -0.15);
+    const windshield = new THREE.Mesh(new THREE.BoxGeometry(1.38, 0.62, 0.08), this.mat.heliGlass);
+    windshield.position.set(0, 1.24, 0.62);
+    windshield.rotation.x = -0.35;
+    const rearGlass = new THREE.Mesh(new THREE.BoxGeometry(1.38, 0.56, 0.08), this.mat.heliGlass);
+    rearGlass.position.set(0, 1.24, -0.92);
+    rearGlass.rotation.x = 0.32;
+    [[-0.68, 0.52], [0.68, 0.52], [-0.68, -0.85], [0.68, -0.85]].forEach(([px, pz]) => {
+      const pil = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.65, 0.08), this.mat.richGoldTrim);
+      pil.position.set(px, 1.22, pz);
+      car.add(pil);
+    });
+
+    // Rear Diamond Spoiler + Sparkling Neon Underglow
+    const spoiler = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.08, 0.32), this.mat.diamondAccent);
+    spoiler.position.set(0, 1.26, -1.9);
+    const underglow = new THREE.Mesh(new THREE.PlaneGeometry(2.1, 4.4), this.mat.diamondGlow);
+    underglow.rotation.x = -Math.PI / 2;
+    underglow.position.set(0, 0.07, 0);
+
+    // Headlights & Taillights
+    const hlGeo = new THREE.BoxGeometry(0.36, 0.14, 0.08);
+    const hlL = new THREE.Mesh(hlGeo, this.mat.diamondGlow);
+    hlL.position.set(-0.62, 0.66, 2.09);
+    const hlR = hlL.clone();
+    hlR.position.x = 0.62;
+    const tlL = new THREE.Mesh(hlGeo, this.mat.taillight);
+    tlL.position.set(-0.62, 0.68, -2.09);
+    const tlR = tlL.clone();
+    tlR.position.x = 0.62;
+
+    // Seated Sheru Bhai inside Diamond Car (toggled visible when driving!)
+    const seatedSheru = this._makeLiveSheruBhai(0.68, true);
+    seatedSheru.position.set(-0.22, 0.56, -0.05);
+    car.userData.seatedSheru = seatedSheru;
+
+    // Night road beam
+    const beam = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 4.5), this.mat.headlightBeam);
+    beam.rotation.x = -Math.PI / 2;
+    beam.position.set(0, 0.09, 4.35);
+    beam.visible = this.timeOfDay === "night";
+    car.userData.nightBeam = beam;
+
+    car.add(lowerBody, hood, rearDeck, grille, hoodGem, roof, windshield, rearGlass, spoiler, underglow, hlL, hlR, tlL, tlR, seatedSheru, beam);
+    return car;
+  }
+
+  /**
+   * 🚁💎 SPARKLING DIAMOND VIP HELICOPTER (Sheru Bhai's City Tour Helicopter!)
+   */
+  _makeDiamondHeliMesh() {
+    const heli = new THREE.Group();
+
+    // Gold Landing Skids + Struts
+    const skidGeo = new THREE.CylinderGeometry(0.09, 0.09, 4.4, 6);
+    skidGeo.rotateX(Math.PI / 2);
+    const skidL = new THREE.Mesh(skidGeo, this.mat.richGoldTrim);
+    skidL.position.set(-1.15, 0.12, 0.1);
+    const skidR = skidL.clone();
+    skidR.position.x = 1.15;
+    const strutGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.85, 5);
+    [[-1.0, 0.9], [1.0, 0.9], [-1.0, -0.8], [1.0, -0.8]].forEach(([sx, sz]) => {
+      const st = new THREE.Mesh(strutGeo, this.mat.richGoldTrim);
+      st.position.set(sx, 0.52, sz);
+      st.rotation.z = sx < 0 ? -0.25 : 0.25;
+      heli.add(st);
+    });
+
+    // Faceted Sparkling Diamond Fuselage Cabin + Crystal Nose
+    const cabinFloor = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.45, 3.6), this.mat.diamondCrystal);
+    cabinFloor.position.set(0, 1.05, 0.1);
+    const cabinBack = new THREE.Mesh(new THREE.BoxGeometry(2.05, 1.45, 1.9), this.mat.diamondCrystal);
+    cabinBack.position.set(0, 1.85, -0.75);
+    const cabinRoof = new THREE.Mesh(new THREE.BoxGeometry(1.95, 0.34, 3.3), this.mat.diamondAccent);
+    cabinRoof.position.set(0, 2.58, 0.05);
+
+    // Nose Cone (faceted diamond crystal!)
+    const noseCone = new THREE.Mesh(new THREE.OctahedronGeometry(1.12, 0), this.mat.diamondAccent);
+    noseCone.scale.set(0.95, 0.72, 1.25);
+    noseCone.position.set(0, 1.45, 1.95);
+
+    // Clear Cyan Cockpit Canopy (so Sheru Bhai is visible flying inside!)
+    const canopy = new THREE.Mesh(new THREE.BoxGeometry(1.98, 1.12, 1.65), this.mat.heliGlass);
+    canopy.position.set(0, 1.84, 1.05);
+
+    // Gold Trim Stripes along fuselage
+    const stripeL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.22, 3.4), this.mat.richGoldTrim);
+    stripeL.position.set(-1.06, 1.25, 0.1);
+    const stripeR = stripeL.clone();
+    stripeR.position.x = 1.06;
+
+    // Tapered Diamond Tail Boom + Vertical Fin + Stabilizers
+    const tailBoom = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.52, 4.4, 6), this.mat.diamondCrystal);
+    tailBoom.rotation.x = Math.PI / 2;
+    tailBoom.position.set(0, 1.85, -3.55);
+
+    const tailFin = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.65, 0.95), this.mat.diamondAccent);
+    tailFin.position.set(0, 2.45, -5.45);
+    tailFin.rotation.x = -0.25;
+
+    const hStab = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.1, 0.55), this.mat.richGoldTrim);
+    hStab.position.set(0, 1.85, -4.6);
+
+    // Main Rotor Mast + 4-Blade Spinning Main Rotor (stored on userData for animation!)
+    const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.22, 0.65, 8), this.mat.richGoldTrim);
+    mast.position.set(0, 2.95, -0.15);
+
+    const mainRotor = new THREE.Group();
+    mainRotor.position.set(0, 3.28, -0.15);
+    const hub = new THREE.Mesh(new THREE.OctahedronGeometry(0.28, 0), this.mat.diamondGlow);
+    const blade1 = new THREE.Mesh(new THREE.BoxGeometry(7.8, 0.06, 0.34), this.mat.rotorBlade);
+    const blade2 = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.06, 7.8), this.mat.rotorBlade);
+    const tip1 = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.07, 0.14), this.mat.diamondGlow);
+    mainRotor.add(hub, blade1, blade2, tip1);
+    heli.userData.mainRotor = mainRotor;
+
+    // Spinning Tail Rotor
+    const tailRotor = new THREE.Group();
+    tailRotor.position.set(0.22, 2.55, -5.55);
+    const tb1 = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.45, 0.14), this.mat.richGoldTrim);
+    const tb2 = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.14, 1.45), this.mat.richGoldTrim);
+    tailRotor.add(tb1, tb2);
+    heli.userData.tailRotor = tailRotor;
+
+    // Navigation Lights (Red Left, Green Right) + Spotlight
+    const navL = new THREE.Mesh(new THREE.SphereGeometry(0.12, 6, 6), this.mat.beaconRed);
+    navL.position.set(-1.12, 1.45, 0.8);
+    const navR = new THREE.Mesh(new THREE.SphereGeometry(0.12, 6, 6), this.mat.beaconGreen);
+    navR.position.set(1.12, 1.45, 0.8);
+
+    // Seated Sheru Bhai inside Diamond Helicopter Cockpit!
+    const seatedSheru = this._makeLiveSheruBhai(0.86, true);
+    seatedSheru.position.set(0, 1.25, 0.95);
+    seatedSheru.visible = false;
+    heli.userData.seatedSheru = seatedSheru;
+
+    heli.add(
+      skidL, skidR, cabinFloor, cabinBack, cabinRoof, noseCone, canopy,
+      stripeL, stripeR, tailBoom, tailFin, hStab, mast, mainRotor, tailRotor, navL, navR, seatedSheru
+    );
+    return heli;
+  }
+
+  /**
+   * ✈️ REALISTIC 3D COMMERCIAL PASSENGER AIRPLANE
+   */
+  _makeCommercialPlaneMesh() {
+    const plane = new THREE.Group();
+
+    // Long Cylindrical White Fuselage + Rounded Nose + Tapered Tail
+    const fuse = new THREE.Mesh(new THREE.CylinderGeometry(1.18, 1.18, 11.4, 12), this.mat.planeWhite);
+    fuse.rotation.x = Math.PI / 2;
+    fuse.position.set(0, 2.35, 0);
+
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(1.18, 12, 10), this.mat.planeWhite);
+    nose.scale.set(1, 0.92, 1.85);
+    nose.position.set(0, 2.3, 5.6);
+
+    const tailCone = new THREE.Mesh(new THREE.ConeGeometry(1.18, 3.6, 12), this.mat.planeWhite);
+    tailCone.rotation.x = -Math.PI / 2;
+    tailCone.position.set(0, 2.45, -7.4);
+
+    // Blue & Gold Airline Livery Belly Stripe + Cockpit Windshield
+    const livery = new THREE.Mesh(new THREE.BoxGeometry(2.42, 0.36, 10.8), this.mat.planeBlue);
+    livery.position.set(0, 2.02, -0.1);
+    const cockpit = new THREE.Mesh(new THREE.BoxGeometry(1.55, 0.48, 1.05), this.mat.busWindshield);
+    cockpit.position.set(0, 2.75, 5.75);
+
+    // Passenger Cabin Windows Strip on Both Sides
+    const winStripGeo = new THREE.BoxGeometry(0.08, 0.28, 8.6);
+    const winL = new THREE.Mesh(winStripGeo, this.mat.busWindshield);
+    winL.position.set(-1.18, 2.6, 0.2);
+    const winR = winL.clone();
+    winR.position.x = 1.18;
+
+    // Swept Main Wings + Wingtip Winglets + Dual Jet Engines
+    const wingGeo = new THREE.BoxGeometry(6.8, 0.22, 2.5);
+    const wingL = new THREE.Mesh(wingGeo, this.mat.planeWhite);
+    wingL.position.set(-4.2, 2.0, 0.4);
+    wingL.rotation.y = 0.24;
+    const wingR = new THREE.Mesh(wingGeo, this.mat.planeWhite);
+    wingR.position.set(4.2, 2.0, 0.4);
+    wingR.rotation.y = -0.24;
+
+    const engGeo = new THREE.CylinderGeometry(0.46, 0.42, 1.85, 10);
+    engGeo.rotateX(Math.PI / 2);
+    const engL = new THREE.Mesh(engGeo, this.mat.planeBlue);
+    engL.position.set(-3.1, 1.45, 0.9);
+    const engR = engL.clone();
+    engR.position.x = 3.1;
+
+    // Vertical Tail Fin (Blue + Gold Stripe) + Horizontal Tailplanes
+    const tailFin = new THREE.Mesh(new THREE.BoxGeometry(0.24, 3.4, 2.6), this.mat.planeBlue);
+    tailFin.position.set(0, 4.45, -6.5);
+    tailFin.rotation.x = -0.28;
+    const finGold = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.55, 2.3), this.mat.richGoldTrim);
+    finGold.position.set(0, 4.95, -6.6);
+    finGold.rotation.x = -0.28;
+
+    const hTail = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.16, 1.45), this.mat.planeWhite);
+    hTail.position.set(0, 2.65, -7.1);
+
+    // Landing Gear Wheels (Front + 2 Main Rear)
+    const wheelGeo = new THREE.CylinderGeometry(0.32, 0.32, 0.24, 8);
+    wheelGeo.rotateZ(Math.PI / 2);
+    const strutGeo = new THREE.CylinderGeometry(0.08, 0.08, 1.1, 6);
+    [[0, 4.6], [-1.75, -0.4], [1.75, -0.4]].forEach(([gx, gz]) => {
+      const st = new THREE.Mesh(strutGeo, this.mat.charcoal);
+      st.position.set(gx, 0.85, gz);
+      const wh = new THREE.Mesh(wheelGeo, this.mat.wheelBlack);
+      wh.position.set(gx, 0.32, gz);
+      plane.add(st, wh);
+    });
+
+    // Wingtip Navigation Lights
+    const navL = new THREE.Mesh(new THREE.SphereGeometry(0.2, 6, 6), this.mat.beaconRed);
+    navL.position.set(-7.5, 2.15, -0.4);
+    const navR = new THREE.Mesh(new THREE.SphereGeometry(0.2, 6, 6), this.mat.beaconGreen);
+    navR.position.set(7.5, 2.15, -0.4);
+
+    plane.add(fuse, nose, tailCone, livery, cockpit, winL, winR, wingL, wingR, engL, engR, tailFin, finGold, hTail, navL, navR);
+    return plane;
+  }
+
+  /**
+   * ✈️ 20-ACRE INTERNATIONAL AIRPORT OUTSIDE THE CITY (East of Outer Ring Road)
+   * Includes:
+   * - Dedicated VIP Airport Express Highway + Entrance Arch
+   * - Grand Terminal, ATC Control Tower (rotating radar + blinking beacon), 88-unit Runway & Taxiways
+   * - Live Airport Shuttle Bus driving passengers to the Airplane -> Passengers climb stairs into Plane -> Plane takes off & circles the ENTIRE CITY -> Lands back!
+   * - Live VIP Sheru Bhai (Lion in rich clothes + gold chains) arriving in his Sparkling Diamond Car inside the Airport right next to the VIP Helipad -> Walking into his Sparkling Diamond Helicopter -> Flying around the ENTIRE CITY!
+   */
+  _buildInternationalAirport(ringRadius) {
+    const ax = ringRadius + 62;
+    this.airportX = ax;
+
+    const ap = new THREE.Group();
+    ap.position.set(ax, 0, 0);
+
+    const nightGlowMeshes = [];
+
+    // 1. Airport Express Highway connecting East Outer Ring Road -> Inside Airport VIP Gate (at z = 18)
+    const hwyLen = 28;
+    const expressHwy = new THREE.Mesh(new THREE.BoxGeometry(hwyLen, 0.1, 7.6), this.mat.highway);
+    expressHwy.position.set(-48, 0.02, 18);
+    const hwyStripe = new THREE.Mesh(new THREE.PlaneGeometry(hwyLen - 2, 0.25), this.mat.petrolYellow);
+    hwyStripe.rotation.x = -Math.PI / 2;
+    hwyStripe.position.set(-48, 0.09, 18);
+    ap.add(expressHwy, hwyStripe);
+
+    // Airport Highway Entrance Gate Arch
+    const archPillarGeo = new THREE.BoxGeometry(0.85, 6.2, 0.85);
+    const apP1 = new THREE.Mesh(archPillarGeo, this.mat.wallWhite);
+    apP1.position.set(-44.5, 3.1, 13.6);
+    const apP2 = apP1.clone();
+    apP2.position.z = 22.4;
+    const apBeam = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.6, 10.2), this.mat.navy);
+    apBeam.position.set(-44.5, 6.0, 18);
+    const gateBoardF = this._makeBuildingBoard("SHERU BHAI AIRPORT", "20 ACRES • VIP GATE", "#0f172a", "#38bdf8", 9.2, 1.35);
+    gateBoardF.rotation.y = -Math.PI / 2;
+    gateBoardF.position.set(-45.08, 6.0, 18);
+    const gateBoardB = gateBoardF.clone();
+    gateBoardB.rotation.y = Math.PI / 2;
+    gateBoardB.position.x = -43.92;
+    ap.add(apP1, apP2, apBeam, gateBoardF, gateBoardB);
+
+    // 2. Massive 20-Acre Airport Tarmac Apron (88 x 96 units!) & Perimeter Fence
+    const turfPad = new THREE.Mesh(new THREE.BoxGeometry(88, 0.06, 96), this.mat.turf);
+    turfPad.position.set(0, 0.01, 0);
+
+    const tarmac = new THREE.Mesh(new THREE.BoxGeometry(52, 0.1, 86), this.mat.tarmacGrey);
+    tarmac.position.set(-14, 0.04, 0);
+
+    // Perimeter Boundary Fence (leaving gate open on West at z = 13..23)
+    const fN = new THREE.Mesh(new THREE.BoxGeometry(88, 1.4, 0.3), this.mat.concrete);
+    fN.position.set(0, 0.7, -48);
+    const fS = fN.clone();
+    fS.position.z = 48;
+    const fE = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.4, 96), this.mat.concrete);
+    fE.position.set(44, 0.7, 0);
+    const fWN = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.4, 61), this.mat.concrete);
+    fWN.position.set(-44, 0.7, -17.5);
+    const fWS = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.4, 25), this.mat.concrete);
+    fWS.position.set(-44, 0.7, 35.5);
+    ap.add(turfPad, tarmac, fN, fS, fE, fWN, fWS);
+
+    // 3. Long International Runway (88 units long along East side, x = +24)
+    const runway = new THREE.Mesh(new THREE.BoxGeometry(14.5, 0.12, 88), this.mat.runwayAsphalt);
+    runway.position.set(24, 0.06, 0);
+    ap.add(runway);
+
+    // Runway Centerline Dashes & Threshold Piano Keys (Instanced or batched clean meshes)
+    const dashGeo = new THREE.PlaneGeometry(0.45, 3.6);
+    dashGeo.rotateX(-Math.PI / 2);
+    for (let rz = -36; rz <= 36; rz += 7.2) {
+      const dash = new THREE.Mesh(dashGeo, this.mat.stripe);
+      dash.position.set(24, 0.14, rz);
+      ap.add(dash);
+    }
+    const keyGeo = new THREE.PlaneGeometry(0.75, 4.2);
+    keyGeo.rotateX(-Math.PI / 2);
+    [-41, 41].forEach((kz) => {
+      for (let kx = 18.5; kx <= 29.5; kx += 1.8) {
+        const key = new THREE.Mesh(keyGeo, this.mat.stripe);
+        key.position.set(kx, 0.14, kz);
+        ap.add(key);
+      }
+    });
+
+    // Taxiway Connectors from Tarmac to Runway (South Takeoff & North Exit)
+    const taxiGeo = new THREE.BoxGeometry(20, 0.11, 7.5);
+    const taxiS = new THREE.Mesh(taxiGeo, this.mat.runwayAsphalt);
+    taxiS.position.set(10, 0.055, 34);
+    const taxiN = taxiS.clone();
+    taxiN.position.z = -34;
+    ap.add(taxiS, taxiN);
+
+    // Glowing Runway Edge Lights (Light up blue/amber at night!)
+    const rLightGeo = new THREE.SphereGeometry(0.24, 5, 5);
+    for (let lz = -40; lz <= 40; lz += 10) {
+      [16.2, 31.8].forEach((lx) => {
+        const bulb = new THREE.Mesh(rLightGeo, this.mat.runwayBlueLight);
+        bulb.position.set(lx, 0.35, lz);
+        bulb.visible = this.timeOfDay === "night";
+        ap.add(bulb);
+        nightGlowMeshes.push(bulb);
+      });
+    }
+
+    // 4. Grand Modern International Terminal Building (West-North Side)
+    const termMain = new THREE.Mesh(new THREE.BoxGeometry(15, 7.2, 32), this.mat.wallWhite);
+    termMain.position.set(-30, 3.65, -14);
+    const termGlass = new THREE.Mesh(new THREE.BoxGeometry(15.3, 4.6, 28), this.mat.glass);
+    termGlass.position.set(-30, 3.8, -14);
+    const termRoof = new THREE.Mesh(new THREE.BoxGeometry(18.5, 0.8, 35), this.mat.navy);
+    termRoof.position.set(-29, 7.6, -14);
+    const termTrim = new THREE.Mesh(new THREE.BoxGeometry(18.7, 0.32, 35.2), this.mat.richGoldTrim);
+    termTrim.position.set(-29, 7.15, -14);
+
+    // Terminal Facade Signboards (both tarmac-facing & city-facing)
+    const termBoardE = this._makeBuildingBoard("SHERU BHAI AIRPORT", "INTERNATIONAL TERMINAL • 20 ACRES", "#0f172a", "#facc15", 16.0, 2.1);
+    termBoardE.rotation.y = Math.PI / 2;
+    termBoardE.position.set(-22.2, 6.2, -14);
+    const termBoardW = termBoardE.clone();
+    termBoardW.rotation.y = -Math.PI / 2;
+    termBoardW.position.x = -37.8;
+    ap.add(termMain, termGlass, termRoof, termTrim, termBoardE, termBoardW);
+
+    // 5. Air Traffic Control (ATC) Tower with Rotating Radar Dish & Blinking Red Beacon!
+    const atcBase = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 3.2, 13.5, 8), this.mat.wallWhite);
+    atcBase.position.set(-30, 6.8, -37);
+    const atcDeck = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 2.8, 1.4, 8), this.mat.navy);
+    atcDeck.position.set(-30, 14.1, -37);
+    const atcGlass = new THREE.Mesh(new THREE.CylinderGeometry(4.4, 4.0, 2.4, 8), this.mat.glass);
+    atcGlass.position.set(-30, 16.0, -37);
+    const atcCap = new THREE.Mesh(new THREE.CylinderGeometry(4.8, 4.6, 0.65, 8), this.mat.wallWhite);
+    atcCap.position.set(-30, 17.5, -37);
+
+    const radarGroup = new THREE.Group();
+    radarGroup.position.set(-30, 18.6, -37);
+    const radarPost = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 1.4, 6), this.mat.charcoal);
+    const radarBar = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.55, 0.25), this.mat.richGoldTrim);
+    radarBar.position.y = 0.65;
+    const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.32, 6, 6), this.mat.beaconRed);
+    beacon.position.y = 1.25;
+    radarGroup.add(radarPost, radarBar, beacon);
+    ap.add(atcBase, atcDeck, atcGlass, atcCap, radarGroup);
+
+    // 6. Mobile Passenger Boarding Stairs beside Commercial Plane Bay (-2, -12)
+    const stairs = new THREE.Group();
+    stairs.position.set(-6.0, 0.1, -9.8);
+    for (let st = 0; st < 6; st++) {
+      const step = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.22, 1.35), this.mat.wallWhite);
+      step.position.set(st * 0.48, 0.2 + st * 0.34, 0);
+      stairs.add(step);
+    }
+    const stairRail = new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.12, 1.42), this.mat.planeBlue);
+    stairRail.position.set(1.2, 1.55, 0);
+    stairRail.rotation.z = 0.62;
+    ap.add(stairs, stairRail);
+
+    // 7. Commercial Airplane + Airport Shuttle Bus + 6 Live Boarding Passengers!
+    const plane = this._makeCommercialPlaneMesh();
+    plane.rotation.order = "YXZ";
+    ap.add(plane);
+
+    const shuttleBus = this._makeRealBusMesh(0x0284c7, false);
+    ap.add(shuttleBus);
+
+    const planePassengers = [
+      this.mat.wallCoral, this.mat.wallGold, this.mat.wallMint,
+      this.mat.wallBlue, this.mat.richVelvetRed, this.mat.khakiUniform
+    ].map((sm) => {
+      const p = this._createCharacter({ shirtMat: sm, pantsMat: this.mat.darkPants, scale: 0.95 });
+      p.visible = false;
+      ap.add(p);
+      return p;
+    });
+
+    // 8. VIP SHERU BHAI HELIPAD & RED CARPET ZONE (Inside Airport South-West at x = -2, z = 24)
+    const vipRoad = new THREE.Mesh(new THREE.BoxGeometry(30, 0.11, 6.2), this.mat.highway);
+    vipRoad.position.set(-29, 0.055, 18);
+    const vipDropBay = new THREE.Mesh(new THREE.BoxGeometry(10, 0.12, 8), this.mat.runwayAsphalt);
+    vipDropBay.position.set(-16, 0.06, 22);
+    ap.add(vipRoad, vipDropBay);
+
+    // Red VIP Carpet from Diamond Car Drop-Off straight onto Diamond Helipad!
+    const redCarpet = new THREE.Mesh(new THREE.BoxGeometry(8.5, 0.15, 2.2), this.mat.vipCarpet);
+    redCarpet.position.set(-10.5, 0.09, 23.2);
+    redCarpet.rotation.y = -0.14;
+    ap.add(redCarpet);
+
+    // Circular VIP Helipad with Glowing Diamond Cyan Ring & Bold Gold "H"
+    const helipad = new THREE.Mesh(new THREE.CylinderGeometry(7.2, 7.5, 0.18, 24), this.mat.runwayAsphalt);
+    helipad.position.set(-1, 0.09, 24);
+    const heliRing = new THREE.Mesh(new THREE.RingGeometry(6.1, 6.8, 24), this.mat.diamondGlow);
+    heliRing.rotation.x = -Math.PI / 2;
+    heliRing.position.set(-1, 0.2, 24);
+    const hLeft = new THREE.Mesh(new THREE.PlaneGeometry(0.85, 5.2), this.mat.richGoldTrim);
+    hLeft.rotation.x = -Math.PI / 2;
+    hLeft.position.set(-2.6, 0.21, 24);
+    const hRight = hLeft.clone();
+    hRight.position.x = 0.6;
+    const hMid = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 0.85), this.mat.richGoldTrim);
+    hMid.rotation.x = -Math.PI / 2;
+    hMid.position.set(-1, 0.21, 24);
+
+    // VIP Helipad Signboard
+    const vipSign = this._makeBuildingBoard("SHERU BHAI VIP PAD", "DIAMOND HELICOPTER", "#0f172a", "#67e8f9", 7.2, 1.15);
+    vipSign.position.set(-1, 2.6, 32.5);
+    const vp1 = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 2.6, 6), this.mat.richGoldTrim);
+    vp1.position.set(-4.2, 1.3, 32.5);
+    const vp2 = vp1.clone();
+    vp2.position.x = 2.2;
+    ap.add(helipad, heliRing, hLeft, hRight, hMid, vipSign, vp1, vp2);
+
+    // 9. LIVE VIP SHERU BHAI + SPARKLING DIAMOND CAR + SPARKLING DIAMOND HELICOPTER!
+    const diamondCar = this._makeDiamondCarMesh();
+    ap.add(diamondCar);
+    if (diamondCar.userData.nightBeam) {
+      nightGlowMeshes.push(diamondCar.userData.nightBeam);
+    }
+
+    const walkingSheru = this._makeLiveSheruBhai(1.08, false);
+    walkingSheru.visible = false;
+    ap.add(walkingSheru);
+
+    const diamondHeli = this._makeDiamondHeliMesh();
+    diamondHeli.rotation.order = "YXZ";
+    ap.add(diamondHeli);
+
+    // 10. Floating Big Airport Sign + Clickable Hitbox
+    const apSign = this._createNameSign("✈️ SHERU BHAI INTL AIRPORT", "20 ACRES • LIVE FLIGHTS & DIAMOND HELI", true);
+    apSign.position.set(-12, 23.5, -14);
+    ap.add(apSign);
+
+    const hitbox = new THREE.Mesh(
+      new THREE.BoxGeometry(88, 18, 96),
+      new THREE.MeshBasicMaterial({ visible: false })
+    );
+    hitbox.position.set(0, 9, 0);
+    hitbox.userData.plotId = "AIRPORT";
+    ap.add(hitbox);
+    this.plotHitboxes.push(hitbox);
+
+    this.cityGroup.add(ap);
+
+    // Precompute scenic aerial flight paths (in Airport local coordinates) circling the ENTIRE CITY!
+    const cityOrbitR = Math.max(ringRadius + 8, 52);
+    const planeCityLoop = new THREE.CatmullRomCurve3(
+      [
+        new THREE.Vector3(24, 20, -48),
+        new THREE.Vector3(10 - ax, 40, -cityOrbitR),
+        new THREE.Vector3(-cityOrbitR - ax, 44, -cityOrbitR * 0.45),
+        new THREE.Vector3(-cityOrbitR - ax, 44, cityOrbitR * 0.55),
+        new THREE.Vector3(-ax, 42, cityOrbitR),
+        new THREE.Vector3(24, 24, 58)
+      ],
+      false,
+      "catmullrom",
+      0.45
+    );
+
+    const heliCityLoop = new THREE.CatmullRomCurve3(
+      [
+        new THREE.Vector3(-1, 20, 24),
+        new THREE.Vector3(-ax * 0.45, 25, 16),
+        new THREE.Vector3(-ax + 12, 22, 12),            // Swoops right past Sheru Bhai Statue at ST Junction!
+        new THREE.Vector3(-ax - cityOrbitR * 0.65, 26, -cityOrbitR * 0.5),
+        new THREE.Vector3(-ax, 27, -cityOrbitR * 0.8),
+        new THREE.Vector3(-ax + cityOrbitR * 0.65, 25, -cityOrbitR * 0.45),
+        new THREE.Vector3(-1, 20, 24)
+      ],
+      false,
+      "catmullrom",
+      0.45
+    );
+
+    this.airportSim = {
+      ax,
+      radarGroup,
+      beacon,
+      plane,
+      shuttleBus,
+      planePassengers,
+      planeCityLoop,
+      diamondCar,
+      walkingSheru,
+      diamondHeli,
+      heliCityLoop,
+      nightGlowMeshes
+    };
+  }
+
   _addWelcomeArch(x, z) {
     const g = new THREE.Group();
     const pGeo = new THREE.BoxGeometry(0.95, 6.4, 0.95);
@@ -2758,6 +3445,9 @@ export class FollowerTownEngine {
     if (this.skyClouds) {
       this.skyClouds.forEach((c) => { c.mesh.visible = !isNight; });
     }
+    if (this.airportSim && this.airportSim.nightGlowMeshes) {
+      this.airportSim.nightGlowMeshes.forEach((m) => { m.visible = isNight; });
+    }
     this.plotsGroup.traverse((obj) => {
       if (obj.userData && obj.userData.isWindow) {
         obj.material = isNight ? this.mat.windowNight : this.mat.windowDay;
@@ -2767,6 +3457,7 @@ export class FollowerTownEngine {
 
   getPlotWorldCenter(plotId) {
     if (plotId === "ST_JUNCTION") return { x: 0, y: 4, z: 0, size: 4 };
+    if (plotId === "AIRPORT") return { x: this.airportX - 4, y: 5, z: 4, size: 12 };
     const plotIndex = parseInt(plotId.replace("plot_", ""), 10) - 1;
     if (isNaN(plotIndex) || plotIndex < 0) return { x: 0, y: 2, z: 0, size: 1 };
 
@@ -2788,7 +3479,7 @@ export class FollowerTownEngine {
 
   focusPlot(plotId, fastSpeed = 0.1) {
     const center = this.getPlotWorldCenter(plotId);
-    const dist = center.size === 8 ? 36 : center.size === 4 ? 28 : 20;
+    const dist = center.size === 12 ? 64 : center.size === 8 ? 36 : center.size === 4 ? 28 : 20;
 
     this.cameraGoal = {
       target: new THREE.Vector3(center.x, center.y, center.z),
@@ -2804,8 +3495,8 @@ export class FollowerTownEngine {
       this.highlightBeacon.rotation.x = -Math.PI / 2;
       this.scene.add(this.highlightBeacon);
     }
-    const sx = center.size === 8 ? 3.8 : center.size === 4 ? 2.0 : 1.05;
-    const sy = center.size >= 4 ? 2.0 : 1.05;
+    const sx = center.size === 12 ? 7.5 : center.size === 8 ? 3.8 : center.size === 4 ? 2.0 : 1.05;
+    const sy = center.size === 12 ? 7.5 : center.size >= 4 ? 2.0 : 1.05;
     this.highlightBeacon.scale.set(sx, sy, 1);
     this.highlightBeacon.position.set(center.x, 0.3, center.z);
   }
@@ -2825,12 +3516,22 @@ export class FollowerTownEngine {
 
     stops.push({
       tag: "CITY CENTER",
-      name: "🗽 ST JUNCTION",
+      name: "🦁 SHERU BHAI • ST JUNCTION",
       target: new THREE.Vector3(0, 4, 0),
       camPos: new THREE.Vector3(20, 22, 20),
       duration: 1.5,
       speed: 0.18,
       plotId: "ST_JUNCTION"
+    });
+
+    stops.push({
+      tag: "20-ACRE INTERNATIONAL AIRPORT",
+      name: "✈️ SHERU BHAI AIRPORT & DIAMOND HELI",
+      target: new THREE.Vector3(this.airportX - 4, 5, 6),
+      camPos: new THREE.Vector3(this.airportX - 58, 44, 56),
+      duration: 2.6,
+      speed: 0.14,
+      plotId: "AIRPORT"
     });
 
     const landmarks = [];
@@ -3116,6 +3817,7 @@ export class FollowerTownEngine {
   findPlotByQuery(query) {
     const q = query.trim().toLowerCase().replace(/^@/, "");
     if (!q) return null;
+    if (q.includes("airport") || q.includes("plane") || q.includes("flight") || q.includes("heli") || q.includes("diamond")) return "AIRPORT";
     if (q.includes("sheru") || q.includes("bhai") || q.includes("junction") || q.includes("statue") || q === "st") return "ST_JUNCTION";
     for (const [plotId, data] of this.plotDataMap.entries()) {
       if (!data || data.status !== "built") continue;
@@ -3533,6 +4235,239 @@ export class FollowerTownEngine {
         c.siteWorkers.forEach((npc) => c.plotGroup.remove(npc));
         this.constructions.splice(i, 1);
       }
+    }
+
+
+    // ✈️ 20-ACRE INTERNATIONAL AIRPORT + 🦁💎 SHERU BHAI DIAMOND CAR & HELICOPTER LIVE SIMULATION
+    if (this.lifeEnabled && this.airportSim) {
+      const sim = this.airportSim;
+
+      // Rotate ATC Tower Radar & Blink Aviation Beacon
+      sim.radarGroup.rotation.y += dt * 1.8;
+      sim.beacon.visible = Math.sin(elapsed * 6.0) > 0;
+
+      // -------------------------------------------------------------
+      // A. COMMERCIAL FLIGHT + SHUTTLE BUS + PASSENGER BOARDING (34s loop)
+      // -------------------------------------------------------------
+      const pCycle = elapsed % 34.0;
+      const plane = sim.plane;
+      const bus = sim.shuttleBus;
+
+      if (pCycle < 4.5) {
+        // Stage 1: Plane parked at boarding bay; Airport Shuttle Bus drives from Terminal to Plane stairs!
+        const t = pCycle / 4.5;
+        plane.position.set(-2.0, 0.08, -12.0);
+        plane.rotation.set(0, 0, 0);
+
+        bus.position.set(THREE.MathUtils.lerp(-19.5, -10.2, t), 0.08, THREE.MathUtils.lerp(-14.0, -10.5, t));
+        bus.rotation.set(0, Math.PI / 2, 0);
+        sim.planePassengers.forEach((p) => (p.visible = false));
+      } else if (pCycle < 10.5) {
+        // Stage 2: Passengers step out of Shuttle Bus -> Climb Boarding Stairs -> Go INSIDE Airplane!
+        plane.position.set(-2.0, 0.08, -12.0);
+        plane.rotation.set(0, 0, 0);
+
+        const boardElapsed = pCycle - 4.5;
+        bus.position.set(-10.2, 0.08, -10.5);
+        bus.rotation.set(0, Math.PI / 2, 0);
+
+        sim.planePassengers.forEach((pax, i) => {
+          const wp = (boardElapsed - i * 0.72) / 2.2;
+          if (wp < 0 || wp >= 1) {
+            pax.visible = false;
+          } else {
+            pax.visible = true;
+            if (wp < 0.35) {
+              // Walk from shuttle bus door to bottom of stairs
+              const s = wp / 0.35;
+              pax.position.set(
+                THREE.MathUtils.lerp(-8.8, -6.0, s),
+                0.14 + Math.abs(Math.sin(elapsed * 12 + i)) * 0.1,
+                THREE.MathUtils.lerp(-10.4, -9.8, s)
+              );
+              pax.rotation.y = Math.PI / 2;
+            } else {
+              // Climb UP the stairs straight inside the Airplane door!
+              const s = (wp - 0.35) / 0.65;
+              pax.position.set(
+                THREE.MathUtils.lerp(-6.0, -2.8, s),
+                THREE.MathUtils.lerp(0.2, 2.25, s) + Math.abs(Math.sin(elapsed * 14 + i)) * 0.08,
+                -9.8
+              );
+              pax.rotation.y = Math.PI / 2;
+            }
+          }
+        });
+      } else if (pCycle < 15.0) {
+        // Stage 3: Shuttle Bus returns to Terminal; Plane taxis onto Runway & Takes Off into the Sky!
+        sim.planePassengers.forEach((p) => (p.visible = false));
+        const t = (pCycle - 10.5) / 4.5;
+
+        const busBackT = Math.min(1, t * 1.4);
+        bus.position.set(THREE.MathUtils.lerp(-10.2, -19.5, busBackT), 0.08, THREE.MathUtils.lerp(-10.5, -14.0, busBackT));
+        bus.rotation.set(0, -Math.PI / 2, 0);
+
+        if (t < 0.4) {
+          // Taxi South-East onto runway threshold (24, 34)
+          const st = t / 0.4;
+          const px = THREE.MathUtils.lerp(-2.0, 24.0, st);
+          const pz = THREE.MathUtils.lerp(-12.0, 34.0, st);
+          plane.position.set(px, 0.08, pz);
+          plane.rotation.set(0, Math.atan2(26.0, 46.0), 0);
+        } else {
+          // Accelerate North down the 88-unit Runway & Climb smoothly into the Air!
+          const st = (t - 0.4) / 0.6;
+          const accel = st * st;
+          const pz = THREE.MathUtils.lerp(34.0, -48.0, accel);
+          const lift = st > 0.45 ? Math.pow((st - 0.45) / 0.55, 1.5) * 20.0 : 0;
+          plane.position.set(24.0, 0.08 + lift, pz);
+          plane.rotation.set(st > 0.4 ? -0.22 * Math.min(1, (st - 0.4) * 2.5) : 0, Math.PI, 0);
+        }
+      } else if (pCycle < 28.0) {
+        // Stage 4: Commercial Airplane Flies High Around the ENTIRE CITY!
+        sim.planePassengers.forEach((p) => (p.visible = false));
+        bus.position.set(-19.5, 0.08, -14.0);
+        bus.rotation.set(0, Math.PI / 2, 0);
+
+        const ft = (pCycle - 15.0) / 13.0;
+        const pos = sim.planeCityLoop.getPointAt(Math.min(0.999, ft));
+        const ahead = sim.planeCityLoop.getPointAt(Math.min(1, ft + 0.015));
+        plane.position.copy(pos);
+        plane.lookAt(ahead.x + sim.ax, ahead.y, ahead.z);
+        plane.rotateZ(0.24); // Graceful banking turn over the city!
+      } else {
+        // Stage 5: Final Approach, Smooth Runway Touchdown & Taxi Back to Boarding Bay!
+        sim.planePassengers.forEach((p) => (p.visible = false));
+        bus.position.set(-19.5, 0.08, -14.0);
+        bus.rotation.set(0, Math.PI / 2, 0);
+
+        const lt = (pCycle - 28.0) / 6.0;
+        if (lt < 0.6) {
+          // Approach from South (+58 Z) -> Touchdown & roll North along runway to (-30 Z)
+          const st = lt / 0.6;
+          const pz = THREE.MathUtils.lerp(58.0, -32.0, st);
+          const alt = st < 0.45 ? THREE.MathUtils.lerp(24.0, 0.08, st / 0.45) : 0.08;
+          plane.position.set(24.0, alt, pz);
+          plane.rotation.set(st < 0.45 ? -0.08 : 0, Math.PI, 0);
+        } else {
+          // Taxi via North taxiway back to boarding bay (-2, -12)
+          const st = (lt - 0.6) / 0.4;
+          const px = THREE.MathUtils.lerp(24.0, -2.0, st);
+          const pz = THREE.MathUtils.lerp(-32.0, -12.0, st);
+          plane.position.set(px, 0.08, pz);
+          plane.rotation.set(0, Math.atan2(-26.0, 20.0), 0);
+        }
+      }
+
+      // -------------------------------------------------------------
+      // B. SHERU BHAI (LION IN RICH CLOTHES & GOLD CHAINS)
+      //    DIAMOND CAR -> INSIDE AIRPORT -> DIAMOND HELICOPTER -> CITY TOUR (34s loop)
+      // -------------------------------------------------------------
+      const sCycle = (elapsed + 2.0) % 34.0;
+      const dCar = sim.diamondCar;
+      const wSheru = sim.walkingSheru;
+      const dHeli = sim.diamondHeli;
+      let rotorSpeed = 2.0;
+
+      if (sCycle < 6.0) {
+        // Stage 1: Sheru Bhai arrives in Sparkling Diamond Car from City Highway -> INSIDE Airport next to Helipad!
+        const t = sCycle / 6.0;
+        const ease = 1 - Math.pow(1 - t, 2);
+        dCar.position.set(THREE.MathUtils.lerp(-60.0, -16.0, ease), 0.08, THREE.MathUtils.lerp(18.0, 22.0, Math.max(0, (t - 0.55) / 0.45)));
+        dCar.rotation.set(0, Math.PI / 2 - (t > 0.55 ? 0.18 : 0), 0);
+        if (dCar.userData.seatedSheru) dCar.userData.seatedSheru.visible = true;
+
+        wSheru.visible = false;
+        dHeli.position.set(-1.0, 0.18, 24.0);
+        dHeli.rotation.set(0, -Math.PI / 2, 0);
+        if (dHeli.userData.seatedSheru) dHeli.userData.seatedSheru.visible = false;
+        rotorSpeed = 1.6;
+      } else if (sCycle < 11.0) {
+        // Stage 2: Sheru Bhai steps out of Diamond Car & walks along Red Carpet -> climbs INSIDE Diamond Helicopter!
+        const t = (sCycle - 6.0) / 5.0;
+        dCar.position.set(-16.0, 0.08, 22.0);
+        dCar.rotation.set(0, Math.PI / 2 - 0.18, 0);
+        if (dCar.userData.seatedSheru) dCar.userData.seatedSheru.visible = false;
+
+        wSheru.visible = true;
+        wSheru.position.set(
+          THREE.MathUtils.lerp(-14.2, -2.5, t),
+          0.16 + Math.abs(Math.sin(elapsed * 11)) * 0.14,
+          THREE.MathUtils.lerp(22.4, 24.0, t)
+        );
+        wSheru.rotation.y = Math.PI / 2;
+
+        dHeli.position.set(-1.0, 0.18, 24.0);
+        dHeli.rotation.set(0, -Math.PI / 2, 0);
+        if (dHeli.userData.seatedSheru) dHeli.userData.seatedSheru.visible = false;
+        rotorSpeed = 2.0 + t * 14.0; // Rotors spin up as Sheru Bhai approaches!
+      } else if (sCycle < 14.5) {
+        // Stage 3: Sheru Bhai INSIDE Diamond Helicopter -> Vertical Liftoff off VIP Helipad!
+        const t = (sCycle - 11.0) / 3.5;
+        dCar.position.set(-16.0, 0.08, 22.0);
+        if (dCar.userData.seatedSheru) dCar.userData.seatedSheru.visible = false;
+        wSheru.visible = false;
+
+        if (dHeli.userData.seatedSheru) dHeli.userData.seatedSheru.visible = true;
+        dHeli.position.set(-1.0, THREE.MathUtils.lerp(0.18, 20.0, t * t * (3 - 2 * t)), 24.0);
+        dHeli.rotation.set(0.12 * t, -Math.PI / 2, 0);
+        rotorSpeed = 24.0;
+      } else if (sCycle < 28.0) {
+        // Stage 4: Sheru Bhai Flies Diamond Helicopter Around the ENTIRE CITY (swooping past Sheru Bhai Statue!)
+        const ft = (sCycle - 14.5) / 13.5;
+        dCar.position.set(-16.0, 0.08, 22.0);
+        if (dCar.userData.seatedSheru) dCar.userData.seatedSheru.visible = false;
+        wSheru.visible = false;
+        if (dHeli.userData.seatedSheru) dHeli.userData.seatedSheru.visible = true;
+
+        const pos = sim.heliCityLoop.getPointAt(Math.min(0.999, ft));
+        const ahead = sim.heliCityLoop.getPointAt(Math.min(1, ft + 0.018));
+        dHeli.position.copy(pos);
+        dHeli.lookAt(ahead.x + sim.ax, ahead.y, ahead.z);
+        dHeli.rotateX(0.14); // Forward flight tilt!
+        rotorSpeed = 26.0;
+      } else if (sCycle < 31.0) {
+        // Stage 5a: Diamond Helicopter descends softly onto VIP Helipad!
+        const t = (sCycle - 28.0) / 3.0;
+        dCar.position.set(-16.0, 0.08, 22.0);
+        if (dCar.userData.seatedSheru) dCar.userData.seatedSheru.visible = false;
+        wSheru.visible = false;
+        if (dHeli.userData.seatedSheru) dHeli.userData.seatedSheru.visible = true;
+
+        dHeli.position.set(-1.0, THREE.MathUtils.lerp(20.0, 0.18, t), 24.0);
+        dHeli.rotation.set(0, -Math.PI / 2, 0);
+        rotorSpeed = 24.0 * (1 - t * 0.7);
+      } else {
+        // Stage 5b: Sheru Bhai walks back to Diamond Car & drives out toward City!
+        const t = (sCycle - 31.0) / 3.0;
+        dHeli.position.set(-1.0, 0.18, 24.0);
+        dHeli.rotation.set(0, -Math.PI / 2, 0);
+        if (dHeli.userData.seatedSheru) dHeli.userData.seatedSheru.visible = false;
+        rotorSpeed = 3.0;
+
+        if (t < 0.5) {
+          const wt = t / 0.5;
+          wSheru.visible = true;
+          wSheru.position.set(
+            THREE.MathUtils.lerp(-2.5, -14.2, wt),
+            0.16 + Math.abs(Math.sin(elapsed * 11)) * 0.14,
+            THREE.MathUtils.lerp(24.0, 22.4, wt)
+          );
+          wSheru.rotation.y = -Math.PI / 2;
+          dCar.position.set(-16.0, 0.08, 22.0);
+          if (dCar.userData.seatedSheru) dCar.userData.seatedSheru.visible = false;
+        } else {
+          const dtCar = (t - 0.5) / 0.5;
+          wSheru.visible = false;
+          if (dCar.userData.seatedSheru) dCar.userData.seatedSheru.visible = true;
+          dCar.position.set(THREE.MathUtils.lerp(-16.0, -60.0, dtCar), 0.08, THREE.MathUtils.lerp(22.0, 18.0, dtCar));
+          dCar.rotation.set(0, -Math.PI / 2, 0);
+        }
+      }
+
+      // Spin Diamond Helicopter Main & Tail Rotors
+      if (dHeli.userData.mainRotor) dHeli.userData.mainRotor.rotation.y += dt * rotorSpeed;
+      if (dHeli.userData.tailRotor) dHeli.userData.tailRotor.rotation.x += dt * (rotorSpeed * 1.4);
     }
 
     // Animated Water Fountain Jets at Sheru Bhai Lion Statue

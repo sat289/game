@@ -1,16 +1,14 @@
-# Dream City / Follower Nagaram 3D (v16 — Clean, Error-Free Upgrade)
+# Sheru Bhai City 3D (v17 — 20-Acre International Airport + Sheru Bhai Diamond Car & Diamond Helicopter)
 
 Upload the `follower-town/` folder into your `sat289/game/` GitHub repository.
 
-## What's New in v16
-1. **🦁 White Marble Lion Sheru Bhai Statue (`(0, 0)` ST Junction):**
-   - Sculpted white marble lion head & full mane, black Wayfarer sunglasses, white 3-piece suit (buttoned vest, open blazer & lapels, both hands gripping lapels), chunky gold chain, animated arcing water fountain jets, and flower beds.
-   - Tap the statue -> **`🦁 Inspect 3D Sheru Bhai Model`** opens the interactive Sketchfab 3D view on demand and frees 100% RAM when closed.
-2. **🏛️ Upgraded Quality of All Places:**
-   - Crisp mounted architectural signboards on every landmark (`SRMT MALL`, `APPLE STORE`, `RELIANCE DIGITAL`, `SUPER HOSPITAL`, `POLICE STATION`, `APSRTC BUS STAND`, `TRANSPORT OFFICE`, `PETROL & DIESEL`, `GRAND SCHOOL`, and live scoreboard `DREAM CITY 184/3` at the Cricket Stadium) plus waiting benches & ACES Filmic lighting.
-3. **✨ Starry Night Sky + Drifting Sky Clouds:**
-   - Lightweight single-draw-call starfield in **🌙 Night Mode** and soft drifting clouds during **☀️ Day** & **🌇 Sunset**.
-4. **⚡ Visitor Quick-Jump Bar (`index.html`):**
-   - Added quick bottom-left buttons (`🦁 Sheru Bhai` & `☀️/🌙`) so visitors can jump right to the Sheru Bhai Statue or preview Night Mode lights anytime.
-5. **🛡️ Low-RAM Smoothness & Zero-Error Verification:**
-   - Auto low-RAM detection (`2GB–4GB` phones), distance sprite culling, material & texture caching, GPU disposal on rebuild, `cdn.jsdelivr.net` Three.js CDN, and `?v=16` cache-busting.
+## What's New in v17
+1. **✈️ 20-Acre International Airport Outside the City (East of Outer Ring Road):**
+   - Connected to the city via a dedicated VIP Airport Express Highway & Entrance Gate Arch.
+   - Features a massive 20-acre tarmac & 88-unit marked Runway (with glowing night runway edge lights), Grand Modern Glass Terminal, Air Traffic Control (ATC) Tower with rotating radar & blinking beacon, and VIP Helipad.
+2. **🚌➡️✈️ Live Shuttle Bus, Passenger Boarding & City Flight Loop:**
+   - The Airport Shuttle Bus drives from the Terminal to the Commercial Airplane's boarding stairs, passengers exit the bus, climb up the stairs **inside the airplane**, and the plane taxis onto the runway, **takes off into the sky, flies around the entire city, and lands back at the airport**!
+3. **🦁💎 Sheru Bhai VIP Arrival (Diamond Car → Diamond Helicopter City Tour):**
+   - **Sheru Bhai** (sculpted Lion in rich royal crimson-gold clothes, multiple glittering gold chains & black sunglasses) arrives from the city in his **Sparkling Diamond Supercar**, drives **inside the airport right next to the VIP Helipad**, steps out onto the red carpet, gets **inside his Sparkling Diamond Helicopter**, lifts off, and **flies around the entire city**!
+4. **⚡ One-Tap Airport Navigation & Low-RAM Optimization:**
+   - Added **`✈️ Airport`** quick-jump buttons in both `index.html` and `admin.html` (plus Reel Mode & Search support for `airport`, `plane`, `heli`, `diamond`). All new airport & diamond meshes stay lightweight for smooth mobile performance.
