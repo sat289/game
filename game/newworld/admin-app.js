@@ -8,7 +8,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged
-} from "./firebase-config.js?v=18";
+} from "./firebase-config.js?v=19";
 import {
   FollowerTownEngine,
   BUILDING_LABELS,
@@ -16,7 +16,7 @@ import {
   getTwoPlotGroup,
   getBlockPlotIds,
   getEightPlotGroup
-} from "./world-engine.js?v=18";
+} from "./world-engine.js?v=19";
 
 let isAdmin = false;
 let selectedPlotId = "plot_0001";
@@ -27,7 +27,9 @@ let worldSettings = {
   dayNumber: 1,
   timeOfDay: "day",
   lifeEnabled: true,
-  beachOwner: "@follower_beach"
+  beachOwner: "@follower_beach",
+  railwayOwner: "@_ur_bunny_108_",
+  airportHouseOwner: "@urs_bazigar"
 };
 
 const container = document.getElementById("canvas-container");
@@ -39,6 +41,7 @@ const loginError = document.getElementById("login-error");
 const plotCard = document.getElementById("plot-card");
 const editBtn = document.getElementById("card-edit-btn");
 const beachEditBtn = document.getElementById("card-beach-edit-btn");
+const railwayEditBtn = document.getElementById("card-railway-edit-btn");
 const websiteBtn = document.getElementById("card-website-btn");
 const sheru3dBtn = document.getElementById("card-sheru3d-btn");
 const sketchfabModal = document.getElementById("sketchfab-modal");
@@ -70,7 +73,24 @@ const engine = new FollowerTownEngine(container, (plotId, data) => {
 });
 
 function openPlotCard(plotId, data) {
-      if (plotId === "BEACH") {
+        if (plotId === "RAILWAY_STATION") {
+    const rOwner = worldSettings.railwayOwner || engine.railwayOwner || "@_ur_bunny_108_";
+    document.getElementById("card-badge").textContent = "INDIAN RAILWAYS • LIVE EXPRESS";
+    document.getElementById("card-owner").textContent = `🚂 ${rOwner} • SHERU BHAI JN`;
+    document.getElementById("card-role").textContent = "Express Train emerges from the Mountain Tunnel at the end of the city, circles the entire town, and stops here for passengers to board!";
+    document.getElementById("card-type").textContent = "RAILWAY STATION & TUNNEL";
+    document.getElementById("card-day").textContent = "";
+    editBtn.classList.add("hidden");
+    if (beachEditBtn) beachEditBtn.classList.add("hidden");
+    if (railwayEditBtn) railwayEditBtn.classList.remove("hidden");
+    websiteBtn.classList.add("hidden");
+    if (sheru3dBtn) sheru3dBtn.classList.add("hidden");
+    plotCard.classList.remove("hidden");
+    return;
+  }
+
+  if (railwayEditBtn) railwayEditBtn.classList.add("hidden");
+  if (plotId === "BEACH") {
     const bOwner = worldSettings.beachOwner || engine.beachOwner || "@follower_beach";
     document.getElementById("card-badge").textContent = "GOLDEN SAND BEACH & VILLA";
     document.getElementById("card-owner").textContent = `🏖️ ${bOwner}'s Beach House`;
@@ -210,6 +230,14 @@ onValue(worldRef, (snapshot) => {
   engine.setBeachOwner(bOwner);
   const beachInput = document.getElementById("w-beach-owner");
   if (beachInput) beachInput.value = bOwner;
+  const rOwner = worldSettings.railwayOwner || "@_ur_bunny_108_";
+  engine.setRailwayOwner(rOwner);
+  const railInput = document.getElementById("w-railway-owner");
+  if (railInput) railInput.value = rOwner;
+  const ahOwner = worldSettings.airportHouseOwner || "@urs_bazigar";
+  engine.setAirportHouseOwner(ahOwner);
+  const ahInput = document.getElementById("w-airport-house-owner");
+  if (ahInput) ahInput.value = ahOwner;
   engine.setTimeOfDay(worldSettings.timeOfDay || "day");
   engine.lifeEnabled = worldSettings.lifeEnabled !== false;
 
@@ -257,7 +285,7 @@ loginForm.addEventListener("submit", async (e) => {
 document.getElementById("btn-logout").addEventListener("click", () => signOut(auth));
 
 document.getElementById("btn-save-plot").addEventListener("click", async () => {
-  if (!isAdmin || selectedPlotId === "ST_JUNCTION" || selectedPlotId === "AIRPORT" || selectedPlotId === "BEACH") return;
+  if (!isAdmin || selectedPlotId === "ST_JUNCTION" || selectedPlotId === "AIRPORT" || selectedPlotId === "BEACH" || selectedPlotId === "RAILWAY_STATION") return;
   const type = document.getElementById("b-type").value;
   let ownerName = document.getElementById("b-owner").value.trim();
   const role = document.getElementById("b-role").value.trim();
@@ -651,6 +679,8 @@ document.getElementById("btn-save-world").addEventListener("click", async () => 
     await update(worldRef, {
       townName: document.getElementById("w-name").value.trim() || "FOLLOWER NAGARAM",
       beachOwner: (document.getElementById("w-beach-owner")?.value.trim() || "@follower_beach"),
+      railwayOwner: (document.getElementById("w-railway-owner")?.value.trim() || "@_ur_bunny_108_"),
+      airportHouseOwner: (document.getElementById("w-airport-house-owner")?.value.trim() || "@urs_bazigar"),
       dayNumber: parseInt(document.getElementById("w-day").value, 10) || 1,
       timeOfDay: document.getElementById("w-time").value,
       lifeEnabled: document.getElementById("w-life").value === "on"
@@ -665,7 +695,7 @@ document.getElementById("btn-save-world").addEventListener("click", async () => 
 function runSearch() {
   const q = document.getElementById("search-input").value;
   const foundId = engine.findPlotByQuery(q);
-  if (foundId === "ST_JUNCTION" || foundId === "AIRPORT" || foundId === "BEACH") {
+  if (foundId === "ST_JUNCTION" || foundId === "AIRPORT" || foundId === "BEACH" || foundId === "RAILWAY_STATION") {
     engine.focusPlot(foundId);
     openPlotCard(foundId, null);
   } else if (foundId) {
@@ -870,5 +900,39 @@ if (beachEditBtn) {
       bi.select();
     }
     showToast("✏️ Enter follower @username & tap Save World Live!");
+  });
+}
+
+// Admin Railway Quick-Jump, Reel Cam & Station Chief Shortcut
+const btnJumpRailway = document.getElementById("btn-jump-railway");
+if (btnJumpRailway) {
+  btnJumpRailway.addEventListener("click", () => {
+    engine.focusPlot("RAILWAY_STATION");
+    openPlotCard("RAILWAY_STATION", null);
+    showToast("🚂 Sheru Bhai Jn • Live Train & Mountain Tunnel!");
+  });
+}
+
+const btnReelRailway = document.getElementById("reel-railway-cam");
+if (btnReelRailway) {
+  btnReelRailway.addEventListener("click", () => {
+    engine.stopProReelTour();
+    engine.stopDroneView();
+    engine.stopBuildReelTour();
+    engine.focusPlot("RAILWAY_STATION", 0.14);
+    showToast("🚂 Railway Reel Cam Active!");
+  });
+}
+
+if (railwayEditBtn) {
+  railwayEditBtn.addEventListener("click", () => {
+    closeAllDrawers();
+    panels.world.classList.remove("hidden");
+    const ri = document.getElementById("w-railway-owner");
+    if (ri) {
+      ri.focus();
+      ri.select();
+    }
+    showToast("✏️ Enter Railway Station @username & tap Save World Live!");
   });
 }

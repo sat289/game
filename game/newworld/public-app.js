@@ -1,5 +1,5 @@
-import { db, ref, onValue } from "./firebase-config.js?v=18";
-import { FollowerTownEngine, BUILDING_LABELS, getRequiredSize } from "./world-engine.js?v=18";
+import { db, ref, onValue } from "./firebase-config.js?v=19";
+import { FollowerTownEngine, BUILDING_LABELS, getRequiredSize } from "./world-engine.js?v=19";
 
 let allPlots = {};
 const container = document.getElementById("canvas-container");
@@ -23,7 +23,20 @@ const engine = new FollowerTownEngine(container, (plotId, data) => {
 });
 
 function openPlotCard(plotId, data) {
-      if (plotId === "BEACH") {
+        if (plotId === "RAILWAY_STATION") {
+    const rOwner = engine.railwayOwner || "@_ur_bunny_108_";
+    document.getElementById("card-badge").textContent = "INDIAN RAILWAYS • LIVE EXPRESS";
+    document.getElementById("card-owner").textContent = `🚂 ${rOwner} • SHERU BHAI JN`;
+    document.getElementById("card-role").textContent = "Express Train emerges from the Mountain Tunnel at the end of the city, circles the entire town, and stops here for passengers to board!";
+    document.getElementById("card-type").textContent = "RAILWAY STATION & TUNNEL";
+    document.getElementById("card-day").textContent = "";
+    websiteBtn.classList.add("hidden");
+    if (sheru3dBtn) sheru3dBtn.classList.add("hidden");
+    plotCard.classList.remove("hidden");
+    return;
+  }
+
+  if (plotId === "BEACH") {
     const bOwner = engine.beachOwner || "@follower_beach";
     document.getElementById("card-badge").textContent = "GOLDEN SAND BEACH & VILLA";
     document.getElementById("card-owner").textContent = `🏖️ ${bOwner}'s Beach House`;
@@ -130,6 +143,8 @@ onValue(ref(db, "worldSettings"), (snapshot) => {
   document.getElementById("stat-day").textContent = `Day ${val.dayNumber || 1}`;
   engine.setTownName(name);
   if (val.beachOwner !== undefined) engine.setBeachOwner(val.beachOwner);
+  if (val.railwayOwner !== undefined) engine.setRailwayOwner(val.railwayOwner);
+  if (val.airportHouseOwner !== undefined) engine.setAirportHouseOwner(val.airportHouseOwner);
   engine.setTimeOfDay(val.timeOfDay || "day");
   engine.lifeEnabled = val.lifeEnabled !== false;
 });
@@ -137,7 +152,7 @@ onValue(ref(db, "worldSettings"), (snapshot) => {
 function runSearch() {
   const q = document.getElementById("search-input").value;
   const foundId = engine.findPlotByQuery(q);
-  if (foundId === "ST_JUNCTION" || foundId === "AIRPORT" || foundId === "BEACH") {
+  if (foundId === "ST_JUNCTION" || foundId === "AIRPORT" || foundId === "BEACH" || foundId === "RAILWAY_STATION") {
     engine.focusPlot(foundId);
     openPlotCard(foundId, null);
   } else if (foundId) {
@@ -270,5 +285,15 @@ if (btnJumpBeach) {
     engine.focusPlot("BEACH");
     openPlotCard("BEACH", null);
     showToast("🏖️ Sheru Bhai chilling at the Beach!");
+  });
+}
+
+// Visitor Quick-Jump to Railway Station & Express Train
+const btnJumpRailway = document.getElementById("btn-jump-railway");
+if (btnJumpRailway) {
+  btnJumpRailway.addEventListener("click", () => {
+    engine.focusPlot("RAILWAY_STATION");
+    openPlotCard("RAILWAY_STATION", null);
+    showToast("🚂 Sheru Bhai Jn • Live Train & Mountain Tunnel!");
   });
 }

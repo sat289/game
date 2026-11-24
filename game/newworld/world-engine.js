@@ -13,7 +13,8 @@ export const FOUR_PLOT_TYPES = new Set([
   "srmt_mall",
   "apple_store",
   "reliance_store",
-  "gym"
+  "gym",
+  "iti_college"
 ]);
 
 export const TWO_PLOT_TYPES = new Set(["photo_studio"]);
@@ -28,9 +29,11 @@ export const BUILDING_LABELS = {
   tower_led: "🏢 5-Floor Luxury LED Tower",
   tower_gold: "🏢 6-Floor Golden Glass Penthouse",
   shop: "☕ టీ & టిఫిన్ • SHOP",
+  cafe: "☕ కేఫ్ • COFFEE CAFE",
   ground: "🏏 గ్రౌండ్ • MEGA CRICKET STADIUM (8 PLOTS)",
   audi_showroom: "🚘 ఆడి షోరూమ్ • AUDI SHOWROOM (8 PLOTS)",
   gym: "🏋️ జిమ్ • FITNESS GYM (4 PLOTS)",
+  iti_college: "🏫 ఐటిఐ కాలేజ్ • ITI COLLEGE (4 PLOTS)",
   photo_studio: "📸 ఫోటో స్టూడియో • PHOTO STUDIO (2 PLOTS)",
   school: "🏫 పాఠశాల • GRAND SCHOOL (4 PLOTS)",
   hospital: "🏥 ఆసుపత్రి • SUPER HOSPITAL (4 PLOTS)",
@@ -248,6 +251,10 @@ export class FollowerTownEngine {
     this.beachSim = null;
     this.beachX = -108;
     this.beachOwner = "@follower_beach";
+    this.railwaySim = null;
+    this.railwayZ = -65;
+    this.railwayOwner = "@_ur_bunny_108_";
+    this.airportHouseOwner = "@urs_bazigar";
     this.turntableRotors = [];
     this.studioFlashes = [];
     this.skyClouds = [];
@@ -479,7 +486,22 @@ export class FollowerTownEngine {
       gymBlack: new THREE.MeshLambertMaterial({ color: 0x18181b }),
       gymSteel: new THREE.MeshLambertMaterial({ color: 0x94a3b8 }),
       studioCyan: new THREE.MeshBasicMaterial({ color: 0x22d3ee }),
-      studioFlash: new THREE.MeshBasicMaterial({ color: 0xffffff })
+      studioFlash: new THREE.MeshBasicMaterial({ color: 0xffffff }),
+      // Railway, Train, Mountain Tunnel, ITI College & Cafe Materials
+      railSteel: new THREE.MeshLambertMaterial({ color: 0x94a3b8 }),
+      railSleeper: new THREE.MeshLambertMaterial({ color: 0x57534e }),
+      railBallast: new THREE.MeshLambertMaterial({ color: 0x64748b }),
+      trainBlue: new THREE.MeshLambertMaterial({ color: 0x1d4ed8 }),
+      trainDarkBlue: new THREE.MeshLambertMaterial({ color: 0x1e3a8a }),
+      trainYellow: new THREE.MeshLambertMaterial({ color: 0xfacc15 }),
+      trainRoof: new THREE.MeshLambertMaterial({ color: 0xcbd5e1 }),
+      mountainRock: new THREE.MeshLambertMaterial({ color: 0x57534e }),
+      mountainGreen: new THREE.MeshLambertMaterial({ color: 0x166534 }),
+      tunnelVoid: new THREE.MeshBasicMaterial({ color: 0x020617 }),
+      stationRoof: new THREE.MeshLambertMaterial({ color: 0x0369a1 }),
+      cafeBrown: new THREE.MeshLambertMaterial({ color: 0x451a03 }),
+      cafeCream: new THREE.MeshLambertMaterial({ color: 0xfef3c7 }),
+      itiWorkshop: new THREE.MeshLambertMaterial({ color: 0x0284c7 })
     };
   }
 
@@ -704,6 +726,22 @@ export class FollowerTownEngine {
     }
   }
 
+  setRailwayOwner(ownerName) {
+    const clean = (ownerName || "@_ur_bunny_108_").trim();
+    if (clean !== this.railwayOwner) {
+      this.railwayOwner = clean;
+      if (this.currentGridRadius > 0) this._rebuildRoadsAndRingRoad();
+    }
+  }
+
+  setAirportHouseOwner(ownerName) {
+    const clean = (ownerName || "@urs_bazigar").trim();
+    if (clean !== this.airportHouseOwner) {
+      this.airportHouseOwner = clean;
+      if (this.currentGridRadius > 0) this._rebuildRoadsAndRingRoad();
+    }
+  }
+
   syncLandmarkFootprints(allPlotsObj) {
     this.landmarkCoveredPlots.clear();
     Object.entries(allPlotsObj || {}).forEach(([pid, p]) => {
@@ -772,9 +810,10 @@ export class FollowerTownEngine {
       this.cityGroup.remove(this.cityGroup.children[0]);
     }
     this.lampBulbs = [];
-    this.plotHitboxes = this.plotHitboxes.filter((h) => h.userData.plotId !== "ST_JUNCTION" && h.userData.plotId !== "AIRPORT" && h.userData.plotId !== "BEACH");
+    this.plotHitboxes = this.plotHitboxes.filter((h) => h.userData.plotId !== "ST_JUNCTION" && h.userData.plotId !== "AIRPORT" && h.userData.plotId !== "BEACH" && h.userData.plotId !== "RAILWAY_STATION");
     this.airportSim = null;
     this.beachSim = null;
+    this.railwaySim = null;
 
     const r = this.currentGridRadius;
     const gridCount = r * 2 + 1;
@@ -873,7 +912,7 @@ export class FollowerTownEngine {
       this._addHighwayLamp(-ringRadius, p);
       this._addHighwayLamp(ringRadius, p);
 
-      this._addPalmTree(p, -(ringRadius + 7));
+      if (p < -10 || p > 10) this._addPalmTree(p, -(ringRadius + 7));
       this._addPalmTree(p, ringRadius + 7);
       if (p < -10 || p > 10) this._addPalmTree(-(ringRadius + 7), p);
       if (p < 8 || p > 28) this._addPalmTree(ringRadius + 7, p);
@@ -910,6 +949,7 @@ export class FollowerTownEngine {
     this._buildSTJunctionStatue();
     this._buildInternationalAirport(ringRadius);
     this._buildSheruBhaiBeach(ringRadius);
+    this._buildRailwaySystem(ringRadius);
     this.setTimeOfDay(this.timeOfDay);
   }
 
@@ -1732,6 +1772,35 @@ export class FollowerTownEngine {
     diamondHeli.rotation.order = "YXZ";
     ap.add(diamondHeli);
 
+    // 9b. 🏡 AIRPORT-SIDE FOLLOWER VIP HOUSE & LUSH GARDEN (Right beside Airport Highway!)
+    const ahGroup = new THREE.Group();
+    ahGroup.position.set(-48, 0.08, 30);
+    const ahBase = new THREE.Mesh(new THREE.BoxGeometry(8.2, 0.2, 8.2), this.mat.turf);
+    ahBase.position.y = 0.06;
+    const ahPlinth = new THREE.Mesh(new THREE.BoxGeometry(5.8, 0.36, 5.2), this.mat.plinthGrey);
+    ahPlinth.position.set(0, 0.28, 0);
+    const ahBody = new THREE.Mesh(new THREE.BoxGeometry(5.4, 3.2, 4.8), this.mat.stuccoIvory);
+    ahBody.position.set(0, 2.0, 0);
+    const ahRoof = new THREE.Mesh(new THREE.BoxGeometry(6.0, 0.34, 5.4), this.mat.slateTrim);
+    ahRoof.position.set(0, 3.75, 0);
+    const ahDoor = new THREE.Mesh(this.geo.door, this.mat.teakWood);
+    ahDoor.position.set(0, 1.15, -2.42);
+    const ahWinL = new THREE.Mesh(this.geo.win, this.mat.windowDay);
+    ahWinL.position.set(-1.55, 1.85, -2.42);
+    const ahWinR = ahWinL.clone();
+    ahWinR.position.x = 1.55;
+    // Lush greenery around the Airport-Side House
+    [[-3.2, -3.2], [3.2, -3.2], [-3.2, 3.2], [3.2, 3.2]].forEach(([gx, gz]) => {
+      const bush = new THREE.Mesh(new THREE.DodecahedronGeometry(0.65, 0), this.mat.treeLeaf);
+      bush.position.set(gx, 0.65, gz);
+      ahGroup.add(bush);
+    });
+    const ahOwnerClean = (this.airportHouseOwner || "@urs_bazigar").trim();
+    const ahSign = this._createNameSign(`🏡 ${ahOwnerClean}`, "✈️ AIRPORT-SIDE VIP HOUSE", false);
+    ahSign.position.set(0, 5.8, 0);
+    ahGroup.add(ahBase, ahPlinth, ahBody, ahRoof, ahDoor, ahWinL, ahWinR, ahSign);
+    ap.add(ahGroup);
+
     // 10. Floating Big Airport Sign + Clickable Hitbox
     const apSign = this._createNameSign("✈️ SHERU BHAI INTL AIRPORT", "20 ACRES • LIVE FLIGHTS & DIAMOND HELI", true);
     apSign.position.set(-12, 23.5, -14);
@@ -2064,6 +2133,376 @@ export class FollowerTownEngine {
     this.beachSim = {
       waveStrips,
       chillingHead: sHeadGroup
+    };
+  }
+
+
+  /**
+   * 🚂 REALISTIC INDIAN EXPRESS TRAIN (1 Blue/Yellow WAP-7 Electric Engine + 3 Blue ICF Passenger Coaches)
+   */
+  _makeTrainLocomotive(nightLights) {
+    const loco = new THREE.Group();
+
+    // Heavy Underframe & 4 Wheel Bogies
+    const chassis = new THREE.Mesh(new THREE.BoxGeometry(1.85, 0.45, 5.6), this.mat.charcoal);
+    chassis.position.set(0, 0.48, 0);
+    const whGeo = new THREE.CylinderGeometry(0.28, 0.28, 1.98, 8);
+    whGeo.rotateZ(Math.PI / 2);
+    [-2.0, -1.1, 1.1, 2.0].forEach((wz) => {
+      const wh = new THREE.Mesh(whGeo, this.mat.wheelBlack);
+      wh.position.set(0, 0.28, wz);
+      loco.add(wh);
+    });
+
+    // Iconic Blue & Yellow Indian Railways WAP-7 Engine Body
+    const body = new THREE.Mesh(new THREE.BoxGeometry(1.9, 1.55, 5.4), this.mat.trainBlue);
+    body.position.set(0, 1.48, 0);
+    const yellowBand = new THREE.Mesh(new THREE.BoxGeometry(1.95, 0.34, 5.44), this.mat.trainYellow);
+    yellowBand.position.set(0, 1.15, 0);
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(1.72, 0.24, 5.0), this.mat.trainRoof);
+    roof.position.set(0, 2.36, 0);
+
+    // Front Cab Windshield + Cattle Guard Cowcatcher
+    const wind = new THREE.Mesh(new THREE.BoxGeometry(1.52, 0.56, 0.1), this.mat.busWindshield);
+    wind.position.set(0, 1.78, 2.71);
+    const guard = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.34, 0.45), this.mat.trainYellow);
+    guard.position.set(0, 0.35, 2.9);
+
+    // Rooftop Electric Pantograph Frame
+    const panto1 = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.08, 0.8), this.mat.charcoal);
+    panto1.position.set(0, 2.85, -1.2);
+    const pantoPost = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.45, 0.6), this.mat.railSteel);
+    pantoPost.position.set(0, 2.62, -1.2);
+
+    // Powerful Locomotive Headlight + Night Beam!
+    const hlBulb = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.12, 8), this.mat.lampBulbNight);
+    hlBulb.rotation.x = Math.PI / 2;
+    hlBulb.position.set(0, 1.38, 2.72);
+    const beam = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 8.5), this.mat.headlightBeam);
+    beam.rotation.x = -Math.PI / 2;
+    beam.position.set(0, 0.22, 7.0);
+    beam.visible = this.timeOfDay === "night";
+    nightLights.push(beam);
+
+    loco.add(chassis, body, yellowBand, roof, wind, guard, panto1, pantoPost, hlBulb, beam);
+    return loco;
+  }
+
+  _makeTrainCoach(trainWindows) {
+    const coach = new THREE.Group();
+
+    const chassis = new THREE.Mesh(new THREE.BoxGeometry(1.82, 0.4, 5.6), this.mat.charcoal);
+    chassis.position.set(0, 0.46, 0);
+    const whGeo = new THREE.CylinderGeometry(0.26, 0.26, 1.94, 8);
+    whGeo.rotateZ(Math.PI / 2);
+    [-2.0, -1.2, 1.2, 2.0].forEach((wz) => {
+      const wh = new THREE.Mesh(whGeo, this.mat.wheelBlack);
+      wh.position.set(0, 0.26, wz);
+      coach.add(wh);
+    });
+
+    // Classic Blue ICF Express Coach + White Stripe + Grey Curved Roof
+    const body = new THREE.Mesh(new THREE.BoxGeometry(1.88, 1.48, 5.5), this.mat.trainDarkBlue);
+    body.position.set(0, 1.42, 0);
+    const stripe = new THREE.Mesh(new THREE.BoxGeometry(1.92, 0.18, 5.52), this.mat.wallWhite);
+    stripe.position.set(0, 1.02, 0);
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(1.76, 0.22, 5.4), this.mat.trainRoof);
+    roof.position.set(0, 2.26, 0);
+
+    // 5 Passenger Windows on BOTH Sides (Glow warm yellow in Night Mode!)
+    const winMat = this.timeOfDay === "night" ? this.mat.windowNight : this.mat.busWindshield;
+    const winGeo = new THREE.BoxGeometry(0.06, 0.48, 0.72);
+    for (let wz = -1.9; wz <= 1.9; wz += 0.95) {
+      const wL = new THREE.Mesh(winGeo, winMat);
+      wL.position.set(-0.95, 1.56, wz);
+      const wR = new THREE.Mesh(winGeo, winMat);
+      wR.position.set(0.95, 1.56, wz);
+      coach.add(wL, wR);
+      trainWindows.push(wL, wR);
+    }
+
+    // Coach Door Cutouts at Ends
+    const doorGeo = new THREE.BoxGeometry(0.07, 1.28, 0.48);
+    [-2.42, 2.42].forEach((dz) => {
+      const dL = new THREE.Mesh(doorGeo, this.mat.charcoal);
+      dL.position.set(-0.95, 1.32, dz);
+      const dR = dL.clone();
+      dR.position.x = 0.95;
+      coach.add(dL, dR);
+    });
+
+    coach.add(chassis, body, stripe, roof);
+    return coach;
+  }
+
+  /**
+   * 🚂 FULL CITY RAILWAY LOOP + MOUNTAIN TUNNEL AT END OF CITY + GRAND RAILWAY STATION
+   * - Runs cleanly around the entire city outside the Outer Ring Road (railR = ringRadius + 12.2)
+   * - Uses InstancedMesh for sleepers & rails (only 2 draw calls for the whole city loop!)
+   * - Mountain Tunnel at South-West end of the city: Train emerges from the tunnel, circles the whole city,
+   *   stops at the North Grand Railway Station while 6 passengers board INSIDE, then circles back into the tunnel!
+   */
+  _buildRailwaySystem(ringRadius) {
+    const railR = ringRadius + 12.2;
+    const cornerR = 11.0;
+    const stationZ = -(railR + 6.8);
+    this.railwayZ = stationZ;
+
+    const rg = new THREE.Group();
+    const nightLights = [];
+    const trainWindows = [];
+
+    // 1. Build Smooth Closed Rounded-Square Track Spline Around the Entire City
+    //    t = 0.0 starts right at the Mountain Tunnel on the South-West end of the city!
+    //    Direction: Clockwise (South-East -> North along East/Airport -> West along North/Station -> South along West/Beach -> back into Tunnel!)
+    const pts = [];
+    const inner = railR - cornerR;
+    // South straight (from Tunnel at x = -inner*0.45 heading East toward SE corner)
+    const tunnelX = -Math.min(inner * 0.48, 28);
+    pts.push(new THREE.Vector3(tunnelX, 0.14, railR));
+    pts.push(new THREE.Vector3(0, 0.14, railR));
+    pts.push(new THREE.Vector3(inner, 0.14, railR));
+    // SE rounded corner
+    pts.push(new THREE.Vector3(railR - 2.2, 0.14, railR - 2.2));
+    // East straight (runs right between Outer Ring Road and 20-Acre Airport!)
+    pts.push(new THREE.Vector3(railR, 0.14, inner));
+    pts.push(new THREE.Vector3(railR, 0.14, 0));
+    pts.push(new THREE.Vector3(railR, 0.14, -inner));
+    // NE rounded corner
+    pts.push(new THREE.Vector3(railR - 2.2, 0.14, -railR + 2.2));
+    // North straight (passes RIGHT THROUGH Grand Railway Station Platform 1 at x=0, z=-railR!)
+    pts.push(new THREE.Vector3(inner, 0.14, -railR));
+    pts.push(new THREE.Vector3(0, 0.14, -railR));
+    pts.push(new THREE.Vector3(-inner, 0.14, -railR));
+    // NW rounded corner
+    pts.push(new THREE.Vector3(-railR + 2.2, 0.14, -railR + 2.2));
+    // West straight (runs right between Outer Ring Road and Sheru Bhai Golden Beach!)
+    pts.push(new THREE.Vector3(-railR, 0.14, -inner));
+    pts.push(new THREE.Vector3(-railR, 0.14, 0));
+    pts.push(new THREE.Vector3(-railR, 0.14, inner));
+    // SW rounded corner leading straight back into the Mountain Tunnel!
+    pts.push(new THREE.Vector3(-railR + 2.2, 0.14, railR - 2.2));
+    pts.push(new THREE.Vector3(-inner, 0.14, railR));
+
+    const trackCurve = new THREE.CatmullRomCurve3(pts, true, "catmullrom", 0.35);
+    const totalLen = trackCurve.getLength();
+
+    // Find exact curve parameter `stationT` closest to Platform 1 (0, -railR)
+    let stationT = 0.5;
+    let bestD = Infinity;
+    for (let s = 0; s < 400; s++) {
+      const tt = s / 400;
+      const p = trackCurve.getPointAt(tt);
+      const d = p.x * p.x + (p.z + railR) * (p.z + railR);
+      if (d < bestD) {
+        bestD = d;
+        stationT = tt;
+      }
+    }
+
+    // 2. Render Railway Track Ballast, Wooden Sleepers & Dual Steel Rails using InstancedMesh (Ultra Low-RAM!)
+    const sleeperCount = Math.min(360, Math.floor(totalLen / 1.8));
+    const sleeperGeo = new THREE.BoxGeometry(2.8, 0.1, 0.42);
+    const sleeperInst = new THREE.InstancedMesh(sleeperGeo, this.mat.railSleeper, sleeperCount);
+
+    const railSegGeo = new THREE.BoxGeometry(0.14, 0.12, (totalLen / sleeperCount) * 1.15);
+    const railInst = new THREE.InstancedMesh(railSegGeo, this.mat.railSteel, sleeperCount * 2);
+
+    const dummy = new THREE.Object3D();
+    const up = new THREE.Vector3(0, 1, 0);
+    const rightVec = new THREE.Vector3();
+    for (let i = 0; i < sleeperCount; i++) {
+      const u = i / sleeperCount;
+      const p = trackCurve.getPointAt(u);
+      const tan = trackCurve.getTangentAt(u).normalize();
+      const yaw = Math.atan2(tan.x, tan.z);
+
+      dummy.position.set(p.x, 0.08, p.z);
+      dummy.rotation.set(0, yaw, 0);
+      dummy.updateMatrix();
+      sleeperInst.setMatrixAt(i, dummy.matrix);
+
+      rightVec.crossVectors(up, tan).normalize();
+      // Left steel rail
+      dummy.position.set(p.x - rightVec.x * 0.82, 0.16, p.z - rightVec.z * 0.82);
+      dummy.rotation.set(0, yaw, 0);
+      dummy.updateMatrix();
+      railInst.setMatrixAt(i * 2, dummy.matrix);
+      // Right steel rail
+      dummy.position.set(p.x + rightVec.x * 0.82, 0.16, p.z + rightVec.z * 0.82);
+      dummy.rotation.set(0, yaw, 0);
+      dummy.updateMatrix();
+      railInst.setMatrixAt(i * 2 + 1, dummy.matrix);
+    }
+    sleeperInst.instanceMatrix.needsUpdate = true;
+    railInst.instanceMatrix.needsUpdate = true;
+    rg.add(sleeperInst, railInst);
+
+    // 3. Railway Level Crossing Gates where Track meets Airport Highway (East) & Beach Road (West)!
+    const addCrossingPost = (cx, cz) => {
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 2.8, 6), this.mat.trainYellow);
+      post.position.set(cx, 1.4, cz);
+      const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.24, 6, 6), this.mat.beaconRed);
+      lamp.position.set(cx, 2.95, cz);
+      rg.add(post, lamp);
+    };
+    addCrossingPost(railR - 2.4, 13.5);
+    addCrossingPost(railR + 2.4, 22.5);
+    addCrossingPost(-railR - 2.4, -4.5);
+    addCrossingPost(-railR + 2.4, 4.5);
+
+    // 4. ⛰️ ROCKY GREEN MOUNTAIN & STONE RAILWAY TUNNEL (At the South-West End of the City!)
+    const tunGroup = new THREE.Group();
+    tunGroup.position.set(tunnelX, 0, railR);
+
+    // Massive Sculpted Rocky Mountain Hill Covering the Tunnel (16 units long!)
+    const peakMain = new THREE.Mesh(new THREE.DodecahedronGeometry(9.6, 0), this.mat.mountainRock);
+    peakMain.scale.set(1.45, 0.92, 0.95);
+    peakMain.position.set(0, 6.2, 0.8);
+    const peakTop = new THREE.Mesh(new THREE.DodecahedronGeometry(6.8, 0), this.mat.mountainGreen);
+    peakTop.scale.set(1.35, 0.72, 0.9);
+    peakTop.position.set(-1.5, 9.6, 1.0);
+    const peakL = new THREE.Mesh(new THREE.DodecahedronGeometry(6.2, 0), this.mat.mountainRock);
+    peakL.position.set(-9.5, 4.2, 0.5);
+    const peakR = new THREE.Mesh(new THREE.DodecahedronGeometry(5.8, 0), this.mat.mountainGreen);
+    peakR.position.set(8.5, 4.0, 0.8);
+    tunGroup.add(peakMain, peakTop, peakL, peakR);
+
+    // Concrete Stone Tunnel Portals on BOTH Ends (East Exit & West Entry) + Pitch-Black Tunnel Interior!
+    [-9.2, 9.2].forEach((px) => {
+      const archWall = new THREE.Mesh(new THREE.BoxGeometry(0.9, 5.2, 6.2), this.mat.concrete);
+      archWall.position.set(px, 2.6, 0);
+      const voidMouth = new THREE.Mesh(new THREE.BoxGeometry(1.1, 3.6, 3.6), this.mat.tunnelVoid);
+      voidMouth.position.set(px, 1.85, 0);
+      const trim = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.55, 6.4), this.mat.trainYellow);
+      trim.position.set(px, 5.2, 0);
+      tunGroup.add(archWall, voidMouth, trim);
+    });
+    // Dark tunnel roof sleeve inside the mountain so train disappears cleanly inside
+    const tunSleeve = new THREE.Mesh(new THREE.BoxGeometry(18.2, 3.9, 4.2), this.mat.tunnelVoid);
+    tunSleeve.position.set(0, 2.0, 0);
+    const tunSign = this._createNameSign("⛰️ MOUNTAIN TUNNEL", "RAILWAY END OF CITY", false);
+    tunSign.position.set(0, 14.5, 0);
+    tunGroup.add(tunSleeve, tunSign);
+    rg.add(tunGroup);
+
+    // 5. 🚉 GRAND INDIAN RAILWAY STATION ("SHERU BHAI JN") on North Side (0, -railR - 6.8)
+    const stGroup = new THREE.Group();
+    stGroup.position.set(0, 0, -railR);
+
+    // Road connecting North Outer Ring Road -> Railway Station Front
+    const stRoad = new THREE.Mesh(new THREE.BoxGeometry(7.2, 0.08, 12.0), this.mat.road);
+    stRoad.position.set(0, 0.02, 5.5);
+    rg.add(stRoad);
+
+    // Raised Long Concrete Platform 1 right beside the Track!
+    const platform = new THREE.Mesh(new THREE.BoxGeometry(34.0, 0.85, 5.2), this.mat.concrete);
+    platform.position.set(0, 0.42, -4.1);
+    const yellowEdge = new THREE.Mesh(new THREE.BoxGeometry(34.0, 0.08, 0.35), this.mat.trainYellow);
+    yellowEdge.position.set(0, 0.87, -1.65);
+
+    // Covered Arched Platform Shed + Steel Pillars + Platform Lamps
+    const shedRoof = new THREE.Mesh(new THREE.BoxGeometry(28.0, 0.32, 5.8), this.mat.stationRoof);
+    shedRoof.position.set(0, 4.85, -4.4);
+    shedRoof.rotation.x = 0.08;
+    for (let px = -12; px <= 12; px += 6) {
+      const pil = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 4.2, 6), this.mat.wallWhite);
+      pil.position.set(px, 2.8, -3.2);
+      stGroup.add(pil);
+      const pLight = new THREE.Mesh(new THREE.SphereGeometry(0.22, 6, 6), this.mat.lampBulbNight);
+      pLight.position.set(px, 4.55, -2.5);
+      pLight.visible = this.timeOfDay === "night";
+      stGroup.add(pLight);
+      nightLights.push(pLight);
+    }
+
+    // Platform Waiting Benches
+    [-8, 0, 8].forEach((bx) => {
+      const bench = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.42, 0.65), this.mat.trainBlue);
+      bench.position.set(bx, 1.05, -4.8);
+      stGroup.add(bench);
+    });
+
+    // Iconic Yellow Indian Railways Station Nameboards at BOTH Platform Ends!
+    const cleanRailOwner = (this.railwayOwner || "@_ur_bunny_108_").trim();
+    const irBoardL = this._makeBuildingBoard("SHERU BHAI JN", "రైల్వే స్టేషన్ • PF 1", "#facc15", "#111827", 5.6, 1.3);
+    irBoardL.position.set(-14.2, 2.4, -3.2);
+    const irBoardR = irBoardL.clone();
+    irBoardR.position.x = 14.2;
+    [-14.2, 14.2].forEach((bx) => {
+      const bp = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.6, 0.18), this.mat.charcoal);
+      bp.position.set(bx, 1.4, -3.2);
+      stGroup.add(bp);
+    });
+
+    // Grand Heritage Railway Station Main Building + Central Clock Tower Dome!
+    const stMain = new THREE.Mesh(new THREE.BoxGeometry(24.0, 5.6, 6.4), this.mat.stuccoCream);
+    stMain.position.set(0, 3.2, -9.8);
+    const stTrim = new THREE.Mesh(new THREE.BoxGeometry(24.4, 0.45, 6.8), this.mat.terracottaRoof);
+    stTrim.position.set(0, 6.1, -9.8);
+    const clockBase = new THREE.Mesh(new THREE.BoxGeometry(4.8, 3.2, 4.2), this.mat.stuccoCream);
+    clockBase.position.set(0, 7.6, -9.8);
+    const clockDome = new THREE.Mesh(new THREE.SphereGeometry(2.2, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), this.mat.terracottaRoof);
+    clockDome.position.set(0, 9.2, -9.8);
+    const clockFace = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.14, 12), this.mat.wallWhite);
+    clockFace.rotation.x = Math.PI / 2;
+    clockFace.position.set(0, 7.8, -7.65);
+
+    // Big Main Station Facade Signboard (Shows Station Name + Station Chief @username!)
+    const mainBoard = this._makeBuildingBoard("RAILWAY STATION", `${cleanRailOwner.toUpperCase()} • SHERU BHAI JN`, "#1e3a8a", "#facc15", 13.5, 1.8);
+    mainBoard.position.set(0, 5.6, -6.5);
+
+    // Floating Station Name Sign
+    const stFloatSign = this._createNameSign(`🚂 SHERU BHAI JN • ${cleanRailOwner}`, "రైల్వే స్టేషన్ • LIVE EXPRESS TRAIN", true);
+    stFloatSign.position.set(0, 13.8, -9.5);
+
+    // 6 Live Waiting Passengers on Platform 1 who board INSIDE the Express Train!
+    const stationPassengers = [
+      this.mat.wallCoral, this.mat.wallGold, this.mat.wallMint,
+      this.mat.wallBlue, this.mat.richVelvetRed, this.mat.khakiUniform
+    ].map((sm, i) => {
+      const p = this._createCharacter({ shirtMat: sm, pantsMat: this.mat.darkPants, scale: 0.95 });
+      p.position.set(-7.5 + i * 3.0, 0.92, -4.0);
+      stGroup.add(p);
+      return p;
+    });
+
+    // Clickable Hitbox for Railway Station
+    const stHitbox = new THREE.Mesh(
+      new THREE.BoxGeometry(36, 14, 18),
+      new THREE.MeshBasicMaterial({ visible: false })
+    );
+    stHitbox.position.set(0, 7, -6.5);
+    stHitbox.userData.plotId = "RAILWAY_STATION";
+    stGroup.add(stHitbox);
+    this.plotHitboxes.push(stHitbox);
+
+    stGroup.add(platform, yellowEdge, shedRoof, irBoardL, irBoardR, stMain, stTrim, clockBase, clockDome, clockFace, mainBoard, stFloatSign);
+    rg.add(stGroup);
+
+    // 6. Spawn Articulated 4-Car Indian Express Train (1 Locomotive + 3 Passenger Coaches)
+    const trainCars = [];
+    const loco = this._makeTrainLocomotive(nightLights);
+    rg.add(loco);
+    trainCars.push(loco);
+    for (let c = 0; c < 3; c++) {
+      const coach = this._makeTrainCoach(trainWindows);
+      rg.add(coach);
+      trainCars.push(coach);
+    }
+
+    this.cityGroup.add(rg);
+
+    this.railwaySim = {
+      trackCurve,
+      totalLen,
+      stationT,
+      tunnelX,
+      railR,
+      trainCars,
+      stationPassengers,
+      nightLights,
+      trainWindows
     };
   }
 
@@ -2729,7 +3168,7 @@ export class FollowerTownEngine {
       buildingObj.rotation.y = pos.rotY;
 
       if (data.ownerName) {
-        const subLabel = data.buildingType === "shop" ? "టీ & టిఫిన్ • SHOP" : "";
+        const subLabel = data.buildingType === "shop" ? "టీ & టిఫిన్ • SHOP" : data.buildingType === "cafe" ? "☕ COFFEE CAFE" : "";
         const sign = this._createNameSign(data.ownerName, subLabel, false);
         sign.position.set(0, buildingObj.userData.labelY || 5.2, 0);
         plotGroup.add(sign);
@@ -2782,7 +3221,8 @@ export class FollowerTownEngine {
       reliance_store: "రిలయన్స్ • RELIANCE DIGITAL",
       audi_showroom: "ఆడి షోరూమ్ • AUDI LUXURY MOTORS",
       gym: "జిమ్ • PERSONAL FITNESS CLUB",
-      photo_studio: "ఫోటో స్టూడియో • PHOTO & 4K VIDEO"
+      photo_studio: "ఫోటో స్టూడియో • PHOTO & 4K VIDEO",
+      iti_college: "ఐటిఐ కాలేజ్ • ITI TECHNICAL COLLEGE"
     };
     return map[type] || "";
   }
@@ -2925,6 +3365,43 @@ export class FollowerTownEngine {
     }
 
     // --- LOCAL TEA & TIFFIN SHOP ---
+    if (type === "cafe") {
+      // Warm Wood & Cream Entrance Coffee Cafe + Giant 3D Coffee Cup on Roof + Outdoor Umbrella Table!
+      const body = new THREE.Mesh(new THREE.BoxGeometry(5.0, 3.0, 4.2), this.mat.cafeBrown);
+      body.position.set(0, 1.55, -0.3);
+      const upperBand = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.55, 4.4), this.mat.cafeCream);
+      upperBand.position.set(0, 3.1, -0.3);
+      const awning = new THREE.Mesh(new THREE.BoxGeometry(5.1, 0.22, 1.5), this.mat.terracottaRoof);
+      awning.position.set(0, 2.45, 2.35);
+      awning.rotation.x = 0.25;
+      const glass = new THREE.Mesh(new THREE.BoxGeometry(3.8, 1.8, 0.12), winMat);
+      glass.position.set(0, 1.15, 1.82);
+      glass.userData.isWindow = true;
+
+      // Giant 3D Rooftop Coffee Cup Sculpture!
+      const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.68, 0.52, 1.15, 10), this.mat.wallWhite);
+      cup.position.set(0, 3.95, -0.2);
+      const coffeeTop = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.62, 0.08, 10), this.mat.cafeBrown);
+      coffeeTop.position.set(0, 4.5, -0.2);
+      const handle = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.08, 6, 10), this.mat.wallWhite);
+      handle.position.set(0.66, 3.95, -0.2);
+
+      // Outdoor Sidewalk Cafe Table & Umbrella
+      const tbl = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.14, 0.65, 8), this.mat.teakWood);
+      tbl.position.set(1.5, 0.36, 2.65);
+      const umbPole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.9, 5), this.mat.wallWhite);
+      umbPole.position.set(1.5, 1.15, 2.65);
+      const umbTop = new THREE.Mesh(new THREE.ConeGeometry(0.95, 0.35, 8), this.mat.petrolYellow);
+      umbTop.position.set(1.5, 2.1, 2.65);
+
+      const cafeBoard = this._makeBuildingBoard("COFFEE CAFE", "FRESH BREW • SNACKS", "#451a03", "#fde047", 4.4, 0.72);
+      cafeBoard.position.set(0, 3.1, 1.92);
+
+      g.add(body, upperBand, awning, glass, cup, coffeeTop, handle, tbl, umbPole, umbTop, cafeBoard);
+      g.userData.labelY = 5.6;
+      return g;
+    }
+
     if (type === "shop") {
       const base = new THREE.Mesh(new THREE.BoxGeometry(4.8, 2.8, 4.2), this.mat.wallGold);
       base.position.y = 1.45;
@@ -3480,6 +3957,64 @@ export class FollowerTownEngine {
     const g = new THREE.Group();
     const winMat = this.timeOfDay === "night" ? this.mat.windowNight : this.mat.windowDay;
 
+
+
+    // 4-PLOT ITI COLLEGE & TECHNICAL WORKSHOP (`iti_college`)
+    if (type === "iti_college") {
+      // Main 2-Story Technical Institute Academic Building
+      const main = new THREE.Mesh(new THREE.BoxGeometry(12.2, 5.2, 4.4), this.mat.stuccoCream);
+      main.position.set(0, 2.65, -4.0);
+      const roof = new THREE.Mesh(new THREE.BoxGeometry(12.8, 0.42, 5.0), this.mat.navy);
+      roof.position.set(0, 5.45, -4.0);
+
+      for (let wx = -4.2; wx <= 4.2; wx += 2.1) {
+        const w1 = new THREE.Mesh(this.geo.win, winMat);
+        w1.position.set(wx, 1.8, -1.75);
+        w1.userData.isWindow = true;
+        const w2 = new THREE.Mesh(this.geo.win, winMat);
+        w2.position.set(wx, 3.8, -1.75);
+        w2.userData.isWindow = true;
+        g.add(w1, w2);
+      }
+
+      // Technical Workshop Shed (Left Side) with Blue Industrial Roof & Machinery Bay
+      const shed = new THREE.Mesh(new THREE.BoxGeometry(5.6, 3.2, 5.4), this.mat.concrete);
+      shed.position.set(-3.4, 1.65, 2.2);
+      const shedRoof = new THREE.Mesh(new THREE.BoxGeometry(6.0, 0.35, 5.8), this.mat.itiWorkshop);
+      shedRoof.position.set(-3.4, 3.4, 2.2);
+      shedRoof.rotation.z = 0.12;
+      const bayDoor = new THREE.Mesh(new THREE.BoxGeometry(2.8, 2.4, 0.14), this.mat.charcoal);
+      bayDoor.position.set(-3.4, 1.3, 4.92);
+
+      // Campus Flag Pole + Indian Tricolor Flag (Right Courtyard)
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 5.8, 6), this.mat.chrome);
+      pole.position.set(3.8, 2.9, 1.8);
+      const fTop = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.28, 0.06), this.mat.roofOrange);
+      fTop.position.set(4.55, 5.5, 1.8);
+      const fMid = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.28, 0.06), this.mat.wallWhite);
+      fMid.position.set(4.55, 5.22, 1.8);
+      const fBot = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.28, 0.06), this.mat.turf);
+      fBot.position.set(4.55, 4.94, 1.8);
+
+      // Personalized ITI College Signboard!
+      const rawIti = (ownerName || "ITI").trim().toUpperCase();
+      const itiSub = rawIti.includes("ITI") ? "TECHNICAL INSTITUTE" : `${rawIti} • TECHNICAL CAMPUS`;
+      const itiBoard = this._makeBuildingBoard("ITI COLLEGE", itiSub, "#1e3a8a", "#facc15", 9.6, 1.35);
+      itiBoard.position.set(0, 5.1, -1.72);
+
+      // 2 Animated ITI Students in Blue Workshop Uniforms
+      const st1 = this._createCharacter({ shirtMat: this.mat.blueUniform, pantsMat: this.mat.darkPants, scale: 0.94 });
+      g.add(st1);
+      this.landmarkActors.push({ plotId, mesh: st1, mode: "patrol_x", baseX: 2.2, baseZ: 3.6, range: 2.4, speed: 1.3, phase: 0 });
+
+      const st2 = this._createCharacter({ shirtMat: this.mat.blueUniform, pantsMat: this.mat.darkPants, scale: 0.94 });
+      g.add(st2);
+      this.landmarkActors.push({ plotId, mesh: st2, mode: "patrol_z", baseX: 0.6, baseZ: 1.8, range: 2.2, speed: 1.2, phase: 1.8 });
+
+      g.add(main, roof, shed, shedRoof, bayDoor, pole, fTop, fMid, fBot, itiBoard);
+      g.userData.labelY = 8.4;
+      return g;
+    }
 
     // 4-PLOT PERSONALIZED FOLLOWER FITNESS GYM (Custom Follower Name on Gym Signboard + Live Workouts!)
     if (type === "gym") {
@@ -4212,6 +4747,16 @@ export class FollowerTownEngine {
     if (this.airportSim && this.airportSim.nightGlowMeshes) {
       this.airportSim.nightGlowMeshes.forEach((m) => { m.visible = isNight; });
     }
+    if (this.railwaySim) {
+      if (this.railwaySim.nightLights) {
+        this.railwaySim.nightLights.forEach((m) => { m.visible = isNight; });
+      }
+      if (this.railwaySim.trainWindows) {
+        this.railwaySim.trainWindows.forEach((m) => {
+          m.material = isNight ? this.mat.windowNight : this.mat.busWindshield;
+        });
+      }
+    }
     this.plotsGroup.traverse((obj) => {
       if (obj.userData && obj.userData.isWindow) {
         obj.material = isNight ? this.mat.windowNight : this.mat.windowDay;
@@ -4223,6 +4768,7 @@ export class FollowerTownEngine {
     if (plotId === "ST_JUNCTION") return { x: 0, y: 4, z: 0, size: 4 };
     if (plotId === "AIRPORT") return { x: this.airportX - 4, y: 5, z: 4, size: 12 };
     if (plotId === "BEACH") return { x: this.beachX + 6, y: 4, z: -2, size: 12 };
+    if (plotId === "RAILWAY_STATION") return { x: 0, y: 4, z: this.railwayZ, size: 12 };
     const plotIndex = parseInt(plotId.replace("plot_", ""), 10) - 1;
     if (isNaN(plotIndex) || plotIndex < 0) return { x: 0, y: 2, z: 0, size: 1 };
 
@@ -4312,6 +4858,16 @@ export class FollowerTownEngine {
       duration: 2.5,
       speed: 0.14,
       plotId: "BEACH"
+    });
+
+    stops.push({
+      tag: "INDIAN RAILWAYS • MOUNTAIN TUNNEL",
+      name: `🚂 SHERU BHAI JN • ${this.railwayOwner || "@_ur_bunny_108_"}`,
+      target: new THREE.Vector3(0, 4, this.railwayZ),
+      camPos: new THREE.Vector3(38, 30, this.railwayZ + 44),
+      duration: 2.6,
+      speed: 0.14,
+      plotId: "RAILWAY_STATION"
     });
 
     const landmarks = [];
@@ -4600,6 +5156,10 @@ export class FollowerTownEngine {
     if (q.includes("airport") || q.includes("plane") || q.includes("flight") || q.includes("heli") || q.includes("diamond")) return "AIRPORT";
     const beachClean = (this.beachOwner || "").toLowerCase().replace(/^@/, "");
     if (q.includes("beach") || q.includes("ocean") || q.includes("sea") || (beachClean && beachClean.includes(q))) return "BEACH";
+    const railClean = (this.railwayOwner || "").toLowerCase().replace(/^@/, "");
+    if (q.includes("train") || q.includes("rail") || q.includes("station") || q.includes("tunnel") || (railClean && railClean.includes(q))) return "RAILWAY_STATION";
+    const ahClean = (this.airportHouseOwner || "").toLowerCase().replace(/^@/, "");
+    if (ahClean && ahClean.includes(q)) return "AIRPORT";
     if (q.includes("sheru") || q.includes("bhai") || q.includes("junction") || q.includes("statue") || q === "st") return "ST_JUNCTION";
     for (const [plotId, data] of this.plotDataMap.entries()) {
       if (!data || data.status !== "built") continue;
@@ -5260,6 +5820,71 @@ export class FollowerTownEngine {
       if (dHeli.userData.tailRotor) dHeli.userData.tailRotor.rotation.x += dt * (rotorSpeed * 1.4);
     }
 
+
+
+    // 🚂 LIVE INDIAN EXPRESS TRAIN + MOUNTAIN TUNNEL + STATION PASSENGER BOARDING (34s loop)
+    if (this.lifeEnabled && this.railwaySim) {
+      const rsim = this.railwaySim;
+      const cycle = elapsed % 34.0;
+      let headT = 0;
+
+      // 0..13s: Emerges from South-West Mountain Tunnel -> speeds East (past Welcome Arch & Airport) -> pulls smoothly into North Railway Station!
+      // 13..20s: STOPPED AT RAILWAY STATION PLATFORM 1 -> 6 Passengers walk forward & board INSIDE the Express Coaches!
+      // 20..34s: Departs Railway Station -> circles West side (past Sheru Bhai Beach!) -> dives straight back into Mountain Tunnel!
+      if (cycle < 13.0) {
+        const p = cycle / 13.0;
+        // Smooth deceleration as train approaches Railway Station
+        const eased = p < 0.78 ? p / 0.78 * 0.88 : 0.88 + (1 - Math.pow(1 - (p - 0.78) / 0.22, 2)) * 0.12;
+        headT = eased * rsim.stationT;
+      } else if (cycle < 20.0) {
+        headT = rsim.stationT;
+      } else {
+        const p = (cycle - 20.0) / 14.0;
+        // Smooth acceleration leaving Railway Station back toward Mountain Tunnel!
+        const eased = p < 0.22 ? Math.pow(p / 0.22, 2) * 0.12 : 0.12 + ((p - 0.22) / 0.78) * 0.88;
+        headT = rsim.stationT + eased * (1.0 - rsim.stationT);
+      }
+
+      // Position Locomotive & 3 Express Coaches cleanly along the spline (each bends around corners!)
+      const carSpacingT = 6.1 / Math.max(rsim.totalLen, 100);
+      rsim.trainCars.forEach((car, idx) => {
+        const carT = (headT - idx * carSpacingT + 1.0) % 1.0;
+        const pos = rsim.trackCurve.getPointAt(carT);
+        const ahead = rsim.trackCurve.getPointAt((carT + 0.008) % 1.0);
+        car.position.set(pos.x, 0.16, pos.z);
+        car.lookAt(ahead.x, 0.16, ahead.z);
+      });
+
+      // Animate 6 Railway Station Passengers on Platform 1
+      if (cycle >= 13.0 && cycle < 20.0) {
+        const boardElapsed = cycle - 13.0;
+        rsim.stationPassengers.forEach((pax, i) => {
+          const wp = (boardElapsed - i * 0.65) / 2.0;
+          if (wp < 0) {
+            pax.visible = true;
+            pax.position.set(-7.5 + i * 3.0, 0.92, -3.8);
+            pax.rotation.y = 0;
+          } else if (wp < 1) {
+            pax.visible = true;
+            pax.position.set(
+              -7.5 + i * 3.0,
+              0.92 + Math.abs(Math.sin(elapsed * 12 + i)) * 0.12,
+              THREE.MathUtils.lerp(-3.8, -0.6, wp)
+            );
+            pax.rotation.y = 0;
+          } else {
+            pax.visible = false; // Boarded inside Express Train!
+          }
+        });
+      } else {
+        // Next group of passengers waiting on Platform 1 for the train to return!
+        rsim.stationPassengers.forEach((pax, i) => {
+          pax.visible = cycle < 13.0 || cycle > 25.0;
+          pax.position.set(-7.5 + i * 3.0, 0.92, -3.8);
+          pax.rotation.y = 0;
+        });
+      }
+    }
 
     // 🏖️ Animated Rolling Ocean Waves & Chilling Sheru Bhai on the Beach
     if (this.lifeEnabled && this.beachSim) {
