@@ -168,36 +168,44 @@ export function getEightPlotGroup(plotId) {
 }
 
 export class FollowerTownEngine {
-  constructor(container, onPlotSelected) {
+  constructor(container, onPlotSelected, options = {}) {
     this.container = container;
     this.onPlotSelected = onPlotSelected;
+    this.hqMode = Boolean(options.highQuality);
+    this.isReelFraming = false;
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x87ceeb);
-    // Very light fog so buildings stay crystal clear and visible from afar!
-    this.scene.fog = new THREE.Fog(0x9bd7f0, 380, 1280);
+    // Clean distant atmospheric haze so buildings & Araku peaks stay crystal clear!
+    this.scene.fog = new THREE.Fog(0x9bd7f0, 460, 1550);
 
     const initW = container.clientWidth || window.innerWidth || 360;
     const initH = container.clientHeight || window.innerHeight || 640;
     const aspect = initW / initH;
-    this.camera = new THREE.PerspectiveCamera(38, aspect, 1.0, 2200);
-    this.camera.position.set(62, 68, 62);
+    this.camera = new THREE.PerspectiveCamera(42, aspect, 1.0, 2400);
+    this.camera.position.set(78, 82, 78);
 
-    // AUTO LOW-RAM DETECTION (2GB–4GB phones get zero-crash ultra-lite mode automatically!)
+    // AUTO LOW-RAM DETECTION (Public visitors on 2GB-4GB phones stay safe; Admin Studio runs crisp Ultra HD!)
     const devMem = navigator.deviceMemory || 4;
     const cpuCores = navigator.hardwareConcurrency || 4;
-    this.isLowRam = devMem <= 4 || cpuCores <= 4;
+    this.isLowRam = !this.hqMode && (devMem <= 4 || cpuCores <= 4);
 
     this.renderer = new THREE.WebGLRenderer({
-      antialias: !this.isLowRam,
+      antialias: this.hqMode || !this.isLowRam,
       powerPreference: "high-performance",
-      precision: "mediump"
+      precision: this.hqMode ? "highp" : "mediump"
     });
     this.renderer.setSize(initW, initH);
-    this.renderer.setPixelRatio(this.isLowRam ? 1.0 : Math.min(window.devicePixelRatio || 1, 1.35));
+    this.renderer.setPixelRatio(
+      this.hqMode
+        ? Math.min(window.devicePixelRatio || 2, 2.0)
+        : (this.isLowRam ? 1.0 : Math.min(window.devicePixelRatio || 1, 1.5))
+    );
     this.renderer.shadowMap.enabled = false;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.08;
+    this.renderer.toneMappingExposure = this.hqMode ? 1.14 : 1.08;
+    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    this.maxAnisotropy = Math.min(8, this.renderer.capabilities.getMaxAnisotropy ? this.renderer.capabilities.getMaxAnisotropy() : 1);
     container.appendChild(this.renderer.domElement);
 
     // FREE-ROAM GOOGLE-MAPS PAN & ZOOM
@@ -397,17 +405,21 @@ export class FollowerTownEngine {
   }
 
   _initLights() {
-    // Bright, crisp 3-point lighting so every building face is clearly visible without heavy shadows!
-    this.hemiLight = new THREE.HemisphereLight(0xffffff, 0x3f6212, 0.95);
+    // Crisp 4-point cinema lighting so walls, roofs, glass, trains & Lion Statue pop in High Quality!
+    this.hemiLight = new THREE.HemisphereLight(0xf0f9ff, 0x365314, 1.02);
     this.scene.add(this.hemiLight);
 
-    this.sunLight = new THREE.DirectionalLight(0xfffbeb, 1.15);
-    this.sunLight.position.set(80, 120, 60);
+    this.sunLight = new THREE.DirectionalLight(0xfffbeb, 1.24);
+    this.sunLight.position.set(90, 135, 70);
     this.scene.add(this.sunLight);
 
-    this.fillLight = new THREE.DirectionalLight(0xdbeafe, 0.45);
-    this.fillLight.position.set(-70, 50, -60);
+    this.fillLight = new THREE.DirectionalLight(0xcceeff, 0.52);
+    this.fillLight.position.set(-85, 65, -75);
     this.scene.add(this.fillLight);
+
+    this.rimLight = new THREE.DirectionalLight(0xfef3c7, 0.28);
+    this.rimLight.position.set(-40, 80, 95);
+    this.scene.add(this.rimLight);
   }
 
   _initSharedMaterials() {
@@ -665,29 +677,33 @@ export class FollowerTownEngine {
     const key = `${title}|${subtitle}|${bgHex}|${accentHex}`;
     let mat = this.signTexCache.get(key);
     if (!mat) {
+      const hi = this.hqMode;
+      const bw = hi ? 768 : 512;
+      const bh = hi ? 192 : 128;
       const c = document.createElement("canvas");
-      c.width = 512;
-      c.height = 128;
+      c.width = bw;
+      c.height = bh;
       const ctx = c.getContext("2d");
       ctx.fillStyle = bgHex;
-      ctx.fillRect(0, 0, 512, 128);
+      ctx.fillRect(0, 0, bw, bh);
       ctx.strokeStyle = accentHex;
-      ctx.lineWidth = 8;
-      ctx.strokeRect(6, 6, 500, 116);
+      ctx.lineWidth = hi ? 12 : 8;
+      ctx.strokeRect(8, 8, bw - 16, bh - 16);
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillStyle = "#ffffff";
-      ctx.font = "900 42px sans-serif";
-      ctx.fillText(title, 256, subtitle ? 46 : 66, 476);
+      ctx.font = `900 ${hi ? 62 : 42}px sans-serif`;
+      ctx.fillText(title, bw / 2, subtitle ? bh * 0.36 : bh * 0.52, bw - 48);
       if (subtitle) {
         ctx.fillStyle = accentHex;
-        ctx.font = "800 26px sans-serif";
-        ctx.fillText(subtitle, 256, 94, 476);
+        ctx.font = `800 ${hi ? 38 : 26}px sans-serif`;
+        ctx.fillText(subtitle, bw / 2, bh * 0.74, bw - 48);
       }
       const tex = new THREE.CanvasTexture(c);
       tex.generateMipmaps = true;
       tex.minFilter = THREE.LinearMipmapLinearFilter;
       tex.magFilter = THREE.LinearFilter;
+      tex.anisotropy = this.maxAnisotropy || 4;
       tex.colorSpace = THREE.SRGBColorSpace;
       mat = new THREE.MeshBasicMaterial({ map: tex });
       this.signTexCache.set(key, mat);
@@ -5645,8 +5661,9 @@ export class FollowerTownEngine {
   // ULTRA-CRISP FLOATING NAME SIGNS (High-Contrast Mipmapped Canvas + Auto-Fit maxWidth!)
   _createNameSign(mainText, subText = "", isBig = false) {
     const canvas = document.createElement("canvas");
-    canvas.width = isBig ? 512 : 320;
-    canvas.height = subText ? (isBig ? 136 : 96) : (isBig ? 96 : 72);
+    const hi = this.hqMode;
+    canvas.width = isBig ? (hi ? 640 : 512) : (hi ? 400 : 320);
+    canvas.height = subText ? (isBig ? (hi ? 164 : 136) : (hi ? 116 : 96)) : (isBig ? (hi ? 116 : 96) : (hi ? 88 : 72));
     const ctx = canvas.getContext("2d");
 
     ctx.fillStyle = "rgba(8, 15, 32, 0.94)";
@@ -5665,20 +5682,21 @@ export class FollowerTownEngine {
 
     const cleanMain = mainText.length > 26 ? mainText.slice(0, 25) + "…" : mainText;
     ctx.lineJoin = "round";
+    const fScale = hi ? 1.22 : 1.0;
     if (subText) {
-      ctx.font = isBig ? "800 24px sans-serif" : "800 18px sans-serif";
+      ctx.font = `800 ${Math.round((isBig ? 24 : 18) * fScale)}px sans-serif`;
       ctx.strokeStyle = "#020617";
-      ctx.lineWidth = 4;
+      ctx.lineWidth = hi ? 5 : 4;
       ctx.strokeText(subText, cx, canvas.height * 0.3, maxW);
       ctx.fillStyle = "#facc15";
       ctx.fillText(subText, cx, canvas.height * 0.3, maxW);
 
-      ctx.font = isBig ? "900 36px sans-serif" : "900 26px sans-serif";
+      ctx.font = `900 ${Math.round((isBig ? 36 : 26) * fScale)}px sans-serif`;
       ctx.strokeText(cleanMain, cx, canvas.height * 0.68, maxW);
       ctx.fillStyle = "#ffffff";
       ctx.fillText(cleanMain, cx, canvas.height * 0.68, maxW);
     } else {
-      ctx.font = isBig ? "900 36px sans-serif" : "900 28px sans-serif";
+      ctx.font = `900 ${Math.round((isBig ? 36 : 28) * fScale)}px sans-serif`;
       ctx.strokeStyle = "#020617";
       ctx.lineWidth = 4;
       ctx.strokeText(cleanMain, cx, canvas.height * 0.52, maxW);
@@ -5690,6 +5708,7 @@ export class FollowerTownEngine {
     tex.generateMipmaps = true;
     tex.minFilter = THREE.LinearMipmapLinearFilter;
     tex.magFilter = THREE.LinearFilter;
+    tex.anisotropy = this.maxAnisotropy || 4;
     tex.colorSpace = THREE.SRGBColorSpace;
 
     const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
@@ -5794,13 +5813,63 @@ export class FollowerTownEngine {
     return { x: pos.x, y: 2.5, z: pos.z, size: 1 };
   }
 
+  /**
+   * ✨ ULTRA HD / LITE QUALITY CONTROLLER (2x Retina sharpness + Crisp Distance Labels for Reels!)
+   */
+  setQualityMode(isHD) {
+    this.hqMode = Boolean(isHD);
+    const pr = this.hqMode
+      ? Math.min(window.devicePixelRatio || 2, 2.0)
+      : (this.isLowRam ? 1.0 : Math.min(window.devicePixelRatio || 1, 1.35));
+    this.renderer.setPixelRatio(pr);
+    const w = this.container.clientWidth || window.innerWidth || 360;
+    const h = this.container.clientHeight || window.innerHeight || 640;
+    this.renderer.setSize(w, h);
+    this.renderer.toneMappingExposure = this.hqMode ? 1.14 : 1.08;
+  }
+
+  /**
+   * 📐 REEL WIDE-ANGLE FRAMING (48° cinematic FOV in 9:16 Reel Mode so full buildings & stations never crop!)
+   */
+  setReelFraming(active) {
+    this.isReelFraming = Boolean(active);
+    this.camera.fov = this.isReelFraming ? 48 : 42;
+    this.camera.updateProjectionMatrix();
+  }
+
+  /**
+   * 🎥 PORTRAIT-AWARE WIDE FRAMING CALCULATOR (Fixes ALL Over-Zoom on 9:16 Mobile Screens!)
+   * Automatically pulls back cleanly on narrow vertical screens so the ENTIRE house, yard,
+   * 2-platform station, airport, or 8-plot showroom fits comfortably in frame!
+   */
+  _getWideDist(baseDist) {
+    const aspect = this.camera.aspect || 0.56;
+    const portraitBoost = aspect < 0.85
+      ? THREE.MathUtils.clamp(0.96 / Math.max(aspect, 0.44), 1.3, 1.82)
+      : 1.0;
+    return baseDist * portraitBoost;
+  }
+
+  _getTargetFraming(plotId, size = 1) {
+    if (plotId === "ST_JUNCTION") return { dist: this._getWideDist(28), heightRatio: 0.72 };
+    if (plotId === "AIRPORT") return { dist: this._getWideDist(76), heightRatio: 0.58 };
+    if (plotId === "BEACH") return { dist: this._getWideDist(72), heightRatio: 0.56 };
+    if (plotId === "RAILWAY_STATION" || plotId === "RAILWAY_SOUTH") return { dist: this._getWideDist(56), heightRatio: 0.58 };
+    if (size === 8) return { dist: this._getWideDist(48), heightRatio: 0.72 };
+    if (size === 4) return { dist: this._getWideDist(35), heightRatio: 0.76 };
+    if (size === 2) return { dist: this._getWideDist(29), heightRatio: 0.78 };
+    return { dist: this._getWideDist(23), heightRatio: 0.8 };
+  }
+
   focusPlot(plotId, fastSpeed = 0.1) {
     const center = this.getPlotWorldCenter(plotId);
-    const dist = center.size === 12 ? 62 : center.size === 8 ? 38 : center.size === 4 ? 28 : center.size === 2 ? 23 : 20;
+    const fr = this._getTargetFraming(plotId, center.size);
+    const dist = fr.dist;
+    const h = Math.max(14, dist * fr.heightRatio);
 
     this.cameraGoal = {
       target: new THREE.Vector3(center.x, center.y, center.z),
-      camPos: new THREE.Vector3(center.x + dist, dist + 4, center.z + dist),
+      camPos: new THREE.Vector3(center.x + dist * 0.75, h, center.z + dist * 0.75),
       speed: fastSpeed
     };
 
@@ -5821,54 +5890,65 @@ export class FollowerTownEngine {
   startProReelTour(allPlotsObj, onStopChange, onComplete) {
     this.stopAllReelModes();
     const stops = [];
+    const rr = this.ringRadius || 48;
 
+    // 1. Wide Establishing Skyline Shot (Shows Entire City + Araku Mountains!)
+    const overD = this._getWideDist(Math.max(115, rr * 2.1));
     stops.push({
-      tag: "FOLLOWER NAGARAM",
+      tag: "WELCOME TO",
       name: this.townName.toUpperCase(),
-      target: new THREE.Vector3(0, 0, 0),
-      camPos: new THREE.Vector3(115, 130, 115),
-      duration: 1.6,
-      speed: 0.16,
+      target: new THREE.Vector3(0, 4, 0),
+      camPos: new THREE.Vector3(overD * 0.72, overD * 0.76, overD * 0.72),
+      duration: 2.0,
+      speed: 0.12,
       plotId: null
     });
 
+    // 2. Full White Marble Lion Sheru Bhai Statue + Fountain Roundabout
+    const stFr = this._getTargetFraming("ST_JUNCTION", 4);
     stops.push({
       tag: "CITY CENTER",
       name: "🦁 SHERU BHAI • ST JUNCTION",
-      target: new THREE.Vector3(0, 4, 0),
-      camPos: new THREE.Vector3(20, 22, 20),
-      duration: 1.5,
-      speed: 0.18,
+      target: new THREE.Vector3(0, 5.5, 0),
+      camPos: new THREE.Vector3(stFr.dist * 0.72, stFr.dist * stFr.heightRatio, stFr.dist * 0.72),
+      duration: 2.0,
+      speed: 0.14,
       plotId: "ST_JUNCTION"
     });
 
+    // 3. Full 20-Acre International Airport + Diamond Helicopter + Parking
+    const apFr = this._getTargetFraming("AIRPORT", 12);
     stops.push({
       tag: "20-ACRE INTERNATIONAL AIRPORT",
       name: "✈️ SHERU BHAI AIRPORT & DIAMOND HELI",
-      target: new THREE.Vector3(this.airportX - 4, 5, 6),
-      camPos: new THREE.Vector3(this.airportX - 58, 44, 56),
-      duration: 2.6,
-      speed: 0.14,
+      target: new THREE.Vector3(this.airportX - 4, 5, 10),
+      camPos: new THREE.Vector3(this.airportX - apFr.dist * 0.75, apFr.dist * 0.56, 10 + apFr.dist * 0.72),
+      duration: 2.8,
+      speed: 0.12,
       plotId: "AIRPORT"
     });
 
+    // 4. Full Golden Beach + Sheru Bhai Chilling + Beach Villa
+    const bFr = this._getTargetFraming("BEACH", 12);
     stops.push({
       tag: "GOLDEN SAND BEACH & VILLA",
       name: `🏖️ SHERU BHAI BEACH • ${this.beachOwner || "@follower_beach"}`,
       target: new THREE.Vector3(this.beachX + 8, 4, -2),
-      camPos: new THREE.Vector3(this.beachX - 46, 36, 44),
-      duration: 2.5,
-      speed: 0.14,
+      camPos: new THREE.Vector3(this.beachX - bFr.dist * 0.68, bFr.dist * 0.54, bFr.dist * 0.68),
+      duration: 2.6,
+      speed: 0.12,
       plotId: "BEACH"
     });
 
+    // 5. Full 2-Platform Railway Station + Steps + Parking + Both Trains
+    const rFr = this._getTargetFraming("RAILWAY_STATION", 12);
     stops.push({
-      tag: "INDIAN RAILWAYS • MOUNTAIN TUNNEL",
+      tag: "2-PLATFORM RAILWAY STATION",
       name: `🚂 SHERU BHAI JN • ${this.railwayOwner || "@_ur_bunny_108_"}`,
       target: new THREE.Vector3(0, 4, this.railwayZ),
-      camPos: new THREE.Vector3(38, 30, this.railwayZ + 44),
-      duration: 2.6,
-      speed: 0.14,
+      camPos: new THREE.Vector3(rFr.dist * 0.68, rFr.dist * 0.56, this.railwayZ + rFr.dist * 0.74),
+      duration: 2.8,
+      speed: 0.12,
       plotId: "RAILWAY_STATION"
     });
 
@@ -5876,22 +5956,22 @@ export class FollowerTownEngine {
     const houses = [];
     Object.entries(allPlotsObj || {}).forEach(([pid, p]) => {
       if (!p || p.status !== "built") return;
-      const sz = getRequiredSize(p.buildingType);
+      const sz = p.size || getRequiredSize(p.buildingType);
       if (sz >= 2) landmarks.push({ pid, p, sz });
       else houses.push({ pid, p, idx: parseInt(pid.replace("plot_", ""), 10) || 0 });
     });
 
     landmarks.slice(0, 5).forEach((lm, i) => {
       const c = this.getPlotWorldCenter(lm.pid);
-      const d = lm.sz === 8 ? 34 : 24;
-      const ang = i % 2 === 0 ? 1 : -1;
+      const fr = this._getTargetFraming(lm.pid, lm.sz);
+      const side = i % 2 === 0 ? 1 : -1;
       stops.push({
         tag: lm.sz === 8 ? "8-PLOT MEGA LANDMARK" : lm.sz === 2 ? "2-PLOT STUDIO" : "TOWN LANDMARK",
         name: lm.p.ownerName || BUILDING_LABELS[lm.p.buildingType],
-        target: new THREE.Vector3(c.x, c.y, c.z),
-        camPos: new THREE.Vector3(c.x + d * ang, d * 0.9, c.z + d),
-        duration: 1.4,
-        speed: 0.2,
+        target: new THREE.Vector3(c.x, c.y + 1, c.z),
+        camPos: new THREE.Vector3(c.x + fr.dist * 0.72 * side, fr.dist * fr.heightRatio, c.z + fr.dist * 0.72),
+        duration: 2.0,
+        speed: 0.15,
         plotId: lm.pid
       });
     });
@@ -5899,14 +5979,15 @@ export class FollowerTownEngine {
     houses.sort((a, b) => (b.p.builtDay || 1) - (a.p.builtDay || 1) || b.idx - a.idx);
     houses.slice(0, 6).forEach((h, i) => {
       const c = this.getPlotWorldCenter(h.pid);
-      const ang = i % 2 === 0 ? 1 : -1;
+      const fr = this._getTargetFraming(h.pid, 1);
+      const side = i % 2 === 0 ? 1 : -1;
       stops.push({
         tag: `NEWLY ADDED • DAY ${h.p.builtDay || 1}`,
         name: h.p.ownerName || "New Resident",
-        target: new THREE.Vector3(c.x, c.y + 1, c.z),
-        camPos: new THREE.Vector3(c.x + 15 * ang, 17, c.z + 15),
-        duration: 1.15,
-        speed: 0.24,
+        target: new THREE.Vector3(c.x, c.y + 1.2, c.z),
+        camPos: new THREE.Vector3(c.x + fr.dist * 0.72 * side, fr.dist * fr.heightRatio, c.z + fr.dist * 0.72),
+        duration: 1.7,
+        speed: 0.18,
         plotId: h.pid
       });
     });
@@ -5914,10 +5995,10 @@ export class FollowerTownEngine {
     stops.push({
       tag: "FOLLOW TO JOIN!",
       name: `${landmarks.length + houses.length} PLACES BUILT`,
-      target: new THREE.Vector3(0, 0, 0),
-      camPos: new THREE.Vector3(-120, 125, 120),
-      duration: 2.2,
-      speed: 0.12,
+      target: new THREE.Vector3(0, 4, 0),
+      camPos: new THREE.Vector3(-overD * 0.75, overD * 0.8, overD * 0.75),
+      duration: 2.4,
+      speed: 0.1,
       plotId: null
     });
 
@@ -5929,7 +6010,7 @@ export class FollowerTownEngine {
     const s = this.proReelTour.stops[index];
     if (!s) return;
     this.cameraGoal = { target: s.target.clone(), camPos: s.camPos.clone(), speed: s.speed };
-    if (s.plotId && s.plotId !== "ST_JUNCTION") {
+    if (s.plotId && !["ST_JUNCTION", "AIRPORT", "BEACH", "RAILWAY_STATION", "RAILWAY_SOUTH"].includes(s.plotId)) {
       const c = this.getPlotWorldCenter(s.plotId);
       if (this.highlightBeacon) {
         const sx = c.size === 8 ? 3.8 : c.size === 4 ? 2.0 : 1.05;
@@ -5949,11 +6030,10 @@ export class FollowerTownEngine {
   }
 
   /**
-   * 🚁 PROFESSIONAL CINEMATIC DRONE FLIGHT (Araku Valley + City Quality!)
-   * - Starts SEAMLESSLY RIGHT FROM WHERE YOU ARE CURRENTLY LOOKING (never snaps to Welcome Arch!)
-   * - Gimbal-stabilized smooth flight with subtle banking roll, sweeping smoothly through the
-   *   Araku misty mountains, waterfalls, rivers, Hollow Railway Tunnels, North & South Stations,
-   *   20-Acre Airport, Golden Beach, and Sheru Bhai Statue!
+   * 🚁 REBUILT HIGH-QUALITY PRO DRONE VIEW:
+   *    SOUTH WELCOME ARCH -> CENTRAL AVENUE -> WHITE MARBLE LION SHERU BHAI STATUE -> ALL OVER CITY!
+   * - Framed cleanly at wide, non-over-zoomed cinema heights so ENTIRE houses, full 2-platform stations,
+   *   hollow mountain tunnels, 20-Acre Airport, Golden Beach & Araku waterfalls look razor-sharp!
    */
   startDroneView(onStop = null) {
     this.stopAllReelModes();
@@ -5966,63 +6046,45 @@ export class FollowerTownEngine {
     const rz = this.railROuter || rr + 28;
     const wfR = rr + 132;
 
-    // 1. Start RIGHT AT YOUR CURRENT CAMERA POSITION & LOOK DIRECTION!
-    const curPos = this.camera.position.clone();
-    const curTarget = this.controls.target.clone();
-    const forward = new THREE.Vector3().subVectors(curTarget, curPos);
-    forward.y = 0;
-    if (forward.lengthSq() < 0.01) forward.set(0, 0, -1);
-    forward.normalize();
-
-    // Smooth lead-out waypoint right along your current line of sight (zero jarring snap!)
-    const leadPt = curPos.clone().addScaledVector(forward, 26);
-    leadPt.y = THREE.MathUtils.clamp(curPos.y * 0.85, 14, 46);
-
-    // 2. Build a sweeping cinematic loop covering City Center -> Araku Waterfalls & Misty Clouds ->
-    //    North Station & Tunnel -> 20-Acre Airport -> South Station & SE Tunnel -> Golden Beach!
-    const scenicWaypoints = [
-      new THREE.Vector3(16, 20, 18),                            // Glide past White Marble Lion Sheru Bhai Statue
-      new THREE.Vector3(18, 22, -rz + 8),                       // Sweep past North 2-Platform Railway Station
-      new THREE.Vector3(-rz * 0.55, 24, -rz - 10),              // Skim over NW Hollow Mountain Tunnel
-      new THREE.Vector3(-wfR * 0.48, 38, -wfR * 0.72),          // Climb through Araku Misty Clouds & NW Waterfall!
-      new THREE.Vector3(wfR * 0.45, 44, -wfR * 0.72),           // High Araku Valley Panorama over North River & NE Waterfall!
-      new THREE.Vector3(ax - 18, 30, -18),                      // Swoop down over 20-Acre Airport Runway & Terminal
-      new THREE.Vector3(ax - 24, 24, 34),                       // Pass Airport Parking, Diamond Heli & Airport Colony Road
-      new THREE.Vector3(rz * 0.45, 22, rz + 12),                // Glide past SE Araku Mountain Tunnel
-      new THREE.Vector3(0, 22, rz + 18),                        // Fly past 2nd South Railway Station (Araku South Jn)
-      new THREE.Vector3(-wfR * 0.48, 34, wfR * 0.62),           // Sweep past SW Coastal Waterfall & South River
-      new THREE.Vector3(bx + 18, 22, 12),                       // Low scenic coast glide over Sheru Bhai Beach & Waves
-      new THREE.Vector3(-18, 20, -14)                           // Return glide into City Skyline
+    const archStartPos = new THREE.Vector3(0, 15.5, rr + 34);
+    const pts = [
+      archStartPos,                                             // 1. Grand Approach framing the ENTIRE Welcome Arch + City!
+      new THREE.Vector3(0, 12.0, rr + 6),                       // 2. Smooth glide directly over/through the Welcome Arch
+      new THREE.Vector3(0, 13.5, rr - 14),                      // 3. Down Central Avenue showing full houses on BOTH sides
+      new THREE.Vector3(4, 16.0, 26),                           // 4. Approaching City Center Sheru Bhai Statue
+      new THREE.Vector3(24, 18.5, 16),                          // 5. Wide Heroic Orbit around White Marble Lion Statue (East)
+      new THREE.Vector3(22, 20.0, -18),                         // 6. Wide Heroic Orbit around Lion Statue (North-East)
+      new THREE.Vector3(-22, 22.0, -16),                        // 7. Wide Heroic Orbit around Lion Statue (North-West)
+      new THREE.Vector3(-rr * 0.65, 34, -rr * 0.55),            // 8. High Wide Sweep over NW City Blocks & Landmarks
+      new THREE.Vector3(-rz * 0.45, 32, -rz - 18),              // 9. Wide View of NW Hollow Mountain Tunnel & Waterfall
+      new THREE.Vector3(10, 32, -rz + 18),                      // 10. Full Wide Framing of North 2-Platform Railway Station & Parking
+      new THREE.Vector3(wfR * 0.42, 52, -wfR * 0.68),           // 11. Majestic Araku Misty Mountains, North River & NE Waterfall
+      new THREE.Vector3(ax - 32, 42, -22),                      // 12. Wide Overview of 20-Acre Airport Terminal & Runway
+      new THREE.Vector3(ax - 36, 34, 48),                       // 13. Airport Parking, Diamond Heli & Airport Colony Boulevard
+      new THREE.Vector3(rr * 0.55, 36, rr * 0.55),              // 14. Sweep back across SE City Blocks & 5-Floor Towers
+      new THREE.Vector3(rz * 0.42, 30, rz + 24),                // 15. Wide View of SE Araku Mountain Tunnel & South Station
+      new THREE.Vector3(-14, 32, rz + 28),                      // 16. Opposite 2-Platform South Railway Station (Araku South Jn)
+      new THREE.Vector3(-wfR * 0.44, 44, wfR * 0.56),           // 17. SW Coastal Waterfall & South Valley River
+      new THREE.Vector3(bx + 24, 34, 24),                       // 18. Wide Panorama over Sheru Bhai Golden Beach, Waves & Villa
+      new THREE.Vector3(-rr * 0.6, 32, rr * 0.45),              // 19. Final Wide Sweep across SW City Skyline
+      new THREE.Vector3(-18, 22, rr + 28)                       // 20. Smooth return curve back to South Welcome Arch!
     ];
 
-    // Pick the scenic waypoint closest to `leadPt` so the transition from YOUR current view is ultra-natural!
-    let bestIdx = 0;
-    let bestD = Infinity;
-    scenicWaypoints.forEach((wp, i) => {
-      const d = wp.distanceToSquared(leadPt);
-      if (d < bestD) {
-        bestD = d;
-        bestIdx = i;
-      }
-    });
-    const ordered = [
-      curPos,
-      leadPt,
-      ...scenicWaypoints.slice(bestIdx),
-      ...scenicWaypoints.slice(0, bestIdx)
-    ];
-
-    const curve = new THREE.CatmullRomCurve3(ordered, true, "catmullrom", 0.5);
+    const curve = new THREE.CatmullRomCurve3(pts, true, "catmullrom", 0.48);
     const totalLen = curve.getLength();
-    // Cinematic smooth drone speed (~28 world units/sec)
-    const normalizedSpeed = 28 / Math.max(totalLen, 180);
+    const normalizedSpeed = 30 / Math.max(totalLen, 220);
+
+    // Place camera cleanly at the Welcome Arch opening shot looking straight through Arch to the Lion Statue!
+    this.camera.position.copy(archStartPos);
+    const initialLook = new THREE.Vector3(0, 6.5, rr - 14);
+    this.controls.target.copy(initialLook);
 
     this.droneTour = {
       active: true,
       curve,
       t: 0,
       speed: normalizedSpeed,
-      smoothTarget: curTarget.clone(),
+      smoothTarget: initialLook.clone(),
       bankAngle: 0,
       onStop
     };
@@ -6038,43 +6100,34 @@ export class FollowerTownEngine {
     }
   }
 
-  /**
-   * 🏗️ REPLAY CONSTRUCTION ANIMATION on any already-built plot!
-   * Re-renders the building with scaffolding, rising scale-up animation & construction workers.
-   */
   replayPlotConstruction(plotId) {
     const data = this.plotDataMap.get(plotId);
     if (!data || data.status !== "built") return;
     this.renderPlot(plotId, data, true);
   }
 
-  /**
-   * 🏗️ SINGLE-BUILDING CINEMA CONSTRUCTION REEL (1-Tap from any Plot Card!)
-   * Starts from your current camera view, smoothly glides in, replays the building's construction
-   * with scaffolding & workers, and gently orbits around it!
-   */
   startSingleBuildReel(plotId, data) {
-    if (this.proReelTour.active) this.stopProReelTour();
-    if (this.droneTour.active) this.stopDroneView();
+    this.stopAllReelModes();
     this.autoSpin = false;
 
     const c = this.getPlotWorldCenter(plotId);
     const sz = data?.size || getRequiredSize(data?.buildingType || "house_blue");
-    const dist = sz === 8 ? 34 : sz === 4 ? 23 : sz === 2 ? 19 : 15;
+    const fr = this._getTargetFraming(plotId, sz);
+    const dist = fr.dist;
     const startAng = Math.atan2(this.camera.position.z - c.z, this.camera.position.x - c.x);
 
     const stops = [
       {
         tag: `🏗️ CONSTRUCTING • DAY ${data?.builtDay || 1}`,
         name: data?.ownerName || BUILDING_LABELS[data?.buildingType] || "Building",
-        target: new THREE.Vector3(c.x, c.y + 1, c.z),
-        camPos: new THREE.Vector3(c.x + Math.cos(startAng) * dist, dist * 0.85, c.z + Math.sin(startAng) * dist),
+        target: new THREE.Vector3(c.x, c.y + 1.2, c.z),
+        camPos: new THREE.Vector3(c.x + Math.cos(startAng) * dist, dist * fr.heightRatio, c.z + Math.sin(startAng) * dist),
         orbitRadius: dist,
-        orbitHeight: dist * 0.82,
+        orbitHeight: dist * fr.heightRatio,
         orbitStartAng: startAng,
-        orbitSpeed: 0.42,
+        orbitSpeed: 0.36,
         duration: 4.2,
-        speed: 0.14,
+        speed: 0.13,
         plotId,
         triggerBuild: true
       }
@@ -6091,13 +6144,6 @@ export class FollowerTownEngine {
     this._applyBuildReelStop(0);
   }
 
-  /**
-   * 🏗️ PRO CINEMA BUILD REEL TOUR (Construction Showcase for Reels):
-   * - Starts SMOOTHLY FROM YOUR CURRENT CAMERA POSITION (no sudden snap!)
-   * - Automatically picks your newest built buildings (including Airport & Beach custom plots!)
-   * - Glides to each building, triggers live 3D construction, and gently orbits while it rises!
-   * - Finishes with a majestic pull-back over the city & Araku Valley mountains!
-   */
   startBuildReelTour(allPlotsObj, onStopChange, onComplete) {
     this.stopAllReelModes();
     this.autoSpin = false;
@@ -6129,17 +6175,18 @@ export class FollowerTownEngine {
     }
 
     const stops = [];
+    const stFr = this._getTargetFraming("ST_JUNCTION", 4);
 
-    // Opening shot smoothly eases from WHERE YOU ARE CURRENTLY LOOKING (zero jump!)
-    const curPos = this.camera.position.clone();
-    const curTarget = this.controls.target.clone();
     stops.push({
       tag: `DAY ${maxDay} • LIVE CONSTRUCTION REEL`,
-      name: this.townName.toUpperCase(),
-      target: curTarget.clone(),
-      camPos: curPos.clone().add(new THREE.Vector3(0, 6, 0)),
-      orbitRadius: 0,
-      duration: 1.2,
+      name: `🦁 ${this.townName.toUpperCase()}`,
+      target: new THREE.Vector3(0, 5.5, 0),
+      camPos: new THREE.Vector3(stFr.dist * 0.72, stFr.dist * stFr.heightRatio, stFr.dist * 0.72),
+      orbitRadius: stFr.dist,
+      orbitHeight: stFr.dist * stFr.heightRatio,
+      orbitStartAng: 0.78,
+      orbitSpeed: 0.28,
+      duration: 1.8,
       speed: 0.14,
       plotId: null,
       triggerBuild: false
@@ -6147,32 +6194,33 @@ export class FollowerTownEngine {
 
     featured.forEach((item, i) => {
       const c = this.getPlotWorldCenter(item.pid);
-      const d = item.sz === 8 ? 34 : item.sz === 4 ? 23 : item.sz === 2 ? 19 : 15;
+      const fr = this._getTargetFraming(item.pid, item.sz);
       const ang = i % 2 === 0 ? 0.65 : 2.35;
       stops.push({
         tag: `🏗️ CONSTRUCTING • DAY ${item.day}`,
         name: item.p.ownerName || BUILDING_LABELS[item.p.buildingType] || "New Building",
-        target: new THREE.Vector3(c.x, c.y + 0.8, c.z),
-        camPos: new THREE.Vector3(c.x + Math.cos(ang) * d, d * 0.86, c.z + Math.sin(ang) * d),
-        orbitRadius: d,
-        orbitHeight: d * 0.82,
+        target: new THREE.Vector3(c.x, c.y + 1.2, c.z),
+        camPos: new THREE.Vector3(c.x + Math.cos(ang) * fr.dist, fr.dist * fr.heightRatio, c.z + Math.sin(ang) * fr.dist),
+        orbitRadius: fr.dist,
+        orbitHeight: fr.dist * fr.heightRatio,
         orbitStartAng: ang,
-        orbitSpeed: i % 2 === 0 ? 0.36 : -0.36,
+        orbitSpeed: i % 2 === 0 ? 0.32 : -0.32,
         duration: 3.2,
-        speed: 0.14,
+        speed: 0.13,
         plotId: item.pid,
         triggerBuild: true
       });
     });
 
-    // Dramatic Araku Valley + City Skyline Finale Pull-Back
+    const rr = this.ringRadius || 48;
+    const endD = this._getWideDist(Math.max(120, rr * 2.15));
     stops.push({
       tag: "COMMENT TO BUILD YOURS!",
       name: `${builtList.length} PLACES LIVE`,
       target: new THREE.Vector3(0, 6, 0),
-      camPos: new THREE.Vector3(-125, 118, 130),
+      camPos: new THREE.Vector3(-endD * 0.72, endD * 0.76, endD * 0.72),
       orbitRadius: 0,
-      duration: 2.3,
+      duration: 2.4,
       speed: 0.08,
       plotId: null,
       triggerBuild: false
@@ -6222,7 +6270,7 @@ export class FollowerTownEngine {
   }
 
   // =========================================================
-  // 🎬 PRO REEL STUDIO v22 ENGINE METHODS (ADMIN ONLY)
+  // 🎬 PRO REEL STUDIO v23 ENGINE METHODS (ADMIN ONLY)
   // =========================================================
   setSimSpeed(mult) {
     this.simSpeed = mult || 1.0;
@@ -6230,12 +6278,12 @@ export class FollowerTownEngine {
 
   _getSkyPreset(mode) {
     if (mode === "night") {
-      return { bg: 0x0b1120, fog: 0x0b1120, sunCol: 0x60a5fa, sunInt: 0.42, hemiInt: 0.3 };
+      return { bg: 0x0b1120, fog: 0x0b1120, sunCol: 0x60a5fa, sunInt: 0.45, hemiInt: 0.34 };
     }
     if (mode === "sunset") {
-      return { bg: 0xf97316, fog: 0xfb923c, sunCol: 0xfdba74, sunInt: 1.05, hemiInt: 0.6 };
+      return { bg: 0xf97316, fog: 0xfb923c, sunCol: 0xfdba74, sunInt: 1.12, hemiInt: 0.65 };
     }
-    return { bg: 0x87ceeb, fog: 0x9bd7f0, sunCol: 0xfffbeb, sunInt: 1.15, hemiInt: 0.95 };
+    return { bg: 0x87ceeb, fog: 0x9bd7f0, sunCol: 0xfffbeb, sunInt: 1.24, hemiInt: 1.02 };
   }
 
   _applyNightEffects(isNight, mode) {
@@ -6273,9 +6321,6 @@ export class FollowerTownEngine {
     });
   }
 
-  /**
-   * 🌅 SMOOTH DAY -> SUNSET -> NIGHT SKY CROSSFADE (2.4s beat-drop transition!)
-   */
   transitionTimeOfDay(targetMode, duration = 2.4) {
     const target = this._getSkyPreset(targetMode);
     this.skyTransition = {
@@ -6310,9 +6355,6 @@ export class FollowerTownEngine {
     this.autoSpin = false;
   }
 
-  /**
-   * 🚂 / 💎 / ✈️ DYNAMIC CHASE CAMS (Train 1, Train 2, Sheru Bhai VIP, Commercial Flight!)
-   */
   startChaseCam(mode, onStop = null) {
     this.stopAllReelModes();
     this.chaseCam = {
@@ -6333,9 +6375,6 @@ export class FollowerTownEngine {
     }
   }
 
-  /**
-   * 📈 CITY GROWTH TIMELAPSE (Day 1 -> Day 2 -> Day 3 -> Today!)
-   */
   startGrowthTimelapse(allPlotsObj, onStopChange, onComplete) {
     this.stopAllReelModes();
     const daySet = new Set();
@@ -6353,7 +6392,6 @@ export class FollowerTownEngine {
       return;
     }
 
-    // Hide all built meshes above Day 1 so they pop in wave-by-wave!
     const savedVis = [];
     entries.forEach((e) => {
       const grp = this.plotMeshes.get(e.pid);
@@ -6394,9 +6432,6 @@ export class FollowerTownEngine {
     }
   }
 
-  /**
-   * ⏱️ 24-HOUR SKYLINE HYPERLAPSE (Full Day -> Sunset -> Starry Disco Night -> Dawn in 10s!)
-   */
   start24HourHyperlapse(onStop = null) {
     this.stopAllReelModes();
     this.hyperlapse24h = {
@@ -6422,9 +6457,6 @@ export class FollowerTownEngine {
     }
   }
 
-  /**
-   * 🎲 RANDOM FOLLOWER ROULETTE SPOTLIGHT (Rapid hops -> Slams onto 1 VIP Winner!)
-   */
   startRandomFollowerReel(allPlotsObj, onStopChange, onComplete) {
     this.stopAllReelModes();
     const candidates = [];
@@ -6438,7 +6470,6 @@ export class FollowerTownEngine {
       return;
     }
 
-    // Shuffle and take up to 5 fast roulette hops + 1 final winner!
     for (let i = candidates.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
@@ -6449,32 +6480,33 @@ export class FollowerTownEngine {
     const stops = [];
     picks.slice(0, -1).forEach((item, i) => {
       const c = this.getPlotWorldCenter(item.pid);
+      const hopD = this._getWideDist(30);
       stops.push({
         tag: "🎲 PICKING LUCKY FOLLOWER...",
         name: item.p.ownerName,
         target: new THREE.Vector3(c.x, c.y + 1, c.z),
-        camPos: new THREE.Vector3(c.x + (i % 2 === 0 ? 22 : -22), 26, c.z + 22),
+        camPos: new THREE.Vector3(c.x + (i % 2 === 0 ? hopD * 0.72 : -hopD * 0.72), hopD * 0.85, c.z + hopD * 0.72),
         orbitRadius: 0,
-        duration: 0.55,
-        speed: 0.28,
+        duration: 0.65,
+        speed: 0.24,
         plotId: item.pid,
         triggerBuild: false
       });
     });
 
     const wc = this.getPlotWorldCenter(winner.pid);
-    const wd = winner.sz === 8 ? 34 : winner.sz === 4 ? 23 : 15;
+    const wFr = this._getTargetFraming(winner.pid, winner.sz);
     stops.push({
       tag: "🏆 TODAY'S VIP FOLLOWER!",
       name: winner.p.ownerName,
-      target: new THREE.Vector3(wc.x, wc.y + 1, wc.z),
-      camPos: new THREE.Vector3(wc.x + wd, wd * 0.85, wc.z + wd),
-      orbitRadius: wd,
-      orbitHeight: wd * 0.82,
+      target: new THREE.Vector3(wc.x, wc.y + 1.2, wc.z),
+      camPos: new THREE.Vector3(wc.x + wFr.dist * 0.72, wFr.dist * wFr.heightRatio, wc.z + wFr.dist * 0.72),
+      orbitRadius: wFr.dist,
+      orbitHeight: wFr.dist * wFr.heightRatio,
       orbitStartAng: 0.78,
-      orbitSpeed: 0.45,
+      orbitSpeed: 0.36,
       duration: 4.0,
-      speed: 0.16,
+      speed: 0.14,
       plotId: winner.pid,
       triggerBuild: false
     });
@@ -6490,9 +6522,6 @@ export class FollowerTownEngine {
     this._applyBuildReelStop(0);
   }
 
-  /**
-   * 🪩 DISCO STATUE NIGHT CRANE OUTRO (6.5s dramatic spiral around Sheru Bhai Lion Statue!)
-   */
   startDiscoOutro(onStop = null) {
     this.stopAllReelModes();
     this.transitionTimeOfDay("night", 1.5);
@@ -6514,30 +6543,27 @@ export class FollowerTownEngine {
     }
   }
 
-  /**
-   * 🚶 STREET-LEVEL WALK POV (Human Eye-Level Cruise down Sheru Bhai City Roads!)
-   */
   startStreetWalk(onStop = null) {
     this.stopAllReelModes();
     const rr = this.ringRadius || 48;
     const pts = [
-      new THREE.Vector3(0, 2.7, rr - 4),
-      new THREE.Vector3(0, 2.7, rr * 0.55),
-      new THREE.Vector3(0, 2.7, 15.5),
-      new THREE.Vector3(9.8, 2.9, 9.8),
-      new THREE.Vector3(10.5, 2.9, -9.8),
-      new THREE.Vector3(0, 2.7, -15.5),
-      new THREE.Vector3(0, 2.7, -(rr - 8)),
-      new THREE.Vector3(rr * 0.45, 2.8, -(rr - 8)),
-      new THREE.Vector3(rr * 0.45, 2.8, rr - 8)
+      new THREE.Vector3(0, 5.4, rr + 2),
+      new THREE.Vector3(0, 5.4, rr * 0.55),
+      new THREE.Vector3(0, 5.4, 17.5),
+      new THREE.Vector3(12.5, 5.8, 12.5),
+      new THREE.Vector3(12.5, 5.8, -12.5),
+      new THREE.Vector3(0, 5.4, -17.5),
+      new THREE.Vector3(0, 5.4, -(rr - 6)),
+      new THREE.Vector3(rr * 0.48, 5.8, -(rr - 6)),
+      new THREE.Vector3(rr * 0.48, 5.8, rr - 6)
     ];
-    const curve = new THREE.CatmullRomCurve3(pts, true, "catmullrom", 0.35);
+    const curve = new THREE.CatmullRomCurve3(pts, true, "catmullrom", 0.38);
     const totalLen = curve.getLength();
     this.streetWalk = {
       active: true,
       curve,
       t: 0,
-      speed: 11.5 / Math.max(totalLen, 100),
+      speed: 12.5 / Math.max(totalLen, 100),
       smoothTarget: this.controls.target.clone(),
       onStop
     };
@@ -6553,9 +6579,6 @@ export class FollowerTownEngine {
     }
   }
 
-  /**
-   * 🎞️ CUSTOM SHOT-LIST QUEUE PLAYER (Plays exact plots/landmarks chosen by Admin in order!)
-   */
   startCustomShotList(shotItems, replayConstruction, onStopChange, onComplete) {
     this.stopAllReelModes();
     if (!shotItems || shotItems.length === 0) {
@@ -6566,19 +6589,19 @@ export class FollowerTownEngine {
     const stops = shotItems.map((item, i) => {
       const c = this.getPlotWorldCenter(item.id);
       const isSpecial = ["ST_JUNCTION", "AIRPORT", "BEACH", "RAILWAY_STATION", "RAILWAY_SOUTH"].includes(item.id);
-      const d = isSpecial ? (item.id === "ST_JUNCTION" ? 22 : 52) : (c.size === 8 ? 34 : c.size === 4 ? 23 : c.size === 2 ? 19 : 15);
+      const fr = this._getTargetFraming(item.id, c.size);
       const ang = i % 2 === 0 ? 0.65 : 2.35;
       return {
         tag: isSpecial ? "CITY LANDMARK" : (replayConstruction ? `🏗️ CONSTRUCTING • DAY ${item.day || 1}` : `DAY ${item.day || 1} SPOTLIGHT`),
         name: item.label,
-        target: new THREE.Vector3(c.x, c.y + 1, c.z),
-        camPos: new THREE.Vector3(c.x + Math.cos(ang) * d, isSpecial ? d * 0.62 : d * 0.85, c.z + Math.sin(ang) * d),
-        orbitRadius: d,
-        orbitHeight: isSpecial ? d * 0.58 : d * 0.82,
+        target: new THREE.Vector3(c.x, c.y + 1.2, c.z),
+        camPos: new THREE.Vector3(c.x + Math.cos(ang) * fr.dist, fr.dist * fr.heightRatio, c.z + Math.sin(ang) * fr.dist),
+        orbitRadius: fr.dist,
+        orbitHeight: fr.dist * fr.heightRatio,
         orbitStartAng: ang,
-        orbitSpeed: i % 2 === 0 ? 0.34 : -0.34,
-        duration: replayConstruction && !isSpecial ? 3.2 : 2.6,
-        speed: 0.14,
+        orbitSpeed: i % 2 === 0 ? 0.3 : -0.3,
+        duration: replayConstruction && !isSpecial ? 3.2 : 2.8,
+        speed: 0.13,
         plotId: isSpecial ? null : item.id,
         triggerBuild: Boolean(replayConstruction && !isSpecial)
       };
@@ -6650,41 +6673,42 @@ export class FollowerTownEngine {
       let upDist = 7.5;
       let sideOffset = 2.8;
 
+      const pBoost = this._getWideDist(1.0);
       if (this.chaseCam.mode === "train1" && this.railwaySim?.train1Cars?.[0]) {
         targetObj = this.railwaySim.train1Cars[0];
-        backDist = 14;
-        upDist = 5.4;
-        sideOffset = 3.2;
+        backDist = 22 * pBoost;
+        upDist = 12 * pBoost;
+        sideOffset = 9 * pBoost;
       } else if (this.chaseCam.mode === "train2" && this.railwaySim?.train2Cars?.[0]) {
         targetObj = this.railwaySim.train2Cars[0];
-        backDist = 14;
-        upDist = 5.4;
-        sideOffset = -3.2;
+        backDist = 22 * pBoost;
+        upDist = 12 * pBoost;
+        sideOffset = -9 * pBoost;
       } else if (this.chaseCam.mode === "vip" && this.airportSim) {
         const dCar = this.airportSim.diamondCar;
         const wSheru = this.airportSim.walkingSheru;
         const dHeli = this.airportSim.diamondHeli;
         if (dCar?.userData?.seatedSheru?.visible) {
           targetObj = dCar;
-          backDist = 11;
-          upDist = 5.8;
-          sideOffset = 3.6;
+          backDist = 18 * pBoost;
+          upDist = 10 * pBoost;
+          sideOffset = 7 * pBoost;
         } else if (wSheru?.visible) {
           targetObj = wSheru;
-          backDist = 9;
-          upDist = 4.6;
-          sideOffset = 4.0;
+          backDist = 15 * pBoost;
+          upDist = 8.5 * pBoost;
+          sideOffset = 7 * pBoost;
         } else if (dHeli) {
           targetObj = dHeli;
-          backDist = 16;
-          upDist = 7.2;
-          sideOffset = 5.5;
+          backDist = 25 * pBoost;
+          upDist = 12 * pBoost;
+          sideOffset = 10 * pBoost;
         }
       } else if (this.chaseCam.mode === "flight" && this.airportSim?.plane) {
         targetObj = this.airportSim.plane;
-        backDist = 26;
-        upDist = 10.5;
-        sideOffset = 8.0;
+        backDist = 36 * pBoost;
+        upDist = 16 * pBoost;
+        sideOffset = 14 * pBoost;
       }
 
       if (targetObj) {
@@ -6711,8 +6735,8 @@ export class FollowerTownEngine {
     if (this.timelapseState.active) {
       this.timelapseState.timer += rawDt;
       const orbitAng = this.timelapseState.timer * 0.22;
-      const r = (this.ringRadius || 48) * 1.65;
-      this.camera.position.lerp(new THREE.Vector3(Math.cos(orbitAng) * r, r * 0.85, Math.sin(orbitAng) * r), 0.08);
+      const r = this._getWideDist((this.ringRadius || 48) * 1.65);
+      this.camera.position.lerp(new THREE.Vector3(Math.cos(orbitAng) * r, r * 0.78, Math.sin(orbitAng) * r), 0.08);
       this.controls.target.lerp(new THREE.Vector3(0, 4, 0), 0.1);
 
       // Animate popping buildings smoothly back to scale.y = 1
@@ -6751,8 +6775,8 @@ export class FollowerTownEngine {
       this.hyperlapse24h.timer += rawDt;
       const u = (this.hyperlapse24h.timer % this.hyperlapse24h.duration) / this.hyperlapse24h.duration;
       const ang = -0.6 + u * Math.PI * 1.4;
-      const r = (this.ringRadius || 48) * 1.45;
-      this.camera.position.lerp(new THREE.Vector3(Math.cos(ang) * r, 58, Math.sin(ang) * r), 0.08);
+      const r = this._getWideDist((this.ringRadius || 48) * 1.55);
+      this.camera.position.lerp(new THREE.Vector3(Math.cos(ang) * r, Math.max(72, r * 0.62), Math.sin(ang) * r), 0.08);
       this.controls.target.lerp(new THREE.Vector3(0, 8, 0), 0.08);
 
       const dayP = this._getSkyPreset("day");
@@ -6797,8 +6821,8 @@ export class FollowerTownEngine {
       const p = Math.min(1, this.discoOutro.timer / this.discoOutro.duration);
       const ease = p * p * (3 - 2 * p);
       const ang = 0.5 + ease * Math.PI * 1.5;
-      const rad = THREE.MathUtils.lerp(11.5, 32.0, ease);
-      const h = THREE.MathUtils.lerp(4.4, 24.0, ease);
+      const rad = this._getWideDist(THREE.MathUtils.lerp(18.0, 42.0, ease));
+      const h = this._getWideDist(THREE.MathUtils.lerp(9.0, 30.0, ease));
       this.camera.position.lerp(new THREE.Vector3(Math.cos(ang) * rad, h, Math.sin(ang) * rad), 0.14);
       this.controls.target.lerp(new THREE.Vector3(0, THREE.MathUtils.lerp(6.8, 7.6, ease), 0), 0.14);
       if (p >= 1) this.stopDiscoOutro();
@@ -6828,7 +6852,7 @@ export class FollowerTownEngine {
       const tgtAlpha = 1 - Math.exp(-2.8 * dt);
       this.camera.position.lerp(pos, camAlpha);
 
-      const desiredTarget = new THREE.Vector3(lookPt.x, Math.max(3.0, lookPt.y - 7.5), lookPt.z);
+      const desiredTarget = new THREE.Vector3(lookPt.x, Math.max(4.0, lookPt.y - 9.5), lookPt.z);
       if (this.droneTour.smoothTarget) {
         this.droneTour.smoothTarget.lerp(desiredTarget, tgtAlpha);
         this.controls.target.copy(this.droneTour.smoothTarget);
@@ -7684,7 +7708,7 @@ export class FollowerTownEngine {
       this._cullAccum = 0;
       const cx = this.camera.position.x;
       const cz = this.camera.position.z;
-      const maxDistSq = this.isLowRam ? 105 * 105 : 145 * 145;
+      const maxDistSq = this.hqMode ? 260 * 260 : this.isLowRam ? 105 * 105 : 165 * 165;
       for (let i = 0; i < this.plotSigns.length; i++) {
         const ps = this.plotSigns[i];
         const dx = ps.x - cx;

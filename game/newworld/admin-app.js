@@ -8,7 +8,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged
-} from "./firebase-config.js?v=22";
+} from "./firebase-config.js?v=23";
 import {
   FollowerTownEngine,
   BUILDING_LABELS,
@@ -16,7 +16,7 @@ import {
   getTwoPlotGroup,
   getBlockPlotIds,
   getEightPlotGroup
-} from "./world-engine.js?v=22";
+} from "./world-engine.js?v=23";
 
 let isAdmin = false;
 let selectedPlotId = "plot_0001";
@@ -130,7 +130,7 @@ const engine = new FollowerTownEngine(container, (plotId, data) => {
   }
   selectedPlotId = plotId;
   openPlotCard(plotId, data);
-});
+}, { highQuality: true });
 
 engine.onAddPlotTap = (result) => {
   if (!isAdmin) return;
@@ -883,7 +883,10 @@ document.getElementById("btn-reel-mode").addEventListener("click", () => {
   plotCard.classList.add("hidden");
   document.querySelectorAll(".hud-element").forEach((el) => el.classList.add("hidden"));
   reelControls.classList.remove("hidden");
-  showToast("🎬 9:16 Reel Mode — Tap ⚡ Pro Reel to auto-shoot!");
+  engine.setReelFraming(true);
+  engine.setQualityMode(true);
+  if (btnHqToggle) { btnHqToggle.classList.add("active"); btnHqToggle.textContent = "✨ Ultra HD"; }
+  showToast("✨ Ultra HD 9:16 Reel Studio — Wide Framing Active!");
 });
 
 btnProTour.addEventListener("click", () => {
@@ -919,7 +922,7 @@ btnDroneView.addEventListener("click", () => {
   btnDroneView.classList.add("active");
   btnDroneView.textContent = "⏹ Stop Drone";
   reelBanner.classList.add("hidden");
-  showToast("🚁 High-Speed Drone View Active!");
+  showToast("🚁 HD Drone: Welcome Arch → Lion Statue → Full City!");
   engine.startDroneView(() => {
     btnDroneView.classList.remove("active");
     btnDroneView.textContent = "🚁 Pro Drone";
@@ -954,6 +957,7 @@ btnBuildReel.addEventListener("click", () => {
 
 document.getElementById("reel-exit").addEventListener("click", () => {
   engine.stopAllReelModes();
+  engine.setReelFraming(false);
   engine.setSimSpeed(1.0);
   if (typeof stopCanvasRecording === "function") stopCanvasRecording();
   if (typeof exitCleanScreen === "function") exitCleanScreen();
@@ -1137,6 +1141,7 @@ const btnStreetWalk = document.getElementById("reel-street-btn");
 const btnQueueOpen = document.getElementById("reel-queue-btn");
 
 const btnRecCanvas = document.getElementById("reel-rec-btn");
+const btnHqToggle = document.getElementById("reel-hq-btn");
 const btnClean321 = document.getElementById("reel-clean-btn");
 const btnSimSpeed = document.getElementById("reel-speed-btn");
 const btnSmoothTime = document.getElementById("reel-smooth-time");
@@ -1436,7 +1441,7 @@ function stopCanvasRecording() {
   reelRecBadge?.classList.add("hidden");
   if (btnRecCanvas) {
     btnRecCanvas.classList.remove("active");
-    btnRecCanvas.textContent = "🔴 REC";
+    btnRecCanvas.textContent = "🔴 REC HD";
   }
 }
 
@@ -1455,16 +1460,21 @@ if (btnRecCanvas) {
     }
 
     try {
-      const stream = canvas.captureStream(30);
+      // Automatically ensure Ultra HD sharpness before starting recording!
+      engine.setQualityMode(true);
+      const stream = canvas.captureStream(60);
       const mimeTypes = [
+        "video/mp4;codecs=avc1",
+        "video/mp4",
         "video/webm;codecs=vp9",
         "video/webm;codecs=vp8",
-        "video/webm",
-        "video/mp4"
+        "video/webm"
       ];
       const chosenMime = mimeTypes.find((m) => MediaRecorder.isTypeSupported(m)) || "";
       recordedChunks = [];
-      mediaRecorder = chosenMime ? new MediaRecorder(stream, { mimeType: chosenMime, videoBitsPerSecond: 4500000 }) : new MediaRecorder(stream);
+      mediaRecorder = chosenMime
+        ? new MediaRecorder(stream, { mimeType: chosenMime, videoBitsPerSecond: 12000000 })
+        : new MediaRecorder(stream, { videoBitsPerSecond: 12000000 });
 
       mediaRecorder.ondataavailable = (ev) => {
         if (ev.data && ev.data.size > 0) recordedChunks.push(ev.data);
@@ -1497,7 +1507,7 @@ if (btnRecCanvas) {
         const ss = String(secs % 60).padStart(2, "0");
         if (reelRecTimer) reelRecTimer.textContent = `REC ${mm}:${ss}`;
       }, 500);
-      showToast("🔴 Pure 3D Canvas Recording Started!");
+      showToast("🔴 Ultra HD 60fps Canvas Recording Started!");
     } catch (err) {
       showToast("REC error: " + err.message);
     }
@@ -1601,5 +1611,16 @@ if (btnQueueOpen && reelShotlistPanel) {
         showToast("✅ Custom Shot List Complete!");
       }
     );
+  });
+}
+
+// ✨ ULTRA HD / LITE QUALITY TOGGLE IN REEL STUDIO
+if (btnHqToggle) {
+  btnHqToggle.addEventListener("click", () => {
+    const nextHQ = !engine.hqMode;
+    engine.setQualityMode(nextHQ);
+    btnHqToggle.classList.toggle("active", nextHQ);
+    btnHqToggle.textContent = nextHQ ? "✨ Ultra HD" : "⚡ Lite";
+    showToast(nextHQ ? "✨ Ultra HD Screen Quality ON (2x Retina)" : "⚡ Lite Battery Mode ON");
   });
 }
