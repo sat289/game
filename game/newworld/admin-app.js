@@ -8,14 +8,15 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged
-} from "./firebase-config.js?v=17";
+} from "./firebase-config.js?v=18";
 import {
   FollowerTownEngine,
   BUILDING_LABELS,
   getRequiredSize,
+  getTwoPlotGroup,
   getBlockPlotIds,
   getEightPlotGroup
-} from "./world-engine.js?v=17";
+} from "./world-engine.js?v=18";
 
 let isAdmin = false;
 let selectedPlotId = "plot_0001";
@@ -25,7 +26,8 @@ let worldSettings = {
   townName: "FOLLOWER NAGARAM",
   dayNumber: 1,
   timeOfDay: "day",
-  lifeEnabled: true
+  lifeEnabled: true,
+  beachOwner: "@follower_beach"
 };
 
 const container = document.getElementById("canvas-container");
@@ -36,6 +38,7 @@ const loginForm = document.getElementById("login-form");
 const loginError = document.getElementById("login-error");
 const plotCard = document.getElementById("plot-card");
 const editBtn = document.getElementById("card-edit-btn");
+const beachEditBtn = document.getElementById("card-beach-edit-btn");
 const websiteBtn = document.getElementById("card-website-btn");
 const sheru3dBtn = document.getElementById("card-sheru3d-btn");
 const sketchfabModal = document.getElementById("sketchfab-modal");
@@ -67,7 +70,23 @@ const engine = new FollowerTownEngine(container, (plotId, data) => {
 });
 
 function openPlotCard(plotId, data) {
-    if (plotId === "AIRPORT") {
+      if (plotId === "BEACH") {
+    const bOwner = worldSettings.beachOwner || engine.beachOwner || "@follower_beach";
+    document.getElementById("card-badge").textContent = "GOLDEN SAND BEACH & VILLA";
+    document.getElementById("card-owner").textContent = `🏖️ ${bOwner}'s Beach House`;
+    document.getElementById("card-role").textContent = "Sheru Bhai chilling on the beach + Luxury Beachfront Villa with your follower's @username!";
+    document.getElementById("card-type").textContent = "SHERU BHAI BEACH";
+    document.getElementById("card-day").textContent = "";
+    editBtn.classList.add("hidden");
+    if (beachEditBtn) beachEditBtn.classList.remove("hidden");
+    websiteBtn.classList.add("hidden");
+    if (sheru3dBtn) sheru3dBtn.classList.add("hidden");
+    plotCard.classList.remove("hidden");
+    return;
+  }
+
+  if (beachEditBtn) beachEditBtn.classList.add("hidden");
+  if (plotId === "AIRPORT") {
     document.getElementById("card-badge").textContent = "20-ACRE INTERNATIONAL AIRPORT";
     document.getElementById("card-owner").textContent = "✈️ SHERU BHAI INTL AIRPORT";
     document.getElementById("card-role").textContent = "Outside City (20 Acres) • Live Shuttle Buses, Passenger Flights & Sheru Bhai arriving in Diamond Car to fly his Diamond Helicopter!";
@@ -104,7 +123,15 @@ function openPlotCard(plotId, data) {
     document.getElementById("card-owner").textContent = data.ownerName || label;
     document.getElementById("card-role").textContent = data.role || "Town Resident";
     document.getElementById("card-type").textContent =
-      size === 8 ? "8-PLOT MEGA STADIUM" : size === 4 ? "4-PLOT LANDMARK" : data.buildingType.startsWith("tower_") ? "5-FLOOR MODERN TOWER" : "CLASSIC HOUSE";
+      size === 8
+        ? (data.buildingType === "audi_showroom" ? "8-PLOT AUDI SHOWROOM" : "8-PLOT STADIUM")
+        : size === 4
+        ? "4-PLOT LANDMARK"
+        : size === 2
+        ? "2-PLOT STUDIO"
+        : data.buildingType.startsWith("tower_")
+        ? "5-FLOOR TOWER"
+        : "CLASSIC HOUSE";
     document.getElementById("card-day").textContent = `Day ${data.builtDay || 1}`;
   } else {
     document.getElementById("card-badge").textContent = "AVAILABLE PLOT";
@@ -179,6 +206,10 @@ onValue(worldRef, (snapshot) => {
   document.getElementById("town-title").textContent = `ADMIN • ${name}`;
   document.getElementById("stat-day").textContent = `Day ${worldSettings.dayNumber || 1}`;
   engine.setTownName(name);
+  const bOwner = worldSettings.beachOwner || "@follower_beach";
+  engine.setBeachOwner(bOwner);
+  const beachInput = document.getElementById("w-beach-owner");
+  if (beachInput) beachInput.value = bOwner;
   engine.setTimeOfDay(worldSettings.timeOfDay || "day");
   engine.lifeEnabled = worldSettings.lifeEnabled !== false;
 
@@ -226,7 +257,7 @@ loginForm.addEventListener("submit", async (e) => {
 document.getElementById("btn-logout").addEventListener("click", () => signOut(auth));
 
 document.getElementById("btn-save-plot").addEventListener("click", async () => {
-  if (!isAdmin || selectedPlotId === "ST_JUNCTION") return;
+  if (!isAdmin || selectedPlotId === "ST_JUNCTION" || selectedPlotId === "AIRPORT" || selectedPlotId === "BEACH") return;
   const type = document.getElementById("b-type").value;
   let ownerName = document.getElementById("b-owner").value.trim();
   const role = document.getElementById("b-role").value.trim();
@@ -253,6 +284,7 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
     let toClear = [selectedPlotId];
     if (oldSize === 8) toClear = getEightPlotGroup(selectedPlotId).siblings;
     else if (oldSize === 4) toClear = getBlockPlotIds(selectedPlotId).siblings;
+    else if (oldSize === 2) toClear = getTwoPlotGroup(selectedPlotId).siblings;
 
     toClear.forEach((pid) => {
       updates[`plots/${pid}`] = {
@@ -264,8 +296,28 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
         builtDay
       };
     });
-  } else if (newSize === 4 || newSize === 8) {
-    const groupInfo = newSize === 8 ? getEightPlotGroup(selectedPlotId) : getBlockPlotIds(selectedPlotId);
+  } else if (newSize === 2 || newSize === 4 || newSize === 8) {
+    // If replacing a larger old landmark (e.g. 4-plot -> 2-plot), clear old extra siblings first
+    if (oldSize > newSize) {
+      const oldSibs = oldSize === 8 ? getEightPlotGroup(selectedPlotId).siblings : getBlockPlotIds(selectedPlotId).siblings;
+      oldSibs.forEach((sibId) => {
+        updates[`plots/${sibId}`] = {
+          status: "empty",
+          ownerName: "",
+          role: "",
+          buildingType: "empty",
+          size: 1,
+          builtDay
+        };
+      });
+    }
+
+    const groupInfo =
+      newSize === 8
+        ? getEightPlotGroup(selectedPlotId)
+        : newSize === 4
+        ? getBlockPlotIds(selectedPlotId)
+        : getTwoPlotGroup(selectedPlotId);
     const reservedSet = new Set(groupInfo.siblings);
     let searchStart = 1;
 
@@ -284,10 +336,17 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
       }
     }
 
+    const defaultRole =
+      newSize === 8
+        ? (type === "audi_showroom" ? "8-Plot Audi Luxury Showroom" : "8-Plot Mega Stadium")
+        : newSize === 4
+        ? (type === "gym" ? "Fitness Gym Owner" : "4-Plot Town Landmark")
+        : "2-Plot Photo Studio";
+
     const anchorPayload = {
       status: "built",
       ownerName: ownerName || BUILDING_LABELS[type] || "Landmark",
-      role: role || (newSize === 8 ? "8-Plot Mega Stadium" : "4-Plot Town Landmark"),
+      role: role || defaultRole,
       buildingType: type,
       size: newSize,
       builtDay
@@ -309,8 +368,13 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
 
     selectedPlotId = groupInfo.anchorId;
   } else {
-    if (oldSize === 8 || oldSize === 4) {
-      const oldSibs = oldSize === 8 ? getEightPlotGroup(selectedPlotId).siblings : getBlockPlotIds(selectedPlotId).siblings;
+    if (oldSize === 8 || oldSize === 4 || oldSize === 2) {
+      const oldSibs =
+        oldSize === 8
+          ? getEightPlotGroup(selectedPlotId).siblings
+          : oldSize === 4
+          ? getBlockPlotIds(selectedPlotId).siblings
+          : getTwoPlotGroup(selectedPlotId).siblings;
       oldSibs.forEach((sibId) => {
         if (sibId !== selectedPlotId) {
           updates[`plots/${sibId}`] = {
@@ -341,7 +405,7 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
     } else if (relocatedCount > 0) {
       showToast(`🏗️ Built! Moved ${relocatedCount} houses to free plots.`);
     } else {
-      showToast(newSize === 8 ? "🏟️ Built 8-Plot Mega Stadium!" : newSize === 4 ? "🏛️ Built 4-Plot Landmark!" : `🔨 Built ${ownerName}'s plot!`);
+      showToast(newSize === 8 ? (type === "audi_showroom" ? "🚘 Built 8-Plot Audi Showroom!" : "🏟️ Built 8-Plot Mega Stadium!") : newSize === 4 ? "🏛️ Built 4-Plot Landmark!" : newSize === 2 ? "📸 Built 2-Plot Photo Studio!" : `🔨 Built ${ownerName}'s plot!`);
     }
     closeAllDrawers();
     engine.focusPlot(selectedPlotId);
@@ -360,14 +424,16 @@ document.getElementById("btn-fix-overlaps").addEventListener("click", async () =
   Object.entries(allPlots).forEach(([pid, p]) => {
     if (p && p.status === "built") {
       const reqSize = getRequiredSize(p.buildingType);
-      if (reqSize >= 4) landmarks.push({ pid, data: p, reqSize });
+      if (reqSize >= 2) landmarks.push({ pid, data: p, reqSize });
     }
   });
 
   if (landmarks.length === 0) return showToast("No multi-plot landmarks found!");
 
+  const getGrp = (pid, sz) => (sz === 8 ? getEightPlotGroup(pid) : sz === 4 ? getBlockPlotIds(pid) : getTwoPlotGroup(pid));
+
   landmarks.forEach((lm) => {
-    const grp = lm.reqSize === 8 ? getEightPlotGroup(lm.pid) : getBlockPlotIds(lm.pid);
+    const grp = getGrp(lm.pid, lm.reqSize);
     grp.siblings.forEach((s) => reservedSet.add(s));
   });
 
@@ -375,7 +441,7 @@ document.getElementById("btn-fix-overlaps").addEventListener("click", async () =
   let searchStart = 1;
 
   for (const lm of landmarks) {
-    const grp = lm.reqSize === 8 ? getEightPlotGroup(lm.pid) : getBlockPlotIds(lm.pid);
+    const grp = getGrp(lm.pid, lm.reqSize);
 
     for (const sibId of grp.siblings) {
       if (sibId === lm.pid) continue;
@@ -584,6 +650,7 @@ document.getElementById("btn-save-world").addEventListener("click", async () => 
   try {
     await update(worldRef, {
       townName: document.getElementById("w-name").value.trim() || "FOLLOWER NAGARAM",
+      beachOwner: (document.getElementById("w-beach-owner")?.value.trim() || "@follower_beach"),
       dayNumber: parseInt(document.getElementById("w-day").value, 10) || 1,
       timeOfDay: document.getElementById("w-time").value,
       lifeEnabled: document.getElementById("w-life").value === "on"
@@ -598,9 +665,9 @@ document.getElementById("btn-save-world").addEventListener("click", async () => 
 function runSearch() {
   const q = document.getElementById("search-input").value;
   const foundId = engine.findPlotByQuery(q);
-  if (foundId === "ST_JUNCTION") {
-    engine.focusPlot("ST_JUNCTION");
-    openPlotCard("ST_JUNCTION", null);
+  if (foundId === "ST_JUNCTION" || foundId === "AIRPORT" || foundId === "BEACH") {
+    engine.focusPlot(foundId);
+    openPlotCard(foundId, null);
   } else if (foundId) {
     selectedPlotId = foundId;
     engine.focusPlot(foundId);
@@ -769,5 +836,39 @@ if (btnReelAirport) {
     engine.stopBuildReelTour();
     engine.focusPlot("AIRPORT", 0.14);
     showToast("✈️ Airport Reel Cam Active!");
+  });
+}
+
+// Admin Beach Quick-Jump, Reel Cam & Beach House @username Shortcut
+const btnJumpBeach = document.getElementById("btn-jump-beach");
+if (btnJumpBeach) {
+  btnJumpBeach.addEventListener("click", () => {
+    engine.focusPlot("BEACH");
+    openPlotCard("BEACH", null);
+    showToast("🏖️ Sheru Bhai Beach & Follower Beach Villa!");
+  });
+}
+
+const btnReelBeach = document.getElementById("reel-beach-cam");
+if (btnReelBeach) {
+  btnReelBeach.addEventListener("click", () => {
+    engine.stopProReelTour();
+    engine.stopDroneView();
+    engine.stopBuildReelTour();
+    engine.focusPlot("BEACH", 0.14);
+    showToast("🏖️ Beach Reel Cam Active!");
+  });
+}
+
+if (beachEditBtn) {
+  beachEditBtn.addEventListener("click", () => {
+    closeAllDrawers();
+    panels.world.classList.remove("hidden");
+    const bi = document.getElementById("w-beach-owner");
+    if (bi) {
+      bi.focus();
+      bi.select();
+    }
+    showToast("✏️ Enter follower @username & tap Save World Live!");
   });
 }

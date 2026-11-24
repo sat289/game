@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
-export const EIGHT_PLOT_TYPES = new Set(["ground"]);
+export const EIGHT_PLOT_TYPES = new Set(["ground", "audi_showroom"]);
 
 export const FOUR_PLOT_TYPES = new Set([
   "police_station",
@@ -12,8 +12,11 @@ export const FOUR_PLOT_TYPES = new Set([
   "petrol_bunk",
   "srmt_mall",
   "apple_store",
-  "reliance_store"
+  "reliance_store",
+  "gym"
 ]);
+
+export const TWO_PLOT_TYPES = new Set(["photo_studio"]);
 
 export const BUILDING_LABELS = {
   house_blue: "🏡 Ivory & Slate Villa",
@@ -26,6 +29,9 @@ export const BUILDING_LABELS = {
   tower_gold: "🏢 6-Floor Golden Glass Penthouse",
   shop: "☕ టీ & టిఫిన్ • SHOP",
   ground: "🏏 గ్రౌండ్ • MEGA CRICKET STADIUM (8 PLOTS)",
+  audi_showroom: "🚘 ఆడి షోరూమ్ • AUDI SHOWROOM (8 PLOTS)",
+  gym: "🏋️ జిమ్ • FITNESS GYM (4 PLOTS)",
+  photo_studio: "📸 ఫోటో స్టూడియో • PHOTO STUDIO (2 PLOTS)",
   school: "🏫 పాఠశాల • GRAND SCHOOL (4 PLOTS)",
   hospital: "🏥 ఆసుపత్రి • SUPER HOSPITAL (4 PLOTS)",
   bus_stand: "🚌 బస్ స్టాండ్ • APSRTC TERMINAL (4 PLOTS)",
@@ -41,6 +47,7 @@ export const BUILDING_LABELS = {
 export function getRequiredSize(type) {
   if (EIGHT_PLOT_TYPES.has(type)) return 8;
   if (FOUR_PLOT_TYPES.has(type)) return 4;
+  if (TWO_PLOT_TYPES.has(type)) return 2;
   return 1;
 }
 
@@ -106,6 +113,27 @@ export function getBlockPlotIds(plotId) {
   const num = parseInt(plotId.replace("plot_", ""), 10);
   const blockIdx = Math.floor((num - 1) / 4);
   return getBlockPlotIdsByBlockIdx(blockIdx);
+}
+
+/**
+ * 2-Plot Side-by-Side Row Helper (faces North road for subIdx 0/1, South road for subIdx 2/3)
+ */
+export function getTwoPlotGroup(plotId) {
+  const num = parseInt(plotId.replace("plot_", ""), 10);
+  const idx0 = Math.max(0, num - 1);
+  const blockIdx = Math.floor(idx0 / 4);
+  const subIdx = idx0 % 4;
+  const isNorthRow = subIdx < 2;
+  const base = blockIdx * 4 + (isNorthRow ? 1 : 3);
+  const pA = `plot_${String(base).padStart(4, "0")}`;
+  const pB = `plot_${String(base + 1).padStart(4, "0")}`;
+  return {
+    blockIdx,
+    isNorthRow,
+    rotY: isNorthRow ? Math.PI : 0,
+    anchorId: pA,
+    siblings: [pA, pB]
+  };
 }
 
 export function getEightPlotGroup(plotId) {
@@ -217,6 +245,11 @@ export class FollowerTownEngine {
     this.fountainJets = [];
     this.airportSim = null;
     this.airportX = 110;
+    this.beachSim = null;
+    this.beachX = -108;
+    this.beachOwner = "@follower_beach";
+    this.turntableRotors = [];
+    this.studioFlashes = [];
     this.skyClouds = [];
     this.cloudMat = null;
     this.starField = null;
@@ -427,7 +460,26 @@ export class FollowerTownEngine {
       heliGlass: new THREE.MeshLambertMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.45 }),
       planeWhite: new THREE.MeshLambertMaterial({ color: 0xf8fafc }),
       planeBlue: new THREE.MeshLambertMaterial({ color: 0x0284c7 }),
-      rotorBlade: new THREE.MeshLambertMaterial({ color: 0x0f172a })
+      rotorBlade: new THREE.MeshLambertMaterial({ color: 0x0f172a }),
+      // Beach, Audi Showroom, Gym & Photo Studio Materials
+      beachSand: new THREE.MeshLambertMaterial({ color: 0xfde68a }),
+      beachSandWet: new THREE.MeshLambertMaterial({ color: 0xeab308 }),
+      oceanDeep: new THREE.MeshLambertMaterial({ color: 0x0284c7 }),
+      oceanShallow: new THREE.MeshLambertMaterial({ color: 0x06b6d4 }),
+      seaFoam: new THREE.MeshBasicMaterial({ color: 0xe0f2fe, transparent: true, opacity: 0.8 }),
+      tropicalShirt: new THREE.MeshLambertMaterial({ color: 0x0ea5e9 }),
+      tropicalShorts: new THREE.MeshLambertMaterial({ color: 0xf43f5e }),
+      audiSilver: new THREE.MeshPhongMaterial({ color: 0xe2e8f0, specular: 0xffffff, shininess: 110 }),
+      audiRed: new THREE.MeshPhongMaterial({ color: 0xdc2626, specular: 0xffffff, shininess: 120 }),
+      audiBlue: new THREE.MeshPhongMaterial({ color: 0x1d4ed8, specular: 0xffffff, shininess: 120 }),
+      audiBlack: new THREE.MeshPhongMaterial({ color: 0x111827, specular: 0x94a3b8, shininess: 110 }),
+      audiWhite: new THREE.MeshPhongMaterial({ color: 0xf8fafc, specular: 0xffffff, shininess: 125 }),
+      audiGlass: new THREE.MeshLambertMaterial({ color: 0x0f172a, transparent: true, opacity: 0.85 }),
+      gymOrange: new THREE.MeshBasicMaterial({ color: 0xf97316 }),
+      gymBlack: new THREE.MeshLambertMaterial({ color: 0x18181b }),
+      gymSteel: new THREE.MeshLambertMaterial({ color: 0x94a3b8 }),
+      studioCyan: new THREE.MeshBasicMaterial({ color: 0x22d3ee }),
+      studioFlash: new THREE.MeshBasicMaterial({ color: 0xffffff })
     };
   }
 
@@ -644,13 +696,21 @@ export class FollowerTownEngine {
     }
   }
 
+  setBeachOwner(ownerName) {
+    const clean = (ownerName || "@follower_beach").trim();
+    if (clean !== this.beachOwner) {
+      this.beachOwner = clean;
+      if (this.currentGridRadius > 0) this._rebuildRoadsAndRingRoad();
+    }
+  }
+
   syncLandmarkFootprints(allPlotsObj) {
     this.landmarkCoveredPlots.clear();
     Object.entries(allPlotsObj || {}).forEach(([pid, p]) => {
       if (p && p.status === "built") {
         const req = getRequiredSize(p.buildingType);
-        if (req >= 4) {
-          const grp = req === 8 ? getEightPlotGroup(pid) : getBlockPlotIds(pid);
+        if (req >= 2) {
+          const grp = req === 8 ? getEightPlotGroup(pid) : req === 4 ? getBlockPlotIds(pid) : getTwoPlotGroup(pid);
           grp.siblings.forEach((sib) => {
             if (sib !== pid) this.landmarkCoveredPlots.add(sib);
           });
@@ -712,8 +772,9 @@ export class FollowerTownEngine {
       this.cityGroup.remove(this.cityGroup.children[0]);
     }
     this.lampBulbs = [];
-    this.plotHitboxes = this.plotHitboxes.filter((h) => h.userData.plotId !== "ST_JUNCTION" && h.userData.plotId !== "AIRPORT");
+    this.plotHitboxes = this.plotHitboxes.filter((h) => h.userData.plotId !== "ST_JUNCTION" && h.userData.plotId !== "AIRPORT" && h.userData.plotId !== "BEACH");
     this.airportSim = null;
+    this.beachSim = null;
 
     const r = this.currentGridRadius;
     const gridCount = r * 2 + 1;
@@ -722,11 +783,11 @@ export class FollowerTownEngine {
     this.ringRadius = ringRadius;
 
     const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(ringRadius * 2 + 340, ringRadius * 2 + 240),
+      new THREE.PlaneGeometry(ringRadius * 2 + 440, ringRadius * 2 + 260),
       this.mat.grass
     );
     ground.rotation.x = -Math.PI / 2;
-    ground.position.set(55, -0.06, 0);
+    ground.position.set(0, -0.06, 0);
     this.cityGroup.add(ground);
 
     const roadLines = [];
@@ -814,7 +875,7 @@ export class FollowerTownEngine {
 
       this._addPalmTree(p, -(ringRadius + 7));
       this._addPalmTree(p, ringRadius + 7);
-      this._addPalmTree(-(ringRadius + 7), p);
+      if (p < -10 || p > 10) this._addPalmTree(-(ringRadius + 7), p);
       if (p < 8 || p > 28) this._addPalmTree(ringRadius + 7, p);
     }
 
@@ -848,6 +909,7 @@ export class FollowerTownEngine {
 
     this._buildSTJunctionStatue();
     this._buildInternationalAirport(ringRadius);
+    this._buildSheruBhaiBeach(ringRadius);
     this.setTimeOfDay(this.timeOfDay);
   }
 
@@ -1733,6 +1795,278 @@ export class FollowerTownEngine {
     };
   }
 
+
+  /**
+   * 🏖️ GOLDEN SAND SHERU BHAI BEACH + LUXURY FOLLOWER BEACH HOUSE (West Coast Outside City!)
+   * Features:
+   * - Beach Boulevard Road connecting West Outer Ring Road -> Palm-lined Beachfront
+   * - Golden Sand Beach + Wet Shoreline + Deep Turquoise Ocean + Animated Rolling White Sea Foam Waves
+   * - Wooden Ocean Pier / Jetty with glowing night lamps
+   * - 🦁 SHERU BHAI CHILLING ON THE BEACH: Sculpted Lion in sunglasses, gold chain & rich tropical outfit
+   *   relaxing on a VIP wooden sun-lounger under a beach umbrella with a chilled coconut drink!
+   * - 🏡 LUXURY FOLLOWER BEACH HOUSE: Modern coastal white-and-teak villa right on the sand with
+   *   customizable Follower @username mounted signboard + floating sign!
+   */
+  _buildSheruBhaiBeach(ringRadius) {
+    const bx = -(ringRadius + 58);
+    this.beachX = bx;
+
+    const bg = new THREE.Group();
+    bg.position.set(bx, 0, 0);
+
+    // 1. Beach Boulevard Connector Road from West Outer Ring Road (East side of beach group: x = +48 -> +24)
+    const roadLen = 30;
+    const beachRoad = new THREE.Mesh(new THREE.BoxGeometry(roadLen, 0.1, 7.2), this.mat.road);
+    beachRoad.position.set(42, 0.02, 0);
+    const roadDash = new THREE.Mesh(new THREE.PlaneGeometry(roadLen - 2, 0.25), this.mat.stripe);
+    roadDash.rotation.x = -Math.PI / 2;
+    roadDash.position.set(42, 0.08, 0);
+    bg.add(beachRoad, roadDash);
+
+    // Coastal Entrance Arch ("SHERU BHAI BEACH")
+    const apGeo = new THREE.BoxGeometry(0.75, 5.6, 0.75);
+    const p1 = new THREE.Mesh(apGeo, this.mat.teakWood);
+    p1.position.set(34, 2.8, -4.4);
+    const p2 = p1.clone();
+    p2.position.z = 4.4;
+    const archTop = new THREE.Mesh(new THREE.BoxGeometry(0.95, 1.45, 9.8), this.mat.oceanDeep);
+    archTop.position.set(34, 5.4, 0);
+    const bArchF = this._makeBuildingBoard("SHERU BHAI BEACH", "VIP OCEAN RESORT", "#0284c7", "#fde047", 8.8, 1.25);
+    bArchF.rotation.y = Math.PI / 2;
+    bArchF.position.set(34.5, 5.4, 0);
+    const bArchB = bArchF.clone();
+    bArchB.rotation.y = -Math.PI / 2;
+    bArchB.position.x = 33.5;
+    bg.add(p1, p2, archTop, bArchF, bArchB);
+
+    // 2. Wide Golden Sand Beach + Wet Sand Shore + Turquoise Shallow & Deep Ocean!
+    const drySand = new THREE.Mesh(new THREE.BoxGeometry(44, 0.14, 96), this.mat.beachSand);
+    drySand.position.set(16, 0.04, 0);
+
+    const wetSand = new THREE.Mesh(new THREE.BoxGeometry(7.5, 0.1, 96), this.mat.beachSandWet);
+    wetSand.position.set(-7.5, 0.03, 0);
+
+    const shallowSea = new THREE.Mesh(new THREE.BoxGeometry(16, 0.08, 110), this.mat.oceanShallow);
+    shallowSea.position.set(-18, 0.01, 0);
+
+    const deepSea = new THREE.Mesh(new THREE.BoxGeometry(58, 0.06, 130), this.mat.oceanDeep);
+    deepSea.position.set(-54, 0.0, 0);
+
+    bg.add(drySand, wetSand, shallowSea, deepSea);
+
+    // Animated White Ocean Wave Foam Strips (3 rolling waves!)
+    const waveStrips = [];
+    const waveGeo = new THREE.PlaneGeometry(1.6, 94);
+    waveGeo.rotateX(-Math.PI / 2);
+    for (let w = 0; w < 3; w++) {
+      const foam = new THREE.Mesh(waveGeo, this.mat.seaFoam);
+      foam.position.set(-10 - w * 5.2, 0.1, 0);
+      bg.add(foam);
+      waveStrips.push({ mesh: foam, baseX: -10 - w * 5.2, phase: w * 2.1 });
+    }
+
+    // 3. Wooden Ocean Pier / Jetty extending out into the Turquoise Sea (at z = 22)
+    const pierDeck = new THREE.Mesh(new THREE.BoxGeometry(24, 0.25, 4.4), this.mat.teakWood);
+    pierDeck.position.set(-16, 0.72, 22);
+    for (let px = -26; px <= -6; px += 5) {
+      [-1.8, 1.8].forEach((pz) => {
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.18, 1.1, 6), this.mat.darkWood);
+        post.position.set(px, 0.35, 22 + pz);
+        bg.add(post);
+      });
+    }
+    const pierLamp = new THREE.Mesh(new THREE.SphereGeometry(0.32, 6, 6), this.mat.lampBulbDay);
+    pierLamp.position.set(-27.2, 2.3, 22);
+    const pierPole = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 1.6, 5), this.mat.lampPole);
+    pierPole.position.set(-27.2, 1.5, 22);
+    this.lampBulbs.push(pierLamp);
+    bg.add(pierDeck, pierPole, pierLamp);
+
+    // 4. Beach Coconut Palm Trees along the Golden Sand
+    const addBeachPalm = (px, pz, tilt = 0.14) => {
+      const palm = new THREE.Group();
+      palm.position.set(px, 0.1, pz);
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.28, 5.2, 6), this.mat.treeTrunk);
+      trunk.position.y = 2.6;
+      trunk.rotation.z = tilt;
+      palm.add(trunk);
+      for (let i = 0; i < 6; i++) {
+        const ang = (i / 6) * Math.PI * 2;
+        const frond = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.12, 0.65), this.mat.treeLeaf);
+        frond.position.set(Math.sin(tilt) * 2.4 + Math.cos(ang) * 1.1, 5.1, Math.sin(ang) * 1.1);
+        frond.rotation.y = -ang;
+        frond.rotation.z = -0.32;
+        palm.add(frond);
+      }
+      bg.add(palm);
+    };
+    [[24, -36, 0.12], [18, -26, -0.15], [6, -30, 0.18], [4, 2, 0.14], [14, 28, -0.14], [24, 34, 0.12], [2, 34, 0.16]].forEach(
+      ([px, pz, t]) => addBeachPalm(px, pz, t)
+    );
+
+    // 5. 🦁 SHERU BHAI CHILLING ON THE BEACH (VIP Lounger + Umbrella + Coconut Drink!) at (x = 4, z = 11)
+    const chillZone = new THREE.Group();
+    chillZone.position.set(4, 0.12, 11);
+
+    // Luxury Wooden Beach Sun Lounger with White Cushion & Red Towel
+    const bedFrame = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.24, 1.35), this.mat.teakWood);
+    bedFrame.position.set(0, 0.36, 0);
+    const mattress = new THREE.Mesh(new THREE.BoxGeometry(2.45, 0.18, 1.2), this.mat.wallWhite);
+    mattress.position.set(0, 0.54, 0);
+    const backrest = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.18, 1.18), this.mat.wallWhite);
+    backrest.position.set(0.92, 0.92, 0);
+    backrest.rotation.z = 0.62;
+    const towel = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.06, 1.24), this.mat.tropicalShorts);
+    towel.position.set(-0.35, 0.65, 0);
+    chillZone.add(bedFrame, mattress, backrest, towel);
+
+    // Giant Colorful Striped Beach Umbrella shading Sheru Bhai
+    const uPole = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 3.6, 6), this.mat.richGoldTrim);
+    uPole.position.set(0.8, 1.8, -1.25);
+    const uCanopy = new THREE.Mesh(new THREE.ConeGeometry(2.6, 0.85, 8), this.mat.petrolRed);
+    uCanopy.position.set(0.8, 3.55, -1.25);
+    const uStripe = new THREE.Mesh(new THREE.ConeGeometry(2.64, 0.45, 8), this.mat.wallWhite);
+    uStripe.position.set(0.8, 3.35, -1.25);
+    chillZone.add(uPole, uCanopy, uStripe);
+
+    // Gold Side Table + Fresh Green Coconut Drink with Straw!
+    const sideTbl = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.35, 0.62, 8), this.mat.richGoldTrim);
+    sideTbl.position.set(0.2, 0.32, 1.25);
+    const coconut = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 8), this.mat.turf);
+    coconut.position.set(0.2, 0.78, 1.25);
+    const straw = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.42, 4), this.mat.petrolYellow);
+    straw.position.set(0.25, 1.02, 1.25);
+    straw.rotation.z = -0.35;
+    chillZone.add(sideTbl, coconut, straw);
+
+    // Standing Surfboard planted in the sand nearby!
+    const surf = new THREE.Mesh(new THREE.BoxGeometry(0.14, 2.8, 0.72), this.mat.studioCyan);
+    surf.position.set(-2.2, 1.35, -2.5);
+    surf.rotation.z = 0.22;
+    surf.rotation.y = 0.4;
+    chillZone.add(surf);
+
+    // 🦁 SCULPTED CHILLING SHERU BHAI LION RECLINING ON THE LOUNGER (Sunglasses + Gold Chain + Beach Fit!)
+    const chillingSheru = new THREE.Group();
+    chillingSheru.position.set(0.25, 0.68, 0);
+
+    // Relaxed stretched legs in colorful beach shorts
+    const sLegGeo = new THREE.CylinderGeometry(0.17, 0.14, 1.25, 8);
+    sLegGeo.rotateZ(Math.PI / 2);
+    const sLegL = new THREE.Mesh(sLegGeo, this.mat.lionFurGold);
+    sLegL.position.set(-0.78, 0.16, -0.22);
+    const sLegR = sLegL.clone();
+    sLegR.position.z = 0.22;
+    const shorts = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.34, 0.76), this.mat.tropicalShorts);
+    shorts.position.set(-0.18, 0.2, 0);
+
+    // Reclining Torso in Royal Tropical Shirt + Chunky Gold Chain
+    const sTorso = new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.42, 0.78), this.mat.tropicalShirt);
+    sTorso.position.set(0.42, 0.48, 0);
+    sTorso.rotation.z = 0.56;
+    const sChain = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.045, 6, 12, Math.PI), this.mat.richGoldTrim);
+    sChain.position.set(0.54, 0.68, 0);
+    sChain.rotation.y = -Math.PI / 2;
+    sChain.rotation.z = Math.PI;
+
+    // Relaxed Lion Head + Full Mane + Cool Black Sunglasses facing the Ocean!
+    const sHeadGroup = new THREE.Group();
+    sHeadGroup.position.set(0.88, 0.98, 0);
+    const sHead = new THREE.Mesh(new THREE.SphereGeometry(0.35, 10, 10), this.mat.lionFurGold);
+    const sSnout = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.2, 0.24), this.mat.lionFurGold);
+    sSnout.position.set(-0.28, -0.06, 0);
+    const sNose = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.08, 0.12), this.mat.sunglasses);
+    sNose.position.set(-0.38, 0.0, 0);
+    const sShades = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.15, 0.52), this.mat.sunglasses);
+    sShades.position.set(-0.32, 0.08, 0);
+    const sManeGeo = new THREE.DodecahedronGeometry(0.22, 0);
+    for (let m = 0; m < 8; m++) {
+      const ang = (m / 8) * Math.PI * 2;
+      const mt = new THREE.Mesh(sManeGeo, this.mat.lionManeRich);
+      mt.position.set(0.08, Math.sin(ang) * 0.36, Math.cos(ang) * 0.36);
+      sHeadGroup.add(mt);
+    }
+    sHeadGroup.add(sHead, sSnout, sNose, sShades);
+
+    chillingSheru.add(sLegL, sLegR, shorts, sTorso, sChain, sHeadGroup);
+    chillZone.add(chillingSheru);
+
+    const chillSign = this._createNameSign("🦁 SHERU BHAI CHILLING", "VIP BEACH LOUNGE", false);
+    chillSign.position.set(0.5, 4.9, 0);
+    chillZone.add(chillSign);
+    bg.add(chillZone);
+
+    // Extra Beach Umbrella + Lounge Chairs down the sand
+    const u2Pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 3.2, 5), this.mat.wallWhite);
+    u2Pole.position.set(1, 1.6, -24);
+    const u2Top = new THREE.Mesh(new THREE.ConeGeometry(2.2, 0.75, 8), this.mat.studioCyan);
+    u2Top.position.set(1, 3.2, -24);
+    bg.add(u2Pole, u2Top);
+
+    // 6. 🏡 LUXURY FOLLOWER BEACH HOUSE VILLA RIGHT ON THE SAND (x = 16, z = -14)
+    const villa = new THREE.Group();
+    villa.position.set(16, 0.12, -14);
+
+    // Raised Teak Deck + Infinity Plunge Pool facing the Ocean (-X)
+    const deck = new THREE.Mesh(new THREE.BoxGeometry(15.5, 0.45, 13.5), this.mat.teakWood);
+    deck.position.set(0, 0.24, 0);
+    const pool = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.5, 7.6), this.mat.water);
+    pool.position.set(-5.2, 0.25, 0);
+
+    // Ground Floor White Stucco Villa + Huge Ocean-View Glass Doors
+    const vFloor1 = new THREE.Mesh(new THREE.BoxGeometry(9.2, 3.6, 10.6), this.mat.wallWhite);
+    vFloor1.position.set(2.0, 2.25, 0);
+    const vGlass1 = new THREE.Mesh(new THREE.BoxGeometry(0.24, 2.7, 8.2), this.mat.glass);
+    vGlass1.position.set(-2.62, 2.0, 0);
+    const vTeakClad = new THREE.Mesh(new THREE.BoxGeometry(9.4, 3.6, 2.2), this.mat.teakWood);
+    vTeakClad.position.set(2.0, 2.25, -4.4);
+
+    // Second Floor Cantilevered Oceanfront Suite + Glass Balcony Railing + Pergola Roof
+    const vSlab = new THREE.Mesh(new THREE.BoxGeometry(11.6, 0.35, 11.4), this.mat.wallWhite);
+    vSlab.position.set(1.2, 4.15, 0);
+    const vFloor2 = new THREE.Mesh(new THREE.BoxGeometry(8.2, 3.2, 8.8), this.mat.stuccoIvory);
+    vFloor2.position.set(2.4, 5.9, -0.5);
+    const vGlass2 = new THREE.Mesh(new THREE.BoxGeometry(0.24, 2.4, 7.2), this.mat.glass);
+    vGlass2.position.set(-1.72, 5.85, -0.5);
+    const vBalcRail = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.95, 10.8), this.mat.glass);
+    vBalcRail.position.set(-4.45, 4.8, 0);
+
+    const vRoof = new THREE.Mesh(new THREE.BoxGeometry(10.6, 0.35, 10.4), this.mat.slateTrim);
+    vRoof.position.set(1.8, 7.65, -0.5);
+
+    // Personalized Mounted Beach House Signboard with Follower's @username!
+    const cleanOwner = (this.beachOwner || "@follower_beach").trim();
+    const villaBoardW = this._makeBuildingBoard(cleanOwner.toUpperCase(), "BEACH HOUSE VILLA", "#0f172a", "#38bdf8", 8.8, 1.4);
+    villaBoardW.rotation.y = -Math.PI / 2;
+    villaBoardW.position.set(-3.55, 7.65, -0.5);
+    const villaBoardE = villaBoardW.clone();
+    villaBoardE.rotation.y = Math.PI / 2;
+    villaBoardE.position.x = 7.15;
+
+    // Floating @username sign above Beach House Villa!
+    const villaSign = this._createNameSign(`🏡 ${cleanOwner}`, "🏖️ BEACH HOUSE VILLA • SHERU BHAI BEACH", true);
+    villaSign.position.set(1.5, 10.8, 0);
+
+    villa.add(deck, pool, vFloor1, vGlass1, vTeakClad, vSlab, vFloor2, vGlass2, vBalcRail, vRoof, villaBoardW, villaBoardE, villaSign);
+    bg.add(villa);
+
+    // 7. Clickable Hitbox for the Entire Beach & Beach House
+    const hitbox = new THREE.Mesh(
+      new THREE.BoxGeometry(84, 14, 96),
+      new THREE.MeshBasicMaterial({ visible: false })
+    );
+    hitbox.position.set(0, 7, 0);
+    hitbox.userData.plotId = "BEACH";
+    bg.add(hitbox);
+    this.plotHitboxes.push(hitbox);
+
+    this.cityGroup.add(bg);
+    this.beachSim = {
+      waveStrips,
+      chillingHead: sHeadGroup
+    };
+  }
+
   _addWelcomeArch(x, z) {
     const g = new THREE.Group();
     const pGeo = new THREE.BoxGeometry(0.95, 6.4, 0.95);
@@ -2263,6 +2597,8 @@ export class FollowerTownEngine {
       this.autoSimulations = this.autoSimulations.filter((s) => s.plotId !== plotId);
       this.policeSimulations = this.policeSimulations.filter((s) => s.plotId !== plotId);
       this.ambulanceSimulations = this.ambulanceSimulations.filter((s) => s.plotId !== plotId);
+      this.turntableRotors = this.turntableRotors.filter((r) => r.plotId !== plotId);
+      this.studioFlashes = this.studioFlashes.filter((f) => f.plotId !== plotId);
       this.blockedRoadZones = this.blockedRoadZones.filter((z) => z.plotId !== plotId);
     }
 
@@ -2278,6 +2614,7 @@ export class FollowerTownEngine {
     const size = data?.status === "built" ? (data.size || reqSize) : 1;
     const isEightPlot = size === 8;
     const isFourPlot = size === 4;
+    const isTwoPlot = size === 2;
 
     const plotGroup = new THREE.Group();
     if (isEightPlot) {
@@ -2297,6 +2634,10 @@ export class FollowerTownEngine {
       });
     } else if (isFourPlot) {
       plotGroup.position.set(pos.blockCenterX, 0.08, pos.blockCenterZ);
+    } else if (isTwoPlot) {
+      const twoInfo = getTwoPlotGroup(plotId);
+      const rowZ = pos.blockCenterZ + (twoInfo.isNorthRow ? -this.PLOT_SIZE / 2 : this.PLOT_SIZE / 2);
+      plotGroup.position.set(pos.blockCenterX, 0.08, rowZ);
     } else {
       plotGroup.position.set(pos.x, 0.08, pos.z);
     }
@@ -2309,6 +2650,12 @@ export class FollowerTownEngine {
         new THREE.MeshBasicMaterial({ visible: false })
       );
       hitbox.position.y = 5.5;
+    } else if (isTwoPlot) {
+      hitbox = new THREE.Mesh(
+        new THREE.BoxGeometry(this.BLOCK_FOOTPRINT - 0.2, 8.0, this.PLOT_SIZE - 0.2),
+        new THREE.MeshBasicMaterial({ visible: false })
+      );
+      hitbox.position.y = 4.0;
     } else {
       hitbox = new THREE.Mesh(this.geo.hit1, new THREE.MeshBasicMaterial({ visible: false }));
       hitbox.position.y = 3.25;
@@ -2334,6 +2681,11 @@ export class FollowerTownEngine {
             ),
             lotBaseMat
           )
+        : isTwoPlot
+        ? new THREE.Mesh(
+            new THREE.BoxGeometry(this.BLOCK_FOOTPRINT - 0.2, 0.14, this.PLOT_SIZE - 0.2),
+            lotBaseMat
+          )
         : new THREE.Mesh(this.geo.base1, lotBaseMat);
     lotBase.position.y = isEightPlot ? 0.13 : 0.07;
     plotGroup.add(lotBase);
@@ -2343,18 +2695,35 @@ export class FollowerTownEngine {
     if (!data || data.status !== "built" || data.buildingType === "empty") {
       buildingObj = this._buildEmptyPlotMesh();
     } else if (isEightPlot) {
-      buildingObj = this._buildEightPlotCricketStadium(plotId);
-      const topLabel = data.ownerName || BUILDING_LABELS.ground;
-      const sign = this._createNameSign(topLabel, "🏏 గ్రౌండ్ • 8-PLOT MEGA STADIUM", true);
-      sign.position.set(0, 10.6, 0);
-      buildingObj.add(sign);
+      if (data.buildingType === "audi_showroom") {
+        buildingObj = this._buildEightPlotAudiShowroom(plotId, data.ownerName);
+        const topLabel = data.ownerName || "AUDI SHOWROOM";
+        const sign = this._createNameSign(topLabel, "🚘 ఆడి షోరూమ్ • 8-PLOT AUDI SHOWROOM", true);
+        sign.position.set(0, 11.4, 0);
+        buildingObj.add(sign);
+      } else {
+        buildingObj = this._buildEightPlotCricketStadium(plotId);
+        const topLabel = data.ownerName || BUILDING_LABELS.ground;
+        const sign = this._createNameSign(topLabel, "🏏 గ్రౌండ్ • 8-PLOT MEGA STADIUM", true);
+        sign.position.set(0, 10.6, 0);
+        buildingObj.add(sign);
+      }
     } else if (isFourPlot) {
-      buildingObj = this._buildFourPlotLandmark(data.buildingType, plotId);
+      buildingObj = this._buildFourPlotLandmark(data.buildingType, plotId, data.ownerName);
       const topLabel = data.ownerName || BUILDING_LABELS[data.buildingType] || "LANDMARK";
       const subLabel = this._getLandmarkSubtitle(data.buildingType);
       const sign = this._createNameSign(topLabel, subLabel, true);
       sign.position.set(0, buildingObj.userData.labelY || 11.2, 0);
       buildingObj.add(sign);
+    } else if (isTwoPlot) {
+      const twoInfo = getTwoPlotGroup(plotId);
+      buildingObj = this._buildTwoPlotBuilding(data.buildingType, plotId, data.ownerName);
+      buildingObj.rotation.y = twoInfo.rotY;
+      const topLabel = data.ownerName || BUILDING_LABELS[data.buildingType] || "PHOTO STUDIO";
+      const subLabel = this._getLandmarkSubtitle(data.buildingType);
+      const sign = this._createNameSign(topLabel, subLabel, true);
+      sign.position.set(0, buildingObj.userData.labelY || 7.6, 0);
+      plotGroup.add(sign);
     } else {
       buildingObj = this._buildOnePlotBuilding(data.buildingType);
       buildingObj.rotation.y = pos.rotY;
@@ -2372,7 +2741,7 @@ export class FollowerTownEngine {
 
     if (animateBuild && data.status === "built") {
       buildingObj.scale.y = 0.05;
-      const scafW = isEightPlot ? 31.0 : isFourPlot ? 13.0 : 5.6;
+      const scafW = isEightPlot ? 31.0 : isFourPlot || isTwoPlot ? 13.0 : 5.6;
       const scafD = isEightPlot || isFourPlot ? 13.0 : 5.6;
       const scafH = isEightPlot || isFourPlot ? 9.5 : 5.5;
       const scaffold = new THREE.Mesh(new THREE.BoxGeometry(scafW, scafH, scafD), this.mat.scaffolding);
@@ -2410,7 +2779,10 @@ export class FollowerTownEngine {
       petrol_bunk: "పెట్రోల్ బంక్ • FUEL PLAZA",
       srmt_mall: "SRMT మాల్ • SRMT MALL",
       apple_store: "ఆపిల్ స్టోర్ • APPLE STORE",
-      reliance_store: "రిలయన్స్ • RELIANCE DIGITAL"
+      reliance_store: "రిలయన్స్ • RELIANCE DIGITAL",
+      audi_showroom: "ఆడి షోరూమ్ • AUDI LUXURY MOTORS",
+      gym: "జిమ్ • PERSONAL FITNESS CLUB",
+      photo_studio: "ఫోటో స్టూడియో • PHOTO & 4K VIDEO"
     };
     return map[type] || "";
   }
@@ -2738,6 +3110,291 @@ export class FollowerTownEngine {
   }
 
   // 8-PLOT MEGA CRICKET STADIUM
+
+  /**
+   * 🚘 REALISTIC 3D AUDI LUXURY CAR MODEL (R8 Supercar / RS7 / e-tron GT / Q8 SUV)
+   * Features: 4 tires with silver/gold alloy rims, sculpted hood, hexagonal Audi grille,
+   * sharp white LED DRL headlights, rear red LED lightbar, sloped windshield & spoiler/roof rails!
+   */
+  _makeRealAudiCarMesh(bodyMat, isSUV = false) {
+    const car = new THREE.Group();
+    const len = isSUV ? 4.3 : 4.05;
+    const w = isSUV ? 1.88 : 1.78;
+    const bodyH = isSUV ? 0.74 : 0.54;
+
+    // 4 Realistic Alloy Wheels
+    const wheelR = isSUV ? 0.36 : 0.31;
+    const wheelGeo = new THREE.CylinderGeometry(wheelR, wheelR, 0.24, 10);
+    wheelGeo.rotateZ(Math.PI / 2);
+    const rimGeo = new THREE.CylinderGeometry(wheelR * 0.58, wheelR * 0.58, 0.26, 8);
+    rimGeo.rotateZ(Math.PI / 2);
+    [[-w / 2 + 0.04, 1.25], [w / 2 - 0.04, 1.25], [-w / 2 + 0.04, -1.2], [w / 2 - 0.04, -1.2]].forEach(([wx, wz]) => {
+      const tire = new THREE.Mesh(wheelGeo, this.mat.wheelBlack);
+      tire.position.set(wx, wheelR, wz);
+      const rim = new THREE.Mesh(rimGeo, this.mat.rimSilver);
+      rim.position.set(wx, wheelR, wz);
+      car.add(tire, rim);
+    });
+
+    // Lower Aerodynamic Body + Sculpted Sloped Hood
+    const chassis = new THREE.Mesh(new THREE.BoxGeometry(w, bodyH, len), bodyMat);
+    chassis.position.set(0, wheelR + bodyH / 2 - 0.05, 0);
+
+    const hood = new THREE.Mesh(new THREE.BoxGeometry(w - 0.14, 0.18, 1.35), bodyMat);
+    hood.position.set(0, wheelR + bodyH + 0.02, 1.22);
+    hood.rotation.x = 0.08;
+
+    // Greenhouse Cabin (Sleek Coupe vs Tall Q8 SUV)
+    const cabH = isSUV ? 0.64 : 0.46;
+    const cabLen = isSUV ? 2.15 : 1.55;
+    const cabZ = isSUV ? -0.35 : -0.18;
+    const cab = new THREE.Mesh(new THREE.BoxGeometry(w - 0.26, cabH, cabLen), this.mat.audiGlass);
+    cab.position.set(0, wheelR + bodyH + cabH / 2 - 0.06, cabZ);
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(w - 0.3, 0.09, cabLen - 0.22), bodyMat);
+    roof.position.set(0, wheelR + bodyH + cabH - 0.04, cabZ);
+
+    // Side Mirrors
+    [-w / 2 - 0.08, w / 2 + 0.08].forEach((mx) => {
+      const mir = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.1, 0.18), bodyMat);
+      mir.position.set(mx, wheelR + bodyH + 0.1, 0.55);
+      car.add(mir);
+    });
+
+    // Iconic Audi Hexagonal Singleframe Grille + Mini Chrome Strip
+    const grille = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.34, 0.1), this.mat.charcoal);
+    grille.position.set(0, wheelR + 0.2, len / 2 + 0.02);
+    const grilleTrim = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.08, 0.12), this.mat.chrome);
+    grilleTrim.position.set(0, wheelR + 0.28, len / 2 + 0.03);
+
+    // Sharp White Audi LED DRL Headlights + Continuous Rear Red LED Lightbar
+    const drlGeo = new THREE.BoxGeometry(0.36, 0.1, 0.08);
+    const drlL = new THREE.Mesh(drlGeo, this.mat.studioFlash);
+    drlL.position.set(-0.62, wheelR + 0.32, len / 2 + 0.02);
+    const drlR = drlL.clone();
+    drlR.position.x = 0.62;
+
+    const rearBar = new THREE.Mesh(new THREE.BoxGeometry(w - 0.18, 0.12, 0.08), this.mat.taillight);
+    rearBar.position.set(0, wheelR + 0.38, -len / 2 - 0.02);
+
+    // Sport Rear Spoiler (Coupe) or Roof Rails (Q8 SUV)
+    if (!isSUV) {
+      const spoiler = new THREE.Mesh(new THREE.BoxGeometry(w - 0.06, 0.08, 0.32), this.mat.charcoal);
+      spoiler.position.set(0, wheelR + bodyH + 0.22, -len / 2 + 0.22);
+      car.add(spoiler);
+    } else {
+      [-0.62, 0.62].forEach((rx) => {
+        const rail = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.1, 1.7), this.mat.chrome);
+        rail.position.set(rx, wheelR + bodyH + cabH + 0.04, cabZ);
+        car.add(rail);
+      });
+    }
+
+    car.add(chassis, hood, cab, roof, grille, grilleTrim, drlL, drlR, rearBar);
+    return car;
+  }
+
+  /**
+   * 🚘 8-PLOT MEGA AUDI LUXURY CAR SHOWROOM (`audi_showroom`)
+   * Features: Panoramic silver-and-glass showroom hall, iconic 3D 4 Interlocking Chrome Audi Rings,
+   * rotating glass display turntable, 6 real detailed 3D Audi models, and animated visitors/managers!
+   */
+  _buildEightPlotAudiShowroom(plotId, ownerName = "") {
+    const g = new THREE.Group();
+
+    // Sleek Polished Dark Showroom Floor & Front Outdoor VIP Display Apron
+    const floorIndoor = new THREE.Mesh(new THREE.BoxGeometry(31.5, 0.16, 8.8), this.mat.marble);
+    floorIndoor.position.set(0, 0.32, -2.4);
+    const apronOutdoor = new THREE.Mesh(new THREE.BoxGeometry(32.0, 0.12, 5.4), this.mat.tarmacGrey);
+    apronOutdoor.position.set(0, 0.3, 4.7);
+
+    // Architectural Rear Wall + Silver Aluminum Pillars + Glass Curtain Front Wall
+    const backWall = new THREE.Mesh(new THREE.BoxGeometry(31.5, 6.2, 0.6), this.mat.audiBlack);
+    backWall.position.set(0, 3.4, -6.5);
+    const sideWallL = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6.2, 8.8), this.mat.audiSilver);
+    sideWallL.position.set(-15.5, 3.4, -2.4);
+    const sideWallR = sideWallL.clone();
+    sideWallR.position.x = 15.5;
+
+    // Clear Glass Panoramic Windows on Front (so all 4 indoor Audi cars & rotating turntable shine through!)
+    const frontGlass = new THREE.Mesh(new THREE.BoxGeometry(30.6, 5.4, 0.14), this.mat.glass);
+    frontGlass.position.set(0, 3.1, 1.9);
+
+    // Sweeping Modern Cantilevered Silver Roof + Dark Fascia + Red Audi Sport Accent Stripe
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(32.8, 0.75, 11.4), this.mat.audiSilver);
+    roof.position.set(0, 6.85, -1.5);
+    const fascia = new THREE.Mesh(new THREE.BoxGeometry(33.0, 1.05, 0.35), this.mat.audiBlack);
+    fascia.position.set(0, 6.95, 4.15);
+    const redStripe = new THREE.Mesh(new THREE.BoxGeometry(33.1, 0.2, 0.38), this.mat.audiRed);
+    redStripe.position.set(0, 6.38, 4.16);
+
+    // Front Support Columns
+    [-14.5, -5.2, 5.2, 14.5].forEach((cx) => {
+      const col = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 6.4, 8), this.mat.audiSilver);
+      col.position.set(cx, 3.5, 3.8);
+      g.add(col);
+    });
+
+    // ICONIC 3D FOUR INTERLOCKING CHROME AUDI RINGS on the Rooftop Pedestal!
+    const ringsGroup = new THREE.Group();
+    ringsGroup.position.set(0, 8.75, 3.6);
+    const ringGeo = new THREE.TorusGeometry(0.92, 0.14, 8, 20);
+    [-2.1, -0.7, 0.7, 2.1].forEach((rx) => {
+      const ring = new THREE.Mesh(ringGeo, this.mat.audiSilver);
+      ring.position.x = rx;
+      ringsGroup.add(ring);
+    });
+    const ringPedestal = new THREE.Mesh(new THREE.BoxGeometry(6.8, 0.45, 0.9), this.mat.audiBlack);
+    ringPedestal.position.set(0, 7.55, 3.6);
+    g.add(ringsGroup, ringPedestal);
+
+    // Mounted Facade Signboard ("AUDI SHOWROOM" + Owner Name!)
+    const subTxt = ownerName ? `${ownerName.toUpperCase()} • LUXURY MOTORS` : "LUXURY MOTORS • 8 PLOTS";
+    const audiBoard = this._makeBuildingBoard("AUDI SHOWROOM", subTxt, "#09090b", "#ef4444", 12.6, 1.35);
+    audiBoard.position.set(-8.6, 6.98, 4.36);
+    const audiBoardR = this._makeBuildingBoard("QUATTRO • R8 • Q8", "TEST DRIVE LIVE", "#09090b", "#e2e8f0", 8.8, 1.25);
+    audiBoardR.position.set(9.4, 6.98, 4.36);
+
+    // 1. ROTATING CENTER DISPLAY TURNTABLE + PEARL WHITE AUDI R8 SUPERCAR!
+    const turntable = new THREE.Group();
+    turntable.position.set(0, 0.42, -2.0);
+    const disc = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 3.4, 0.22, 20), this.mat.audiBlack);
+    const ledRing = new THREE.Mesh(new THREE.RingGeometry(3.05, 3.35, 24), this.mat.studioCyan);
+    ledRing.rotation.x = -Math.PI / 2;
+    ledRing.position.y = 0.13;
+    const heroR8 = this._makeRealAudiCarMesh(this.mat.audiWhite, false);
+    heroR8.position.set(0, 0.12, 0);
+    turntable.add(disc, ledRing, heroR8);
+    g.add(turntable);
+    this.turntableRotors.push({ plotId, mesh: turntable, speed: 0.75 });
+
+    // 2. 3 MORE REAL AUDI CARS INSIDE THE GLASS SHOWROOM
+    const carRedR8 = this._makeRealAudiCarMesh(this.mat.audiRed, false);
+    carRedR8.position.set(-9.5, 0.4, -2.2);
+    carRedR8.rotation.y = 0.45;
+
+    const carBlueEtron = this._makeRealAudiCarMesh(this.mat.audiBlue, false);
+    carBlueEtron.position.set(9.5, 0.4, -2.2);
+    carBlueEtron.rotation.y = -0.45;
+
+    const carSilverQ8 = this._makeRealAudiCarMesh(this.mat.audiSilver, true);
+    carSilverQ8.position.set(-12.6, 0.4, -2.2);
+    carSilverQ8.rotation.y = 0.25;
+
+    // 3. 2 VIP TEST-DRIVE AUDI CARS PARKED OUTDOOR IN FRONT!
+    const carBlackRS7 = this._makeRealAudiCarMesh(this.mat.audiBlack, false);
+    carBlackRS7.position.set(-8.2, 0.36, 4.9);
+    carBlackRS7.rotation.y = Math.PI / 2 - 0.2;
+
+    const carGoldRS6 = this._makeRealAudiCarMesh(this.mat.richGoldTrim, true);
+    carGoldRS6.position.set(8.2, 0.36, 4.9);
+    carGoldRS6.rotation.y = -Math.PI / 2 + 0.2;
+
+    g.add(carRedR8, carBlueEtron, carSilverQ8, carBlackRS7, carGoldRS6);
+
+    // Showroom Staff & Visitors admiring the Audi fleet
+    const mgr = this._createCharacter({ shirtMat: this.mat.audiBlack, pantsMat: this.mat.darkPants, scale: 0.96 });
+    g.add(mgr);
+    this.landmarkActors.push({ plotId, mesh: mgr, mode: "patrol_x", baseX: 0, baseZ: 3.4, range: 4.5, speed: 1.1, phase: 0 });
+
+    const buyer = this._createCharacter({ shirtMat: this.mat.wallBlue, pantsMat: this.mat.darkPants, scale: 0.96 });
+    g.add(buyer);
+    this.landmarkActors.push({ plotId, mesh: buyer, mode: "patrol_x", baseX: -8.5, baseZ: 6.4, range: 2.6, speed: 1.2, phase: 1.6 });
+
+    g.add(floorIndoor, apronOutdoor, backWall, sideWallL, sideWallR, frontGlass, roof, fascia, redStripe, audiBoard, audiBoardR);
+    g.userData.labelY = 11.4;
+    return g;
+  }
+
+  /**
+   * 📸 2-PLOT BUILDING BUILDER: FOLLOWER PHOTO STUDIO (`photo_studio`)
+   * Features: 14.6 x 7.2 road-facing modern studio, Giant 3D DSLR Camera Sculpture on roof,
+   * personalized Follower @username storefront signboard, glass window showing studio backdrop,
+   * flashing softbox lights, tripod camera, photographer & posing model!
+   */
+  _buildTwoPlotBuilding(type, plotId, ownerName = "") {
+    const g = new THREE.Group();
+    const winMat = this.timeOfDay === "night" ? this.mat.windowNight : this.mat.windowDay;
+
+    // Main Modern Studio Structure (13.4 wide x 4.4 tall x 5.6 deep)
+    const body = new THREE.Mesh(new THREE.BoxGeometry(13.4, 4.4, 5.4), this.mat.charcoal);
+    body.position.set(0, 2.25, -0.5);
+
+    const creamWing = new THREE.Mesh(new THREE.BoxGeometry(4.4, 4.5, 5.6), this.mat.stuccoIvory);
+    creamWing.position.set(-4.6, 2.3, -0.45);
+
+    const roofSlab = new THREE.Mesh(new THREE.BoxGeometry(14.0, 0.42, 6.2), this.mat.slateTrim);
+    roofSlab.position.set(0, 4.65, -0.3);
+
+    const neonBar = new THREE.Mesh(new THREE.BoxGeometry(13.8, 0.16, 0.2), this.mat.studioCyan);
+    neonBar.position.set(0, 4.42, 2.82);
+
+    // Wide Clear Glass Studio Display Window (Right & Center) + Entrance Door (Left)
+    const studioGlass = new THREE.Mesh(new THREE.BoxGeometry(7.8, 3.1, 0.12), this.mat.glass);
+    studioGlass.position.set(2.1, 1.8, 2.22);
+
+    const door = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.5, 0.16), this.mat.teakWood);
+    door.position.set(-4.6, 1.35, 2.36);
+    const winSide = new THREE.Mesh(this.geo.win, winMat);
+    winSide.position.set(-4.6, 3.3, 2.38);
+    winSide.userData.isWindow = true;
+
+    // GIANT 3D DSLR CAMERA SCULPTURE MOUNTED ON THE STUDIO ROOF!
+    const camGroup = new THREE.Group();
+    camGroup.position.set(-4.4, 5.75, 0.2);
+    const camBody = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.65, 1.15), this.mat.audiBlack);
+    const camGrip = new THREE.Mesh(new THREE.BoxGeometry(0.65, 1.68, 1.32), this.mat.charcoal);
+    camGrip.position.set(-1.1, 0, 0.1);
+    const camPrism = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.55, 0.95), this.mat.audiBlack);
+    camPrism.position.set(0.1, 1.05, 0);
+    const shutterBtn = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.18, 8), this.mat.audiRed);
+    shutterBtn.position.set(-0.95, 0.9, 0.15);
+    const lensBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.68, 0.72, 1.05, 14), this.mat.charcoal);
+    lensBarrel.rotation.x = Math.PI / 2;
+    lensBarrel.position.set(0.15, -0.05, 0.85);
+    const lensRing = new THREE.Mesh(new THREE.TorusGeometry(0.66, 0.06, 6, 16), this.mat.richGoldTrim);
+    lensRing.position.set(0.15, -0.05, 1.25);
+    const lensGlass = new THREE.Mesh(new THREE.CylinderGeometry(0.54, 0.54, 0.08, 12), this.mat.oceanDeep);
+    lensGlass.rotation.x = Math.PI / 2;
+    lensGlass.position.set(0.15, -0.05, 1.38);
+    camGroup.add(camBody, camGrip, camPrism, shutterBtn, lensBarrel, lensRing, lensGlass);
+
+    // PERSONALIZED FOLLOWER PHOTO STUDIO SIGNBOARD (shows follower's exact name!)
+    const cleanName = (ownerName || "PRO PHOTO").replace(/^@/, "").toUpperCase();
+    const titleStr = cleanName.length > 12 ? cleanName.slice(0, 12) : `${cleanName} STUDIO`;
+    const studioBoard = this._makeBuildingBoard(titleStr, "PHOTO • VIDEO • DRONE 4K", "#0f172a", "#22d3ee", 8.4, 1.25);
+    studioBoard.position.set(2.1, 4.95, 2.86);
+
+    // INTERIOR STUDIO SCENE (Visible right through the glass window + outdoor photoshoot bay!)
+    const backdrop = new THREE.Mesh(new THREE.BoxGeometry(3.8, 2.9, 0.12), this.mat.wallWhite);
+    backdrop.position.set(4.2, 1.65, -0.6);
+
+    // 2 Studio Softbox Lights on Tripods + Periodic Animated Camera Flash!
+    const flashBulb = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.75, 0.25), this.mat.studioFlash);
+    flashBulb.position.set(2.2, 2.35, 0.65);
+    flashBulb.rotation.y = Math.PI / 4;
+    const stand1 = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.08, 2.2, 5), this.mat.charcoal);
+    stand1.position.set(2.2, 1.15, 0.65);
+    this.studioFlashes.push({ plotId, mesh: flashBulb, phase: Math.random() * 6 });
+
+    // Photographer with Tripod Camera + Posing Model right in front of the studio!
+    const tripod = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.25, 1.2, 4), this.mat.charcoal);
+    tripod.position.set(0.6, 0.65, 2.95);
+    const miniCam = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.3, 0.35), this.mat.audiBlack);
+    miniCam.position.set(0.6, 1.35, 2.95);
+
+    const photog = this._createCharacter({ shirtMat: this.mat.charcoal, pantsMat: this.mat.darkPants, scale: 0.92 });
+    photog.position.set(-0.15, 0.14, 2.95);
+    photog.rotation.y = Math.PI / 2;
+
+    const model = this._createCharacter({ shirtMat: this.mat.wallCoral, pantsMat: this.mat.wallBlue, scale: 0.92 });
+    g.add(model);
+    this.landmarkActors.push({ plotId, mesh: model, mode: "guard", baseX: 2.8, baseZ: 2.95, range: 0.4, speed: 1.8, phase: 0 });
+
+    g.add(body, creamWing, roofSlab, neonBar, studioGlass, door, winSide, camGroup, studioBoard, backdrop, stand1, flashBulb, tripod, miniCam, photog);
+    g.userData.labelY = 7.8;
+    return g;
+  }
+
   _buildEightPlotCricketStadium(plotId) {
     const g = new THREE.Group();
 
@@ -2819,9 +3476,116 @@ export class FollowerTownEngine {
   }
 
   // 4-PLOT GRAND LANDMARKS
-  _buildFourPlotLandmark(type, plotId) {
+  _buildFourPlotLandmark(type, plotId, ownerName = "") {
     const g = new THREE.Group();
     const winMat = this.timeOfDay === "night" ? this.mat.windowNight : this.mat.windowDay;
+
+
+    // 4-PLOT PERSONALIZED FOLLOWER FITNESS GYM (Custom Follower Name on Gym Signboard + Live Workouts!)
+    if (type === "gym") {
+      // Modern Matte-Black & Brushed Concrete Fitness Club Hall
+      const mainHall = new THREE.Mesh(new THREE.BoxGeometry(12.6, 5.2, 8.6), this.mat.gymBlack);
+      mainHall.position.set(0, 2.65, -1.6);
+
+      const roofCap = new THREE.Mesh(new THREE.BoxGeometry(13.2, 0.45, 9.4), this.mat.slateTrim);
+      roofCap.position.set(0, 5.45, -1.5);
+
+      // Glowing Neon Orange Energy Strips
+      const neonTop = new THREE.Mesh(new THREE.BoxGeometry(13.3, 0.22, 0.28), this.mat.gymOrange);
+      neonTop.position.set(0, 5.2, 3.15);
+      const neonSideL = new THREE.Mesh(new THREE.BoxGeometry(0.24, 5.0, 0.28), this.mat.gymOrange);
+      neonSideL.position.set(-6.32, 2.65, 2.75);
+      const neonSideR = neonSideL.clone();
+      neonSideR.position.x = 6.32;
+
+      // Clear Panoramic Glass Front Wall (shows inside gym equipment!)
+      const frontGlass = new THREE.Mesh(new THREE.BoxGeometry(11.4, 3.8, 0.14), this.mat.glass);
+      frontGlass.position.set(0, 2.1, 2.72);
+
+      // GIANT 3D BARBELL / DUMBBELL SCULPTURE ON THE ROOF!
+      const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 7.6, 8), this.mat.gymSteel);
+      bar.rotation.z = Math.PI / 2;
+      bar.position.set(0, 6.8, -0.4);
+      const pBigGeo = new THREE.CylinderGeometry(1.05, 1.05, 0.38, 12);
+      pBigGeo.rotateZ(Math.PI / 2);
+      const pMedGeo = new THREE.CylinderGeometry(0.78, 0.78, 0.34, 12);
+      pMedGeo.rotateZ(Math.PI / 2);
+      [-2.8, 2.8].forEach((px) => {
+        const pb = new THREE.Mesh(pBigGeo, this.mat.gymBlack);
+        pb.position.set(px, 6.8, -0.4);
+        const pm = new THREE.Mesh(pMedGeo, this.mat.gymOrange);
+        pm.position.set(px + (px < 0 ? -0.42 : 0.42), 6.8, -0.4);
+        g.add(pb, pm);
+      });
+      [-1.8, 1.8].forEach((sx) => {
+        const sup = new THREE.Mesh(new THREE.BoxGeometry(0.32, 1.35, 0.32), this.mat.gymSteel);
+        sup.position.set(sx, 6.1, -0.4);
+        g.add(sup);
+      });
+
+      // CUSTOM PERSONALIZED FOLLOWER NAME GYM SIGNBOARDS (Front + Side!)
+      const rawName = (ownerName || "FITNESS").trim();
+      const dispName = rawName.startsWith("@") ? rawName.toUpperCase() : rawName.toUpperCase();
+      const gymTitle = dispName.includes("GYM") ? dispName : `${dispName} GYM`;
+      const gymBoard = this._makeBuildingBoard(gymTitle, "FITNESS CLUB • PRO WORKOUT", "#18181b", "#f97316", 10.6, 1.55);
+      gymBoard.position.set(0, 4.95, 3.32);
+      const sideBoard = this._makeBuildingBoard(gymTitle, "24/7 FITNESS", "#18181b", "#facc15", 6.6, 1.15);
+      sideBoard.rotation.y = Math.PI / 2;
+      sideBoard.position.set(6.36, 4.1, -1.6);
+
+      // INTERIOR & OUTDOOR GYM EQUIPMENT (Treadmills, Bench Press, Dumbbell Rack, Pull-Up Rig!)
+      const rubberMat = new THREE.Mesh(new THREE.BoxGeometry(11.6, 0.1, 3.8), this.mat.charcoal);
+      rubberMat.position.set(0, 0.16, 4.8);
+
+      // 2 Treadmills (left bay)
+      [-4.2, -2.4].forEach((tx) => {
+        const tBase = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.18, 2.2), this.mat.gymBlack);
+        tBase.position.set(tx, 0.28, 4.7);
+        const tPost = new THREE.Mesh(new THREE.BoxGeometry(0.95, 1.35, 0.25), this.mat.gymSteel);
+        tPost.position.set(tx, 0.95, 3.75);
+        g.add(tBase, tPost);
+      });
+
+      // Bench Press + Barbell (center-right)
+      const bench = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.55, 2.1), this.mat.audiRed);
+      bench.position.set(1.8, 0.45, 4.7);
+      const rackL = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.3, 0.14), this.mat.gymSteel);
+      rackL.position.set(1.25, 0.85, 4.0);
+      const rackR = rackL.clone();
+      rackR.position.x = 2.35;
+      const miniBar = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.9, 6), this.mat.gymSteel);
+      miniBar.rotation.z = Math.PI / 2;
+      miniBar.position.set(1.8, 1.35, 4.0);
+      g.add(bench, rackL, rackR, miniBar);
+
+      // Dumbbell Rack (far right)
+      const dRack = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.85, 0.65), this.mat.gymSteel);
+      dRack.position.set(4.6, 0.6, 4.5);
+      g.add(dRack);
+
+      // 3 LIVE ANIMATED GYM MEMBERS WORKING OUT (Treadmill Runner + 2 Dumbbell Lifters!)
+      const runner = this._createCharacter({ shirtMat: this.mat.gymOrange, pantsMat: this.mat.darkPants, scale: 0.94 });
+      g.add(runner);
+      this.landmarkActors.push({ plotId, mesh: runner, mode: "gym_run", baseX: -4.2, baseZ: 4.85, range: 0.2, speed: 9.0, phase: 0 });
+
+      const makeLifter = (lx, lz, shirtMat, phase) => {
+        const lifter = this._createCharacter({ shirtMat, pantsMat: this.mat.darkPants, scale: 0.96 });
+        const dbGeo = new THREE.BoxGeometry(0.16, 0.16, 0.42);
+        const dbL = new THREE.Mesh(dbGeo, this.mat.gymBlack);
+        dbL.position.set(-0.34, 0.72, 0.18);
+        const dbR = dbL.clone();
+        dbR.position.x = 0.34;
+        lifter.add(dbL, dbR);
+        g.add(lifter);
+        this.landmarkActors.push({ plotId, mesh: lifter, mode: "gym_lift", baseX: lx, baseZ: lz, range: 0.22, speed: 4.2, phase });
+      };
+      makeLifter(0.1, 5.1, this.mat.wallBlue, 0);
+      makeLifter(3.8, 5.4, this.mat.wallMint, 1.7);
+
+      g.add(mainHall, roofCap, neonTop, neonSideL, neonSideR, frontGlass, bar, gymBoard, sideBoard, rubberMat);
+      g.userData.labelY = 9.0;
+      return g;
+    }
 
     if (type === "petrol_bunk") {
       const canopy = new THREE.Mesh(new THREE.BoxGeometry(12.2, 0.7, 6.6), this.mat.petrolRed);
@@ -3458,6 +4222,7 @@ export class FollowerTownEngine {
   getPlotWorldCenter(plotId) {
     if (plotId === "ST_JUNCTION") return { x: 0, y: 4, z: 0, size: 4 };
     if (plotId === "AIRPORT") return { x: this.airportX - 4, y: 5, z: 4, size: 12 };
+    if (plotId === "BEACH") return { x: this.beachX + 6, y: 4, z: -2, size: 12 };
     const plotIndex = parseInt(plotId.replace("plot_", ""), 10) - 1;
     if (isNaN(plotIndex) || plotIndex < 0) return { x: 0, y: 2, z: 0, size: 1 };
 
@@ -3474,12 +4239,17 @@ export class FollowerTownEngine {
     if (size === 4) {
       return { x: pos.blockCenterX, y: 3.5, z: pos.blockCenterZ, size: 4 };
     }
+    if (size === 2) {
+      const twoInfo = getTwoPlotGroup(plotId);
+      const rowZ = pos.blockCenterZ + (twoInfo.isNorthRow ? -this.PLOT_SIZE / 2 : this.PLOT_SIZE / 2);
+      return { x: pos.blockCenterX, y: 3.2, z: rowZ, size: 2 };
+    }
     return { x: pos.x, y: 2.5, z: pos.z, size: 1 };
   }
 
   focusPlot(plotId, fastSpeed = 0.1) {
     const center = this.getPlotWorldCenter(plotId);
-    const dist = center.size === 12 ? 64 : center.size === 8 ? 36 : center.size === 4 ? 28 : 20;
+    const dist = center.size === 12 ? 62 : center.size === 8 ? 38 : center.size === 4 ? 28 : center.size === 2 ? 23 : 20;
 
     this.cameraGoal = {
       target: new THREE.Vector3(center.x, center.y, center.z),
@@ -3534,12 +4304,22 @@ export class FollowerTownEngine {
       plotId: "AIRPORT"
     });
 
+    stops.push({
+      tag: "GOLDEN SAND BEACH & VILLA",
+      name: `🏖️ SHERU BHAI BEACH • ${this.beachOwner || "@follower_beach"}`,
+      target: new THREE.Vector3(this.beachX + 8, 4, -2),
+      camPos: new THREE.Vector3(this.beachX - 46, 36, 44),
+      duration: 2.5,
+      speed: 0.14,
+      plotId: "BEACH"
+    });
+
     const landmarks = [];
     const houses = [];
     Object.entries(allPlotsObj || {}).forEach(([pid, p]) => {
       if (!p || p.status !== "built") return;
       const sz = getRequiredSize(p.buildingType);
-      if (sz >= 4) landmarks.push({ pid, p, sz });
+      if (sz >= 2) landmarks.push({ pid, p, sz });
       else houses.push({ pid, p, idx: parseInt(pid.replace("plot_", ""), 10) || 0 });
     });
 
@@ -3548,7 +4328,7 @@ export class FollowerTownEngine {
       const d = lm.sz === 8 ? 34 : 24;
       const ang = i % 2 === 0 ? 1 : -1;
       stops.push({
-        tag: lm.sz === 8 ? "8-PLOT STADIUM" : "TOWN LANDMARK",
+        tag: lm.sz === 8 ? "8-PLOT MEGA LANDMARK" : lm.sz === 2 ? "2-PLOT STUDIO" : "TOWN LANDMARK",
         name: lm.p.ownerName || BUILDING_LABELS[lm.p.buildingType],
         target: new THREE.Vector3(c.x, c.y, c.z),
         camPos: new THREE.Vector3(c.x + d * ang, d * 0.9, c.z + d),
@@ -3818,6 +4598,8 @@ export class FollowerTownEngine {
     const q = query.trim().toLowerCase().replace(/^@/, "");
     if (!q) return null;
     if (q.includes("airport") || q.includes("plane") || q.includes("flight") || q.includes("heli") || q.includes("diamond")) return "AIRPORT";
+    const beachClean = (this.beachOwner || "").toLowerCase().replace(/^@/, "");
+    if (q.includes("beach") || q.includes("ocean") || q.includes("sea") || (beachClean && beachClean.includes(q))) return "BEACH";
     if (q.includes("sheru") || q.includes("bhai") || q.includes("junction") || q.includes("statue") || q === "st") return "ST_JUNCTION";
     for (const [plotId, data] of this.plotDataMap.entries()) {
       if (!data || data.status !== "built") continue;
@@ -4151,6 +4933,14 @@ export class FollowerTownEngine {
           const dz = Math.sin(t * 0.65) * a.range;
           a.mesh.position.set(a.baseX, 0.14 + Math.abs(Math.sin(t * 2.5)) * 0.08, a.baseZ + dz);
           a.mesh.rotation.y = a.baseX < -3.0 ? Math.PI / 2 : -Math.PI / 2;
+        } else if (a.mode === "gym_run") {
+          // Fast jogging bounce on gym treadmill!
+          a.mesh.position.set(a.baseX, 0.4 + Math.abs(Math.sin(t)) * 0.18, a.baseZ);
+          a.mesh.rotation.y = Math.PI;
+        } else if (a.mode === "gym_lift") {
+          // Rhythmic dumbbell curl & squat pump!
+          a.mesh.position.set(a.baseX, 0.22 + Math.abs(Math.sin(t)) * 0.14, a.baseZ);
+          a.mesh.rotation.y = Math.sin(t * 0.3) * 0.25;
         } else if (a.mode === "ball_x") {
           const bx = a.baseX + Math.sin(t) * a.range;
           const by = 0.35 + Math.abs(Math.cos(t * 2)) * 1.3;
@@ -4468,6 +5258,34 @@ export class FollowerTownEngine {
       // Spin Diamond Helicopter Main & Tail Rotors
       if (dHeli.userData.mainRotor) dHeli.userData.mainRotor.rotation.y += dt * rotorSpeed;
       if (dHeli.userData.tailRotor) dHeli.userData.tailRotor.rotation.x += dt * (rotorSpeed * 1.4);
+    }
+
+
+    // 🏖️ Animated Rolling Ocean Waves & Chilling Sheru Bhai on the Beach
+    if (this.lifeEnabled && this.beachSim) {
+      for (const w of this.beachSim.waveStrips) {
+        const waveCycle = (elapsed * 0.65 + w.phase) % 1;
+        w.mesh.position.x = w.baseX + waveCycle * 6.5;
+        w.mesh.scale.set(1.0 + Math.sin(waveCycle * Math.PI) * 0.4, 1, 1);
+      }
+      if (this.beachSim.chillingHead) {
+        this.beachSim.chillingHead.rotation.y = Math.sin(elapsed * 0.9) * 0.22;
+      }
+    }
+
+    // 🚘 Rotating Glass Car Turntable inside 8-Plot Audi Showroom
+    if (this.lifeEnabled && this.turntableRotors.length > 0) {
+      for (const tr of this.turntableRotors) {
+        tr.mesh.rotation.y += dt * tr.speed;
+      }
+    }
+
+    // 📸 Periodic Studio Softbox Camera Flash inside 2-Plot Photo Studios
+    if (this.lifeEnabled && this.studioFlashes.length > 0) {
+      for (const sf of this.studioFlashes) {
+        const pulse = (elapsed * 0.7 + sf.phase) % 2.4;
+        sf.mesh.visible = pulse < 0.18 || (pulse > 0.3 && pulse < 0.42);
+      }
     }
 
     // Animated Water Fountain Jets at Sheru Bhai Lion Statue

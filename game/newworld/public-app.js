@@ -1,5 +1,5 @@
-import { db, ref, onValue } from "./firebase-config.js?v=17";
-import { FollowerTownEngine, BUILDING_LABELS, getRequiredSize } from "./world-engine.js?v=17";
+import { db, ref, onValue } from "./firebase-config.js?v=18";
+import { FollowerTownEngine, BUILDING_LABELS, getRequiredSize } from "./world-engine.js?v=18";
 
 let allPlots = {};
 const container = document.getElementById("canvas-container");
@@ -23,7 +23,20 @@ const engine = new FollowerTownEngine(container, (plotId, data) => {
 });
 
 function openPlotCard(plotId, data) {
-    if (plotId === "AIRPORT") {
+      if (plotId === "BEACH") {
+    const bOwner = engine.beachOwner || "@follower_beach";
+    document.getElementById("card-badge").textContent = "GOLDEN SAND BEACH & VILLA";
+    document.getElementById("card-owner").textContent = `🏖️ ${bOwner}'s Beach House`;
+    document.getElementById("card-role").textContent = "Sheru Bhai chilling under the beach umbrella + Luxury Beachfront Villa overlooking animated ocean waves!";
+    document.getElementById("card-type").textContent = "SHERU BHAI BEACH";
+    document.getElementById("card-day").textContent = "";
+    websiteBtn.classList.add("hidden");
+    if (sheru3dBtn) sheru3dBtn.classList.add("hidden");
+    plotCard.classList.remove("hidden");
+    return;
+  }
+
+  if (plotId === "AIRPORT") {
     document.getElementById("card-badge").textContent = "20-ACRE INTERNATIONAL AIRPORT";
     document.getElementById("card-owner").textContent = "✈️ SHERU BHAI INTL AIRPORT";
     document.getElementById("card-role").textContent = "Outside City (20 Acres) • Live Shuttle Buses, Passenger Flights & Sheru Bhai arriving in Diamond Car to fly his Diamond Helicopter!";
@@ -56,7 +69,15 @@ function openPlotCard(plotId, data) {
     document.getElementById("card-owner").textContent = data.ownerName || label;
     document.getElementById("card-role").textContent = data.role || "Follower Nagaram Resident";
     document.getElementById("card-type").textContent =
-      size === 8 ? "8-PLOT MEGA STADIUM" : size === 4 ? "4-PLOT LANDMARK" : data.buildingType.startsWith("tower_") ? "5-FLOOR MODERN TOWER" : "CLASSIC HOUSE";
+      size === 8
+        ? (data.buildingType === "audi_showroom" ? "8-PLOT AUDI SHOWROOM" : "8-PLOT MEGA STADIUM")
+        : size === 4
+        ? "4-PLOT LANDMARK"
+        : size === 2
+        ? "2-PLOT STUDIO"
+        : data.buildingType.startsWith("tower_")
+        ? "5-FLOOR MODERN TOWER"
+        : "CLASSIC HOUSE";
     document.getElementById("card-day").textContent = `Day ${data.builtDay || 1}`;
   } else {
     document.getElementById("card-badge").textContent = "AVAILABLE PLOT";
@@ -108,6 +129,7 @@ onValue(ref(db, "worldSettings"), (snapshot) => {
   document.getElementById("town-title").textContent = name;
   document.getElementById("stat-day").textContent = `Day ${val.dayNumber || 1}`;
   engine.setTownName(name);
+  if (val.beachOwner !== undefined) engine.setBeachOwner(val.beachOwner);
   engine.setTimeOfDay(val.timeOfDay || "day");
   engine.lifeEnabled = val.lifeEnabled !== false;
 });
@@ -115,9 +137,9 @@ onValue(ref(db, "worldSettings"), (snapshot) => {
 function runSearch() {
   const q = document.getElementById("search-input").value;
   const foundId = engine.findPlotByQuery(q);
-  if (foundId === "ST_JUNCTION") {
-    engine.focusPlot("ST_JUNCTION");
-    openPlotCard("ST_JUNCTION", null);
+  if (foundId === "ST_JUNCTION" || foundId === "AIRPORT" || foundId === "BEACH") {
+    engine.focusPlot(foundId);
+    openPlotCard(foundId, null);
   } else if (foundId) {
     engine.focusPlot(foundId);
     openPlotCard(foundId, allPlots[foundId]);
@@ -238,5 +260,15 @@ if (btnJumpAirport) {
     engine.focusPlot("AIRPORT");
     openPlotCard("AIRPORT", null);
     showToast("✈️ Welcome to 20-Acre Sheru Bhai Airport!");
+  });
+}
+
+// Visitor Quick-Jump to Sheru Bhai Beach & Beach House
+const btnJumpBeach = document.getElementById("btn-jump-beach");
+if (btnJumpBeach) {
+  btnJumpBeach.addEventListener("click", () => {
+    engine.focusPlot("BEACH");
+    openPlotCard("BEACH", null);
+    showToast("🏖️ Sheru Bhai chilling at the Beach!");
   });
 }
