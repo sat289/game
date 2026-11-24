@@ -8,7 +8,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged
-} from "./firebase-config.js?v=21";
+} from "./firebase-config.js?v=22";
 import {
   FollowerTownEngine,
   BUILDING_LABELS,
@@ -16,7 +16,7 @@ import {
   getTwoPlotGroup,
   getBlockPlotIds,
   getEightPlotGroup
-} from "./world-engine.js?v=21";
+} from "./world-engine.js?v=22";
 
 let isAdmin = false;
 let selectedPlotId = "plot_0001";
@@ -953,12 +953,14 @@ btnBuildReel.addEventListener("click", () => {
 });
 
 document.getElementById("reel-exit").addEventListener("click", () => {
-  engine.stopProReelTour();
-  engine.stopDroneView();
-  engine.stopBuildReelTour();
-  engine.autoSpin = false;
+  engine.stopAllReelModes();
+  engine.setSimSpeed(1.0);
+  if (typeof stopCanvasRecording === "function") stopCanvasRecording();
+  if (typeof exitCleanScreen === "function") exitCleanScreen();
   reelControls.classList.add("hidden");
   reelBanner.classList.add("hidden");
+  document.getElementById("reel-hook-editor")?.classList.add("hidden");
+  document.getElementById("reel-shotlist-panel")?.classList.add("hidden");
   topHud.classList.remove("hidden");
   adminDock.classList.remove("hidden");
 });
@@ -1109,5 +1111,495 @@ if (replayBuildBtn) {
     closeAllDrawers();
     engine.startSingleBuildReel(selectedPlotId, allPlots[selectedPlotId]);
     showToast("🏗️ Recording Cinema Construction Replay!");
+  });
+}
+
+// =========================================================
+// 🎬 PRO REEL STUDIO v22 CONTROLS (ADMIN PAGE ONLY!)
+// =========================================================
+const reelDockWrap = document.getElementById("reel-dock-wrap");
+const reelFrameGuide = document.getElementById("reel-frame-guide");
+const reelSafezone = document.getElementById("reel-safezone");
+const reelCountdown = document.getElementById("reel-countdown");
+const reelRecBadge = document.getElementById("reel-rec-badge");
+const reelRecTimer = document.getElementById("reel-rec-timer");
+const reelHookEditor = document.getElementById("reel-hook-editor");
+const reelShotlistPanel = document.getElementById("reel-shotlist-panel");
+
+const btnTrainCam = document.getElementById("reel-train-cam");
+const btnVipCam = document.getElementById("reel-vip-cam");
+const btnFlightCam = document.getElementById("reel-flight-cam");
+const btnTimelapse = document.getElementById("reel-timelapse-btn");
+const btn24hSky = document.getElementById("reel-24h-btn");
+const btnRandomVip = document.getElementById("reel-random-btn");
+const btnDiscoOutro = document.getElementById("reel-disco-btn");
+const btnStreetWalk = document.getElementById("reel-street-btn");
+const btnQueueOpen = document.getElementById("reel-queue-btn");
+
+const btnRecCanvas = document.getElementById("reel-rec-btn");
+const btnClean321 = document.getElementById("reel-clean-btn");
+const btnSimSpeed = document.getElementById("reel-speed-btn");
+const btnSmoothTime = document.getElementById("reel-smooth-time");
+const btnHookToggle = document.getElementById("reel-hook-btn");
+const btnSafezoneToggle = document.getElementById("reel-safezone-btn");
+
+function showReelBanner(tag, name) {
+  reelTagText.textContent = tag;
+  reelNameText.textContent = name;
+  reelBanner.classList.remove("hidden");
+  reelBanner.style.animation = "none";
+  void reelBanner.offsetWidth;
+  reelBanner.style.animation = "popIn 0.25s ease-out";
+}
+
+function resetModeButtons() {
+  if (btnTrainCam) { btnTrainCam.classList.remove("active"); btnTrainCam.textContent = "🚂 Train Cam"; }
+  if (btnVipCam) { btnVipCam.classList.remove("active"); btnVipCam.textContent = "💎 VIP Cam"; }
+  if (btnFlightCam) { btnFlightCam.classList.remove("active"); btnFlightCam.textContent = "✈️ Flight Cam"; }
+  if (btnTimelapse) { btnTimelapse.classList.remove("active"); btnTimelapse.textContent = "📈 Timelapse"; }
+  if (btn24hSky) { btn24hSky.classList.remove("active"); btn24hSky.textContent = "⏱️ 24H Sky"; }
+  if (btnRandomVip) { btnRandomVip.classList.remove("active"); btnRandomVip.textContent = "🎲 VIP Pick"; }
+  if (btnDiscoOutro) { btnDiscoOutro.classList.remove("active"); btnDiscoOutro.textContent = "🪩 Disco Outro"; }
+  if (btnStreetWalk) { btnStreetWalk.classList.remove("active"); btnStreetWalk.textContent = "🚶 Street POV"; }
+}
+
+// 1. 🚂 Train Chase Cam (Toggles Train 1 WAP-7 -> Train 2 Vande Bharat -> Stop!)
+let trainCamIdx = 0;
+if (btnTrainCam) {
+  btnTrainCam.addEventListener("click", () => {
+    if (engine.chaseCam.active && engine.chaseCam.mode === "train1") {
+      trainCamIdx = 2;
+      btnTrainCam.textContent = "🚄 Vande Cam";
+      showToast("🚄 Chasing Vande Bharat Express!");
+      engine.startChaseCam("train2", () => resetModeButtons());
+      return;
+    }
+    if (engine.chaseCam.active && engine.chaseCam.mode === "train2") {
+      engine.stopChaseCam();
+      resetModeButtons();
+      return;
+    }
+    resetModeButtons();
+    trainCamIdx = 1;
+    btnTrainCam.classList.add("active");
+    btnTrainCam.textContent = "🚂 WAP-7 (Tap: Vande)";
+    showToast("🚂 Chasing Indian Express through Mountain Tunnels!");
+    engine.startChaseCam("train1", () => resetModeButtons());
+  });
+}
+
+// 2. 💎 Sheru Bhai VIP Chase Cam (Diamond Car -> Red Carpet -> Diamond Helicopter!)
+if (btnVipCam) {
+  btnVipCam.addEventListener("click", () => {
+    if (engine.chaseCam.active && engine.chaseCam.mode === "vip") {
+      engine.stopChaseCam();
+      resetModeButtons();
+      return;
+    }
+    resetModeButtons();
+    btnVipCam.classList.add("active");
+    btnVipCam.textContent = "⏹ Stop VIP";
+    showToast("💎 Tracking Sheru Bhai (Diamond Car & Diamond Helicopter)!");
+    engine.startChaseCam("vip", () => resetModeButtons());
+  });
+}
+
+// 3. ✈️ Flight Takeoff Cam
+if (btnFlightCam) {
+  btnFlightCam.addEventListener("click", () => {
+    if (engine.chaseCam.active && engine.chaseCam.mode === "flight") {
+      engine.stopChaseCam();
+      resetModeButtons();
+      return;
+    }
+    resetModeButtons();
+    btnFlightCam.classList.add("active");
+    btnFlightCam.textContent = "⏹ Stop Flight";
+    showToast("✈️ Tracking Commercial Flight Takeoff & City Loop!");
+    engine.startChaseCam("flight", () => resetModeButtons());
+  });
+}
+
+// 4. 📈 City Growth Timelapse (Day 1 -> Today!)
+if (btnTimelapse) {
+  btnTimelapse.addEventListener("click", () => {
+    if (engine.timelapseState.active) {
+      engine.stopGrowthTimelapse();
+      resetModeButtons();
+      reelBanner.classList.add("hidden");
+      return;
+    }
+    resetModeButtons();
+    btnTimelapse.classList.add("active");
+    btnTimelapse.textContent = "⏹ Stop Lapse";
+    showToast("📈 Playing Day 1 → Today City Growth Timelapse!");
+    engine.startGrowthTimelapse(
+      allPlots,
+      (tag, name) => showReelBanner(tag, name),
+      () => {
+        resetModeButtons();
+        reelBanner.classList.add("hidden");
+      }
+    );
+  });
+}
+
+// 5. ⏱️ 24-Hour Skyline Hyperlapse
+if (btn24hSky) {
+  btn24hSky.addEventListener("click", () => {
+    if (engine.hyperlapse24h.active) {
+      engine.stop24HourHyperlapse();
+      resetModeButtons();
+      return;
+    }
+    resetModeButtons();
+    btn24hSky.classList.add("active");
+    btn24hSky.textContent = "⏹ Stop 24H";
+    showToast("⏱️ 24-Hour Skyline Hyperlapse Active!");
+    engine.start24HourHyperlapse(() => resetModeButtons());
+  });
+}
+
+// 6. 🎲 Random Follower Spotlight Roulette
+if (btnRandomVip) {
+  btnRandomVip.addEventListener("click", () => {
+    if (engine.buildReelTour.active) {
+      engine.stopBuildReelTour();
+      resetModeButtons();
+      reelBanner.classList.add("hidden");
+      return;
+    }
+    resetModeButtons();
+    btnRandomVip.classList.add("active");
+    btnRandomVip.textContent = "🎲 Picking...";
+    engine.startRandomFollowerReel(
+      allPlots,
+      (tag, name) => showReelBanner(tag, name),
+      () => {
+        resetModeButtons();
+        reelBanner.classList.add("hidden");
+      }
+    );
+  });
+}
+
+// 7. 🪩 Disco Statue Night Crane Outro
+if (btnDiscoOutro) {
+  btnDiscoOutro.addEventListener("click", () => {
+    if (engine.discoOutro.active) {
+      engine.stopDiscoOutro();
+      resetModeButtons();
+      return;
+    }
+    resetModeButtons();
+    btnDiscoOutro.classList.add("active");
+    btnDiscoOutro.textContent = "⏹ Stop Outro";
+    showToast("🪩 Disco Statue Night Crane Shot!");
+    engine.startDiscoOutro(() => resetModeButtons());
+  });
+}
+
+// 8. 🚶 Street-Level Walk POV
+if (btnStreetWalk) {
+  btnStreetWalk.addEventListener("click", () => {
+    if (engine.streetWalk.active) {
+      engine.stopStreetWalk();
+      resetModeButtons();
+      return;
+    }
+    resetModeButtons();
+    btnStreetWalk.classList.add("active");
+    btnStreetWalk.textContent = "⏹ Stop Walk";
+    showToast("🚶 Street-Level Walk POV Active!");
+    engine.startStreetWalk(() => resetModeButtons());
+  });
+}
+
+// 9. ⚡ Speed & Slow-Mo Toggle (0.5x / 1x / 2x)
+const speedSteps = [1.0, 0.5, 2.0];
+let speedStepIdx = 0;
+if (btnSimSpeed) {
+  btnSimSpeed.addEventListener("click", () => {
+    speedStepIdx = (speedStepIdx + 1) % speedSteps.length;
+    const sp = speedSteps[speedStepIdx];
+    engine.setSimSpeed(sp);
+    btnSimSpeed.textContent = sp === 0.5 ? "🐢 0.5x" : sp === 2.0 ? "⚡ 2x" : "⚡ 1x";
+    showToast(sp === 0.5 ? "🐢 Cinematic Slow-Mo (0.5x)" : sp === 2.0 ? "⚡ Hyperlapse Speed (2x)" : "▶️ Normal Speed (1x)");
+  });
+}
+
+// 10. 🌅 Smooth 2.4s Day -> Sunset -> Night Sky Fade
+if (btnSmoothTime) {
+  btnSmoothTime.addEventListener("click", () => {
+    const order = ["day", "sunset", "night"];
+    const next = order[(order.indexOf(engine.timeOfDay) + 1) % order.length];
+    engine.transitionTimeOfDay(next, 2.4);
+    showToast(next === "night" ? "🌙 Fading smoothly to Disco Night..." : next === "sunset" ? "🌇 Fading to Golden Sunset..." : "☀️ Fading to Sunny Day...");
+  });
+}
+
+// 11. 📐 Instagram Safe-Zone Overlay Toggle
+if (btnSafezoneToggle && reelSafezone) {
+  btnSafezoneToggle.addEventListener("click", () => {
+    const nowHidden = reelSafezone.classList.toggle("hidden");
+    btnSafezoneToggle.classList.toggle("active", !nowHidden);
+  });
+}
+
+// 12. 📝 Quick Editable Hook Banner
+if (btnHookToggle && reelHookEditor) {
+  btnHookToggle.addEventListener("click", () => {
+    reelShotlistPanel?.classList.add("hidden");
+    reelHookEditor.classList.toggle("hidden");
+  });
+  document.getElementById("btn-apply-hook")?.addEventListener("click", () => {
+    const t = document.getElementById("hook-tag-input")?.value.trim() || "SHERU BHAI CITY";
+    const h = document.getElementById("hook-title-input")?.value.trim() || "NEW UPDATE LIVE!";
+    showReelBanner(t, h);
+    reelHookEditor.classList.add("hidden");
+  });
+  document.getElementById("btn-clear-hook")?.addEventListener("click", () => {
+    reelBanner.classList.add("hidden");
+    reelHookEditor.classList.add("hidden");
+  });
+  document.getElementById("btn-close-hook")?.addEventListener("click", () => {
+    reelHookEditor.classList.add("hidden");
+  });
+}
+
+// 13. 👻 Auto-Hide Clean Screen + 3-2-1 Countdown (Double-tap anywhere to restore!)
+let isCleanScreen = false;
+let lastTapTime = 0;
+
+function exitCleanScreen() {
+  if (!isCleanScreen) return;
+  isCleanScreen = false;
+  reelControls.classList.remove("clean-active");
+  reelDockWrap?.classList.remove("hidden");
+  reelFrameGuide?.classList.remove("hidden");
+  showToast("🎬 Studio Controls Restored");
+}
+
+if (btnClean321 && reelCountdown) {
+  btnClean321.addEventListener("click", () => {
+    reelHookEditor?.classList.add("hidden");
+    reelShotlistPanel?.classList.add("hidden");
+    reelSafezone?.classList.add("hidden");
+    btnSafezoneToggle?.classList.remove("active");
+
+    let count = 3;
+    reelCountdown.textContent = String(count);
+    reelCountdown.classList.remove("hidden");
+    const timer = setInterval(() => {
+      count--;
+      if (count > 0) {
+        reelCountdown.textContent = String(count);
+      } else {
+        clearInterval(timer);
+        reelCountdown.classList.add("hidden");
+        isCleanScreen = true;
+        reelControls.classList.add("clean-active");
+        reelDockWrap?.classList.add("hidden");
+        reelFrameGuide?.classList.add("hidden");
+      }
+    }, 850);
+  });
+}
+
+window.addEventListener("pointerup", () => {
+  if (!isCleanScreen) return;
+  const now = Date.now();
+  if (now - lastTapTime < 340) {
+    exitCleanScreen();
+  }
+  lastTapTime = now;
+});
+
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && isCleanScreen) exitCleanScreen();
+});
+
+// 14. 🔴 Built-In Pure Canvas Video Recorder (MediaRecorder + captureStream)
+let mediaRecorder = null;
+let recordedChunks = [];
+let recStartTime = 0;
+let recInterval = null;
+
+function stopCanvasRecording() {
+  if (mediaRecorder && mediaRecorder.state !== "inactive") {
+    mediaRecorder.stop();
+  }
+  if (recInterval) {
+    clearInterval(recInterval);
+    recInterval = null;
+  }
+  reelRecBadge?.classList.add("hidden");
+  if (btnRecCanvas) {
+    btnRecCanvas.classList.remove("active");
+    btnRecCanvas.textContent = "🔴 REC";
+  }
+}
+
+if (btnRecCanvas) {
+  btnRecCanvas.addEventListener("click", () => {
+    if (mediaRecorder && mediaRecorder.state === "recording") {
+      stopCanvasRecording();
+      showToast("💾 Saving Reel video...");
+      return;
+    }
+
+    const canvas = engine.renderer?.domElement;
+    if (!canvas || typeof canvas.captureStream !== "function" || typeof MediaRecorder === "undefined") {
+      showToast("⚠️ Use phone Screen Recorder with 👻 Clean 3-2-1 on this browser!");
+      return;
+    }
+
+    try {
+      const stream = canvas.captureStream(30);
+      const mimeTypes = [
+        "video/webm;codecs=vp9",
+        "video/webm;codecs=vp8",
+        "video/webm",
+        "video/mp4"
+      ];
+      const chosenMime = mimeTypes.find((m) => MediaRecorder.isTypeSupported(m)) || "";
+      recordedChunks = [];
+      mediaRecorder = chosenMime ? new MediaRecorder(stream, { mimeType: chosenMime, videoBitsPerSecond: 4500000 }) : new MediaRecorder(stream);
+
+      mediaRecorder.ondataavailable = (ev) => {
+        if (ev.data && ev.data.size > 0) recordedChunks.push(ev.data);
+      };
+      mediaRecorder.onstop = () => {
+        if (recordedChunks.length === 0) return;
+        const ext = chosenMime.includes("mp4") ? "mp4" : "webm";
+        const blob = new Blob(recordedChunks, { type: chosenMime || "video/webm" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `sheru-bhai-city-reel-${Date.now()}.${ext}`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+        showToast("🎉 Reel video downloaded!");
+      };
+
+      mediaRecorder.start(400);
+      recStartTime = Date.now();
+      btnRecCanvas.classList.add("active");
+      btnRecCanvas.textContent = "⏹ Stop REC";
+      reelRecBadge?.classList.remove("hidden");
+      if (reelRecTimer) reelRecTimer.textContent = "REC 0:00";
+
+      recInterval = setInterval(() => {
+        const secs = Math.floor((Date.now() - recStartTime) / 1000);
+        const mm = Math.floor(secs / 60);
+        const ss = String(secs % 60).padStart(2, "0");
+        if (reelRecTimer) reelRecTimer.textContent = `REC ${mm}:${ss}`;
+      }, 500);
+      showToast("🔴 Pure 3D Canvas Recording Started!");
+    } catch (err) {
+      showToast("REC error: " + err.message);
+    }
+  });
+}
+
+// 15. 🎞️ Custom Shot-List Queue Picker ("Pick Today's Commenters")
+const selectedShotQueue = [];
+
+function renderShotlistItems(filterText = "") {
+  const box = document.getElementById("shotlist-items");
+  const countEl = document.getElementById("shotlist-count");
+  if (!box) return;
+  const q = filterText.trim().toLowerCase();
+
+  const allItems = [
+    { id: "ST_JUNCTION", label: "🦁 Sheru Bhai Lion Statue", sub: "CENTER", day: 0 },
+    { id: "AIRPORT", label: "✈️ 20-Acre Airport & Diamond Heli", sub: "AIRPORT", day: 0 },
+    { id: "BEACH", label: "🏖️ Sheru Bhai Beach & Villa", sub: "BEACH", day: 0 },
+    { id: "RAILWAY_STATION", label: "🚂 North Railway Station", sub: "STATION 1", day: 0 },
+    { id: "RAILWAY_SOUTH", label: "🚉 Araku South Station", sub: "STATION 2", day: 0 }
+  ];
+
+  const builtPlots = [];
+  Object.entries(allPlots || {}).forEach(([pid, p]) => {
+    if (!p || p.status !== "built") return;
+    builtPlots.push({
+      id: pid,
+      label: p.ownerName || BUILDING_LABELS[p.buildingType] || pid,
+      sub: `Day ${p.builtDay || 1} • ${BUILDING_LABELS[p.buildingType] || p.buildingType}`,
+      day: p.builtDay || 1
+    });
+  });
+  builtPlots.sort((a, b) => b.day - a.day);
+
+  const combined = [...allItems, ...builtPlots].filter(
+    (it) => !q || it.label.toLowerCase().includes(q) || it.sub.toLowerCase().includes(q)
+  );
+
+  box.innerHTML = "";
+  combined.slice(0, 80).forEach((item) => {
+    const isSel = selectedShotQueue.some((s) => s.id === item.id);
+    const row = document.createElement("label");
+    row.className = "shot-item" + (isSel ? " selected" : "");
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = isSel;
+    cb.addEventListener("change", () => {
+      const idx = selectedShotQueue.findIndex((s) => s.id === item.id);
+      if (cb.checked && idx === -1) {
+        selectedShotQueue.push(item);
+      } else if (!cb.checked && idx !== -1) {
+        selectedShotQueue.splice(idx, 1);
+      }
+      row.classList.toggle("selected", cb.checked);
+      if (countEl) countEl.textContent = `${selectedShotQueue.length} shots selected`;
+    });
+    const spanLbl = document.createElement("span");
+    spanLbl.textContent = item.label;
+    const spanSub = document.createElement("span");
+    spanSub.className = "shot-sub";
+    spanSub.textContent = item.sub;
+    row.append(cb, spanLbl, spanSub);
+    box.appendChild(row);
+  });
+
+  if (countEl) countEl.textContent = `${selectedShotQueue.length} shots selected`;
+}
+
+if (btnQueueOpen && reelShotlistPanel) {
+  btnQueueOpen.addEventListener("click", () => {
+    reelHookEditor?.classList.add("hidden");
+    const willOpen = reelShotlistPanel.classList.contains("hidden");
+    reelShotlistPanel.classList.toggle("hidden");
+    if (willOpen) renderShotlistItems(document.getElementById("shotlist-search")?.value || "");
+  });
+  document.getElementById("btn-close-shotlist")?.addEventListener("click", () => {
+    reelShotlistPanel.classList.add("hidden");
+  });
+  document.getElementById("shotlist-search")?.addEventListener("input", (e) => {
+    renderShotlistItems(e.target.value);
+  });
+  document.getElementById("btn-clear-shotlist")?.addEventListener("click", () => {
+    selectedShotQueue.length = 0;
+    renderShotlistItems(document.getElementById("shotlist-search")?.value || "");
+  });
+  document.getElementById("btn-play-shotlist")?.addEventListener("click", () => {
+    if (selectedShotQueue.length === 0) {
+      showToast("Pick at least 1 plot or landmark first!");
+      return;
+    }
+    const doBuild = document.getElementById("shotlist-replay-build")?.checked !== false;
+    reelShotlistPanel.classList.add("hidden");
+    showToast(`🎞️ Playing ${selectedShotQueue.length} Custom Shots!`);
+    engine.startCustomShotList(
+      [...selectedShotQueue],
+      doBuild,
+      (tag, name) => showReelBanner(tag, name),
+      () => {
+        reelBanner.classList.add("hidden");
+        showToast("✅ Custom Shot List Complete!");
+      }
+    );
   });
 }

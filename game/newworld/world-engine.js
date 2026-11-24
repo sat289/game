@@ -225,9 +225,7 @@ export class FollowerTownEngine {
 
     this.controls.addEventListener("start", () => {
       this.cameraGoal = null;
-      if (this.proReelTour.active) this.stopProReelTour();
-      if (this.droneTour.active) this.stopDroneView();
-      if (this.buildReelTour.active) this.stopBuildReelTour();
+      this.stopAllReelModes();
     });
 
     this.PLOT_SIZE = 7.4;
@@ -311,6 +309,64 @@ export class FollowerTownEngine {
       timer: 0,
       onStopChange: null,
       onComplete: null
+    };
+
+    // Pro Reel Studio v22 State
+    this.simSpeed = 1.0;
+    this.simTime = 0;
+    this.chaseCam = {
+      active: false,
+      mode: null, // "train1" | "train2" | "vip" | "flight"
+      smoothTarget: new THREE.Vector3(),
+      onStop: null
+    };
+    this.timelapseState = {
+      active: false,
+      days: [],
+      dayIdx: 0,
+      timer: 0,
+      savedVis: [],
+      onStopChange: null,
+      onComplete: null
+    };
+    this.hyperlapse24h = {
+      active: false,
+      timer: 0,
+      duration: 10.0,
+      prevSpeed: 1.0,
+      prevMode: "day",
+      onStop: null
+    };
+    this.discoOutro = {
+      active: false,
+      timer: 0,
+      duration: 6.5,
+      onStop: null
+    };
+    this.streetWalk = {
+      active: false,
+      curve: null,
+      t: 0,
+      speed: 0.04,
+      smoothTarget: new THREE.Vector3(),
+      onStop: null
+    };
+    this.skyTransition = {
+      active: false,
+      timer: 0,
+      duration: 2.4,
+      fromBg: new THREE.Color(),
+      toBg: new THREE.Color(),
+      fromFog: new THREE.Color(),
+      toFog: new THREE.Color(),
+      fromSunCol: new THREE.Color(),
+      toSunCol: new THREE.Color(),
+      fromSunInt: 1.15,
+      toSunInt: 1.15,
+      fromHemiInt: 0.95,
+      toHemiInt: 0.95,
+      targetMode: "day",
+      toggledNightProps: false
     };
 
     this.cityGroup = new THREE.Group();
@@ -5763,6 +5819,7 @@ export class FollowerTownEngine {
   }
 
   startProReelTour(allPlotsObj, onStopChange, onComplete) {
+    this.stopAllReelModes();
     const stops = [];
 
     stops.push({
@@ -5899,8 +5956,7 @@ export class FollowerTownEngine {
    *   20-Acre Airport, Golden Beach, and Sheru Bhai Statue!
    */
   startDroneView(onStop = null) {
-    if (this.proReelTour.active) this.stopProReelTour();
-    if (this.buildReelTour.active) this.stopBuildReelTour();
+    this.stopAllReelModes();
     this.cameraGoal = null;
     this.autoSpin = false;
 
@@ -6043,8 +6099,7 @@ export class FollowerTownEngine {
    * - Finishes with a majestic pull-back over the city & Araku Valley mountains!
    */
   startBuildReelTour(allPlotsObj, onStopChange, onComplete) {
-    if (this.proReelTour.active) this.stopProReelTour();
-    if (this.droneTour.active) this.stopDroneView();
+    this.stopAllReelModes();
     this.autoSpin = false;
 
     const builtList = [];
@@ -6166,6 +6221,380 @@ export class FollowerTownEngine {
     if (this.buildReelTour.onComplete) this.buildReelTour.onComplete();
   }
 
+  // =========================================================
+  // 🎬 PRO REEL STUDIO v22 ENGINE METHODS (ADMIN ONLY)
+  // =========================================================
+  setSimSpeed(mult) {
+    this.simSpeed = mult || 1.0;
+  }
+
+  _getSkyPreset(mode) {
+    if (mode === "night") {
+      return { bg: 0x0b1120, fog: 0x0b1120, sunCol: 0x60a5fa, sunInt: 0.42, hemiInt: 0.3 };
+    }
+    if (mode === "sunset") {
+      return { bg: 0xf97316, fog: 0xfb923c, sunCol: 0xfdba74, sunInt: 1.05, hemiInt: 0.6 };
+    }
+    return { bg: 0x87ceeb, fog: 0x9bd7f0, sunCol: 0xfffbeb, sunInt: 1.15, hemiInt: 0.95 };
+  }
+
+  _applyNightEffects(isNight, mode) {
+    this.lampBulbs.forEach((b) => {
+      b.material = isNight ? this.mat.lampBulbNight : this.mat.lampBulbDay;
+    });
+    this.vehicleHeadlights.forEach((hl) => {
+      hl.visible = isNight;
+    });
+    if (this.starField) this.starField.visible = isNight;
+    if (this.cloudMat) {
+      this.cloudMat.color.setHex(mode === "sunset" ? 0xfed7aa : 0xffffff);
+    }
+    if (this.skyClouds) {
+      this.skyClouds.forEach((c) => { c.mesh.visible = !isNight; });
+    }
+    if (this.airportSim && this.airportSim.nightGlowMeshes) {
+      this.airportSim.nightGlowMeshes.forEach((m) => { m.visible = isNight; });
+    }
+    if (this.discoGroup) this.discoGroup.visible = isNight;
+    if (this.railwaySim) {
+      if (this.railwaySim.nightLights) {
+        this.railwaySim.nightLights.forEach((m) => { m.visible = isNight; });
+      }
+      if (this.railwaySim.trainWindows) {
+        this.railwaySim.trainWindows.forEach((m) => {
+          m.material = isNight ? this.mat.windowNight : this.mat.busWindshield;
+        });
+      }
+    }
+    this.plotsGroup.traverse((obj) => {
+      if (obj.userData && obj.userData.isWindow) {
+        obj.material = isNight ? this.mat.windowNight : this.mat.windowDay;
+      }
+    });
+  }
+
+  /**
+   * 🌅 SMOOTH DAY -> SUNSET -> NIGHT SKY CROSSFADE (2.4s beat-drop transition!)
+   */
+  transitionTimeOfDay(targetMode, duration = 2.4) {
+    const target = this._getSkyPreset(targetMode);
+    this.skyTransition = {
+      active: true,
+      timer: 0,
+      duration,
+      fromBg: this.scene.background.clone(),
+      toBg: new THREE.Color(target.bg),
+      fromFog: this.scene.fog.color.clone(),
+      toFog: new THREE.Color(target.fog),
+      fromSunCol: this.sunLight.color.clone(),
+      toSunCol: new THREE.Color(target.sunCol),
+      fromSunInt: this.sunLight.intensity,
+      toSunInt: target.sunInt,
+      fromHemiInt: this.hemiLight.intensity,
+      toHemiInt: target.hemiInt,
+      targetMode,
+      toggledNightProps: false
+    };
+  }
+
+  stopAllReelModes() {
+    if (this.proReelTour.active) this.stopProReelTour();
+    if (this.droneTour.active) this.stopDroneView();
+    if (this.buildReelTour.active) this.stopBuildReelTour();
+    if (this.chaseCam.active) this.stopChaseCam();
+    if (this.timelapseState.active) this.stopGrowthTimelapse();
+    if (this.hyperlapse24h.active) this.stop24HourHyperlapse();
+    if (this.discoOutro.active) this.stopDiscoOutro();
+    if (this.streetWalk.active) this.stopStreetWalk();
+    this.cameraGoal = null;
+    this.autoSpin = false;
+  }
+
+  /**
+   * 🚂 / 💎 / ✈️ DYNAMIC CHASE CAMS (Train 1, Train 2, Sheru Bhai VIP, Commercial Flight!)
+   */
+  startChaseCam(mode, onStop = null) {
+    this.stopAllReelModes();
+    this.chaseCam = {
+      active: true,
+      mode,
+      smoothTarget: this.controls.target.clone(),
+      onStop
+    };
+  }
+
+  stopChaseCam() {
+    this.chaseCam.active = false;
+    this.chaseCam.mode = null;
+    if (this.chaseCam.onStop) {
+      const cb = this.chaseCam.onStop;
+      this.chaseCam.onStop = null;
+      cb();
+    }
+  }
+
+  /**
+   * 📈 CITY GROWTH TIMELAPSE (Day 1 -> Day 2 -> Day 3 -> Today!)
+   */
+  startGrowthTimelapse(allPlotsObj, onStopChange, onComplete) {
+    this.stopAllReelModes();
+    const daySet = new Set();
+    const entries = [];
+    Object.entries(allPlotsObj || {}).forEach(([pid, p]) => {
+      if (p && p.status === "built") {
+        const d = p.builtDay || 1;
+        daySet.add(d);
+        entries.push({ pid, day: d });
+      }
+    });
+    const days = Array.from(daySet).sort((a, b) => a - b);
+    if (days.length === 0) {
+      if (onComplete) onComplete();
+      return;
+    }
+
+    // Hide all built meshes above Day 1 so they pop in wave-by-wave!
+    const savedVis = [];
+    entries.forEach((e) => {
+      const grp = this.plotMeshes.get(e.pid);
+      if (grp) {
+        savedVis.push({ grp, pid: e.pid, day: e.day });
+        if (e.day > days[0]) {
+          grp.visible = false;
+        }
+      }
+    });
+
+    this.timelapseState = {
+      active: true,
+      days,
+      dayIdx: 0,
+      timer: 0,
+      savedVis,
+      onStopChange,
+      onComplete
+    };
+
+    const countDay0 = savedVis.filter((s) => s.day <= days[0]).length;
+    if (onStopChange) onStopChange("📈 CITY GROWTH TIMELAPSE", `DAY ${days[0]} • ${countDay0} PLACES`);
+  }
+
+  stopGrowthTimelapse() {
+    if (!this.timelapseState.active) return;
+    this.timelapseState.active = false;
+    this.timelapseState.savedVis.forEach((s) => {
+      s.grp.visible = true;
+      s.grp.scale.set(1, 1, 1);
+    });
+    this.timelapseState.savedVis = [];
+    if (this.timelapseState.onComplete) {
+      const cb = this.timelapseState.onComplete;
+      this.timelapseState.onComplete = null;
+      cb();
+    }
+  }
+
+  /**
+   * ⏱️ 24-HOUR SKYLINE HYPERLAPSE (Full Day -> Sunset -> Starry Disco Night -> Dawn in 10s!)
+   */
+  start24HourHyperlapse(onStop = null) {
+    this.stopAllReelModes();
+    this.hyperlapse24h = {
+      active: true,
+      timer: 0,
+      duration: 10.0,
+      prevSpeed: this.simSpeed,
+      prevMode: this.timeOfDay,
+      onStop
+    };
+    this.simSpeed = 2.4;
+  }
+
+  stop24HourHyperlapse() {
+    if (!this.hyperlapse24h.active) return;
+    this.hyperlapse24h.active = false;
+    this.simSpeed = this.hyperlapse24h.prevSpeed || 1.0;
+    this.setTimeOfDay(this.hyperlapse24h.prevMode || "day");
+    if (this.hyperlapse24h.onStop) {
+      const cb = this.hyperlapse24h.onStop;
+      this.hyperlapse24h.onStop = null;
+      cb();
+    }
+  }
+
+  /**
+   * 🎲 RANDOM FOLLOWER ROULETTE SPOTLIGHT (Rapid hops -> Slams onto 1 VIP Winner!)
+   */
+  startRandomFollowerReel(allPlotsObj, onStopChange, onComplete) {
+    this.stopAllReelModes();
+    const candidates = [];
+    Object.entries(allPlotsObj || {}).forEach(([pid, p]) => {
+      if (p && p.status === "built" && p.ownerName) {
+        candidates.push({ pid, p, sz: p.size || getRequiredSize(p.buildingType) });
+      }
+    });
+    if (candidates.length === 0) {
+      if (onComplete) onComplete();
+      return;
+    }
+
+    // Shuffle and take up to 5 fast roulette hops + 1 final winner!
+    for (let i = candidates.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+    }
+    const picks = candidates.slice(0, Math.min(6, candidates.length));
+    const winner = picks[picks.length - 1];
+
+    const stops = [];
+    picks.slice(0, -1).forEach((item, i) => {
+      const c = this.getPlotWorldCenter(item.pid);
+      stops.push({
+        tag: "🎲 PICKING LUCKY FOLLOWER...",
+        name: item.p.ownerName,
+        target: new THREE.Vector3(c.x, c.y + 1, c.z),
+        camPos: new THREE.Vector3(c.x + (i % 2 === 0 ? 22 : -22), 26, c.z + 22),
+        orbitRadius: 0,
+        duration: 0.55,
+        speed: 0.28,
+        plotId: item.pid,
+        triggerBuild: false
+      });
+    });
+
+    const wc = this.getPlotWorldCenter(winner.pid);
+    const wd = winner.sz === 8 ? 34 : winner.sz === 4 ? 23 : 15;
+    stops.push({
+      tag: "🏆 TODAY'S VIP FOLLOWER!",
+      name: winner.p.ownerName,
+      target: new THREE.Vector3(wc.x, wc.y + 1, wc.z),
+      camPos: new THREE.Vector3(wc.x + wd, wd * 0.85, wc.z + wd),
+      orbitRadius: wd,
+      orbitHeight: wd * 0.82,
+      orbitStartAng: 0.78,
+      orbitSpeed: 0.45,
+      duration: 4.0,
+      speed: 0.16,
+      plotId: winner.pid,
+      triggerBuild: false
+    });
+
+    this.buildReelTour = {
+      active: true,
+      stops,
+      idx: 0,
+      timer: 0,
+      onStopChange,
+      onComplete
+    };
+    this._applyBuildReelStop(0);
+  }
+
+  /**
+   * 🪩 DISCO STATUE NIGHT CRANE OUTRO (6.5s dramatic spiral around Sheru Bhai Lion Statue!)
+   */
+  startDiscoOutro(onStop = null) {
+    this.stopAllReelModes();
+    this.transitionTimeOfDay("night", 1.5);
+    this.discoOutro = {
+      active: true,
+      timer: 0,
+      duration: 6.5,
+      onStop
+    };
+  }
+
+  stopDiscoOutro() {
+    if (!this.discoOutro.active) return;
+    this.discoOutro.active = false;
+    if (this.discoOutro.onStop) {
+      const cb = this.discoOutro.onStop;
+      this.discoOutro.onStop = null;
+      cb();
+    }
+  }
+
+  /**
+   * 🚶 STREET-LEVEL WALK POV (Human Eye-Level Cruise down Sheru Bhai City Roads!)
+   */
+  startStreetWalk(onStop = null) {
+    this.stopAllReelModes();
+    const rr = this.ringRadius || 48;
+    const pts = [
+      new THREE.Vector3(0, 2.7, rr - 4),
+      new THREE.Vector3(0, 2.7, rr * 0.55),
+      new THREE.Vector3(0, 2.7, 15.5),
+      new THREE.Vector3(9.8, 2.9, 9.8),
+      new THREE.Vector3(10.5, 2.9, -9.8),
+      new THREE.Vector3(0, 2.7, -15.5),
+      new THREE.Vector3(0, 2.7, -(rr - 8)),
+      new THREE.Vector3(rr * 0.45, 2.8, -(rr - 8)),
+      new THREE.Vector3(rr * 0.45, 2.8, rr - 8)
+    ];
+    const curve = new THREE.CatmullRomCurve3(pts, true, "catmullrom", 0.35);
+    const totalLen = curve.getLength();
+    this.streetWalk = {
+      active: true,
+      curve,
+      t: 0,
+      speed: 11.5 / Math.max(totalLen, 100),
+      smoothTarget: this.controls.target.clone(),
+      onStop
+    };
+  }
+
+  stopStreetWalk() {
+    if (!this.streetWalk.active) return;
+    this.streetWalk.active = false;
+    if (this.streetWalk.onStop) {
+      const cb = this.streetWalk.onStop;
+      this.streetWalk.onStop = null;
+      cb();
+    }
+  }
+
+  /**
+   * 🎞️ CUSTOM SHOT-LIST QUEUE PLAYER (Plays exact plots/landmarks chosen by Admin in order!)
+   */
+  startCustomShotList(shotItems, replayConstruction, onStopChange, onComplete) {
+    this.stopAllReelModes();
+    if (!shotItems || shotItems.length === 0) {
+      if (onComplete) onComplete();
+      return;
+    }
+
+    const stops = shotItems.map((item, i) => {
+      const c = this.getPlotWorldCenter(item.id);
+      const isSpecial = ["ST_JUNCTION", "AIRPORT", "BEACH", "RAILWAY_STATION", "RAILWAY_SOUTH"].includes(item.id);
+      const d = isSpecial ? (item.id === "ST_JUNCTION" ? 22 : 52) : (c.size === 8 ? 34 : c.size === 4 ? 23 : c.size === 2 ? 19 : 15);
+      const ang = i % 2 === 0 ? 0.65 : 2.35;
+      return {
+        tag: isSpecial ? "CITY LANDMARK" : (replayConstruction ? `🏗️ CONSTRUCTING • DAY ${item.day || 1}` : `DAY ${item.day || 1} SPOTLIGHT`),
+        name: item.label,
+        target: new THREE.Vector3(c.x, c.y + 1, c.z),
+        camPos: new THREE.Vector3(c.x + Math.cos(ang) * d, isSpecial ? d * 0.62 : d * 0.85, c.z + Math.sin(ang) * d),
+        orbitRadius: d,
+        orbitHeight: isSpecial ? d * 0.58 : d * 0.82,
+        orbitStartAng: ang,
+        orbitSpeed: i % 2 === 0 ? 0.34 : -0.34,
+        duration: replayConstruction && !isSpecial ? 3.2 : 2.6,
+        speed: 0.14,
+        plotId: isSpecial ? null : item.id,
+        triggerBuild: Boolean(replayConstruction && !isSpecial)
+      };
+    });
+
+    this.buildReelTour = {
+      active: true,
+      stops,
+      idx: 0,
+      timer: 0,
+      onStopChange,
+      onComplete
+    };
+    this._applyBuildReelStop(0);
+  }
+
   findPlotByQuery(query) {
     const q = query.trim().toLowerCase().replace(/^@/, "");
     if (!q) return null;
@@ -6189,8 +6618,203 @@ export class FollowerTownEngine {
 
   _animate() {
     requestAnimationFrame(() => this._animate());
-    const dt = Math.min(this.clock.getDelta(), 0.05);
-    const elapsed = this.clock.elapsedTime;
+    const rawDt = Math.min(this.clock.getDelta(), 0.05);
+    const dt = rawDt * this.simSpeed;
+    this.simTime += dt;
+    const elapsed = this.simTime;
+
+    // 🌅 SMOOTH DAY -> SUNSET -> NIGHT SKY CROSSFADE
+    if (this.skyTransition.active) {
+      this.skyTransition.timer += rawDt;
+      const p = Math.min(1, this.skyTransition.timer / this.skyTransition.duration);
+      const ease = p * p * (3 - 2 * p);
+      this.scene.background.lerpColors(this.skyTransition.fromBg, this.skyTransition.toBg, ease);
+      this.scene.fog.color.lerpColors(this.skyTransition.fromFog, this.skyTransition.toFog, ease);
+      this.sunLight.color.lerpColors(this.skyTransition.fromSunCol, this.skyTransition.toSunCol, ease);
+      this.sunLight.intensity = THREE.MathUtils.lerp(this.skyTransition.fromSunInt, this.skyTransition.toSunInt, ease);
+      this.hemiLight.intensity = THREE.MathUtils.lerp(this.skyTransition.fromHemiInt, this.skyTransition.toHemiInt, ease);
+      if (p >= 0.5 && !this.skyTransition.toggledNightProps) {
+        this.skyTransition.toggledNightProps = true;
+        this.timeOfDay = this.skyTransition.targetMode;
+        this._applyNightEffects(this.timeOfDay === "night", this.timeOfDay);
+      }
+      if (p >= 1) {
+        this.skyTransition.active = false;
+      }
+    }
+
+    // 🚂 / 💎 / ✈️ DYNAMIC LIVE CHASE CAMS (Train 1, Train 2, Sheru Bhai VIP, Commercial Flight)
+    if (this.chaseCam.active) {
+      let targetObj = null;
+      let backDist = 14;
+      let upDist = 7.5;
+      let sideOffset = 2.8;
+
+      if (this.chaseCam.mode === "train1" && this.railwaySim?.train1Cars?.[0]) {
+        targetObj = this.railwaySim.train1Cars[0];
+        backDist = 14;
+        upDist = 5.4;
+        sideOffset = 3.2;
+      } else if (this.chaseCam.mode === "train2" && this.railwaySim?.train2Cars?.[0]) {
+        targetObj = this.railwaySim.train2Cars[0];
+        backDist = 14;
+        upDist = 5.4;
+        sideOffset = -3.2;
+      } else if (this.chaseCam.mode === "vip" && this.airportSim) {
+        const dCar = this.airportSim.diamondCar;
+        const wSheru = this.airportSim.walkingSheru;
+        const dHeli = this.airportSim.diamondHeli;
+        if (dCar?.userData?.seatedSheru?.visible) {
+          targetObj = dCar;
+          backDist = 11;
+          upDist = 5.8;
+          sideOffset = 3.6;
+        } else if (wSheru?.visible) {
+          targetObj = wSheru;
+          backDist = 9;
+          upDist = 4.6;
+          sideOffset = 4.0;
+        } else if (dHeli) {
+          targetObj = dHeli;
+          backDist = 16;
+          upDist = 7.2;
+          sideOffset = 5.5;
+        }
+      } else if (this.chaseCam.mode === "flight" && this.airportSim?.plane) {
+        targetObj = this.airportSim.plane;
+        backDist = 26;
+        upDist = 10.5;
+        sideOffset = 8.0;
+      }
+
+      if (targetObj) {
+        const wPos = new THREE.Vector3();
+        const wDir = new THREE.Vector3();
+        targetObj.getWorldPosition(wPos);
+        targetObj.getWorldDirection(wDir);
+        const wRight = new THREE.Vector3(-wDir.z, 0, wDir.x).normalize();
+
+        const desiredPos = wPos.clone()
+          .addScaledVector(wDir, -backDist)
+          .addScaledVector(wRight, sideOffset);
+        desiredPos.y = Math.max(3.2, wPos.y + upDist);
+
+        const alpha = 1 - Math.exp(-4.2 * rawDt);
+        this.camera.position.lerp(desiredPos, alpha);
+        const lookAtPos = wPos.clone().add(new THREE.Vector3(0, 1.5, 0));
+        this.chaseCam.smoothTarget.lerp(lookAtPos, alpha);
+        this.controls.target.copy(this.chaseCam.smoothTarget);
+      }
+    }
+
+    // 📈 CITY GROWTH TIMELAPSE (Wave-by-Wave Day 1 -> Today + Sweeping Panorama Orbit!)
+    if (this.timelapseState.active) {
+      this.timelapseState.timer += rawDt;
+      const orbitAng = this.timelapseState.timer * 0.22;
+      const r = (this.ringRadius || 48) * 1.65;
+      this.camera.position.lerp(new THREE.Vector3(Math.cos(orbitAng) * r, r * 0.85, Math.sin(orbitAng) * r), 0.08);
+      this.controls.target.lerp(new THREE.Vector3(0, 4, 0), 0.1);
+
+      // Animate popping buildings smoothly back to scale.y = 1
+      for (const s of this.timelapseState.savedVis) {
+        if (s.grp.visible && s.grp.scale.y < 1) {
+          s.grp.scale.y = Math.min(1, s.grp.scale.y + rawDt * 2.8);
+        }
+      }
+
+      const stepDur = 2.2;
+      const nextIdx = Math.min(this.timelapseState.days.length - 1, Math.floor(this.timelapseState.timer / stepDur));
+      if (nextIdx > this.timelapseState.dayIdx) {
+        this.timelapseState.dayIdx = nextIdx;
+        const curDay = this.timelapseState.days[nextIdx];
+        let shownCount = 0;
+        for (const s of this.timelapseState.savedVis) {
+          if (s.day <= curDay) {
+            if (!s.grp.visible) {
+              s.grp.visible = true;
+              s.grp.scale.y = 0.08;
+            }
+            shownCount++;
+          }
+        }
+        if (this.timelapseState.onStopChange) {
+          this.timelapseState.onStopChange("📈 CITY GROWTH TIMELAPSE", `DAY ${curDay} • ${shownCount} PLACES`);
+        }
+      }
+      if (this.timelapseState.timer > this.timelapseState.days.length * stepDur + 2.2) {
+        this.stopGrowthTimelapse();
+      }
+    }
+
+    // ⏱️ 24-HOUR SKYLINE HYPERLAPSE (Morning -> Noon -> Sunset -> Starry Disco Night -> Dawn!)
+    if (this.hyperlapse24h.active) {
+      this.hyperlapse24h.timer += rawDt;
+      const u = (this.hyperlapse24h.timer % this.hyperlapse24h.duration) / this.hyperlapse24h.duration;
+      const ang = -0.6 + u * Math.PI * 1.4;
+      const r = (this.ringRadius || 48) * 1.45;
+      this.camera.position.lerp(new THREE.Vector3(Math.cos(ang) * r, 58, Math.sin(ang) * r), 0.08);
+      this.controls.target.lerp(new THREE.Vector3(0, 8, 0), 0.08);
+
+      const dayP = this._getSkyPreset("day");
+      const sunP = this._getSkyPreset("sunset");
+      const nitP = this._getSkyPreset("night");
+
+      let a, b, f;
+      let isNightNow = false;
+      let modeNow = "day";
+      if (u < 0.32) {
+        a = dayP; b = sunP; f = u / 0.32;
+        modeNow = f > 0.5 ? "sunset" : "day";
+      } else if (u < 0.55) {
+        a = sunP; b = nitP; f = (u - 0.32) / 0.23;
+        isNightNow = f > 0.45;
+        modeNow = isNightNow ? "night" : "sunset";
+      } else if (u < 0.82) {
+        a = nitP; b = nitP; f = 0;
+        isNightNow = true;
+        modeNow = "night";
+      } else {
+        a = nitP; b = dayP; f = (u - 0.82) / 0.18;
+        isNightNow = f < 0.4;
+        modeNow = isNightNow ? "night" : "day";
+      }
+
+      this.scene.background.lerpColors(new THREE.Color(a.bg), new THREE.Color(b.bg), f);
+      this.scene.fog.color.lerpColors(new THREE.Color(a.fog), new THREE.Color(b.fog), f);
+      this.sunLight.color.lerpColors(new THREE.Color(a.sunCol), new THREE.Color(b.sunCol), f);
+      this.sunLight.intensity = THREE.MathUtils.lerp(a.sunInt, b.sunInt, f);
+      this.hemiLight.intensity = THREE.MathUtils.lerp(a.hemiInt, b.hemiInt, f);
+
+      if (this.timeOfDay !== modeNow) {
+        this.timeOfDay = modeNow;
+        this._applyNightEffects(isNightNow, modeNow);
+      }
+    }
+
+    // 🪩 DISCO STATUE NIGHT CRANE OUTRO
+    if (this.discoOutro.active) {
+      this.discoOutro.timer += rawDt;
+      const p = Math.min(1, this.discoOutro.timer / this.discoOutro.duration);
+      const ease = p * p * (3 - 2 * p);
+      const ang = 0.5 + ease * Math.PI * 1.5;
+      const rad = THREE.MathUtils.lerp(11.5, 32.0, ease);
+      const h = THREE.MathUtils.lerp(4.4, 24.0, ease);
+      this.camera.position.lerp(new THREE.Vector3(Math.cos(ang) * rad, h, Math.sin(ang) * rad), 0.14);
+      this.controls.target.lerp(new THREE.Vector3(0, THREE.MathUtils.lerp(6.8, 7.6, ease), 0), 0.14);
+      if (p >= 1) this.stopDiscoOutro();
+    }
+
+    // 🚶 STREET-LEVEL WALK POV
+    if (this.streetWalk.active && this.streetWalk.curve) {
+      this.streetWalk.t = (this.streetWalk.t + rawDt * this.streetWalk.speed) % 1;
+      const pos = this.streetWalk.curve.getPointAt(this.streetWalk.t);
+      const lookPt = this.streetWalk.curve.getPointAt((this.streetWalk.t + 0.03) % 1);
+      const bobY = pos.y + Math.sin(this.clock.elapsedTime * 7.5) * 0.12;
+      const alpha = 1 - Math.exp(-5.0 * rawDt);
+      this.camera.position.lerp(new THREE.Vector3(pos.x, bobY, pos.z), alpha);
+      this.streetWalk.smoothTarget.lerp(new THREE.Vector3(lookPt.x, 3.4, lookPt.z), alpha);
+      this.controls.target.copy(this.streetWalk.smoothTarget);
+    }
 
     // 🚁 PROFESSIONAL GIMBAL-STABILIZED CINEMATIC DRONE FLIGHT
     if (this.droneTour.active && this.droneTour.curve) {

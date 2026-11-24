@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Nagaram Builder Studio — Admin Only</title>
-  <link rel="stylesheet" href="./style.css?v=21" />
+  <link rel="stylesheet" href="./style.css?v=22" />
   <script type="importmap">
     {
       "imports": {
@@ -84,23 +84,99 @@
     <button id="btn-reel-mode" class="dock-btn reel-btn">🎬 9:16 Reel</button>
   </div>
 
-  <!-- 9:16 Pro Reel Recording Overlay -->
+  <!-- 9:16 PRO REEL STUDIO OVERLAY (ADMIN ONLY) -->
   <div id="reel-controls" class="hidden">
-    <div class="reel-frame-guide"></div>
+    <div class="reel-frame-guide" id="reel-frame-guide"></div>
+
+    <!-- Optional Instagram Reels Safe-Zone Guidelines -->
+    <div id="reel-safezone" class="hidden">
+      <div class="sz-top">IG TOP BAR SAFE AREA</div>
+      <div class="sz-right">IG ICONS</div>
+      <div class="sz-bottom">IG CAPTION &amp; AUDIO SAFE AREA</div>
+    </div>
+
+    <!-- 3-2-1 Clean Screen Countdown Overlay -->
+    <div id="reel-countdown" class="hidden">3</div>
+
+    <!-- Live Canvas REC Indicator (Top-Left, hidden automatically during Clean Screen if desired) -->
+    <div id="reel-rec-badge" class="hidden">
+      <span class="rec-dot"></span>
+      <span id="reel-rec-timer">REC 0:00</span>
+    </div>
+
+    <!-- Spotlight / Custom Hook Banner -->
     <div id="reel-spotlight-banner" class="hidden">
       <div class="reel-tag" id="reel-tag-text">NEWLY ADDED</div>
       <div class="reel-name" id="reel-name-text">@username</div>
     </div>
-    <div class="reel-bar">
-      <button id="reel-build-tour" class="mini-pill build">🏗️ Build Reel</button>
-      <button id="reel-drone-view" class="mini-pill drone">🚁 Pro Drone</button>
-      <button id="reel-airport-cam" class="mini-pill airport">✈️ Airport</button>
-      <button id="reel-beach-cam" class="mini-pill beach">🏖️ Beach</button>
-      <button id="reel-railway-cam" class="mini-pill railway">🚂 Train</button>
-      <button id="reel-pro-tour" class="mini-pill pro">⚡ Pro Reel</button>
-      <button id="reel-day-toggle" class="mini-pill">☀️/🌙</button>
-      <button id="reel-orbit-toggle" class="mini-pill">🔄 Spin</button>
-      <button id="reel-exit" class="mini-pill danger">✕ Exit</button>
+
+    <!-- Inline Custom Hook Editor Bar -->
+    <div id="reel-hook-editor" class="glass-card hidden">
+      <div class="hook-row">
+        <input type="text" id="hook-tag-input" placeholder="Tag (e.g. DAY 4 UPDATE)" value="DAY 4 • SHERU BHAI CITY" />
+        <input type="text" id="hook-title-input" placeholder="Hook Title (e.g. ARAKU MOUNTAINS + 2 TRAINS 🔥)" value="ARAKU MOUNTAINS + 2 TRAINS 🚂" />
+      </div>
+      <div class="hook-actions">
+        <button id="btn-apply-hook" class="mini-pill build">✅ Show Banner</button>
+        <button id="btn-clear-hook" class="mini-pill">🚫 Hide</button>
+        <button id="btn-close-hook" class="mini-pill danger">✕</button>
+      </div>
+    </div>
+
+    <!-- Custom Shot-List Queue Picker Modal -->
+    <div id="reel-shotlist-panel" class="glass-card hidden">
+      <div class="drawer-header">
+        <h3>🎞️ Custom Shot-List Queue</h3>
+        <button id="btn-close-shotlist" class="close-x">✕</button>
+      </div>
+      <input type="text" id="shotlist-search" placeholder="Filter @username or landmark..." autocomplete="off" style="margin-bottom:8px;" />
+      <label class="shot-check-row">
+        <input type="checkbox" id="shotlist-replay-build" checked />
+        <span>🏗️ Replay 3D Construction on selected plots</span>
+      </label>
+      <div id="shotlist-items" class="shotlist-items"></div>
+      <div class="shotlist-footer">
+        <span id="shotlist-count">0 shots selected</span>
+        <div style="display:flex;gap:6px;">
+          <button id="btn-clear-shotlist" class="mini-pill">Clear</button>
+          <button id="btn-play-shotlist" class="mini-pill build">▶ Play Queue</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2-Row Clean Mobile Reel Studio Dock -->
+    <div id="reel-dock-wrap">
+      <!-- Row 1: All Cinematic Camera & Reel Modes -->
+      <div class="reel-bar reel-bar-modes">
+        <button id="reel-drone-view" class="mini-pill drone">🚁 Pro Drone</button>
+        <button id="reel-build-tour" class="mini-pill build">🏗️ Build Reel</button>
+        <button id="reel-train-cam" class="mini-pill railway">🚂 Train Cam</button>
+        <button id="reel-vip-cam" class="mini-pill vip">💎 VIP Cam</button>
+        <button id="reel-flight-cam" class="mini-pill airport">✈️ Flight Cam</button>
+        <button id="reel-timelapse-btn" class="mini-pill timelapse">📈 Timelapse</button>
+        <button id="reel-24h-btn" class="mini-pill sky24">⏱️ 24H Sky</button>
+        <button id="reel-random-btn" class="mini-pill random">🎲 VIP Pick</button>
+        <button id="reel-disco-btn" class="mini-pill disco">🪩 Disco Outro</button>
+        <button id="reel-street-btn" class="mini-pill street">🚶 Street POV</button>
+        <button id="reel-pro-tour" class="mini-pill pro">⚡ Pro Reel</button>
+        <button id="reel-queue-btn" class="mini-pill queue">🎞️ Shot List</button>
+        <button id="reel-airport-cam" class="mini-pill airport">✈️ Airport</button>
+        <button id="reel-beach-cam" class="mini-pill beach">🏖️ Beach</button>
+        <button id="reel-railway-cam" class="mini-pill railway">🚉 Station</button>
+      </div>
+
+      <!-- Row 2: Recording & Studio Tools -->
+      <div class="reel-bar reel-bar-tools">
+        <button id="reel-rec-btn" class="mini-pill rec">🔴 REC</button>
+        <button id="reel-clean-btn" class="mini-pill clean">👻 Clean 3-2-1</button>
+        <button id="reel-speed-btn" class="mini-pill">⚡ 1x</button>
+        <button id="reel-smooth-time" class="mini-pill">🌅 Sky Fade</button>
+        <button id="reel-day-toggle" class="mini-pill">☀️/🌙</button>
+        <button id="reel-hook-btn" class="mini-pill">📝 Hook</button>
+        <button id="reel-safezone-btn" class="mini-pill">📐 Safe</button>
+        <button id="reel-orbit-toggle" class="mini-pill">🔄 Spin</button>
+        <button id="reel-exit" class="mini-pill danger">✕ Exit</button>
+      </div>
     </div>
   </div>
 
@@ -271,7 +347,7 @@
 
   <div id="toast" class="hidden"></div>
 
-  <script type="module" src="./admin-app.js?v=21"></script>
+  <script type="module" src="./admin-app.js?v=22"></script>
   <script>
     window.addEventListener("error", function(e) {
       var box = document.getElementById("err-banner");
