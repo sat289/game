@@ -8,7 +8,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged
-} from "./firebase-config.js?v=20";
+} from "./firebase-config.js?v=21";
 import {
   FollowerTownEngine,
   BUILDING_LABELS,
@@ -16,7 +16,7 @@ import {
   getTwoPlotGroup,
   getBlockPlotIds,
   getEightPlotGroup
-} from "./world-engine.js?v=20";
+} from "./world-engine.js?v=21";
 
 let isAdmin = false;
 let selectedPlotId = "plot_0001";
@@ -41,6 +41,7 @@ const plotCard = document.getElementById("plot-card");
 const editBtn = document.getElementById("card-edit-btn");
 const beachEditBtn = document.getElementById("card-beach-edit-btn");
 const railwayEditBtn = document.getElementById("card-railway-edit-btn");
+const replayBuildBtn = document.getElementById("card-replay-build-btn");
 const websiteBtn = document.getElementById("card-website-btn");
 const sheru3dBtn = document.getElementById("card-sheru3d-btn");
 const sketchfabModal = document.getElementById("sketchfab-modal");
@@ -96,13 +97,13 @@ function getNextZoneSlot(zone) {
   const existing = Object.values(allPlots).filter((p) => p && p.isCustomZone && p.zone === zone);
   const count = existing.length;
   if (zone === "airport") {
-    // Neat rows in lush green VIP Airport Colony safely South of Airport fence (clear of railway tracks!)
+    // Neat rows right along the paved Airport Colony Boulevard (North row facing South road, South row facing North road!)
     const col = count % 7;
     const row = Math.floor(count / 7);
     return {
-      offsetX: -30 + col * 9.2,
-      offsetZ: 56 + row * 9.5,
-      rotY: Math.PI
+      offsetX: -28 + col * 9.2,
+      offsetZ: row % 2 === 0 ? 58.2 : 70.6,
+      rotY: row % 2 === 0 ? Math.PI : 0
     };
   }
   // Neat coastal strip along Golden Beach palm side facing the Ocean (-X)!
@@ -141,7 +142,24 @@ engine.onAddPlotTap = (result) => {
 };
 
 function openPlotCard(plotId, data) {
-        if (plotId === "RAILWAY_STATION") {
+          if (plotId === "RAILWAY_SOUTH") {
+    document.getElementById("card-badge").textContent = "ARAKU VALLEY GATE • SOUTH STATION";
+    document.getElementById("card-owner").textContent = "🚉 ARAKU SOUTH JN";
+    document.getElementById("card-role").textContent = "2nd Opposite-Side 2-Platform Railway Station with Foot Overbridge Steps, Parking & Both Express Trains emerging from the Araku Mountain Tunnels!";
+    document.getElementById("card-type").textContent = "SOUTH RAILWAY STATION";
+    document.getElementById("card-day").textContent = "";
+    editBtn.classList.add("hidden");
+    if (beachEditBtn) beachEditBtn.classList.add("hidden");
+    if (railwayEditBtn) railwayEditBtn.classList.add("hidden");
+  if (replayBuildBtn) replayBuildBtn.classList.toggle("hidden", !(data && data.status === "built"));
+    if (replayBuildBtn) replayBuildBtn.classList.add("hidden");
+    websiteBtn.classList.add("hidden");
+    if (sheru3dBtn) sheru3dBtn.classList.add("hidden");
+    plotCard.classList.remove("hidden");
+    return;
+  }
+
+  if (plotId === "RAILWAY_STATION") {
     const rOwner = worldSettings.railwayOwner || engine.railwayOwner || "@_ur_bunny_108_";
     document.getElementById("card-badge").textContent = "INDIAN RAILWAYS • LIVE EXPRESS";
     document.getElementById("card-owner").textContent = `🚂 ${rOwner} • SHERU BHAI JN`;
@@ -354,7 +372,7 @@ loginForm.addEventListener("submit", async (e) => {
 document.getElementById("btn-logout").addEventListener("click", () => signOut(auth));
 
 document.getElementById("btn-save-plot").addEventListener("click", async () => {
-  if (!isAdmin || selectedPlotId === "ST_JUNCTION" || selectedPlotId === "AIRPORT" || selectedPlotId === "BEACH" || selectedPlotId === "RAILWAY_STATION") return;
+  if (!isAdmin || selectedPlotId === "ST_JUNCTION" || selectedPlotId === "AIRPORT" || selectedPlotId === "BEACH" || selectedPlotId === "RAILWAY_STATION" || selectedPlotId === "RAILWAY_SOUTH") return;
   const type = document.getElementById("b-type").value;
   let ownerName = document.getElementById("b-owner").value.trim();
   const role = document.getElementById("b-role").value.trim();
@@ -816,7 +834,7 @@ document.getElementById("btn-save-world").addEventListener("click", async () => 
 function runSearch() {
   const q = document.getElementById("search-input").value;
   const foundId = engine.findPlotByQuery(q);
-  if (foundId === "ST_JUNCTION" || foundId === "AIRPORT" || foundId === "BEACH" || foundId === "RAILWAY_STATION") {
+  if (foundId === "ST_JUNCTION" || foundId === "AIRPORT" || foundId === "BEACH" || foundId === "RAILWAY_STATION" || foundId === "RAILWAY_SOUTH") {
     engine.focusPlot(foundId);
     openPlotCard(foundId, null);
   } else if (foundId) {
@@ -904,7 +922,7 @@ btnDroneView.addEventListener("click", () => {
   showToast("🚁 High-Speed Drone View Active!");
   engine.startDroneView(() => {
     btnDroneView.classList.remove("active");
-    btnDroneView.textContent = "🚁 Drone";
+    btnDroneView.textContent = "🚁 Pro Drone";
   });
 });
 
@@ -1081,4 +1099,15 @@ if (btnAddPlotMode) {
 }
 if (btnExitAddPlot) {
   btnExitAddPlot.addEventListener("click", () => setAddPlotMode(false));
+}
+
+// 🏗️ Single-Building Cinema Construction Replay directly from Plot Card!
+if (replayBuildBtn) {
+  replayBuildBtn.addEventListener("click", () => {
+    if (!selectedPlotId || !allPlots[selectedPlotId] || allPlots[selectedPlotId].status !== "built") return;
+    plotCard.classList.add("hidden");
+    closeAllDrawers();
+    engine.startSingleBuildReel(selectedPlotId, allPlots[selectedPlotId]);
+    showToast("🏗️ Recording Cinema Construction Replay!");
+  });
 }

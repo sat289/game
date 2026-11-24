@@ -1,5 +1,5 @@
-import { db, ref, onValue } from "./firebase-config.js?v=20";
-import { FollowerTownEngine, BUILDING_LABELS, getRequiredSize } from "./world-engine.js?v=20";
+import { db, ref, onValue } from "./firebase-config.js?v=21";
+import { FollowerTownEngine, BUILDING_LABELS, getRequiredSize } from "./world-engine.js?v=21";
 
 let allPlots = {};
 const container = document.getElementById("canvas-container");
@@ -28,7 +28,19 @@ const engine = new FollowerTownEngine(container, (plotId, data) => {
 });
 
 function openPlotCard(plotId, data) {
-        if (plotId === "RAILWAY_STATION") {
+          if (plotId === "RAILWAY_SOUTH") {
+    document.getElementById("card-badge").textContent = "ARAKU VALLEY GATE • SOUTH STATION";
+    document.getElementById("card-owner").textContent = "🚉 ARAKU SOUTH JN";
+    document.getElementById("card-role").textContent = "2nd Opposite-Side 2-Platform Railway Station with Foot Overbridge Steps, Parking & Both Express Trains emerging from the Araku Mountain Tunnels!";
+    document.getElementById("card-type").textContent = "SOUTH RAILWAY STATION";
+    document.getElementById("card-day").textContent = "";
+    websiteBtn.classList.add("hidden");
+    if (sheru3dBtn) sheru3dBtn.classList.add("hidden");
+    plotCard.classList.remove("hidden");
+    return;
+  }
+
+  if (plotId === "RAILWAY_STATION") {
     const rOwner = engine.railwayOwner || "@_ur_bunny_108_";
     document.getElementById("card-badge").textContent = "INDIAN RAILWAYS • LIVE EXPRESS";
     document.getElementById("card-owner").textContent = `🚂 ${rOwner} • SHERU BHAI JN`;
@@ -160,7 +172,7 @@ onValue(ref(db, "worldSettings"), (snapshot) => {
 function runSearch() {
   const q = document.getElementById("search-input").value;
   const foundId = engine.findPlotByQuery(q);
-  if (foundId === "ST_JUNCTION" || foundId === "AIRPORT" || foundId === "BEACH" || foundId === "RAILWAY_STATION") {
+  if (foundId === "ST_JUNCTION" || foundId === "AIRPORT" || foundId === "BEACH" || foundId === "RAILWAY_STATION" || foundId === "RAILWAY_SOUTH") {
     engine.focusPlot(foundId);
     openPlotCard(foundId, null);
   } else if (foundId) {
@@ -343,5 +355,22 @@ if (reqInstaDmBtn) {
     showToast("📋 Message copied! Opening Instagram DM...");
     const dmUrl = `https://ig.me/m/${INSTA_HANDLE}?text=${encodeURIComponent(fullMsg)}`;
     window.open(dmUrl, "_blank", "noopener");
+  });
+}
+
+// Visitor Pro Cinematic Drone Toggle (Starts smoothly right from current view!)
+const btnPublicDrone = document.getElementById("btn-public-drone");
+if (btnPublicDrone) {
+  btnPublicDrone.addEventListener("click", () => {
+    if (engine.droneTour.active) {
+      engine.stopDroneView();
+      return;
+    }
+    plotCard.classList.add("hidden");
+    btnPublicDrone.textContent = "⏹ Stop";
+    showToast("🚁 Pro Drone Flight starting from your view! Drag to stop.");
+    engine.startDroneView(() => {
+      btnPublicDrone.textContent = "🚁 Drone";
+    });
   });
 }

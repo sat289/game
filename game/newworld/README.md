@@ -1,21 +1,16 @@
-# Sheru Bhai City 3D (v20 — Double-Track Hollow Tunnel, 2-Platform Railway Station w/ Steps & IN/OUT Parking, Night Statue Disco Lights, Interactive Airport/Beach Add Plot Mode, Crisp Names & Instagram DM Request)
+# Sheru Bhai City 3D (v21 — Araku Valley 360° Misty Mountains, Rivers & Waterfalls, 2 Opposite Railway Stations, Mountain Tunnels, Airport Parking + Colony Road & Pro Drone View)
 
 Upload the `follower-town/` folder into your `sat289/game/` GitHub repository.
 
-## What's New in v20
-1. **⛰️ Real Hollowed Mountain Tunnel + 2 Railway Tracks + 2 Realistic 3D Trains:**
-   - Placed in the North-West outer corner! True open hollow arched concrete tunnel bore covered by rocky green hills so you can look straight inside.
-   - **Double Tracks:** Track 1 runs the **Blue/Yellow WAP-7 Indian Express (5 cars)** clockwise; Track 2 runs the **White/Orange Vande Bharat Aero Express (5 cars)** counter-clockwise — one train comes while the other goes!
-2. **🚉 Real 2-Platform Railway Station (`SHERU BHAI JN`) + Foot Overbridge Steps + Direct Road + IN/OUT Parking:**
-   - **Platform 1 (South/City side)** & **Platform 2 (North/Heritage Building side)** connected by an elevated **Foot Overbridge with real stepped staircases** & walking pedestrian.
-   - **Direct Road Connection** from Platform 1 straight through a dedicated **Station Parking Plaza** (with separate green `IN ⬆` & red `⬇ OUT` lanes + parked cars & autos) to the City Outer Ring Road.
-3. **🪩 Night Disco Lights for Sheru Bhai Statue:**
-   - In **🌙 Night Mode**, 6 rotating colorful disco spotlight beams, glowing RGB ground pods, pulsing dancefloor ring, and a color-cycling spotlight light up the White Marble Lion Sheru Bhai Statue!
-4. **➕ Interactive Airport & Beach `Add Plot` Mode (Zero Houses on Railway Tracks):**
-   - Removed the misplaced house near the railway track and expanded safe clearances around both railway tracks.
-   - Added glowing **`➕ ADD AIRPORT PLOT`** & **`➕ ADD BEACH PLOT`** pads + an **`➕ Add Plot`** mode button in `admin.html` so touching open Airport/Beach land spawns a buildable plot right there (automatically blocking railway tracks!).
-5. **🔤 Crisp Readable Names Everywhere:**
-   - Upgraded all floating name tags and building signboards to high-res mipmapped textures (`512x128` / `320x84`) with bold outlines and `maxWidth` auto-fitting.
-6. **📱 Normal User Mode (`index.html`) Fix + Direct Instagram DM:**
-   - Compacted bottom pills and moved the smaller **`➕ Add Building`** button cleanly above them so it is always visible.
-   - Added **`📸 Send via Instagram DM (@_satish_official_16)`** inside the modal—automatically copies the user's building request message and opens Instagram DM directly with their message!
+## What's New in v21
+1. **⛰️💧 360° Araku Valley Mountains, Rivers, Waterfalls & Misty Clouds (Zero Blank Void):**
+   - Full lush green & rocky mountain ring encircling the entire horizon with pine forests, drifting valley mist clouds, **3 animated cliff waterfalls** with falling foam ribbons & splash pools, and **2 winding blue rivers** flowing into the West Ocean.
+2. **🚉 2nd Opposite-Side Railway Station (`ARAKU SOUTH JN`) + Dual Mountain Tunnels:**
+   - Added a complete 2nd 2-platform Railway Station on the South side with Foot Overbridge steps, IN/OUT parking, and waiting passengers.
+   - Added a 2nd Hollow Araku Mountain Tunnel on the SE mountainside so both trains (Blue/Yellow WAP-7 Express & White/Orange Vande Bharat) emerge directly from the mountains and stop at **both** North & South stations!
+3. **✈️🅿️ Airport Parking Lot & Paved Airport-Side Houses Boulevard:**
+   - Added a dedicated **Airport Passenger Parking Plaza** (`IN ⬆ / ⬇ OUT`) right beside the Terminal with parked cars & autos.
+   - Added a full paved **Airport Colony Boulevard** with center stripes, sidewalks, street lamps, and a direct link road to the Airport Express Highway for all Airport-side houses!
+4. **🚁🏗️ Professional Cinematic Drone View (Starts From Current View!) & Orbiting Construction Reels:**
+   - **`🚁 Pro Drone`** starts seamlessly **right from where you are currently looking** (never snaps back to the Welcome Arch!) with smooth gimbal stabilization, gliding across the city, Araku misty clouds, waterfalls, tunnels, airport & beach.
+   - **`🏗️ Build Reel`** also starts smoothly from your current view and gently orbits each building while it constructs — plus a 1-tap **`🏗️ Replay Build Reel Here`** button on any built plot card!

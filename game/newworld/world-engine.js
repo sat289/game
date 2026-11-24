@@ -175,12 +175,12 @@ export class FollowerTownEngine {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x87ceeb);
     // Very light fog so buildings stay crystal clear and visible from afar!
-    this.scene.fog = new THREE.Fog(0x87ceeb, 320, 920);
+    this.scene.fog = new THREE.Fog(0x9bd7f0, 380, 1280);
 
     const initW = container.clientWidth || window.innerWidth || 360;
     const initH = container.clientHeight || window.innerHeight || 640;
     const aspect = initW / initH;
-    this.camera = new THREE.PerspectiveCamera(38, aspect, 1.0, 1450);
+    this.camera = new THREE.PerspectiveCamera(38, aspect, 1.0, 2200);
     this.camera.position.set(62, 68, 62);
 
     // AUTO LOW-RAM DETECTION (2GB–4GB phones get zero-crash ultra-lite mode automatically!)
@@ -211,7 +211,7 @@ export class FollowerTownEngine {
     this.controls.maxPolarAngle = Math.PI / 2.22;
     this.controls.minPolarAngle = 0.25;
     this.controls.minDistance = 12;
-    this.controls.maxDistance = 480;
+    this.controls.maxDistance = 540;
     this.controls.touches = {
       ONE: THREE.TOUCH.PAN,
       TWO: THREE.TOUCH.DOLLY_ROTATE
@@ -253,6 +253,8 @@ export class FollowerTownEngine {
     this.beachOwner = "@follower_beach";
     this.railwaySim = null;
     this.railwayZ = -88;
+    this.railwaySouthZ = 88;
+    this.arakuSim = null;
     this.railRInner = 70;
     this.railROuter = 73.8;
     this.railwayOwner = "@_ur_bunny_108_";
@@ -518,7 +520,17 @@ export class FollowerTownEngine {
       parkingRed: new THREE.MeshBasicMaterial({ color: 0xef4444 }),
       addPadGlow: new THREE.MeshBasicMaterial({ color: 0x22c55e, transparent: true, opacity: 0.78 }),
       tunnelConcrete: new THREE.MeshLambertMaterial({ color: 0x94a3b8 }),
-      tunnelDarkWall: new THREE.MeshLambertMaterial({ color: 0x1e293b })
+      tunnelDarkWall: new THREE.MeshLambertMaterial({ color: 0x1e293b }),
+      // Araku Valley Misty Mountains, Forest Pines, Rivers & Waterfalls
+      arakuDeepGreen: new THREE.MeshLambertMaterial({ color: 0x14532d }),
+      arakuForestGreen: new THREE.MeshLambertMaterial({ color: 0x15803d }),
+      arakuLushHill: new THREE.MeshLambertMaterial({ color: 0x166534 }),
+      arakuRockGrey: new THREE.MeshLambertMaterial({ color: 0x475569 }),
+      arakuCliffDark: new THREE.MeshLambertMaterial({ color: 0x334155 }),
+      riverBlue: new THREE.MeshLambertMaterial({ color: 0x0ea5e9 }),
+      waterfallBlue: new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.88 }),
+      waterfallFoam: new THREE.MeshBasicMaterial({ color: 0xf0f9ff, transparent: true, opacity: 0.9 }),
+      valleyMist: new THREE.MeshLambertMaterial({ color: 0xf8fafc, transparent: true, opacity: 0.52 })
     };
   }
 
@@ -790,8 +802,9 @@ export class FollowerTownEngine {
     const m = Math.max(Math.abs(wx), Math.abs(wz));
     // Double track corridor with generous safety margin so NO house ever touches a rail!
     if (m >= this.railRInner - 5.5 && m <= this.railROuter + 5.5) return true;
-    // Also protect North Railway Station + Parking Plaza footprint
+    // Also protect North & South Railway Stations + Parking Plazas footprint
     if (Math.abs(wx) < 26 && wz < -this.ringRadius && wz > -(this.railROuter + 18)) return true;
+    if (Math.abs(wx) < 26 && wz > this.ringRadius && wz < (this.railROuter + 18)) return true;
     return false;
   }
 
@@ -880,11 +893,12 @@ export class FollowerTownEngine {
     }
     this.lampBulbs = [];
     this.plotHitboxes = this.plotHitboxes.filter(
-      (h) => !["ST_JUNCTION", "AIRPORT", "BEACH", "RAILWAY_STATION", "ADD_AIRPORT_PLOT", "ADD_BEACH_PLOT"].includes(h.userData.plotId)
+      (h) => !["ST_JUNCTION", "AIRPORT", "BEACH", "RAILWAY_STATION", "RAILWAY_SOUTH", "ADD_AIRPORT_PLOT", "ADD_BEACH_PLOT"].includes(h.userData.plotId)
     );
     this.airportSim = null;
     this.beachSim = null;
     this.railwaySim = null;
+    this.arakuSim = null;
     this.discoGroup = null;
     this.discoCones = [];
     this.discoPointLight = null;
@@ -896,8 +910,9 @@ export class FollowerTownEngine {
     const ringRadius = innerSpan / 2 + 10.5;
     this.ringRadius = ringRadius;
 
+    // Vast continuous lush Araku valley floor (eliminates all blank edges/voids!)
     const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(ringRadius * 2 + 520, ringRadius * 2 + 360),
+      new THREE.PlaneGeometry(ringRadius * 2 + 1300, ringRadius * 2 + 1300),
       this.mat.grass
     );
     ground.rotation.x = -Math.PI / 2;
@@ -988,7 +1003,7 @@ export class FollowerTownEngine {
       this._addHighwayLamp(ringRadius, p);
 
       if (p < -20 || p > 20) this._addPalmTree(p, -(ringRadius + 7));
-      this._addPalmTree(p, ringRadius + 7);
+      if (p < -20 || p > 20) this._addPalmTree(p, ringRadius + 7);
       if (p < -10 || p > 10) this._addPalmTree(-(ringRadius + 7), p);
       if (p < 8 || p > 28) this._addPalmTree(ringRadius + 7, p);
     }
@@ -1025,6 +1040,7 @@ export class FollowerTownEngine {
     this._buildInternationalAirport(ringRadius);
     this._buildSheruBhaiBeach(ringRadius);
     this._buildRailwaySystem(ringRadius);
+    this._buildArakuLandscape(ringRadius);
     // Keep any existing custom Airport / Beach zone plots positioned accurately!
     for (const [pid, pdata] of this.plotDataMap.entries()) {
       if (pdata && pdata.isCustomZone) {
@@ -1902,13 +1918,93 @@ export class FollowerTownEngine {
     diamondHeli.rotation.order = "YXZ";
     ap.add(diamondHeli);
 
-    // 9b. ➕ AIRPORT COLONY PLOT ZONE (Safely South of Airport Fence — Zero Overlap with Railway Tracks!)
-    const apColonyRoad = new THREE.Mesh(new THREE.BoxGeometry(64, 0.08, 4.4), this.mat.road);
-    apColonyRoad.position.set(0, 0.03, 50.8);
-    ap.add(apColonyRoad);
+    // 9b. 🅿️ DEDICATED AIRPORT PASSENGER PARKING PLAZA (Beside Terminal & VIP Gate — IN ⬆ / ⬇ OUT!)
+    const apParkGroup = new THREE.Group();
+    apParkGroup.position.set(-30, 0.06, 33);
+
+    const apParkBase = new THREE.Mesh(new THREE.BoxGeometry(22.0, 0.12, 14.5), this.mat.tarmacGrey);
+    apParkGroup.add(apParkBase);
+
+    // Connector Driveway from Airport Express Highway (z = 18 -> z = 26) straight into Airport Parking!
+    const apParkEntryL = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.11, 9.0), this.mat.road);
+    apParkEntryL.position.set(-5.8, 0.0, -10.5);
+    const apParkExitR = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.11, 9.0), this.mat.road);
+    apParkExitR.position.set(5.8, 0.0, -10.5);
+    apParkGroup.add(apParkEntryL, apParkExitR);
+
+    // White Parking Bay Markings + Parked Cars & Yellow Autos
+    for (let px = -9.0; px <= 9.0; px += 3.0) {
+      const pLine = new THREE.Mesh(new THREE.PlaneGeometry(0.14, 4.2), this.mat.stripe);
+      pLine.rotation.x = -Math.PI / 2;
+      pLine.position.set(px, 0.08, 3.6);
+      apParkGroup.add(pLine);
+    }
+    const apCar1 = this._makeVehicleMesh(false, false, 0x3b82f6, false);
+    apCar1.position.set(-7.5, 0.08, 3.6);
+    const apCar2 = this._makeVehicleMesh(false, false, 0xf59e0b, false);
+    apCar2.position.set(-4.5, 0.08, 3.6);
+    const apCar3 = this._makeVehicleMesh(false, false, 0x10b981, false);
+    apCar3.position.set(1.5, 0.08, 3.6);
+    const apAuto = this._makeRealAutoMesh(false, false);
+    apAuto.position.set(7.5, 0.08, 3.6);
+    apParkGroup.add(apCar1, apCar2, apCar3, apAuto);
+
+    // Airport Parking Overhead Signboard + IN / OUT Badges
+    const apParkBoard = this._makeBuildingBoard("AIRPORT PARKING", "IN ⬆  •  ⬇ OUT • 24/7", "#1e3a8a", "#facc15", 8.8, 1.35);
+    apParkBoard.position.set(0, 3.4, -7.2);
+    [-4.2, 4.2].forEach((sx) => {
+      const sp = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 3.2, 6), this.mat.chrome);
+      sp.position.set(sx, 1.6, -7.2);
+      apParkGroup.add(sp);
+    });
+    const apInStrip = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 2.8), this.mat.parkingGreen);
+    apInStrip.rotation.x = -Math.PI / 2;
+    apInStrip.position.set(-5.8, 0.08, -7.8);
+    const apOutStrip = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 2.8), this.mat.parkingRed);
+    apOutStrip.rotation.x = -Math.PI / 2;
+    apOutStrip.position.set(5.8, 0.08, -7.8);
+    apParkGroup.add(apParkBoard, apInStrip, apOutStrip);
+    ap.add(apParkGroup);
+
+    // 9c. 🛣️ PROPER PAVED ROAD NETWORK FOR AIRPORT-SIDE HOUSES (Connected directly to Airport Express Highway!)
+    // Direct North-South Link Road dropping South from Airport Express Highway (x = -46, z = 18 -> z = 65)
+    const linkRoad = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.1, 49.0), this.mat.road);
+    linkRoad.position.set(-46, 0.04, 41.5);
+    const linkDash = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 45.0), this.mat.stripe);
+    linkDash.rotation.x = -Math.PI / 2;
+    linkDash.position.set(-46, 0.1, 41.5);
+    ap.add(linkRoad, linkDash);
+
+    // Main Airport Colony Boulevard (East-West along z = 64.4 — right between Row 1 & Row 2 of Airport Houses!)
+    const apColonyRoad = new THREE.Mesh(new THREE.BoxGeometry(84, 0.1, 5.8), this.mat.road);
+    apColonyRoad.position.set(-5, 0.04, 64.4);
+    const apSidewalkN = new THREE.Mesh(new THREE.BoxGeometry(84, 0.12, 1.2), this.mat.sidewalk);
+    apSidewalkN.position.set(-5, 0.06, 61.1);
+    const apSidewalkS = apSidewalkN.clone();
+    apSidewalkS.position.z = 67.7;
+    ap.add(apColonyRoad, apSidewalkN, apSidewalkS);
+
+    for (let dx = -42; dx <= 34; dx += 6.0) {
+      const cd = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.2), this.mat.stripe);
+      cd.rotation.x = -Math.PI / 2;
+      cd.position.set(dx, 0.1, 64.4);
+      ap.add(cd);
+    }
+    // Street lamps along the Airport Colony Boulevard
+    for (let lx = -36; lx <= 28; lx += 16) {
+      const lp = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 3.6, 5), this.mat.lampPole);
+      lp.position.set(lx, 1.8, 61.1);
+      const lb = new THREE.Mesh(new THREE.SphereGeometry(0.22, 6, 6), this.mat.lampBulbDay);
+      lb.position.set(lx, 3.65, 61.1);
+      ap.add(lp, lb);
+      this.lampBulbs.push(lb);
+    }
+    const colSign = this._makeBuildingBoard("AIRPORT COLONY ROAD", "VIP RESIDENTIAL PLOTS", "#0f172a", "#38bdf8", 7.8, 1.15);
+    colSign.position.set(-39, 3.2, 60.4);
+    ap.add(colSign);
 
     const apAddPad = new THREE.Group();
-    apAddPad.position.set(-39, 0.12, 56);
+    apAddPad.position.set(-38, 0.12, 56.8);
     const padBase = new THREE.Mesh(new THREE.BoxGeometry(7.0, 0.18, 7.0), this.mat.addPadGlow);
     const plusH = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.22, 0.85), this.mat.wallWhite);
     plusH.position.y = 0.05;
@@ -2040,8 +2136,8 @@ export class FollowerTownEngine {
     const shallowSea = new THREE.Mesh(new THREE.BoxGeometry(16, 0.08, 110), this.mat.oceanShallow);
     shallowSea.position.set(-18, 0.01, 0);
 
-    const deepSea = new THREE.Mesh(new THREE.BoxGeometry(58, 0.06, 130), this.mat.oceanDeep);
-    deepSea.position.set(-54, 0.0, 0);
+    const deepSea = new THREE.Mesh(new THREE.BoxGeometry(520, 0.06, 1100), this.mat.oceanDeep);
+    deepSea.position.set(-284, 0.0, 0);
 
     bg.add(drySand, wetSand, shallowSea, deepSea);
 
@@ -2866,6 +2962,172 @@ export class FollowerTownEngine {
     stGroup.add(pf1, pf1Edge, pf1Roof, pf2, pf2Edge, pf2Roof, stMain, stTrim, clockBase, clockDome, clockFace, mainBoard, stFloatSign);
     rg.add(stGroup);
 
+    // 4b. ⛰️ SECOND HOLLOW ARAKU MOUNTAIN TUNNEL (Opposite South-East Side — Trains Emerge From Mountains on BOTH Ends!)
+    const tunGroupSE = new THREE.Group();
+    tunGroupSE.position.set(-tunnelX, 0, railRMid);
+    const wallS2 = new THREE.Mesh(new THREE.BoxGeometry(tunLen, 4.4, 1.1), this.mat.tunnelDarkWall);
+    wallS2.position.set(0, 2.2, 4.3);
+    const wallN2 = new THREE.Mesh(new THREE.BoxGeometry(tunLen, 4.4, 1.1), this.mat.tunnelDarkWall);
+    wallN2.position.set(0, 2.2, -4.3);
+    tunGroupSE.add(wallS2, wallN2);
+    vaultAngles.forEach((va) => {
+      const slab = new THREE.Mesh(new THREE.BoxGeometry(tunLen, 0.75, 2.3), this.mat.tunnelDarkWall);
+      slab.position.set(0, 3.8 + Math.cos(va) * 2.1, Math.sin(va) * vaultR);
+      slab.rotation.x = va;
+      tunGroupSE.add(slab);
+    });
+    [-tunLen / 2, tunLen / 2].forEach((px) => {
+      const pS = new THREE.Mesh(new THREE.BoxGeometry(1.2, 5.8, 2.4), this.mat.tunnelConcrete);
+      pS.position.set(px, 2.9, 5.2);
+      const pN = pS.clone();
+      pN.position.z = -5.2;
+      const pHeader = new THREE.Mesh(new THREE.BoxGeometry(1.3, 1.9, 12.8), this.mat.tunnelConcrete);
+      pHeader.position.set(px, 6.2, 0);
+      const pYellow = new THREE.Mesh(new THREE.BoxGeometry(1.38, 0.42, 13.0), this.mat.trainYellow);
+      pYellow.position.set(px, 5.3, 0);
+      const sigG = new THREE.Mesh(new THREE.SphereGeometry(0.26, 6, 6), this.mat.beaconGreen);
+      sigG.position.set(px + (px > 0 ? 0.72 : -0.72), 6.2, 2.2);
+      const sigR = new THREE.Mesh(new THREE.SphereGeometry(0.26, 6, 6), this.mat.beaconRed);
+      sigR.position.set(px + (px > 0 ? 0.72 : -0.72), 6.2, -2.2);
+      tunGroupSE.add(pS, pN, pHeader, pYellow, sigG, sigR);
+    });
+    const mSETop = new THREE.Mesh(new THREE.DodecahedronGeometry(7.6, 0), this.mat.arakuForestGreen);
+    mSETop.scale.set(1.75, 0.72, 1.35);
+    mSETop.position.set(0, 9.8, 0);
+    const mSESideS = new THREE.Mesh(new THREE.DodecahedronGeometry(7.4, 0), this.mat.arakuRockGrey);
+    mSESideS.scale.set(1.55, 0.95, 0.95);
+    mSESideS.position.set(0, 4.8, 10.6);
+    const mSESideN = new THREE.Mesh(new THREE.DodecahedronGeometry(5.6, 0), this.mat.arakuLushHill);
+    mSESideN.scale.set(1.4, 0.8, 0.78);
+    mSESideN.position.set(0, 3.6, -9.8);
+    const tunSignSE = this._createNameSign("⛰️ ARAKU MOUNTAIN TUNNEL", "EAST GATE • 2 TRACKS", true);
+    tunSignSE.position.set(0, 16.5, 0);
+    tunGroupSE.add(mSETop, mSESideS, mSESideN, tunSignSE);
+    rg.add(tunGroupSE);
+
+    // 4c. 🚉 SECOND OPPOSITE-SIDE GRAND 2-PLATFORM RAILWAY STATION ("ARAKU SOUTH JN" on South Side!)
+    this.railwaySouthZ = railRMid;
+    const southT1 = findNearestT(track1Curve, 0, railRInner);
+    const southT2 = findNearestT(track2Curve, 0, railROuter);
+
+    const stSouth = new THREE.Group();
+    stSouth.position.set(0, 0, railRMid);
+
+    // Platform 1 (City/North Side at local z = -5.0, next to Track 1 at local z = -1.9)
+    const spf1 = new THREE.Mesh(new THREE.BoxGeometry(36.0, 0.9, 4.6), this.mat.concrete);
+    spf1.position.set(0, 0.45, -5.0);
+    const spf1Edge = new THREE.Mesh(new THREE.BoxGeometry(36.0, 0.08, 0.36), this.mat.trainYellow);
+    spf1Edge.position.set(0, 0.92, -2.85);
+    const spf1Roof = new THREE.Mesh(new THREE.BoxGeometry(26.0, 0.28, 4.8), this.mat.stationRoof);
+    spf1Roof.position.set(-2, 4.5, -5.0);
+
+    // Platform 2 (Mountain/South Side at local z = +5.0, next to Track 2 at local z = +1.9)
+    const spf2 = new THREE.Mesh(new THREE.BoxGeometry(36.0, 0.9, 4.8), this.mat.concrete);
+    spf2.position.set(0, 0.45, 5.0);
+    const spf2Edge = new THREE.Mesh(new THREE.BoxGeometry(36.0, 0.08, 0.36), this.mat.trainYellow);
+    spf2Edge.position.set(0, 0.92, 2.75);
+    const spf2Roof = new THREE.Mesh(new THREE.BoxGeometry(26.0, 0.28, 5.0), this.mat.stationRoof);
+    spf2Roof.position.set(-2, 4.5, 5.0);
+
+    for (let px = -12; px <= 8; px += 5) {
+      const c1 = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 3.6, 6), this.mat.wallWhite);
+      c1.position.set(px, 2.7, -5.2);
+      const c2 = c1.clone();
+      c2.position.z = 5.2;
+      const l1 = new THREE.Mesh(new THREE.SphereGeometry(0.22, 6, 6), this.mat.lampBulbNight);
+      l1.position.set(px, 4.2, -3.8);
+      l1.visible = this.timeOfDay === "night";
+      const l2 = l1.clone();
+      l2.position.z = 3.8;
+      stSouth.add(c1, c2, l1, l2);
+      nightLights.push(l1, l2);
+    }
+
+    // Yellow Station Nameboards on BOTH South Platforms
+    const sIr1 = this._makeBuildingBoard("ARAKU SOUTH JN", "PLATFORM 1 • CITY SIDE", "#facc15", "#111827", 5.8, 1.25);
+    sIr1.position.set(-15.0, 2.4, -4.8);
+    const sIr2 = this._makeBuildingBoard("ARAKU SOUTH JN", "PLATFORM 2 • VALLEY VIEW", "#facc15", "#111827", 5.8, 1.25);
+    sIr2.position.set(-15.0, 2.4, 4.8);
+    stSouth.add(sIr1, sIr2);
+
+    // Foot Overbridge with Real 8-Step Staircases connecting South Platform 1 <-> Platform 2!
+    const sFobDeck = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.34, 11.4), this.mat.concrete);
+    sFobDeck.position.set(fobX, 4.65, 0);
+    const sFobRailL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.1, 11.4), this.mat.fobSteel);
+    sFobRailL.position.set(fobX - 1.52, 5.35, 0);
+    const sFobRailR = sFobRailL.clone();
+    sFobRailR.position.x = fobX + 1.52;
+    const sFobRoof = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.22, 11.6), this.mat.stationRoof);
+    sFobRoof.position.set(fobX, 6.45, 0);
+    [[-1.4, 4.2], [1.4, 4.2], [-1.4, -4.2], [1.4, -4.2]].forEach(([dx, dz]) => {
+      const col = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 4.6, 6), this.mat.fobSteel);
+      col.position.set(fobX + dx, 2.5, dz);
+      stSouth.add(col);
+    });
+    for (let st = 0; st < 8; st++) {
+      const sx = fobX - 1.8 - st * 0.56;
+      const sy = 4.45 - st * 0.44;
+      const st1 = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.24, 1.85), this.mat.concrete);
+      st1.position.set(sx, sy, -5.2);
+      const st2 = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.24, 1.85), this.mat.concrete);
+      st2.position.set(sx, sy, 5.2);
+      stSouth.add(st1, st2);
+    }
+    const southBridgeWalker = this._createCharacter({ shirtMat: this.mat.wallMint, pantsMat: this.mat.darkPants, scale: 0.92 });
+    southBridgeWalker.position.set(fobX, 4.86, 0);
+    stSouth.add(sFobDeck, sFobRailL, sFobRailR, sFobRoof, southBridgeWalker);
+
+    // Direct Road Connection + South Station Parking Plaza (between South Platform 1 & South Outer Ring Road!)
+    const sParkLot = new THREE.Mesh(new THREE.BoxGeometry(28.0, 0.1, 11.6), this.mat.tarmacGrey);
+    sParkLot.position.set(0, 0.05, -parkingZ);
+    const sRoadIn = new THREE.Mesh(new THREE.BoxGeometry(5.4, 0.1, connLen + 2.5), this.mat.road);
+    sRoadIn.position.set(-8.5, 0.04, -connZ);
+    const sRoadOut = new THREE.Mesh(new THREE.BoxGeometry(5.4, 0.1, connLen + 2.5), this.mat.road);
+    sRoadOut.position.set(8.5, 0.04, -connZ);
+    const sCar1 = this._makeVehicleMesh(false, false, 0xf59e0b, false);
+    sCar1.position.set(-8.4, 0.1, -12.2);
+    const sAuto = this._makeRealAutoMesh(false, false);
+    sAuto.position.set(7.4, 0.1, -12.2);
+    const sInSign = this._makeBuildingBoard("IN ⬇", "SOUTH PARKING", "#15803d", "#ffffff", 4.6, 1.0);
+    sInSign.position.set(-8.5, 2.8, -19.8);
+    const sOutSign = this._makeBuildingBoard("⬆ OUT", "TO CITY ROAD", "#b91c1c", "#ffffff", 4.6, 1.0);
+    sOutSign.position.set(8.5, 2.8, -19.8);
+    stSouth.add(sParkLot, sRoadIn, sRoadOut, sCar1, sAuto, sInSign, sOutSign);
+
+    // South Station Main Building + Roof Arch (Behind South Platform 2 at local z = +10.8)
+    const sMain = new THREE.Mesh(new THREE.BoxGeometry(26.0, 5.4, 6.2), this.mat.stuccoIvory);
+    sMain.position.set(0, 3.1, 10.8);
+    const sTrim = new THREE.Mesh(new THREE.BoxGeometry(26.4, 0.45, 6.6), this.mat.stationRoof);
+    sTrim.position.set(0, 5.9, 10.8);
+    const sMainBoard = this._makeBuildingBoard("ARAKU SOUTH JN", "2ND RAILWAY STATION • EXPRESS", "#0f172a", "#facc15", 14.5, 1.9);
+    sMainBoard.position.set(0, 5.2, 7.6);
+    sMainBoard.rotation.y = Math.PI;
+    const sFloatSign = this._createNameSign("🚉 ARAKU SOUTH JN", "2 PLATFORMS • MOUNTAIN EXPRESS", true);
+    sFloatSign.position.set(0, 12.6, 9.8);
+
+    // 5 Passengers on South Platform 1 + 5 Passengers on South Platform 2
+    const makeSouthPax = (zPos) =>
+      [this.mat.wallBlue, this.mat.wallCoral, this.mat.wallGold, this.mat.wallMint, this.mat.khakiUniform].map((sm, i) => {
+        const p = this._createCharacter({ shirtMat: sm, pantsMat: this.mat.darkPants, scale: 0.94 });
+        p.position.set(-7.5 + i * 3.4, 0.95, zPos);
+        stSouth.add(p);
+        return p;
+      });
+    const southPaxPF1 = makeSouthPax(-4.4);
+    const southPaxPF2 = makeSouthPax(4.4);
+
+    const sHitbox = new THREE.Mesh(
+      new THREE.BoxGeometry(38, 15, 28),
+      new THREE.MeshBasicMaterial({ visible: false })
+    );
+    sHitbox.position.set(0, 7.5, -2.0);
+    sHitbox.userData.plotId = "RAILWAY_SOUTH";
+    stSouth.add(sHitbox);
+    this.plotHitboxes.push(sHitbox);
+
+    stSouth.add(spf1, spf1Edge, spf1Roof, spf2, spf2Edge, spf2Roof, sMain, sTrim, sMainBoard, sFloatSign);
+    rg.add(stSouth);
+
     // 5. SPAWN 2 REALISTIC 3D TRAINS (Opposite Directions on Track 1 & Track 2!)
     // Train 1 (Blue/Yellow WAP-7 Electric Engine + 4 Passenger Coaches on Track 1)
     const train1Cars = [];
@@ -2895,15 +3157,254 @@ export class FollowerTownEngine {
       len2,
       stationT1,
       stationT2,
+      southT1,
+      southT2,
       train1Cars,
       train2Cars,
       paxPF1,
       paxPF2,
+      southPaxPF1,
+      southPaxPF2,
       bridgeWalker,
+      southBridgeWalker,
       fobX,
       nightLights,
       trainWindows
     };
+  }
+
+
+  /**
+   * ⛰️💧 360° ARAKU VALLEY MISTY MOUNTAINS, LUSH PINE FORESTS, FLOWING RIVERS & ANIMATED WATERFALLS
+   * Surrounds the ENTIRE city horizon so there is NEVER a blank screen or empty edge!
+   * Uses InstancedMesh for hills & forest trees to stay buttery-smooth on low-RAM phones.
+   */
+  _buildArakuLandscape(ringRadius) {
+    const ag = new THREE.Group();
+
+    const waterRibbons = [];
+    const mistClouds = [];
+    const riverRipples = [];
+
+    // Outer mountain ring sits comfortably outside Airport (East), Beach (West), and Both Railway Stations (N & S)
+    const minR = ringRadius + 148;
+    const outerR = ringRadius + 245;
+
+    // 1. 360° LAYERED ARAKU GREEN FORESTED MOUNTAINS (2 InstancedMeshes = only 2 draw calls!)
+    //    Leave a clean scenic Ocean Horizon opening on the West Beach side (angle between 158° and 202°)
+    //    while framing the Beach with dramatic green coastal headlands on NW & SW!
+    const peakData = [];
+    const rockData = [];
+    const treeData = [];
+
+    // Ring 1: Closer Lush Green Foothills (42 hills)
+    const countInner = this.isLowRam ? 36 : 48;
+    for (let i = 0; i < countInner; i++) {
+      const ang = (i / countInner) * Math.PI * 2;
+      const deg = (ang * 180) / Math.PI;
+      if (deg > 158 && deg < 202) continue; // Keep West Ocean open for Golden Beach!
+
+      const rad = minR + ((i * 37) % 34);
+      const px = Math.cos(ang) * rad;
+      const pz = Math.sin(ang) * rad;
+      const h = 32 + ((i * 19) % 28);
+      const w = 26 + ((i * 13) % 20);
+      peakData.push({ x: px, y: h * 0.42, z: pz, sx: w, sy: h, sz: w * 0.92, ry: i * 0.7 });
+
+      // Scatter lush Araku pine trees on lower slopes of foothills
+      const treesPerHill = this.isLowRam ? 3 : 5;
+      for (let t = 0; t < treesPerHill; t++) {
+        const ta = ang + (t - 2) * 0.045;
+        const tr = rad - w * 0.55 - (t % 2) * 6;
+        treeData.push({
+          x: Math.cos(ta) * tr,
+          y: 2.2 + (t % 3) * 1.4,
+          z: Math.sin(ta) * tr,
+          s: 1.35 + (t % 3) * 0.45
+        });
+      }
+    }
+
+    // Ring 2: Towering Araku Background Mountain Peaks & Rocky Ridges (56 massive peaks!)
+    const countOuter = this.isLowRam ? 44 : 60;
+    for (let i = 0; i < countOuter; i++) {
+      const ang = (i / countOuter) * Math.PI * 2 + 0.05;
+      const deg = (ang * 180) / Math.PI;
+      if (deg > 162 && deg < 198) continue; // Open sunset ocean horizon on West!
+
+      const rad = outerR + ((i * 43) % 68);
+      const px = Math.cos(ang) * rad;
+      const pz = Math.sin(ang) * rad;
+      const h = 62 + ((i * 29) % 58);
+      const w = 44 + ((i * 17) % 34);
+      if (i % 3 === 0) {
+        rockData.push({ x: px, y: h * 0.44, z: pz, sx: w, sy: h, sz: w * 0.88, ry: i * 1.1 });
+      } else {
+        peakData.push({ x: px, y: h * 0.44, z: pz, sx: w, sy: h, sz: w * 0.95, ry: i * 0.9 });
+      }
+    }
+
+    const dummy = new THREE.Object3D();
+    const hillGeo = new THREE.ConeGeometry(1.0, 1.0, 7);
+    const hillInst = new THREE.InstancedMesh(hillGeo, this.mat.arakuDeepGreen, peakData.length);
+    peakData.forEach((p, idx) => {
+      dummy.position.set(p.x, p.y, p.z);
+      dummy.scale.set(p.sx, p.sy, p.sz);
+      dummy.rotation.set(0, p.ry, 0);
+      dummy.updateMatrix();
+      hillInst.setMatrixAt(idx, dummy.matrix);
+    });
+    hillInst.instanceMatrix.needsUpdate = true;
+    ag.add(hillInst);
+
+    const rockGeo = new THREE.DodecahedronGeometry(0.75, 0);
+    const rockInst = new THREE.InstancedMesh(rockGeo, this.mat.arakuRockGrey, rockData.length);
+    rockData.forEach((p, idx) => {
+      dummy.position.set(p.x, p.y, p.z);
+      dummy.scale.set(p.sx, p.sy, p.sz);
+      dummy.rotation.set(0, p.ry, 0);
+      dummy.updateMatrix();
+      rockInst.setMatrixAt(idx, dummy.matrix);
+    });
+    rockInst.instanceMatrix.needsUpdate = true;
+    ag.add(rockInst);
+
+    const pineGeo = new THREE.ConeGeometry(1.7, 5.2, 5);
+    const pineInst = new THREE.InstancedMesh(pineGeo, this.mat.arakuForestGreen, treeData.length);
+    treeData.forEach((tr, idx) => {
+      dummy.position.set(tr.x, tr.y, tr.z);
+      dummy.scale.setScalar(tr.s);
+      dummy.rotation.set(0, idx * 0.8, 0);
+      dummy.updateMatrix();
+      pineInst.setMatrixAt(idx, dummy.matrix);
+    });
+    pineInst.instanceMatrix.needsUpdate = true;
+    ag.add(pineInst);
+
+    // 2. 💧 3 DRAMATIC ARAKU CLIFF WATERFALLS WITH ANIMATED CASCADING WHITE WATER & SPLASH POOLS!
+    const buildWaterfallCliff = (wx, wz, rotY, height = 42) => {
+      const wf = new THREE.Group();
+      wf.position.set(wx, 0, wz);
+      wf.rotation.y = rotY;
+
+      // Dark Wet Rocky Cliff Behind Waterfall + Lush Green Mountain Framing Both Sides
+      const cliff = new THREE.Mesh(new THREE.BoxGeometry(16, height, 10), this.mat.arakuCliffDark);
+      cliff.position.set(0, height / 2, -5.5);
+      const flankL = new THREE.Mesh(new THREE.ConeGeometry(16, height * 1.18, 7), this.mat.arakuLushHill);
+      flankL.position.set(-14, height * 0.55, -6);
+      const flankR = new THREE.Mesh(new THREE.ConeGeometry(15, height * 1.12, 7), this.mat.arakuDeepGreen);
+      flankR.position.set(14, height * 0.52, -6);
+      wf.add(cliff, flankL, flankR);
+
+      // Continuous Shimmering Blue Waterfall Sheet
+      const chute = new THREE.Mesh(new THREE.PlaneGeometry(6.8, height - 2), this.mat.waterfallBlue);
+      chute.position.set(0, height / 2, -0.35);
+      wf.add(chute);
+
+      // 5 Animated Falling White Foam Ribbons plunging continuously down the cliff!
+      const ribGeo = new THREE.PlaneGeometry(1.55, 5.4);
+      for (let r = 0; r < 5; r++) {
+        const rib = new THREE.Mesh(ribGeo, this.mat.waterfallFoam);
+        const rx = -2.2 + (r % 3) * 2.2;
+        rib.position.set(rx, height * 0.5, -0.1);
+        wf.add(rib);
+        waterRibbons.push({ mesh: rib, minY: 2.8, maxY: height - 3.5, speed: 15 + (r % 3) * 3.5, phase: r * 0.22 });
+      }
+
+      // Turquoise Plunge Pool + Foaming Mist Ring at the Waterfall Base!
+      const pool = new THREE.Mesh(new THREE.CylinderGeometry(11.5, 12.2, 0.28, 16), this.mat.riverBlue);
+      pool.position.set(0, 0.14, 7.5);
+      const mistFoam = new THREE.Mesh(new THREE.RingGeometry(2.5, 6.2, 16), this.mat.waterfallFoam);
+      mistFoam.rotation.x = -Math.PI / 2;
+      mistFoam.position.set(0, 0.34, 4.2);
+      wf.add(pool, mistFoam);
+
+      ag.add(wf);
+    };
+
+    const wfDist = ringRadius + 138;
+    // Waterfall 1: North-East Araku Gorge (visible behind North Station & Airport!)
+    buildWaterfallCliff(wfDist * 0.55, -wfDist * 0.88, -0.45, 48);
+    // Waterfall 2: North-West Mountain Ridge (cascading right behind the Hollow Railway Tunnel!)
+    buildWaterfallCliff(-wfDist * 0.65, -wfDist * 0.88, 0.55, 44);
+    // Waterfall 3: South-West Coastal Mountain Cliff (flowing straight into the Ocean beside the Beach!)
+    buildWaterfallCliff(-wfDist * 0.72, wfDist * 0.78, 2.35, 42);
+
+    // 3. 🌊 WINDING FLOWING BLUE VALLEY RIVERS (Connecting Araku Waterfalls -> Flowing Around Valley -> Into West Ocean!)
+    const buildValleyRiver = (pts, width = 10.5) => {
+      const rCurve = new THREE.CatmullRomCurve3(pts, false, "catmullrom", 0.45);
+      const segs = 32;
+      const rGeo = new THREE.PlaneGeometry(width, (rCurve.getLength() / segs) * 1.18);
+      rGeo.rotateX(-Math.PI / 2);
+      const rInst = new THREE.InstancedMesh(rGeo, this.mat.riverBlue, segs);
+      for (let i = 0; i < segs; i++) {
+        const u = (i + 0.5) / segs;
+        const p = rCurve.getPointAt(u);
+        const tan = rCurve.getTangentAt(u);
+        dummy.position.set(p.x, 0.06, p.z);
+        dummy.rotation.set(0, Math.atan2(tan.x, tan.z), 0);
+        dummy.scale.set(1, 1, 1);
+        dummy.updateMatrix();
+        rInst.setMatrixAt(i, dummy.matrix);
+      }
+      rInst.instanceMatrix.needsUpdate = true;
+      ag.add(rInst);
+
+      // Animated White Flowing Water Sparkles drifting along the river!
+      const ripGeo = new THREE.PlaneGeometry(width * 0.38, 2.6);
+      ripGeo.rotateX(-Math.PI / 2);
+      for (let k = 0; k < 6; k++) {
+        const rip = new THREE.Mesh(ripGeo, this.mat.waterfallFoam);
+        ag.add(rip);
+        riverRipples.push({ mesh: rip, curve: rCurve, phase: k / 6, speed: 0.075 });
+      }
+    };
+
+    // North Valley River: Flows from NE Araku Waterfall -> behind North Railway Station -> NW Waterfall -> into West Ocean!
+    const nrZ = -(ringRadius + 96);
+    buildValleyRiver([
+      new THREE.Vector3(wfDist * 0.52, 0, -wfDist * 0.8),
+      new THREE.Vector3(45, 0, nrZ - 14),
+      new THREE.Vector3(0, 0, nrZ - 18),
+      new THREE.Vector3(-wfDist * 0.55, 0, -wfDist * 0.78),
+      new THREE.Vector3(-(ringRadius + 115), 0, -68),
+      new THREE.Vector3(-(ringRadius + 145), 0, -40)
+    ], 11.0);
+
+    // South Valley River: Flows from SE Araku Hills -> behind South Railway Station -> SW Waterfall -> into West Ocean!
+    const srZ = ringRadius + 96;
+    buildValleyRiver([
+      new THREE.Vector3(wfDist * 0.58, 0, wfDist * 0.75),
+      new THREE.Vector3(42, 0, srZ + 12),
+      new THREE.Vector3(-12, 0, srZ + 16),
+      new THREE.Vector3(-wfDist * 0.65, 0, wfDist * 0.72),
+      new THREE.Vector3(-(ringRadius + 122), 0, 56)
+    ], 10.5);
+
+    // 4. ☁️ MISTY ARAKU VALLEY CLOUDS WRAPPING AROUND THE MOUNTAIN PEAKS (Exact Araku Drone Reel Vibe!)
+    const mistPuffGeo = new THREE.DodecahedronGeometry(9.5, 0);
+    const mistCount = this.isLowRam ? 12 : 18;
+    for (let m = 0; m < mistCount; m++) {
+      const ang = (m / mistCount) * Math.PI * 2;
+      const rad = minR + 14 + (m % 3) * 28;
+      const mg = new THREE.Group();
+      const p1 = new THREE.Mesh(mistPuffGeo, this.mat.valleyMist);
+      const p2 = new THREE.Mesh(mistPuffGeo, this.mat.valleyMist);
+      p2.position.set(8.5, 0.8, 1.5);
+      p2.scale.set(0.85, 0.7, 0.85);
+      const p3 = new THREE.Mesh(mistPuffGeo, this.mat.valleyMist);
+      p3.position.set(-8.0, -0.4, -1.2);
+      p3.scale.set(0.75, 0.65, 0.8);
+      mg.add(p1, p2, p3);
+      mg.scale.set(1.6, 0.42, 1.25);
+      const y = 34 + (m % 4) * 10;
+      mg.position.set(Math.cos(ang) * rad, y, Math.sin(ang) * rad);
+      ag.add(mg);
+      mistClouds.push({ mesh: mg, ang, rad, y, speed: 0.018 + (m % 3) * 0.008 });
+    }
+
+    this.cityGroup.add(ag);
+    this.arakuSim = { waterRibbons, mistClouds, riverRipples };
   }
 
   _addWelcomeArch(x, z) {
@@ -5203,6 +5704,7 @@ export class FollowerTownEngine {
     if (plotId === "AIRPORT") return { x: this.airportX - 4, y: 5, z: 4, size: 12 };
     if (plotId === "BEACH") return { x: this.beachX + 6, y: 4, z: -2, size: 12 };
     if (plotId === "RAILWAY_STATION") return { x: 0, y: 5, z: this.railwayZ, size: 12 };
+    if (plotId === "RAILWAY_SOUTH") return { x: 0, y: 5, z: this.railwaySouthZ, size: 12 };
     if (plotId === "ADD_AIRPORT_PLOT") return { x: this.airportX - 39, y: 2, z: 56, size: 1 };
     if (plotId === "ADD_BEACH_PLOT") return { x: this.beachX + 22, y: 2, z: 16, size: 1 };
     const customData = this.plotDataMap.get(plotId);
@@ -5390,70 +5892,89 @@ export class FollowerTownEngine {
   }
 
   /**
-   * 🚁 HIGH-SPEED CONTINUOUS DRONE VIEW:
-   * 1. Starts outside South Welcome Arch -> flies RIGHT THROUGH the Welcome Arch!
-   * 2. Speeds between the buildings straight to ST Junction Statue at (0,0)
-   * 3. Circles ST Junction Statue
-   * 4. Continuously weaves down every street showing all houses & @usernames!
+   * 🚁 PROFESSIONAL CINEMATIC DRONE FLIGHT (Araku Valley + City Quality!)
+   * - Starts SEAMLESSLY RIGHT FROM WHERE YOU ARE CURRENTLY LOOKING (never snaps to Welcome Arch!)
+   * - Gimbal-stabilized smooth flight with subtle banking roll, sweeping smoothly through the
+   *   Araku misty mountains, waterfalls, rivers, Hollow Railway Tunnels, North & South Stations,
+   *   20-Acre Airport, Golden Beach, and Sheru Bhai Statue!
    */
   startDroneView(onStop = null) {
     if (this.proReelTour.active) this.stopProReelTour();
+    if (this.buildReelTour.active) this.stopBuildReelTour();
     this.cameraGoal = null;
     this.autoSpin = false;
 
-    const rr = this.ringRadius || 40;
-    const r = Math.max(1, this.currentGridRadius);
-    const step = this.BLOCK_STEP;
-    const pts = [];
+    const rr = this.ringRadius || 48;
+    const ax = this.airportX || rr + 78;
+    const bx = this.beachX || -(rr + 76);
+    const rz = this.railROuter || rr + 28;
+    const wfR = rr + 132;
 
-    // 1. Approach & fly INSIDE through the South Welcome Arch (at x=0, z=rr - 5.8, arch height=6.2)
-    pts.push(new THREE.Vector3(0, 4.0, rr + 14));
-    pts.push(new THREE.Vector3(0, 3.6, rr - 5.8)); // Inside the Welcome Arch!
-    pts.push(new THREE.Vector3(0, 4.6, rr - 18));  // Speeding between buildings!
+    // 1. Start RIGHT AT YOUR CURRENT CAMERA POSITION & LOOK DIRECTION!
+    const curPos = this.camera.position.clone();
+    const curTarget = this.controls.target.clone();
+    const forward = new THREE.Vector3().subVectors(curTarget, curPos);
+    forward.y = 0;
+    if (forward.lengthSq() < 0.01) forward.set(0, 0, -1);
+    forward.normalize();
 
-    // 2. Fly straight down the central avenue toward ST Junction Statue (0,0)
-    pts.push(new THREE.Vector3(0, 5.4, 15));
-    pts.push(new THREE.Vector3(10.5, 6.2, 8.5));
-    pts.push(new THREE.Vector3(11.5, 6.8, -6.5));
-    pts.push(new THREE.Vector3(0, 7.2, -12.5));
-    pts.push(new THREE.Vector3(-11.5, 6.8, -4.0));
+    // Smooth lead-out waypoint right along your current line of sight (zero jarring snap!)
+    const leadPt = curPos.clone().addScaledVector(forward, 26);
+    leadPt.y = THREE.MathUtils.clamp(curPos.y * 0.85, 14, 46);
 
-    // 3. Continuous serpentine fly-through across ALL city streets so every house & @username is shown!
-    const span = r * step;
-    let dir = 1;
-    for (let row = -r; row <= r; row++) {
-      const roadZ = (row + 0.5) * step;
-      if (dir > 0) {
-        pts.push(new THREE.Vector3(-span, 8.5, roadZ));
-        pts.push(new THREE.Vector3(0, 7.8, roadZ));
-        pts.push(new THREE.Vector3(span, 8.5, roadZ));
-      } else {
-        pts.push(new THREE.Vector3(span, 8.5, roadZ));
-        pts.push(new THREE.Vector3(0, 7.8, roadZ));
-        pts.push(new THREE.Vector3(-span, 8.5, roadZ));
+    // 2. Build a sweeping cinematic loop covering City Center -> Araku Waterfalls & Misty Clouds ->
+    //    North Station & Tunnel -> 20-Acre Airport -> South Station & SE Tunnel -> Golden Beach!
+    const scenicWaypoints = [
+      new THREE.Vector3(16, 20, 18),                            // Glide past White Marble Lion Sheru Bhai Statue
+      new THREE.Vector3(18, 22, -rz + 8),                       // Sweep past North 2-Platform Railway Station
+      new THREE.Vector3(-rz * 0.55, 24, -rz - 10),              // Skim over NW Hollow Mountain Tunnel
+      new THREE.Vector3(-wfR * 0.48, 38, -wfR * 0.72),          // Climb through Araku Misty Clouds & NW Waterfall!
+      new THREE.Vector3(wfR * 0.45, 44, -wfR * 0.72),           // High Araku Valley Panorama over North River & NE Waterfall!
+      new THREE.Vector3(ax - 18, 30, -18),                      // Swoop down over 20-Acre Airport Runway & Terminal
+      new THREE.Vector3(ax - 24, 24, 34),                       // Pass Airport Parking, Diamond Heli & Airport Colony Road
+      new THREE.Vector3(rz * 0.45, 22, rz + 12),                // Glide past SE Araku Mountain Tunnel
+      new THREE.Vector3(0, 22, rz + 18),                        // Fly past 2nd South Railway Station (Araku South Jn)
+      new THREE.Vector3(-wfR * 0.48, 34, wfR * 0.62),           // Sweep past SW Coastal Waterfall & South River
+      new THREE.Vector3(bx + 18, 22, 12),                       // Low scenic coast glide over Sheru Bhai Beach & Waves
+      new THREE.Vector3(-18, 20, -14)                           // Return glide into City Skyline
+    ];
+
+    // Pick the scenic waypoint closest to `leadPt` so the transition from YOUR current view is ultra-natural!
+    let bestIdx = 0;
+    let bestD = Infinity;
+    scenicWaypoints.forEach((wp, i) => {
+      const d = wp.distanceToSquared(leadPt);
+      if (d < bestD) {
+        bestD = d;
+        bestIdx = i;
       }
-      dir *= -1;
-    }
+    });
+    const ordered = [
+      curPos,
+      leadPt,
+      ...scenicWaypoints.slice(bestIdx),
+      ...scenicWaypoints.slice(0, bestIdx)
+    ];
 
-    // 4. Loop smoothly back outside the South Welcome Arch for continuous playback
-    pts.push(new THREE.Vector3(-12, 9.0, rr + 12));
-
-    const curve = new THREE.CatmullRomCurve3(pts, true, "catmullrom", 0.35);
+    const curve = new THREE.CatmullRomCurve3(ordered, true, "catmullrom", 0.5);
     const totalLen = curve.getLength();
-    // High-speed drone velocity (~24 world units/second) regardless of city size!
-    const normalizedSpeed = 24 / Math.max(totalLen, 120);
+    // Cinematic smooth drone speed (~28 world units/sec)
+    const normalizedSpeed = 28 / Math.max(totalLen, 180);
 
     this.droneTour = {
       active: true,
       curve,
       t: 0,
       speed: normalizedSpeed,
+      smoothTarget: curTarget.clone(),
+      bankAngle: 0,
       onStop
     };
   }
 
   stopDroneView() {
     this.droneTour.active = false;
+    this.camera.up.set(0, 1, 0);
     if (this.droneTour.onStop) {
       const cb = this.droneTour.onStop;
       this.droneTour.onStop = null;
@@ -5472,10 +5993,54 @@ export class FollowerTownEngine {
   }
 
   /**
-   * 🏗️ BUILD REEL TOUR (Construction Showcase for Reels):
-   * Automatically picks the newest built buildings (current Day # first, up to 8 places),
-   * flies rapidly to each one, replays its live construction animation (scaffolding + workers + rising),
-   * and finishes with a sweep over Sheru Bhai Statue!
+   * 🏗️ SINGLE-BUILDING CINEMA CONSTRUCTION REEL (1-Tap from any Plot Card!)
+   * Starts from your current camera view, smoothly glides in, replays the building's construction
+   * with scaffolding & workers, and gently orbits around it!
+   */
+  startSingleBuildReel(plotId, data) {
+    if (this.proReelTour.active) this.stopProReelTour();
+    if (this.droneTour.active) this.stopDroneView();
+    this.autoSpin = false;
+
+    const c = this.getPlotWorldCenter(plotId);
+    const sz = data?.size || getRequiredSize(data?.buildingType || "house_blue");
+    const dist = sz === 8 ? 34 : sz === 4 ? 23 : sz === 2 ? 19 : 15;
+    const startAng = Math.atan2(this.camera.position.z - c.z, this.camera.position.x - c.x);
+
+    const stops = [
+      {
+        tag: `🏗️ CONSTRUCTING • DAY ${data?.builtDay || 1}`,
+        name: data?.ownerName || BUILDING_LABELS[data?.buildingType] || "Building",
+        target: new THREE.Vector3(c.x, c.y + 1, c.z),
+        camPos: new THREE.Vector3(c.x + Math.cos(startAng) * dist, dist * 0.85, c.z + Math.sin(startAng) * dist),
+        orbitRadius: dist,
+        orbitHeight: dist * 0.82,
+        orbitStartAng: startAng,
+        orbitSpeed: 0.42,
+        duration: 4.2,
+        speed: 0.14,
+        plotId,
+        triggerBuild: true
+      }
+    ];
+
+    this.buildReelTour = {
+      active: true,
+      stops,
+      idx: 0,
+      timer: 0,
+      onStopChange: null,
+      onComplete: null
+    };
+    this._applyBuildReelStop(0);
+  }
+
+  /**
+   * 🏗️ PRO CINEMA BUILD REEL TOUR (Construction Showcase for Reels):
+   * - Starts SMOOTHLY FROM YOUR CURRENT CAMERA POSITION (no sudden snap!)
+   * - Automatically picks your newest built buildings (including Airport & Beach custom plots!)
+   * - Glides to each building, triggers live 3D construction, and gently orbits while it rises!
+   * - Finishes with a majestic pull-back over the city & Araku Valley mountains!
    */
   startBuildReelTour(allPlotsObj, onStopChange, onComplete) {
     if (this.proReelTour.active) this.stopProReelTour();
@@ -5485,13 +6050,14 @@ export class FollowerTownEngine {
     const builtList = [];
     Object.entries(allPlotsObj || {}).forEach(([pid, p]) => {
       if (!p || p.status !== "built") return;
-      const sz = getRequiredSize(p.buildingType);
+      const sz = p.size || getRequiredSize(p.buildingType);
+      const numIdx = pid.startsWith("zone_") ? 99999 : (parseInt(pid.replace("plot_", ""), 10) || 0);
       builtList.push({
         pid,
         p,
         sz,
         day: p.builtDay || 1,
-        idx: parseInt(pid.replace("plot_", ""), 10) || 0
+        idx: numIdx
       });
     });
 
@@ -5500,7 +6066,6 @@ export class FollowerTownEngine {
       return;
     }
 
-    // Sort newest Day first, then Landmarks first, then highest plot index!
     builtList.sort((a, b) => b.day - a.day || b.sz - a.sz || b.idx - a.idx);
     const maxDay = builtList[0].day;
     let featured = builtList.filter((item) => item.day === maxDay).slice(0, 8);
@@ -5510,42 +6075,50 @@ export class FollowerTownEngine {
 
     const stops = [];
 
-    // Opening shot on Sheru Bhai Statue
+    // Opening shot smoothly eases from WHERE YOU ARE CURRENTLY LOOKING (zero jump!)
+    const curPos = this.camera.position.clone();
+    const curTarget = this.controls.target.clone();
     stops.push({
-      tag: `DAY ${maxDay} • NEW CONSTRUCTIONS`,
-      name: "🦁 SHERU BHAI • ST JUNCTION",
-      target: new THREE.Vector3(0, 4.5, 0),
-      camPos: new THREE.Vector3(24, 24, 24),
-      duration: 1.6,
-      speed: 0.16,
+      tag: `DAY ${maxDay} • LIVE CONSTRUCTION REEL`,
+      name: this.townName.toUpperCase(),
+      target: curTarget.clone(),
+      camPos: curPos.clone().add(new THREE.Vector3(0, 6, 0)),
+      orbitRadius: 0,
+      duration: 1.2,
+      speed: 0.14,
       plotId: null,
       triggerBuild: false
     });
 
     featured.forEach((item, i) => {
       const c = this.getPlotWorldCenter(item.pid);
-      const d = item.sz === 8 ? 34 : item.sz === 4 ? 24 : 16;
-      const side = i % 2 === 0 ? 1 : -1;
+      const d = item.sz === 8 ? 34 : item.sz === 4 ? 23 : item.sz === 2 ? 19 : 15;
+      const ang = i % 2 === 0 ? 0.65 : 2.35;
       stops.push({
         tag: `🏗️ CONSTRUCTING • DAY ${item.day}`,
         name: item.p.ownerName || BUILDING_LABELS[item.p.buildingType] || "New Building",
-        target: new THREE.Vector3(c.x, c.y, c.z),
-        camPos: new THREE.Vector3(c.x + d * side, d * 0.92, c.z + d),
-        duration: 2.9, // Enough time to watch scaffolding + building rise completely!
-        speed: 0.18,
+        target: new THREE.Vector3(c.x, c.y + 0.8, c.z),
+        camPos: new THREE.Vector3(c.x + Math.cos(ang) * d, d * 0.86, c.z + Math.sin(ang) * d),
+        orbitRadius: d,
+        orbitHeight: d * 0.82,
+        orbitStartAng: ang,
+        orbitSpeed: i % 2 === 0 ? 0.36 : -0.36,
+        duration: 3.2,
+        speed: 0.14,
         plotId: item.pid,
         triggerBuild: true
       });
     });
 
-    // Finale Zoom-Out
+    // Dramatic Araku Valley + City Skyline Finale Pull-Back
     stops.push({
       tag: "COMMENT TO BUILD YOURS!",
       name: `${builtList.length} PLACES LIVE`,
-      target: new THREE.Vector3(0, 0, 0),
-      camPos: new THREE.Vector3(-110, 118, 110),
-      duration: 2.0,
-      speed: 0.11,
+      target: new THREE.Vector3(0, 6, 0),
+      camPos: new THREE.Vector3(-125, 118, 130),
+      orbitRadius: 0,
+      duration: 2.3,
+      speed: 0.08,
       plotId: null,
       triggerBuild: false
     });
@@ -5600,6 +6173,7 @@ export class FollowerTownEngine {
     const beachClean = (this.beachOwner || "").toLowerCase().replace(/^@/, "");
     if (q.includes("beach") || q.includes("ocean") || q.includes("sea") || (beachClean && beachClean.includes(q))) return "BEACH";
     const railClean = (this.railwayOwner || "").toLowerCase().replace(/^@/, "");
+    if (q.includes("south") || q.includes("araku") || q.includes("waterfall") || q.includes("mountain")) return "RAILWAY_SOUTH";
     if (q.includes("train") || q.includes("rail") || q.includes("station") || q.includes("tunnel") || (railClean && railClean.includes(q))) return "RAILWAY_STATION";
 
     if (q.includes("sheru") || q.includes("bhai") || q.includes("junction") || q.includes("statue") || q === "st") return "ST_JUNCTION";
@@ -5618,22 +6192,39 @@ export class FollowerTownEngine {
     const dt = Math.min(this.clock.getDelta(), 0.05);
     const elapsed = this.clock.elapsedTime;
 
-    // 🚁 Continuous High-Speed Drone Camera Flight
+    // 🚁 PROFESSIONAL GIMBAL-STABILIZED CINEMATIC DRONE FLIGHT
     if (this.droneTour.active && this.droneTour.curve) {
       this.droneTour.t = (this.droneTour.t + dt * this.droneTour.speed) % 1;
       const pos = this.droneTour.curve.getPointAt(this.droneTour.t);
-      const lookT = (this.droneTour.t + 0.018) % 1;
+      const lookT = (this.droneTour.t + 0.024) % 1;
       const lookPt = this.droneTour.curve.getPointAt(lookT);
 
-      this.camera.position.lerp(pos, 0.22);
-      // Slight downward tilt so houses & @username signs are framed clearly
-      this.controls.target.lerp(new THREE.Vector3(lookPt.x, Math.max(1.5, lookPt.y - 2.6), lookPt.z), 0.22);
+      // Frame-rate independent cinema gimbal damping (silky smooth on 30fps or 60fps phones!)
+      const camAlpha = 1 - Math.exp(-3.4 * dt);
+      const tgtAlpha = 1 - Math.exp(-2.8 * dt);
+      this.camera.position.lerp(pos, camAlpha);
+
+      const desiredTarget = new THREE.Vector3(lookPt.x, Math.max(3.0, lookPt.y - 7.5), lookPt.z);
+      if (this.droneTour.smoothTarget) {
+        this.droneTour.smoothTarget.lerp(desiredTarget, tgtAlpha);
+        this.controls.target.copy(this.droneTour.smoothTarget);
+      } else {
+        this.controls.target.lerp(desiredTarget, tgtAlpha);
+      }
     }
 
-    // 🏗️ Construction Replay Reel Choreographer
+    // 🏗️ PRO CINEMA BUILD REEL CHOREOGRAPHER (Orbits smoothly around each building while it rises!)
     if (this.buildReelTour.active) {
       this.buildReelTour.timer += dt;
       const cur = this.buildReelTour.stops[this.buildReelTour.idx];
+      if (cur && cur.orbitRadius > 0 && this.cameraGoal) {
+        const ang = cur.orbitStartAng + this.buildReelTour.timer * cur.orbitSpeed;
+        this.cameraGoal.camPos.set(
+          cur.target.x + Math.cos(ang) * cur.orbitRadius,
+          cur.orbitHeight,
+          cur.target.z + Math.sin(ang) * cur.orbitRadius
+        );
+      }
       if (cur && this.buildReelTour.timer >= cur.duration) {
         this.buildReelTour.timer = 0;
         this.buildReelTour.idx++;
@@ -6264,44 +6855,14 @@ export class FollowerTownEngine {
 
 
 
-    // 🚂 DOUBLE-TRACK LIVE 3D TRAINS (Train 1 Coming + Train 2 Going Through Hollow Tunnel & 2-Platform Station!)
+    // 🚂 DOUBLE-TRACK LIVE 3D TRAINS (Stopping at BOTH North Station & Opposite South Station + Mountain Tunnels!)
     if (this.lifeEnabled && this.railwaySim) {
       const rsim = this.railwaySim;
 
-      const updateTrainLoop = (cycleOffset, curve, totalLen, stationT, cars, paxList, pfZ, doorZ, faceRotY) => {
-        const cycle = (elapsed + cycleOffset) % 34.0;
-        let loopProg = 0;
-
-        // 0..6.5s: Stopped cleanly at Station Platform while 5 Passengers board INSIDE!
-        // 6.5..34.0s: Smooth acceleration -> steady cruise around the entire city & through Hollow Mountain Tunnel -> smooth braking into Platform!
-        if (cycle < 6.5) {
-          loopProg = 0;
-        } else {
-          const runT = (cycle - 6.5) / 27.5; // 0..1 around entire loop
-          if (runT < 0.08) {
-            const a = runT / 0.08;
-            loopProg = 0.04 * a * a;
-          } else if (runT < 0.92) {
-            loopProg = 0.04 + ((runT - 0.08) / 0.84) * 0.92;
-          } else {
-            const b = (runT - 0.92) / 0.08;
-            loopProg = 0.96 + 0.04 * (1 - (1 - b) * (1 - b));
-          }
-        }
-
-        const headT = (stationT + loopProg) % 1.0;
-        const spacingT = 6.2 / Math.max(totalLen, 120);
-        cars.forEach((car, idx) => {
-          const carT = (headT - idx * spacingT + 1.0) % 1.0;
-          const pos = curve.getPointAt(carT);
-          const ahead = curve.getPointAt((carT + 0.008) % 1.0);
-          car.position.set(pos.x, 0.18, pos.z);
-          car.lookAt(ahead.x, 0.18, ahead.z);
-        });
-
-        if (cycle < 6.5) {
+      const animateBoarding = (paxList, isStopped, stopElapsed, cycleTotal, pfZ, doorZ, faceRotY) => {
+        if (isStopped) {
           paxList.forEach((pax, i) => {
-            const wp = (cycle - i * 0.72) / 2.0;
+            const wp = (stopElapsed - i * 0.62) / 1.8;
             if (wp < 0) {
               pax.visible = true;
               pax.position.set(-7.5 + i * 3.4, 0.95, pfZ);
@@ -6319,25 +6880,112 @@ export class FollowerTownEngine {
             }
           });
         } else {
-          // Fresh waiting passengers gather on the platform before the train returns!
           paxList.forEach((pax, i) => {
-            pax.visible = cycle > 14.0;
+            pax.visible = cycleTotal > 10.0;
             pax.position.set(-7.5 + i * 3.4, 0.95, pfZ);
             pax.rotation.y = faceRotY;
           });
         }
       };
 
-      // Train 1 (Incoming Clockwise on Track 1 -> Platform 1)
-      updateTrainLoop(0.0, rsim.track1Curve, rsim.len1, rsim.stationT1, rsim.train1Cars, rsim.paxPF1, 4.6, 2.2, Math.PI);
-      // Train 2 (Outgoing Counter-Clockwise Vande Bharat on Track 2 -> Platform 2, offset by 17s so both trains cross & run continuously!)
-      updateTrainLoop(17.0, rsim.track2Curve, rsim.len2, rsim.stationT2, rsim.train2Cars, rsim.paxPF2, -4.6, -2.2, 0);
+      const updateTwoStationTrain = (
+        cycleOffset, curve, totalLen, northT, southT, cars,
+        nPax, nPfZ, nDoorZ, nFace,
+        sPax, sPfZ, sDoorZ, sFace
+      ) => {
+        const cycle = (elapsed + cycleOffset) % 44.0;
+        const deltaNS = (southT - northT + 1.0) % 1.0;
+        const deltaSN = 1.0 - deltaNS;
 
-      // Animate Pedestrian crossing the Foot Overbridge between Platform 1 & Platform 2!
+        let headT = northT;
+        let atNorth = false;
+        let atSouth = false;
+        let stopClock = 0;
+
+        // 0..5.5s: Stopped at North Station (SHERU BHAI JN)
+        // 5.5..22.0s: Runs through Mountain Tunnel & City -> arrives at South Station!
+        // 22.0..27.5s: Stopped at South Station (ARAKU SOUTH JN)
+        // 27.5..44.0s: Runs through Opposite Mountain Tunnel -> returns to North Station!
+        const easeSegment = (u) => {
+          if (u < 0.1) return 0.05 * (u / 0.1) * (u / 0.1);
+          if (u < 0.9) return 0.05 + ((u - 0.1) / 0.8) * 0.9;
+          const b = (u - 0.9) / 0.1;
+          return 0.95 + 0.05 * (1 - (1 - b) * (1 - b));
+        };
+
+        if (cycle < 5.5) {
+          headT = northT;
+          atNorth = true;
+          stopClock = cycle;
+        } else if (cycle < 22.0) {
+          const u = (cycle - 5.5) / 16.5;
+          headT = (northT + easeSegment(u) * deltaNS) % 1.0;
+        } else if (cycle < 27.5) {
+          headT = southT;
+          atSouth = true;
+          stopClock = cycle - 22.0;
+        } else {
+          const u = (cycle - 27.5) / 16.5;
+          headT = (southT + easeSegment(u) * deltaSN) % 1.0;
+        }
+
+        const spacingT = 6.2 / Math.max(totalLen, 120);
+        cars.forEach((car, idx) => {
+          const carT = (headT - idx * spacingT + 1.0) % 1.0;
+          const pos = curve.getPointAt(carT);
+          const ahead = curve.getPointAt((carT + 0.008) % 1.0);
+          car.position.set(pos.x, 0.18, pos.z);
+          car.lookAt(ahead.x, 0.18, ahead.z);
+        });
+
+        animateBoarding(nPax, atNorth, stopClock, cycle, nPfZ, nDoorZ, nFace);
+        animateBoarding(sPax, atSouth, stopClock, (cycle + 22.0) % 44.0, sPfZ, sDoorZ, sFace);
+      };
+
+      // Train 1 (Blue/Yellow WAP-7 Express — Track 1 Clockwise, stopping at North PF1 & South PF1!)
+      updateTwoStationTrain(
+        0.0, rsim.track1Curve, rsim.len1, rsim.stationT1, rsim.southT1, rsim.train1Cars,
+        rsim.paxPF1, 4.6, 2.2, Math.PI,
+        rsim.southPaxPF1, -4.6, -2.2, 0
+      );
+
+      // Train 2 (White/Orange Vande Bharat — Track 2 Counter-Clockwise, stopping at North PF2 & South PF2!)
+      updateTwoStationTrain(
+        22.0, rsim.track2Curve, rsim.len2, rsim.stationT2, rsim.southT2, rsim.train2Cars,
+        rsim.paxPF2, -4.6, -2.2, 0,
+        rsim.southPaxPF2, 4.6, 2.2, Math.PI
+      );
+
+      // Foot Overbridge Pedestrians on BOTH North & South Stations!
       if (rsim.bridgeWalker) {
         const bz = Math.sin(elapsed * 0.9) * 4.2;
         rsim.bridgeWalker.position.set(rsim.fobX, 4.86 + Math.abs(Math.sin(elapsed * 7)) * 0.1, bz);
         rsim.bridgeWalker.rotation.y = Math.cos(elapsed * 0.9) >= 0 ? 0 : Math.PI;
+      }
+      if (rsim.southBridgeWalker) {
+        const bz2 = Math.cos(elapsed * 0.85) * 4.2;
+        rsim.southBridgeWalker.position.set(rsim.fobX, 4.86 + Math.abs(Math.sin(elapsed * 7 + 1.2)) * 0.1, bz2);
+        rsim.southBridgeWalker.rotation.y = -Math.sin(elapsed * 0.85) >= 0 ? 0 : Math.PI;
+      }
+    }
+
+    // ⛰️💧 ARAKU VALLEY WATERFALLS, FLOWING RIVERS & MISTY MOUNTAIN CLOUDS ANIMATION
+    if (this.lifeEnabled && this.arakuSim) {
+      for (const rib of this.arakuSim.waterRibbons) {
+        const span = rib.maxY - rib.minY;
+        const drop = ((elapsed * rib.speed + rib.phase * span) % span);
+        rib.mesh.position.y = rib.maxY - drop;
+      }
+      for (const rip of this.arakuSim.riverRipples) {
+        const u = (elapsed * rip.speed + rip.phase) % 1;
+        const p = rip.curve.getPointAt(u);
+        const tan = rip.curve.getTangentAt(u);
+        rip.mesh.position.set(p.x, 0.14, p.z);
+        rip.mesh.rotation.y = Math.atan2(tan.x, tan.z);
+      }
+      for (const mc of this.arakuSim.mistClouds) {
+        const curAng = mc.ang + elapsed * mc.speed;
+        mc.mesh.position.set(Math.cos(curAng) * mc.rad, mc.y + Math.sin(elapsed * 0.6 + mc.ang) * 1.4, Math.sin(curAng) * mc.rad);
       }
     }
 
