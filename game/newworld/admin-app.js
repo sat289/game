@@ -8,7 +8,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged
-} from "./firebase-config.js?v=28";
+} from "./firebase-config.js?v=26";
 import {
   FollowerTownEngine,
   BUILDING_LABELS,
@@ -16,7 +16,7 @@ import {
   getTwoPlotGroup,
   getBlockPlotIds,
   getEightPlotGroup
-} from "./world-engine.js?v=28";
+} from "./world-engine.js?v=26";
 
 let isAdmin = false;
 let selectedPlotId = "plot_0001";
@@ -107,24 +107,12 @@ function getNextZoneSlot(zone) {
       rotY: row % 2 === 0 ? Math.PI : 0
     };
   }
-  // Spacious Beachside Colony Strip (North & South of Beach Highway, clear of OYO/Hostel/Parking!)
-  const beachSlots = [
-    { offsetX: 24, offsetZ: -44, rotY: -Math.PI / 2 },
-    { offsetX: 24, offsetZ: -32, rotY: -Math.PI / 2 },
-    { offsetX: 24, offsetZ: 34,  rotY: -Math.PI / 2 },
-    { offsetX: 24, offsetZ: 46,  rotY: -Math.PI / 2 },
-    { offsetX: 40, offsetZ: -44, rotY: -Math.PI / 2 },
-    { offsetX: 40, offsetZ: -28, rotY: -Math.PI / 2 },
-    { offsetX: 40, offsetZ: -12, rotY: -Math.PI / 2 },
-    { offsetX: 40, offsetZ: 14,  rotY: -Math.PI / 2 },
-    { offsetX: 40, offsetZ: 30,  rotY: -Math.PI / 2 },
-    { offsetX: 40, offsetZ: 46,  rotY: -Math.PI / 2 }
-  ];
-  if (count < beachSlots.length) return beachSlots[count];
-  const extra = count - beachSlots.length;
+  // Neat coastal strip along Golden Beach palm side facing the Ocean (-X)!
+  const row = count % 8;
+  const col = Math.floor(count / 8);
   return {
-    offsetX: 56 + Math.floor(extra / 6) * 16,
-    offsetZ: -42 + (extra % 6) * 16.5,
+    offsetX: 22 + col * 9.0,
+    offsetZ: -34 + row * 9.4,
     rotY: -Math.PI / 2
   };
 }
@@ -155,22 +143,6 @@ engine.onAddPlotTap = (result) => {
 };
 
 function openPlotCard(plotId, data) {
-  if (plotId === "HILL_TEMPLE") {
-    document.getElementById("card-badge").textContent = "SACRED HILLTOP TEMPLE • ARAKU PEAK";
-    document.getElementById("card-owner").textContent = "🛕 SRI VENKATESWARA HILL TEMPLE";
-    document.getElementById("card-role").textContent = "Grand Real-Style Mountain Temple beside the Railway Station with 48 Pilgrimage Steps, Devotees Climbing, Winding Ghat Road for Vehicles, River & Radiant Golden Glow!";
-    document.getElementById("card-type").textContent = "HILLTOP MAHA TEMPLE";
-    document.getElementById("card-day").textContent = "LIVE DIVINE GLOW ✨";
-    editBtn.classList.add("hidden");
-    if (beachEditBtn) beachEditBtn.classList.add("hidden");
-    if (railwayEditBtn) railwayEditBtn.classList.add("hidden");
-    if (replayBuildBtn) replayBuildBtn.classList.add("hidden");
-    websiteBtn.classList.add("hidden");
-    if (sheru3dBtn) sheru3dBtn.classList.add("hidden");
-    plotCard.classList.remove("hidden");
-    return;
-  }
-
           if (plotId === "RAILWAY_SOUTH") {
     document.getElementById("card-badge").textContent = "ARAKU VALLEY GATE • SOUTH STATION";
     document.getElementById("card-owner").textContent = "🚉 ARAKU SOUTH JN";
@@ -259,17 +231,11 @@ function openPlotCard(plotId, data) {
     document.getElementById("card-role").textContent = data.role || "Town Resident";
     document.getElementById("card-type").textContent =
       size === 8
-        ? (data.buildingType === "imax_theater" ? "8-PLOT IMAX 3D DOME" : data.buildingType === "movie_theater" ? "8-PLOT MOVIE THEATER" : data.buildingType === "mahindra_showroom" ? "8-PLOT MAHINDRA SHOWROOM" : data.buildingType === "bmw_showroom" ? "8-PLOT BMW SHOWROOM" : data.buildingType === "audi_showroom" ? "8-PLOT AUDI SHOWROOM" : "8-PLOT STADIUM")
+        ? (data.buildingType === "imax_theater" ? "8-PLOT IMAX 3D DOME" : data.buildingType === "movie_theater" ? "8-PLOT MOVIE THEATER" : data.buildingType === "audi_showroom" ? "8-PLOT AUDI SHOWROOM" : "8-PLOT STADIUM")
         : size === 4
-        ? (data.buildingType === "tirumala_temple" ? "4-PLOT TIRUMALA TEMPLE" : data.buildingType === "hotel_oyo" ? "20-FLOOR OYO TOWER" : data.buildingType === "hostel" ? "4-PLOT HOSTEL" : data.buildingType === "wine_shop" ? "4-PLOT WINE SHOP" : data.buildingType === "swimming_pool" ? "4-PLOT SWIMMING POOL" : data.buildingType === "city_park" ? "4-PLOT CITY PARK" : data.buildingType === "library" ? "4-PLOT LIBRARY" : data.buildingType === "dmart" ? "4-PLOT D-MART" : "4-PLOT LANDMARK")
+        ? (data.buildingType === "dmart" ? "4-PLOT D-MART" : "4-PLOT LANDMARK")
         : size === 2
         ? (data.buildingType === "mobile_showroom" ? "2-PLOT MOBILE SHOWROOM" : data.buildingType === "beach_villa_2" ? "2-PLOT BEACH VILLA" : "2-PLOT STUDIO")
-        : data.buildingType === "ice_cream_shop"
-        ? "ICE CREAM SHOP"
-        : data.buildingType === "medical_shop"
-        ? "24/7 MEDICAL SHOP"
-        : data.buildingType === "veg_shop"
-        ? "VEGETABLE SHOP"
         : data.buildingType === "mobile_shop"
         ? "MOBILE SHOP"
         : data.buildingType === "beach_villa"
@@ -553,9 +519,9 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
 
     const defaultRole =
       newSize === 8
-        ? (type === "imax_theater" ? "8-Plot IMAX 3D Dome Theater" : type === "movie_theater" ? "8-Plot Multiplex Movie Theater" : type === "mahindra_showroom" ? "8-Plot Mahindra SUV Showroom" : type === "bmw_showroom" ? "8-Plot BMW Luxury Showroom" : type === "audi_showroom" ? "8-Plot Audi Luxury Showroom" : "8-Plot Mega Stadium")
+        ? (type === "imax_theater" ? "8-Plot IMAX 3D Dome Theater" : type === "movie_theater" ? "8-Plot Multiplex Movie Theater" : type === "audi_showroom" ? "8-Plot Audi Luxury Showroom" : "8-Plot Mega Stadium")
         : newSize === 4
-        ? (type === "hotel_oyo" ? "20-Floor OYO Rooms Tower" : type === "hostel" ? "Boys & Girls Hostel" : type === "wine_shop" ? "Royal Wine Shop Landmark" : type === "dmart" ? "D-Mart Hypermarket" : type === "gym" ? "Fitness Gym Owner" : "4-Plot Town Landmark")
+        ? (type === "dmart" ? "D-Mart Hypermarket" : type === "gym" ? "Fitness Gym Owner" : "4-Plot Town Landmark")
         : (type === "mobile_showroom" ? "2-Plot Mega Mobile Showroom" : type === "beach_villa_2" ? "Luxury 2-Plot Beachfront Villa" : "2-Plot Photo Studio");
 
     const anchorPayload = {
@@ -620,7 +586,7 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
     } else if (relocatedCount > 0) {
       showToast(`🏗️ Built! Moved ${relocatedCount} houses to free plots.`);
     } else {
-      showToast(newSize === 8 ? (type === "imax_theater" ? "🎬 Built 8-Plot Giant IMAX 3D Dome with Sky Disco Lights!" : type === "movie_theater" ? "🎭 Built 8-Plot Real Movie Theater with Sky Disco Lights!" : type === "mahindra_showroom" ? "🚙 Built 8-Plot Mahindra SUV Showroom!" : type === "bmw_showroom" ? "🏎️ Built 8-Plot BMW Luxury Showroom!" : type === "audi_showroom" ? "🚘 Built 8-Plot Audi Showroom!" : "🏟️ Built 8-Plot Mega Stadium!") : newSize === 4 ? "🏛️ Built 4-Plot Landmark!" : newSize === 2 ? (type === "mobile_showroom" ? "📱 Built 2-Plot Mega Mobile Showroom!" : type === "beach_villa_2" ? "🏖️ Built 2-Plot Luxury Beach Villa!" : "📸 Built 2-Plot Photo Studio!") : `🔨 Built ${ownerName}'s plot!`);
+      showToast(newSize === 8 ? (type === "imax_theater" ? "🎬 Built 8-Plot Giant IMAX 3D Dome with Sky Disco Lights!" : type === "movie_theater" ? "🎭 Built 8-Plot Real Movie Theater with Sky Disco Lights!" : type === "audi_showroom" ? "🚘 Built 8-Plot Audi Showroom!" : "🏟️ Built 8-Plot Mega Stadium!") : newSize === 4 ? "🏛️ Built 4-Plot Landmark!" : newSize === 2 ? (type === "mobile_showroom" ? "📱 Built 2-Plot Mega Mobile Showroom!" : type === "beach_villa_2" ? "🏖️ Built 2-Plot Luxury Beach Villa!" : "📸 Built 2-Plot Photo Studio!") : `🔨 Built ${ownerName}'s plot!`);
     }
     closeAllDrawers();
     engine.focusPlot(selectedPlotId);
@@ -1588,8 +1554,7 @@ function renderShotlistItems(filterText = "") {
     { id: "AIRPORT", label: "✈️ 20-Acre Airport & Diamond Heli", sub: "AIRPORT", day: 0 },
     { id: "BEACH", label: "🏖️ Sheru Bhai Beach & Villa", sub: "BEACH", day: 0 },
     { id: "RAILWAY_STATION", label: "🚂 North Railway Station", sub: "STATION 1", day: 0 },
-    { id: "RAILWAY_SOUTH", label: "🚉 Araku South Station", sub: "STATION 2", day: 0 },
-    { id: "HILL_TEMPLE", label: "🛕 Sacred Hilltop Temple Mountain", sub: "HILL TEMPLE", day: 0 }
+    { id: "RAILWAY_SOUTH", label: "🚉 Araku South Station", sub: "STATION 2", day: 0 }
   ];
 
   const builtPlots = [];
@@ -1705,14 +1670,5 @@ if (btnBloomToggle) {
     btnBloomToggle.classList.toggle("active", engine.bloomEnabled);
     btnBloomToggle.textContent = engine.bloomEnabled ? "✨ Bloom" : "✨ Bloom OFF";
     showToast(engine.bloomEnabled ? "✨ Neon Cinema Bloom Glow ON!" : "✨ Bloom Glow OFF");
-  });
-}
-
-const btnReelTemple = document.getElementById("reel-temple-cam");
-if (btnReelTemple) {
-  btnReelTemple.addEventListener("click", () => {
-    engine.stopAllReelModes();
-    engine.focusPlot("HILL_TEMPLE", 0.12);
-    showToast("🛕 Sacred Hilltop Temple Mountain & Pilgrimage Steps!");
   });
 }
