@@ -18,7 +18,7 @@ export const FOUR_PLOT_TYPES = new Set([
   "dmart"
 ]);
 
-export const TWO_PLOT_TYPES = new Set(["photo_studio", "beach_villa_2"]);
+export const TWO_PLOT_TYPES = new Set(["photo_studio", "beach_villa_2", "mobile_showroom"]);
 
 export const BUILDING_LABELS = {
   house_blue: "🏡 Ivory & Slate Villa",
@@ -31,6 +31,8 @@ export const BUILDING_LABELS = {
   tower_gold: "🏢 6-Floor Golden Glass Penthouse",
   shop: "☕ టీ & టిఫిన్ • SHOP",
   cafe: "☕ కేఫ్ • COFFEE CAFE",
+  mobile_shop: "📱 మొబైల్ షాప్ • MOBILE SHOP (1 PLOT)",
+  mobile_showroom: "📱 మొబైల్ షోరూమ్ • MEGA MOBILE HUB (2 PLOTS)",
   ground: "🏏 గ్రౌండ్ • MEGA CRICKET STADIUM (8 PLOTS)",
   audi_showroom: "🚘 ఆడి షోరూమ్ • AUDI SHOWROOM (8 PLOTS)",
   beach_villa: "🏖️ బీచ్ విల్లా • BEACH HOUSE VILLA (1 PLOT)",
@@ -214,6 +216,19 @@ export class FollowerTownEngine {
     this._perfThrottle = false;
     this._animFrameTick = 0;
     this._emptyPlotCoords = new Map();
+
+    // v26 Cinema Quality (Admin Reel Mode Only) + Hero .glb 3D Models
+    this.shadowsEnabled = false;
+    this.bloomEnabled = false;
+    this.composer = null;
+    this.bloomPass = null;
+    this._bloomLoading = false;
+    this.heroModelUrls = { statue: "", audi: "", heli: "" };
+    this.glbCache = new Map();
+    this._gltfLoader = null;
+    this.heroStatueSlot = null;
+    this.heroHeliSlot = null;
+    this.heroAudiSlots = [];
     this.renderer.shadowMap.enabled = false;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = this.hqMode ? 1.14 : 1.08;
@@ -410,6 +425,7 @@ export class FollowerTownEngine {
 
     this._initLights();
     this._buildSkyDecor();
+    this._initProceduralTextures();
     this._initSharedMaterials();
     this._initSharedGeometries();
     this._sharedMatSet = new Set(Object.values(this.mat));
@@ -427,6 +443,20 @@ export class FollowerTownEngine {
 
     this.sunLight = new THREE.DirectionalLight(0xfffbeb, 1.24);
     this.sunLight.position.set(90, 135, 70);
+    this.sunTarget = new THREE.Object3D();
+    this.sunTarget.position.set(0, 0, 0);
+    this.scene.add(this.sunTarget);
+    this.sunLight.target = this.sunTarget;
+    this.sunLight.castShadow = false;
+    this.sunLight.shadow.mapSize.set(2048, 2048);
+    this.sunLight.shadow.camera.near = 20;
+    this.sunLight.shadow.camera.far = 360;
+    this.sunLight.shadow.camera.left = -95;
+    this.sunLight.shadow.camera.right = 95;
+    this.sunLight.shadow.camera.top = 95;
+    this.sunLight.shadow.camera.bottom = -95;
+    this.sunLight.shadow.bias = -0.0005;
+    this.sunLight.shadow.normalBias = 0.04;
     this.scene.add(this.sunLight);
 
     this.fillLight = new THREE.DirectionalLight(0xcceeff, 0.52);
@@ -438,17 +468,146 @@ export class FollowerTownEngine {
     this.scene.add(this.rimLight);
   }
 
+  /**
+   * 🧱 ZERO-MB PROCEDURAL CANVAS TEXTURES (Crisp Asphalt Road Grain, Lush Grass Blades & Shiny Sky-Reflective Glass!)
+   * Generated once in RAM (< 200 KB total) and shared across the entire city for instant realism with zero download lag!
+   */
+  _initProceduralTextures() {
+    const makeTex = (size, drawFn, repeatX = 1, repeatY = 1, repeat = true) => {
+      const c = document.createElement("canvas");
+      c.width = size;
+      c.height = size;
+      const ctx = c.getContext("2d");
+      drawFn(ctx, size);
+      const tex = new THREE.CanvasTexture(c);
+      if (repeat) {
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(repeatX, repeatY);
+      }
+      tex.generateMipmaps = !this.isVeryLowRam;
+      tex.minFilter = this.isVeryLowRam ? THREE.LinearFilter : THREE.LinearMipmapLinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      tex.anisotropy = this.isVeryLowRam ? 1 : Math.min(4, this.maxAnisotropy || 2);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    };
+
+    // 1. Crisp Asphalt Road & Highway Grain Texture
+    const drawAsphalt = (ctx, s, baseHex) => {
+      ctx.fillStyle = baseHex;
+      ctx.fillRect(0, 0, s, s);
+      // Fine aggregate asphalt grain speckles (deterministic pseudo-random so it tiles cleanly)
+      let seed = 1337;
+      const rnd = () => {
+        seed = (seed * 16807) % 2147483647;
+        return (seed - 1) / 2147483646;
+      };
+      for (let i = 0; i < 950; i++) {
+        const x = rnd() * s;
+        const y = rnd() * s;
+        const v = rnd();
+        ctx.fillStyle = v > 0.65 ? "rgba(255,255,255,0.08)" : v > 0.3 ? "rgba(15,23,42,0.22)" : "rgba(148,163,184,0.09)";
+        ctx.fillRect(x, y, 2, 2);
+      }
+      // Subtle tire wear sheen bands
+      ctx.fillStyle = "rgba(255,255,255,0.035)";
+      ctx.fillRect(0, s * 0.22, s, s * 0.12);
+      ctx.fillRect(0, s * 0.66, s, s * 0.12);
+    };
+    const roadTex = makeTex(128, (ctx, s) => drawAsphalt(ctx, s, "#334155"), 8, 8);
+    const highwayTex = makeTex(128, (ctx, s) => drawAsphalt(ctx, s, "#1e293b"), 14, 14);
+
+    // 2. Lush Multi-Tone Grass & Meadow Texture
+    const grassTex = makeTex(128, (ctx, s) => {
+      ctx.fillStyle = "#65a30d";
+      ctx.fillRect(0, 0, s, s);
+      let seed = 4242;
+      const rnd = () => {
+        seed = (seed * 16807) % 2147483647;
+        return (seed - 1) / 2147483646;
+      };
+      // Soft sunlight meadow patches
+      for (let i = 0; i < 28; i++) {
+        ctx.fillStyle = i % 2 === 0 ? "rgba(132,204,22,0.18)" : "rgba(21,128,61,0.16)";
+        ctx.beginPath();
+        ctx.arc(rnd() * s, rnd() * s, 10 + rnd() * 14, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // Crisp micro grass blades
+      for (let i = 0; i < 620; i++) {
+        const x = rnd() * s;
+        const y = rnd() * s;
+        ctx.fillStyle = rnd() > 0.5 ? "rgba(163,230,53,0.26)" : "rgba(22,101,52,0.25)";
+        ctx.fillRect(x, y, 2, 4);
+      }
+    }, 36, 36);
+
+    const turfTex = makeTex(128, (ctx, s) => {
+      ctx.fillStyle = "#16a34a";
+      ctx.fillRect(0, 0, s, s);
+      ctx.fillStyle = "rgba(34,197,94,0.16)";
+      for (let x = 0; x < s; x += 16) ctx.fillRect(x, 0, 8, s);
+    }, 10, 10);
+
+    // 3. Shiny Sky-Reflective Architectural Glass Texture (Diagonal Sunlit Sky Reflection Streaks!)
+    const glassTex = makeTex(128, (ctx, s) => {
+      const grad = ctx.createLinearGradient(0, 0, s, s);
+      grad.addColorStop(0.0, "#7dd3fc");
+      grad.addColorStop(0.32, "#38bdf8");
+      grad.addColorStop(0.55, "#0284c7");
+      grad.addColorStop(1.0, "#1e3a8a");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, s, s);
+
+      // Diagonal gleaming sky/cloud reflection slashes
+      ctx.fillStyle = "rgba(255,255,255,0.42)";
+      ctx.beginPath();
+      ctx.moveTo(s * 0.08, 0);
+      ctx.lineTo(s * 0.28, 0);
+      ctx.lineTo(0, s * 0.56);
+      ctx.lineTo(0, s * 0.32);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = "rgba(255,255,255,0.28)";
+      ctx.beginPath();
+      ctx.moveTo(s * 0.48, 0);
+      ctx.lineTo(s * 0.62, 0);
+      ctx.lineTo(s * 0.14, s);
+      ctx.lineTo(0, s);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = "rgba(224,242,254,0.2)";
+      ctx.beginPath();
+      ctx.moveTo(s * 0.78, 0);
+      ctx.lineTo(s * 0.88, 0);
+      ctx.lineTo(s * 0.42, s);
+      ctx.lineTo(s * 0.32, s);
+      ctx.closePath();
+      ctx.fill();
+
+      // Subtle architectural mullion frame border
+      ctx.strokeStyle = "rgba(15,23,42,0.35)";
+      ctx.lineWidth = 4;
+      ctx.strokeRect(2, 2, s - 4, s - 4);
+    }, 1, 1, false);
+
+    this.procTex = { roadTex, highwayTex, grassTex, turfTex, glassTex };
+  }
+
   _initSharedMaterials() {
     this.mat = {
-      grass: new THREE.MeshLambertMaterial({ color: 0x65a30d }),
-      turf: new THREE.MeshLambertMaterial({ color: 0x16a34a }),
+      grass: new THREE.MeshLambertMaterial({ map: this.procTex.grassTex }),
+      turf: new THREE.MeshLambertMaterial({ map: this.procTex.turfTex }),
       pitch: new THREE.MeshLambertMaterial({ color: 0xd6b588 }),
-      road: new THREE.MeshLambertMaterial({ color: 0x334155 }),
-      highway: new THREE.MeshLambertMaterial({ color: 0x1e293b }),
+      road: new THREE.MeshLambertMaterial({ map: this.procTex.roadTex }),
+      highway: new THREE.MeshLambertMaterial({ map: this.procTex.highwayTex }),
       median: new THREE.MeshLambertMaterial({ color: 0x15803d }),
       sidewalk: new THREE.MeshLambertMaterial({ color: 0x94a3b8 }),
       concrete: new THREE.MeshLambertMaterial({ color: 0xcbd5e1 }),
-      marble: new THREE.MeshLambertMaterial({ color: 0xf1f5f9 }),
+      marble: new THREE.MeshPhongMaterial({ color: 0xf8fafc, specular: 0xffffff, shininess: 65 }),
       bronze: new THREE.MeshLambertMaterial({ color: 0xd97706 }),
       gold: new THREE.MeshLambertMaterial({ color: 0xfbbf24 }),
       water: new THREE.MeshLambertMaterial({ color: 0x38bdf8 }),
@@ -470,8 +629,8 @@ export class FollowerTownEngine {
       wallCoral: new THREE.MeshLambertMaterial({ color: 0xfb7185 }),
       wallMint: new THREE.MeshLambertMaterial({ color: 0x34d399 }),
       wallGold: new THREE.MeshLambertMaterial({ color: 0xfbbf24 }),
-      glass: new THREE.MeshLambertMaterial({ color: 0x93c5fd, transparent: true, opacity: 0.72 }),
-      darkGlass: new THREE.MeshLambertMaterial({ color: 0x1e3a5f }),
+      glass: new THREE.MeshPhongMaterial({ map: this.procTex.glassTex, color: 0xdbeafe, specular: 0xffffff, shininess: 135, transparent: true, opacity: 0.78 }),
+      darkGlass: new THREE.MeshPhongMaterial({ map: this.procTex.glassTex, color: 0x334155, specular: 0xe0f2fe, shininess: 120 }),
       appleSilver: new THREE.MeshLambertMaterial({ color: 0xe2e8f0 }),
       relianceBlue: new THREE.MeshLambertMaterial({ color: 0x1d4ed8 }),
       srmtPurple: new THREE.MeshLambertMaterial({ color: 0x7e22ce }),
@@ -488,7 +647,7 @@ export class FollowerTownEngine {
       ledStripNight: new THREE.MeshBasicMaterial({ color: 0xfef08a }),
       headlightBeam: new THREE.MeshBasicMaterial({ color: 0xfef9c3, transparent: true, opacity: 0.42, side: THREE.DoubleSide }),
       taillight: new THREE.MeshBasicMaterial({ color: 0xef4444 }),
-      windowDay: new THREE.MeshLambertMaterial({ color: 0x3b6ea5 }),
+      windowDay: new THREE.MeshPhongMaterial({ map: this.procTex.glassTex, color: 0xcceeff, specular: 0xffffff, shininess: 125 }),
       windowNight: new THREE.MeshBasicMaterial({ color: 0xfde047 }),
       scaffolding: new THREE.MeshLambertMaterial({ color: 0xd97706, wireframe: true }),
       skin: new THREE.MeshLambertMaterial({ color: 0xfdba74 }),
@@ -551,8 +710,8 @@ export class FollowerTownEngine {
       }),
       lionFurGold: new THREE.MeshLambertMaterial({ color: 0xf5c06b }),
       lionManeRich: new THREE.MeshLambertMaterial({ color: 0x92400e }),
-      runwayAsphalt: new THREE.MeshLambertMaterial({ color: 0x1e293b }),
-      tarmacGrey: new THREE.MeshLambertMaterial({ color: 0x334155 }),
+      runwayAsphalt: new THREE.MeshLambertMaterial({ map: this.procTex.highwayTex }),
+      tarmacGrey: new THREE.MeshLambertMaterial({ map: this.procTex.roadTex }),
       runwayBlueLight: new THREE.MeshBasicMaterial({ color: 0x38bdf8 }),
       beaconRed: new THREE.MeshBasicMaterial({ color: 0xef4444 }),
       beaconGreen: new THREE.MeshBasicMaterial({ color: 0x22c55e }),
@@ -574,7 +733,7 @@ export class FollowerTownEngine {
       audiBlue: new THREE.MeshPhongMaterial({ color: 0x1d4ed8, specular: 0xffffff, shininess: 120 }),
       audiBlack: new THREE.MeshPhongMaterial({ color: 0x111827, specular: 0x94a3b8, shininess: 110 }),
       audiWhite: new THREE.MeshPhongMaterial({ color: 0xf8fafc, specular: 0xffffff, shininess: 125 }),
-      audiGlass: new THREE.MeshLambertMaterial({ color: 0x0f172a, transparent: true, opacity: 0.85 }),
+      audiGlass: new THREE.MeshPhongMaterial({ map: this.procTex.glassTex, color: 0x1e293b, specular: 0xffffff, shininess: 145, transparent: true, opacity: 0.88 }),
       gymOrange: new THREE.MeshBasicMaterial({ color: 0xf97316 }),
       gymBlack: new THREE.MeshLambertMaterial({ color: 0x18181b }),
       gymSteel: new THREE.MeshLambertMaterial({ color: 0x94a3b8 }),
@@ -633,7 +792,13 @@ export class FollowerTownEngine {
       cinemaScreenGlow: new THREE.MeshBasicMaterial({ color: 0x60a5fa }),
       popcornYellow: new THREE.MeshLambertMaterial({ color: 0xfde047 }),
       dmartDeepGreen: new THREE.MeshLambertMaterial({ color: 0x0f7638 }),
-      invisibleHitbox: new THREE.MeshBasicMaterial({ visible: false })
+      invisibleHitbox: new THREE.MeshBasicMaterial({ visible: false }),
+      // Mobile Shop & Mega Mobile Showroom Materials
+      mobileBlue: new THREE.MeshPhongMaterial({ color: 0x0284c7, specular: 0xbae6fd, shininess: 105 }),
+      mobileCyanGlow: new THREE.MeshBasicMaterial({ color: 0x22d3ee }),
+      mobileOrange: new THREE.MeshLambertMaterial({ color: 0xf97316 }),
+      mobileTitanium: new THREE.MeshPhongMaterial({ color: 0x334155, specular: 0xffffff, shininess: 130 }),
+      mobileScreenGlow: new THREE.MeshBasicMaterial({ color: 0x38bdf8 })
     };
   }
 
@@ -822,6 +987,8 @@ export class FollowerTownEngine {
       this.camera.aspect = w / h;
       this.camera.updateProjectionMatrix();
       this.renderer.setSize(w, h);
+      if (this.composer) this.composer.setSize(w, h);
+      if (this.bloomPass) this.bloomPass.setSize(w, h);
     });
 
     const dom = this.renderer.domElement;
@@ -947,6 +1114,7 @@ export class FollowerTownEngine {
     this.turntableRotors = this.turntableRotors.filter((r) => r.plotId !== plotId);
     this.studioFlashes = this.studioFlashes.filter((f) => f.plotId !== plotId);
     this.theaterDiscos = this.theaterDiscos.filter((t) => t.plotId !== plotId);
+    this.heroAudiSlots = this.heroAudiSlots.filter((a) => a.plotId !== plotId);
   }
 
   syncLandmarkFootprints(allPlotsObj) {
@@ -1172,6 +1340,7 @@ export class FollowerTownEngine {
         this.renderPlot(pid, pdata, false);
       }
     }
+    if (this.shadowsEnabled) this._applyShadowFlags(this.cityGroup);
     this.setTimeOfDay(this.timeOfDay);
   }
 
@@ -1459,6 +1628,10 @@ export class FollowerTownEngine {
     const sign = this._createNameSign("🦁 SHERU BHAI STATUE", "ST JUNCTION • TAP FOR 3D VIEW", true);
     sign.position.set(0, 12.2, 0);
 
+    this.heroStatueSlot = lionStatue;
+    if (this.heroModelUrls && this.heroModelUrls.statue) {
+      this._loadHeroGLB("statue", this.heroModelUrls.statue, lionStatue, 5.2, 4.6, 0);
+    }
     g.add(basePad, gardenRing, poolRim, water, step1, step2, goldCollar, statueBase, aura, sign);
     this.cityGroup.add(g);
   }
@@ -2041,6 +2214,10 @@ export class FollowerTownEngine {
 
     const diamondHeli = this._makeDiamondHeliMesh();
     diamondHeli.rotation.order = "YXZ";
+    this.heroHeliSlot = diamondHeli;
+    if (this.heroModelUrls && this.heroModelUrls.heli) {
+      this._loadHeroGLB("heli", this.heroModelUrls.heli, diamondHeli, 8.2, 0.1, 0);
+    }
     ap.add(diamondHeli);
 
     // 9b. 🅿️ DEDICATED AIRPORT PASSENGER PARKING PLAZA (Beside Terminal & VIP Gate — IN ⬆ / ⬇ OUT!)
@@ -4066,6 +4243,7 @@ export class FollowerTownEngine {
       this.turntableRotors = this.turntableRotors.filter((r) => r.plotId !== plotId);
       this.studioFlashes = this.studioFlashes.filter((f) => f.plotId !== plotId);
       this.theaterDiscos = this.theaterDiscos.filter((t) => t.plotId !== plotId);
+      this.heroAudiSlots = this.heroAudiSlots.filter((a) => a.plotId !== plotId);
       this.blockedRoadZones = this.blockedRoadZones.filter((z) => z.plotId !== plotId);
     }
 
@@ -4230,12 +4408,12 @@ export class FollowerTownEngine {
       } else if (isCustom && size === 2) {
         buildingObj = this._buildTwoPlotBuilding(data.buildingType, plotId, data.ownerName);
       } else {
-        buildingObj = this._buildOnePlotBuilding(data.buildingType);
+        buildingObj = this._buildOnePlotBuilding(data.buildingType, data.ownerName);
       }
       buildingObj.rotation.y = pos.rotY;
 
       if (data.ownerName) {
-        const subLabel = data.buildingType === "shop" ? "టీ & టిఫిన్ • SHOP" : data.buildingType === "cafe" ? "☕ COFFEE CAFE" : data.buildingType === "beach_villa" ? "🏖️ BEACH HOUSE VILLA" : "";
+        const subLabel = data.buildingType === "shop" ? "టీ & టిఫిన్ • SHOP" : data.buildingType === "cafe" ? "☕ COFFEE CAFE" : data.buildingType === "mobile_shop" ? "📱 MOBILE SHOP • 5G" : data.buildingType === "beach_villa" ? "🏖️ BEACH HOUSE VILLA" : "";
         const sign = this._createNameSign(data.ownerName, subLabel, false);
         sign.position.set(0, buildingObj.userData.labelY || 5.2, 0);
         plotGroup.add(sign);
@@ -4244,6 +4422,7 @@ export class FollowerTownEngine {
     }
 
     plotGroup.add(buildingObj);
+    if (this.shadowsEnabled) this._applyShadowFlags(plotGroup);
 
     if (animateBuild && data.status === "built") {
       buildingObj.scale.y = 0.05;
@@ -4293,7 +4472,8 @@ export class FollowerTownEngine {
       movie_theater: "మూవీ థియేటర్ • IMAX MULTIPLEX",
       dmart: "డి-మార్ట్ • DAILY DISCOUNTS • DAILY SAVINGS",
       imax_theater: "ఐమాక్స్ 3D • GIANT SCREEN IMAX DOME",
-      beach_villa_2: "🏖️ LUXURY MEGA BEACH VILLA"
+      beach_villa_2: "🏖️ LUXURY MEGA BEACH VILLA",
+      mobile_showroom: "📱 మొబైల్ షోరూమ్ • 5G SMARTPHONES"
     };
     return map[type] || "";
   }
@@ -4322,7 +4502,7 @@ export class FollowerTownEngine {
   // =========================================================================
   // 1-PLOT BUILDINGS: KEEPS CLASSIC HOUSES + ADDS NEW 5-FLOOR MODERN TOWERS!
   // =========================================================================
-  _buildOnePlotBuilding(type) {
+  _buildOnePlotBuilding(type, ownerName = "") {
     const g = new THREE.Group();
     const winMat = this.timeOfDay === "night" ? this.mat.windowNight : this.mat.windowDay;
 
@@ -4436,6 +4616,60 @@ export class FollowerTownEngine {
     }
 
     // --- LOCAL TEA & TIFFIN SHOP ---
+    if (type === "mobile_shop") {
+      // 📱 1-PLOT FOLLOWER MOBILE SHOP (Glowing Cyan Storefront + Giant 3D Smartphone on Roof + Interior Phone Display!)
+      const body = new THREE.Mesh(new THREE.BoxGeometry(5.2, 3.3, 4.4), this.mat.wallWhite);
+      body.position.set(0, 1.7, -0.35);
+
+      const topFascia = new THREE.Mesh(new THREE.BoxGeometry(5.5, 0.92, 4.7), this.mat.mobileBlue);
+      topFascia.position.set(0, 3.65, -0.35);
+      const neonTrim = new THREE.Mesh(new THREE.BoxGeometry(5.58, 0.16, 4.76), this.mat.mobileCyanGlow);
+      neonTrim.position.set(0, 3.16, -0.35);
+
+      // Panoramic Sky-Reflective Glass Front showing interior smartphone demo counter!
+      const frontGlass = new THREE.Mesh(new THREE.BoxGeometry(4.2, 2.2, 0.14), this.mat.glass);
+      frontGlass.position.set(0, 1.35, 1.88);
+      const counter = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.95, 0.72), this.mat.mobileBlue);
+      counter.position.set(0, 0.62, 0.55);
+      // 3 Mini Glowing Display Phones on the Shop Counter!
+      [-0.9, 0, 0.9].forEach((mx) => {
+        const miniPhone = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.06, 0.45), this.mat.mobileScreenGlow);
+        miniPhone.position.set(mx, 1.14, 0.55);
+        g.add(miniPhone);
+      });
+
+      // GIANT 3D SMARTPHONE SCULPTURE MOUNTED ON THE SHOP ROOF!
+      const phoneGroup = new THREE.Group();
+      phoneGroup.position.set(0, 5.25, -0.2);
+      phoneGroup.rotation.y = 0.18;
+      const phoneFrame = new THREE.Mesh(new THREE.BoxGeometry(1.35, 2.35, 0.24), this.mat.mobileTitanium);
+      const phoneScreen = new THREE.Mesh(new THREE.BoxGeometry(1.18, 2.12, 0.08), this.mat.mobileScreenGlow);
+      phoneScreen.position.z = 0.11;
+      // Glowing colorful app icons on the 3D Smartphone screen!
+      const iconCols = [this.mat.wallCoral, this.mat.petrolYellow, this.mat.turf, this.mat.mobileOrange];
+      for (let r = 0; r < 2; r++) {
+        for (let c = 0; c < 2; c++) {
+          const ic = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.32, 0.05), iconCols[r * 2 + c]);
+          ic.position.set(-0.24 + c * 0.48, 0.42 - r * 0.52, 0.16);
+          phoneGroup.add(ic);
+        }
+      }
+      // Rear Triple-Lens Camera Island!
+      const camBump = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.55, 0.1), this.mat.cinemaObsidian);
+      camBump.position.set(-0.26, 0.65, -0.14);
+      phoneGroup.add(phoneFrame, phoneScreen, camBump);
+
+      // Personalized Storefront Mobile Shop Signboard (shows follower's @username!)
+      const rawMob = (ownerName || "PRO").replace(/^@/, "").trim().toUpperCase();
+      const mobTitle = rawMob.includes("MOBILE") ? rawMob : `${rawMob.slice(0, 10)} MOBILES`;
+      const mobBoard = this._makeBuildingBoard(mobTitle, "5G PHONES • REPAIR • COVERS", "#0f172a", "#22d3ee", 5.2, 0.82);
+      mobBoard.position.set(0, 3.65, 2.04);
+
+      g.add(body, topFascia, neonTrim, frontGlass, counter, phoneGroup, mobBoard);
+      g.userData.labelY = 7.4;
+      return g;
+    }
+
     if (type === "beach_villa") {
       // 🏖️ ADDABLE 1-PLOT LUXURY BEACH HOUSE VILLA (Teak Deck + Plunge Pool + Ocean Glass + Balcony + Surfboard!)
       const deck = new THREE.Mesh(new THREE.BoxGeometry(6.3, 0.32, 6.2), this.mat.teakWood);
@@ -5476,6 +5710,10 @@ export class FollowerTownEngine {
     ledRing.position.y = 0.13;
     const heroR8 = this._makeRealAudiCarMesh(this.mat.audiWhite, false);
     heroR8.position.set(0, 0.12, 0);
+    this.heroAudiSlots.push({ plotId, group: heroR8 });
+    if (this.heroModelUrls && this.heroModelUrls.audi) {
+      this._loadHeroGLB("audi", this.heroModelUrls.audi, heroR8, 4.3, 0.02, 0);
+    }
     turntable.add(disc, ledRing, heroR8);
     g.add(turntable);
     this.turntableRotors.push({ plotId, mesh: turntable, speed: 0.75 });
@@ -5527,6 +5765,79 @@ export class FollowerTownEngine {
   _buildTwoPlotBuilding(type, plotId, ownerName = "") {
     const g = new THREE.Group();
     const winMat = this.timeOfDay === "night" ? this.mat.windowNight : this.mat.windowDay;
+
+    if (type === "mobile_showroom") {
+      // 📱 2-PLOT MEGA MOBILE SHOWROOM (Sangeetha / Big C Style Smartphone Megastore + Rotating 3D Phone!)
+      const mainBody = new THREE.Mesh(new THREE.BoxGeometry(13.6, 4.5, 5.4), this.mat.wallWhite);
+      mainBody.position.set(0, 2.3, -0.55);
+
+      const upperBand = new THREE.Mesh(new THREE.BoxGeometry(14.0, 1.35, 5.8), this.mat.mobileBlue);
+      upperBand.position.set(0, 5.05, -0.55);
+      const orangeStrip = new THREE.Mesh(new THREE.BoxGeometry(14.1, 0.24, 5.86), this.mat.mobileOrange);
+      orangeStrip.position.set(0, 4.3, -0.55);
+      const cyanStrip = new THREE.Mesh(new THREE.BoxGeometry(14.1, 0.18, 5.86), this.mat.mobileCyanGlow);
+      cyanStrip.position.set(0, 5.75, -0.55);
+
+      // Wide Clear Sky-Reflective Glass Storefront + Center Glass Entry Doors
+      const glassFront = new THREE.Mesh(new THREE.BoxGeometry(12.2, 3.35, 0.14), this.mat.glass);
+      glassFront.position.set(0, 1.95, 2.18);
+      const doorFrame = new THREE.Mesh(new THREE.BoxGeometry(2.8, 2.6, 0.2), this.mat.mobileBlue);
+      doorFrame.position.set(0, 1.4, 2.22);
+
+      // Interior Experience Tables with Glowing Demo Smartphones + Accessories Wall!
+      [-3.8, 3.8].forEach((tx) => {
+        const tbl = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.95, 1.25), this.mat.stuccoIvory);
+        tbl.position.set(tx, 0.62, 0.55);
+        for (let p = -1; p <= 1; p++) {
+          const ph = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.08, 0.48), this.mat.mobileScreenGlow);
+          ph.position.set(tx + p * 0.9, 1.15, 0.55);
+          g.add(ph);
+        }
+        g.add(tbl);
+      });
+      // Colorful Phone Case & Accessories Wall inside back of store
+      const caseWall = new THREE.Mesh(new THREE.BoxGeometry(10.8, 2.4, 0.25), this.mat.mobileBlue);
+      caseWall.position.set(0, 1.55, -2.4);
+      g.add(caseWall);
+
+      // GIANT ROTATING 3D TITANIUM SMARTPHONE HOLOGRAM ON ROOF!
+      const megaPhone = new THREE.Group();
+      megaPhone.position.set(-4.2, 7.25, 0.2);
+      const pBody = new THREE.Mesh(new THREE.BoxGeometry(1.75, 3.0, 0.32), this.mat.mobileTitanium);
+      const pScrF = new THREE.Mesh(new THREE.BoxGeometry(1.52, 2.72, 0.08), this.mat.mobileScreenGlow);
+      pScrF.position.z = 0.16;
+      const pScrB = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.75, 0.12), this.mat.cinemaObsidian);
+      pScrB.position.set(-0.32, 0.85, -0.18);
+      megaPhone.add(pBody, pScrF, pScrB);
+      g.add(megaPhone);
+      this.turntableRotors.push({ plotId, mesh: megaPhone, speed: 1.05 });
+
+      // Mini Rooftop 5G Signal Mast on Right Side
+      const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.2, 2.6, 6), this.mat.chrome);
+      mast.position.set(4.8, 7.0, -0.4);
+      const signalRing = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.08, 6, 14), this.mat.mobileCyanGlow);
+      signalRing.position.set(4.8, 8.1, -0.4);
+      g.add(mast, signalRing);
+
+      // Personalized Main Mega Mobile Showroom Signboard + Brand Banner!
+      const rawShow = (ownerName || "SHERU BHAI").replace(/^@/, "").trim().toUpperCase();
+      const showTitle = rawShow.includes("MOBILE") ? rawShow : `${rawShow} MOBILES`;
+      const mainBoard = this._makeBuildingBoard(showTitle, "iPHONE • SAMSUNG • REDMI • 5G REPAIR", "#0f172a", "#22d3ee", 11.4, 1.32);
+      mainBoard.position.set(0.5, 5.05, 2.38);
+
+      // Sidewalk Promotional Standee + Animated Shoppers!
+      const standee = this._makeBuildingBoard("5G EXCHANGE", "0% EMI LIVE!", "#f97316", "#ffffff", 1.75, 1.35);
+      standee.position.set(-5.2, 1.15, 2.9);
+      g.add(standee);
+
+      const buyer = this._createCharacter({ shirtMat: this.mat.mobileOrange, pantsMat: this.mat.darkPants, scale: 0.94 });
+      g.add(buyer);
+      this.landmarkActors.push({ plotId, mesh: buyer, mode: "patrol_x", baseX: 0, baseZ: 2.85, range: 3.4, speed: 1.25, phase: 0 });
+
+      g.add(mainBody, upperBand, orangeStrip, cyanStrip, glassFront, doorFrame, mainBoard);
+      g.userData.labelY = 9.4;
+      return g;
+    }
 
     if (type === "beach_villa_2") {
       // 🏖️ ADDABLE 2-PLOT LUXURY MEGA BEACH HOUSE VILLA (Wide Infinity Pool + Dual Suites + Palm Lounge!)
@@ -6713,6 +7024,7 @@ export class FollowerTownEngine {
         obj.material = isNight ? this.mat.windowNight : this.mat.windowDay;
       }
     });
+    this._updateBloomForTime();
   }
 
   getPlotWorldCenter(plotId) {
@@ -6766,6 +7078,10 @@ export class FollowerTownEngine {
     const w = this.container.clientWidth || window.innerWidth || 360;
     const h = this.container.clientHeight || window.innerHeight || 640;
     this.renderer.setSize(w, h);
+    if (this.composer) {
+      this.composer.setPixelRatio(pr);
+      this.composer.setSize(w, h);
+    }
     this.renderer.toneMappingExposure = this.hqMode ? 1.14 : 1.08;
   }
 
@@ -7265,6 +7581,7 @@ export class FollowerTownEngine {
         obj.material = isNight ? this.mat.windowNight : this.mat.windowDay;
       }
     });
+    this._updateBloomForTime();
   }
 
   transitionTimeOfDay(targetMode, duration = 2.4) {
@@ -7562,6 +7879,199 @@ export class FollowerTownEngine {
       onComplete
     };
     this._applyBuildReelStop(0);
+  }
+
+  // =========================================================
+  // ✨ v26 CINEMA FX (ADMIN REEL MODE ONLY):
+  //    1. Real Soft Sun Shadows (PCFSoftShadowMap following camera)
+  //    2. Neon Cinema Bloom / Glow (Lazy-loaded UnrealBloomPass)
+  //    3. Hero .glb 3D Model Loader (GLTFLoader with auto-fit)
+  // =========================================================
+  _applyShadowFlags(rootGroup) {
+    if (!rootGroup) return;
+    const on = this.shadowsEnabled;
+    rootGroup.traverse((obj) => {
+      if (!obj.isMesh) return;
+      if (obj.material === this.mat.invisibleHitbox) return;
+      if (obj.material && obj.material.blending === THREE.AdditiveBlending) {
+        obj.castShadow = false;
+        obj.receiveShadow = false;
+        return;
+      }
+      const geo = obj.geometry;
+      const p = geo?.parameters;
+      const isFlatPlane = geo?.type === "PlaneGeometry" || geo?.type === "RingGeometry" || (p && typeof p.height === "number" && p.height <= 0.45);
+      if (isFlatPlane) {
+        obj.castShadow = false;
+        obj.receiveShadow = on;
+      } else {
+        obj.castShadow = on;
+        obj.receiveShadow = on;
+      }
+    });
+  }
+
+  /**
+   * ☀️ REAL SOFT SUN SHADOWS (Admin Reel Mode Only — Zero cost for public visitors!)
+   */
+  setShadowsEnabled(enabled) {
+    this.shadowsEnabled = Boolean(enabled);
+    this.renderer.shadowMap.enabled = this.shadowsEnabled;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.sunLight.castShadow = this.shadowsEnabled;
+
+    this._applyShadowFlags(this.cityGroup);
+    this._applyShadowFlags(this.plotsGroup);
+    this._applyShadowFlags(this.vehiclesGroup);
+    this.renderer.shadowMap.needsUpdate = true;
+  }
+
+  _updateBloomForTime() {
+    if (!this.bloomPass) return;
+    if (this.timeOfDay === "night") {
+      // Dramatic cinema glow for Disco Statue beams, Theater Sky Lights, Train Headlights & Neon Shops!
+      this.bloomPass.threshold = 0.46;
+      this.bloomPass.strength = 0.72;
+      this.bloomPass.radius = 0.56;
+    } else if (this.timeOfDay === "sunset") {
+      this.bloomPass.threshold = 0.72;
+      this.bloomPass.strength = 0.36;
+      this.bloomPass.radius = 0.42;
+    } else {
+      // Subtle crisp specular bloom in Daylight so colors stay vibrant and never washed out!
+      this.bloomPass.threshold = 0.86;
+      this.bloomPass.strength = 0.22;
+      this.bloomPass.radius = 0.35;
+    }
+  }
+
+  /**
+   * ✨ NEON CINEMA BLOOM / GLOW EFFECT (Lazy-loaded ONLY when Admin enters Reel Mode!)
+   */
+  async enableCinemaBloom(enabled) {
+    if (!enabled) {
+      this.bloomEnabled = false;
+      return;
+    }
+    if (this.composer && this.bloomPass) {
+      this.bloomEnabled = true;
+      this._updateBloomForTime();
+      return;
+    }
+    if (this._bloomLoading) return;
+    this._bloomLoading = true;
+    try {
+      const [{ EffectComposer }, { RenderPass }, { UnrealBloomPass }, { OutputPass }] = await Promise.all([
+        import("three/addons/postprocessing/EffectComposer.js"),
+        import("three/addons/postprocessing/RenderPass.js"),
+        import("three/addons/postprocessing/UnrealBloomPass.js"),
+        import("three/addons/postprocessing/OutputPass.js")
+      ]);
+      const w = this.container.clientWidth || window.innerWidth || 360;
+      const h = this.container.clientHeight || window.innerHeight || 640;
+      const composer = new EffectComposer(this.renderer);
+      composer.setPixelRatio(this.renderer.getPixelRatio());
+      composer.setSize(w, h);
+      composer.addPass(new RenderPass(this.scene, this.camera));
+      const bloomPass = new UnrealBloomPass(new THREE.Vector2(w, h), 0.35, 0.45, 0.72);
+      composer.addPass(bloomPass);
+      composer.addPass(new OutputPass());
+      this.composer = composer;
+      this.bloomPass = bloomPass;
+      this.bloomEnabled = true;
+      this._updateBloomForTime();
+    } catch (err) {
+      console.warn("Cinema Bloom fallback to standard renderer:", err);
+      this.bloomEnabled = false;
+    } finally {
+      this._bloomLoading = false;
+    }
+  }
+
+  /**
+   * 🚗 HERO .GLB 3D MODELS LOADER (Sheru Bhai Statue, Audi Hero Car, Diamond Helicopter!)
+   * Auto-scales, auto-centers, and seamlessly swaps in any lightweight .glb while keeping built-in 3D as instant fallback!
+   */
+  setHeroModelUrls(urls = {}) {
+    const clean = {
+      statue: (urls.statue || "").trim(),
+      audi: (urls.audi || "").trim(),
+      heli: (urls.heli || "").trim()
+    };
+    const prev = this.heroModelUrls || { statue: "", audi: "", heli: "" };
+    this.heroModelUrls = clean;
+
+    if (clean.statue !== prev.statue && this.heroStatueSlot) {
+      this._applyHeroSlot("statue", clean.statue, this.heroStatueSlot, 5.2, 4.6, 0);
+    }
+    if (clean.heli !== prev.heli && this.heroHeliSlot) {
+      this._applyHeroSlot("heli", clean.heli, this.heroHeliSlot, 8.2, 0.1, 0);
+    }
+    if (clean.audi !== prev.audi && this.heroAudiSlots.length > 0) {
+      this.heroAudiSlots.forEach((slot) => {
+        this._applyHeroSlot("audi", clean.audi, slot.group, 4.3, 0.02, 0);
+      });
+    }
+  }
+
+  _applyHeroSlot(slotName, url, targetGroup, targetMaxDim, yOffset, rotY) {
+    // Remove previous custom GLB wrapper if any & restore procedural fallback first
+    const oldGlb = targetGroup.getObjectByName(`hero_glb_${slotName}`);
+    if (oldGlb) targetGroup.remove(oldGlb);
+    targetGroup.children.forEach((ch) => {
+      if (ch.userData && ch.userData._hiddenByGlb) {
+        ch.visible = true;
+        delete ch.userData._hiddenByGlb;
+      }
+    });
+    if (url) {
+      this._loadHeroGLB(slotName, url, targetGroup, targetMaxDim, yOffset, rotY);
+    }
+  }
+
+  async _loadHeroGLB(slotName, url, targetGroup, targetMaxDim = 5.0, yOffset = 0, rotY = 0) {
+    if (!url || !targetGroup) return;
+    try {
+      if (!this._gltfLoader) {
+        const { GLTFLoader } = await import("three/addons/loaders/GLTFLoader.js");
+        this._gltfLoader = new GLTFLoader();
+      }
+      let baseScene = this.glbCache.get(url);
+      if (!baseScene) {
+        const gltf = await this._gltfLoader.loadAsync(url);
+        baseScene = gltf.scene;
+        this.glbCache.set(url, baseScene);
+      }
+      const model = baseScene.clone(true);
+      const box = new THREE.Box3().setFromObject(model);
+      const size = new THREE.Vector3();
+      const center = new THREE.Vector3();
+      box.getSize(size);
+      box.getCenter(center);
+      const maxDim = Math.max(size.x, size.y, size.z) || 1;
+      const scale = targetMaxDim / maxDim;
+
+      const wrap = new THREE.Group();
+      wrap.name = `hero_glb_${slotName}`;
+      model.scale.setScalar(scale);
+      model.position.set(-center.x * scale, -box.min.y * scale + yOffset, -center.z * scale);
+      wrap.rotation.y = rotY;
+      wrap.add(model);
+
+      // Remove any existing wrapper and hide procedural fallback meshes cleanly
+      const prevWrap = targetGroup.getObjectByName(`hero_glb_${slotName}`);
+      if (prevWrap) targetGroup.remove(prevWrap);
+      targetGroup.children.forEach((ch) => {
+        if (ch.visible) {
+          ch.visible = false;
+          ch.userData._hiddenByGlb = true;
+        }
+      });
+      targetGroup.add(wrap);
+      if (this.shadowsEnabled) this._applyShadowFlags(wrap);
+    } catch (err) {
+      console.warn(`Hero .glb load skipped for ${slotName} (${url}):`, err);
+    }
   }
 
   findPlotByQuery(query) {
@@ -8748,6 +9258,20 @@ export class FollowerTownEngine {
     }
 
     this.controls.update();
-    this.renderer.render(this.scene, this.camera);
+
+    // ☀️ Keep Real Soft Sun Shadow Frustum centered right on the camera's active focus point!
+    if (this.shadowsEnabled && this.sunTarget) {
+      const tx = this.controls.target.x;
+      const tz = this.controls.target.z;
+      this.sunTarget.position.set(tx, 0, tz);
+      this.sunLight.position.set(tx + 85, 130, tz + 65);
+    }
+
+    // ✨ Render with Neon Cinema Bloom Composer when enabled in Admin Reel Mode!
+    if (this.bloomEnabled && this.composer) {
+      this.composer.render();
+    } else {
+      this.renderer.render(this.scene, this.camera);
+    }
   }
 }

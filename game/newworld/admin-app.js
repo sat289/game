@@ -8,7 +8,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged
-} from "./firebase-config.js?v=25";
+} from "./firebase-config.js?v=26";
 import {
   FollowerTownEngine,
   BUILDING_LABELS,
@@ -16,7 +16,7 @@ import {
   getTwoPlotGroup,
   getBlockPlotIds,
   getEightPlotGroup
-} from "./world-engine.js?v=25";
+} from "./world-engine.js?v=26";
 
 let isAdmin = false;
 let selectedPlotId = "plot_0001";
@@ -28,7 +28,8 @@ let worldSettings = {
   timeOfDay: "day",
   lifeEnabled: true,
   beachOwner: "@follower_beach",
-  railwayOwner: "@_ur_bunny_108_"
+  railwayOwner: "@_ur_bunny_108_",
+  heroModels: { statue: "", audi: "", heli: "" }
 };
 
 const container = document.getElementById("canvas-container");
@@ -234,7 +235,9 @@ function openPlotCard(plotId, data) {
         : size === 4
         ? (data.buildingType === "dmart" ? "4-PLOT D-MART" : "4-PLOT LANDMARK")
         : size === 2
-        ? (data.buildingType === "beach_villa_2" ? "2-PLOT BEACH VILLA" : "2-PLOT STUDIO")
+        ? (data.buildingType === "mobile_showroom" ? "2-PLOT MOBILE SHOWROOM" : data.buildingType === "beach_villa_2" ? "2-PLOT BEACH VILLA" : "2-PLOT STUDIO")
+        : data.buildingType === "mobile_shop"
+        ? "MOBILE SHOP"
         : data.buildingType === "beach_villa"
         ? "BEACH HOUSE VILLA"
         : data.buildingType.startsWith("tower_")
@@ -326,6 +329,14 @@ onValue(worldRef, (snapshot) => {
   engine.setRailwayOwner(rOwner);
   const railInput = document.getElementById("w-railway-owner");
   if (railInput) railInput.value = rOwner;
+  const hm = worldSettings.heroModels || { statue: "", audi: "", heli: "" };
+  engine.setHeroModelUrls(hm);
+  const gs = document.getElementById("w-glb-statue");
+  const ga = document.getElementById("w-glb-audi");
+  const gh = document.getElementById("w-glb-heli");
+  if (gs) gs.value = hm.statue || "";
+  if (ga) ga.value = hm.audi || "";
+  if (gh) gh.value = hm.heli || "";
 
   engine.setTimeOfDay(worldSettings.timeOfDay || "day");
   engine.lifeEnabled = worldSettings.lifeEnabled !== false;
@@ -511,7 +522,7 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
         ? (type === "imax_theater" ? "8-Plot IMAX 3D Dome Theater" : type === "movie_theater" ? "8-Plot Multiplex Movie Theater" : type === "audi_showroom" ? "8-Plot Audi Luxury Showroom" : "8-Plot Mega Stadium")
         : newSize === 4
         ? (type === "dmart" ? "D-Mart Hypermarket" : type === "gym" ? "Fitness Gym Owner" : "4-Plot Town Landmark")
-        : (type === "beach_villa_2" ? "Luxury 2-Plot Beachfront Villa" : "2-Plot Photo Studio");
+        : (type === "mobile_showroom" ? "2-Plot Mega Mobile Showroom" : type === "beach_villa_2" ? "Luxury 2-Plot Beachfront Villa" : "2-Plot Photo Studio");
 
     const anchorPayload = {
       status: "built",
@@ -575,7 +586,7 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
     } else if (relocatedCount > 0) {
       showToast(`🏗️ Built! Moved ${relocatedCount} houses to free plots.`);
     } else {
-      showToast(newSize === 8 ? (type === "imax_theater" ? "🎬 Built 8-Plot Giant IMAX 3D Dome with Sky Disco Lights!" : type === "movie_theater" ? "🎭 Built 8-Plot Real Movie Theater with Sky Disco Lights!" : type === "audi_showroom" ? "🚘 Built 8-Plot Audi Showroom!" : "🏟️ Built 8-Plot Mega Stadium!") : newSize === 4 ? "🏛️ Built 4-Plot Landmark!" : newSize === 2 ? (type === "beach_villa_2" ? "🏖️ Built 2-Plot Luxury Beach Villa!" : "📸 Built 2-Plot Photo Studio!") : `🔨 Built ${ownerName}'s plot!`);
+      showToast(newSize === 8 ? (type === "imax_theater" ? "🎬 Built 8-Plot Giant IMAX 3D Dome with Sky Disco Lights!" : type === "movie_theater" ? "🎭 Built 8-Plot Real Movie Theater with Sky Disco Lights!" : type === "audi_showroom" ? "🚘 Built 8-Plot Audi Showroom!" : "🏟️ Built 8-Plot Mega Stadium!") : newSize === 4 ? "🏛️ Built 4-Plot Landmark!" : newSize === 2 ? (type === "mobile_showroom" ? "📱 Built 2-Plot Mega Mobile Showroom!" : type === "beach_villa_2" ? "🏖️ Built 2-Plot Luxury Beach Villa!" : "📸 Built 2-Plot Photo Studio!") : `🔨 Built ${ownerName}'s plot!`);
     }
     closeAllDrawers();
     engine.focusPlot(selectedPlotId);
@@ -824,7 +835,12 @@ document.getElementById("btn-save-world").addEventListener("click", async () => 
       railwayOwner: (document.getElementById("w-railway-owner")?.value.trim() || "@_ur_bunny_108_"),
       dayNumber: parseInt(document.getElementById("w-day").value, 10) || 1,
       timeOfDay: document.getElementById("w-time").value,
-      lifeEnabled: document.getElementById("w-life").value === "on"
+      lifeEnabled: document.getElementById("w-life").value === "on",
+      heroModels: {
+        statue: (document.getElementById("w-glb-statue")?.value || "").trim(),
+        audi: (document.getElementById("w-glb-audi")?.value || "").trim(),
+        heli: (document.getElementById("w-glb-heli")?.value || "").trim()
+      }
     });
     showToast("World updated live!");
     closeAllDrawers();
@@ -887,8 +903,12 @@ document.getElementById("btn-reel-mode").addEventListener("click", () => {
   reelControls.classList.remove("hidden");
   engine.setReelFraming(true);
   engine.setQualityMode(true);
+  engine.setShadowsEnabled(true);
+  engine.enableCinemaBloom(true);
   if (btnHqToggle) { btnHqToggle.classList.add("active"); btnHqToggle.textContent = "✨ Ultra HD"; }
-  showToast("✨ Ultra HD 9:16 Reel Studio — Wide Framing Active!");
+  if (btnShadowsToggle) { btnShadowsToggle.classList.add("active"); btnShadowsToggle.textContent = "☀️ Shadows"; }
+  if (btnBloomToggle) { btnBloomToggle.classList.add("active"); btnBloomToggle.textContent = "✨ Bloom"; }
+  showToast("✨ Reel Studio: Soft Sun Shadows + Neon Bloom ON!");
 });
 
 btnProTour.addEventListener("click", () => {
@@ -960,6 +980,8 @@ btnBuildReel.addEventListener("click", () => {
 document.getElementById("reel-exit").addEventListener("click", () => {
   engine.stopAllReelModes();
   engine.setReelFraming(false);
+  engine.setShadowsEnabled(false);
+  engine.enableCinemaBloom(false);
   engine.setSimSpeed(1.0);
   if (typeof stopCanvasRecording === "function") stopCanvasRecording();
   if (typeof exitCleanScreen === "function") exitCleanScreen();
@@ -1144,6 +1166,8 @@ const btnQueueOpen = document.getElementById("reel-queue-btn");
 
 const btnRecCanvas = document.getElementById("reel-rec-btn");
 const btnHqToggle = document.getElementById("reel-hq-btn");
+const btnShadowsToggle = document.getElementById("reel-shadows-btn");
+const btnBloomToggle = document.getElementById("reel-bloom-btn");
 const btnClean321 = document.getElementById("reel-clean-btn");
 const btnSimSpeed = document.getElementById("reel-speed-btn");
 const btnSmoothTime = document.getElementById("reel-smooth-time");
@@ -1624,5 +1648,27 @@ if (btnHqToggle) {
     btnHqToggle.classList.toggle("active", nextHQ);
     btnHqToggle.textContent = nextHQ ? "✨ Ultra HD" : "⚡ Lite";
     showToast(nextHQ ? "✨ Ultra HD Screen Quality ON (2x Retina)" : "⚡ Lite Battery Mode ON");
+  });
+}
+
+// ☀️ REAL SOFT SUN SHADOWS TOGGLE (Admin Reel Mode Only!)
+if (btnShadowsToggle) {
+  btnShadowsToggle.addEventListener("click", () => {
+    const next = !engine.shadowsEnabled;
+    engine.setShadowsEnabled(next);
+    btnShadowsToggle.classList.toggle("active", next);
+    btnShadowsToggle.textContent = next ? "☀️ Shadows" : "☀️ Shadows OFF";
+    showToast(next ? "☀️ Real Soft Sun Shadows ON!" : "☀️ Sun Shadows OFF");
+  });
+}
+
+// ✨ NEON CINEMA BLOOM / GLOW TOGGLE (Admin Reel Mode Only!)
+if (btnBloomToggle) {
+  btnBloomToggle.addEventListener("click", async () => {
+    const next = !engine.bloomEnabled;
+    await engine.enableCinemaBloom(next);
+    btnBloomToggle.classList.toggle("active", engine.bloomEnabled);
+    btnBloomToggle.textContent = engine.bloomEnabled ? "✨ Bloom" : "✨ Bloom OFF";
+    showToast(engine.bloomEnabled ? "✨ Neon Cinema Bloom Glow ON!" : "✨ Bloom Glow OFF");
   });
 }

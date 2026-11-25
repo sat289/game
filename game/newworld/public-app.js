@@ -1,5 +1,5 @@
-import { db, ref, onValue } from "./firebase-config.js?v=25";
-import { FollowerTownEngine, BUILDING_LABELS, getRequiredSize } from "./world-engine.js?v=25";
+import { db, ref, onValue } from "./firebase-config.js?v=26";
+import { FollowerTownEngine, BUILDING_LABELS, getRequiredSize } from "./world-engine.js?v=26";
 
 let allPlots = {};
 const container = document.getElementById("canvas-container");
@@ -104,7 +104,9 @@ function openPlotCard(plotId, data) {
         : size === 4
         ? (data.buildingType === "dmart" ? "4-PLOT D-MART" : "4-PLOT LANDMARK")
         : size === 2
-        ? (data.buildingType === "beach_villa_2" ? "2-PLOT BEACH VILLA" : "2-PLOT STUDIO")
+        ? (data.buildingType === "mobile_showroom" ? "2-PLOT MOBILE SHOWROOM" : data.buildingType === "beach_villa_2" ? "2-PLOT BEACH VILLA" : "2-PLOT STUDIO")
+        : data.buildingType === "mobile_shop"
+        ? "MOBILE SHOP"
         : data.buildingType === "beach_villa"
         ? "BEACH HOUSE VILLA"
         : data.buildingType.startsWith("tower_")
@@ -167,6 +169,7 @@ onValue(ref(db, "worldSettings"), (snapshot) => {
   engine.setTownName(name);
   if (val.beachOwner !== undefined) engine.setBeachOwner(val.beachOwner);
   if (val.railwayOwner !== undefined) engine.setRailwayOwner(val.railwayOwner);
+  if (val.heroModels) engine.setHeroModelUrls(val.heroModels);
   engine.setTimeOfDay(val.timeOfDay || "day");
   engine.lifeEnabled = val.lifeEnabled !== false;
 });
