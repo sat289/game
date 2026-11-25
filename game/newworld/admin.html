@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Nagaram Builder Studio — Admin Only</title>
-  <link rel="stylesheet" href="./style.css?v=29" />
+  <link rel="stylesheet" href="./style.css?v=31" />
   <script type="importmap">
     {
       "imports": {
@@ -76,7 +76,9 @@
   <div id="admin-dock" class="hidden hud-element">
     <button id="btn-open-builder" class="dock-btn">🏗️ Build</button>
     <button id="btn-add-plot-mode" class="dock-btn add-plot-btn">➕ Add Plot</button>
+    <button id="btn-open-requests" class="dock-btn inbox-btn">📬 Inbox <span id="req-badge" class="req-badge hidden">0</span></button>
     <button id="btn-open-bulk" class="dock-btn">👥 @Usernames</button>
+    <button id="btn-admin-drive" class="dock-btn drive-dock-btn">🎮 Drive</button>
     <button id="btn-open-world" class="dock-btn">🌤️ World</button>
     <button id="btn-jump-airport" class="dock-btn">✈️ Airport</button>
     <button id="btn-jump-beach" class="dock-btn">🏖️ Beach</button>
@@ -165,6 +167,9 @@
         <button id="reel-railway-cam" class="mini-pill railway">🚉 Station</button>
         <button id="reel-temple-cam" class="mini-pill temple">🛕 Hill Temple</button>
         <button id="reel-temple-orbit" class="mini-pill temple">✨ Temple Orbit</button>
+        <button id="reel-rocket-cam" class="mini-pill rocket">🚀 Rocket Cam</button>
+        <button id="reel-island-cam" class="mini-pill island">🌉 VIP Island</button>
+        <button id="reel-wheel-cam" class="mini-pill wheel">🎡 Giant Wheel</button>
       </div>
 
       <!-- Row 2: Recording & Studio Tools -->
@@ -326,6 +331,10 @@
         <label>🚂 Railway Station Chief @username</label>
         <input type="text" id="w-railway-owner" value="@_ur_bunny_108_" placeholder="e.g. @_ur_bunny_108_" />
       </div>
+      <div>
+        <label>🏝️ VIP Island Mansion @username</label>
+        <input type="text" id="w-island-owner" value="@vip_island_king" placeholder="e.g. @top_commenter" />
+      </div>
 
       <div>
         <label>Current Day #</label>
@@ -403,9 +412,69 @@
     <button id="btn-exit-add-plot" class="mini-pill danger">✕ Done</button>
   </div>
 
+
+  <!-- Drawer 4: 📬 Unlimited Firebase Follower Requests Inbox -->
+  <div id="panel-requests" class="drawer glass-card hidden hud-element">
+    <div class="drawer-header">
+      <h3>📬 Live Follower Requests Inbox</h3>
+      <button class="close-drawer close-x">✕</button>
+    </div>
+    <p class="hint">Unlimited free requests direct from <strong>stgames.online</strong> via Firebase! Tap <strong>⚡ Auto-Build</strong> to build instantly on a free plot.</p>
+    <div class="inbox-toolbar">
+      <input type="text" id="req-search" placeholder="Search @username or building..." autocomplete="off" />
+      <select id="req-filter" style="width:auto;min-width:105px;">
+        <option value="pending">Pending</option>
+        <option value="all">All</option>
+        <option value="built">Built</option>
+      </select>
+    </div>
+    <div id="requests-list" class="requests-list">
+      <div class="hint" style="text-align:center;padding:18px;">Loading live Firebase requests...</div>
+    </div>
+    <p class="hint" style="margin-top:8px;font-size:10px;opacity:0.8;">
+      Firebase Rule for public submissions: <code>"requests": { ".read": true, ".write": true }</code>
+    </p>
+  </div>
+
+  <!-- 🎮 DRIVABLE CAR / GT650 SUPERBIKE / AUTO HUD OVERLAY -->
+  <div id="drive-hud" class="hidden">
+    <div class="drive-top-bar glass-card">
+      <div class="drive-speed-box">
+        <span id="drive-speed-num">0</span>
+        <span class="drive-speed-unit">KM/H</span>
+      </div>
+      <div class="drive-veh-switch">
+        <button id="drive-veh-car" class="drive-pill active">🏎️ Car</button>
+        <button id="drive-veh-bike" class="drive-pill">🏍️ GT650</button>
+        <button id="drive-veh-auto" class="drive-pill">🛺 Auto</button>
+      </div>
+      <div class="drive-tp-switch">
+        <button id="drive-tp-city" class="drive-pill" title="Spawn at City Avenue">🏙️</button>
+        <button id="drive-tp-bridge" class="drive-pill" title="Spawn at Sea Bridge & VIP Island">🌉</button>
+        <button id="drive-tp-temple" class="drive-pill" title="Spawn at Temple Ghat Road">🛕</button>
+        <button id="drive-tp-rocket" class="drive-pill" title="Spawn at ISRO Rocket Launchpad">🚀</button>
+        <button id="drive-exit-btn" class="drive-pill danger">✕ Exit</button>
+      </div>
+    </div>
+
+    <div class="drive-touch-controls">
+      <div class="drive-pad-left">
+        <button id="drive-btn-left" class="drive-ctrl-btn">◀</button>
+        <button id="drive-btn-right" class="drive-ctrl-btn">▶</button>
+      </div>
+      <div class="drive-pad-right">
+        <button id="drive-btn-boost" class="drive-ctrl-btn boost">🔥 NITRO</button>
+        <div class="drive-pedals">
+          <button id="drive-btn-brake" class="drive-ctrl-btn brake">⬇ REV</button>
+          <button id="drive-btn-gas" class="drive-ctrl-btn gas">⬆ GAS</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="toast" class="hidden"></div>
 
-  <script type="module" src="./admin-app.js?v=29"></script>
+  <script type="module" src="./admin-app.js?v=31"></script>
   <script>
     window.addEventListener("error", function(e) {
       var box = document.getElementById("err-banner");

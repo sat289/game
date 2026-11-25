@@ -4,7 +4,10 @@ import {
   getDatabase,
   ref,
   onValue,
-  update
+  update,
+  push,
+  set,
+  remove
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import {
   getAuth,
@@ -40,6 +43,9 @@ export {
   ref,
   onValue,
   update,
+  push,
+  set,
+  remove,
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged

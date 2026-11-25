@@ -1,5 +1,12 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import {
+  createGLSLSkyDome,
+  getSkyPalette,
+  createGLSLOceanMaterial,
+  createGLSLContactShadowMaterial
+} from "./shaders-glsl.js?v=31";
+import { WasmPerfEngine } from "./wasm-perf.js?v=31";
 
 export const EIGHT_PLOT_TYPES = new Set(["ground", "audi_showroom", "movie_theater", "imax_theater", "mahindra_showroom", "bmw_showroom"]);
 
@@ -217,25 +224,32 @@ export class FollowerTownEngine {
     this.camera = new THREE.PerspectiveCamera(42, aspect, 1.0, 2400);
     this.camera.position.set(78, 82, 78);
 
-    // AUTO VERY-LOW-RAM DETECTION (2GB-4GB phones get zero-crash ultra-smooth play automatically!)
+    // v31 MULTI-LANGUAGE HIGH-QUALITY ENGINE (GLSL Shaders + WebAssembly Culling + Crisp Visitor HD!)
     const devMem = navigator.deviceMemory || 4;
     const cpuCores = navigator.hardwareConcurrency || 4;
-    this.isVeryLowRam = !this.hqMode && (devMem <= 3 || cpuCores <= 4);
-    this.isLowRam = !this.hqMode && (devMem <= 4 || cpuCores <= 4);
+    this.visitorHD = Boolean(options.visitorHD);
+    this.graphicsPreset = this.hqMode ? "ultra" : "hd";
+    this.isVeryLowRam = !this.hqMode && (devMem <= 2 || cpuCores <= 2);
+    this.isLowRam = !this.hqMode && (devMem <= 3 || cpuCores <= 4);
 
     this.renderer = new THREE.WebGLRenderer({
-      antialias: this.hqMode || !this.isLowRam,
-      powerPreference: this.isVeryLowRam ? "default" : "high-performance",
-      precision: this.hqMode ? "highp" : this.isVeryLowRam ? "lowp" : "mediump",
+      antialias: !this.isVeryLowRam,
+      powerPreference: "high-performance",
+      precision: this.hqMode ? "highp" : "mediump",
       stencil: false
     });
     this.renderer.setSize(initW, initH);
     const isMobScreen = Math.min(initW, initH) < 720;
-    this.renderer.setPixelRatio(
-      this.hqMode
-        ? Math.min(window.devicePixelRatio || 2, isMobScreen ? 1.75 : 2.0)
-        : (this.isVeryLowRam ? 1.0 : this.isLowRam ? 1.15 : Math.min(window.devicePixelRatio || 1.5, 1.5))
-    );
+    const nativeDpr = window.devicePixelRatio || 1.5;
+    this.basePixelRatio = this.hqMode
+      ? Math.min(nativeDpr, isMobScreen ? 1.75 : 2.0)
+      : (this.isVeryLowRam ? Math.min(nativeDpr, 1.25) : Math.min(nativeDpr, 1.5));
+    this.renderer.setPixelRatio(this.basePixelRatio);
+
+    this.wasmPerf = new WasmPerfEngine();
+    this.skyDome = null;
+    this.oceanShader = null;
+    this.contactShadowMat = createGLSLContactShadowMaterial();
     this._fpsFrames = 0;
     this._fpsAccum = 0;
     this._perfThrottle = false;
@@ -262,7 +276,7 @@ export class FollowerTownEngine {
     this.heroAudiSlots = [];
     this.renderer.shadowMap.enabled = false;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = this.hqMode ? 1.14 : 1.08;
+    this.renderer.toneMappingExposure = this.hqMode ? 1.15 : 1.12;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.maxAnisotropy = Math.min(8, this.renderer.capabilities.getMaxAnisotropy ? this.renderer.capabilities.getMaxAnisotropy() : 1);
     container.appendChild(this.renderer.domElement);
@@ -323,6 +337,28 @@ export class FollowerTownEngine {
     this.hillTempleSim = null;
     this.hillTemplePos = { x: 46, z: -104 };
     this.beachHighwaySim = null;
+    this.islandOwner = "@vip_island_king";
+    this.rocketSim = null;
+    this.rocketPadPos = { x: -104, z: 116 };
+    this.seaBridgeSim = null;
+    this._getSeaBridgeY = null;
+    this._seaBridgeBounds = null;
+    this.vipIslandPos = { x: -224, z: -2 };
+    this.ferrisWheelSim = null;
+    this.ferrisWheelPos = { x: -102, z: 44 };
+    this._driveKeysBound = false;
+    this.driveState = {
+      active: false,
+      vehicleType: "car",
+      group: null,
+      pos: new THREE.Vector3(0, 0.14, 34),
+      yaw: Math.PI,
+      speed: 0,
+      steerAngle: 0,
+      keys: { forward: false, backward: false, left: false, right: false, boost: false },
+      onSpeed: null,
+      onExit: null
+    };
     this.railRInner = 70;
     this.railROuter = 73.8;
     this.railwayOwner = "@_ur_bunny_108_";
@@ -563,11 +599,11 @@ export class FollowerTownEngine {
       ctx.fillRect(0, s * 0.22, s, s * 0.12);
       ctx.fillRect(0, s * 0.66, s, s * 0.12);
     };
-    const roadTex = makeTex(128, (ctx, s) => drawAsphalt(ctx, s, "#334155"), 8, 8);
-    const highwayTex = makeTex(128, (ctx, s) => drawAsphalt(ctx, s, "#1e293b"), 14, 14);
+    const roadTex = makeTex(256, (ctx, s) => drawAsphalt(ctx, s, "#334155"), 8, 8);
+    const highwayTex = makeTex(256, (ctx, s) => drawAsphalt(ctx, s, "#1e293b"), 14, 14);
 
     // 2. Lush Multi-Tone Grass & Meadow Texture
-    const grassTex = makeTex(128, (ctx, s) => {
+    const grassTex = makeTex(256, (ctx, s) => {
       ctx.fillStyle = "#65a30d";
       ctx.fillRect(0, 0, s, s);
       let seed = 4242;
@@ -599,7 +635,7 @@ export class FollowerTownEngine {
     }, 10, 10);
 
     // 3. Shiny Sky-Reflective Architectural Glass Texture (Diagonal Sunlit Sky Reflection Streaks!)
-    const glassTex = makeTex(128, (ctx, s) => {
+    const glassTex = makeTex(256, (ctx, s) => {
       const grad = ctx.createLinearGradient(0, 0, s, s);
       grad.addColorStop(0.0, "#7dd3fc");
       grad.addColorStop(0.32, "#38bdf8");
@@ -905,7 +941,30 @@ export class FollowerTownEngine {
       cricketNetMat: new THREE.MeshBasicMaterial({ color: 0xf8fafc, transparent: true, opacity: 0.24, wireframe: true }),
       floodlightGlow: new THREE.MeshBasicMaterial({ color: 0xfef9c3 }),
       bikeRacingRed: new THREE.MeshPhongMaterial({ color: 0xdc2626, specular: 0xffffff, shininess: 150 }),
-      bikeChromeGold: new THREE.MeshPhongMaterial({ color: 0xf59e0b, specular: 0xffffff, shininess: 160 })
+      bikeChromeGold: new THREE.MeshPhongMaterial({ color: 0xf59e0b, specular: 0xffffff, shininess: 160 }),
+      // v30 ISRO Rocket Launchpad, RGB Sea Bridge, VIP Island & Ferris Wheel Materials
+      rocketWhite: new THREE.MeshPhongMaterial({ color: 0xf8fafc, specular: 0xffffff, shininess: 115 }),
+      rocketGantryRed: new THREE.MeshLambertMaterial({ color: 0xdc2626 }),
+      rocketFlame: new THREE.MeshBasicMaterial({
+        color: 0xf97316,
+        transparent: true,
+        opacity: 0.92,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
+      }),
+      rocketFlameCore: new THREE.MeshBasicMaterial({
+        color: 0xfef08a,
+        transparent: true,
+        opacity: 0.96,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
+      }),
+      rocketSmoke: new THREE.MeshLambertMaterial({ color: 0xe2e8f0, transparent: true, opacity: 0.72 }),
+      bridgeDeckAsphalt: new THREE.MeshLambertMaterial({ color: 0x1e293b }),
+      bridgePylonWhite: new THREE.MeshPhongMaterial({ color: 0xf1f5f9, specular: 0xffffff, shininess: 90 }),
+      ferrisSteel: new THREE.MeshPhongMaterial({ color: 0xe2e8f0, specular: 0xffffff, shininess: 130 }),
+      ferrisRimNeon: new THREE.MeshBasicMaterial({ color: 0x22d3ee })
     };
   }
 
@@ -1067,6 +1126,7 @@ export class FollowerTownEngine {
   _disposePlotGroup(group) {
     if (!group) return;
     const cachedSignMats = new Set(this.signTexCache ? this.signTexCache.values() : []);
+    if (this.contactShadowMat) cachedSignMats.add(this.contactShadowMat);
     group.traverse((obj) => {
       if (obj.isSprite && obj.material) {
         if (!cachedSignMats.has(obj.material)) {
@@ -1092,7 +1152,11 @@ export class FollowerTownEngine {
 
   // Ultra-Lightweight Starfield (Night Only — 1 draw call) + Soft Drifting Sky Clouds (Day/Sunset)
   _buildSkyDecor() {
-    const starCount = this.isLowRam ? 140 : 240;
+    // 🎨 GLSL GPU ATMOSPHERIC SKY DOME (1 Draw Call — Smooth Realistic Sky Gradient & Sun Glow!)
+    this.skyDome = createGLSLSkyDome();
+    this.scene.add(this.skyDome.mesh);
+
+    const starCount = this.isLowRam ? 160 : 260;
     const positions = new Float32Array(starCount * 3);
     for (let i = 0; i < starCount; i++) {
       const theta = Math.random() * Math.PI * 2;
@@ -1240,6 +1304,14 @@ export class FollowerTownEngine {
     }
   }
 
+  setIslandOwner(ownerName) {
+    const clean = (ownerName || "@vip_island_king").trim();
+    if (clean !== this.islandOwner) {
+      this.islandOwner = clean;
+      if (this.currentGridRadius > 0) this._rebuildRoadsAndRingRoad();
+    }
+  }
+
   isPointOnRailwayTrack(wx, wz) {
     const m = Math.max(Math.abs(wx), Math.abs(wz));
     // Double track corridor with generous safety margin so NO house ever touches a rail!
@@ -1338,7 +1410,7 @@ export class FollowerTownEngine {
     }
     this.lampBulbs = [];
     this.plotHitboxes = this.plotHitboxes.filter(
-      (h) => !["ST_JUNCTION", "AIRPORT", "BEACH", "RAILWAY_STATION", "RAILWAY_SOUTH", "ADD_AIRPORT_PLOT", "ADD_BEACH_PLOT", "HILL_TEMPLE"].includes(h.userData.plotId)
+      (h) => !["ST_JUNCTION", "AIRPORT", "BEACH", "RAILWAY_STATION", "RAILWAY_SOUTH", "ADD_AIRPORT_PLOT", "ADD_BEACH_PLOT", "HILL_TEMPLE", "ROCKET_PAD", "VIP_ISLAND", "FERRIS_WHEEL"].includes(h.userData.plotId)
     );
     this.airportSim = null;
     this.beachSim = null;
@@ -1346,6 +1418,9 @@ export class FollowerTownEngine {
     this.arakuSim = null;
     this.hillTempleSim = null;
     this.beachHighwaySim = null;
+    this.rocketSim = null;
+    this.seaBridgeSim = null;
+    this.ferrisWheelSim = null;
     if (Array.isArray(this.landmarkActors)) {
       this.landmarkActors = this.landmarkActors.filter(
         (a) => !["BEACH_OYO_DEFAULT", "BEACH_HOSTEL_DEFAULT", "BEACH_MED_DEFAULT"].includes(a.plotId)
@@ -1493,6 +1568,9 @@ export class FollowerTownEngine {
     this._buildSheruBhaiBeach(ringRadius);
     this._buildRailwaySystem(ringRadius);
     this._buildHilltopTempleMountain(ringRadius);
+    this._buildSeaBridgeAndVipIsland(ringRadius);
+    this._buildBeachFerrisWheel(ringRadius);
+    this._buildRocketLaunchpad(ringRadius);
     this._buildArakuLandscape(ringRadius);
     // Keep any existing custom Airport / Beach zone plots positioned accurately!
     for (const [pid, pdata] of this.plotDataMap.entries()) {
@@ -2602,11 +2680,12 @@ export class FollowerTownEngine {
     drySand.position.set(16, 0.04, 0);
     const wetSand = new THREE.Mesh(this._boxGeo(7.5, 0.1, 114), this.mat.beachSandWet);
     wetSand.position.set(-7.5, 0.03, 0);
-    const shallowSea = new THREE.Mesh(this._boxGeo(16, 0.08, 128), this.mat.oceanShallow);
-    shallowSea.position.set(-18, 0.01, 0);
-    const deepSea = new THREE.Mesh(this._boxGeo(520, 0.06, 1100), this.mat.oceanDeep);
-    deepSea.position.set(-284, 0.0, 0);
-    bg.add(drySand, wetSand, shallowSea, deepSea);
+    // 🎨 GLSL GPU ANIMATED SHIMMERING OCEAN WATER (Zero CPU Loops — Real Ripples, Depth & Foam!)
+    this.oceanShader = createGLSLOceanMaterial(bx - 10.5);
+    const oceanPlane = new THREE.Mesh(new THREE.PlaneGeometry(540, 1120, 1, 1), this.oceanShader.mat);
+    oceanPlane.rotation.x = -Math.PI / 2;
+    oceanPlane.position.set(-280, 0.04, 0);
+    bg.add(drySand, wetSand, oceanPlane);
 
     // Animated White Ocean Wave Foam Strips
     const waveStrips = [];
@@ -4008,6 +4087,417 @@ export class FollowerTownEngine {
   }
 
 
+
+  /**
+   * 🌉🏝️ RGB CABLE-STAYED SEA BRIDGE + VIP PRIVATE ISLAND (`VIP_ISLAND`)
+   */
+  _buildSeaBridgeAndVipIsland(ringRadius) {
+    const bx = this.beachX || -(ringRadius + 76);
+    const bridgeZ = -2;
+    const bridgeStartX = bx + 11.5;
+    const bridgeEndX = bx - 98.0;
+    const bridgeLen = bridgeStartX - bridgeEndX;
+    const islandX = bridgeEndX - 24.0;
+    this.vipIslandPos = { x: islandX, z: bridgeZ };
+
+    const sg = new THREE.Group();
+    const rgbCables = [];
+    const bridgeLights = [];
+
+    const segs = 18;
+    const segLen = bridgeLen / segs;
+    const getBridgeY = (worldX) => {
+      const u = THREE.MathUtils.clamp((bridgeStartX - worldX) / bridgeLen, 0, 1);
+      return 0.25 + u * 1.55 + Math.sin(u * Math.PI) * 4.8;
+    };
+    this._getSeaBridgeY = getBridgeY;
+    this._seaBridgeBounds = { minX: bridgeEndX - 4, maxX: bridgeStartX + 2, z: bridgeZ, halfW: 4.5 };
+
+    for (let i = 0; i < segs; i++) {
+      const x1 = bridgeStartX - i * segLen;
+      const x2 = bridgeStartX - (i + 1) * segLen;
+      const cx = (x1 + x2) / 2;
+      const y1 = getBridgeY(x1);
+      const y2 = getBridgeY(x2);
+      const cy = (y1 + y2) / 2;
+      const pitch = Math.atan2(y2 - y1, segLen);
+
+      const deck = new THREE.Mesh(this._boxGeo(segLen + 0.35, 0.52, 7.6), this.mat.bridgeDeckAsphalt);
+      deck.position.set(cx, cy, bridgeZ);
+      deck.rotation.z = -pitch;
+
+      const dash = new THREE.Mesh(this._boxGeo(segLen * 0.65, 0.08, 0.22), this.mat.stripe);
+      dash.position.set(cx, cy + 0.28, bridgeZ);
+      dash.rotation.z = -pitch;
+
+      const railMat = new THREE.MeshBasicMaterial({ color: i % 2 === 0 ? 0x22d3ee : 0xec4899 });
+      const railN = new THREE.Mesh(this._boxGeo(segLen + 0.2, 0.36, 0.24), railMat);
+      railN.position.set(cx, cy + 0.55, bridgeZ - 3.65);
+      railN.rotation.z = -pitch;
+      const railS = railN.clone();
+      railS.position.z = bridgeZ + 3.65;
+      bridgeLights.push(railMat);
+      sg.add(deck, dash, railN, railS);
+    }
+
+    const pylonXs = [bridgeStartX - bridgeLen * 0.32, bridgeStartX - bridgeLen * 0.68];
+    const cablePalette = [0x22d3ee, 0xec4899, 0xfacc15, 0xa855f7, 0x38bdf8, 0x4ade80];
+
+    pylonXs.forEach((px, pIdx) => {
+      const baseDeckY = getBridgeY(px);
+      const topY = baseDeckY + 21.5;
+
+      const pier = new THREE.Mesh(this._boxGeo(4.8, baseDeckY + 1.2, 10.2), this.mat.concrete);
+      pier.position.set(px, (baseDeckY - 0.6) / 2, bridgeZ);
+      const legN = new THREE.Mesh(this._boxGeo(1.6, 23.0, 1.6), this.mat.bridgePylonWhite);
+      legN.position.set(px, baseDeckY + 10.5, bridgeZ - 2.6);
+      legN.rotation.x = 0.14;
+      const legS = new THREE.Mesh(this._boxGeo(1.6, 23.0, 1.6), this.mat.bridgePylonWhite);
+      legS.position.set(px, baseDeckY + 10.5, bridgeZ + 2.6);
+      legS.rotation.x = -0.14;
+      const crossBeam = new THREE.Mesh(this._boxGeo(1.7, 1.3, 6.2), this.mat.bridgePylonWhite);
+      crossBeam.position.set(px, baseDeckY + 13.5, bridgeZ);
+      const crownCap = new THREE.Mesh(this._boxGeo(2.2, 1.4, 2.4), this.mat.richGoldTrim);
+      crownCap.position.set(px, topY + 0.5, bridgeZ);
+      sg.add(pier, legN, legS, crossBeam, crownCap);
+
+      for (const side of [-1, 1]) {
+        for (let c = 1; c <= 3; c++) {
+          const anchorX = px + side * (c * 8.2);
+          const anchorY = getBridgeY(anchorX) + 0.4;
+          const anchorTopY = topY - c * 2.1;
+          for (const zSide of [-3.5, 3.5]) {
+            const pA = new THREE.Vector3(px, anchorTopY, bridgeZ + zSide * 0.25);
+            const pB = new THREE.Vector3(anchorX, anchorY, bridgeZ + zSide);
+            const dist = pA.distanceTo(pB);
+            const cMat = new THREE.MeshBasicMaterial({ color: cablePalette[(c + pIdx) % cablePalette.length] });
+            const cable = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, dist, 5), cMat);
+            cable.position.copy(pA).add(pB).multiplyScalar(0.5);
+            cable.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3().subVectors(pB, pA).normalize());
+            sg.add(cable);
+            rgbCables.push({ mat: cMat, idx: c + pIdx * 3 });
+          }
+        }
+      }
+    });
+
+    const brSign = this._makeBuildingBoard("SHERU BHAI SEA LINK", "RGB BRIDGE • VIP PRIVATE ISLAND", "#020617", "#22d3ee", 9.2, 1.3);
+    brSign.rotation.y = Math.PI / 2;
+    brSign.position.set(bridgeStartX - 3.5, getBridgeY(bridgeStartX - 3.5) + 5.2, bridgeZ);
+    [-3.7, 3.7].forEach((sz) => {
+      const p = new THREE.Mesh(this._boxGeo(0.45, 5.4, 0.45), this.mat.bridgePylonWhite);
+      p.position.set(bridgeStartX - 3.5, getBridgeY(bridgeStartX - 3.5) + 2.7, bridgeZ + sz);
+      sg.add(p);
+    });
+    sg.add(brSign);
+
+    const isl = new THREE.Group();
+    isl.position.set(islandX, 0, bridgeZ);
+
+    const sandRing = new THREE.Mesh(new THREE.CylinderGeometry(24.5, 29.5, 1.5, 20), this.mat.beachSand);
+    sandRing.position.y = 0.75;
+    const lushTop = new THREE.Mesh(new THREE.CylinderGeometry(20.5, 23.0, 0.7, 18), this.mat.turf);
+    lushTop.position.y = 1.7;
+    const islandRoad = new THREE.Mesh(this._boxGeo(18.0, 0.14, 7.2), this.mat.road);
+    islandRoad.position.set(16.0, 1.98, 0);
+    isl.add(sandRing, lushTop, islandRoad);
+
+    const mBase = new THREE.Mesh(this._boxGeo(16.0, 0.5, 14.5), this.mat.marble);
+    mBase.position.set(-2.5, 2.2, 0);
+    const mPool = new THREE.Mesh(this._boxGeo(5.2, 0.54, 9.6), this.mat.poolTileBlue);
+    mPool.position.set(3.2, 2.22, 0);
+
+    const mf1 = new THREE.Mesh(this._boxGeo(10.8, 3.6, 12.2), this.mat.wallWhite);
+    mf1.position.set(-4.2, 4.2, 0);
+    const mg1 = new THREE.Mesh(this._boxGeo(0.2, 2.8, 10.2), this.mat.glass);
+    mg1.position.set(1.25, 4.0, 0);
+
+    const mf2 = new THREE.Mesh(this._boxGeo(9.6, 3.4, 10.8), this.mat.stuccoIvory);
+    mf2.position.set(-4.8, 7.7, 0);
+    const mg2 = new THREE.Mesh(this._boxGeo(0.2, 2.5, 8.8), this.mat.glass);
+    mg2.position.set(0.05, 7.6, 0);
+    const mSlab2 = new THREE.Mesh(this._boxGeo(12.2, 0.35, 12.8), this.mat.wallWhite);
+    mSlab2.position.set(-3.8, 6.0, 0);
+
+    const mf3 = new THREE.Mesh(this._boxGeo(7.6, 3.0, 8.2), this.mat.wallWhite);
+    mf3.position.set(-5.2, 10.9, 0);
+    const mRoofNeon = new THREE.Mesh(this._boxGeo(8.2, 0.25, 8.8), this.mat.ferrisRimNeon);
+    mRoofNeon.position.set(-5.2, 12.5, 0);
+
+    const hPad = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 4.5, 0.3, 16), this.mat.tarmacGrey);
+    hPad.position.set(-4.0, 2.15, -14.0);
+    const hRing = new THREE.Mesh(new THREE.RingGeometry(3.4, 3.85, 18), this.mat.petrolYellow);
+    hRing.rotation.x = -Math.PI / 2;
+    hRing.position.set(-4.0, 2.34, -14.0);
+    const hBarL = new THREE.Mesh(this._boxGeo(0.45, 0.08, 3.2), this.mat.wallWhite);
+    hBarL.position.set(-5.1, 2.34, -14.0);
+    const hBarR = hBarL.clone();
+    hBarR.position.x = -2.9;
+    const hBarM = new THREE.Mesh(this._boxGeo(2.2, 0.08, 0.45), this.mat.wallWhite);
+    hBarM.position.set(-4.0, 2.34, -14.0);
+
+    const yacht = new THREE.Group();
+    yacht.position.set(6, 0.4, 24);
+    const yHull = new THREE.Mesh(this._boxGeo(9.2, 1.35, 3.2), this.mat.wallWhite);
+    const yDeck = new THREE.Mesh(this._boxGeo(5.8, 1.2, 2.4), this.mat.glass);
+    yDeck.position.set(-0.8, 1.2, 0);
+    const yTrim = new THREE.Mesh(this._boxGeo(9.4, 0.2, 3.3), this.mat.richGoldTrim);
+    yTrim.position.y = 0.65;
+    yacht.add(yHull, yDeck, yTrim);
+
+    for (let p = 0; p < 8; p++) {
+      const pa = (p / 8) * Math.PI * 2;
+      if (Math.abs(pa) < 0.4) continue;
+      const px = Math.cos(pa) * 18.2;
+      const pz = Math.sin(pa) * 18.2;
+      const tr = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.28, 5.2, 5), this.mat.treeTrunk);
+      tr.position.set(px, 4.4, pz);
+      const lf = new THREE.Mesh(new THREE.DodecahedronGeometry(1.85, 0), this.mat.treeLeaf);
+      lf.position.set(px, 7.2, pz);
+      isl.add(tr, lf);
+    }
+
+    const cleanIslOwner = (this.islandOwner || "@vip_island_king").trim();
+    const islBoard = this._makeBuildingBoard(cleanIslOwner.toUpperCase(), "VIP PRIVATE ISLAND MANSION", "#0f172a", "#facc15", 9.6, 1.5);
+    islBoard.rotation.y = Math.PI / 2;
+    islBoard.position.set(1.2, 11.2, 0);
+    const islSign = this._createNameSign(`👑 ${cleanIslOwner}`, "🏝️ VIP PRIVATE ISLAND • SEA LINK", true);
+    islSign.position.set(-4.2, 15.6, 0);
+
+    const islHit = new THREE.Mesh(this._boxGeo(48, 22, 48), this.mat.invisibleHitbox);
+    islHit.position.set(0, 10, 0);
+    islHit.userData.plotId = "VIP_ISLAND";
+    this.plotHitboxes.push(islHit);
+
+    isl.add(mBase, mPool, mf1, mg1, mf2, mg2, mSlab2, mf3, mRoofNeon, hPad, hRing, hBarL, hBarR, hBarM, yacht, islBoard, islSign, islHit);
+    sg.add(isl);
+    this.cityGroup.add(sg);
+
+    this.seaBridgeSim = { rgbCables, bridgeLights, yacht };
+  }
+
+  /**
+   * 🎡 BEACHSIDE GIANT FERRIS WHEEL & MINI AMUSEMENT PARK (`FERRIS_WHEEL`)
+   */
+  _buildBeachFerrisWheel(ringRadius) {
+    const bx = this.beachX || -(ringRadius + 76);
+    const fx = bx + 8;
+    const fz = 44;
+    this.ferrisWheelPos = { x: fx, z: fz };
+
+    const fg = new THREE.Group();
+    fg.position.set(fx, 0, fz);
+
+    const plaza = new THREE.Mesh(this._boxGeo(20.0, 0.24, 18.0), this.mat.marble);
+    plaza.position.y = 0.16;
+    const gateL = new THREE.Mesh(this._boxGeo(0.55, 4.4, 0.55), this.mat.icePink);
+    gateL.position.set(9.6, 2.3, -3.5);
+    const gateR = gateL.clone();
+    gateR.position.z = 3.5;
+    const gateBoard = this._makeBuildingBoard("SHERU BHAI EYE", "GIANT FERRIS WHEEL • FUN PARK", "#831843", "#fde047", 7.8, 1.25);
+    gateBoard.rotation.y = Math.PI / 2;
+    gateBoard.position.set(9.6, 4.6, 0);
+
+    const hubY = 16.5;
+    const wheelR = 11.8;
+    [-2.4, 2.4].forEach((lx) => {
+      const legF = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.45, 18.2, 8), this.mat.ferrisSteel);
+      legF.position.set(lx, hubY / 2 + 0.4, -3.4);
+      legF.rotation.x = 0.2;
+      const legB = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.45, 18.2, 8), this.mat.ferrisSteel);
+      legB.position.set(lx, hubY / 2 + 0.4, 3.4);
+      legB.rotation.x = -0.2;
+      fg.add(legF, legB);
+    });
+    const axle = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.65, 5.8, 10), this.mat.richGoldTrim);
+    axle.rotation.z = Math.PI / 2;
+    axle.position.set(0, hubY, 0);
+
+    const wheelRotor = new THREE.Group();
+    wheelRotor.position.set(0, hubY, 0);
+
+    const rimGeo = new THREE.TorusGeometry(wheelR, 0.26, 8, 32);
+    const rimL = new THREE.Mesh(rimGeo, this.mat.ferrisSteel);
+    rimL.rotation.y = Math.PI / 2;
+    rimL.position.x = -1.45;
+    const rimR = rimL.clone();
+    rimR.position.x = 1.45;
+
+    const neonRimMat = new THREE.MeshBasicMaterial({ color: 0xec4899 });
+    const neonRim = new THREE.Mesh(new THREE.TorusGeometry(wheelR - 1.1, 0.16, 6, 28), neonRimMat);
+    neonRim.rotation.y = Math.PI / 2;
+    wheelRotor.add(rimL, rimR, neonRim);
+
+    const cabinMats = [this.mat.oyoRed, this.mat.mobileCyanGlow, this.mat.petrolYellow, this.mat.icePink, this.mat.turf, this.mat.girlDressPurple];
+    const cabins = [];
+    const cabinCount = 12;
+
+    for (let i = 0; i < cabinCount; i++) {
+      const ang = (i / cabinCount) * Math.PI * 2;
+      const spoke = new THREE.Mesh(this._boxGeo(0.14, wheelR * 2, 0.14), this.mat.ferrisSteel);
+      spoke.position.x = -1.45;
+      spoke.rotation.x = ang;
+      const spokeR = spoke.clone();
+      spokeR.position.x = 1.45;
+      wheelRotor.add(spoke, spokeR);
+
+      const cabPivot = new THREE.Group();
+      cabPivot.position.set(0, Math.sin(ang) * wheelR, Math.cos(ang) * wheelR);
+      const cabBody = new THREE.Mesh(this._boxGeo(2.2, 1.7, 1.7), cabinMats[i % cabinMats.length]);
+      cabBody.position.y = -0.95;
+      const cabGlass = new THREE.Mesh(this._boxGeo(2.3, 0.72, 1.4), this.mat.windowNight);
+      cabGlass.position.y = -0.65;
+      const cabRoof = new THREE.Mesh(this._boxGeo(2.4, 0.22, 1.9), this.mat.wallWhite);
+      cabRoof.position.y = -0.05;
+      cabPivot.add(cabBody, cabGlass, cabRoof);
+      wheelRotor.add(cabPivot);
+      cabins.push(cabPivot);
+    }
+
+    const funBooth = new THREE.Mesh(this._boxGeo(4.0, 2.6, 3.2), this.mat.icePink);
+    funBooth.position.set(5.8, 1.5, -5.8);
+    const funCone = new THREE.Mesh(new THREE.ConeGeometry(3.0, 1.8, 8), this.mat.petrolYellow);
+    funCone.position.set(5.8, 3.6, -5.8);
+
+    const fwSign = this._createNameSign("🎡 SHERU BHAI GIANT WHEEL", "BEACH AMUSEMENT PARK", true);
+    fwSign.position.set(0, hubY + wheelR + 3.2, 0);
+
+    const fwHit = new THREE.Mesh(this._boxGeo(20, 30, 22), this.mat.invisibleHitbox);
+    fwHit.position.set(0, 15, 0);
+    fwHit.userData.plotId = "FERRIS_WHEEL";
+    this.plotHitboxes.push(fwHit);
+
+    fg.add(plaza, gateL, gateR, gateBoard, axle, wheelRotor, funBooth, funCone, fwSign, fwHit);
+    this.cityGroup.add(fg);
+
+    this.ferrisWheelSim = { wheelRotor, cabins, neonRimMat };
+  }
+
+  /**
+   * 🚀 ISRO-STYLE ROCKET LAUNCHPAD (SRIHARIKOTA COASTAL ZONE — `ROCKET_PAD`)
+   */
+  _buildRocketLaunchpad(ringRadius) {
+    const rx = -(ringRadius + 56);
+    const rz = ringRadius + 68;
+    this.rocketPadPos = { x: rx, z: rz };
+
+    const rg = new THREE.Group();
+    rg.position.set(rx, 0, rz);
+
+    const roadLen = 68;
+    const spRoad = new THREE.Mesh(this._boxGeo(6.4, 0.12, roadLen), this.mat.road);
+    spRoad.position.set(16, 0.04, -roadLen / 2);
+    const spDash = new THREE.Mesh(new THREE.PlaneGeometry(0.24, roadLen - 2), this.mat.stripe);
+    spDash.rotation.x = -Math.PI / 2;
+    spDash.position.set(16, 0.11, -roadLen / 2);
+    rg.add(spRoad, spDash);
+
+    const apron = new THREE.Mesh(this._boxGeo(34.0, 0.45, 30.0), this.mat.concrete);
+    apron.position.y = 0.22;
+    const padDeck = new THREE.Mesh(this._boxGeo(12.5, 1.6, 12.5), this.mat.stoneDark);
+    padDeck.position.set(0, 1.0, 0);
+    const blastTrench = new THREE.Mesh(this._boxGeo(6.2, 0.3, 14.0), this.mat.cinemaObsidian);
+    blastTrench.position.set(0, 1.85, 0);
+    const dangerRing = new THREE.Mesh(new THREE.RingGeometry(8.2, 9.2, 24), this.mat.petrolYellow);
+    dangerRing.rotation.x = -Math.PI / 2;
+    dangerRing.position.set(0, 0.48, 0);
+
+    const gantry = new THREE.Group();
+    gantry.position.set(-5.8, 1.8, 0);
+    for (let lvl = 0; lvl < 6; lvl++) {
+      const ly = lvl * 3.8 + 1.9;
+      const frame = new THREE.Mesh(this._boxGeo(3.2, 3.6, 3.2), lvl % 2 === 0 ? this.mat.rocketGantryRed : this.mat.wallWhite);
+      frame.position.y = ly;
+      gantry.add(frame);
+    }
+    [9.5, 16.5].forEach((ay) => {
+      const arm = new THREE.Mesh(this._boxGeo(4.8, 0.45, 0.75), this.mat.rocketGantryRed);
+      arm.position.set(3.2, ay, 0);
+      gantry.add(arm);
+    });
+    const beaconMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+    const topBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.55, 8, 8), beaconMat);
+    topBeacon.position.set(0, 23.6, 0);
+    gantry.add(topBeacon);
+
+    const bunker = new THREE.Mesh(this._boxGeo(10.5, 3.6, 6.2), this.mat.wallWhite);
+    bunker.position.set(11.5, 2.2, 9.2);
+    const bWin = new THREE.Mesh(this._boxGeo(8.2, 1.5, 0.16), this.mat.glass);
+    bWin.position.set(11.5, 2.6, 6.08);
+    const spBoard = this._makeBuildingBoard("ISRO • SHERU SPACEPORT", "PSLV / GSLV LIVE LAUNCHPAD", "#0f172a", "#f97316", 11.4, 1.45);
+    spBoard.position.set(11.5, 4.9, 6.1);
+
+    const rocket = new THREE.Group();
+    rocket.position.set(0, 1.85, 0);
+
+    const core1 = new THREE.Mesh(new THREE.CylinderGeometry(1.25, 1.35, 9.5, 14), this.mat.rocketWhite);
+    core1.position.y = 5.4;
+    const saffronBand = new THREE.Mesh(new THREE.CylinderGeometry(1.29, 1.29, 0.75, 14), this.mat.templeSaffron);
+    saffronBand.position.y = 9.0;
+    const greenBand = new THREE.Mesh(new THREE.CylinderGeometry(1.29, 1.29, 0.75, 14), this.mat.dmartBrightGreen);
+    greenBand.position.y = 7.6;
+    const stage2 = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.25, 5.5, 14), this.mat.cinemaObsidian);
+    stage2.position.y = 12.6;
+    const fairing = new THREE.Mesh(new THREE.CylinderGeometry(1.42, 1.2, 4.2, 14), this.mat.rocketWhite);
+    fairing.position.y = 17.2;
+    const noseCone = new THREE.Mesh(new THREE.ConeGeometry(1.42, 4.4, 14), this.mat.rocketWhite);
+    noseCone.position.y = 21.5;
+
+    [-1.9, 1.9].forEach((bx) => {
+      const bBody = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.6, 8.2, 10), this.mat.rocketWhite);
+      bBody.position.set(bx, 4.8, 0);
+      const bTip = new THREE.Mesh(new THREE.ConeGeometry(0.55, 1.8, 10), this.mat.rocketGantryRed);
+      bTip.position.set(bx, 9.8, 0);
+      const bNozzle = new THREE.Mesh(new THREE.ConeGeometry(0.52, 0.9, 8), this.mat.cinemaObsidian);
+      bNozzle.position.set(bx, 0.45, 0);
+      rocket.add(bBody, bTip, bNozzle);
+    });
+    const mainNozzle = new THREE.Mesh(new THREE.ConeGeometry(1.1, 1.2, 10), this.mat.cinemaObsidian);
+    mainNozzle.position.y = 0.6;
+
+    const flameGroup = new THREE.Group();
+    const outerFlame = new THREE.Mesh(new THREE.ConeGeometry(2.1, 12.5, 12), this.mat.rocketFlame);
+    outerFlame.rotation.x = Math.PI;
+    outerFlame.position.y = -6.2;
+    const innerFlame = new THREE.Mesh(new THREE.ConeGeometry(1.05, 8.2, 10), this.mat.rocketFlameCore);
+    innerFlame.rotation.x = Math.PI;
+    innerFlame.position.y = -4.0;
+    flameGroup.add(outerFlame, innerFlame);
+    flameGroup.visible = false;
+
+    rocket.add(core1, saffronBand, greenBand, stage2, fairing, noseCone, mainNozzle, flameGroup);
+
+    const smokePuffs = [];
+    const smokeGeo = new THREE.DodecahedronGeometry(2.2, 0);
+    for (let s = 0; s < 8; s++) {
+      const ang = (s / 8) * Math.PI * 2;
+      const puff = new THREE.Mesh(smokeGeo, this.mat.rocketSmoke);
+      puff.position.set(Math.cos(ang) * 3.5, 2.2, Math.sin(ang) * 3.5);
+      puff.visible = false;
+      rg.add(puff);
+      smokePuffs.push({ mesh: puff, ang, baseR: 2.5 + (s % 2) * 1.4 });
+    }
+
+    const padSign = this._createNameSign("🚀 ISRO ROCKET LAUNCHPAD", "SRIHARIKOTA ZONE • LIVE LIFTOFF", true);
+    padSign.position.set(0, 27.5, 0);
+
+    const padHit = new THREE.Mesh(this._boxGeo(34, 30, 30), this.mat.invisibleHitbox);
+    padHit.position.set(0, 15, 0);
+    padHit.userData.plotId = "ROCKET_PAD";
+    this.plotHitboxes.push(padHit);
+
+    rg.add(apron, padDeck, blastTrench, dangerRing, gantry, bunker, bWin, spBoard, rocket, padSign, padHit);
+    this.cityGroup.add(rg);
+
+    this.rocketSim = {
+      rocket,
+      flameGroup,
+      smokePuffs,
+      beaconMat,
+      baseY: 1.85
+    };
+  }
+
   _buildArakuLandscape(ringRadius) {
     const ag = new THREE.Group();
 
@@ -4879,6 +5369,17 @@ export class FollowerTownEngine {
       hitbox.rotation.y = pos.rotY;
     }
     plotGroup.add(lotBase);
+
+    // 🎨 GLSL BAKED GROUND CONTACT-SHADOW (Crisp Soft 3D Depth on 2GB-4GB Visitor Phones at Near-Zero Cost!)
+    if (data && data.status === "built" && data.buildingType !== "empty" && this.contactShadowMat) {
+      const shW = effEight ? this.EIGHT_PLOT_WIDTH + 1.8 : effFour ? this.BLOCK_FOOTPRINT + 1.4 : effTwo ? this.BLOCK_FOOTPRINT + 1.2 : this.PLOT_SIZE + 0.9;
+      const shD = effEight ? this.BLOCK_FOOTPRINT + 1.6 : effFour ? this.BLOCK_FOOTPRINT + 1.4 : this.PLOT_SIZE + 0.9;
+      const aoPlane = new THREE.Mesh(new THREE.PlaneGeometry(shW, shD), this.contactShadowMat);
+      aoPlane.rotation.x = -Math.PI / 2;
+      aoPlane.position.y = effEight ? 0.27 : 0.15;
+      if (isCustom && (effEight || effFour || effTwo)) aoPlane.rotation.z = -pos.rotY;
+      plotGroup.add(aoPlane);
+    }
 
     let buildingObj = null;
 
@@ -8361,10 +8862,10 @@ export class FollowerTownEngine {
 
     if (!mat) {
       const canvas = document.createElement("canvas");
-      canvas.width = isBig ? (hi ? 640 : 448) : (hi ? 400 : lite ? 224 : 320);
+      canvas.width = isBig ? (hi ? 640 : 512) : (hi ? 400 : lite ? 304 : 352);
       canvas.height = subText
-        ? (isBig ? (hi ? 164 : 120) : (hi ? 116 : lite ? 68 : 96))
-        : (isBig ? (hi ? 116 : 88) : (hi ? 88 : lite ? 52 : 72));
+        ? (isBig ? (hi ? 164 : 132) : (hi ? 116 : lite ? 84 : 100))
+        : (isBig ? (hi ? 116 : 96) : (hi ? 88 : lite ? 64 : 76));
       const ctx = canvas.getContext("2d");
 
       ctx.fillStyle = "rgba(8, 15, 32, 0.94)";
@@ -8383,7 +8884,7 @@ export class FollowerTownEngine {
 
       const cleanMain = mainText.length > 26 ? mainText.slice(0, 25) + "…" : mainText;
       ctx.lineJoin = "round";
-      const fScale = hi ? 1.22 : lite ? 0.72 : 1.0;
+      const fScale = hi ? 1.22 : lite ? 0.92 : 1.06;
       if (subText) {
         ctx.font = `800 ${Math.round((isBig ? 23 : 18) * fScale)}px sans-serif`;
         ctx.strokeStyle = "#020617";
@@ -8443,6 +8944,33 @@ export class FollowerTownEngine {
       this.hemiLight.intensity = 0.95;
     }
 
+    // 🎨 Sync GLSL Atmospheric Sky Dome & GLSL Shimmering Ocean Shader!
+    if (this.skyDome) {
+      const pal = getSkyPalette(mode);
+      this.skyDome.uniforms.uTopColor.value.copy(pal.top);
+      this.skyDome.uniforms.uMidColor.value.copy(pal.mid);
+      this.skyDome.uniforms.uHorizonColor.value.copy(pal.horizon);
+      this.skyDome.uniforms.uSunDir.value.copy(pal.sunDir);
+      this.skyDome.uniforms.uSunColor.value.copy(pal.sunCol);
+      this.skyDome.uniforms.uSunGlow.value = pal.sunGlow;
+    }
+    if (this.oceanShader) {
+      const u = this.oceanShader.uniforms;
+      if (mode === "night") {
+        u.uDeepColor.value.setHex(0x02142b);
+        u.uShallowColor.value.setHex(0x0c4a6e);
+        u.uSpecColor.value.setHex(0x93c5fd);
+      } else if (mode === "sunset") {
+        u.uDeepColor.value.setHex(0x1e3a5f);
+        u.uShallowColor.value.setHex(0xd97706);
+        u.uSpecColor.value.setHex(0xfde047);
+      } else {
+        u.uDeepColor.value.setHex(0x0369a1);
+        u.uShallowColor.value.setHex(0x22d3ee);
+        u.uSpecColor.value.setHex(0xe0f2fe);
+      }
+    }
+
     const isNight = mode === "night";
     this.lampBulbs.forEach((b) => {
       b.material = isNight ? this.mat.lampBulbNight : this.mat.lampBulbDay;
@@ -8491,6 +9019,9 @@ export class FollowerTownEngine {
     if (plotId === "RAILWAY_STATION") return { x: 0, y: 5, z: this.railwayZ, size: 12 };
     if (plotId === "RAILWAY_SOUTH") return { x: 0, y: 5, z: this.railwaySouthZ, size: 12 };
     if (plotId === "HILL_TEMPLE") return { x: this.hillTemplePos.x, y: 18, z: this.hillTemplePos.z - 2, size: 12 };
+    if (plotId === "ROCKET_PAD") return { x: this.rocketPadPos.x, y: 12, z: this.rocketPadPos.z, size: 12 };
+    if (plotId === "VIP_ISLAND") return { x: this.vipIslandPos.x + 18, y: 8, z: this.vipIslandPos.z, size: 12 };
+    if (plotId === "FERRIS_WHEEL") return { x: this.ferrisWheelPos.x, y: 14, z: this.ferrisWheelPos.z, size: 12 };
     if (plotId === "ADD_AIRPORT_PLOT") return { x: this.airportX - 39, y: 2, z: 56, size: 1 };
     if (plotId === "ADD_BEACH_PLOT") return { x: this.beachX + 22, y: 2, z: 16, size: 1 };
     const customData = this.plotDataMap.get(plotId);
@@ -8540,7 +9071,44 @@ export class FollowerTownEngine {
       this.composer.setPixelRatio(pr);
       this.composer.setSize(w, h);
     }
-    this.renderer.toneMappingExposure = this.hqMode ? 1.14 : 1.08;
+    this.renderer.toneMappingExposure = this.hqMode ? 1.15 : 1.12;
+  }
+
+  /**
+   * ✨ VISITOR 1-TAP GRAPHICS PRESET ("hd" | "ultra" | "smooth")
+   */
+  async setGraphicsPreset(preset = "hd") {
+    this.graphicsPreset = preset;
+    const nativeDpr = window.devicePixelRatio || 1.5;
+    const w = this.container.clientWidth || window.innerWidth || 360;
+    const h = this.container.clientHeight || window.innerHeight || 640;
+
+    if (preset === "ultra") {
+      this.hqMode = true;
+      this.basePixelRatio = Math.min(nativeDpr, 1.85);
+      this.renderer.setPixelRatio(this.basePixelRatio);
+      this.renderer.setSize(w, h);
+      this.setShadowsEnabled(true);
+      await this.enableCinemaBloom(true);
+    } else if (preset === "smooth") {
+      this.hqMode = false;
+      this.basePixelRatio = Math.min(nativeDpr, 1.15);
+      this.renderer.setPixelRatio(this.basePixelRatio);
+      this.renderer.setSize(w, h);
+      this.setShadowsEnabled(false);
+      await this.enableCinemaBloom(false);
+    } else {
+      this.hqMode = false;
+      this.basePixelRatio = this.isVeryLowRam ? Math.min(nativeDpr, 1.25) : Math.min(nativeDpr, 1.5);
+      this.renderer.setPixelRatio(this.basePixelRatio);
+      this.renderer.setSize(w, h);
+      this.setShadowsEnabled(false);
+      await this.enableCinemaBloom(false);
+    }
+    if (this.composer) {
+      this.composer.setPixelRatio(this.basePixelRatio);
+      this.composer.setSize(w, h);
+    }
   }
 
   /**
@@ -8571,6 +9139,9 @@ export class FollowerTownEngine {
     if (plotId === "BEACH") return { dist: this._getWideDist(72), heightRatio: 0.56 };
     if (plotId === "RAILWAY_STATION" || plotId === "RAILWAY_SOUTH") return { dist: this._getWideDist(56), heightRatio: 0.58 };
     if (plotId === "HILL_TEMPLE") return { dist: this._getWideDist(72), heightRatio: 0.62 };
+    if (plotId === "ROCKET_PAD") return { dist: this._getWideDist(68), heightRatio: 0.62 };
+    if (plotId === "VIP_ISLAND") return { dist: this._getWideDist(78), heightRatio: 0.56 };
+    if (plotId === "FERRIS_WHEEL") return { dist: this._getWideDist(56), heightRatio: 0.58 };
     if (size === 8) return { dist: this._getWideDist(48), heightRatio: 0.72 };
     if (size === 4) return { dist: this._getWideDist(35), heightRatio: 0.76 };
     if (size === 2) return { dist: this._getWideDist(29), heightRatio: 0.78 };
@@ -8782,6 +9353,9 @@ export class FollowerTownEngine {
       new THREE.Vector3(rz * 0.42, 30, rz + 24),                // 15. Wide View of SE Araku Mountain Tunnel & South Station
       new THREE.Vector3(-14, 32, rz + 28),                      // 16. Opposite 2-Platform South Railway Station (Araku South Jn)
       new THREE.Vector3(-wfR * 0.44, 44, wfR * 0.56),           // 17. SW Coastal Waterfall & South Valley River
+      new THREE.Vector3(-(rr + 36), 34, rr + 56),               // 17b. Glide past ISRO Rocket Launchpad!
+      new THREE.Vector3(bx + 18, 30, 48),                       // 17c. Sweep past Beach Giant Ferris Wheel!
+      new THREE.Vector3(bx - 52, 26, 22),                       // 17d. Dramatic Glide along RGB Sea Bridge & VIP Island!
       new THREE.Vector3(bx + 24, 34, 24),                       // 18. Wide Panorama over Sheru Bhai Golden Beach, Waves & Villa
       new THREE.Vector3(-rr * 0.6, 32, rr * 0.45),              // 19. Final Wide Sweep across SW City Skyline
       new THREE.Vector3(-18, 22, rr + 28)                       // 20. Smooth return curve back to South Welcome Arch!
@@ -9168,7 +9742,154 @@ export class FollowerTownEngine {
     this.fireworkBursts.push({ points, vel, age: 0, maxAge: 1.85 });
   }
 
+  // =========================================================
+  // 🎮 v30 DRIVABLE CAR / GT650 SUPERBIKE / AUTO MODE
+  // =========================================================
+  _buildPlayerDriveMesh(type) {
+    if (type === "auto") {
+      return this._makeRealAutoMesh(true, false);
+    }
+    if (type === "bike") {
+      const bk = new THREE.Group();
+      const wGeo = new THREE.CylinderGeometry(0.38, 0.38, 0.2, 10);
+      wGeo.rotateZ(Math.PI / 2);
+      const wF = new THREE.Mesh(wGeo, this.mat.wheelBlack);
+      wF.position.set(0, 0.38, 0.85);
+      const wB = wF.clone();
+      wB.position.z = -0.85;
+      const frame = new THREE.Mesh(this._boxGeo(0.38, 0.45, 1.5), this.mat.chrome);
+      frame.position.set(0, 0.58, 0);
+      const tank = new THREE.Mesh(this._boxGeo(0.46, 0.38, 0.85), this.mat.bikeChromeGold);
+      tank.position.set(0, 0.92, 0.18);
+      const handle = new THREE.Mesh(this._boxGeo(0.85, 0.08, 0.12), this.mat.chrome);
+      handle.position.set(0, 1.12, 0.62);
+      const hl = new THREE.Mesh(new THREE.SphereGeometry(0.16, 6, 6), this.mat.floodlightGlow);
+      hl.position.set(0, 0.98, 0.92);
+      const rider = this._createCharacter({ shirtMat: this.mat.bikeRacingRed, pantsMat: this.mat.darkPants, scale: 0.92 });
+      rider.position.set(0, 0.52, -0.15);
+      rider.rotation.x = 0.22;
+      bk.add(wF, wB, frame, tank, handle, hl, rider);
+      return bk;
+    }
+    const car = this._makeRealAudiCarMesh(this.mat.bikeRacingRed, false);
+    const underglow = new THREE.Mesh(new THREE.PlaneGeometry(2.1, 4.1), this.mat.ferrisRimNeon);
+    underglow.rotation.x = -Math.PI / 2;
+    underglow.position.y = 0.08;
+    car.add(underglow);
+    return car;
+  }
+
+  startDriveMode(vehicleType = "car", onSpeed = null, onExit = null) {
+    this.stopAllReelModes();
+    if (this.driveState.group) {
+      this.scene.remove(this.driveState.group);
+    }
+    const rr = this.ringRadius || 48;
+    const mesh = this._buildPlayerDriveMesh(vehicleType);
+    this.driveState.active = true;
+    this.driveState.vehicleType = vehicleType;
+    this.driveState.group = mesh;
+    this.driveState.pos.set(0, 0.14, rr - 10);
+    this.driveState.yaw = Math.PI;
+    this.driveState.speed = 0;
+    this.driveState.steerAngle = 0;
+    this.driveState.keys = { forward: false, backward: false, left: false, right: false, boost: false };
+    this.driveState.onSpeed = onSpeed;
+    this.driveState.onExit = onExit;
+
+    mesh.position.copy(this.driveState.pos);
+    mesh.rotation.y = this.driveState.yaw;
+    this.scene.add(mesh);
+    this.controls.enabled = false;
+
+    if (!this._driveKeysBound) {
+      this._driveKeysBound = true;
+      window.addEventListener("keydown", (e) => {
+        if (!this.driveState.active) return;
+        if (e.code === "ArrowUp" || e.code === "KeyW") this.driveState.keys.forward = true;
+        if (e.code === "ArrowDown" || e.code === "KeyS") this.driveState.keys.backward = true;
+        if (e.code === "ArrowLeft" || e.code === "KeyA") this.driveState.keys.left = true;
+        if (e.code === "ArrowRight" || e.code === "KeyD") this.driveState.keys.right = true;
+        if (e.code === "ShiftLeft" || e.code === "ShiftRight") this.driveState.keys.boost = true;
+        if (e.code === "Escape") this.stopDriveMode();
+      });
+      window.addEventListener("keyup", (e) => {
+        if (!this.driveState.active) return;
+        if (e.code === "ArrowUp" || e.code === "KeyW") this.driveState.keys.forward = false;
+        if (e.code === "ArrowDown" || e.code === "KeyS") this.driveState.keys.backward = false;
+        if (e.code === "ArrowLeft" || e.code === "KeyA") this.driveState.keys.left = false;
+        if (e.code === "ArrowRight" || e.code === "KeyD") this.driveState.keys.right = false;
+        if (e.code === "ShiftLeft" || e.code === "ShiftRight") this.driveState.keys.boost = false;
+      });
+    }
+  }
+
+  switchDriveVehicle(vehicleType) {
+    if (!this.driveState.active) return;
+    if (this.driveState.group) this.scene.remove(this.driveState.group);
+    const mesh = this._buildPlayerDriveMesh(vehicleType);
+    this.driveState.vehicleType = vehicleType;
+    this.driveState.group = mesh;
+    mesh.position.copy(this.driveState.pos);
+    mesh.rotation.y = this.driveState.yaw;
+    this.scene.add(mesh);
+  }
+
+  setDriveControl(key, pressed) {
+    if (!this.driveState.active) return;
+    this.driveState.keys[key] = Boolean(pressed);
+  }
+
+  teleportDrive(dest) {
+    if (!this.driveState.active) return;
+    const rr = this.ringRadius || 48;
+    this.driveState.speed = 0;
+    if (dest === "bridge") {
+      this.driveState.pos.set(this.beachX + 18, 0.25, -2);
+      this.driveState.yaw = -Math.PI / 2;
+    } else if (dest === "temple") {
+      this.driveState.pos.set(this.hillTemplePos.x, 0.2, this.hillTemplePos.z + 32);
+      this.driveState.yaw = Math.PI;
+    } else if (dest === "rocket") {
+      this.driveState.pos.set(this.rocketPadPos.x + 16, 0.2, this.rocketPadPos.z - 28);
+      this.driveState.yaw = 0;
+    } else {
+      this.driveState.pos.set(0, 0.14, rr - 10);
+      this.driveState.yaw = Math.PI;
+    }
+  }
+
+  stopDriveMode() {
+    if (!this.driveState.active) return;
+    this.driveState.active = false;
+    if (this.driveState.group) {
+      this.scene.remove(this.driveState.group);
+      this.driveState.group = null;
+    }
+    this.controls.enabled = true;
+    if (this.driveState.onExit) {
+      const cb = this.driveState.onExit;
+      this.driveState.onExit = null;
+      cb();
+    }
+  }
+
+  _getDriveGroundY(wx, wz) {
+    if (this._seaBridgeBounds && this._getSeaBridgeY) {
+      const b = this._seaBridgeBounds;
+      if (wx >= b.minX && wx <= b.maxX && Math.abs(wz - b.z) <= b.halfW + 1.5) {
+        return this._getSeaBridgeY(wx) + 0.35;
+      }
+    }
+    if (this.vipIslandPos) {
+      const dIsl = Math.hypot(wx - this.vipIslandPos.x, wz - this.vipIslandPos.z);
+      if (dIsl < 24.5) return 2.15;
+    }
+    return 0.14;
+  }
+
   stopAllReelModes() {
+    if (this.driveState && this.driveState.active) this.stopDriveMode();
     if (this.templeOrbit && this.templeOrbit.active) this.stopTempleOrbit();
     if (this.proReelTour.active) this.stopProReelTour();
     if (this.droneTour.active) this.stopDroneView();
@@ -9415,7 +10136,7 @@ export class FollowerTownEngine {
 
     const stops = shotItems.map((item, i) => {
       const c = this.getPlotWorldCenter(item.id);
-      const isSpecial = ["ST_JUNCTION", "AIRPORT", "BEACH", "RAILWAY_STATION", "RAILWAY_SOUTH", "HILL_TEMPLE"].includes(item.id);
+      const isSpecial = ["ST_JUNCTION", "AIRPORT", "BEACH", "RAILWAY_STATION", "RAILWAY_SOUTH", "HILL_TEMPLE", "ROCKET_PAD", "VIP_ISLAND", "FERRIS_WHEEL"].includes(item.id);
       const fr = this._getTargetFraming(item.id, c.size);
       const ang = i % 2 === 0 ? 0.65 : 2.35;
       return {
@@ -9732,6 +10453,11 @@ export class FollowerTownEngine {
         backDist = 36 * pBoost;
         upDist = 16 * pBoost;
         sideOffset = 14 * pBoost;
+      } else if (this.chaseCam.mode === "rocket" && this.rocketSim?.rocket) {
+        targetObj = this.rocketSim.rocket;
+        backDist = 32 * pBoost;
+        upDist = 14 * pBoost;
+        sideOffset = 18 * pBoost;
       }
 
       if (targetObj) {
@@ -9851,6 +10577,137 @@ export class FollowerTownEngine {
       if (p >= 1) this.stopDiscoOutro();
     }
 
+
+
+    // 🎮 PLAYER DRIVABLE CAR / GT650 SUPERBIKE / AUTO PHYSICS & CHASE CAMERA
+    if (this.driveState && this.driveState.active && this.driveState.group) {
+      const ds = this.driveState;
+      const k = ds.keys;
+      const isBike = ds.vehicleType === "bike";
+      const isAuto = ds.vehicleType === "auto";
+      const maxSpd = (isBike ? 46 : isAuto ? 28 : 40) * (k.boost ? 1.55 : 1.0);
+      const accel = isBike ? 36 : isAuto ? 22 : 30;
+
+      if (k.forward) {
+        ds.speed = Math.min(maxSpd, ds.speed + accel * rawDt);
+      } else if (k.backward) {
+        ds.speed = Math.max(-14, ds.speed - accel * 1.15 * rawDt);
+      } else {
+        ds.speed *= Math.exp(-3.2 * rawDt);
+        if (Math.abs(ds.speed) < 0.08) ds.speed = 0;
+      }
+
+      const steerInput = (k.left ? 1 : 0) - (k.right ? 1 : 0);
+      const turnFactor = Math.min(1, Math.abs(ds.speed) / 6.0);
+      const turnDir = ds.speed >= 0 ? 1 : -1;
+      ds.yaw += steerInput * 2.15 * turnFactor * turnDir * rawDt;
+
+      ds.pos.x += Math.sin(ds.yaw) * ds.speed * rawDt;
+      ds.pos.z += Math.cos(ds.yaw) * ds.speed * rawDt;
+      const maxWorld = (this.ringRadius || 48) + 210;
+      ds.pos.x = THREE.MathUtils.clamp(ds.pos.x, this.vipIslandPos.x - 22, maxWorld);
+      ds.pos.z = THREE.MathUtils.clamp(ds.pos.z, -maxWorld, maxWorld);
+      ds.pos.y = THREE.MathUtils.lerp(ds.pos.y, this._getDriveGroundY(ds.pos.x, ds.pos.z), 0.22);
+
+      ds.group.position.copy(ds.pos);
+      ds.group.rotation.y = ds.yaw;
+      ds.group.rotation.z = isBike ? THREE.MathUtils.lerp(ds.group.rotation.z, -steerInput * 0.28 * turnFactor, 0.16) : 0;
+
+      const camBack = 15.5 + Math.abs(ds.speed) * 0.08;
+      const camUp = 7.4;
+      const desiredCam = new THREE.Vector3(
+        ds.pos.x - Math.sin(ds.yaw) * camBack,
+        ds.pos.y + camUp,
+        ds.pos.z - Math.cos(ds.yaw) * camBack
+      );
+      const camAlpha = 1 - Math.exp(-6.5 * rawDt);
+      this.camera.position.lerp(desiredCam, camAlpha);
+      this.controls.target.lerp(new THREE.Vector3(ds.pos.x, ds.pos.y + 2.2, ds.pos.z), camAlpha);
+
+      if (ds.onSpeed) {
+        ds.onSpeed(Math.round(Math.abs(ds.speed) * 3.1));
+      }
+    }
+
+    // 🚀 ISRO ROCKET LAUNCHPAD LIVE 24-SECOND COUNTDOWN -> IGNITION -> LIFTOFF CYCLE!
+    if (this.lifeEnabled && this.rocketSim) {
+      const rs = this.rocketSim;
+      const cyc = elapsed % 24.0;
+      rs.beaconMat.color.setHex(Math.floor(elapsed * 4) % 2 === 0 ? 0xef4444 : 0xfacc15);
+
+      if (cyc < 7.0) {
+        rs.rocket.position.set(0, rs.baseY, 0);
+        rs.rocket.visible = true;
+        rs.flameGroup.visible = false;
+        for (const sp of rs.smokePuffs) sp.mesh.visible = false;
+      } else if (cyc < 10.0) {
+        const p = (cyc - 7.0) / 3.0;
+        rs.rocket.visible = true;
+        rs.rocket.position.set(Math.sin(elapsed * 45) * 0.08, rs.baseY, Math.cos(elapsed * 42) * 0.08);
+        rs.flameGroup.visible = true;
+        rs.flameGroup.scale.set(0.7 + p * 0.4, 0.5 + p * 0.7, 0.7 + p * 0.4);
+        for (const sp of rs.smokePuffs) {
+          sp.mesh.visible = true;
+          const r = sp.baseR + p * 7.5;
+          sp.mesh.position.set(Math.cos(sp.ang) * r, 2.2 + p * 2.5, Math.sin(sp.ang) * r);
+          const sc = 0.7 + p * 1.4;
+          sp.mesh.scale.set(sc, sc, sc);
+        }
+      } else if (cyc < 19.5) {
+        const t = cyc - 10.0;
+        const alt = rs.baseY + t * t * 2.25;
+        rs.rocket.visible = alt < 185;
+        rs.rocket.position.set(0, alt, 0);
+        rs.flameGroup.visible = true;
+        const flPulse = 1.0 + Math.sin(elapsed * 32) * 0.16;
+        rs.flameGroup.scale.set(1.15, 1.35 * flPulse, 1.15);
+        for (const sp of rs.smokePuffs) {
+          const fade = Math.max(0, 1 - t / 4.2);
+          sp.mesh.visible = fade > 0.05;
+          const r = sp.baseR + 7.5 + t * 3.0;
+          sp.mesh.position.set(Math.cos(sp.ang) * r, 4.2 + t * 1.8, Math.sin(sp.ang) * r);
+          const sc = (2.0 + t * 0.4) * fade;
+          sp.mesh.scale.set(sc, sc, sc);
+        }
+      } else {
+        rs.rocket.position.set(0, rs.baseY, 0);
+        rs.rocket.visible = true;
+        rs.flameGroup.visible = false;
+        for (const sp of rs.smokePuffs) sp.mesh.visible = false;
+      }
+    }
+
+    // 🌉 RGB CABLE-STAYED SEA BRIDGE NEON CYCLING + BOBBING VIP ISLAND YACHT
+    if (this.seaBridgeSim) {
+      const sbs = this.seaBridgeSim;
+      if (sbs.yacht && this.lifeEnabled) {
+        sbs.yacht.position.y = 0.4 + Math.sin(elapsed * 1.8) * 0.16;
+      }
+      if (this.timeOfDay === "night" && this.lifeEnabled) {
+        const pal = [0x22d3ee, 0xec4899, 0xfacc15, 0xa855f7, 0x38bdf8, 0x4ade80];
+        const step = Math.floor(elapsed * 2.2);
+        for (const c of sbs.rgbCables) {
+          c.mat.color.setHex(pal[(step + c.idx) % pal.length]);
+        }
+        for (let i = 0; i < sbs.bridgeLights.length; i++) {
+          sbs.bridgeLights[i].color.setHex(pal[(step + i) % pal.length]);
+        }
+      }
+    }
+
+    // 🎡 BEACHSIDE GIANT FERRIS WHEEL ROTATION (Cabins stay level/upright!)
+    if (this.lifeEnabled && this.ferrisWheelSim) {
+      const fws = this.ferrisWheelSim;
+      fws.wheelRotor.rotation.x += dt * 0.34;
+      const curAngle = fws.wheelRotor.rotation.x;
+      for (const cab of fws.cabins) {
+        cab.rotation.x = -curAngle;
+      }
+      if (this.timeOfDay === "night" && fws.neonRimMat) {
+        const fPal = [0xec4899, 0x22d3ee, 0xfacc15, 0xa855f7];
+        fws.neonRimMat.color.setHex(fPal[Math.floor(elapsed * 2.5) % fPal.length]);
+      }
+    }
 
     // 🛕 SACRED HILLTOP TEMPLE CINEMA ORBIT CAM
     if (this.templeOrbit && this.templeOrbit.active) {
@@ -10978,19 +11835,27 @@ export class FollowerTownEngine {
       }
     }
 
-    // VERY-LOW-RAM AUTO-FPS SMOOTH GOVERNOR + FAR SPRITE & EMPTY PLOT CULLING
+    // 🎨 UPDATE GLSL GPU SHADERS (Ocean Wave Ripples & Camera-Centered Atmospheric Sky Dome)
+    if (this.oceanShader && this.lifeEnabled) {
+      this.oceanShader.uniforms.uTime.value = elapsed;
+    }
+    if (this.skyDome) {
+      this.skyDome.mesh.position.copy(this.camera.position);
+    }
+
+    // ⚡ SMART AUTO-FPS SMOOTH GOVERNOR + COMPILED WEBASSEMBLY (WASM) ZERO-GC DISTANCE CULLING
     this._animFrameTick++;
     if (!this.hqMode) {
       this._fpsFrames++;
       this._fpsAccum += rawDt;
-      if (this._fpsAccum >= 2.2) {
+      if (this._fpsAccum >= 2.8) {
         const avgFps = this._fpsFrames / this._fpsAccum;
-        if (avgFps < 24 && !this._perfThrottle) {
+        if (avgFps < 20 && !this._perfThrottle) {
           this._perfThrottle = true;
-          this.renderer.setPixelRatio(0.82);
-        } else if (avgFps > 42 && this._perfThrottle) {
+          this.renderer.setPixelRatio(Math.max(1.05, (this.basePixelRatio || 1.35) * 0.8));
+        } else if (avgFps > 38 && this._perfThrottle) {
           this._perfThrottle = false;
-          this.renderer.setPixelRatio(this.isVeryLowRam ? 0.92 : 1.0);
+          this.renderer.setPixelRatio(this.basePixelRatio || 1.45);
         }
         this._fpsFrames = 0;
         this._fpsAccum = 0;
@@ -11003,27 +11868,22 @@ export class FollowerTownEngine {
       const cx = this.camera.position.x;
       const cz = this.camera.position.z;
       const maxDistSq = this.hqMode
-        ? 260 * 260
-        : this._perfThrottle
-        ? 85 * 85
+        ? 280 * 280
+        : this.graphicsPreset === "smooth" || this._perfThrottle
+        ? 105 * 105
         : this.isVeryLowRam
-        ? 95 * 95
-        : this.isLowRam
-        ? 110 * 110
-        : 170 * 170;
-      for (let i = 0; i < this.plotSigns.length; i++) {
-        const ps = this.plotSigns[i];
-        const dx = ps.x - cx;
-        const dz = ps.z - cz;
-        ps.sprite.visible = dx * dx + dz * dz < maxDistSq;
+        ? 125 * 125
+        : 185 * 185;
+
+      if (this.wasmPerf) {
+        this.wasmPerf.cullList(this.plotSigns, "sprite", cx, cz, maxDistSq);
       }
 
-      if ((this.isLowRam || this._perfThrottle) && !this.hqMode && this._emptyPlotCoords.size > 0) {
-        const emptyMaxSq = this._perfThrottle ? 145 * 145 : 195 * 195;
-        for (const ep of this._emptyPlotCoords.values()) {
-          const dx = ep.x - cx;
-          const dz = ep.z - cz;
-          ep.grp.visible = dx * dx + dz * dz < emptyMaxSq;
+      if ((this.isLowRam || this.graphicsPreset === "smooth" || this._perfThrottle) && !this.hqMode && this._emptyPlotCoords.size > 0) {
+        const emptyMaxSq = (this.graphicsPreset === "smooth" || this._perfThrottle) ? 160 * 160 : 215 * 215;
+        const emptyArr = Array.from(this._emptyPlotCoords.values());
+        if (this.wasmPerf) {
+          this.wasmPerf.cullList(emptyArr, "grp", cx, cz, emptyMaxSq);
         }
       }
     }

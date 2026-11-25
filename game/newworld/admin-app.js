@@ -5,10 +5,11 @@ import {
   ref,
   onValue,
   update,
+  remove,
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged
-} from "./firebase-config.js?v=29";
+} from "./firebase-config.js?v=31";
 import {
   FollowerTownEngine,
   BUILDING_LABELS,
@@ -16,7 +17,7 @@ import {
   getTwoPlotGroup,
   getBlockPlotIds,
   getEightPlotGroup
-} from "./world-engine.js?v=29";
+} from "./world-engine.js?v=31";
 
 let isAdmin = false;
 let selectedPlotId = "plot_0001";
@@ -29,6 +30,7 @@ let worldSettings = {
   lifeEnabled: true,
   beachOwner: "@follower_beach",
   railwayOwner: "@_ur_bunny_108_",
+  islandOwner: "@vip_island_king",
   heroModels: { statue: "", audi: "", heli: "" },
   weather: "clear",
   fireworks: false
@@ -54,7 +56,8 @@ const SKETCHFAB_URL = "https://sketchfab.com/models/011d2f8f40e146ff8b2d7dfc70e9
 const panels = {
   builder: document.getElementById("panel-builder"),
   bulk: document.getElementById("panel-bulk"),
-  world: document.getElementById("panel-world")
+  world: document.getElementById("panel-world"),
+  requests: document.getElementById("panel-requests")
 };
 
 function showToast(msg) {
@@ -157,6 +160,54 @@ engine.onAddPlotTap = (result) => {
 };
 
 function openPlotCard(plotId, data) {
+  if (plotId === "ROCKET_PAD") {
+    document.getElementById("card-badge").textContent = "ISRO SRIHARIKOTA ZONE • SPACEPORT";
+    document.getElementById("card-owner").textContent = "🚀 SHERU BHAI SPACEPORT";
+    document.getElementById("card-role").textContent = "Live ISRO-style PSLV/GSLV Rocket Launchpad blasting into space every 24 seconds! Use 🚀 Rocket Cam in Reel Mode for slow-mo liftoff!";
+    document.getElementById("card-type").textContent = "LIVE ROCKET LAUNCHPAD";
+    document.getElementById("card-day").textContent = "AUTO LAUNCH EVERY 24s 🔥";
+    editBtn.classList.add("hidden");
+    if (beachEditBtn) beachEditBtn.classList.add("hidden");
+    if (railwayEditBtn) railwayEditBtn.classList.add("hidden");
+    if (replayBuildBtn) replayBuildBtn.classList.add("hidden");
+    websiteBtn.classList.add("hidden");
+    if (sheru3dBtn) sheru3dBtn.classList.add("hidden");
+    plotCard.classList.remove("hidden");
+    return;
+  }
+
+  if (plotId === "VIP_ISLAND") {
+    document.getElementById("card-badge").textContent = "RGB SEA BRIDGE • PRIVATE OCEAN ISLAND";
+    document.getElementById("card-owner").textContent = `🏝️ ${worldSettings.islandOwner || "@vip_island_king"}`;
+    document.getElementById("card-role").textContent = "Exclusive VIP Private Island Mansion connected to Beach via the glowing RGB Cable-Stayed Sea Bridge! Change owner @username in 🌤️ World settings.";
+    document.getElementById("card-type").textContent = "VIP ISLAND MANSION";
+    document.getElementById("card-day").textContent = "TOP COMMENTER REWARD 👑";
+    editBtn.classList.add("hidden");
+    if (beachEditBtn) beachEditBtn.classList.add("hidden");
+    if (railwayEditBtn) railwayEditBtn.classList.add("hidden");
+    if (replayBuildBtn) replayBuildBtn.classList.add("hidden");
+    websiteBtn.classList.add("hidden");
+    if (sheru3dBtn) sheru3dBtn.classList.add("hidden");
+    plotCard.classList.remove("hidden");
+    return;
+  }
+
+  if (plotId === "FERRIS_WHEEL") {
+    document.getElementById("card-badge").textContent = "BEACH PROMENADE • AMUSEMENT PARK";
+    document.getElementById("card-owner").textContent = "🎡 SHERU BHAI GIANT WHEEL";
+    document.getElementById("card-role").textContent = "Towering rotating Giant Ferris Wheel with 12 level-stabilized glowing cabins & Beach Mini Amusement Park!";
+    document.getElementById("card-type").textContent = "BEACH AMUSEMENT PARK";
+    document.getElementById("card-day").textContent = "NIGHT LED SHOW ✨";
+    editBtn.classList.add("hidden");
+    if (beachEditBtn) beachEditBtn.classList.add("hidden");
+    if (railwayEditBtn) railwayEditBtn.classList.add("hidden");
+    if (replayBuildBtn) replayBuildBtn.classList.add("hidden");
+    websiteBtn.classList.add("hidden");
+    if (sheru3dBtn) sheru3dBtn.classList.add("hidden");
+    plotCard.classList.remove("hidden");
+    return;
+  }
+
   if (plotId === "HILL_TEMPLE") {
     document.getElementById("card-badge").textContent = "SACRED HILLTOP TEMPLE • ARAKU PEAK";
     document.getElementById("card-owner").textContent = "🛕 SRI VENKATESWARA HILL TEMPLE";
@@ -367,6 +418,10 @@ onValue(worldRef, (snapshot) => {
   engine.setRailwayOwner(rOwner);
   const railInput = document.getElementById("w-railway-owner");
   if (railInput) railInput.value = rOwner;
+  const islOwner = worldSettings.islandOwner || "@vip_island_king";
+  engine.setIslandOwner(islOwner);
+  const islInput = document.getElementById("w-island-owner");
+  if (islInput) islInput.value = islOwner;
   const hm = worldSettings.heroModels || { statue: "", audi: "", heli: "" };
   engine.setHeroModelUrls(hm);
   const gs = document.getElementById("w-glb-statue");
@@ -879,6 +934,7 @@ document.getElementById("btn-save-world").addEventListener("click", async () => 
       townName: document.getElementById("w-name").value.trim() || "FOLLOWER NAGARAM",
       beachOwner: (document.getElementById("w-beach-owner")?.value.trim() || "@follower_beach"),
       railwayOwner: (document.getElementById("w-railway-owner")?.value.trim() || "@_ur_bunny_108_"),
+      islandOwner: (document.getElementById("w-island-owner")?.value.trim() || "@vip_island_king"),
       dayNumber: parseInt(document.getElementById("w-day").value, 10) || 1,
       timeOfDay: document.getElementById("w-time").value,
       lifeEnabled: document.getElementById("w-life").value === "on",
@@ -1241,6 +1297,7 @@ function resetModeButtons() {
   if (btnDiscoOutro) { btnDiscoOutro.classList.remove("active"); btnDiscoOutro.textContent = "🪩 Disco Outro"; }
   if (btnStreetWalk) { btnStreetWalk.classList.remove("active"); btnStreetWalk.textContent = "🚶 Street POV"; }
   const bto = document.getElementById("reel-temple-orbit"); if (bto) { bto.classList.remove("active"); bto.textContent = "✨ Temple Orbit"; }
+  const brc = document.getElementById("reel-rocket-cam"); if (brc) { brc.classList.remove("active"); brc.textContent = "🚀 Rocket Cam"; }
 }
 
 // 1. 🚂 Train Chase Cam (Toggles Train 1 WAP-7 -> Train 2 Vande Bharat -> Stop!)
@@ -1604,7 +1661,10 @@ function renderShotlistItems(filterText = "") {
     { id: "BEACH", label: "🏖️ Sheru Bhai Beach & Villa", sub: "BEACH", day: 0 },
     { id: "RAILWAY_STATION", label: "🚂 North Railway Station", sub: "STATION 1", day: 0 },
     { id: "RAILWAY_SOUTH", label: "🚉 Araku South Station", sub: "STATION 2", day: 0 },
-    { id: "HILL_TEMPLE", label: "🛕 Sacred Hilltop Temple Mountain", sub: "HILL TEMPLE", day: 0 }
+    { id: "HILL_TEMPLE", label: "🛕 Sacred Hilltop Temple Mountain", sub: "HILL TEMPLE", day: 0 },
+    { id: "ROCKET_PAD", label: "🚀 ISRO Rocket Launchpad", sub: "SPACEPORT", day: 0 },
+    { id: "VIP_ISLAND", label: "🌉 RGB Sea Bridge & VIP Island", sub: "VIP ISLAND", day: 0 },
+    { id: "FERRIS_WHEEL", label: "🎡 Beach Giant Ferris Wheel", sub: "GIANT WHEEL", day: 0 }
   ];
 
   const builtPlots = [];
@@ -1781,3 +1841,389 @@ if (btnFwToggle) {
     }
   });
 }
+
+// =========================================================
+// 📬 UNLIMITED FIREBASE FOLLOWER REQUESTS INBOX (v30)
+// =========================================================
+let liveRequests = {};
+const reqBadge = document.getElementById("req-badge");
+const reqListEl = document.getElementById("requests-list");
+const reqSearchEl = document.getElementById("req-search");
+const reqFilterEl = document.getElementById("req-filter");
+
+function mapRequestedBuildingToType(text = "") {
+  const s = text.toLowerCase();
+  if (s.includes("imax")) return "imax_theater";
+  if (s.includes("movie") || s.includes("theater") || s.includes("multiplex")) return "movie_theater";
+  if (s.includes("audi")) return "audi_showroom";
+  if (s.includes("mahindra")) return "mahindra_showroom";
+  if (s.includes("bmw")) return "bmw_showroom";
+  if (s.includes("stadium") || s.includes("ground")) return "ground";
+  if (s.includes("box cricket") || s.includes("turf")) return "box_cricket";
+  if (s.includes("gt650") || s.includes("bike") || s.includes("superbike")) return "bike_showroom";
+  if (s.includes("d-mart") || s.includes("dmart")) return "dmart";
+  if (s.includes("oyo") || s.includes("hotel")) return "hotel_oyo";
+  if (s.includes("hostel")) return "hostel";
+  if (s.includes("wine")) return "wine_shop";
+  if (s.includes("temple") || s.includes("tirumala")) return "tirumala_temple";
+  if (s.includes("park")) return "city_park";
+  if (s.includes("library")) return "library";
+  if (s.includes("swimming") || s.includes("pool")) return "swimming_pool";
+  if (s.includes("iti")) return "iti_college";
+  if (s.includes("gym")) return "gym";
+  if (s.includes("srmt") || s.includes("mall")) return "srmt_mall";
+  if (s.includes("apple")) return "apple_store";
+  if (s.includes("reliance")) return "reliance_store";
+  if (s.includes("police")) return "police_station";
+  if (s.includes("hospital")) return "hospital";
+  if (s.includes("school")) return "school";
+  if (s.includes("bus")) return "bus_stand";
+  if (s.includes("auto")) return "auto_stand";
+  if (s.includes("petrol")) return "petrol_bunk";
+  if (s.includes("photo") || s.includes("studio")) return "photo_studio";
+  if (s.includes("mega mobile") || s.includes("mobile showroom")) return "mobile_showroom";
+  if (s.includes("mobile")) return "mobile_shop";
+  if (s.includes("medical") || s.includes("pharmacy")) return "medical_shop";
+  if (s.includes("biryani")) return "biryani_point";
+  if (s.includes("ice cream")) return "ice_cream_shop";
+  if (s.includes("veg")) return "veg_shop";
+  if (s.includes("cafe") || s.includes("coffee")) return "cafe";
+  if (s.includes("tea") || s.includes("tiffin") || s.includes("shop")) return "shop";
+  if (s.includes("beach")) return "beach_villa";
+  if (s.includes("tower") || s.includes("5-floor")) return "tower_led";
+  return "house_blue";
+}
+
+function findNextFreeEmptyPlotId(reqSize = 1) {
+  const totalSlots = Math.max(Object.keys(allPlots).length + 12, 80);
+  for (let i = 1; i <= totalSlots; i++) {
+    const pid = `plot_${String(i).padStart(4, "0")}`;
+    const p = allPlots[pid];
+    if (!p || p.status !== "built") {
+      if (reqSize === 1) return pid;
+      if (reqSize === 2) {
+        const g2 = getTwoPlotGroup(pid);
+        if (g2.siblings.every((sid) => !allPlots[sid] || allPlots[sid].status !== "built")) return g2.anchorId;
+      } else if (reqSize === 4) {
+        const g4 = getBlockPlotIds(pid);
+        if (g4.siblings.every((sid) => !allPlots[sid] || allPlots[sid].status !== "built")) return g4.anchorId;
+      } else if (reqSize === 8) {
+        const g8 = getEightPlotGroup(pid);
+        if (g8.siblings.every((sid) => !allPlots[sid] || allPlots[sid].status !== "built")) return g8.anchorId;
+      }
+    }
+  }
+  return `plot_${String(totalSlots + 1).padStart(4, "0")}`;
+}
+
+function formatRelTime(ts) {
+  if (!ts) return "Just now";
+  const mins = Math.max(0, Math.floor((Date.now() - ts) / 60000));
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+function renderRequestsInbox() {
+  const entries = Object.entries(liveRequests || {})
+    .map(([id, r]) => ({ id, ...(r || {}) }))
+    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+  const pendingCount = entries.filter((r) => (r.status || "pending") === "pending").length;
+  if (reqBadge) {
+    reqBadge.textContent = String(pendingCount);
+    reqBadge.classList.toggle("hidden", pendingCount === 0);
+  }
+  if (!reqListEl) return;
+
+  const q = (reqSearchEl?.value || "").trim().toLowerCase();
+  const filter = reqFilterEl?.value || "pending";
+  const filtered = entries.filter((r) => {
+    const st = r.status || "pending";
+    if (filter !== "all" && st !== filter) return false;
+    if (!q) return true;
+    return (
+      (r.username || "").toLowerCase().includes(q) ||
+      (r.building || "").toLowerCase().includes(q) ||
+      (r.job || "").toLowerCase().includes(q) ||
+      (r.note || "").toLowerCase().includes(q)
+    );
+  });
+
+  if (filtered.length === 0) {
+    reqListEl.innerHTML = `<div class="hint" style="text-align:center;padding:18px;">No ${filter === "all" ? "" : filter} requests right now.</div>`;
+    return;
+  }
+
+  reqListEl.innerHTML = "";
+  filtered.forEach((req) => {
+    const card = document.createElement("div");
+    const isBuilt = req.status === "built";
+    card.className = "req-card" + (isBuilt ? " built" : "");
+
+    const head = document.createElement("div");
+    head.className = "req-card-head";
+    const uEl = document.createElement("span");
+    uEl.className = "req-user";
+    uEl.textContent = (req.username || "@follower") + (isBuilt ? " ✅" : "");
+    const tEl = document.createElement("span");
+    tEl.className = "req-time";
+    tEl.textContent = formatRelTime(req.createdAt);
+    head.append(uEl, tEl);
+
+    const meta = document.createElement("div");
+    meta.className = "req-meta";
+    meta.textContent = `🏗️ ${req.building || "Classic House"}  •  💼 ${req.job || "Resident"}`;
+
+    card.append(head, meta);
+    if (req.note) {
+      const noteEl = document.createElement("div");
+      noteEl.className = "req-note";
+      noteEl.textContent = `“${req.note}”`;
+      card.appendChild(noteEl);
+    }
+
+    const acts = document.createElement("div");
+    acts.className = "req-actions";
+
+    const bType = mapRequestedBuildingToType(req.building || "");
+    const btnAuto = document.createElement("button");
+    btnAuto.className = "req-btn-auto";
+    btnAuto.textContent = isBuilt ? "🔄 Build Again" : "⚡ Auto-Build";
+    btnAuto.addEventListener("click", async () => {
+      if (!isAdmin) return;
+      const reqSize = getRequiredSize(bType);
+      const dayNum = worldSettings.dayNumber || 1;
+      const handle = (req.username || "@follower").trim();
+      const formattedHandle = handle.startsWith("@") ? handle : `@${handle}`;
+
+      if (bType === "beach_villa") {
+        const slot = getNextZoneSlot("beach");
+        const newPlotId = `zone_beach_${Date.now().toString(36)}`;
+        const payload = {
+          status: "built",
+          isCustomZone: true,
+          zone: "beach",
+          offsetX: Number(slot.offsetX.toFixed(2)),
+          offsetZ: Number(slot.offsetZ.toFixed(2)),
+          customRotY: slot.rotY,
+          ownerName: formattedHandle,
+          role: req.job || "Beachfront Resident",
+          buildingType: "beach_villa",
+          size: 1,
+          builtDay: dayNum
+        };
+        await update(ref(db), {
+          [`plots/${newPlotId}`]: payload,
+          [`requests/${req.id}/status`]: "built",
+          [`requests/${req.id}/builtPlotId`]: newPlotId
+        });
+        selectedPlotId = newPlotId;
+        closeAllDrawers();
+        engine.focusPlot(newPlotId);
+        openPlotCard(newPlotId, payload);
+        showToast(`🏖️ Auto-Built ${formattedHandle}'s Beach Villa!`);
+        return;
+      }
+
+      const targetPlotId = findNextFreeEmptyPlotId(reqSize);
+      const updates = {};
+      if (reqSize === 8 || reqSize === 4 || reqSize === 2) {
+        const gInfo =
+          reqSize === 8 ? getEightPlotGroup(targetPlotId)
+          : reqSize === 4 ? getBlockPlotIds(targetPlotId)
+          : getTwoPlotGroup(targetPlotId);
+        gInfo.siblings.forEach((sid) => {
+          if (sid === gInfo.anchorId) {
+            updates[`plots/${sid}`] = {
+              status: "built",
+              ownerName: formattedHandle,
+              role: req.job || BUILDING_LABELS[bType] || "Landmark",
+              buildingType: bType,
+              size: reqSize,
+              builtDay: dayNum
+            };
+          } else {
+            updates[`plots/${sid}`] = {
+              status: "occupied_by_landmark",
+              parentPlot: gInfo.anchorId,
+              ownerName: "",
+              role: "",
+              buildingType: "empty",
+              size: 1,
+              builtDay: dayNum
+            };
+          }
+        });
+        selectedPlotId = gInfo.anchorId;
+      } else {
+        updates[`plots/${targetPlotId}`] = {
+          status: "built",
+          ownerName: formattedHandle,
+          role: req.job || "Follower Resident",
+          buildingType: bType,
+          size: 1,
+          builtDay: dayNum
+        };
+        selectedPlotId = targetPlotId;
+      }
+      updates[`requests/${req.id}/status`] = "built";
+      updates[`requests/${req.id}/builtPlotId`] = selectedPlotId;
+
+      try {
+        await update(ref(db), updates);
+        closeAllDrawers();
+        engine.focusPlot(selectedPlotId);
+        openPlotCard(selectedPlotId, updates[`plots/${selectedPlotId}`]);
+        showToast(`⚡ Auto-Built ${formattedHandle} (${BUILDING_LABELS[bType] || bType})!`);
+      } catch (err) {
+        showToast("Build failed: " + err.message);
+      }
+    });
+
+    const btnPick = document.createElement("button");
+    btnPick.className = "req-btn-pick";
+    btnPick.textContent = "✏️ Pre-Fill Builder";
+    btnPick.addEventListener("click", () => {
+      document.getElementById("b-owner").value = req.username || "";
+      document.getElementById("b-role").value = req.job || "";
+      document.getElementById("b-type").value = bType;
+      document.getElementById("b-day").value = worldSettings.dayNumber || 1;
+      closeAllDrawers();
+      panels.builder.classList.remove("hidden");
+      showToast("✏️ Builder pre-filled! Tap any plot, then Save Building.");
+    });
+
+    const btnDel = document.createElement("button");
+    btnDel.className = "req-btn-del";
+    btnDel.textContent = "🗑️";
+    btnDel.title = "Delete Request";
+    btnDel.addEventListener("click", async () => {
+      if (!isAdmin) return;
+      try {
+        await remove(ref(db, `requests/${req.id}`));
+        showToast("🗑️ Request removed");
+      } catch (err) {
+        showToast("Error: " + err.message);
+      }
+    });
+
+    acts.append(btnAuto, btnPick, btnDel);
+    card.appendChild(acts);
+    reqListEl.appendChild(card);
+  });
+}
+
+onValue(ref(db, "requests"), (snap) => {
+  liveRequests = snap.val() || {};
+  renderRequestsInbox();
+});
+
+document.getElementById("btn-open-requests")?.addEventListener("click", () => {
+  closeAllDrawers();
+  panels.requests?.classList.remove("hidden");
+  renderRequestsInbox();
+});
+reqSearchEl?.addEventListener("input", () => renderRequestsInbox());
+reqFilterEl?.addEventListener("change", () => renderRequestsInbox());
+
+// =========================================================
+// 🚀 / 🌉 / 🎡 REEL MODE CAMERAS & 🎮 ADMIN DRIVE MODE (v30)
+// =========================================================
+const btnReelRocket = document.getElementById("reel-rocket-cam");
+if (btnReelRocket) {
+  btnReelRocket.addEventListener("click", () => {
+    if (engine.chaseCam.active && engine.chaseCam.mode === "rocket") {
+      engine.stopChaseCam();
+      resetModeButtons();
+      return;
+    }
+    resetModeButtons();
+    btnReelRocket.classList.add("active");
+    btnReelRocket.textContent = "⏹ Stop Rocket";
+    showToast("🚀 Tracking Live ISRO Rocket Launchpad & Liftoff!");
+    engine.startChaseCam("rocket", () => resetModeButtons());
+  });
+}
+
+document.getElementById("reel-island-cam")?.addEventListener("click", () => {
+  engine.stopAllReelModes();
+  engine.focusPlot("VIP_ISLAND", 0.12);
+  showToast("🌉 RGB Sea Bridge & VIP Private Island!");
+});
+
+document.getElementById("reel-wheel-cam")?.addEventListener("click", () => {
+  engine.stopAllReelModes();
+  engine.focusPlot("FERRIS_WHEEL", 0.12);
+  showToast("🎡 Beach Giant Ferris Wheel & Amusement Park!");
+});
+
+// 🎮 ADMIN DRIVE MODE
+const admDriveHud = document.getElementById("drive-hud");
+const admSpeedNum = document.getElementById("drive-speed-num");
+
+function setAdminDriveHud(show) {
+  if (!admDriveHud) return;
+  admDriveHud.classList.toggle("hidden", !show);
+  if (show) {
+    closeAllDrawers();
+    plotCard.classList.add("hidden");
+    topHud.classList.add("hidden");
+    adminDock.classList.add("hidden");
+  } else {
+    topHud.classList.remove("hidden");
+    adminDock.classList.remove("hidden");
+  }
+}
+
+function bindAdmDriveHold(btnId, controlKey) {
+  const el = document.getElementById(btnId);
+  if (!el) return;
+  const down = (e) => { e.preventDefault(); el.classList.add("pressed"); engine.setDriveControl(controlKey, true); };
+  const up = (e) => { e.preventDefault(); el.classList.remove("pressed"); engine.setDriveControl(controlKey, false); };
+  el.addEventListener("pointerdown", down);
+  el.addEventListener("pointerup", up);
+  el.addEventListener("pointerleave", up);
+  el.addEventListener("pointercancel", up);
+}
+
+bindAdmDriveHold("drive-btn-left", "left");
+bindAdmDriveHold("drive-btn-right", "right");
+bindAdmDriveHold("drive-btn-gas", "forward");
+bindAdmDriveHold("drive-btn-brake", "backward");
+bindAdmDriveHold("drive-btn-boost", "boost");
+
+function updateAdmDriveBtns(vType) {
+  ["car", "bike", "auto"].forEach((t) => {
+    document.getElementById(`drive-veh-${t}`)?.classList.toggle("active", t === vType);
+  });
+}
+
+["car", "bike", "auto"].forEach((t) => {
+  document.getElementById(`drive-veh-${t}`)?.addEventListener("click", () => {
+    engine.switchDriveVehicle(t);
+    updateAdmDriveBtns(t);
+  });
+});
+
+document.getElementById("drive-tp-city")?.addEventListener("click", () => engine.teleportDrive("city"));
+document.getElementById("drive-tp-bridge")?.addEventListener("click", () => engine.teleportDrive("bridge"));
+document.getElementById("drive-tp-temple")?.addEventListener("click", () => engine.teleportDrive("temple"));
+document.getElementById("drive-tp-rocket")?.addEventListener("click", () => engine.teleportDrive("rocket"));
+document.getElementById("drive-exit-btn")?.addEventListener("click", () => {
+  engine.stopDriveMode();
+  setAdminDriveHud(false);
+});
+
+document.getElementById("btn-admin-drive")?.addEventListener("click", () => {
+  setAdminDriveHud(true);
+  updateAdmDriveBtns("car");
+  engine.startDriveMode(
+    "car",
+    (kmh) => { if (admSpeedNum) admSpeedNum.textContent = String(kmh); },
+    () => setAdminDriveHud(false)
+  );
+  showToast("🚗 Drive Mode ON! Drive across the RGB Sea Bridge, Ghat Road & Rocket Pad!");
+});

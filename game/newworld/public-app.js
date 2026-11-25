@@ -1,5 +1,5 @@
-import { db, ref, onValue } from "./firebase-config.js?v=29";
-import { FollowerTownEngine, BUILDING_LABELS, getRequiredSize } from "./world-engine.js?v=29";
+import { db, ref, onValue, push, set } from "./firebase-config.js?v=31";
+import { FollowerTownEngine, BUILDING_LABELS, getRequiredSize } from "./world-engine.js?v=31";
 
 let allPlots = {};
 const container = document.getElementById("canvas-container");
@@ -25,9 +25,45 @@ const engine = new FollowerTownEngine(container, (plotId, data) => {
     return;
   }
   openPlotCard(plotId, data);
-});
+}, { visitorHD: true });
 
 function openPlotCard(plotId, data) {
+  if (plotId === "ROCKET_PAD") {
+    document.getElementById("card-badge").textContent = "ISRO SRIHARIKOTA ZONE • SPACEPORT";
+    document.getElementById("card-owner").textContent = "🚀 SHERU BHAI SPACEPORT";
+    document.getElementById("card-role").textContent = "Live ISRO-style PSLV/GSLV Rocket Launchpad! Watch the rocket ignite with glowing exhaust flames, blast into space every 24 seconds, and try driving up to the launch tower!";
+    document.getElementById("card-type").textContent = "LIVE ROCKET LAUNCHPAD";
+    document.getElementById("card-day").textContent = "AUTO LAUNCH EVERY 24s 🔥";
+    if (sheru3dBtn) sheru3dBtn.classList.add("hidden");
+    websiteBtn.classList.add("hidden");
+    plotCard.classList.remove("hidden");
+    return;
+  }
+
+  if (plotId === "VIP_ISLAND") {
+    document.getElementById("card-badge").textContent = "RGB SEA BRIDGE • PRIVATE OCEAN ISLAND";
+    document.getElementById("card-owner").textContent = `🏝️ ${engine.islandOwner || "@vip_island_king"}`;
+    document.getElementById("card-role").textContent = "Exclusive VIP Private Island Mansion connected to Sheru Bhai Beach by the glowing RGB Cable-Stayed Sea Bridge! Tap 🎮 Drive to drive across the bridge!";
+    document.getElementById("card-type").textContent = "VIP ISLAND MANSION";
+    document.getElementById("card-day").textContent = "TOP COMMENTER REWARD 👑";
+    if (sheru3dBtn) sheru3dBtn.classList.add("hidden");
+    websiteBtn.classList.add("hidden");
+    plotCard.classList.remove("hidden");
+    return;
+  }
+
+  if (plotId === "FERRIS_WHEEL") {
+    document.getElementById("card-badge").textContent = "BEACH PROMENADE • AMUSEMENT PARK";
+    document.getElementById("card-owner").textContent = "🎡 SHERU BHAI GIANT WHEEL";
+    document.getElementById("card-role").textContent = "Towering rotating Giant Ferris Wheel with 12 glowing neon cabins right beside Golden Beach & the 20-Floor OYO Resort!";
+    document.getElementById("card-type").textContent = "BEACH AMUSEMENT PARK";
+    document.getElementById("card-day").textContent = "NIGHT LED SHOW ✨";
+    if (sheru3dBtn) sheru3dBtn.classList.add("hidden");
+    websiteBtn.classList.add("hidden");
+    plotCard.classList.remove("hidden");
+    return;
+  }
+
           if (plotId === "HILL_TEMPLE") {
     document.getElementById("card-badge").textContent = "SACRED HILLTOP TEMPLE • ARAKU PEAK";
     document.getElementById("card-owner").textContent = "🛕 SRI VENKATESWARA HILL TEMPLE";
@@ -192,6 +228,7 @@ onValue(ref(db, "worldSettings"), (snapshot) => {
   if (val.heroModels) engine.setHeroModelUrls(val.heroModels);
   if (val.weather !== undefined) engine.setRainEnabled(val.weather === "rain");
   if (val.fireworks !== undefined) engine.setFireworksEnabled(Boolean(val.fireworks));
+  if (val.islandOwner !== undefined) engine.setIslandOwner(val.islandOwner);
   engine.setTimeOfDay(val.timeOfDay || "day");
   engine.lifeEnabled = val.lifeEnabled !== false;
 });
@@ -254,29 +291,52 @@ reqForm.addEventListener("submit", async (e) => {
   reqSubmitBtn.disabled = true;
   reqSubmitBtn.textContent = "Sending...";
 
+  const cleanHandle = uname.startsWith("@") ? uname : `@${uname}`;
+  let savedToFirebase = false;
   try {
-    const res = await fetch(FORMSPREE_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({
-        instagram_username: uname.startsWith("@") ? uname : `@${uname}`,
-        requested_job: job,
-        preferred_building: building,
-        note
-      })
+    const newReqRef = push(ref(db, "requests"));
+    await set(newReqRef, {
+      username: cleanHandle,
+      job,
+      building,
+      note,
+      status: "pending",
+      createdAt: Date.now()
     });
-    if (res.ok) {
-      showToast("🎉 Request sent! Watch the next Reel!");
+    savedToFirebase = true;
+  } catch (fbErr) {
+    console.warn("Firebase /requests fallback to Formspree:", fbErr.message);
+  }
+
+  try {
+    if (savedToFirebase) {
+      showToast("🎉 Request sent to Admin Live Inbox! Watch the next Reel!");
       reqForm.reset();
       reqModal.classList.add("hidden");
     } else {
-      showToast("Could not send request. Try again!");
+      const res = await fetch(FORMSPREE_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          instagram_username: cleanHandle,
+          requested_job: job,
+          preferred_building: building,
+          note
+        })
+      });
+      if (res.ok) {
+        showToast("🎉 Request sent! Watch the next Reel!");
+        reqForm.reset();
+        reqModal.classList.add("hidden");
+      } else {
+        showToast("Could not send request. Try Instagram DM button below!");
+      }
     }
   } catch {
-    showToast("Network error. Try again!");
+    showToast("Network error. Try Instagram DM button below!");
   } finally {
     reqSubmitBtn.disabled = false;
-    reqSubmitBtn.textContent = "🚀 Send Request";
+    reqSubmitBtn.textContent = "🚀 Send Request (Website)";
   }
 });
 
@@ -407,5 +467,117 @@ if (btnPubTemple) {
   btnPubTemple.addEventListener("click", () => {
     engine.focusPlot("HILL_TEMPLE", 0.12);
     showToast("🛕 Flying to Sacred Hilltop Temple Mountain!");
+  });
+}
+
+// v30 New Landmark Quick Jumps (Rocket, VIP Island, Ferris Wheel)
+document.getElementById("btn-public-rocket")?.addEventListener("click", () => {
+  engine.focusPlot("ROCKET_PAD", 0.12);
+  openPlotCard("ROCKET_PAD", null);
+  showToast("🚀 ISRO Spaceport • Watch the Live Rocket Launch!");
+});
+document.getElementById("btn-public-island")?.addEventListener("click", () => {
+  engine.focusPlot("VIP_ISLAND", 0.12);
+  openPlotCard("VIP_ISLAND", null);
+  showToast("🌉 RGB Cable-Stayed Sea Bridge & VIP Island!");
+});
+document.getElementById("btn-public-wheel")?.addEventListener("click", () => {
+  engine.focusPlot("FERRIS_WHEEL", 0.12);
+  openPlotCard("FERRIS_WHEEL", null);
+  showToast("🎡 Beach Giant Ferris Wheel & Amusement Park!");
+});
+
+// 🎮 DRIVABLE CAR / GT650 SUPERBIKE / AUTO MODE (PUBLIC VISITOR)
+const driveHud = document.getElementById("drive-hud");
+const driveSpeedNum = document.getElementById("drive-speed-num");
+const btnPublicDrive = document.getElementById("btn-public-drive");
+
+function setDriveHudVisible(show) {
+  if (!driveHud) return;
+  driveHud.classList.toggle("hidden", !show);
+  document.querySelectorAll(".hud-element").forEach((el) => {
+    if (el.id !== "plot-card") el.classList.toggle("hidden", show);
+  });
+  if (show) plotCard.classList.add("hidden");
+}
+
+function bindHoldControl(btnId, controlKey) {
+  const el = document.getElementById(btnId);
+  if (!el) return;
+  const down = (e) => {
+    e.preventDefault();
+    el.classList.add("pressed");
+    engine.setDriveControl(controlKey, true);
+  };
+  const up = (e) => {
+    e.preventDefault();
+    el.classList.remove("pressed");
+    engine.setDriveControl(controlKey, false);
+  };
+  el.addEventListener("pointerdown", down);
+  el.addEventListener("pointerup", up);
+  el.addEventListener("pointerleave", up);
+  el.addEventListener("pointercancel", up);
+}
+
+bindHoldControl("drive-btn-left", "left");
+bindHoldControl("drive-btn-right", "right");
+bindHoldControl("drive-btn-gas", "forward");
+bindHoldControl("drive-btn-brake", "backward");
+bindHoldControl("drive-btn-boost", "boost");
+
+function updateDriveVehButtons(vType) {
+  ["car", "bike", "auto"].forEach((t) => {
+    document.getElementById(`drive-veh-${t}`)?.classList.toggle("active", t === vType);
+  });
+}
+
+["car", "bike", "auto"].forEach((t) => {
+  document.getElementById(`drive-veh-${t}`)?.addEventListener("click", () => {
+    engine.switchDriveVehicle(t);
+    updateDriveVehButtons(t);
+  });
+});
+
+document.getElementById("drive-tp-city")?.addEventListener("click", () => engine.teleportDrive("city"));
+document.getElementById("drive-tp-bridge")?.addEventListener("click", () => engine.teleportDrive("bridge"));
+document.getElementById("drive-tp-temple")?.addEventListener("click", () => engine.teleportDrive("temple"));
+document.getElementById("drive-tp-rocket")?.addEventListener("click", () => engine.teleportDrive("rocket"));
+
+document.getElementById("drive-exit-btn")?.addEventListener("click", () => {
+  engine.stopDriveMode();
+  setDriveHudVisible(false);
+});
+
+if (btnPublicDrive) {
+  btnPublicDrive.addEventListener("click", () => {
+    setDriveHudVisible(true);
+    updateDriveVehButtons("car");
+    engine.startDriveMode(
+      "car",
+      (kmh) => { if (driveSpeedNum) driveSpeedNum.textContent = String(kmh); },
+      () => setDriveHudVisible(false)
+    );
+    showToast("🚗 Drive Mode ON! Use buttons or WASD / Arrows to explore!");
+  });
+}
+
+// ✨ VISITOR 1-TAP GRAPHICS PRESET SWITCH (HD -> Ultra -> Smooth Low-RAM)
+const btnPubGfx = document.getElementById("btn-public-gfx");
+if (btnPubGfx) {
+  const presets = [
+    { id: "hd",     label: "✨ HD",     cls: "gfx-hd",     toast: "✨ HD Mode: Crisp GLSL Sky + Ocean + Contact Shadows + WASM Fast Culling!" },
+    { id: "ultra",  label: "🔥 Ultra",  cls: "gfx-ultra",  toast: "🔥 Ultra Mode: 1.85x Sharp + Soft Sun Shadows + Night Glow Bloom!" },
+    { id: "smooth", label: "⚡ Smooth", cls: "gfx-smooth", toast: "⚡ Smooth Low-RAM Mode: Optimized for 2GB RAM Phones!" }
+  ];
+  let pIdx = 0;
+  btnPubGfx.addEventListener("click", async () => {
+    pIdx = (pIdx + 1) % presets.length;
+    const p = presets[pIdx];
+    btnPubGfx.classList.remove("gfx-hd", "gfx-ultra", "gfx-smooth");
+    btnPubGfx.classList.add(p.cls);
+    btnPubGfx.textContent = p.label;
+    await engine.setGraphicsPreset(p.id);
+    showToast(p.toast);
   });
 }
