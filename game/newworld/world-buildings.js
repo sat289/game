@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { BUILDING_LABELS } from "./world-constants.js?v=35";
+import { BUILDING_LABELS } from "./world-constants.js?v=36";
 
 export const buildingMethods = {
   _getLandmarkSubtitle(type) {

@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getSkyPalette } from "./shaders-glsl.js?v=35";
+import { getSkyPalette } from "./shaders-glsl.js?v=36";
 import {
   BUILDING_LABELS,
   getRequiredSize,
@@ -7,7 +7,7 @@ import {
   getTwoPlotGroup,
   getBlockPlotIds,
   getEightPlotGroup
-} from "./world-constants.js?v=35";
+} from "./world-constants.js?v=36";
 
 export const cinematicMethods = {
   setTimeOfDay(mode) {
@@ -806,7 +806,56 @@ export const cinematicMethods = {
     this.fireworkBursts.push({ points, vel, age: 0, maxAge: 1.85 });
   },
 
+  // =========================================================
+  // 🎬 v36 6 BRAND-NEW PRO REEL MODES
+  // =========================================================
+  startCinemaReel(mode, options = {}, onBanner = null, onStop = null) {
+    this.stopAllReelModes();
+    const durations = {
+      mega: 28.0,
+      mansion: 8.5,
+      skydrop: 5.5,
+      beach_sweep: 9.0,
+      stadium: 7.5,
+      hero360: 6.5
+    };
+    let fx = 0, fy = 4, fz = 0;
+    let fLabel = "SHERU BHAI STATUE";
+    if (options && options.plotId) {
+      const c = this.getPlotWorldCenter(options.plotId);
+      if (c) { fx = c.x; fy = c.y; fz = c.z; }
+      fLabel = options.label || options.plotId;
+    }
+
+    this.cinemaReel = {
+      active: true,
+      mode,
+      timer: 0,
+      duration: durations[mode] || 8.0,
+      focusTarget: new THREE.Vector3(fx, fy, fz),
+      focusLabel: fLabel,
+      switchedSunset: false,
+      switchedNight: false,
+      onStop,
+      onBanner
+    };
+    if (mode === "mega" && this.timeOfDay !== "day") {
+      this.setTimeOfDay("day");
+    }
+  },
+
+  stopCinemaReel() {
+    if (!this.cinemaReel || !this.cinemaReel.active) return;
+    this.cinemaReel.active = false;
+    if (this.cinemaReel.onStop) {
+      const cb = this.cinemaReel.onStop;
+      this.cinemaReel.onStop = null;
+      cb();
+    }
+  },
+
   stopAllReelModes() {
+    if (this.cinemaReel && this.cinemaReel.active) this.stopCinemaReel();
     if (this.templeOrbit && this.templeOrbit.active) this.stopTempleOrbit();
     if (this.proReelTour.active) this.stopProReelTour();
     if (this.droneTour.active) this.stopDroneView();

@@ -9,7 +9,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged
-} from "./firebase-config.js?v=35";
+} from "./firebase-config.js?v=36";
 import {
   FollowerTownEngine,
   BUILDING_LABELS,
@@ -17,7 +17,7 @@ import {
   getTwoPlotGroup,
   getBlockPlotIds,
   getEightPlotGroup
-} from "./world-engine.js?v=35";
+} from "./world-engine.js?v=36";
 
 let isAdmin = false;
 let selectedPlotId = "plot_0001";
@@ -1314,6 +1314,17 @@ function resetModeButtons() {
   if (btnStreetWalk) { btnStreetWalk.classList.remove("active"); btnStreetWalk.textContent = "🚶 Street POV"; }
   const bto = document.getElementById("reel-temple-orbit"); if (bto) { bto.classList.remove("active"); bto.textContent = "✨ Temple Orbit"; }
   const brc = document.getElementById("reel-rocket-cam"); if (brc) { brc.classList.remove("active"); brc.textContent = "🚀 Rocket Cam"; }
+  [
+    ["reel-mega-btn", "🎬 Mega Reel"],
+    ["reel-mansion-btn", "👑 Mansion Reel"],
+    ["reel-skydrop-btn", "⚡ Sky Drop"],
+    ["reel-beachsweep-btn", "🎡 Beach Sweep"],
+    ["reel-stadiumreel-btn", "🏏 Stadium Orbit"],
+    ["reel-hero360-btn", "🔄 Hero 360°"]
+  ].forEach(([id, lbl]) => {
+    const el = document.getElementById(id);
+    if (el) { el.classList.remove("active"); el.textContent = lbl; }
+  });
 }
 
 // 1. 🚂 Train Chase Cam (Toggles Train 1 WAP-7 -> Train 2 Vande Bharat -> Stop!)
@@ -2184,3 +2195,59 @@ document.getElementById("reel-stadium-cam")?.addEventListener("click", () => {
   engine.focusPlot("OUTSKIRTS_STADIUM", 0.12);
   showToast("🏏 Outskirts International Cricket Stadium • Live Scoreboard!");
 });
+
+// =========================================================
+// 🎬 v36: 6 BRAND-NEW PRO REEL MODES WIRING
+// =========================================================
+function bindCinemaReelButton(btnId, mode, toastMsg, getOpts = null) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    if (engine.cinemaReel && engine.cinemaReel.active && engine.cinemaReel.mode === mode) {
+      engine.stopCinemaReel();
+      resetModeButtons();
+      return;
+    }
+    resetModeButtons();
+    btn.classList.add("active");
+    btn.textContent = "⏹ Stop";
+    showToast(toastMsg);
+    let lastTag = "";
+    const opts = getOpts ? getOpts() : {};
+    engine.startCinemaReel(
+      mode,
+      opts,
+      (tag, title) => {
+        if (tag !== lastTag) {
+          lastTag = tag;
+          const banner = document.getElementById("reel-spotlight-banner");
+          const tagEl = document.getElementById("reel-tag-text");
+          const nameEl = document.getElementById("reel-name-text");
+          if (tagEl) tagEl.textContent = tag;
+          if (nameEl) nameEl.textContent = title;
+          if (banner) banner.classList.remove("hidden");
+        }
+      },
+      () => {
+        resetModeButtons();
+        if (mode === "mega") {
+          const banner = document.getElementById("reel-spotlight-banner");
+          if (banner) banner.classList.add("hidden");
+        }
+      }
+    );
+  });
+}
+
+bindCinemaReelButton("reel-mega-btn", "mega", "🎬 1-Tap 28s Auto Mega-Reel Director Running! Hit 🔴 REC HD!");
+bindCinemaReelButton("reel-mansion-btn", "mansion", "👑 Gliding across RGB Sea Bridge to Sheru Bhai Royal Mansion!");
+bindCinemaReelButton("reel-skydrop-btn", "skydrop", "⚡ Cloud Sky Drop-In Reveal!", () => ({
+  plotId: selectedPlotId || "ST_JUNCTION",
+  label: allPlots[selectedPlotId]?.ownerName || "SHERU BHAI STATUE"
+}));
+bindCinemaReelButton("reel-beachsweep-btn", "beach_sweep", "🎡 Coastal Sweep: Ferris Wheel → 20-Floor OYO → Beach Villas!");
+bindCinemaReelButton("reel-stadiumreel-btn", "stadium", "🏏 Outskirts Cricket Stadium & Live Scoreboard Orbit!");
+bindCinemaReelButton("reel-hero360-btn", "hero360", "🔄 360° Hero Spin around Selected Building!", () => ({
+  plotId: selectedPlotId || "ST_JUNCTION",
+  label: allPlots[selectedPlotId]?.ownerName || "SHERU BHAI STATUE"
+}));

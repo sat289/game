@@ -1,14 +1,17 @@
-# Sheru Bhai City 3D (v35 — Ultra-Realistic Textured Buildings & Landmarks Edition • Zero Drive Mode)
+# Sheru Bhai City 3D (v36 — Fixed Admin Dock & Full-Width Right-to-Left Scroll Bars + 6 New Pro Reel Modes + Realistic PBR Textures)
 
-Clean, pure 3D City Explorer & Pro Reel Studio with **ZERO drive game mode**, upgraded with **15 zero-MB Procedural PBR Textures + Bump Maps** (`textures-pbr.js`), GLSL GPU Shaders (`shaders-glsl.js`), WebAssembly culling (`wasm-perf.js`), and upload-safe modular files (< 168 KB each)!
+Upload the **entire `follower-town/` folder** (all 19 files — every file under **164 KB**) into your `sat289/game/game/newworld/` GitHub repository!
 
-## What's New in v35
-1. **🧱 Ultra-Realistic Procedural PBR Textures & Bump Maps (`textures-pbr.js`):**
-   - Upgrades EVERY house, 5-floor tower, showroom, mall, temple, road, plaza, beach & mountain with crisp `256×256` zero-MB procedural textures & subtle bump depth: **Red Masonry Brick + Bump**, **Architectural Limestone Stucco + Bump**, **Veined Carrara White Marble**, **Veined Black-Gold Royal Marble**, **Natural Teak & Dark Wood Planks + Bump**, **Overlapping Terracotta & Slate Roof Shingles + Bump**, **Interlocking Paver Concrete**, **Curved Curtain-Wall Sky Glass**, **Realistic Lit Night Windows**, **Rippled Golden Beach Sand**, **Layered Mountain Granite Rock**, **Brushed Metal Cladding**, and **Crushed Railway Gravel Ballast**!
-2. **👑 Sheru Bhai Royal Island Mansion (`VIP_ISLAND`):**
-   - Realistic black-and-gold veined marble palace matching your reference concept: Golden Crown + `SHERU BHAI` + Golden Lion Crest plaque, gold lattice panels, glowing arched double doors, symmetrical 2-story cream-marble wings with tiled hipped roofs & glass balconies, 3-tier turquoise fountain + hedge ring + flower beds, and White Lion Sheru Bhai flanked by 2 Black-Suited Ram Bodyguards!
-3. **💄 2-Plot Luxury Beauty Parlour & Spa (`beauty_parlour`):**
-   - Blush-pink textured stucco & rose-gold luxury salon with illuminated vanity mirrors, styling chairs, rotating 3D golden lipstick & crown roof sculpture, and floating sparkles!
-4. **🚀 Remodeled ISRO Sriharikota Rocket Launchpad (`ROCKET_PAD`) — Zero Mountain/River Overlap!**
-5. **🏏 International Outskirts Cricket Stadium (`OUTSKIRTS_STADIUM`) — Live Updating LED Scoreboard, 4 Floodlights & Multi-Tier Colorful Seats!**
-6. **🧹 Clean & Lightweight:** 100% removed Drive Game Mode, fixed full-width bottom quick bar, and split every file under 168 KB for error-free mobile Chrome GitHub uploads (or push in 3 seconds with `python3 optimize_city.py --push "v35"` in Termux!).
+## Fixed in v36
+1. **Fixed Admin `🎬 9:16 Reel` Not Showing & Half-Screen Scrolling Bar Bug:**
+   - Removed the CSS `transform: translateZ(0)` override that broke `#admin-dock` and pushed it to the right half of the screen.
+   - Upgraded `#admin-dock`, `.public-quick-bar`, and `#reel-dock-wrap` to full edge-to-edge width (`left: 8px; right: 8px`) with smooth horizontal scrolling across the entire screen.
+   - Moved **`🎬 9:16 Reel`** to the very first slot of `#admin-dock` right beside **`🏗️ Build`** and **`📬 Inbox`** so it's always visible instantly!
+
+## 6 Brand-New Pro Reel Modes in `admin.html` (`🎬 9:16 Reel`)
+1. **`🎬 Mega Reel`** — 1-Tap 28-second Auto Viral Reel Director (Sky Drop → Royal Island Mansion → Sunset Hilltop Temple → ISRO Rocket → Outskirts Cricket Stadium → Night Fireworks & Disco Statue Finale!).
+2. **`👑 Mansion Reel`** — Smooth glide over the glowing RGB Sea Bridge into Sheru Bhai's Black-Gold Marble Island Mansion, Fountain & Bodyguards.
+3. **`⚡ Sky Drop`** — High-altitude cloud drop-in reveal down to your selected building or Lion Statue.
+4. **`🎡 Beach Sweep`** — Coastal crane pan across GLSL Ocean → Giant Ferris Wheel → 20-Floor OYO → Beach Villas.
+5. **`🏏 Stadium Orbit`** — Dramatic orbit around the Outskirts International Cricket Stadium & Live Scoreboard.
+6. **`🔄 Hero 360°`** — Smooth 360° spotlight orbit around whichever follower house or landmark you tapped.

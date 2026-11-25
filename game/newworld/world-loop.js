@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getSkyPalette } from "./shaders-glsl.js?v=35";
+import { getSkyPalette } from "./shaders-glsl.js?v=36";
 
 export const loopMethods = {
   _animate() {
@@ -316,6 +316,115 @@ export const loopMethods = {
         const fPal = [0xec4899, 0x22d3ee, 0xfacc15, 0xa855f7];
         fws.neonRimMat.color.setHex(fPal[Math.floor(elapsed * 2.5) % fPal.length]);
       }
+    }
+
+
+    // 🎬 v36 6 BRAND-NEW PRO REEL MODES (Mega Reel, Mansion Glide, Sky Drop, Beach Sweep, Stadium Orbit, Hero 360°)
+    if (this.cinemaReel && this.cinemaReel.active) {
+      const cr = this.cinemaReel;
+      cr.timer += rawDt;
+      const t = cr.timer;
+      const p = Math.min(1, t / cr.duration);
+      const ease = p * p * (3 - 2 * p);
+      const bx = this.beachX || -120;
+      const isl = this.vipIslandPos || { x: bx - 122, z: -2 };
+      const ht = this.hillTemplePos || { x: 44, z: -104 };
+      const rk = this.rocketPadPos || { x: -104, z: 116 };
+      const st = this.outskirtsStadiumPos || { x: 112, z: 116 };
+
+      if (cr.mode === "mansion") {
+        const camX = THREE.MathUtils.lerp(bx + 12, isl.x + 28, ease);
+        const camY = THREE.MathUtils.lerp(20, 14, ease) + Math.sin(ease * Math.PI) * 5.0;
+        const camZ = isl.z + Math.sin(ease * Math.PI * 1.15) * 26;
+        const tgtX = THREE.MathUtils.lerp(isl.x + 32, isl.x - 4, ease);
+        this.camera.position.lerp(new THREE.Vector3(camX, camY, camZ), 0.11);
+        this.controls.target.lerp(new THREE.Vector3(tgtX, 6.5, isl.z), 0.12);
+      } else if (cr.mode === "skydrop") {
+        const ft = cr.focusTarget;
+        const dropEase = 1 - Math.pow(1 - p, 3);
+        const ang = 0.6 + dropEase * 1.15;
+        const rad = this._getWideDist(THREE.MathUtils.lerp(165, 28, dropEase));
+        const h = this._getWideDist(THREE.MathUtils.lerp(135, 16, dropEase));
+        this.camera.position.lerp(new THREE.Vector3(ft.x + Math.cos(ang) * rad, h, ft.z + Math.sin(ang) * rad), 0.16);
+        this.controls.target.lerp(new THREE.Vector3(ft.x, ft.y + 1.5, ft.z), 0.16);
+      } else if (cr.mode === "beach_sweep") {
+        const camX = THREE.MathUtils.lerp(bx - 16, bx - 22, ease);
+        const camY = THREE.MathUtils.lerp(24, 30, Math.sin(ease * Math.PI));
+        const camZ = THREE.MathUtils.lerp(56, -34, ease);
+        const tgtX = bx + 16;
+        const tgtZ = THREE.MathUtils.lerp(42, -16, ease);
+        this.camera.position.lerp(new THREE.Vector3(camX, camY, camZ), 0.11);
+        this.controls.target.lerp(new THREE.Vector3(tgtX, 9.5, tgtZ), 0.12);
+      } else if (cr.mode === "stadium") {
+        const ang = 0.4 + ease * Math.PI * 1.35;
+        const rad = this._getWideDist(THREE.MathUtils.lerp(56, 74, ease));
+        const h = this._getWideDist(THREE.MathUtils.lerp(24, 42, ease));
+        this.camera.position.lerp(new THREE.Vector3(st.x + Math.cos(ang) * rad, h, st.z + Math.sin(ang) * rad), 0.12);
+        this.controls.target.lerp(new THREE.Vector3(st.x, 10.0, st.z - 4), 0.13);
+      } else if (cr.mode === "hero360") {
+        const ft = cr.focusTarget;
+        const ang = ease * Math.PI * 2.0;
+        const rad = this._getWideDist(30);
+        const h = this._getWideDist(18 + Math.sin(ease * Math.PI) * 7);
+        this.camera.position.lerp(new THREE.Vector3(ft.x + Math.cos(ang) * rad, h, ft.z + Math.sin(ang) * rad), 0.15);
+        this.controls.target.lerp(new THREE.Vector3(ft.x, ft.y + 1.5, ft.z), 0.16);
+      } else if (cr.mode === "mega") {
+        let camPos = null;
+        let lookAt = null;
+        if (t < 4.0) {
+          const u = t / 4.0;
+          const de = 1 - Math.pow(1 - u, 3);
+          const a = 0.6 + de * 0.9;
+          const r = this._getWideDist(THREE.MathUtils.lerp(135, 32, de));
+          camPos = new THREE.Vector3(Math.cos(a) * r, this._getWideDist(THREE.MathUtils.lerp(110, 18, de)), Math.sin(a) * r);
+          lookAt = new THREE.Vector3(0, 5.5, 0);
+          if (cr.onBanner) cr.onBanner("MEGA UPDATE 🔥", "SHERU BHAI CITY 3D");
+        } else if (t < 9.0) {
+          const u = (t - 4.0) / 5.0;
+          camPos = new THREE.Vector3(THREE.MathUtils.lerp(bx + 10, isl.x + 28, u), 18, isl.z + Math.sin(u * Math.PI) * 22);
+          lookAt = new THREE.Vector3(THREE.MathUtils.lerp(isl.x + 24, isl.x - 4, u), 6.5, isl.z);
+          if (cr.onBanner) cr.onBanner("ROYAL PALACE 👑", "SHERU BHAI ISLAND MANSION");
+        } else if (t < 13.5) {
+          if (!cr.switchedSunset) { cr.switchedSunset = true; this.transitionTimeOfDay("sunset", 2.0); }
+          const u = (t - 9.0) / 4.5;
+          const a = 0.8 + u * 1.5;
+          const r = this._getWideDist(48);
+          camPos = new THREE.Vector3(ht.x + Math.cos(a) * r, this._getWideDist(28), ht.z + Math.sin(a) * r);
+          lookAt = new THREE.Vector3(ht.x, 19.5, ht.z - 2);
+          if (cr.onBanner) cr.onBanner("DIVINE PEAK 🛕", "SACRED HILLTOP TEMPLE");
+        } else if (t < 18.0) {
+          const u = (t - 13.5) / 4.5;
+          const rY = this.rocketSim && this.rocketSim.rocket && this.rocketSim.rocket.visible ? Math.min(85, this.rocketSim.rocket.position.y + 8) : 14;
+          camPos = new THREE.Vector3(rk.x + 36, rY + 14, rk.z + THREE.MathUtils.lerp(28, -14, u));
+          lookAt = new THREE.Vector3(rk.x, rY, rk.z);
+          if (cr.onBanner) cr.onBanner("ISRO SPACEPORT 🚀", "LIVE ROCKET LAUNCHPAD");
+        } else if (t < 22.0) {
+          const u = (t - 18.0) / 4.0;
+          const a = 0.5 + u * 1.2;
+          const r = this._getWideDist(58);
+          camPos = new THREE.Vector3(st.x + Math.cos(a) * r, this._getWideDist(28), st.z + Math.sin(a) * r);
+          lookAt = new THREE.Vector3(st.x, 10, st.z - 4);
+          if (cr.onBanner) cr.onBanner("LIVE CRICKET 🏏", "SHERU BHAI STADIUM");
+        } else {
+          if (!cr.switchedNight) {
+            cr.switchedNight = true;
+            this.transitionTimeOfDay("night", 1.8);
+            this.setFireworksEnabled(true);
+          }
+          const u = (t - 22.0) / 6.0;
+          const a = 0.7 + u * Math.PI * 1.45;
+          const r = this._getWideDist(THREE.MathUtils.lerp(26, 62, u));
+          camPos = new THREE.Vector3(Math.cos(a) * r, this._getWideDist(THREE.MathUtils.lerp(14, 44, u)), Math.sin(a) * r);
+          lookAt = new THREE.Vector3(0, 6.0, 0);
+          if (cr.onBanner) cr.onBanner("NIGHT DISCO + FIREWORKS 🎆", "STGAMES.ONLINE (LINK IN BIO)");
+        }
+        if (camPos && lookAt) {
+          this.camera.position.lerp(camPos, 0.1);
+          this.controls.target.lerp(lookAt, 0.12);
+        }
+      }
+
+      if (p >= 1) this.stopCinemaReel();
     }
 
     // 🛕 SACRED HILLTOP TEMPLE CINEMA ORBIT CAM

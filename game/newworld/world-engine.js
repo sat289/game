@@ -5,10 +5,10 @@ import {
   getSkyPalette,
   createGLSLOceanMaterial,
   createGLSLContactShadowMaterial
-} from "./shaders-glsl.js?v=35";
-import { createProceduralTextureSuite } from "./textures-pbr.js?v=35";
-import { WasmPerfEngine } from "./wasm-perf.js?v=35";
-import { QualityManager } from "./quality-manager.js?v=35";
+} from "./shaders-glsl.js?v=36";
+import { createProceduralTextureSuite } from "./textures-pbr.js?v=36";
+import { WasmPerfEngine } from "./wasm-perf.js?v=36";
+import { QualityManager } from "./quality-manager.js?v=36";
 import {
   EIGHT_PLOT_TYPES,
   FOUR_PLOT_TYPES,
@@ -21,12 +21,12 @@ import {
   getBlockPlotIds,
   getTwoPlotGroup,
   getEightPlotGroup
-} from "./world-constants.js?v=35";
-import { zoneMethods } from "./world-zones.js?v=35";
-import { buildingMethods } from "./world-buildings.js?v=35";
-import { cinematicMethods } from "./world-cinematics.js?v=35";
-import { loopMethods } from "./world-loop.js?v=35";
-import { outskirtsMethods } from "./world-outskirts.js?v=35";
+} from "./world-constants.js?v=36";
+import { zoneMethods } from "./world-zones.js?v=36";
+import { buildingMethods } from "./world-buildings.js?v=36";
+import { cinematicMethods } from "./world-cinematics.js?v=36";
+import { loopMethods } from "./world-loop.js?v=36";
+import { outskirtsMethods } from "./world-outskirts.js?v=36";
 
 export {
   EIGHT_PLOT_TYPES,
@@ -291,6 +291,18 @@ export class FollowerTownEngine {
       timer: 0,
       duration: 7.5,
       onStop: null
+    };
+    this.cinemaReel = {
+      active: false,
+      mode: null,
+      timer: 0,
+      duration: 8.0,
+      focusTarget: new THREE.Vector3(0, 4, 0),
+      focusLabel: "SHERU BHAI CITY",
+      switchedSunset: false,
+      switchedNight: false,
+      onStop: null,
+      onBanner: null
     };
     this.rainEnabled = false;
     this.rainPoints = null;
