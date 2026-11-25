@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Nagaram Builder Studio — Admin Only</title>
+  <link rel="stylesheet" href="./style.css?v=35" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <!-- Full-Screen Admin Lock Gate -->
+  <div id="admin-gate" class="modal">
+    <div class="modal-content glass-card">
+      <div class="plot-badge">RESTRICTED STUDIO</div>
+      <h2>🔐 Admin Login</h2>
+      <p class="subtext">Sign in with your authorized Firebase Admin account to build classic houses, 5-floor modern towers, 4-plot landmarks, and 8-plot stadiums.</p>
+      <form id="login-form">
+        <label>Admin Email</label>
+        <input type="email" id="admin-email" required placeholder="admin@example.com" />
+        <label>Password</label>
+        <input type="password" id="admin-password" required placeholder="••••••••" />
+        <div id="login-error" class="error-text"></div>
+        <button type="submit" class="primary-btn full-width">Unlock Builder Studio</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="canvas-container"></div>
+
+  <!-- Admin Top HUD -->
+  <header id="top-hud" class="hud-element hidden">
+    <div class="brand-badge admin-badge">
+      <div class="brand-title" id="town-title">ADMIN • FOLLOWER NAGARAM</div>
+      <div class="brand-stats">
+        <span id="stat-day">Day 1</span>
+        <span>•</span>
+        <span id="stat-houses">0 Places</span>
+      </div>
+    </div>
+
+    <div class="search-box">
+      <input type="text" id="search-input" placeholder="Find @username or mall..." autocomplete="off" />
+      <button id="search-btn" title="Find">🔍</button>
+    </div>
+
+    <button id="btn-logout" class="icon-btn danger-outline" title="Sign Out">🚪</button>
+  </header>
+
+  <!-- Selected Plot / ST Junction Card -->
+  <div id="plot-card" class="glass-card hidden hud-element">
+    <button id="close-plot-card" class="close-x">✕</button>
+    <div class="plot-badge" id="card-badge">AVAILABLE PLOT</div>
+    <h3 id="card-owner">Open Land</h3>
+    <p id="card-role">Tap Build to place a house, 5-floor tower, or landmark</p>
+    <div class="card-meta">
+      <span id="card-type">OPEN</span>
+      <span id="card-day"></span>
+    </div>
+    <button id="card-edit-btn" class="primary-btn full-width">🛠️ Build / Edit Here</button>
+    <button id="card-replay-build-btn" class="secondary-btn full-width hidden" style="margin-top:8px;">🏗️ Replay Build Reel Here</button>
+    <button id="card-beach-edit-btn" class="primary-btn full-width hidden">🏖️ Set Beach House @username</button>
+    <button id="card-railway-edit-btn" class="primary-btn full-width hidden">🚂 Set Railway Station @username</button>
+    <a id="card-website-btn" href="https://stgames.online/" target="_blank" rel="noopener" class="primary-btn full-width hidden" style="display:block;text-align:center;text-decoration:none;">🌐 Open stgames.online</a>
+    <button id="card-sheru3d-btn" class="secondary-btn full-width hidden" style="margin-top:8px;">🦁 Inspect 3D Sheru Bhai Model</button>
+  </div>
+
+  <!-- Admin Bottom Dock -->
+  <div id="admin-dock" class="hidden hud-element">
+    <button id="btn-open-builder" class="dock-btn">🏗️ Build</button>
+    <button id="btn-add-plot-mode" class="dock-btn add-plot-btn">➕ Add Plot</button>
+    <button id="btn-open-requests" class="dock-btn inbox-btn">📬 Inbox <span id="req-badge" class="req-badge hidden">0</span></button>
+    <button id="btn-open-bulk" class="dock-btn">👥 @Usernames</button>
+    <button id="btn-open-world" class="dock-btn">🌤️ World</button>
+    <button id="btn-jump-airport" class="dock-btn">✈️ Airport</button>
+    <button id="btn-jump-beach" class="dock-btn">🏖️ Beach</button>
+    <button id="btn-jump-railway" class="dock-btn">🚂 Train</button>
+    <button id="btn-reel-mode" class="dock-btn reel-btn">🎬 9:16 Reel</button>
+  </div>
+
+  <!-- 9:16 PRO REEL STUDIO OVERLAY (ADMIN ONLY) -->
+  <div id="reel-controls" class="hidden">
+    <div class="reel-frame-guide" id="reel-frame-guide"></div>
+
+    <!-- Optional Instagram Reels Safe-Zone Guidelines -->
+    <div id="reel-safezone" class="hidden">
+      <div class="sz-top">IG TOP BAR SAFE AREA</div>
+      <div class="sz-right">IG ICONS</div>
+      <div class="sz-bottom">IG CAPTION &amp; AUDIO SAFE AREA</div>
+    </div>
+
+    <!-- 3-2-1 Clean Screen Countdown Overlay -->
+    <div id="reel-countdown" class="hidden">3</div>
+
+    <!-- Live Canvas REC Indicator (Top-Left, hidden automatically during Clean Screen if desired) -->
+    <div id="reel-rec-badge" class="hidden">
+      <span class="rec-dot"></span>
+      <span id="reel-rec-timer">REC 0:00</span>
+    </div>
+
+    <!-- Spotlight / Custom Hook Banner -->
+    <div id="reel-spotlight-banner" class="hidden">
+      <div class="reel-tag" id="reel-tag-text">NEWLY ADDED</div>
+      <div class="reel-name" id="reel-name-text">@username</div>
+    </div>
+
+    <!-- Inline Custom Hook Editor Bar -->
+    <div id="reel-hook-editor" class="glass-card hidden">
+      <div class="hook-row">
+        <input type="text" id="hook-tag-input" placeholder="Tag (e.g. DAY 4 UPDATE)" value="DAY 4 • SHERU BHAI CITY" />
+        <input type="text" id="hook-title-input" placeholder="Hook Title (e.g. ARAKU MOUNTAINS + 2 TRAINS 🔥)" value="ARAKU MOUNTAINS + 2 TRAINS 🚂" />
+      </div>
+      <div class="hook-actions">
+        <button id="btn-apply-hook" class="mini-pill build">✅ Show Banner</button>
+        <button id="btn-clear-hook" class="mini-pill">🚫 Hide</button>
+        <button id="btn-close-hook" class="mini-pill danger">✕</button>
+      </div>
+    </div>
+
+    <!-- Custom Shot-List Queue Picker Modal -->
+    <div id="reel-shotlist-panel" class="glass-card hidden">
+      <div class="drawer-header">
+        <h3>🎞️ Custom Shot-List Queue</h3>
+        <button id="btn-close-shotlist" class="close-x">✕</button>
+      </div>
+      <input type="text" id="shotlist-search" placeholder="Filter @username or landmark..." autocomplete="off" style="margin-bottom:8px;" />
+      <label class="shot-check-row">
+        <input type="checkbox" id="shotlist-replay-build" checked />
+        <span>🏗️ Replay 3D Construction on selected plots</span>
+      </label>
+      <div id="shotlist-items" class="shotlist-items"></div>
+      <div class="shotlist-footer">
+        <span id="shotlist-count">0 shots selected</span>
+        <div style="display:flex;gap:6px;">
+          <button id="btn-clear-shotlist" class="mini-pill">Clear</button>
+          <button id="btn-play-shotlist" class="mini-pill build">▶ Play Queue</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2-Row Clean Mobile Reel Studio Dock -->
+    <div id="reel-dock-wrap">
+      <!-- Row 1: All Cinematic Camera & Reel Modes -->
+      <div class="reel-bar reel-bar-modes">
+        <button id="reel-drone-view" class="mini-pill drone">🚁 Pro Drone</button>
+        <button id="reel-build-tour" class="mini-pill build">🏗️ Build Reel</button>
+        <button id="reel-train-cam" class="mini-pill railway">🚂 Train Cam</button>
+        <button id="reel-vip-cam" class="mini-pill vip">💎 VIP Cam</button>
+        <button id="reel-flight-cam" class="mini-pill airport">✈️ Flight Cam</button>
+        <button id="reel-timelapse-btn" class="mini-pill timelapse">📈 Timelapse</button>
+        <button id="reel-24h-btn" class="mini-pill sky24">⏱️ 24H Sky</button>
+        <button id="reel-random-btn" class="mini-pill random">🎲 VIP Pick</button>
+        <button id="reel-disco-btn" class="mini-pill disco">🪩 Disco Outro</button>
+        <button id="reel-street-btn" class="mini-pill street">🚶 Street POV</button>
+        <button id="reel-pro-tour" class="mini-pill pro">⚡ Pro Reel</button>
+        <button id="reel-queue-btn" class="mini-pill queue">🎞️ Shot List</button>
+        <button id="reel-airport-cam" class="mini-pill airport">✈️ Airport</button>
+        <button id="reel-beach-cam" class="mini-pill beach">🏖️ Beach</button>
+        <button id="reel-railway-cam" class="mini-pill railway">🚉 Station</button>
+        <button id="reel-temple-cam" class="mini-pill temple">🛕 Hill Temple</button>
+        <button id="reel-temple-orbit" class="mini-pill temple">✨ Temple Orbit</button>
+        <button id="reel-rocket-cam" class="mini-pill rocket">🚀 Rocket Cam</button>
+        <button id="reel-island-cam" class="mini-pill island">🌉 VIP Island</button>
+        <button id="reel-wheel-cam" class="mini-pill wheel">🎡 Giant Wheel</button>
+        <button id="reel-stadium-cam" class="mini-pill stadium-pill">🏏 Stadium</button>
+      </div>
+
+      <!-- Row 2: Recording & Studio Tools -->
+      <div class="reel-bar reel-bar-tools">
+        <button id="reel-rec-btn" class="mini-pill rec">🔴 REC HD</button>
+        <button id="reel-hq-btn" class="mini-pill hq active">✨ Ultra HD</button>
+        <button id="reel-shadows-btn" class="mini-pill shadows active">☀️ Shadows</button>
+        <button id="reel-bloom-btn" class="mini-pill bloom active">✨ Bloom</button>
+        <button id="reel-rain-btn" class="mini-pill rain">🌧️ Rain</button>
+        <button id="reel-fireworks-btn" class="mini-pill fireworks">🎆 Fireworks</button>
+        <button id="reel-clean-btn" class="mini-pill clean">👻 Clean 3-2-1</button>
+        <button id="reel-speed-btn" class="mini-pill">⚡ 1x</button>
+        <button id="reel-smooth-time" class="mini-pill">🌅 Sky Fade</button>
+        <button id="reel-day-toggle" class="mini-pill">☀️/🌙</button>
+        <button id="reel-hook-btn" class="mini-pill">📝 Hook</button>
+        <button id="reel-safezone-btn" class="mini-pill">📐 Safe</button>
+        <button id="reel-orbit-toggle" class="mini-pill">🔄 Spin</button>
+        <button id="reel-exit" class="mini-pill danger">✕ Exit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Drawer 1: Classic Houses + NEW 5-Floor Towers + 4-Plot & 8-Plot Landmarks -->
+  <div id="panel-builder" class="drawer glass-card hidden hud-element">
+    <div class="drawer-header">
+      <h3>🏗️ Build on Selected Plot</h3>
+      <button class="close-drawer close-x">✕</button>
+    </div>
+    <p class="hint">Classic houses stay unchanged. Choose any new <b>5-Floor Modern Tower</b> or <b>4/8-Plot Landmark</b> below!</p>
+    <div class="form-grid">
+      <div>
+        <label>Instagram @username (or Chief)</label>
+        <input type="text" id="b-owner" placeholder="e.g. @itzz_me_thrinesh._.2010" />
+      </div>
+      <div>
+        <label>Role / Caption</label>
+        <input type="text" id="b-role" placeholder="e.g. Manager / SI / Captain" />
+      </div>
+      <div>
+        <label>Building Type (Telugu + English)</label>
+        <select id="b-type">
+          <optgroup label="🏡 Realistic Follower Houses (1 Plot • Faces Road)">
+            <option value="house_blue">🏡 Ivory & Slate Modern Villa</option>
+            <option value="house_coral">🏠 Terracotta & Cream Duplex</option>
+            <option value="house_mint">🏡 Sage & Teak Courtyard House</option>
+            <option value="house_gold">🏢 Sandstone Luxury Duplex</option>
+            <option value="beach_villa">🏖️ Beach House Villa (1 Plot • Plunge Pool &amp; Teak Deck)</option>
+            <option value="shop">☕ Tea & Tiffin Shop (1 Plot)</option>
+            <option value="cafe">☕ Modern Coffee Cafe (1 Plot • Roof Cup & Seating)</option>
+            <option value="mobile_shop">📱 Follower Mobile Shop (1 Plot • Roof 3D Phone &amp; Custom Name)</option>
+            <option value="ice_cream_shop">🍨 Ice Cream Parlour (1 Plot • Giant 3D Swirl Cone Roof)</option>
+            <option value="veg_shop">🥬 Fresh Vegetable Shop (1 Plot • 3D Veggie Crates &amp; Awning)</option>
+            <option value="medical_shop">💊 24/7 Medical Shop (1 Plot • Glowing + Cross &amp; Boys Entering)</option>
+            <option value="biryani_point">🍲 Hyderabadi Dum Biryani Point (1 Plot • Giant Brass Handi &amp; Foodies)</option>
+          </optgroup>
+          <optgroup label="🏙️ NEW 5-Floor Modern Towers (1 Plot • Faces Road)">
+            <option value="tower_brick">🏢 5-Floor Brick & Green Balcony Tower</option>
+            <option value="tower_cube">🏢 5-Floor Modern Cube Cantilever Tower</option>
+            <option value="tower_led">🏢 5-Floor Luxury LED & Wood Tower</option>
+            <option value="tower_gold">🏢 6-Floor Golden Glass Penthouse</option>
+          </optgroup>
+          <optgroup label="📸 2-Plot Custom Studios (2 Plots • Faces Road)">
+            <option value="photo_studio">📸 Follower Photo Studio (2 Plots • DSLR Roof &amp; Studio Lights)</option>
+            <option value="beach_villa_2">🏖️ Luxury Mega Beach Villa (2 Plots • Infinity Pool &amp; Palm Lounge)</option>
+            <option value="mobile_showroom">📱 Mega Mobile Showroom (2 Plots • Rotating 3D Phone, 5G &amp; Repair)</option>
+            <option value="beauty_parlour">💄 Luxury Beauty Parlour &amp; Spa (2 Plots • Sparkles, Rotating Crown &amp; Mirrors)</option>
+          </optgroup>
+          <optgroup label="🏟️ Mega 8-Plot Landmarks (8 Plots • Removes Middle Road)">
+            <option value="movie_theater">🎭 Real Multiplex Movie Theater (8 Plots • Box Office, Popcorn, Parking &amp; 8 Sky Disco Lights)</option>
+            <option value="imax_theater">🎬 Giant IMAX 3D Dome Theater (8 Plots • IMAX Dome, Posters, Parking &amp; Sky Disco Lights)</option>
+            <option value="audi_showroom">🚘 Audi Luxury Car Showroom (8 Plots • 6 Real Audi Cars + Turntable)</option>
+            <option value="mahindra_showroom">🚙 Mahindra SUV Showroom (8 Plots • Thar/XUV700 Turntable + 5 SUVs)</option>
+            <option value="bmw_showroom">🏎️ BMW Luxury Showroom (8 Plots • M-Sport Roundel + 6 BMW Cars)</option>
+            <option value="ground">🏏 Mega Cricket Stadium Ground (8 Plots • Kids Playing)</option>
+          </optgroup>
+          <optgroup label="🏛️ Public Town Landmarks (4 Plots • Real-Life Actions)">
+            <option value="police_station">🚓 Police HQ (4 Plots • Moving Police Patrol Car)</option>
+            <option value="hospital">🏥 Super Hospital (4 Plots • Accident + Ambulance Rescue)</option>
+            <option value="school">🏫 Grand School Campus (4 Plots • Kids & Bus)</option>
+            <option value="iti_college">🏫 ITI College &amp; Workshop (4 Plots • Custom Name)</option>
+            <option value="tirumala_temple">🛕 Tirumala Venkateswara Swamy Temple (4 Plots • Golden Gopuram &amp; Lamps)</option>
+            <option value="city_park">🌳 Central City Park (4 Plots • Fountain, Jogging Track &amp; Gazebo)</option>
+            <option value="library">📚 Grand Public Library (4 Plots • Giant 3D Open Book &amp; Pillars)</option>
+            <option value="swimming_pool">🏊 Olympic Swimming Pool Club (4 Plots • Lanes, Diving Board &amp; Custom Name)</option>
+            <option value="box_cricket">🏏 Floodlit Box Cricket Turf Arena (4 Plots • Net Roof, Lights &amp; Players)</option>
+            <option value="auto_stand">🛺 Transport Office & Auto Stand (4 Plots • Drivers Cleaning + City Trips)</option>
+            <option value="bus_stand">🚌 APSRTC Bus Stand (4 Plots • Real Buses Driving Into City)</option>
+            <option value="petrol_bunk">⛽ Highway Petrol Bunk (4 Plots • Live Refueling)</option>
+          </optgroup>
+          <optgroup label="🛍️ Malls, Gyms & Branded Stores (4 Plots)">
+            <option value="gym">🏋️ Follower Fitness Gym (4 Plots • Custom Name Signboard & Workouts)</option>
+            <option value="dmart">🛒 Real D-Mart Hypermarket (4 Plots • Pylon Logo, Aisles, Trolleys, Car &amp; Bike Parking)</option>
+            <option value="hotel_oyo">🏨 20-Floor OYO Rooms Skyscraper (4 Plots • Parking + Boys &amp; Girls Entering)</option>
+            <option value="hostel">🏢 Beach &amp; City Hostel (4 Plots • Rooms, Balconies &amp; Bike Parking)</option>
+            <option value="wine_shop">🍾 Royal Wine Shop Landmark (4 Plots • Real Style Counter, Bottles &amp; Parking)</option>
+            <option value="bike_showroom">🏍️ GT650 &amp; Superbike Showroom (4 Plots • Rotating Roof Bike &amp; Showroom)</option>
+            <option value="srmt_mall">🏬 SRMT Mall (4 Plots • Cinema & Shoppers)</option>
+            <option value="apple_store">🍎 Apple Store (4 Plots • Glass Flagship)</option>
+            <option value="reliance_store">🛒 Reliance Digital & Smart (4 Plots)</option>
+          </optgroup>
+          <optgroup label="🚜 Land Action">
+            <option value="empty">🚜 Demolish / Clear Land</option>
+          </optgroup>
+        </select>
+      </div>
+      <div>
+        <label>Built on Day #</label>
+        <input type="number" id="b-day" min="1" value="1" />
+      </div>
+    </div>
+    <button id="btn-save-plot" class="primary-btn full-width">🔨 Construct & Auto-Relocate</button>
+  </div>
+
+  <!-- Drawer 2: Instagram @Usernames Sync -->
+  <div id="panel-bulk" class="drawer glass-card hidden hud-element">
+    <div class="drawer-header">
+      <h3>👥 Instagram @Usernames Sync</h3>
+      <button class="close-drawer close-x">✕</button>
+    </div>
+
+    <div class="bulk-section">
+      <label>Option A: Paste Instagram @usernames (1 per line)</label>
+      <textarea id="bulk-usernames" rows="4" placeholder="@itzz_me_thrinesh._.2010&#10;@k_dharma_raja&#10;@srinivas_tarun9"></textarea>
+      <button id="btn-import-usernames" class="primary-btn full-width">🏘️ Build Houses for New @Usernames</button>
+    </div>
+
+    <hr />
+
+    <div class="bulk-section">
+      <label>Option B: Upload Instagram followers_1.html or followers_1.json</label>
+      <input type="file" id="ig-file-input" accept=".html,.htm,.json,.txt" />
+      <p class="hint">Auto-detects New Followers & Unfollowers compared to your live town!</p>
+      <div id="diff-results" class="hidden">
+        <div class="diff-stats">
+          <span class="badge-new" id="diff-new-count">0 New</span>
+          <span class="badge-unfollow" id="diff-unfollow-count">0 Unfollowed</span>
+        </div>
+        <button id="btn-build-diff-new" class="secondary-btn full-width hidden">➕ Build All New Followers</button>
+        <div id="unfollow-list" class="unfollow-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Drawer 3: World Settings + 1-Click Fix Overlaps -->
+  <div id="panel-world" class="drawer glass-card hidden hud-element">
+    <div class="drawer-header">
+      <h3>🌤️ World & City Maintenance</h3>
+      <button class="close-drawer close-x">✕</button>
+    </div>
+    <div class="form-grid">
+      <div>
+        <label>Town Name (Arch & HUD)</label>
+        <input type="text" id="w-name" value="FOLLOWER NAGARAM" />
+      </div>
+      <div>
+        <label>🏖️ Beach House Follower @username</label>
+        <input type="text" id="w-beach-owner" value="@follower_beach" placeholder="e.g. @your_follower" />
+      </div>
+      <div>
+        <label>🚂 Railway Station Chief @username</label>
+        <input type="text" id="w-railway-owner" value="@_ur_bunny_108_" placeholder="e.g. @_ur_bunny_108_" />
+      </div>
+      <div>
+        <label>🏝️ VIP Island Mansion @username</label>
+        <input type="text" id="w-island-owner" value="@vip_island_king" placeholder="e.g. @top_commenter" />
+      </div>
+
+      <div>
+        <label>Current Day #</label>
+        <input type="number" id="w-day" min="1" value="1" />
+      </div>
+      <div>
+        <label>Time of Day</label>
+        <select id="w-time">
+          <option value="day">☀️ Sunny Day</option>
+          <option value="sunset">🌇 Golden Sunset</option>
+          <option value="night">🌙 Night Lights (Headlights & LEDs ON)</option>
+        </select>
+      </div>
+      <div>
+        <label>Traffic, Postman & Rescue</label>
+        <select id="w-life">
+          <option value="on">🚗 Active</option>
+          <option value="off">⏸️ Paused</option>
+        </select>
+      </div>
+      <div>
+        <label>🌧️ City Weather</label>
+        <select id="w-weather">
+          <option value="clear">☀️ Clear Sky</option>
+          <option value="rain">🌧️ Monsoon Rain</option>
+        </select>
+      </div>
+      <div>
+        <label>🎆 Night Fireworks</label>
+        <select id="w-fireworks">
+          <option value="off">Off</option>
+          <option value="on">🎆 Live Celebration</option>
+        </select>
+      </div>
+      <div style="grid-column: 1 / -1; border-top: 1px solid rgba(148,163,184,0.2); padding-top: 8px; margin-top: 4px;">
+        <label style="color:#facc15;font-weight:800;">🚗 Hero .glb 3D Models (Optional — Leave blank for built-in 3D)</label>
+      </div>
+      <div>
+        <label>🦁 Sheru Bhai Statue .glb</label>
+        <input type="text" id="w-glb-statue" placeholder="./models/sheru.glb or https://..." />
+      </div>
+      <div>
+        <label>🚘 Audi Hero Car .glb</label>
+        <input type="text" id="w-glb-audi" placeholder="./models/audi.glb or https://..." />
+      </div>
+      <div>
+        <label>🚁 Diamond Helicopter .glb</label>
+        <input type="text" id="w-glb-heli" placeholder="./models/heli.glb or https://..." />
+      </div>
+    </div>
+    <button id="btn-save-world" class="primary-btn full-width">💾 Save World Live</button>
+    <hr />
+    <label>City Layout Fixer</label>
+    <p class="hint">Automatically moves any overlapping houses out of Police HQ, Cricket Stadium, and Landmarks to free plots.</p>
+    <button id="btn-fix-overlaps" class="secondary-btn full-width">🛠️ Fix & Relocate All Overlapping Houses</button>
+  </div>
+
+  
+  <!-- Lazy-Loaded 3D Sheru Bhai Sketchfab Modal (Frees 100% RAM when closed!) -->
+  <div id="sketchfab-modal" class="modal hidden">
+    <div class="modal-content glass-card sketchfab-card" style="position:relative;">
+      <button id="close-sketchfab" class="close-x">✕</button>
+      <div class="plot-badge">3D STATUE INSPECTOR</div>
+      <h3>🦁 Sheru Bhai 3D Model</h3>
+      <p class="subtext">Interactive 3D view (by Mrchintu on Sketchfab). Closing frees 100% RAM.</p>
+      <div class="sketchfab-frame-wrap">
+        <iframe id="sketchfab-iframe" title="Sheru Bhai 3D Model" frameborder="0" allowfullscreen allow="autoplay; fullscreen; xr-spatial-tracking"></iframe>
+      </div>
+      <a href="https://stgames.online/" target="_blank" rel="noopener" class="primary-btn full-width" style="display:block;text-align:center;text-decoration:none;margin-top:10px;">🌐 Visit stgames.online</a>
+    </div>
+  </div>
+
+  <div id="add-plot-banner" class="hidden hud-element">
+    <span>📍 <b>ADD PLOT MODE ON:</b> Tap open land at Airport or Beach (avoid railway tracks)</span>
+    <button id="btn-exit-add-plot" class="mini-pill danger">✕ Done</button>
+  </div>
+
+
+  <!-- Drawer 4: 📬 Unlimited Firebase Follower Requests Inbox -->
+  <div id="panel-requests" class="drawer glass-card hidden hud-element">
+    <div class="drawer-header">
+      <h3>📬 Live Follower Requests Inbox</h3>
+      <button class="close-drawer close-x">✕</button>
+    </div>
+    <p class="hint">Unlimited free requests direct from <strong>stgames.online</strong> via Firebase! Tap <strong>⚡ Auto-Build</strong> to build instantly on a free plot.</p>
+    <div class="inbox-toolbar">
+      <input type="text" id="req-search" placeholder="Search @username or building..." autocomplete="off" />
+      <select id="req-filter" style="width:auto;min-width:105px;">
+        <option value="pending">Pending</option>
+        <option value="all">All</option>
+        <option value="built">Built</option>
+      </select>
+    </div>
+    <div id="requests-list" class="requests-list">
+      <div class="hint" style="text-align:center;padding:18px;">Loading live Firebase requests...</div>
+    </div>
+    <p class="hint" style="margin-top:8px;font-size:10px;opacity:0.8;">
+      Firebase Rule for public submissions: <code>"requests": { ".read": true, ".write": true }</code>
+    </p>
+  </div>
+
+  <div id="toast" class="hidden"></div>
+
+  <script type="module" src="./admin-app.js?v=35"></script>
+  <script>
+    window.addEventListener("error", function(e) {
+      var box = document.getElementById("err-banner");
+      if (!box) {
+        box = document.createElement("div");
+        box.id = "err-banner";
+        box.style.cssText = "position:fixed;bottom:10px;left:10px;right:10px;z-index:99999;background:#7f1d1d;color:#fff;padding:10px 14px;border-radius:10px;font:12px/1.4 sans-serif;box-shadow:0 4px 16px rgba(0,0,0,0.5);";
+        document.body.appendChild(box);
+      }
+      box.textContent = "Error: " + (e.message || "Failed to load script");
+    });
+  </script>
+</body>
+</html>
