@@ -8,7 +8,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged
-} from "./firebase-config.js?v=23";
+} from "./firebase-config.js?v=25";
 import {
   FollowerTownEngine,
   BUILDING_LABELS,
@@ -16,7 +16,7 @@ import {
   getTwoPlotGroup,
   getBlockPlotIds,
   getEightPlotGroup
-} from "./world-engine.js?v=23";
+} from "./world-engine.js?v=25";
 
 let isAdmin = false;
 let selectedPlotId = "plot_0001";
@@ -230,11 +230,13 @@ function openPlotCard(plotId, data) {
     document.getElementById("card-role").textContent = data.role || "Town Resident";
     document.getElementById("card-type").textContent =
       size === 8
-        ? (data.buildingType === "audi_showroom" ? "8-PLOT AUDI SHOWROOM" : "8-PLOT STADIUM")
+        ? (data.buildingType === "imax_theater" ? "8-PLOT IMAX 3D DOME" : data.buildingType === "movie_theater" ? "8-PLOT MOVIE THEATER" : data.buildingType === "audi_showroom" ? "8-PLOT AUDI SHOWROOM" : "8-PLOT STADIUM")
         : size === 4
-        ? "4-PLOT LANDMARK"
+        ? (data.buildingType === "dmart" ? "4-PLOT D-MART" : "4-PLOT LANDMARK")
         : size === 2
-        ? "2-PLOT STUDIO"
+        ? (data.buildingType === "beach_villa_2" ? "2-PLOT BEACH VILLA" : "2-PLOT STUDIO")
+        : data.buildingType === "beach_villa"
+        ? "BEACH HOUSE VILLA"
         : data.buildingType.startsWith("tower_")
         ? "5-FLOOR TOWER"
         : "CLASSIC HOUSE";
@@ -378,7 +380,7 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
   const role = document.getElementById("b-role").value.trim();
   const builtDay = parseInt(document.getElementById("b-day").value, 10) || 1;
 
-  const isHouseOrTower = type.startsWith("house_") || type.startsWith("tower_");
+  const isHouseOrTower = type.startsWith("house_") || type.startsWith("tower_") || type.startsWith("beach_villa");
   const newSize = type === "empty" ? 0 : getRequiredSize(type);
 
   if (type !== "empty" && isHouseOrTower && !ownerName) {
@@ -506,10 +508,10 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
 
     const defaultRole =
       newSize === 8
-        ? (type === "audi_showroom" ? "8-Plot Audi Luxury Showroom" : "8-Plot Mega Stadium")
+        ? (type === "imax_theater" ? "8-Plot IMAX 3D Dome Theater" : type === "movie_theater" ? "8-Plot Multiplex Movie Theater" : type === "audi_showroom" ? "8-Plot Audi Luxury Showroom" : "8-Plot Mega Stadium")
         : newSize === 4
-        ? (type === "gym" ? "Fitness Gym Owner" : "4-Plot Town Landmark")
-        : "2-Plot Photo Studio";
+        ? (type === "dmart" ? "D-Mart Hypermarket" : type === "gym" ? "Fitness Gym Owner" : "4-Plot Town Landmark")
+        : (type === "beach_villa_2" ? "Luxury 2-Plot Beachfront Villa" : "2-Plot Photo Studio");
 
     const anchorPayload = {
       status: "built",
@@ -573,7 +575,7 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
     } else if (relocatedCount > 0) {
       showToast(`🏗️ Built! Moved ${relocatedCount} houses to free plots.`);
     } else {
-      showToast(newSize === 8 ? (type === "audi_showroom" ? "🚘 Built 8-Plot Audi Showroom!" : "🏟️ Built 8-Plot Mega Stadium!") : newSize === 4 ? "🏛️ Built 4-Plot Landmark!" : newSize === 2 ? "📸 Built 2-Plot Photo Studio!" : `🔨 Built ${ownerName}'s plot!`);
+      showToast(newSize === 8 ? (type === "imax_theater" ? "🎬 Built 8-Plot Giant IMAX 3D Dome with Sky Disco Lights!" : type === "movie_theater" ? "🎭 Built 8-Plot Real Movie Theater with Sky Disco Lights!" : type === "audi_showroom" ? "🚘 Built 8-Plot Audi Showroom!" : "🏟️ Built 8-Plot Mega Stadium!") : newSize === 4 ? "🏛️ Built 4-Plot Landmark!" : newSize === 2 ? (type === "beach_villa_2" ? "🏖️ Built 2-Plot Luxury Beach Villa!" : "📸 Built 2-Plot Photo Studio!") : `🔨 Built ${ownerName}'s plot!`);
     }
     closeAllDrawers();
     engine.focusPlot(selectedPlotId);

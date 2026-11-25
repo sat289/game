@@ -1,5 +1,5 @@
-import { db, ref, onValue } from "./firebase-config.js?v=23";
-import { FollowerTownEngine, BUILDING_LABELS, getRequiredSize } from "./world-engine.js?v=23";
+import { db, ref, onValue } from "./firebase-config.js?v=25";
+import { FollowerTownEngine, BUILDING_LABELS, getRequiredSize } from "./world-engine.js?v=25";
 
 let allPlots = {};
 const container = document.getElementById("canvas-container");
@@ -100,11 +100,13 @@ function openPlotCard(plotId, data) {
     document.getElementById("card-role").textContent = data.role || "Follower Nagaram Resident";
     document.getElementById("card-type").textContent =
       size === 8
-        ? (data.buildingType === "audi_showroom" ? "8-PLOT AUDI SHOWROOM" : "8-PLOT MEGA STADIUM")
+        ? (data.buildingType === "imax_theater" ? "8-PLOT IMAX 3D DOME" : data.buildingType === "movie_theater" ? "8-PLOT MOVIE THEATER" : data.buildingType === "audi_showroom" ? "8-PLOT AUDI SHOWROOM" : "8-PLOT MEGA STADIUM")
         : size === 4
-        ? "4-PLOT LANDMARK"
+        ? (data.buildingType === "dmart" ? "4-PLOT D-MART" : "4-PLOT LANDMARK")
         : size === 2
-        ? "2-PLOT STUDIO"
+        ? (data.buildingType === "beach_villa_2" ? "2-PLOT BEACH VILLA" : "2-PLOT STUDIO")
+        : data.buildingType === "beach_villa"
+        ? "BEACH HOUSE VILLA"
         : data.buildingType.startsWith("tower_")
         ? "5-FLOOR MODERN TOWER"
         : "CLASSIC HOUSE";

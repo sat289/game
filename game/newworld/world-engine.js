@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
-export const EIGHT_PLOT_TYPES = new Set(["ground", "audi_showroom"]);
+export const EIGHT_PLOT_TYPES = new Set(["ground", "audi_showroom", "movie_theater", "imax_theater"]);
 
 export const FOUR_PLOT_TYPES = new Set([
   "police_station",
@@ -14,10 +14,11 @@ export const FOUR_PLOT_TYPES = new Set([
   "apple_store",
   "reliance_store",
   "gym",
-  "iti_college"
+  "iti_college",
+  "dmart"
 ]);
 
-export const TWO_PLOT_TYPES = new Set(["photo_studio"]);
+export const TWO_PLOT_TYPES = new Set(["photo_studio", "beach_villa_2"]);
 
 export const BUILDING_LABELS = {
   house_blue: "🏡 Ivory & Slate Villa",
@@ -32,6 +33,11 @@ export const BUILDING_LABELS = {
   cafe: "☕ కేఫ్ • COFFEE CAFE",
   ground: "🏏 గ్రౌండ్ • MEGA CRICKET STADIUM (8 PLOTS)",
   audi_showroom: "🚘 ఆడి షోరూమ్ • AUDI SHOWROOM (8 PLOTS)",
+  beach_villa: "🏖️ బీచ్ విల్లా • BEACH HOUSE VILLA (1 PLOT)",
+  beach_villa_2: "🏖️ మెగా బీచ్ విల్లా • MEGA BEACH VILLA (2 PLOTS)",
+  movie_theater: "🎭 మూవీ థియేటర్ • REAL IMAX MULTIPLEX (8 PLOTS)",
+  imax_theater: "🎬 ఐమాక్స్ 3D • GIANT IMAX DOME (8 PLOTS)",
+  dmart: "🛒 డి-మార్ట్ • D-MART HYPERMARKET (4 PLOTS)",
   gym: "🏋️ జిమ్ • FITNESS GYM (4 PLOTS)",
   iti_college: "🏫 ఐటిఐ కాలేజ్ • ITI COLLEGE (4 PLOTS)",
   photo_studio: "📸 ఫోటో స్టూడియో • PHOTO STUDIO (2 PLOTS)",
@@ -185,22 +191,29 @@ export class FollowerTownEngine {
     this.camera = new THREE.PerspectiveCamera(42, aspect, 1.0, 2400);
     this.camera.position.set(78, 82, 78);
 
-    // AUTO LOW-RAM DETECTION (Public visitors on 2GB-4GB phones stay safe; Admin Studio runs crisp Ultra HD!)
+    // AUTO VERY-LOW-RAM DETECTION (2GB-4GB phones get zero-crash ultra-smooth play automatically!)
     const devMem = navigator.deviceMemory || 4;
     const cpuCores = navigator.hardwareConcurrency || 4;
+    this.isVeryLowRam = !this.hqMode && (devMem <= 3 || cpuCores <= 4);
     this.isLowRam = !this.hqMode && (devMem <= 4 || cpuCores <= 4);
 
     this.renderer = new THREE.WebGLRenderer({
       antialias: this.hqMode || !this.isLowRam,
-      powerPreference: "high-performance",
-      precision: this.hqMode ? "highp" : "mediump"
+      powerPreference: this.isVeryLowRam ? "default" : "high-performance",
+      precision: this.hqMode ? "highp" : this.isVeryLowRam ? "lowp" : "mediump",
+      stencil: false
     });
     this.renderer.setSize(initW, initH);
     this.renderer.setPixelRatio(
       this.hqMode
         ? Math.min(window.devicePixelRatio || 2, 2.0)
-        : (this.isLowRam ? 1.0 : Math.min(window.devicePixelRatio || 1, 1.5))
+        : (this.isVeryLowRam ? 0.92 : this.isLowRam ? 1.0 : Math.min(window.devicePixelRatio || 1, 1.45))
     );
+    this._fpsFrames = 0;
+    this._fpsAccum = 0;
+    this._perfThrottle = false;
+    this._animFrameTick = 0;
+    this._emptyPlotCoords = new Map();
     this.renderer.shadowMap.enabled = false;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = this.hqMode ? 1.14 : 1.08;
@@ -272,6 +285,7 @@ export class FollowerTownEngine {
     this.onAddPlotTap = null;
     this.turntableRotors = [];
     this.studioFlashes = [];
+    this.theaterDiscos = [];
     this.skyClouds = [];
     this.cloudMat = null;
     this.starField = null;
@@ -398,6 +412,8 @@ export class FollowerTownEngine {
     this._buildSkyDecor();
     this._initSharedMaterials();
     this._initSharedGeometries();
+    this._sharedMatSet = new Set(Object.values(this.mat));
+    this._sharedGeoSet = new Set(Object.values(this.geo));
     this._initEvents();
 
     this.ensureCapacity(36);
@@ -598,7 +614,26 @@ export class FollowerTownEngine {
       riverBlue: new THREE.MeshLambertMaterial({ color: 0x0ea5e9 }),
       waterfallBlue: new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.88 }),
       waterfallFoam: new THREE.MeshBasicMaterial({ color: 0xf0f9ff, transparent: true, opacity: 0.9 }),
-      valleyMist: new THREE.MeshLambertMaterial({ color: 0xf8fafc, transparent: true, opacity: 0.52 })
+      valleyMist: new THREE.MeshLambertMaterial({ color: 0xf8fafc, transparent: true, opacity: 0.52 }),
+      // 8-Plot Movie Theater & 4-Plot Real D-Mart Materials
+      cinemaObsidian: new THREE.MeshLambertMaterial({ color: 0x111827 }),
+      cinemaCrimson: new THREE.MeshLambertMaterial({ color: 0xb91c1c }),
+      cinemaMarquee: new THREE.MeshBasicMaterial({ color: 0xfef08a }),
+      cinemaNeonPink: new THREE.MeshBasicMaterial({ color: 0xec4899 }),
+      cinemaNeonCyan: new THREE.MeshBasicMaterial({ color: 0x22d3ee }),
+      dmartGreen: new THREE.MeshLambertMaterial({ color: 0x15803d }),
+      dmartBrightGreen: new THREE.MeshLambertMaterial({ color: 0x16a34a }),
+      dmartYellow: new THREE.MeshLambertMaterial({ color: 0xfacc15 }),
+      dmartOfferRed: new THREE.MeshLambertMaterial({ color: 0xdc2626 }),
+      cartChrome: new THREE.MeshPhongMaterial({ color: 0xe2e8f0, specular: 0xffffff, shininess: 120 }),
+      // Real IMAX Dome, Upgraded Multiplex & Shared Zero-Allocation Hitbox Material
+      imaxBlue: new THREE.MeshPhongMaterial({ color: 0x0369a1, specular: 0x7dd3fc, shininess: 120 }),
+      imaxDomeSilver: new THREE.MeshPhongMaterial({ color: 0xcbd5e1, specular: 0xffffff, shininess: 130 }),
+      imaxNeonBlue: new THREE.MeshBasicMaterial({ color: 0x38bdf8 }),
+      cinemaScreenGlow: new THREE.MeshBasicMaterial({ color: 0x60a5fa }),
+      popcornYellow: new THREE.MeshLambertMaterial({ color: 0xfde047 }),
+      dmartDeepGreen: new THREE.MeshLambertMaterial({ color: 0x0f7638 }),
+      invisibleHitbox: new THREE.MeshBasicMaterial({ visible: false })
     };
   }
 
@@ -714,10 +749,26 @@ export class FollowerTownEngine {
   // Frees GPU texture memory for unique sprite labels when a plot is rebuilt or cleared
   _disposePlotGroup(group) {
     if (!group) return;
+    const cachedSignMats = new Set(this.signTexCache ? this.signTexCache.values() : []);
     group.traverse((obj) => {
       if (obj.isSprite && obj.material) {
-        if (obj.material.map) obj.material.map.dispose();
-        obj.material.dispose();
+        if (!cachedSignMats.has(obj.material)) {
+          if (obj.material.map) obj.material.map.dispose();
+          obj.material.dispose();
+        }
+      } else if (obj.isMesh) {
+        if (obj.geometry && this._sharedGeoSet && !this._sharedGeoSet.has(obj.geometry)) {
+          obj.geometry.dispose();
+        }
+        if (obj.material && this._sharedMatSet && !this._sharedMatSet.has(obj.material) && !cachedSignMats.has(obj.material)) {
+          if (Array.isArray(obj.material)) {
+            obj.material.forEach((m) => {
+              if (!this._sharedMatSet.has(m) && !cachedSignMats.has(m)) m.dispose();
+            });
+          } else {
+            obj.material.dispose();
+          }
+        }
       }
     });
   }
@@ -882,6 +933,7 @@ export class FollowerTownEngine {
 
   removeCustomPlot(plotId) {
     this.plotDataMap.delete(plotId);
+    this._emptyPlotCoords.delete(plotId);
     if (this.plotMeshes.has(plotId)) {
       const oldGroup = this.plotMeshes.get(plotId);
       this._disposePlotGroup(oldGroup);
@@ -894,6 +946,7 @@ export class FollowerTownEngine {
     this.landmarkActors = this.landmarkActors.filter((a) => a.plotId !== plotId);
     this.turntableRotors = this.turntableRotors.filter((r) => r.plotId !== plotId);
     this.studioFlashes = this.studioFlashes.filter((f) => f.plotId !== plotId);
+    this.theaterDiscos = this.theaterDiscos.filter((t) => t.plotId !== plotId);
   }
 
   syncLandmarkFootprints(allPlotsObj) {
@@ -1396,7 +1449,7 @@ export class FollowerTownEngine {
 
     const hitbox = new THREE.Mesh(
       new THREE.CylinderGeometry(6.8, 6.8, 12.2, 12),
-      new THREE.MeshBasicMaterial({ visible: false })
+      this.mat.invisibleHitbox
     );
     hitbox.position.y = 6.1;
     hitbox.userData.plotId = "ST_JUNCTION";
@@ -2084,7 +2137,7 @@ export class FollowerTownEngine {
     plusV.position.y = 0.05;
     const padSign = this._createNameSign("➕ ADD AIRPORT PLOT", "TAP TO PLACE PLOT HERE", false);
     padSign.position.set(0, 3.6, 0);
-    const padHit = new THREE.Mesh(new THREE.BoxGeometry(7.4, 5.0, 7.4), new THREE.MeshBasicMaterial({ visible: false }));
+    const padHit = new THREE.Mesh(new THREE.BoxGeometry(7.4, 5.0, 7.4), this.mat.invisibleHitbox);
     padHit.position.y = 2.5;
     padHit.userData.plotId = "ADD_AIRPORT_PLOT";
     apAddPad.add(padBase, plusH, plusV, padSign, padHit);
@@ -2098,7 +2151,7 @@ export class FollowerTownEngine {
 
     const hitbox = new THREE.Mesh(
       new THREE.BoxGeometry(88, 18, 96),
-      new THREE.MeshBasicMaterial({ visible: false })
+      this.mat.invisibleHitbox
     );
     hitbox.position.set(0, 9, 0);
     hitbox.userData.plotId = "AIRPORT";
@@ -2419,7 +2472,7 @@ export class FollowerTownEngine {
     bPlusV.position.y = 0.05;
     const bPadSign = this._createNameSign("➕ ADD BEACH PLOT", "TAP TO PLACE BEACH PLOT", false);
     bPadSign.position.set(0, 3.6, 0);
-    const bPadHit = new THREE.Mesh(new THREE.BoxGeometry(7.4, 5.0, 7.4), new THREE.MeshBasicMaterial({ visible: false }));
+    const bPadHit = new THREE.Mesh(new THREE.BoxGeometry(7.4, 5.0, 7.4), this.mat.invisibleHitbox);
     bPadHit.position.y = 2.5;
     bPadHit.userData.plotId = "ADD_BEACH_PLOT";
     bAddPad.add(bPadBase, bPlusH, bPlusV, bPadSign, bPadHit);
@@ -2429,7 +2482,7 @@ export class FollowerTownEngine {
     // 7. Clickable Hitbox for the Entire Beach & Beach House
     const hitbox = new THREE.Mesh(
       new THREE.BoxGeometry(84, 14, 96),
-      new THREE.MeshBasicMaterial({ visible: false })
+      this.mat.invisibleHitbox
     );
     hitbox.position.set(0, 7, 0);
     hitbox.userData.plotId = "BEACH";
@@ -3024,7 +3077,7 @@ export class FollowerTownEngine {
     // Clickable Hitbox for Railway Station
     const stHitbox = new THREE.Mesh(
       new THREE.BoxGeometry(38, 15, 28),
-      new THREE.MeshBasicMaterial({ visible: false })
+      this.mat.invisibleHitbox
     );
     stHitbox.position.set(0, 7.5, 2.0);
     stHitbox.userData.plotId = "RAILWAY_STATION";
@@ -3190,7 +3243,7 @@ export class FollowerTownEngine {
 
     const sHitbox = new THREE.Mesh(
       new THREE.BoxGeometry(38, 15, 28),
-      new THREE.MeshBasicMaterial({ visible: false })
+      this.mat.invisibleHitbox
     );
     sHitbox.position.set(0, 7.5, -2.0);
     sHitbox.userData.plotId = "RAILWAY_SOUTH";
@@ -4012,6 +4065,7 @@ export class FollowerTownEngine {
       this.ambulanceSimulations = this.ambulanceSimulations.filter((s) => s.plotId !== plotId);
       this.turntableRotors = this.turntableRotors.filter((r) => r.plotId !== plotId);
       this.studioFlashes = this.studioFlashes.filter((f) => f.plotId !== plotId);
+      this.theaterDiscos = this.theaterDiscos.filter((t) => t.plotId !== plotId);
       this.blockedRoadZones = this.blockedRoadZones.filter((z) => z.plotId !== plotId);
     }
 
@@ -4054,8 +4108,10 @@ export class FollowerTownEngine {
         maxZ: midZ + this.BLOCK_FOOTPRINT / 2 + 1
       });
     } else if (isFourPlot) {
+      this._emptyPlotCoords.delete(plotId);
       plotGroup.position.set(pos.blockCenterX, 0.08, pos.blockCenterZ);
     } else if (isTwoPlot) {
+      this._emptyPlotCoords.delete(plotId);
       const twoInfo = getTwoPlotGroup(plotId);
       const rowZ = pos.blockCenterZ + (twoInfo.isNorthRow ? -this.PLOT_SIZE / 2 : this.PLOT_SIZE / 2);
       plotGroup.position.set(pos.blockCenterX, 0.08, rowZ);
@@ -4068,17 +4124,17 @@ export class FollowerTownEngine {
       const hitW = isEightPlot ? this.EIGHT_PLOT_WIDTH : this.BLOCK_FOOTPRINT - 0.2;
       hitbox = new THREE.Mesh(
         new THREE.BoxGeometry(hitW, 11.0, this.BLOCK_FOOTPRINT - 0.2),
-        new THREE.MeshBasicMaterial({ visible: false })
+        this.mat.invisibleHitbox
       );
       hitbox.position.y = 5.5;
     } else if (isTwoPlot) {
       hitbox = new THREE.Mesh(
         new THREE.BoxGeometry(this.BLOCK_FOOTPRINT - 0.2, 8.0, this.PLOT_SIZE - 0.2),
-        new THREE.MeshBasicMaterial({ visible: false })
+        this.mat.invisibleHitbox
       );
       hitbox.position.y = 4.0;
     } else {
-      hitbox = new THREE.Mesh(this.geo.hit1, new THREE.MeshBasicMaterial({ visible: false }));
+      hitbox = new THREE.Mesh(this.geo.hit1, this.mat.invisibleHitbox);
       hitbox.position.y = 3.25;
     }
     hitbox.userData.plotId = plotId;
@@ -4115,8 +4171,22 @@ export class FollowerTownEngine {
 
     if (!data || data.status !== "built" || data.buildingType === "empty") {
       buildingObj = this._buildEmptyPlotMesh();
+      this._emptyPlotCoords.set(plotId, { grp: plotGroup, x: plotGroup.position.x, z: plotGroup.position.z });
     } else if (isEightPlot) {
-      if (data.buildingType === "audi_showroom") {
+      this._emptyPlotCoords.delete(plotId);
+      if (data.buildingType === "imax_theater") {
+        buildingObj = this._buildEightPlotIMAXTheater(plotId, data.ownerName);
+        const topLabel = data.ownerName || "SHERU BHAI IMAX";
+        const sign = this._createNameSign(topLabel, "🎬 ఐమాక్స్ 3D • 8-PLOT GIANT IMAX DOME", true);
+        sign.position.set(0, 13.2, 0);
+        buildingObj.add(sign);
+      } else if (data.buildingType === "movie_theater") {
+        buildingObj = this._buildEightPlotMovieTheater(plotId, data.ownerName);
+        const topLabel = data.ownerName || "SHERU BHAI MULTIPLEX";
+        const sign = this._createNameSign(topLabel, "🎭 మూవీ థియేటర్ • 8-PLOT REAL MULTIPLEX", true);
+        sign.position.set(0, 12.8, 0);
+        buildingObj.add(sign);
+      } else if (data.buildingType === "audi_showroom") {
         buildingObj = this._buildEightPlotAudiShowroom(plotId, data.ownerName);
         const topLabel = data.ownerName || "AUDI SHOWROOM";
         const sign = this._createNameSign(topLabel, "🚘 ఆడి షోరూమ్ • 8-PLOT AUDI SHOWROOM", true);
@@ -4146,8 +4216,13 @@ export class FollowerTownEngine {
       sign.position.set(0, buildingObj.userData.labelY || 7.6, 0);
       plotGroup.add(sign);
     } else {
+      this._emptyPlotCoords.delete(plotId);
       if (isCustom && size === 8) {
-        buildingObj = data.buildingType === "audi_showroom"
+        buildingObj = data.buildingType === "imax_theater"
+          ? this._buildEightPlotIMAXTheater(plotId, data.ownerName)
+          : data.buildingType === "movie_theater"
+          ? this._buildEightPlotMovieTheater(plotId, data.ownerName)
+          : data.buildingType === "audi_showroom"
           ? this._buildEightPlotAudiShowroom(plotId, data.ownerName)
           : this._buildEightPlotCricketStadium(plotId);
       } else if (isCustom && size === 4) {
@@ -4160,7 +4235,7 @@ export class FollowerTownEngine {
       buildingObj.rotation.y = pos.rotY;
 
       if (data.ownerName) {
-        const subLabel = data.buildingType === "shop" ? "టీ & టిఫిన్ • SHOP" : data.buildingType === "cafe" ? "☕ COFFEE CAFE" : "";
+        const subLabel = data.buildingType === "shop" ? "టీ & టిఫిన్ • SHOP" : data.buildingType === "cafe" ? "☕ COFFEE CAFE" : data.buildingType === "beach_villa" ? "🏖️ BEACH HOUSE VILLA" : "";
         const sign = this._createNameSign(data.ownerName, subLabel, false);
         sign.position.set(0, buildingObj.userData.labelY || 5.2, 0);
         plotGroup.add(sign);
@@ -4214,7 +4289,11 @@ export class FollowerTownEngine {
       audi_showroom: "ఆడి షోరూమ్ • AUDI LUXURY MOTORS",
       gym: "జిమ్ • PERSONAL FITNESS CLUB",
       photo_studio: "ఫోటో స్టూడియో • PHOTO & 4K VIDEO",
-      iti_college: "ఐటిఐ కాలేజ్ • ITI TECHNICAL COLLEGE"
+      iti_college: "ఐటిఐ కాలేజ్ • ITI TECHNICAL COLLEGE",
+      movie_theater: "మూవీ థియేటర్ • IMAX MULTIPLEX",
+      dmart: "డి-మార్ట్ • DAILY DISCOUNTS • DAILY SAVINGS",
+      imax_theater: "ఐమాక్స్ 3D • GIANT SCREEN IMAX DOME",
+      beach_villa_2: "🏖️ LUXURY MEGA BEACH VILLA"
     };
     return map[type] || "";
   }
@@ -4357,6 +4436,46 @@ export class FollowerTownEngine {
     }
 
     // --- LOCAL TEA & TIFFIN SHOP ---
+    if (type === "beach_villa") {
+      // 🏖️ ADDABLE 1-PLOT LUXURY BEACH HOUSE VILLA (Teak Deck + Plunge Pool + Ocean Glass + Balcony + Surfboard!)
+      const deck = new THREE.Mesh(new THREE.BoxGeometry(6.3, 0.32, 6.2), this.mat.teakWood);
+      deck.position.set(0, 0.16, 0);
+      const pool = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.36, 1.55), this.mat.water);
+      pool.position.set(-0.7, 0.17, 2.05);
+
+      const f1 = new THREE.Mesh(new THREE.BoxGeometry(5.2, 2.45, 3.6), this.mat.wallWhite);
+      f1.position.set(0, 1.54, -0.85);
+      const teakClad = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.48, 3.7), this.mat.teakWood);
+      teakClad.position.set(1.9, 1.54, -0.85);
+      const glass1 = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.9, 0.14), winMat);
+      glass1.position.set(-0.6, 1.38, 0.96);
+      glass1.userData.isWindow = true;
+
+      const slab = new THREE.Mesh(new THREE.BoxGeometry(5.8, 0.24, 4.4), this.mat.wallWhite);
+      slab.position.set(0, 2.86, -0.5);
+      const f2 = new THREE.Mesh(new THREE.BoxGeometry(4.4, 2.15, 3.1), this.mat.stuccoIvory);
+      f2.position.set(0.3, 4.05, -1.0);
+      const glass2 = new THREE.Mesh(new THREE.BoxGeometry(3.4, 1.55, 0.14), winMat);
+      glass2.position.set(0.3, 4.0, 0.56);
+      glass2.userData.isWindow = true;
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(5.5, 0.65, 0.1), this.mat.glass);
+      rail.position.set(0, 3.3, 1.62);
+      const roof = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.24, 3.8), this.mat.slateTrim);
+      roof.position.set(0.3, 5.22, -0.9);
+
+      const surf = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.85, 0.46), this.mat.studioCyan);
+      surf.position.set(2.35, 1.15, 1.95);
+      surf.rotation.z = -0.18;
+      const uPole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.8, 5), this.mat.wallWhite);
+      uPole.position.set(1.85, 1.1, 2.2);
+      const uTop = new THREE.Mesh(new THREE.ConeGeometry(0.95, 0.34, 8), this.mat.petrolRed);
+      uTop.position.set(1.85, 2.0, 2.2);
+
+      g.add(deck, pool, f1, teakClad, glass1, slab, f2, glass2, rail, roof, surf, uPole, uTop);
+      g.userData.labelY = 6.8;
+      return g;
+    }
+
     if (type === "cafe") {
       // Warm Wood & Cream Entrance Coffee Cafe + Giant 3D Coffee Cup on Roof + Outdoor Umbrella Table!
       const body = new THREE.Mesh(new THREE.BoxGeometry(5.0, 3.0, 4.2), this.mat.cafeBrown);
@@ -4585,6 +4704,631 @@ export class FollowerTownEngine {
    * Features: 4 tires with silver/gold alloy rims, sculpted hood, hexagonal Audi grille,
    * sharp white LED DRL headlights, rear red LED lightbar, sloped windshield & spoiler/roof rails!
    */
+
+  /**
+   * 🎬 CRISP CACHED MOVIE POSTER BILLBOARD (For 8-Plot Movie Theater Facade & Lightbox Kiosks)
+   */
+  _makeMoviePoster(title, tagline, bgTop, bgBot, accentHex = "#facc15", w = 1.9, h = 2.65) {
+    const key = `POSTER|${title}|${tagline}|${bgTop}|${bgBot}`;
+    let mat = this.signTexCache.get(key);
+    if (!mat) {
+      const c = document.createElement("canvas");
+      c.width = 256;
+      c.height = 360;
+      const ctx = c.getContext("2d");
+      const grad = ctx.createLinearGradient(0, 0, 0, 360);
+      grad.addColorStop(0, bgTop);
+      grad.addColorStop(1, bgBot);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 256, 360);
+
+      // Cinematic Poster Border & Spotlight Glow
+      ctx.strokeStyle = accentHex;
+      ctx.lineWidth = 10;
+      ctx.strokeRect(8, 8, 240, 344);
+
+      ctx.fillStyle = "rgba(255,255,255,0.14)";
+      ctx.beginPath();
+      ctx.arc(128, 130, 74, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Top "NOW SHOWING" Pill
+      ctx.fillStyle = accentHex;
+      ctx.fillRect(36, 26, 184, 34);
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "#09090b";
+      ctx.font = "900 18px sans-serif";
+      ctx.fillText("NOW SHOWING", 128, 44);
+
+      // Bold Movie Title
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "900 44px sans-serif";
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = "#020617";
+      ctx.strokeText(title, 128, 182, 220);
+      ctx.fillText(title, 128, 182, 220);
+
+      // Tagline & Dolby/IMAX Badge
+      ctx.fillStyle = accentHex;
+      ctx.font = "800 22px sans-serif";
+      ctx.fillText(tagline, 128, 246, 220);
+
+      ctx.fillStyle = "rgba(0,0,0,0.65)";
+      ctx.fillRect(38, 288, 180, 38);
+      ctx.fillStyle = "#f8fafc";
+      ctx.font = "800 18px sans-serif";
+      ctx.fillText("IMAX 3D • DOLBY", 128, 308);
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.generateMipmaps = true;
+      tex.minFilter = THREE.LinearMipmapLinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      tex.anisotropy = this.maxAnisotropy || 4;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      mat = new THREE.MeshBasicMaterial({ map: tex });
+      this.signTexCache.set(key, mat);
+    }
+    return new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+  }
+
+  /**
+   * 🛒 AUTHENTIC REAL D-MART BRAND SIGNBOARD (Signature Emerald Green + Yellow Arc + Bold DMart Wordmark!)
+   */
+  _makeDMartLogoBoard(ownerSub = "", w = 11.4, h = 2.0) {
+    const key = `DMART_LOGO|${ownerSub}`;
+    let mat = this.signTexCache.get(key);
+    if (!mat) {
+      const c = document.createElement("canvas");
+      c.width = 768;
+      c.height = 192;
+      const ctx = c.getContext("2d");
+
+      // Signature D-Mart Deep Green Background + Bright Yellow Top & Bottom Border Trim
+      ctx.fillStyle = "#15803d";
+      ctx.fillRect(0, 0, 768, 192);
+      ctx.fillStyle = "#facc15";
+      ctx.fillRect(0, 0, 768, 14);
+      ctx.fillRect(0, 178, 768, 14);
+
+      // Iconic White House-Roof & Shopping Cart Emblem on Left of Logo
+      ctx.strokeStyle = "#facc15";
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.moveTo(74, 88);
+      ctx.lineTo(126, 42);
+      ctx.lineTo(178, 88);
+      ctx.stroke();
+
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(92, 92, 68, 44);
+      ctx.fillStyle = "#15803d";
+      ctx.font = "900 32px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("D", 126, 116);
+
+      // Bold Signature "DMart" Typography (White "D" + Bright Yellow/White "Mart")
+      ctx.textAlign = "left";
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "900 84px sans-serif";
+      ctx.fillText("D", 206, 86);
+      ctx.fillStyle = "#facc15";
+      ctx.font = "900 84px sans-serif";
+      ctx.fillText("Mart", 272, 86);
+
+      // Signature Yellow Curved Smile / Cart Underline
+      ctx.strokeStyle = "#facc15";
+      ctx.lineWidth = 7;
+      ctx.beginPath();
+      ctx.moveTo(208, 126);
+      ctx.quadraticCurveTo(360, 144, 515, 122);
+      ctx.stroke();
+
+      // Tagline right below ("DAILY DISCOUNTS • DAILY SAVINGS" + Owner Name if set)
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#f8fafc";
+      ctx.font = "800 24px sans-serif";
+      const subLine = ownerSub
+        ? `DAILY DISCOUNTS • DAILY SAVINGS • ${ownerSub.toUpperCase()}`
+        : "DAILY DISCOUNTS • DAILY SAVINGS";
+      ctx.fillText(subLine, 470, 158, 540);
+
+      // Right-Side Yellow "SUPERMARKET" Vertical Pill
+      ctx.fillStyle = "#facc15";
+      ctx.fillRect(576, 46, 166, 62);
+      ctx.fillStyle = "#14532d";
+      ctx.font = "900 24px sans-serif";
+      ctx.fillText("HYPERMARKET", 659, 78, 154);
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.generateMipmaps = true;
+      tex.minFilter = THREE.LinearMipmapLinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      tex.anisotropy = this.maxAnisotropy || 4;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      mat = new THREE.MeshBasicMaterial({ map: tex });
+      this.signTexCache.set(key, mat);
+    }
+    return new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+  }
+
+  /**
+   * 🪩 SHARED HELPER: 8 ADDITIVE-BLENDED NIGHT-SKY ROTATING DISCO SEARCHLIGHT BEAMS
+   * Shoots tall glowing beams (28-32 units high) with bright atmospheric air-reflection halos
+   * that visibly reflect into the night air & rotate 360° — ZERO extra PointLights on low-RAM devices!
+   */
+  _attachSkyDiscoLights(parentGroup, plotId, beamSpots, palette, marqueeBulbs = null, pointLightPos = null) {
+    const nightGroup = new THREE.Group();
+    const skyBeams = [];
+
+    const baseGeo = new THREE.CylinderGeometry(0.46, 0.62, 0.72, 8);
+    const lampHeadGeo = new THREE.SphereGeometry(0.38, 8, 8);
+    const haloGeo = new THREE.RingGeometry(0.6, 3.2, 14);
+    haloGeo.rotateX(-Math.PI / 2);
+
+    beamSpots.forEach((spot, idx) => {
+      const housing = new THREE.Mesh(baseGeo, this.mat.cinemaObsidian);
+      housing.position.set(spot.x, spot.y + 0.35, spot.z);
+      parentGroup.add(housing);
+
+      const pivot = new THREE.Group();
+      pivot.position.set(spot.x, spot.y + 0.68, spot.z);
+
+      const colHex = palette[idx % palette.length];
+      const beamMat = new THREE.MeshBasicMaterial({
+        color: colHex,
+        transparent: true,
+        opacity: 0.44,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
+      });
+      const coreMat = new THREE.MeshBasicMaterial({
+        color: colHex,
+        transparent: true,
+        opacity: 0.78,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
+      });
+      const haloMat = new THREE.MeshBasicMaterial({
+        color: colHex,
+        transparent: true,
+        opacity: 0.36,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
+      });
+      const bulbMat = new THREE.MeshBasicMaterial({ color: colHex });
+
+      const coneGeo = new THREE.CylinderGeometry(3.4, 0.3, spot.h, 10, 1, true);
+      coneGeo.translate(0, spot.h / 2, 0);
+      const cone = new THREE.Mesh(coneGeo, beamMat);
+      cone.rotation.z = spot.tilt;
+
+      const coreGeo = new THREE.CylinderGeometry(0.75, 0.16, spot.h * 0.96, 6, 1, true);
+      coreGeo.translate(0, (spot.h * 0.96) / 2, 0);
+      const core = new THREE.Mesh(coreGeo, coreMat);
+      core.rotation.z = spot.tilt;
+
+      const airHalo = new THREE.Mesh(haloGeo, haloMat);
+      airHalo.position.set(-Math.sin(spot.tilt) * spot.h * 0.92, Math.cos(spot.tilt) * spot.h * 0.92, 0);
+
+      const lens = new THREE.Mesh(lampHeadGeo, bulbMat);
+      pivot.add(lens, cone, core, airHalo);
+      nightGroup.add(pivot);
+
+      skyBeams.push({
+        pivot,
+        cone,
+        core,
+        airHalo,
+        beamMat,
+        coreMat,
+        haloMat,
+        bulbMat,
+        beamH: spot.h,
+        baseTilt: spot.tilt,
+        dir: spot.dir,
+        colorIdx: idx
+      });
+    });
+
+    let ptLight = null;
+    if (!this.isLowRam && pointLightPos) {
+      ptLight = new THREE.PointLight(palette[0], 3.0, 32);
+      ptLight.position.copy(pointLightPos);
+      nightGroup.add(ptLight);
+    }
+
+    nightGroup.visible = this.timeOfDay === "night";
+    parentGroup.add(nightGroup);
+
+    this.theaterDiscos.push({
+      plotId,
+      nightGroup,
+      skyBeams,
+      pointLight: ptLight,
+      marqueeBulbs,
+      palette
+    });
+  }
+
+  /**
+   * 🎭 UPGRADED REAL 8-PLOT MULTIPLEX MOVIE THEATER (`movie_theater`)
+   */
+  _buildEightPlotMovieTheater(plotId, ownerName = "") {
+    const g = new THREE.Group();
+
+    const plazaFloor = new THREE.Mesh(new THREE.BoxGeometry(21.2, 0.16, 13.8), this.mat.marble);
+    plazaFloor.position.set(-5.4, 0.32, 0);
+    const parkLot = new THREE.Mesh(new THREE.BoxGeometry(10.8, 0.14, 13.8), this.mat.tarmacGrey);
+    parkLot.position.set(10.5, 0.31, 0);
+
+    const step1 = new THREE.Mesh(new THREE.BoxGeometry(7.2, 0.22, 1.4), this.mat.marble);
+    step1.position.set(-4.2, 0.42, 2.2);
+    const carpet = new THREE.Mesh(new THREE.BoxGeometry(4.0, 0.19, 5.4), this.mat.vipCarpet);
+    carpet.position.set(-4.2, 0.35, 4.2);
+    [-6.2, -2.2].forEach((sx) => {
+      [2.8, 4.6, 6.4].forEach((sz) => {
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.72, 6), this.mat.richGoldTrim);
+        post.position.set(sx, 0.72, sz);
+        g.add(post);
+      });
+    });
+    g.add(plazaFloor, parkLot, step1, carpet);
+
+    const mainHall = new THREE.Mesh(new THREE.BoxGeometry(20.0, 7.2, 8.2), this.mat.cinemaObsidian);
+    mainHall.position.set(-5.4, 3.9, -2.5);
+
+    const upperHall = new THREE.Mesh(new THREE.BoxGeometry(15.2, 1.8, 6.4), this.mat.cinemaObsidian);
+    upperHall.position.set(-5.4, 8.2, -3.2);
+    const upperNeon = new THREE.Mesh(new THREE.BoxGeometry(15.4, 0.22, 6.6), this.mat.cinemaNeonCyan);
+    upperNeon.position.set(-5.4, 7.45, -3.2);
+
+    const crimsonPanelL = new THREE.Mesh(new THREE.BoxGeometry(4.8, 6.0, 0.38), this.mat.cinemaCrimson);
+    crimsonPanelL.position.set(-12.6, 3.8, 1.65);
+    const crimsonPanelR = crimsonPanelL.clone();
+    crimsonPanelR.position.x = 1.6;
+
+    [-15.2, -9.8, -1.2, 4.2].forEach((fx) => {
+      const fin = new THREE.Mesh(new THREE.BoxGeometry(0.32, 7.3, 0.68), this.mat.richGoldTrim);
+      fin.position.set(fx, 3.95, 1.65);
+      const neonRib = new THREE.Mesh(new THREE.BoxGeometry(0.12, 6.6, 0.14), this.mat.cinemaNeonPink);
+      neonRib.position.set(fx, 3.95, 2.02);
+      g.add(fin, neonRib);
+    });
+
+    // Double-Height Clear Glass Lobby Atrium WITH REAL INTERIOR MOVIE SCREEN & TIERED RED SEATS PREVIEW!
+    const lobbyGlass = new THREE.Mesh(new THREE.BoxGeometry(8.4, 4.6, 0.14), this.mat.glass);
+    lobbyGlass.position.set(-4.2, 2.75, 1.68);
+    const indoorScreen = new THREE.Mesh(new THREE.BoxGeometry(5.6, 2.6, 0.12), this.mat.cinemaScreenGlow);
+    indoorScreen.position.set(-4.2, 3.2, -0.4);
+    for (let r = 0; r < 3; r++) {
+      const seatRow = new THREE.Mesh(new THREE.BoxGeometry(5.8, 0.45, 0.55), this.mat.cinemaCrimson);
+      seatRow.position.set(-4.2, 0.75 + r * 0.42, 0.9 - r * 0.45);
+      g.add(seatRow);
+    }
+
+    const marquee = new THREE.Mesh(new THREE.BoxGeometry(19.0, 1.2, 3.4), this.mat.cinemaCrimson);
+    marquee.position.set(-5.4, 5.2, 2.9);
+    const marqueeGoldTop = new THREE.Mesh(new THREE.BoxGeometry(19.3, 0.22, 3.6), this.mat.richGoldTrim);
+    marqueeGoldTop.position.set(-5.4, 5.84, 2.9);
+    const marqueeGoldBot = marqueeGoldTop.clone();
+    marqueeGoldBot.position.y = 4.56;
+
+    const bulbGeo = new THREE.SphereGeometry(0.14, 6, 6);
+    const marqueeBulbs = [];
+    for (let bx = -14.2; bx <= 3.4; bx += 1.25) {
+      const bulb = new THREE.Mesh(bulbGeo, this.mat.cinemaMarquee);
+      bulb.position.set(bx, 5.2, 4.66);
+      g.add(bulb);
+      marqueeBulbs.push(bulb);
+    }
+
+    const marqueeBoard = this._makeBuildingBoard(
+      "NOW SHOWING • IMAX 3D • DOLBY",
+      "SALAAR 2 • DEVARA • PUSHPA 2 • KALKI",
+      "#09090b",
+      "#facc15",
+      16.2,
+      0.9
+    );
+    marqueeBoard.position.set(-5.4, 5.2, 4.62);
+
+    const cleanThName = (ownerName || "SHERU BHAI").trim().toUpperCase();
+    const theaterTitle = cleanThName.includes("CINEMA") || cleanThName.includes("THEATER") || cleanThName.includes("MULTIPLEX")
+      ? cleanThName
+      : `${cleanThName} MULTIPLEX`;
+    const mainTheaterBoard = this._makeBuildingBoard(
+      theaterTitle,
+      "IMAX 3D • SCREEN 1, 2, 3 • DOLBY ATMOS",
+      "#09090b",
+      "#facc15",
+      15.8,
+      1.85
+    );
+    mainTheaterBoard.position.set(-5.4, 8.65, 1.55);
+    const boardBack = new THREE.Mesh(new THREE.BoxGeometry(16.2, 2.05, 0.45), this.mat.cinemaObsidian);
+    boardBack.position.set(-5.4, 8.65, 1.3);
+
+    const reelSculpture = new THREE.Group();
+    reelSculpture.position.set(-5.4, 10.6, -3.2);
+    const reelDisc = new THREE.Mesh(new THREE.CylinderGeometry(2.0, 2.0, 0.42, 16), this.mat.richGoldTrim);
+    reelDisc.rotation.x = Math.PI / 2;
+    const reelRim = new THREE.Mesh(new THREE.TorusGeometry(1.96, 0.18, 8, 18), this.mat.cinemaCrimson);
+    const reelHub = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.52, 0.54, 10), this.mat.cinemaObsidian);
+    reelHub.rotation.x = Math.PI / 2;
+    for (let h = 0; h < 5; h++) {
+      const ha = (h / 5) * Math.PI * 2;
+      const hole = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.36, 0.48, 8), this.mat.cinemaObsidian);
+      hole.rotation.x = Math.PI / 2;
+      hole.position.set(Math.cos(ha) * 1.1, Math.sin(ha) * 1.1, 0);
+      reelSculpture.add(hole);
+    }
+    reelSculpture.add(reelDisc, reelRim, reelHub);
+    g.add(reelSculpture);
+    this.turntableRotors.push({ plotId, mesh: reelSculpture, speed: 0.95 });
+
+    const p1 = this._makeMoviePoster("SALAAR 2", "REBEL RETURNS", "#7f1d1d", "#09090b", "#facc15");
+    p1.position.set(-13.7, 2.55, 1.9);
+    const p2 = this._makeMoviePoster("DEVARA", "FEAR IN IMAX", "#0c4a6e", "#020617", "#38bdf8");
+    p2.position.set(-11.4, 2.55, 1.9);
+    const p3 = this._makeMoviePoster("PUSHPA 2", "THE RULE", "#7c2d12", "#1c1917", "#fb923c");
+    p3.position.set(0.45, 2.55, 1.9);
+    const p4 = this._makeMoviePoster("KALKI 2898", "IMAX 3D", "#312e81", "#020617", "#c084fc");
+    p4.position.set(2.75, 2.55, 1.9);
+
+    const makePosterKiosk = (kx, kz, posterMesh) => {
+      const kg = new THREE.Group();
+      kg.position.set(kx, 0.4, kz);
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(2.15, 2.9, 0.28), this.mat.cinemaObsidian);
+      frame.position.y = 1.85;
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.7, 0.42), this.mat.richGoldTrim);
+      post.position.y = 0.35;
+      posterMesh.position.set(0, 1.85, 0.16);
+      const backPoster = posterMesh.clone();
+      backPoster.rotation.y = Math.PI;
+      backPoster.position.z = -0.16;
+      kg.add(frame, post, posterMesh, backPoster);
+      g.add(kg);
+    };
+    makePosterKiosk(-14.4, 5.2, this._makeMoviePoster("RRR", "FIRE & WATER", "#991b1b", "#1e3a8a", "#fde047"));
+    makePosterKiosk(3.2, 5.2, this._makeMoviePoster("SHERU BHAI", "THE LION KING", "#854d0e", "#09090b", "#22d3ee"));
+
+    // Real 3-Window Box Office Ticket Pavilion + Popcorn Stall
+    const ticketBooth = new THREE.Group();
+    ticketBooth.position.set(-9.6, 0.4, 4.9);
+
+    const tbBase = new THREE.Mesh(new THREE.BoxGeometry(4.4, 1.15, 2.4), this.mat.cinemaCrimson);
+    tbBase.position.y = 0.58;
+    const tbCounter = new THREE.Mesh(new THREE.BoxGeometry(4.7, 0.15, 2.75), this.mat.richGoldTrim);
+    tbCounter.position.y = 1.18;
+    const tbGlass = new THREE.Mesh(new THREE.BoxGeometry(4.2, 1.35, 2.15), this.mat.glass);
+    tbGlass.position.y = 1.9;
+    [-1.1, 1.1].forEach((dx) => {
+      const div = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.35, 2.2), this.mat.richGoldTrim);
+      div.position.set(dx, 1.9, 0);
+      ticketBooth.add(div);
+    });
+    const tbRoof = new THREE.Mesh(new THREE.BoxGeometry(5.0, 0.45, 3.0), this.mat.cinemaObsidian);
+    tbRoof.position.y = 2.76;
+    const tbBoard = this._makeBuildingBoard("TICKET COUNTER", "11AM • 2PM • 6PM • 9PM", "#b91c1c", "#facc15", 4.6, 0.85);
+    tbBoard.position.set(0, 3.12, 1.52);
+
+    const clerk = this._createCharacter({ shirtMat: this.mat.richGoldTrim, pantsMat: this.mat.darkPants, scale: 0.88 });
+    clerk.position.set(0, 0.38, 0);
+    const qRail = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.1, 0.08), this.mat.richGoldTrim);
+    qRail.position.set(0, 0.72, 1.95);
+    ticketBooth.add(tbBase, tbCounter, tbGlass, tbRoof, tbBoard, clerk, qRail);
+
+    const popStall = new THREE.Group();
+    popStall.position.set(-0.2, 0.4, 5.1);
+    const popBase = new THREE.Mesh(new THREE.BoxGeometry(2.3, 1.05, 1.6), this.mat.cinemaCrimson);
+    popBase.position.y = 0.52;
+    const popBucket = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.34, 0.72, 8), this.mat.popcornYellow);
+    popBucket.position.set(0, 1.4, 0);
+    const popSign = this._makeBuildingBoard("POPCORN", "SNACKS • DRINKS", "#facc15", "#991b1b", 2.2, 0.58);
+    popSign.position.set(0, 2.25, 0.82);
+    popStall.add(popBase, popBucket, popSign);
+    g.add(ticketBooth, popStall);
+
+    const fan1 = this._createCharacter({ shirtMat: this.mat.wallBlue, pantsMat: this.mat.darkPants, scale: 0.94 });
+    g.add(fan1);
+    this.landmarkActors.push({ plotId, mesh: fan1, mode: "patrol_x", baseX: -9.6, baseZ: 6.45, range: 1.8, speed: 1.2, phase: 0 });
+    const fan2 = this._createCharacter({ shirtMat: this.mat.wallCoral, pantsMat: this.mat.darkPants, scale: 0.94 });
+    g.add(fan2);
+    this.landmarkActors.push({ plotId, mesh: fan2, mode: "patrol_z", baseX: -4.2, baseZ: 4.5, range: 1.8, speed: 1.35, phase: 1.4 });
+
+    for (let pz = -5.2; pz <= 2.8; pz += 2.65) {
+      const pLine = new THREE.Mesh(new THREE.PlaneGeometry(3.8, 0.14), this.mat.stripe);
+      pLine.rotation.x = -Math.PI / 2;
+      pLine.position.set(13.3, 0.4, pz);
+      g.add(pLine);
+    }
+    const tpIn = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 2.2), this.mat.parkingGreen);
+    tpIn.rotation.x = -Math.PI / 2;
+    tpIn.position.set(7.8, 0.4, 5.4);
+    const tpOut = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 2.2), this.mat.parkingRed);
+    tpOut.rotation.x = -Math.PI / 2;
+    tpOut.position.set(13.0, 0.4, 5.4);
+
+    const barrierPost = new THREE.Mesh(new THREE.BoxGeometry(0.32, 1.1, 0.32), this.mat.petrolYellow);
+    barrierPost.position.set(6.5, 0.9, 4.4);
+    const barrierArm = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.12, 0.12), this.mat.petrolRed);
+    barrierArm.position.set(7.8, 1.2, 4.4);
+    barrierArm.rotation.z = 0.22;
+
+    const tpBoard = this._makeBuildingBoard("THEATER PARKING", "IN ⬆  •  ⬇ OUT • CARS & BIKES", "#0f172a", "#facc15", 8.0, 1.15);
+    tpBoard.position.set(10.5, 3.5, 6.2);
+    [6.6, 14.4].forEach((px) => {
+      const tpPole = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 3.5, 6), this.mat.richGoldTrim);
+      tpPole.position.set(px, 1.8, 6.2);
+      g.add(tpPole);
+    });
+
+    const tCar1 = this._makeVehicleMesh(false, false, 0xef4444, false);
+    tCar1.position.set(13.2, 0.38, -3.9);
+    tCar1.rotation.y = -Math.PI / 2;
+    const tCar2 = this._makeVehicleMesh(false, false, 0x3b82f6, false);
+    tCar2.position.set(13.2, 0.38, -1.25);
+    tCar2.rotation.y = -Math.PI / 2;
+    const tCar3 = this._makeVehicleMesh(false, false, 0x10b981, false);
+    tCar3.position.set(13.2, 0.38, 1.4);
+    tCar3.rotation.y = -Math.PI / 2;
+    const tAuto = this._makeRealAutoMesh(false, false);
+    tAuto.position.set(7.8, 0.38, -2.5);
+    tAuto.rotation.y = Math.PI / 2;
+    g.add(tpIn, tpOut, barrierPost, barrierArm, tpBoard, tCar1, tCar2, tCar3, tAuto);
+
+    const beamSpots = [
+      { x: -15.4, y: 0.45, z: 6.3,  h: 30.0, tilt: 0.40, dir: 1 },
+      { x: 4.8,   y: 0.45, z: 6.3,  h: 30.0, tilt: 0.40, dir: -1 },
+      { x: -15.4, y: 0.45, z: -6.4, h: 30.0, tilt: 0.38, dir: -1 },
+      { x: 15.2,  y: 0.45, z: -6.4, h: 30.0, tilt: 0.38, dir: 1 },
+      { x: -14.2, y: 7.55, z: 1.3,  h: 28.0, tilt: 0.45, dir: 1 },
+      { x: 3.4,   y: 7.55, z: 1.3,  h: 28.0, tilt: 0.45, dir: -1 },
+      { x: -12.0, y: 9.15, z: -3.2, h: 26.0, tilt: 0.35, dir: -1 },
+      { x: 1.2,   y: 9.15, z: -3.2, h: 26.0, tilt: 0.35, dir: 1 }
+    ];
+    this._attachSkyDiscoLights(
+      g,
+      plotId,
+      beamSpots,
+      [0xec4899, 0x22d3ee, 0xfacc15, 0xa855f7, 0x4ade80, 0xef4444],
+      marqueeBulbs,
+      new THREE.Vector3(-5.4, 9.2, 5.4)
+    );
+
+    g.add(
+      mainHall, upperHall, upperNeon, crimsonPanelL, crimsonPanelR, lobbyGlass, indoorScreen,
+      marquee, marqueeGoldTop, marqueeGoldBot, marqueeBoard, mainTheaterBoard, boardBack, p1, p2, p3, p4
+    );
+    g.userData.labelY = 12.8;
+    return g;
+  }
+
+  /**
+   * 🎬 DEDICATED 8-PLOT REAL GIANT IMAX 3D DOME THEATER (`imax_theater`)
+   */
+  _buildEightPlotIMAXTheater(plotId, ownerName = "") {
+    const g = new THREE.Group();
+
+    const plaza = new THREE.Mesh(new THREE.BoxGeometry(21.4, 0.16, 13.8), this.mat.marble);
+    plaza.position.set(-5.3, 0.32, 0);
+    const parkLot = new THREE.Mesh(new THREE.BoxGeometry(10.6, 0.14, 13.8), this.mat.tarmacGrey);
+    parkLot.position.set(10.6, 0.31, 0);
+    const carpet = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.19, 5.2), this.mat.imaxBlue);
+    carpet.position.set(-5.2, 0.35, 4.2);
+    g.add(plaza, parkLot, carpet);
+
+    const baseHall = new THREE.Mesh(new THREE.BoxGeometry(19.6, 4.8, 8.6), this.mat.imaxBlue);
+    baseHall.position.set(-5.4, 2.75, -2.2);
+
+    const glassAtrium = new THREE.Mesh(new THREE.BoxGeometry(14.0, 4.2, 1.4), this.mat.glass);
+    glassAtrium.position.set(-5.4, 2.5, 2.2);
+
+    const imaxDome = new THREE.Mesh(
+      new THREE.SphereGeometry(6.8, 18, 12, 0, Math.PI * 2, 0, Math.PI / 2),
+      this.mat.imaxDomeSilver
+    );
+    imaxDome.scale.set(1.25, 0.85, 0.92);
+    imaxDome.position.set(-5.4, 5.0, -2.4);
+
+    const domeRing = new THREE.Mesh(new THREE.TorusGeometry(7.2, 0.2, 8, 28), this.mat.imaxNeonBlue);
+    domeRing.rotation.x = Math.PI / 2;
+    domeRing.scale.set(1.18, 0.88, 1);
+    domeRing.position.set(-5.4, 5.2, -2.4);
+
+    const canopy = new THREE.Mesh(new THREE.BoxGeometry(17.5, 0.85, 3.2), this.mat.cinemaObsidian);
+    canopy.position.set(-5.4, 4.95, 3.0);
+    const canopyNeon = new THREE.Mesh(new THREE.BoxGeometry(17.8, 0.2, 3.35), this.mat.imaxNeonBlue);
+    canopyNeon.position.set(-5.4, 4.5, 3.0);
+
+    const cleanName = (ownerName || "").trim().toUpperCase();
+    const imaxSub = cleanName ? `${cleanName} • LASER 3D • 70MM GIANT SCREEN` : "LASER 3D • 70MM GIANT SCREEN • DOLBY";
+    const imaxSign = this._makeBuildingBoard("I M A X  3 D", imaxSub, "#020617", "#38bdf8", 14.8, 1.9);
+    imaxSign.position.set(-5.4, 6.25, 2.65);
+    const imaxBack = new THREE.Mesh(new THREE.BoxGeometry(15.2, 2.1, 0.42), this.mat.cinemaObsidian);
+    imaxBack.position.set(-5.4, 6.25, 2.4);
+
+    const ip1 = this._makeMoviePoster("INTERSTELLAR", "70MM IMAX", "#0f172a", "#020617", "#38bdf8");
+    ip1.position.set(-13.8, 2.45, 2.22);
+    const ip2 = this._makeMoviePoster("AVATAR 3", "IMAX 3D", "#0369a1", "#082f49", "#22d3ee");
+    ip2.position.set(2.9, 2.45, 2.22);
+    const ip3 = this._makeMoviePoster("KALKI 2898", "LASER IMAX", "#312e81", "#020617", "#c084fc");
+    ip3.position.set(-13.8, 2.45, 5.1);
+    const ip4 = this._makeMoviePoster("SALAAR 2", "IMAX SOUND", "#7f1d1d", "#09090b", "#facc15");
+    ip4.position.set(2.9, 2.45, 5.1);
+
+    const boxOffice = new THREE.Group();
+    boxOffice.position.set(-10.2, 0.4, 5.0);
+    const boBase = new THREE.Mesh(new THREE.BoxGeometry(4.0, 1.1, 2.2), this.mat.imaxBlue);
+    boBase.position.y = 0.55;
+    const boGlass = new THREE.Mesh(new THREE.BoxGeometry(3.8, 1.3, 2.0), this.mat.glass);
+    boGlass.position.y = 1.75;
+    const boRoof = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.36, 2.6), this.mat.cinemaObsidian);
+    boRoof.position.y = 2.58;
+    const boSign = this._makeBuildingBoard("IMAX TICKETS", "BOOK 3D SEATS", "#0369a1", "#38bdf8", 4.1, 0.78);
+    boSign.position.set(0, 2.95, 1.35);
+    const boClerk = this._createCharacter({ shirtMat: this.mat.imaxNeonBlue, pantsMat: this.mat.darkPants, scale: 0.88 });
+    boClerk.position.set(0, 0.35, 0);
+    boxOffice.add(boBase, boGlass, boRoof, boSign, boClerk);
+    g.add(boxOffice);
+
+    const m1 = this._createCharacter({ shirtMat: this.mat.wallGold, pantsMat: this.mat.darkPants, scale: 0.94 });
+    g.add(m1);
+    this.landmarkActors.push({ plotId, mesh: m1, mode: "patrol_z", baseX: -5.2, baseZ: 4.6, range: 1.7, speed: 1.3, phase: 0 });
+
+    for (let pz = -5.2; pz <= 2.8; pz += 2.65) {
+      const pLine = new THREE.Mesh(new THREE.PlaneGeometry(3.8, 0.14), this.mat.stripe);
+      pLine.rotation.x = -Math.PI / 2;
+      pLine.position.set(13.4, 0.4, pz);
+      g.add(pLine);
+    }
+    const ipBoard = this._makeBuildingBoard("IMAX PARKING", "IN ⬆  •  ⬇ OUT • VIP", "#020617", "#38bdf8", 7.8, 1.15);
+    ipBoard.position.set(10.6, 3.4, 6.2);
+    [6.8, 14.4].forEach((px) => {
+      const p = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 3.4, 6), this.mat.imaxDomeSilver);
+      p.position.set(px, 1.75, 6.2);
+      g.add(p);
+    });
+    const iCar1 = this._makeVehicleMesh(false, false, 0x38bdf8, false);
+    iCar1.position.set(13.3, 0.38, -3.9);
+    iCar1.rotation.y = -Math.PI / 2;
+    const iCar2 = this._makeVehicleMesh(false, false, 0xf8fafc, false);
+    iCar2.position.set(13.3, 0.38, -1.25);
+    iCar2.rotation.y = -Math.PI / 2;
+    const iAuto = this._makeRealAutoMesh(false, false);
+    iAuto.position.set(8.0, 0.38, -2.5);
+    iAuto.rotation.y = Math.PI / 2;
+    g.add(ipBoard, iCar1, iCar2, iAuto);
+
+    const beamSpots = [
+      { x: -15.4, y: 0.45, z: 6.3,  h: 31.0, tilt: 0.40, dir: 1 },
+      { x: 4.8,   y: 0.45, z: 6.3,  h: 31.0, tilt: 0.40, dir: -1 },
+      { x: -15.4, y: 0.45, z: -6.4, h: 31.0, tilt: 0.38, dir: -1 },
+      { x: 15.2,  y: 0.45, z: -6.4, h: 31.0, tilt: 0.38, dir: 1 },
+      { x: -14.2, y: 5.2,  z: 1.5,  h: 28.0, tilt: 0.44, dir: 1 },
+      { x: 3.4,   y: 5.2,  z: 1.5,  h: 28.0, tilt: 0.44, dir: -1 },
+      { x: -10.8, y: 7.4,  z: -2.4, h: 27.0, tilt: 0.34, dir: -1 },
+      { x: 0.0,   y: 7.4,  z: -2.4, h: 27.0, tilt: 0.34, dir: 1 }
+    ];
+    this._attachSkyDiscoLights(
+      g,
+      plotId,
+      beamSpots,
+      [0x38bdf8, 0xec4899, 0x22d3ee, 0xa855f7, 0xfacc15, 0x4ade80],
+      null,
+      new THREE.Vector3(-5.4, 10.0, 4.5)
+    );
+
+    g.add(baseHall, glassAtrium, imaxDome, domeRing, canopy, canopyNeon, imaxSign, imaxBack, ip1, ip2, ip3, ip4);
+    g.userData.labelY = 13.2;
+    return g;
+  }
+
   _makeRealAudiCarMesh(bodyMat, isSUV = false) {
     const car = new THREE.Group();
     const len = isSUV ? 4.3 : 4.05;
@@ -4784,6 +5528,52 @@ export class FollowerTownEngine {
     const g = new THREE.Group();
     const winMat = this.timeOfDay === "night" ? this.mat.windowNight : this.mat.windowDay;
 
+    if (type === "beach_villa_2") {
+      // 🏖️ ADDABLE 2-PLOT LUXURY MEGA BEACH HOUSE VILLA (Wide Infinity Pool + Dual Suites + Palm Lounge!)
+      const deck = new THREE.Mesh(new THREE.BoxGeometry(13.8, 0.36, 6.4), this.mat.teakWood);
+      deck.position.set(0, 0.18, 0);
+      const pool = new THREE.Mesh(new THREE.BoxGeometry(7.2, 0.4, 2.1), this.mat.water);
+      pool.position.set(-2.2, 0.19, 1.85);
+
+      const f1 = new THREE.Mesh(new THREE.BoxGeometry(12.2, 2.8, 3.5), this.mat.wallWhite);
+      f1.position.set(0, 1.75, -1.2);
+      const teakWing = new THREE.Mesh(new THREE.BoxGeometry(3.2, 2.85, 3.7), this.mat.teakWood);
+      teakWing.position.set(4.5, 1.75, -1.2);
+      const g1 = new THREE.Mesh(new THREE.BoxGeometry(7.8, 2.2, 0.14), winMat);
+      g1.position.set(-1.2, 1.55, 0.56);
+      g1.userData.isWindow = true;
+
+      const slab = new THREE.Mesh(new THREE.BoxGeometry(13.2, 0.28, 4.6), this.mat.wallWhite);
+      slab.position.set(0, 3.28, -0.75);
+      const f2 = new THREE.Mesh(new THREE.BoxGeometry(9.6, 2.5, 3.2), this.mat.stuccoIvory);
+      f2.position.set(0.8, 4.66, -1.25);
+      const g2 = new THREE.Mesh(new THREE.BoxGeometry(7.6, 1.85, 0.14), winMat);
+      g2.position.set(0.8, 4.62, 0.36);
+      g2.userData.isWindow = true;
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(12.8, 0.72, 0.12), this.mat.glass);
+      rail.position.set(0, 3.76, 1.48);
+      const roof = new THREE.Mesh(new THREE.BoxGeometry(11.4, 0.28, 4.0), this.mat.slateTrim);
+      roof.position.set(0.6, 6.02, -1.1);
+
+      const cleanO = (ownerName || "VIP VILLA").trim().toUpperCase();
+      const vBoard = this._makeBuildingBoard(cleanO, "LUXURY BEACH HOUSE VILLA", "#0f172a", "#38bdf8", 7.6, 1.15);
+      vBoard.position.set(0.6, 6.2, 0.94);
+
+      const lounger = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.32, 0.95), this.mat.wallWhite);
+      lounger.position.set(3.4, 0.52, 1.9);
+      const uPole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.3, 5), this.mat.richGoldTrim);
+      uPole.position.set(4.5, 1.45, 2.1);
+      const uTop = new THREE.Mesh(new THREE.ConeGeometry(1.3, 0.45, 8), this.mat.studioCyan);
+      uTop.position.set(4.5, 2.6, 2.1);
+      const surf = new THREE.Mesh(new THREE.BoxGeometry(0.14, 2.1, 0.52), this.mat.petrolYellow);
+      surf.position.set(-6.1, 1.35, 1.9);
+      surf.rotation.z = 0.2;
+
+      g.add(deck, pool, f1, teakWing, g1, slab, f2, g2, rail, roof, vBoard, lounger, uPole, uTop, surf);
+      g.userData.labelY = 8.4;
+      return g;
+    }
+
     // Main Modern Studio Structure (13.4 wide x 4.4 tall x 5.6 deep)
     const body = new THREE.Mesh(new THREE.BoxGeometry(13.4, 4.4, 5.4), this.mat.charcoal);
     body.position.set(0, 2.25, -0.5);
@@ -4950,6 +5740,142 @@ export class FollowerTownEngine {
     const winMat = this.timeOfDay === "night" ? this.mat.windowNight : this.mat.windowDay;
 
 
+
+
+    // 4-PLOT REAL-STYLE INDIAN D-MART HYPERMARKET (`dmart`)
+    if (type === "dmart") {
+      const hall = new THREE.Mesh(new THREE.BoxGeometry(13.2, 6.0, 7.6), this.mat.wallWhite);
+      hall.position.set(0, 3.05, -2.5);
+
+      const greenFascia = new THREE.Mesh(new THREE.BoxGeometry(13.6, 1.85, 8.0), this.mat.dmartDeepGreen);
+      greenFascia.position.set(0, 6.25, -2.5);
+      const yellowMid = new THREE.Mesh(new THREE.BoxGeometry(13.7, 0.3, 8.1), this.mat.dmartYellow);
+      yellowMid.position.set(0, 5.28, -2.5);
+      const yellowTop = yellowMid.clone();
+      yellowTop.position.y = 7.22;
+
+      const upperWin = new THREE.Mesh(new THREE.BoxGeometry(11.6, 1.15, 0.14), winMat);
+      upperWin.position.set(0, 4.35, 1.32);
+      upperWin.userData.isWindow = true;
+
+      // Iconic Tall Corner D-Mart Green & Yellow Architectural Pylon Tower
+      const pylon = new THREE.Mesh(new THREE.BoxGeometry(2.3, 8.4, 2.3), this.mat.dmartDeepGreen);
+      pylon.position.set(-5.8, 4.25, 0.75);
+      const pylonYellow1 = new THREE.Mesh(new THREE.BoxGeometry(2.42, 0.34, 2.42), this.mat.dmartYellow);
+      pylonYellow1.position.set(-5.8, 7.6, 0.75);
+      const pylonYellow2 = pylonYellow1.clone();
+      pylonYellow2.position.y = 4.6;
+      const pylonMiniLogo = this._makeBuildingBoard("DMart", "READY", "#15803d", "#facc15", 2.1, 1.35);
+      pylonMiniLogo.position.set(-5.8, 6.2, 1.94);
+
+      [-2.5, 2.5, 6.3].forEach((px) => {
+        const pil = new THREE.Mesh(new THREE.BoxGeometry(0.55, 5.2, 0.55), this.mat.dmartBrightGreen);
+        pil.position.set(px, 2.65, 1.38);
+        g.add(pil);
+      });
+      const canopy = new THREE.Mesh(new THREE.BoxGeometry(6.6, 0.42, 2.4), this.mat.dmartDeepGreen);
+      canopy.position.set(0.2, 3.45, 2.45);
+      const canopyYellow = new THREE.Mesh(new THREE.BoxGeometry(6.72, 0.18, 2.5), this.mat.dmartYellow);
+      canopyYellow.position.set(0.2, 3.22, 2.45);
+
+      const frontGlass = new THREE.Mesh(new THREE.BoxGeometry(10.6, 2.95, 0.14), this.mat.glass);
+      frontGlass.position.set(0.7, 1.62, 1.32);
+      const doorFrame = new THREE.Mesh(new THREE.BoxGeometry(3.6, 2.45, 0.18), this.mat.dmartDeepGreen);
+      doorFrame.position.set(0.2, 1.35, 1.38);
+      const doorGlass = new THREE.Mesh(new THREE.BoxGeometry(3.1, 2.2, 0.22), winMat);
+      doorGlass.position.set(0.2, 1.28, 1.38);
+      doorGlass.userData.isWindow = true;
+
+      const aisleColors = [this.mat.dmartYellow, this.mat.dmartOfferRed, this.mat.wallBlue, this.mat.dmartBrightGreen];
+      [-3.4, -0.9, 1.6, 4.1].forEach((ax, i) => {
+        const rack = new THREE.Mesh(new THREE.BoxGeometry(1.05, 2.0, 3.6), this.mat.wallWhite);
+        rack.position.set(ax, 1.15, -2.2);
+        const goods = new THREE.Mesh(new THREE.BoxGeometry(1.12, 0.52, 3.2), aisleColors[i % aisleColors.length]);
+        goods.position.set(ax, 1.65, -2.2);
+        g.add(rack, goods);
+      });
+      [-2.1, 2.4].forEach((bx) => {
+        const billDesk = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.85, 0.65), this.mat.dmartDeepGreen);
+        billDesk.position.set(bx, 0.52, 0.45);
+        g.add(billDesk);
+      });
+
+      const ownerClean = (ownerName || "").trim();
+      const dmartFront = this._makeDMartLogoBoard(ownerClean, 11.4, 1.72);
+      dmartFront.position.set(0.8, 6.25, 1.54);
+      const dmartSide = this._makeDMartLogoBoard("", 7.2, 1.5);
+      dmartSide.rotation.y = Math.PI / 2;
+      dmartSide.position.set(6.84, 6.25, -2.5);
+
+      const entrySign = this._makeBuildingBoard("ENTRY ➔   •   ⬅ EXIT", "OPEN 8 AM – 10 PM", "#0f7638", "#facc15", 5.4, 0.68);
+      entrySign.position.set(0.2, 3.48, 3.68);
+
+      const cartBay = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.14, 1.85), this.mat.sidewalk);
+      cartBay.position.set(-4.3, 0.16, 2.65);
+      const cartRail = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.56, 0.08), this.mat.dmartYellow);
+      cartRail.position.set(-4.3, 0.52, 3.55);
+      for (let c = 0; c < 5; c++) {
+        const cx = -5.75 + c * 0.72;
+        const basket = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.42, 0.72), this.mat.cartChrome);
+        basket.position.set(cx, 0.68, 2.65);
+        const handle = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.08, 0.08), this.mat.dmartDeepGreen);
+        handle.position.set(cx, 0.96, 3.02);
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.34, 0.54), this.mat.charcoal);
+        leg.position.set(cx, 0.32, 2.65);
+        g.add(basket, handle, leg);
+      }
+      g.add(cartBay, cartRail);
+
+      const offerBoard = this._makeBuildingBoard("MEGA OFFERS", "MIN 7% OFF MRP!", "#dc2626", "#facc15", 2.5, 1.45);
+      offerBoard.position.set(4.3, 1.25, 2.55);
+      const offerPost = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.1, 0.18), this.mat.charcoal);
+      offerPost.position.set(4.3, 0.55, 2.5);
+      const guardCabin = new THREE.Mesh(new THREE.BoxGeometry(1.4, 2.1, 1.4), this.mat.dmartDeepGreen);
+      guardCabin.position.set(5.9, 1.15, 2.6);
+      const gcWin = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.85, 1.46), this.mat.glass);
+      gcWin.position.set(5.9, 1.5, 2.6);
+      g.add(offerBoard, offerPost, guardCabin, gcWin);
+
+      const dPark = new THREE.Mesh(new THREE.BoxGeometry(13.4, 0.1, 3.9), this.mat.tarmacGrey);
+      dPark.position.set(0, 0.13, 5.15);
+      [-5.6, -2.8, 0.0, 2.8, 5.6].forEach((lx) => {
+        const pl = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 2.9), this.mat.stripe);
+        pl.rotation.x = -Math.PI / 2;
+        pl.position.set(lx, 0.2, 5.15);
+        g.add(pl);
+      });
+      [-3.0, -1.2, 1.6, 3.4].forEach((bx) => {
+        const bol = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.65, 6), this.mat.dmartYellow);
+        bol.position.set(bx, 0.45, 3.4);
+        g.add(bol);
+      });
+      const dCar1 = this._makeVehicleMesh(false, false, 0x2563eb, false);
+      dCar1.position.set(-4.2, 0.18, 5.15);
+      const dCar2 = this._makeVehicleMesh(false, false, 0xef4444, false);
+      dCar2.position.set(4.2, 0.18, 5.15);
+      const dAuto = this._makeRealAutoMesh(false, false);
+      dAuto.position.set(6.1, 0.18, 5.15);
+      [-1.9, -1.0].forEach((sx) => {
+        const scooter = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.72, 1.25), this.mat.wallCoral);
+        scooter.position.set(sx, 0.52, 5.15);
+        g.add(scooter);
+      });
+      g.add(dPark, dCar1, dCar2, dAuto);
+
+      const guard = this._createCharacter({ shirtMat: this.mat.khakiUniform, pantsMat: this.mat.darkPants, scale: 0.94 });
+      g.add(guard);
+      this.landmarkActors.push({ plotId, mesh: guard, mode: "guard", baseX: 2.2, baseZ: 2.35, range: 0.3, speed: 1.5, phase: 0 });
+      const shop1 = this._createCharacter({ shirtMat: this.mat.wallCoral, pantsMat: this.mat.darkPants, scale: 0.94 });
+      g.add(shop1);
+      this.landmarkActors.push({ plotId, mesh: shop1, mode: "patrol_z", baseX: -0.4, baseZ: 3.6, range: 1.6, speed: 1.3, phase: 0.4 });
+      const shop2 = this._createCharacter({ shirtMat: this.mat.wallBlue, pantsMat: this.mat.darkPants, scale: 0.94 });
+      g.add(shop2);
+      this.landmarkActors.push({ plotId, mesh: shop2, mode: "patrol_x", baseX: 0.4, baseZ: 4.0, range: 2.1, speed: 1.1, phase: 2.1 });
+
+      g.add(hall, greenFascia, yellowMid, yellowTop, upperWin, pylon, pylonYellow1, pylonYellow2, pylonMiniLogo, canopy, canopyYellow, frontGlass, doorFrame, doorGlass, dmartFront, dmartSide, entrySign);
+      g.userData.labelY = 9.4;
+      return g;
+    }
 
     // 4-PLOT ITI COLLEGE & TECHNICAL WORKSHOP (`iti_college`)
     if (type === "iti_college") {
@@ -5658,60 +6584,70 @@ export class FollowerTownEngine {
     return g;
   }
 
-  // ULTRA-CRISP FLOATING NAME SIGNS (High-Contrast Mipmapped Canvas + Auto-Fit maxWidth!)
+  // ULTRA-CRISP FLOATING NAME SIGNS (High-Res Mipmapped on Admin HD; Ultra-Low-VRAM Cached on 2GB-4GB Phones!)
   _createNameSign(mainText, subText = "", isBig = false) {
-    const canvas = document.createElement("canvas");
     const hi = this.hqMode;
-    canvas.width = isBig ? (hi ? 640 : 512) : (hi ? 400 : 320);
-    canvas.height = subText ? (isBig ? (hi ? 164 : 136) : (hi ? 116 : 96)) : (isBig ? (hi ? 116 : 96) : (hi ? 88 : 72));
-    const ctx = canvas.getContext("2d");
+    const lite = this.isLowRam && !isBig && !hi;
+    const key = `SPRITE|${hi ? 1 : lite ? 2 : 0}|${isBig ? 1 : 0}|${mainText}|${subText}`;
+    let mat = this.signTexCache.get(key);
 
-    ctx.fillStyle = "rgba(8, 15, 32, 0.94)";
-    ctx.beginPath();
-    ctx.roundRect(6, 6, canvas.width - 12, canvas.height - 12, 18);
-    ctx.fill();
+    if (!mat) {
+      const canvas = document.createElement("canvas");
+      canvas.width = isBig ? (hi ? 640 : 448) : (hi ? 400 : lite ? 224 : 320);
+      canvas.height = subText
+        ? (isBig ? (hi ? 164 : 120) : (hi ? 116 : lite ? 68 : 96))
+        : (isBig ? (hi ? 116 : 88) : (hi ? 88 : lite ? 52 : 72));
+      const ctx = canvas.getContext("2d");
 
-    ctx.strokeStyle = isBig ? "#facc15" : "#38bdf8";
-    ctx.lineWidth = isBig ? 6 : 4;
-    ctx.stroke();
+      ctx.fillStyle = "rgba(8, 15, 32, 0.94)";
+      ctx.beginPath();
+      ctx.roundRect(5, 5, canvas.width - 10, canvas.height - 10, lite ? 12 : 18);
+      ctx.fill();
 
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    const cx = canvas.width / 2;
-    const maxW = canvas.width - 32;
+      ctx.strokeStyle = isBig ? "#facc15" : "#38bdf8";
+      ctx.lineWidth = isBig ? 5 : lite ? 3 : 4;
+      ctx.stroke();
 
-    const cleanMain = mainText.length > 26 ? mainText.slice(0, 25) + "…" : mainText;
-    ctx.lineJoin = "round";
-    const fScale = hi ? 1.22 : 1.0;
-    if (subText) {
-      ctx.font = `800 ${Math.round((isBig ? 24 : 18) * fScale)}px sans-serif`;
-      ctx.strokeStyle = "#020617";
-      ctx.lineWidth = hi ? 5 : 4;
-      ctx.strokeText(subText, cx, canvas.height * 0.3, maxW);
-      ctx.fillStyle = "#facc15";
-      ctx.fillText(subText, cx, canvas.height * 0.3, maxW);
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      const cx = canvas.width / 2;
+      const maxW = canvas.width - 24;
 
-      ctx.font = `900 ${Math.round((isBig ? 36 : 26) * fScale)}px sans-serif`;
-      ctx.strokeText(cleanMain, cx, canvas.height * 0.68, maxW);
-      ctx.fillStyle = "#ffffff";
-      ctx.fillText(cleanMain, cx, canvas.height * 0.68, maxW);
-    } else {
-      ctx.font = `900 ${Math.round((isBig ? 36 : 28) * fScale)}px sans-serif`;
-      ctx.strokeStyle = "#020617";
-      ctx.lineWidth = 4;
-      ctx.strokeText(cleanMain, cx, canvas.height * 0.52, maxW);
-      ctx.fillStyle = "#ffffff";
-      ctx.fillText(cleanMain, cx, canvas.height * 0.52, maxW);
+      const cleanMain = mainText.length > 26 ? mainText.slice(0, 25) + "…" : mainText;
+      ctx.lineJoin = "round";
+      const fScale = hi ? 1.22 : lite ? 0.72 : 1.0;
+      if (subText) {
+        ctx.font = `800 ${Math.round((isBig ? 23 : 18) * fScale)}px sans-serif`;
+        ctx.strokeStyle = "#020617";
+        ctx.lineWidth = hi ? 5 : 3;
+        ctx.strokeText(subText, cx, canvas.height * 0.3, maxW);
+        ctx.fillStyle = "#facc15";
+        ctx.fillText(subText, cx, canvas.height * 0.3, maxW);
+
+        ctx.font = `900 ${Math.round((isBig ? 34 : 26) * fScale)}px sans-serif`;
+        ctx.strokeText(cleanMain, cx, canvas.height * 0.68, maxW);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText(cleanMain, cx, canvas.height * 0.68, maxW);
+      } else {
+        ctx.font = `900 ${Math.round((isBig ? 34 : 28) * fScale)}px sans-serif`;
+        ctx.strokeStyle = "#020617";
+        ctx.lineWidth = hi ? 5 : 3;
+        ctx.strokeText(cleanMain, cx, canvas.height * 0.52, maxW);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText(cleanMain, cx, canvas.height * 0.52, maxW);
+      }
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.generateMipmaps = !lite;
+      tex.minFilter = lite ? THREE.LinearFilter : THREE.LinearMipmapLinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      if (!lite) tex.anisotropy = this.maxAnisotropy || 4;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      mat = new THREE.SpriteMaterial({ map: tex, transparent: true });
+      this.signTexCache.set(key, mat);
     }
 
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.generateMipmaps = true;
-    tex.minFilter = THREE.LinearMipmapLinearFilter;
-    tex.magFilter = THREE.LinearFilter;
-    tex.anisotropy = this.maxAnisotropy || 4;
-    tex.colorSpace = THREE.SRGBColorSpace;
-
-    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
+    const sprite = new THREE.Sprite(mat);
     sprite.renderOrder = 5;
     sprite.scale.set(isBig ? 13.0 : 6.2, subText ? (isBig ? 3.4 : 1.9) : (isBig ? 2.4 : 1.45), 1);
     return sprite;
@@ -5757,6 +6693,11 @@ export class FollowerTownEngine {
       this.airportSim.nightGlowMeshes.forEach((m) => { m.visible = isNight; });
     }
     if (this.discoGroup) this.discoGroup.visible = isNight;
+    if (this.theaterDiscos) {
+      this.theaterDiscos.forEach((td) => {
+        if (td.nightGroup) td.nightGroup.visible = isNight;
+      });
+    }
     if (this.railwaySim) {
       if (this.railwaySim.nightLights) {
         this.railwaySim.nightLights.forEach((m) => { m.visible = isNight; });
@@ -6304,6 +7245,11 @@ export class FollowerTownEngine {
       this.airportSim.nightGlowMeshes.forEach((m) => { m.visible = isNight; });
     }
     if (this.discoGroup) this.discoGroup.visible = isNight;
+    if (this.theaterDiscos) {
+      this.theaterDiscos.forEach((td) => {
+        if (td.nightGroup) td.nightGroup.visible = isNight;
+      });
+    }
     if (this.railwaySim) {
       if (this.railwaySim.nightLights) {
         this.railwaySim.nightLights.forEach((m) => { m.visible = isNight; });
@@ -7618,7 +8564,7 @@ export class FollowerTownEngine {
     }
 
     // ⛰️💧 ARAKU VALLEY WATERFALLS, FLOWING RIVERS & MISTY MOUNTAIN CLOUDS ANIMATION
-    if (this.lifeEnabled && this.arakuSim) {
+    if (this.lifeEnabled && this.arakuSim && (!this._perfThrottle || (this._animFrameTick % 2 === 0))) {
       for (const rib of this.arakuSim.waterRibbons) {
         const span = rib.maxY - rib.minY;
         const drop = ((elapsed * rib.speed + rib.phase * span) % span);
@@ -7634,6 +8580,55 @@ export class FollowerTownEngine {
       for (const mc of this.arakuSim.mistClouds) {
         const curAng = mc.ang + elapsed * mc.speed;
         mc.mesh.position.set(Math.cos(curAng) * mc.rad, mc.y + Math.sin(elapsed * 0.6 + mc.ang) * 1.4, Math.sin(curAng) * mc.rad);
+      }
+    }
+
+
+    // 🎭🎬 8-PLOT MOVIE THEATER & IMAX NIGHT-SKY ROTATING DISCO BEAMS (Reflects High Into the Night Air!)
+    if (this.theaterDiscos && this.theaterDiscos.length > 0) {
+      const defaultPal = [0xec4899, 0x22d3ee, 0xfacc15, 0xa855f7, 0x4ade80, 0xef4444];
+      const stepIdx = Math.floor(elapsed * 2.4);
+      const isNightNow = this.timeOfDay === "night";
+
+      for (const td of this.theaterDiscos) {
+        if (td.nightGroup) td.nightGroup.visible = isNightNow;
+
+        if (this.lifeEnabled && td.marqueeBulbs) {
+          const chase = Math.floor(elapsed * 5.0);
+          for (let i = 0; i < td.marqueeBulbs.length; i++) {
+            td.marqueeBulbs[i].visible = !isNightNow || (i + chase) % 3 !== 0;
+          }
+        }
+
+        if (isNightNow && this.lifeEnabled) {
+          const pal = td.palette || defaultPal;
+          for (let b = 0; b < td.skyBeams.length; b++) {
+            const sb = td.skyBeams[b];
+            sb.pivot.rotation.y = elapsed * 1.25 * sb.dir + b * 0.85;
+            const tiltWave = sb.baseTilt + Math.sin(elapsed * 1.7 + b * 1.2) * 0.22;
+            sb.cone.rotation.z = tiltWave;
+            sb.core.rotation.z = tiltWave;
+            if (sb.airHalo) {
+              sb.airHalo.position.set(
+                -Math.sin(tiltWave) * sb.beamH * 0.92,
+                Math.cos(tiltWave) * sb.beamH * 0.92,
+                0
+              );
+              const hScale = 0.85 + Math.abs(Math.sin(elapsed * 3.2 + b)) * 0.5;
+              sb.airHalo.scale.set(hScale, hScale, 1);
+            }
+
+            const col = pal[(stepIdx + sb.colorIdx) % pal.length];
+            sb.beamMat.color.setHex(col);
+            sb.coreMat.color.setHex(col);
+            if (sb.haloMat) sb.haloMat.color.setHex(col);
+            sb.bulbMat.color.setHex(col);
+            sb.beamMat.opacity = 0.32 + Math.abs(Math.sin(elapsed * 3.8 + b)) * 0.26;
+          }
+          if (td.pointLight) {
+            td.pointLight.color.setHex(pal[stepIdx % pal.length]);
+          }
+        }
       }
     }
 
@@ -7702,18 +8697,53 @@ export class FollowerTownEngine {
       }
     }
 
-    // Low-RAM Distance Sprite Culling (hides far @username signs to keep 60fps!)
-    this._cullAccum += dt;
+    // VERY-LOW-RAM AUTO-FPS SMOOTH GOVERNOR + FAR SPRITE & EMPTY PLOT CULLING
+    this._animFrameTick++;
+    if (!this.hqMode) {
+      this._fpsFrames++;
+      this._fpsAccum += rawDt;
+      if (this._fpsAccum >= 2.2) {
+        const avgFps = this._fpsFrames / this._fpsAccum;
+        if (avgFps < 24 && !this._perfThrottle) {
+          this._perfThrottle = true;
+          this.renderer.setPixelRatio(0.82);
+        } else if (avgFps > 42 && this._perfThrottle) {
+          this._perfThrottle = false;
+          this.renderer.setPixelRatio(this.isVeryLowRam ? 0.92 : 1.0);
+        }
+        this._fpsFrames = 0;
+        this._fpsAccum = 0;
+      }
+    }
+
+    this._cullAccum += rawDt;
     if (this._cullAccum > 0.25) {
       this._cullAccum = 0;
       const cx = this.camera.position.x;
       const cz = this.camera.position.z;
-      const maxDistSq = this.hqMode ? 260 * 260 : this.isLowRam ? 105 * 105 : 165 * 165;
+      const maxDistSq = this.hqMode
+        ? 260 * 260
+        : this._perfThrottle
+        ? 85 * 85
+        : this.isVeryLowRam
+        ? 95 * 95
+        : this.isLowRam
+        ? 110 * 110
+        : 170 * 170;
       for (let i = 0; i < this.plotSigns.length; i++) {
         const ps = this.plotSigns[i];
         const dx = ps.x - cx;
         const dz = ps.z - cz;
         ps.sprite.visible = dx * dx + dz * dz < maxDistSq;
+      }
+
+      if ((this.isLowRam || this._perfThrottle) && !this.hqMode && this._emptyPlotCoords.size > 0) {
+        const emptyMaxSq = this._perfThrottle ? 145 * 145 : 195 * 195;
+        for (const ep of this._emptyPlotCoords.values()) {
+          const dx = ep.x - cx;
+          const dz = ep.z - cz;
+          ep.grp.visible = dx * dx + dz * dz < emptyMaxSq;
+        }
       }
     }
 
