@@ -8,7 +8,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged
-} from "./firebase-config.js?v=26";
+} from "./firebase-config.js?v=29";
 import {
   FollowerTownEngine,
   BUILDING_LABELS,
@@ -16,7 +16,7 @@ import {
   getTwoPlotGroup,
   getBlockPlotIds,
   getEightPlotGroup
-} from "./world-engine.js?v=26";
+} from "./world-engine.js?v=29";
 
 let isAdmin = false;
 let selectedPlotId = "plot_0001";
@@ -29,7 +29,9 @@ let worldSettings = {
   lifeEnabled: true,
   beachOwner: "@follower_beach",
   railwayOwner: "@_ur_bunny_108_",
-  heroModels: { statue: "", audi: "", heli: "" }
+  heroModels: { statue: "", audi: "", heli: "" },
+  weather: "clear",
+  fireworks: false
 };
 
 const container = document.getElementById("canvas-container");
@@ -107,12 +109,24 @@ function getNextZoneSlot(zone) {
       rotY: row % 2 === 0 ? Math.PI : 0
     };
   }
-  // Neat coastal strip along Golden Beach palm side facing the Ocean (-X)!
-  const row = count % 8;
-  const col = Math.floor(count / 8);
+  // Spacious Beachside Colony Strip (North & South of Beach Highway, clear of OYO/Hostel/Parking!)
+  const beachSlots = [
+    { offsetX: 24, offsetZ: -44, rotY: -Math.PI / 2 },
+    { offsetX: 24, offsetZ: -32, rotY: -Math.PI / 2 },
+    { offsetX: 24, offsetZ: 34,  rotY: -Math.PI / 2 },
+    { offsetX: 24, offsetZ: 46,  rotY: -Math.PI / 2 },
+    { offsetX: 40, offsetZ: -44, rotY: -Math.PI / 2 },
+    { offsetX: 40, offsetZ: -28, rotY: -Math.PI / 2 },
+    { offsetX: 40, offsetZ: -12, rotY: -Math.PI / 2 },
+    { offsetX: 40, offsetZ: 14,  rotY: -Math.PI / 2 },
+    { offsetX: 40, offsetZ: 30,  rotY: -Math.PI / 2 },
+    { offsetX: 40, offsetZ: 46,  rotY: -Math.PI / 2 }
+  ];
+  if (count < beachSlots.length) return beachSlots[count];
+  const extra = count - beachSlots.length;
   return {
-    offsetX: 22 + col * 9.0,
-    offsetZ: -34 + row * 9.4,
+    offsetX: 56 + Math.floor(extra / 6) * 16,
+    offsetZ: -42 + (extra % 6) * 16.5,
     rotY: -Math.PI / 2
   };
 }
@@ -143,6 +157,22 @@ engine.onAddPlotTap = (result) => {
 };
 
 function openPlotCard(plotId, data) {
+  if (plotId === "HILL_TEMPLE") {
+    document.getElementById("card-badge").textContent = "SACRED HILLTOP TEMPLE • ARAKU PEAK";
+    document.getElementById("card-owner").textContent = "🛕 SRI VENKATESWARA HILL TEMPLE";
+    document.getElementById("card-role").textContent = "Grand Real-Style Mountain Temple beside the Railway Station with 48 Pilgrimage Steps, Devotees Climbing, Winding Ghat Road for Vehicles, River & Radiant Golden Glow!";
+    document.getElementById("card-type").textContent = "HILLTOP MAHA TEMPLE";
+    document.getElementById("card-day").textContent = "LIVE DIVINE GLOW ✨";
+    editBtn.classList.add("hidden");
+    if (beachEditBtn) beachEditBtn.classList.add("hidden");
+    if (railwayEditBtn) railwayEditBtn.classList.add("hidden");
+    if (replayBuildBtn) replayBuildBtn.classList.add("hidden");
+    websiteBtn.classList.add("hidden");
+    if (sheru3dBtn) sheru3dBtn.classList.add("hidden");
+    plotCard.classList.remove("hidden");
+    return;
+  }
+
           if (plotId === "RAILWAY_SOUTH") {
     document.getElementById("card-badge").textContent = "ARAKU VALLEY GATE • SOUTH STATION";
     document.getElementById("card-owner").textContent = "🚉 ARAKU SOUTH JN";
@@ -231,11 +261,19 @@ function openPlotCard(plotId, data) {
     document.getElementById("card-role").textContent = data.role || "Town Resident";
     document.getElementById("card-type").textContent =
       size === 8
-        ? (data.buildingType === "imax_theater" ? "8-PLOT IMAX 3D DOME" : data.buildingType === "movie_theater" ? "8-PLOT MOVIE THEATER" : data.buildingType === "audi_showroom" ? "8-PLOT AUDI SHOWROOM" : "8-PLOT STADIUM")
+        ? (data.buildingType === "imax_theater" ? "8-PLOT IMAX 3D DOME" : data.buildingType === "movie_theater" ? "8-PLOT MOVIE THEATER" : data.buildingType === "mahindra_showroom" ? "8-PLOT MAHINDRA SHOWROOM" : data.buildingType === "bmw_showroom" ? "8-PLOT BMW SHOWROOM" : data.buildingType === "audi_showroom" ? "8-PLOT AUDI SHOWROOM" : "8-PLOT STADIUM")
         : size === 4
-        ? (data.buildingType === "dmart" ? "4-PLOT D-MART" : "4-PLOT LANDMARK")
+        ? (data.buildingType === "tirumala_temple" ? "4-PLOT TIRUMALA TEMPLE" : data.buildingType === "hotel_oyo" ? "20-FLOOR OYO TOWER" : data.buildingType === "hostel" ? "4-PLOT HOSTEL" : data.buildingType === "wine_shop" ? "4-PLOT WINE SHOP" : data.buildingType === "box_cricket" ? "4-PLOT BOX CRICKET" : data.buildingType === "bike_showroom" ? "4-PLOT BIKE SHOWROOM" : data.buildingType === "swimming_pool" ? "4-PLOT SWIMMING POOL" : data.buildingType === "city_park" ? "4-PLOT CITY PARK" : data.buildingType === "library" ? "4-PLOT LIBRARY" : data.buildingType === "dmart" ? "4-PLOT D-MART" : "4-PLOT LANDMARK")
         : size === 2
         ? (data.buildingType === "mobile_showroom" ? "2-PLOT MOBILE SHOWROOM" : data.buildingType === "beach_villa_2" ? "2-PLOT BEACH VILLA" : "2-PLOT STUDIO")
+        : data.buildingType === "ice_cream_shop"
+        ? "ICE CREAM SHOP"
+        : data.buildingType === "biryani_point"
+        ? "DUM BIRYANI POINT"
+        : data.buildingType === "medical_shop"
+        ? "24/7 MEDICAL SHOP"
+        : data.buildingType === "veg_shop"
+        ? "VEGETABLE SHOP"
         : data.buildingType === "mobile_shop"
         ? "MOBILE SHOP"
         : data.buildingType === "beach_villa"
@@ -337,6 +375,14 @@ onValue(worldRef, (snapshot) => {
   if (gs) gs.value = hm.statue || "";
   if (ga) ga.value = hm.audi || "";
   if (gh) gh.value = hm.heli || "";
+  const wWeather = worldSettings.weather || "clear";
+  const wFw = Boolean(worldSettings.fireworks);
+  engine.setRainEnabled(wWeather === "rain");
+  engine.setFireworksEnabled(wFw);
+  const wwEl = document.getElementById("w-weather");
+  const wfEl = document.getElementById("w-fireworks");
+  if (wwEl) wwEl.value = wWeather;
+  if (wfEl) wfEl.value = wFw ? "on" : "off";
 
   engine.setTimeOfDay(worldSettings.timeOfDay || "day");
   engine.lifeEnabled = worldSettings.lifeEnabled !== false;
@@ -519,9 +565,9 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
 
     const defaultRole =
       newSize === 8
-        ? (type === "imax_theater" ? "8-Plot IMAX 3D Dome Theater" : type === "movie_theater" ? "8-Plot Multiplex Movie Theater" : type === "audi_showroom" ? "8-Plot Audi Luxury Showroom" : "8-Plot Mega Stadium")
+        ? (type === "imax_theater" ? "8-Plot IMAX 3D Dome Theater" : type === "movie_theater" ? "8-Plot Multiplex Movie Theater" : type === "mahindra_showroom" ? "8-Plot Mahindra SUV Showroom" : type === "bmw_showroom" ? "8-Plot BMW Luxury Showroom" : type === "audi_showroom" ? "8-Plot Audi Luxury Showroom" : "8-Plot Mega Stadium")
         : newSize === 4
-        ? (type === "dmart" ? "D-Mart Hypermarket" : type === "gym" ? "Fitness Gym Owner" : "4-Plot Town Landmark")
+        ? (type === "hotel_oyo" ? "20-Floor OYO Rooms Tower" : type === "hostel" ? "Boys & Girls Hostel" : type === "box_cricket" ? "Floodlit Box Cricket Turf" : type === "bike_showroom" ? "GT650 & Superbike Showroom" : type === "wine_shop" ? "Royal Wine Shop Landmark" : type === "dmart" ? "D-Mart Hypermarket" : type === "gym" ? "Fitness Gym Owner" : "4-Plot Town Landmark")
         : (type === "mobile_showroom" ? "2-Plot Mega Mobile Showroom" : type === "beach_villa_2" ? "Luxury 2-Plot Beachfront Villa" : "2-Plot Photo Studio");
 
     const anchorPayload = {
@@ -586,7 +632,7 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
     } else if (relocatedCount > 0) {
       showToast(`🏗️ Built! Moved ${relocatedCount} houses to free plots.`);
     } else {
-      showToast(newSize === 8 ? (type === "imax_theater" ? "🎬 Built 8-Plot Giant IMAX 3D Dome with Sky Disco Lights!" : type === "movie_theater" ? "🎭 Built 8-Plot Real Movie Theater with Sky Disco Lights!" : type === "audi_showroom" ? "🚘 Built 8-Plot Audi Showroom!" : "🏟️ Built 8-Plot Mega Stadium!") : newSize === 4 ? "🏛️ Built 4-Plot Landmark!" : newSize === 2 ? (type === "mobile_showroom" ? "📱 Built 2-Plot Mega Mobile Showroom!" : type === "beach_villa_2" ? "🏖️ Built 2-Plot Luxury Beach Villa!" : "📸 Built 2-Plot Photo Studio!") : `🔨 Built ${ownerName}'s plot!`);
+      showToast(newSize === 8 ? (type === "imax_theater" ? "🎬 Built 8-Plot Giant IMAX 3D Dome with Sky Disco Lights!" : type === "movie_theater" ? "🎭 Built 8-Plot Real Movie Theater with Sky Disco Lights!" : type === "mahindra_showroom" ? "🚙 Built 8-Plot Mahindra SUV Showroom!" : type === "bmw_showroom" ? "🏎️ Built 8-Plot BMW Luxury Showroom!" : type === "audi_showroom" ? "🚘 Built 8-Plot Audi Showroom!" : "🏟️ Built 8-Plot Mega Stadium!") : newSize === 4 ? "🏛️ Built 4-Plot Landmark!" : newSize === 2 ? (type === "mobile_showroom" ? "📱 Built 2-Plot Mega Mobile Showroom!" : type === "beach_villa_2" ? "🏖️ Built 2-Plot Luxury Beach Villa!" : "📸 Built 2-Plot Photo Studio!") : `🔨 Built ${ownerName}'s plot!`);
     }
     closeAllDrawers();
     engine.focusPlot(selectedPlotId);
@@ -840,7 +886,9 @@ document.getElementById("btn-save-world").addEventListener("click", async () => 
         statue: (document.getElementById("w-glb-statue")?.value || "").trim(),
         audi: (document.getElementById("w-glb-audi")?.value || "").trim(),
         heli: (document.getElementById("w-glb-heli")?.value || "").trim()
-      }
+      },
+      weather: document.getElementById("w-weather")?.value || "clear",
+      fireworks: (document.getElementById("w-fireworks")?.value || "off") === "on"
     });
     showToast("World updated live!");
     closeAllDrawers();
@@ -1192,6 +1240,7 @@ function resetModeButtons() {
   if (btnRandomVip) { btnRandomVip.classList.remove("active"); btnRandomVip.textContent = "🎲 VIP Pick"; }
   if (btnDiscoOutro) { btnDiscoOutro.classList.remove("active"); btnDiscoOutro.textContent = "🪩 Disco Outro"; }
   if (btnStreetWalk) { btnStreetWalk.classList.remove("active"); btnStreetWalk.textContent = "🚶 Street POV"; }
+  const bto = document.getElementById("reel-temple-orbit"); if (bto) { bto.classList.remove("active"); bto.textContent = "✨ Temple Orbit"; }
 }
 
 // 1. 🚂 Train Chase Cam (Toggles Train 1 WAP-7 -> Train 2 Vande Bharat -> Stop!)
@@ -1554,7 +1603,8 @@ function renderShotlistItems(filterText = "") {
     { id: "AIRPORT", label: "✈️ 20-Acre Airport & Diamond Heli", sub: "AIRPORT", day: 0 },
     { id: "BEACH", label: "🏖️ Sheru Bhai Beach & Villa", sub: "BEACH", day: 0 },
     { id: "RAILWAY_STATION", label: "🚂 North Railway Station", sub: "STATION 1", day: 0 },
-    { id: "RAILWAY_SOUTH", label: "🚉 Araku South Station", sub: "STATION 2", day: 0 }
+    { id: "RAILWAY_SOUTH", label: "🚉 Araku South Station", sub: "STATION 2", day: 0 },
+    { id: "HILL_TEMPLE", label: "🛕 Sacred Hilltop Temple Mountain", sub: "HILL TEMPLE", day: 0 }
   ];
 
   const builtPlots = [];
@@ -1670,5 +1720,64 @@ if (btnBloomToggle) {
     btnBloomToggle.classList.toggle("active", engine.bloomEnabled);
     btnBloomToggle.textContent = engine.bloomEnabled ? "✨ Bloom" : "✨ Bloom OFF";
     showToast(engine.bloomEnabled ? "✨ Neon Cinema Bloom Glow ON!" : "✨ Bloom Glow OFF");
+  });
+}
+
+const btnReelTemple = document.getElementById("reel-temple-cam");
+if (btnReelTemple) {
+  btnReelTemple.addEventListener("click", () => {
+    engine.stopAllReelModes();
+    engine.focusPlot("HILL_TEMPLE", 0.12);
+    showToast("🛕 Sacred Hilltop Temple Mountain & Pilgrimage Steps!");
+  });
+}
+
+// ✨ SACRED HILLTOP TEMPLE CINEMA ORBIT CAM
+const btnTempleOrbit = document.getElementById("reel-temple-orbit");
+if (btnTempleOrbit) {
+  btnTempleOrbit.addEventListener("click", () => {
+    if (engine.templeOrbit && engine.templeOrbit.active) {
+      engine.stopTempleOrbit();
+      btnTempleOrbit.classList.remove("active");
+      btnTempleOrbit.textContent = "✨ Temple Orbit";
+      return;
+    }
+    resetModeButtons();
+    btnTempleOrbit.classList.add("active");
+    btnTempleOrbit.textContent = "⏹ Stop Orbit";
+    showToast("🛕 Filming Sacred Hilltop Temple Glow & Pilgrimage Steps!");
+    engine.startTempleOrbit(() => {
+      btnTempleOrbit.classList.remove("active");
+      btnTempleOrbit.textContent = "✨ Temple Orbit";
+    });
+  });
+}
+
+// 🌧️ MONSOON RAIN WEATHER TOGGLE IN REEL STUDIO
+const btnRainToggle = document.getElementById("reel-rain-btn");
+if (btnRainToggle) {
+  btnRainToggle.addEventListener("click", () => {
+    const next = !engine.rainEnabled;
+    engine.setRainEnabled(next);
+    btnRainToggle.classList.toggle("active", next);
+    btnRainToggle.textContent = next ? "🌧️ Rain ON" : "🌧️ Rain";
+    showToast(next ? "🌧️ Monsoon Rain Active — Epic for Night/Araku Reels!" : "☀️ Clear Sky Restored");
+  });
+}
+
+// 🎆 NIGHT SKY FIREWORKS CELEBRATION TOGGLE IN REEL STUDIO
+const btnFwToggle = document.getElementById("reel-fireworks-btn");
+if (btnFwToggle) {
+  btnFwToggle.addEventListener("click", () => {
+    const next = !engine.fireworksEnabled;
+    engine.setFireworksEnabled(next);
+    btnFwToggle.classList.toggle("active", next);
+    btnFwToggle.textContent = next ? "🎆 Fireworks ON" : "🎆 Fireworks";
+    if (next && engine.timeOfDay !== "night") {
+      engine.transitionTimeOfDay("night", 1.8);
+      showToast("🎆 Switching to Night Mode + Sky Fireworks Celebration!");
+    } else {
+      showToast(next ? "🎆 Sky Fireworks Celebration ON!" : "🎆 Fireworks OFF");
+    }
   });
 }

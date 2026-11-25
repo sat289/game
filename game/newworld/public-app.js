@@ -1,5 +1,5 @@
-import { db, ref, onValue } from "./firebase-config.js?v=26";
-import { FollowerTownEngine, BUILDING_LABELS, getRequiredSize } from "./world-engine.js?v=26";
+import { db, ref, onValue } from "./firebase-config.js?v=29";
+import { FollowerTownEngine, BUILDING_LABELS, getRequiredSize } from "./world-engine.js?v=29";
 
 let allPlots = {};
 const container = document.getElementById("canvas-container");
@@ -28,7 +28,19 @@ const engine = new FollowerTownEngine(container, (plotId, data) => {
 });
 
 function openPlotCard(plotId, data) {
-          if (plotId === "RAILWAY_SOUTH") {
+          if (plotId === "HILL_TEMPLE") {
+    document.getElementById("card-badge").textContent = "SACRED HILLTOP TEMPLE • ARAKU PEAK";
+    document.getElementById("card-owner").textContent = "🛕 SRI VENKATESWARA HILL TEMPLE";
+    document.getElementById("card-role").textContent = "Grand Real-Style Mountain Temple beside the Railway Station with 48 Pilgrimage Steps, Devotees Climbing, Winding Ghat Road for Vehicles, River & Radiant Golden Glow!";
+    document.getElementById("card-type").textContent = "HILLTOP MAHA TEMPLE";
+    document.getElementById("card-day").textContent = "LIVE DIVINE GLOW ✨";
+    if (sheru3dBtn) sheru3dBtn.classList.add("hidden");
+    websiteBtn.classList.add("hidden");
+    plotCard.classList.remove("hidden");
+    return;
+  }
+
+  if (plotId === "RAILWAY_SOUTH") {
     document.getElementById("card-badge").textContent = "ARAKU VALLEY GATE • SOUTH STATION";
     document.getElementById("card-owner").textContent = "🚉 ARAKU SOUTH JN";
     document.getElementById("card-role").textContent = "2nd Opposite-Side 2-Platform Railway Station with Foot Overbridge Steps, Parking & Both Express Trains emerging from the Araku Mountain Tunnels!";
@@ -100,11 +112,19 @@ function openPlotCard(plotId, data) {
     document.getElementById("card-role").textContent = data.role || "Follower Nagaram Resident";
     document.getElementById("card-type").textContent =
       size === 8
-        ? (data.buildingType === "imax_theater" ? "8-PLOT IMAX 3D DOME" : data.buildingType === "movie_theater" ? "8-PLOT MOVIE THEATER" : data.buildingType === "audi_showroom" ? "8-PLOT AUDI SHOWROOM" : "8-PLOT MEGA STADIUM")
+        ? (data.buildingType === "imax_theater" ? "8-PLOT IMAX 3D DOME" : data.buildingType === "movie_theater" ? "8-PLOT MOVIE THEATER" : data.buildingType === "mahindra_showroom" ? "8-PLOT MAHINDRA SHOWROOM" : data.buildingType === "bmw_showroom" ? "8-PLOT BMW SHOWROOM" : data.buildingType === "audi_showroom" ? "8-PLOT AUDI SHOWROOM" : "8-PLOT MEGA STADIUM")
         : size === 4
-        ? (data.buildingType === "dmart" ? "4-PLOT D-MART" : "4-PLOT LANDMARK")
+        ? (data.buildingType === "tirumala_temple" ? "4-PLOT TIRUMALA TEMPLE" : data.buildingType === "hotel_oyo" ? "20-FLOOR OYO TOWER" : data.buildingType === "hostel" ? "4-PLOT HOSTEL" : data.buildingType === "wine_shop" ? "4-PLOT WINE SHOP" : data.buildingType === "box_cricket" ? "4-PLOT BOX CRICKET" : data.buildingType === "bike_showroom" ? "4-PLOT BIKE SHOWROOM" : data.buildingType === "swimming_pool" ? "4-PLOT SWIMMING POOL" : data.buildingType === "city_park" ? "4-PLOT CITY PARK" : data.buildingType === "library" ? "4-PLOT PUBLIC LIBRARY" : data.buildingType === "dmart" ? "4-PLOT D-MART" : "4-PLOT LANDMARK")
         : size === 2
         ? (data.buildingType === "mobile_showroom" ? "2-PLOT MOBILE SHOWROOM" : data.buildingType === "beach_villa_2" ? "2-PLOT BEACH VILLA" : "2-PLOT STUDIO")
+        : data.buildingType === "ice_cream_shop"
+        ? "ICE CREAM SHOP"
+        : data.buildingType === "biryani_point"
+        ? "DUM BIRYANI POINT"
+        : data.buildingType === "medical_shop"
+        ? "24/7 MEDICAL SHOP"
+        : data.buildingType === "veg_shop"
+        ? "VEGETABLE SHOP"
         : data.buildingType === "mobile_shop"
         ? "MOBILE SHOP"
         : data.buildingType === "beach_villa"
@@ -170,6 +190,8 @@ onValue(ref(db, "worldSettings"), (snapshot) => {
   if (val.beachOwner !== undefined) engine.setBeachOwner(val.beachOwner);
   if (val.railwayOwner !== undefined) engine.setRailwayOwner(val.railwayOwner);
   if (val.heroModels) engine.setHeroModelUrls(val.heroModels);
+  if (val.weather !== undefined) engine.setRainEnabled(val.weather === "rain");
+  if (val.fireworks !== undefined) engine.setFireworksEnabled(Boolean(val.fireworks));
   engine.setTimeOfDay(val.timeOfDay || "day");
   engine.lifeEnabled = val.lifeEnabled !== false;
 });
@@ -377,5 +399,13 @@ if (btnPublicDrone) {
     engine.startDroneView(() => {
       btnPublicDrone.textContent = "🚁 Drone";
     });
+  });
+}
+
+const btnPubTemple = document.getElementById("btn-public-temple");
+if (btnPubTemple) {
+  btnPubTemple.addEventListener("click", () => {
+    engine.focusPlot("HILL_TEMPLE", 0.12);
+    showToast("🛕 Flying to Sacred Hilltop Temple Mountain!");
   });
 }
