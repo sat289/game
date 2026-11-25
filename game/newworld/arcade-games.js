@@ -1,4 +1,4 @@
-import { GameAudioFX } from "./audio-fx.js?v=33";
+import { GameAudioFX } from "./audio-fx.js?v=34";
 
 /**
  * 🕹️ SHERU BHAI ARCADE — 3 ULTRA-SMOOTH 60FPS LOW-RAM HTML5 CANVAS GAMES (v33)

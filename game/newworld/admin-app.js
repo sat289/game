@@ -9,7 +9,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged
-} from "./firebase-config.js?v=33";
+} from "./firebase-config.js?v=34";
 import {
   FollowerTownEngine,
   BUILDING_LABELS,
@@ -17,7 +17,7 @@ import {
   getTwoPlotGroup,
   getBlockPlotIds,
   getEightPlotGroup
-} from "./world-engine.js?v=33";
+} from "./world-engine.js?v=34";
 
 let isAdmin = false;
 let selectedPlotId = "plot_0001";
@@ -53,28 +53,42 @@ let activeEnterUrl = "";
 
 function getInteriorPageUrl(plotId, data) {
   const owner = encodeURIComponent(
-    plotId === "VIP_ISLAND" ? (engine.islandOwner || "SHERU BHAI") : (data?.ownerName || "SHERU BHAI")
+    plotId === "VIP_ISLAND" ? (engine.islandOwner || "SHERU BHAI")
+    : plotId === "OUTSKIRTS_STADIUM" ? "SHERU BHAI STADIUM"
+    : plotId === "HILL_TEMPLE" ? "SRI VENKATESWARA TEMPLE"
+    : (data?.ownerName || "SHERU BHAI")
   );
   const ret = encodeURIComponent("./admin.html");
-  if (plotId === "VIP_ISLAND") {
-    return `./mansion.html?owner=${owner}&type=mansion&return=${ret}`;
+  const qExtra = new URLSearchParams();
+  qExtra.set("plotId", plotId || "");
+  if (engine.driveState && engine.driveState.active) {
+    qExtra.set("ex", engine.driveState.pos.x.toFixed(2));
+    qExtra.set("ez", engine.driveState.pos.z.toFixed(2));
+    qExtra.set("ey", engine.driveState.yaw.toFixed(3));
   }
-  const bt = data?.buildingType || "";
-  if (["srmt_mall", "dmart", "reliance_store", "apple_store"].includes(bt)) {
-    return `./malls.html?owner=${owner}&type=${bt}&return=${ret}`;
-  }
-  if (["school", "iti_college", "library"].includes(bt)) {
-    return `./school.html?owner=${owner}&type=${bt}&return=${ret}`;
-  }
-  if (["ground", "box_cricket"].includes(bt)) {
-    return `./stadium.html?owner=${owner}&type=${bt}&return=${ret}`;
-  }
-  if (bt === "beauty_parlour") {
-    return `./beauty-parlour.html?owner=${owner}&type=beauty&return=${ret}`;
-  }
-  return `./buildings.html?owner=${owner}&type=${bt || "house"}&return=${ret}`;
-}
+  const tail = `&return=${ret}&${qExtra.toString()}`;
 
+  if (plotId === "VIP_ISLAND") return `./mansion.html?owner=${owner}&type=mansion${tail}`;
+  if (plotId === "OUTSKIRTS_STADIUM") return `./stadium.html?owner=${owner}&type=ground${tail}`;
+  if (plotId === "HILL_TEMPLE") return `./landmarks.html?owner=${owner}&type=tirumala_temple${tail}`;
+
+  const bt = data?.buildingType || "";
+  if (bt === "gym") return `./gym.html?owner=${owner}&type=gym${tail}`;
+  if (["movie_theater", "imax_theater"].includes(bt)) return `./theater.html?owner=${owner}&type=${bt}${tail}`;
+  if (["srmt_mall", "dmart", "reliance_store", "apple_store"].includes(bt)) return `./malls.html?owner=${owner}&type=${bt}${tail}`;
+  if (["school", "iti_college", "library"].includes(bt)) return `./school.html?owner=${owner}&type=${bt}${tail}`;
+  if (["ground", "box_cricket"].includes(bt)) return `./stadium.html?owner=${owner}&type=${bt}${tail}`;
+  if (bt === "beauty_parlour") return `./beauty-parlour.html?owner=${owner}&type=beauty${tail}`;
+  if ([
+    "hospital", "police_station", "tirumala_temple", "hotel_oyo", "hostel", "wine_shop",
+    "medical_shop", "cafe", "shop", "biryani_point", "ice_cream_shop", "veg_shop",
+    "photo_studio", "swimming_pool", "audi_showroom", "bmw_showroom", "mahindra_showroom",
+    "bike_showroom", "mobile_showroom", "mobile_shop", "bus_stand", "auto_stand", "petrol_bunk"
+  ].includes(bt)) {
+    return `./landmarks.html?owner=${owner}&type=${bt}${tail}`;
+  }
+  return `./buildings.html?owner=${owner}&type=${bt || "house"}${tail}`;
+}
 const sheru3dBtn = document.getElementById("card-sheru3d-btn");
 const sketchfabModal = document.getElementById("sketchfab-modal");
 const sketchfabIframe = document.getElementById("sketchfab-iframe");
@@ -188,6 +202,23 @@ engine.onAddPlotTap = (result) => {
 
 function openPlotCard(plotId, data) {
   if (enterBtn) { enterBtn.classList.add("hidden"); enterBtn.textContent = "🚪 Explore Inside (3D)"; }
+  if (plotId === "OUTSKIRTS_STADIUM") {
+    document.getElementById("card-badge").textContent = "SE CITY OUTSKIRTS • INTERNATIONAL ARENA";
+    document.getElementById("card-owner").textContent = "🏏 SHERU BHAI CRICKET STADIUM";
+    document.getElementById("card-role").textContent = "Massive International Cricket Stadium in the city outskirts with Live Updating LED Scoreboard, Towering Floodlights, Multi-Tier Colorful Seats & 22-Yard Pitch!";
+    document.getElementById("card-type").textContent = "OUTSKIRTS CRICKET STADIUM";
+    document.getElementById("card-day").textContent = "LIVE SCOREBOARD 📺";
+    editBtn.classList.add("hidden");
+    if (beachEditBtn) beachEditBtn.classList.add("hidden");
+    if (railwayEditBtn) railwayEditBtn.classList.add("hidden");
+    if (replayBuildBtn) replayBuildBtn.classList.add("hidden");
+    websiteBtn.classList.add("hidden");
+    if (sheru3dBtn) sheru3dBtn.classList.add("hidden");
+    if (enterBtn) { activeEnterUrl = getInteriorPageUrl("OUTSKIRTS_STADIUM", null); enterBtn.classList.remove("hidden"); enterBtn.textContent = "🏏 Enter Cricket Stadium (3D)"; }
+    plotCard.classList.remove("hidden");
+    return;
+  }
+
   if (plotId === "ROCKET_PAD") {
     document.getElementById("card-badge").textContent = "ISRO SRIHARIKOTA ZONE • SPACEPORT";
     document.getElementById("card-owner").textContent = "🚀 SHERU BHAI SPACEPORT";
@@ -1697,7 +1728,8 @@ function renderShotlistItems(filterText = "") {
     { id: "HILL_TEMPLE", label: "🛕 Sacred Hilltop Temple Mountain", sub: "HILL TEMPLE", day: 0 },
     { id: "ROCKET_PAD", label: "🚀 ISRO Rocket Launchpad", sub: "SPACEPORT", day: 0 },
     { id: "VIP_ISLAND", label: "🌉 RGB Sea Bridge & VIP Island", sub: "VIP ISLAND", day: 0 },
-    { id: "FERRIS_WHEEL", label: "🎡 Beach Giant Ferris Wheel", sub: "GIANT WHEEL", day: 0 }
+    { id: "FERRIS_WHEEL", label: "🎡 Beach Giant Ferris Wheel", sub: "GIANT WHEEL", day: 0 },
+    { id: "OUTSKIRTS_STADIUM", label: "🏏 Outskirts International Stadium", sub: "LIVE CRICKET", day: 0 }
   ];
 
   const builtPlots = [];
@@ -2230,12 +2262,12 @@ bindAdmDriveHold("drive-btn-brake", "backward");
 bindAdmDriveHold("drive-btn-boost", "boost");
 
 function updateAdmDriveBtns(vType) {
-  ["car", "bike", "auto"].forEach((t) => {
+  ["jeep", "car", "bike", "auto"].forEach((t) => {
     document.getElementById(`drive-veh-${t}`)?.classList.toggle("active", t === vType);
   });
 }
 
-["car", "bike", "auto"].forEach((t) => {
+["jeep", "car", "bike", "auto"].forEach((t) => {
   document.getElementById(`drive-veh-${t}`)?.addEventListener("click", () => {
     engine.switchDriveVehicle(t);
     updateAdmDriveBtns(t);
@@ -2253,9 +2285,9 @@ document.getElementById("drive-exit-btn")?.addEventListener("click", () => {
 
 document.getElementById("btn-admin-drive")?.addEventListener("click", () => {
   setAdminDriveHud(true);
-  updateAdmDriveBtns("car");
+  updateAdmDriveBtns("jeep");
   engine.startDriveMode(
-    "car",
+    "jeep",
     (kmh) => { if (admSpeedNum) admSpeedNum.textContent = String(kmh); },
     () => setAdminDriveHud(false)
   );
@@ -2303,3 +2335,84 @@ engine.onNearbyDoorChange = (info) => {
     admEnterPrompt.classList.add("hidden");
   }
 };
+
+// 🏏 OUTSKIRTS STADIUM REEL CAM & TELEPORT + FREE FIRE JOYSTICK/JUMP + EXACT OUTSIDE-HOUSE RETURN (ADMIN)
+document.getElementById("reel-stadium-cam")?.addEventListener("click", () => {
+  engine.stopAllReelModes();
+  engine.focusPlot("OUTSKIRTS_STADIUM", 0.12);
+  showToast("🏏 Outskirts International Cricket Stadium • Live Scoreboard!");
+});
+document.getElementById("drive-tp-stadium")?.addEventListener("click", () => engine.teleportDrive("stadium"));
+
+const admSteerWrap = document.getElementById("ff-drive-steer-wrap");
+const admJoyBase = document.getElementById("ff-walk-joy-base");
+const admJoyKnob = document.getElementById("ff-walk-joy-knob");
+const admPedals = document.getElementById("ff-drive-pedals");
+const admJumpBtn = document.getElementById("drive-btn-jump");
+const admBoostBtn = document.getElementById("drive-btn-boost");
+
+function syncAdmFreeFireHud(mode) {
+  const walking = mode === "walk";
+  admSteerWrap?.classList.toggle("hidden", walking);
+  admPedals?.classList.toggle("hidden", walking);
+  admJoyBase?.classList.toggle("hidden", !walking);
+  admJumpBtn?.classList.toggle("hidden", !walking);
+  if (admBoostBtn) admBoostBtn.textContent = walking ? "🏃 RUN" : "🔥 NITRO";
+  if (admAvatarBtn) admAvatarBtn.textContent = walking ? "🚙 JEEP" : "🚶 OUT";
+}
+
+if (admJoyBase && admJoyKnob) {
+  let jPid = null;
+  const maxR = 40;
+  const moveJoy = (cx, cy) => {
+    const r = admJoyBase.getBoundingClientRect();
+    const dx = cx - (r.left + r.width / 2);
+    const dy = cy - (r.top + r.height / 2);
+    const d = Math.min(Math.hypot(dx, dy), maxR);
+    const a = Math.atan2(dy, dx);
+    const kx = Math.cos(a) * d;
+    const ky = Math.sin(a) * d;
+    admJoyKnob.style.transform = `translate(${kx}px, ${ky}px)`;
+    engine.setDriveJoystick(kx / maxR, -ky / maxR);
+  };
+  admJoyBase.addEventListener("pointerdown", (e) => { e.preventDefault(); jPid = e.pointerId; admJoyBase.setPointerCapture(e.pointerId); moveJoy(e.clientX, e.clientY); });
+  admJoyBase.addEventListener("pointermove", (e) => { if (e.pointerId === jPid) moveJoy(e.clientX, e.clientY); });
+  const endJoy = (e) => {
+    if (e.pointerId !== jPid) return;
+    jPid = null;
+    admJoyKnob.style.transform = "translate(0px, 0px)";
+    engine.setDriveJoystick(0, 0);
+  };
+  admJoyBase.addEventListener("pointerup", endJoy);
+  admJoyBase.addEventListener("pointercancel", endJoy);
+}
+
+admJumpBtn?.addEventListener("pointerdown", (e) => { e.preventDefault(); engine.triggerAvatarJump(); });
+admAvatarBtn?.addEventListener("click", () => syncAdmFreeFireHud(engine.driveState.subMode));
+document.getElementById("btn-admin-drive")?.addEventListener("click", () => syncAdmFreeFireHud("drive"));
+
+(function checkAdminReturnOutside() {
+  const sp = new URLSearchParams(window.location.search);
+  if (sp.get("exitMode") !== "walk") return;
+  const exPlot = sp.get("exitPlot") || "";
+  const ex = sp.has("ex") ? parseFloat(sp.get("ex")) : null;
+  const ez = sp.has("ez") ? parseFloat(sp.get("ez")) : null;
+  const ey = sp.has("ey") ? parseFloat(sp.get("ey")) : 0;
+  setTimeout(() => {
+    setAdminDriveHud(true);
+    updateAdmDriveBtns("jeep");
+    engine.spawnOutsideBuilding(
+      exPlot,
+      Number.isFinite(ex) ? ex : null,
+      Number.isFinite(ez) ? ez : null,
+      Number.isFinite(ey) ? ey : 0,
+      (kmh) => { if (admSpeedNum) admSpeedNum.textContent = String(kmh); },
+      () => setAdminDriveHud(false)
+    );
+    syncAdmFreeFireHud("walk");
+    showToast("🚶 Exited right outside the building! Run, jump, or tap 🚙 JEEP to drive!");
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, 700);
+})();

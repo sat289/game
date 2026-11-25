@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getSkyPalette } from "./shaders-glsl.js?v=33";
+import { getSkyPalette } from "./shaders-glsl.js?v=34";
 import {
   BUILDING_LABELS,
   getRequiredSize,
@@ -7,7 +7,7 @@ import {
   getTwoPlotGroup,
   getBlockPlotIds,
   getEightPlotGroup
-} from "./world-constants.js?v=33";
+} from "./world-constants.js?v=34";
 
 export const cinematicMethods = {
   setTimeOfDay(mode) {
@@ -110,6 +110,7 @@ export const cinematicMethods = {
     if (plotId === "ROCKET_PAD") return { x: this.rocketPadPos.x, y: 12, z: this.rocketPadPos.z, size: 12 };
     if (plotId === "VIP_ISLAND") return { x: this.vipIslandPos.x + 18, y: 8, z: this.vipIslandPos.z, size: 12 };
     if (plotId === "FERRIS_WHEEL") return { x: this.ferrisWheelPos.x, y: 14, z: this.ferrisWheelPos.z, size: 12 };
+    if (plotId === "OUTSKIRTS_STADIUM") return { x: this.outskirtsStadiumPos.x, y: 12, z: this.outskirtsStadiumPos.z, size: 12 };
     if (plotId === "ADD_AIRPORT_PLOT") return { x: this.airportX - 39, y: 2, z: 56, size: 1 };
     if (plotId === "ADD_BEACH_PLOT") return { x: this.beachX + 22, y: 2, z: 16, size: 1 };
     const customData = this.plotDataMap.get(plotId);
@@ -216,6 +217,7 @@ export const cinematicMethods = {
     if (plotId === "ROCKET_PAD") return { dist: this._getWideDist(68), heightRatio: 0.62 };
     if (plotId === "VIP_ISLAND") return { dist: this._getWideDist(78), heightRatio: 0.56 };
     if (plotId === "FERRIS_WHEEL") return { dist: this._getWideDist(56), heightRatio: 0.58 };
+    if (plotId === "OUTSKIRTS_STADIUM") return { dist: this._getWideDist(82), heightRatio: 0.56 };
     if (size === 8) return { dist: this._getWideDist(48), heightRatio: 0.72 };
     if (size === 4) return { dist: this._getWideDist(35), heightRatio: 0.76 };
     if (size === 2) return { dist: this._getWideDist(29), heightRatio: 0.78 };
@@ -804,9 +806,158 @@ export const cinematicMethods = {
     this.fireworkBursts.push({ points, vel, age: 0, maxAge: 1.85 });
   },
 
+  /**
+   * 🚙 CUSTOM 3D OFF-ROAD JEEP / THAR (Converted directly from user's jeep.html!)
+   * Features 4 chunky torus off-road tires + spare rear mounted wheel, arched fender mudguards,
+   * 5-bar rugged front grille, glowing round headlights, undercarriage axles & tinted windows — scaled cleanly for city roads!
+   */
+  _makeCustomJeepMesh() {
+    const outer = new THREE.Group();
+    const jeep = new THREE.Group();
+
+    const bodyMat = this.mat.jeepBodyMat;
+    const blackMat = this.mat.jeepTrimMat;
+    const tireMat = this.mat.wheelBlack;
+    const rimMat = this.mat.jeepRimMat;
+    const lightMat = this.mat.floodlightGlow;
+
+    // 4 Chunky Off-Road Torus Tires + Hub Rims
+    const tireGeo = new THREE.TorusGeometry(1.0, 0.48, 10, 20);
+    const hubGeo = new THREE.CylinderGeometry(0.62, 0.62, 0.72, 12);
+    [[-5, 0.5, -4], [5, 0.5, -4], [-5, 0.5, 4], [5, 0.5, 4]].forEach(([x, y, z]) => {
+      const t = new THREE.Mesh(tireGeo, tireMat);
+      t.position.set(x, y, z);
+      t.scale.set(1.5, 1.5, 1.55);
+      const hub = new THREE.Mesh(hubGeo, rimMat);
+      hub.rotation.x = Math.PI / 2;
+      hub.position.set(x, y, z);
+      jeep.add(t, hub);
+    });
+
+    // Rear Mounted Spare Torus Tire
+    const spare = new THREE.Mesh(tireGeo, tireMat);
+    spare.position.set(7.0, 3.5, 0);
+    spare.scale.set(1.45, 1.45, 1.5);
+    spare.rotation.y = Math.PI / 2;
+    jeep.add(spare);
+
+    // Main Rugged Jeep Lower Body, Upper Cabin Roof & Sloped Hood/Windshield
+    const seatGeo = new THREE.BoxGeometry(2.5, 1, 1);
+    const cylGeo = new THREE.CylinderGeometry(0.5, 0.5, 2, 16);
+
+    const carbase = new THREE.Mesh(seatGeo, bodyMat);
+    carbase.position.set(0, 3, 0);
+    carbase.scale.set(1, 13, 7.5);
+    carbase.rotation.z = Math.PI / 2;
+
+    const carbase1 = new THREE.Mesh(seatGeo, bodyMat);
+    carbase1.position.set(2, 5, 0);
+    carbase1.scale.set(1, 8, 6.6);
+    carbase1.rotation.z = Math.PI / 2;
+
+    const windshield = new THREE.Mesh(seatGeo, blackMat);
+    windshield.position.set(-2, 4.5, 0);
+    windshield.scale.set(2.5, 3, 2);
+    windshield.rotation.set(Math.PI / 2, Math.PI / 3, Math.PI / 2);
+
+    const c7 = new THREE.Mesh(cylGeo, bodyMat);
+    c7.position.set(0, 4, 0);
+    c7.scale.set(8, 6.5, 1);
+    c7.rotation.set(Math.PI / 2, Math.PI, Math.PI / 2);
+
+    const c8 = new THREE.Mesh(cylGeo, bodyMat);
+    c8.position.set(2, 6, 0);
+    c8.scale.set(7, 4, 1);
+    c8.rotation.set(Math.PI / 2, Math.PI, Math.PI / 2);
+
+    // Tinted Side & Rear Windows + Front Windshield Trim
+    const winL = new THREE.Mesh(cylGeo, blackMat);
+    winL.position.set(2, 4.5, 3.3);
+    winL.scale.set(3.5, 4.1, 1.4);
+    winL.rotation.set(Math.PI, Math.PI, Math.PI / 2);
+    const winR = winL.clone();
+    winR.position.z = -3.3;
+
+    const winBack = new THREE.Mesh(cylGeo, blackMat);
+    winBack.position.set(6, 3.5, 0);
+    winBack.scale.set(5.3, 3.7, 2);
+    winBack.rotation.set(Math.PI, Math.PI / 2, Math.PI / 2);
+
+    const hoodBump = new THREE.Mesh(cylGeo, blackMat);
+    hoodBump.position.set(-5.6, 4.5, 0);
+    hoodBump.scale.set(3, 1, 0.5);
+    hoodBump.rotation.set(Math.PI / 2, Math.PI, Math.PI / 2);
+
+    jeep.add(carbase, carbase1, windshield, c7, c8, winL, winR, winBack, hoodBump);
+
+    // Wheel Arch Fender Mudguards (Front & Rear Left/Right)
+    const fenderSpecs = [
+      [-6.1, 2.3, 4, Math.PI / 5, 0.5], [-6.1, 2.3, -4, Math.PI / 5, 0.5],
+      [-4.8, 2.6, 4, Math.PI, 1.0], [-4.8, 2.6, -4, Math.PI, 1.0],
+      [-3.4, 1.8, 4, -Math.PI / 3, 1.0], [-3.4, 1.8, -4, -Math.PI / 3, 1.0],
+      [6.5, 1.8, 4, -Math.PI / 3, 1.0], [6.5, 1.8, -4, -Math.PI / 3, 1.0],
+      [5.0, 2.6, 4, Math.PI, 1.2], [5.0, 2.6, -4, Math.PI, 1.2],
+      [3.5, 1.8, 4, Math.PI / 3, 1.0], [3.5, 1.8, -4, Math.PI / 3, 1.0]
+    ];
+    fenderSpecs.forEach(([fx, fy, fz, ry, sy]) => {
+      const f = new THREE.Mesh(cylGeo, bodyMat);
+      f.position.set(fx, fy, fz);
+      f.scale.set(1.5, sy, 0.5);
+      f.rotation.set(Math.PI / 2, ry, Math.PI / 2);
+      jeep.add(f);
+    });
+
+    // Undercarriage Axles & Driveshaft
+    const axF = new THREE.Mesh(cylGeo, blackMat);
+    axF.position.set(-5, 0.5, 0);
+    axF.scale.set(0.5, 4, 0.5);
+    axF.rotation.set(Math.PI, Math.PI / 2, Math.PI / 2);
+    const axR = axF.clone();
+    axR.position.x = 5;
+    const shaft = new THREE.Mesh(cylGeo, blackMat);
+    shaft.position.set(0, 0.5, 0);
+    shaft.scale.set(0.5, 4.5, 0.5);
+    shaft.rotation.set(Math.PI, Math.PI, Math.PI / 2);
+    jeep.add(axF, axR, shaft);
+
+    // Glowing Round Jeep Headlights + Dark Bezels + 5 Iconic Vertical Front Grille Bars + Heavy Bumper!
+    [-2.5, 2.5].forEach((hz) => {
+      const hl = new THREE.Mesh(cylGeo, lightMat);
+      hl.position.set(-6.45, 3.5, hz);
+      hl.scale.set(1, 0.3, 1);
+      hl.rotation.set(Math.PI / 2, Math.PI, Math.PI / 2);
+      const bezel = new THREE.Mesh(cylGeo, blackMat);
+      bezel.position.set(-6.32, 3.5, hz);
+      bezel.scale.set(1.22, 0.3, 1.22);
+      bezel.rotation.set(Math.PI / 2, Math.PI, Math.PI / 2);
+      jeep.add(hl, bezel);
+    });
+    [-1.7, -0.9, 0, 0.9, 1.7].forEach((gz) => {
+      const bar = new THREE.Mesh(seatGeo, blackMat);
+      bar.position.set(-0.12, 3, gz);
+      bar.scale.set(0.8, 13, 0.5);
+      bar.rotation.z = Math.PI / 2;
+      jeep.add(bar);
+    });
+    const bumper = new THREE.Mesh(seatGeo, blackMat);
+    bumper.position.set(-0.1, 2, 0);
+    bumper.scale.set(2, 13, 1);
+    bumper.rotation.set(Math.PI / 2, Math.PI, Math.PI / 2);
+    jeep.add(bumper);
+
+    // Original jeep.html front faces -X and spans ~14 units long -> scale 0.31 (~4.35 units long) & rotate +PI/2 so Front faces +Z!
+    jeep.scale.setScalar(0.31);
+    jeep.rotation.y = Math.PI / 2;
+    jeep.position.y = 0.52;
+    outer.add(jeep);
+    return outer;
+  },
+
   _buildPlayerDriveMesh(type) {
     let veh;
-    if (type === "auto") {
+    if (type === "jeep") {
+      veh = this._makeCustomJeepMesh();
+    } else if (type === "auto") {
       veh = this._makeRealAutoMesh(true, false);
     } else if (type === "bike") {
       const bk = new THREE.Group();
@@ -824,8 +975,9 @@ export const cinematicMethods = {
       handle.position.set(0, 1.12, 0.62);
       const hl = new THREE.Mesh(new THREE.SphereGeometry(0.16, 6, 6), this.mat.floodlightGlow);
       hl.position.set(0, 0.98, 0.92);
-      const rider = this._createCharacter({ shirtMat: this.mat.bikeRacingRed, pantsMat: this.mat.darkPants, scale: 0.92 });
-      rider.position.set(0, 0.52, -0.15);
+      const rider = this._buildPlayerAvatarMesh();
+      rider.scale.setScalar(0.75);
+      rider.position.set(0, 0.45, -0.15);
       rider.rotation.x = 0.22;
       bk.add(wF, wB, frame, tank, handle, hl, rider);
       veh = bk;
@@ -837,36 +989,36 @@ export const cinematicMethods = {
       veh.add(underglow);
     }
 
-    // Dual Nitro Exhaust Flame Cones (behind tailpipes, -Z)
+    // Dual Nitro Exhaust Flame Cones
     const nitroGroup = new THREE.Group();
-    [-0.42, 0.42].forEach((nx) => {
-      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.24, 2.2, 8), this.mat.nitroCyanFlame);
+    [-0.45, 0.45].forEach((nx) => {
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.26, 2.4, 8), this.mat.nitroCyanFlame);
       cone.rotation.x = -Math.PI / 2;
-      cone.position.set(nx, 0.42, -2.55);
+      cone.position.set(nx, 0.48, -2.6);
       nitroGroup.add(cone);
     });
     nitroGroup.visible = false;
     veh.add(nitroGroup);
 
-    // Bright Glowing Brake Taillights (flare when braking/reversing)
+    // Bright Glowing Brake Taillights
     const brakeGroup = new THREE.Group();
-    [-0.65, 0.65].forEach((bx) => {
-      const bl = new THREE.Mesh(this._boxGeo(0.35, 0.2, 0.14), this.mat.brakeGlowMat);
-      bl.position.set(bx, 0.65, -1.96);
+    [-0.72, 0.72].forEach((bx) => {
+      const bl = new THREE.Mesh(this._boxGeo(0.38, 0.22, 0.14), this.mat.brakeGlowMat);
+      bl.position.set(bx, 0.78, -2.05);
       brakeGroup.add(bl);
     });
     brakeGroup.visible = false;
     veh.add(brakeGroup);
 
     // Twin Soft Ground Headlight Beams in front (+Z)
-    const hlBeam = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 7.5), this.mat.divineGoldGlow);
+    const hlBeam = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 8.2), this.mat.divineGoldGlow);
     hlBeam.rotation.x = -Math.PI / 2;
-    hlBeam.position.set(0, 0.11, 5.4);
+    hlBeam.position.set(0, 0.11, 5.8);
     veh.add(hlBeam);
 
     // Drift Tire Smoke Puffs
     const smokePuffs = [];
-    const sGeo = new THREE.DodecahedronGeometry(0.38, 0);
+    const sGeo = new THREE.DodecahedronGeometry(0.42, 0);
     for (let i = 0; i < 6; i++) {
       const sp = new THREE.Mesh(sGeo, this.mat.driftSmokeMat);
       sp.visible = false;
@@ -880,57 +1032,97 @@ export const cinematicMethods = {
     return veh;
   },
 
+  /**
+   * 🧍 REALISTIC ARTICULATED 3D PLAYER AVATAR (Head, Hair, Sunglasses, Neck, Tailored Hoodie Jacket, Gold Chain, Articulated Limbs & Sneakers!)
+   */
   _buildPlayerAvatarMesh() {
     const g = new THREE.Group();
-    const legGeo = this._boxGeo(0.22, 0.72, 0.22);
-    const legL = new THREE.Mesh(legGeo, this.mat.wallWhite);
-    legL.position.set(-0.15, 0.36, 0);
-    const legR = new THREE.Mesh(legGeo, this.mat.wallWhite);
-    legR.position.set(0.15, 0.36, 0);
-    const torso = new THREE.Mesh(this._boxGeo(0.62, 0.78, 0.32), this.mat.mansionCreamMarble);
-    torso.position.y = 1.12;
-    const goldTie = new THREE.Mesh(this._boxGeo(0.1, 0.5, 0.35), this.mat.mansionGoldTrim);
-    goldTie.position.set(0, 1.16, 0.02);
-    const armGeo = this._boxGeo(0.18, 0.66, 0.2);
-    const armL = new THREE.Mesh(armGeo, this.mat.wallWhite);
-    armL.position.set(-0.42, 1.12, 0);
-    const armR = new THREE.Mesh(armGeo, this.mat.wallWhite);
-    armR.position.set(0.42, 1.12, 0);
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.28, 10, 8), this.mat.wallCream);
-    head.position.y = 1.78;
-    const shades = new THREE.Mesh(this._boxGeo(0.42, 0.12, 0.12), this.mat.sunglasses);
-    shades.position.set(0, 1.82, 0.24);
-    g.add(legL, legR, torso, goldTie, armL, armR, head, shades);
+    const skinMat = this.mat.skin;
+    const jacketMat = this.mat.avatarHoodieMat;
+    const jeansMat = this.mat.avatarJeansMat;
+    const hairMat = this.mat.avatarHairMat;
+    const shoeMat = this.mat.avatarShoeMat;
+    const goldMat = this.mat.mansionGoldTrim;
+
+    // Articulated Left & Right Legs (Pivot at hip y = 0.88 for natural stride!)
+    const makeLeg = (lx) => {
+      const hip = new THREE.Group();
+      hip.position.set(lx, 0.88, 0);
+      const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.11, 0.44, 8), jeansMat);
+      thigh.position.y = -0.22;
+      const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.105, 0.09, 0.42, 8), jeansMat);
+      shin.position.y = -0.62;
+      const shoe = new THREE.Mesh(this._boxGeo(0.22, 0.14, 0.36), shoeMat);
+      shoe.position.set(0, -0.82, 0.06);
+      hip.add(thigh, shin, shoe);
+      return hip;
+    };
+    const legL = makeLeg(-0.16);
+    const legR = makeLeg(0.16);
+
+    // Sculpted Torso (Athletic Jacket + White Inner Tee + Gold Chain + Waist Belt!)
+    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.23, 0.68, 10), jacketMat);
+    torso.scale.set(1.18, 1.0, 0.78);
+    torso.position.y = 1.24;
+    const innerShirt = new THREE.Mesh(this._boxGeo(0.22, 0.52, 0.38), this.mat.wallWhite);
+    innerShirt.position.set(0, 1.28, 0.05);
+    const goldChain = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.025, 6, 12, Math.PI), goldMat);
+    goldChain.position.set(0, 1.46, 0.19);
+    goldChain.rotation.z = Math.PI;
+    const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.22, 0.14, 8), jacketMat);
+    collar.position.y = 1.58;
+
+    // Articulated Left & Right Arms (Pivot at shoulder y = 1.52!)
+    const makeArm = (ax) => {
+      const sh = new THREE.Group();
+      sh.position.set(ax, 1.52, 0);
+      const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.085, 0.48, 8), jacketMat);
+      sleeve.position.y = -0.24;
+      const hand = new THREE.Mesh(new THREE.SphereGeometry(0.085, 8, 8), skinMat);
+      hand.position.y = -0.52;
+      sh.add(sleeve, hand);
+      return sh;
+    };
+    const armL = makeArm(-0.37);
+    const armR = makeArm(0.37);
+
+    // Neck + Rounded Head + Stylish Hair + Cool Black Shades!
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.1, 0.16, 8), skinMat);
+    neck.position.y = 1.66;
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.24, 14, 12), skinMat);
+    head.scale.set(0.95, 1.08, 0.98);
+    head.position.y = 1.88;
+    const hairTop = new THREE.Mesh(new THREE.SphereGeometry(0.255, 12, 10, 0, Math.PI * 2, 0, Math.PI * 0.56), hairMat);
+    hairTop.position.set(0, 1.92, -0.02);
+    const shades = new THREE.Mesh(this._boxGeo(0.38, 0.11, 0.1), this.mat.sunglasses);
+    shades.position.set(0, 1.9, 0.21);
+
+    g.add(legL, legR, torso, innerShirt, goldChain, collar, armL, armR, neck, head, hairTop, shades);
     g.userData = { legL, legR, armL, armR };
     return g;
   },
 
+  /**
+   * 🛑 STRICT ROAD-ONLY & BUILDING WALL COLLISION CHECKER (Jeep/Cars stay on roads & never enter buildings!)
+   */
   _isDrivePosBlocked(wx, wz, isWalking = false) {
-    const pad = isWalking ? 0.8 : 1.35;
+    const pad = isWalking ? 0.65 : 1.35;
     const r = this.currentGridRadius;
-    const step = this.BLOCK_STEP; // 19.0
-    const halfBlock = this.BLOCK_FOOTPRINT / 2; // 7.4
+    const step = this.BLOCK_STEP;
+    const halfBlock = this.BLOCK_FOOTPRINT / 2;
     const innerEdge = (r + 0.5) * step;
 
-    // 1. Inside Main City Grid: Allow driving ONLY on roads & intersections — block every solid city block!
     if (Math.abs(wx) < innerEdge - 0.5 && Math.abs(wz) < innerEdge - 0.5) {
-      // Check central ST Junction Statue roundabout pedestal
       if (Math.hypot(wx, wz) < 6.6 + pad) return true;
-
-      // Check 8-plot blocked middle-road zones
       for (const bz of this.blockedRoadZones) {
         if (wx > bz.minX - pad && wx < bz.maxX + pad && wz > bz.minZ - pad && wz < bz.maxZ + pad) return true;
       }
-
-      // Compute nearest block center `(bx * step, bz * step)`
       const bx = Math.round(wx / step);
       const bz = Math.round(wz / step);
       if (Math.abs(bx) <= r && Math.abs(bz) <= r) {
         const localX = Math.abs(wx - bx * step);
         const localZ = Math.abs(wz - bz * step);
-        // Roads run between blocks (`localX > halfBlock` or `localZ > halfBlock`)!
-        // When walking on foot, allow stepping slightly closer to sidewalks/doors (`halfBlock - 1.2`)!
-        const blockLimit = isWalking ? halfBlock - 1.4 : halfBlock - 0.35;
+        const blockLimit = isWalking ? halfBlock - 1.5 : halfBlock - 0.35;
         if (localX < blockLimit + pad && localZ < blockLimit + pad) {
           return true;
         }
@@ -938,28 +1130,22 @@ export const cinematicMethods = {
       return false;
     }
 
-    // 2. Sheru Bhai Island Mansion Solid Palace Structure (courtyard & road remain open!)
     if (this.vipIslandPos) {
       const lx = wx - this.vipIslandPos.x;
       const lz = wz - this.vipIslandPos.z;
-      // Palace main walls sit at lx in [-12, -2], lz in [-13, 13]
       if (lx > -13.5 - pad && lx < -1.8 + pad && Math.abs(lz) < 13.5 + pad) return true;
-      // Fountain center pool sits at (6.2, 0), radius 4.8
       if (Math.hypot(lx - 6.2, lz) < 4.9 + pad) return true;
     }
 
-    // 3. Beachside Pre-Built OYO Tower, Hostel & Medical Shop solid cores
     if (this.beachX) {
       const blx = wx - this.beachX;
-      // Beach OYO (20.5, 20.5) & Beach Hostel (20.5, -34.5)
       if (Math.abs(blx - 20.5) < 6.2 + pad && Math.abs(wz - 20.5) < 6.2 + pad) return true;
       if (Math.abs(blx - 20.5) < 6.2 + pad && Math.abs(wz + 34.5) < 6.2 + pad) return true;
     }
 
-    // 4. Keep vehicles off the Deep Ocean unless on the RGB Sea Bridge or VIP Island!
     if (this.beachX && wx < this.beachX - 8) {
       const onBridge = this._seaBridgeBounds && wx >= this._seaBridgeBounds.minX && wx <= this._seaBridgeBounds.maxX && Math.abs(wz - this._seaBridgeBounds.z) <= this._seaBridgeBounds.halfW - 0.5;
-      const onIsland = this.vipIslandPos && Math.hypot(wx - this.vipIslandPos.x, wz - this.vipIslandPos.z) < 23.5;
+      const onIsland = this.vipIslandPos && Math.hypot(wx - this.vipIslandPos.x, wz - this.vipIslandPos.z) < 25.5;
       if (!onBridge && !onIsland) return true;
     }
 
@@ -981,14 +1167,13 @@ export const cinematicMethods = {
     }
   },
 
-  startDriveMode(vehicleType = "car", onSpeed = null, onExit = null) {
+  startDriveMode(vehicleType = "jeep", onSpeed = null, onExit = null) {
     this.stopAllReelModes();
     this._clearDriveMeshes();
 
     const step = this.BLOCK_STEP;
     const rr = this.ringRadius || 48;
-    // Spawn cleanly right on the paved South Avenue road!
-    const spawnX = (0.5) * step; // Road corridor X = +9.5!
+    const spawnX = 0.5 * step;
     const spawnZ = rr - 4;
     const mesh = this._buildPlayerDriveMesh(vehicleType);
 
@@ -1001,6 +1186,11 @@ export const cinematicMethods = {
     this.driveState.carPos.copy(this.driveState.pos);
     this.driveState.carYaw = this.driveState.yaw;
     this.driveState.speed = 0;
+    this.driveState.jumpVel = 0;
+    this.driveState.jumpY = 0;
+    this.driveState.camYawOffset = 0;
+    this.driveState.joyX = 0;
+    this.driveState.joyY = 0;
     this.driveState.keys = { forward: false, backward: false, left: false, right: false, boost: false };
     this.driveState.onSpeed = onSpeed;
     this.driveState.onExit = onExit;
@@ -1011,26 +1201,149 @@ export const cinematicMethods = {
     this.scene.add(mesh);
     this.controls.enabled = false;
 
-    if (!this._driveKeysBound) {
-      this._driveKeysBound = true;
-      window.addEventListener("keydown", (e) => {
-        if (!this.driveState.active) return;
-        if (e.code === "ArrowUp" || e.code === "KeyW") this.driveState.keys.forward = true;
-        if (e.code === "ArrowDown" || e.code === "KeyS") this.driveState.keys.backward = true;
-        if (e.code === "ArrowLeft" || e.code === "KeyA") this.driveState.keys.left = true;
-        if (e.code === "ArrowRight" || e.code === "KeyD") this.driveState.keys.right = true;
-        if (e.code === "ShiftLeft" || e.code === "ShiftRight") this.driveState.keys.boost = true;
-        if (e.code === "KeyH") this.playDriveHorn();
-        if (e.code === "Escape") this.stopDriveMode();
-      });
-      window.addEventListener("keyup", (e) => {
-        if (!this.driveState.active) return;
-        if (e.code === "ArrowUp" || e.code === "KeyW") this.driveState.keys.forward = false;
-        if (e.code === "ArrowDown" || e.code === "KeyS") this.driveState.keys.backward = false;
-        if (e.code === "ArrowLeft" || e.code === "KeyA") this.driveState.keys.left = false;
-        if (e.code === "ArrowRight" || e.code === "KeyD") this.driveState.keys.right = false;
-        if (e.code === "ShiftLeft" || e.code === "ShiftRight") this.driveState.keys.boost = false;
-      });
+    this._bindDriveInputListeners();
+  },
+
+  /**
+   * 🚪 SPAWN RIGHT OUTSIDE THE EXACT HOUSE / BUILDING YOU JUST EXITED (ON FOOT + PARKED JEEP NEARBY!)
+   * Lets you immediately run, jump, explore the street, enter another building, or hop right into your Jeep!
+   */
+  spawnOutsideBuilding(plotId, customX = null, customZ = null, customYaw = 0, onSpeed = null, onExit = null) {
+    this.stopAllReelModes();
+    this._clearDriveMeshes();
+
+    // Compute safe sidewalk/road spot right outside the exited building's front door!
+    let sx = Number.isFinite(customX) ? customX : null;
+    let sz = Number.isFinite(customZ) ? customZ : null;
+    let syaw = Number.isFinite(customYaw) ? customYaw : 0;
+
+    if (sx === null || sz === null) {
+      const c = this.getPlotWorldCenter(plotId || "ST_JUNCTION");
+      if (plotId === "VIP_ISLAND" && this.vipIslandPos) {
+        sx = this.vipIslandPos.x + 1.2;
+        sz = this.vipIslandPos.z;
+        syaw = Math.PI / 2;
+      } else if (plotId === "OUTSKIRTS_STADIUM" && this.outskirtsStadiumPos) {
+        sx = this.outskirtsStadiumPos.x - 18;
+        sz = this.outskirtsStadiumPos.z - 28;
+        syaw = Math.PI;
+      } else if (c) {
+        // Snap cleanly to the nearest street edge right outside the plot!
+        const step = this.BLOCK_STEP;
+        const bx = Math.round(c.x / step);
+        const bz = Math.round(c.z / step);
+        const roadZ = c.z >= bz * step ? (bz + 0.5) * step : (bz - 0.5) * step;
+        sx = c.x;
+        sz = Math.abs(c.x) < (this.currentGridRadius + 0.5) * step ? roadZ : c.z + 9.5;
+        syaw = c.z >= bz * step ? 0 : Math.PI;
+      } else {
+        sx = 0.5 * this.BLOCK_STEP;
+        sz = (this.ringRadius || 48) - 6;
+      }
+    }
+
+    const groundY = this._getDriveGroundY(sx, sz);
+    // Park your custom Jeep right on the curb beside you so you can hop in anytime!
+    const jeepMesh = this._buildPlayerDriveMesh("jeep");
+    const carX = sx + 3.2;
+    const carZ = sz;
+    jeepMesh.position.set(carX, this._getDriveGroundY(carX, carZ), carZ);
+    jeepMesh.rotation.y = syaw;
+    this.scene.add(jeepMesh);
+
+    const avatarMesh = this._buildPlayerAvatarMesh();
+    avatarMesh.position.set(sx, groundY, sz);
+    avatarMesh.rotation.y = syaw;
+    this.scene.add(avatarMesh);
+
+    this.driveState.active = true;
+    this.driveState.subMode = "walk";
+    this.driveState.vehicleType = "jeep";
+    this.driveState.group = jeepMesh;
+    this.driveState.avatarGroup = avatarMesh;
+    this.driveState.pos.set(sx, groundY, sz);
+    this.driveState.yaw = syaw;
+    this.driveState.carPos.set(carX, this._getDriveGroundY(carX, carZ), carZ);
+    this.driveState.carYaw = syaw;
+    this.driveState.speed = 0;
+    this.driveState.jumpVel = 0;
+    this.driveState.jumpY = 0;
+    this.driveState.camYawOffset = 0;
+    this.driveState.joyX = 0;
+    this.driveState.joyY = 0;
+    this.driveState.keys = { forward: false, backward: false, left: false, right: false, boost: false };
+    this.driveState.onSpeed = onSpeed;
+    this.driveState.onExit = onExit;
+    this._lastNearbyPlotId = null;
+
+    this.controls.enabled = false;
+    this.camera.position.set(sx - Math.sin(syaw) * 9.5, groundY + 4.8, sz - Math.cos(syaw) * 9.5);
+    this.controls.target.set(sx, groundY + 1.8, sz);
+
+    this._bindDriveInputListeners();
+  },
+
+  _bindDriveInputListeners() {
+    if (this._driveKeysBound) return;
+    this._driveKeysBound = true;
+    window.addEventListener("keydown", (e) => {
+      if (!this.driveState.active) return;
+      if (e.code === "ArrowUp" || e.code === "KeyW") this.driveState.keys.forward = true;
+      if (e.code === "ArrowDown" || e.code === "KeyS") this.driveState.keys.backward = true;
+      if (e.code === "ArrowLeft" || e.code === "KeyA") this.driveState.keys.left = true;
+      if (e.code === "ArrowRight" || e.code === "KeyD") this.driveState.keys.right = true;
+      if (e.code === "ShiftLeft" || e.code === "ShiftRight") this.driveState.keys.boost = true;
+      if (e.code === "Space") this.triggerAvatarJump();
+      if (e.code === "KeyH") this.playDriveHorn();
+      if (e.code === "Escape") this.stopDriveMode();
+    });
+    window.addEventListener("keyup", (e) => {
+      if (!this.driveState.active) return;
+      if (e.code === "ArrowUp" || e.code === "KeyW") this.driveState.keys.forward = false;
+      if (e.code === "ArrowDown" || e.code === "KeyS") this.driveState.keys.backward = false;
+      if (e.code === "ArrowLeft" || e.code === "KeyA") this.driveState.keys.left = false;
+      if (e.code === "ArrowRight" || e.code === "KeyD") this.driveState.keys.right = false;
+      if (e.code === "ShiftLeft" || e.code === "ShiftRight") this.driveState.keys.boost = false;
+    });
+
+    // Free Fire Right-Screen Touch Drag to Rotate Camera smoothly around Avatar / Jeep!
+    let lookDragId = null;
+    let lastLookX = 0;
+    const dom = this.renderer.domElement;
+    dom.addEventListener("pointerdown", (e) => {
+      if (!this.driveState.active) return;
+      lookDragId = e.pointerId;
+      lastLookX = e.clientX;
+    });
+    dom.addEventListener("pointermove", (e) => {
+      if (!this.driveState.active || e.pointerId !== lookDragId) return;
+      const dx = e.clientX - lastLookX;
+      lastLookX = e.clientX;
+      if (this.driveState.subMode === "walk") {
+        this.driveState.yaw -= dx * 0.0085;
+      } else {
+        this.driveState.camYawOffset = THREE.MathUtils.clamp(this.driveState.camYawOffset - dx * 0.007, -1.5, 1.5);
+      }
+    });
+    dom.addEventListener("pointerup", (e) => {
+      if (e.pointerId === lookDragId) lookDragId = null;
+    });
+    dom.addEventListener("pointercancel", (e) => {
+      if (e.pointerId === lookDragId) lookDragId = null;
+    });
+  },
+
+  setDriveJoystick(jx, jy) {
+    if (!this.driveState.active) return;
+    this.driveState.joyX = THREE.MathUtils.clamp(jx, -1, 1);
+    this.driveState.joyY = THREE.MathUtils.clamp(jy, -1, 1);
+  },
+
+  triggerAvatarJump() {
+    if (!this.driveState.active || this.driveState.subMode !== "walk") return;
+    if (this.driveState.jumpY <= 0.05) {
+      this.driveState.jumpVel = 9.2;
+      if (this.audioFX) this.audioFX.playStep();
     }
   },
 
@@ -1038,9 +1351,9 @@ export const cinematicMethods = {
     if (!this.driveState.active) return "drive";
     const ds = this.driveState;
     if (ds.subMode === "drive") {
-      // Park car & step out as 3D Walking Avatar!
       ds.subMode = "walk";
       ds.speed = 0;
+      ds.camYawOffset = 0;
       ds.carPos.copy(ds.pos);
       ds.carYaw = ds.yaw;
       if (ds.nitroFlames) ds.nitroFlames.visible = false;
@@ -1051,17 +1364,26 @@ export const cinematicMethods = {
         this.scene.add(ds.avatarGroup);
       }
       ds.avatarGroup.visible = true;
-      // Step slightly beside the parked car
-      ds.pos.set(ds.carPos.x + Math.cos(ds.carYaw) * 2.2, ds.carPos.y, ds.carPos.z - Math.sin(ds.carYaw) * 2.2);
+      ds.pos.set(ds.carPos.x + Math.cos(ds.carYaw) * 2.4, ds.carPos.y, ds.carPos.z - Math.sin(ds.carYaw) * 2.4);
       ds.avatarGroup.position.copy(ds.pos);
       ds.avatarGroup.rotation.y = ds.yaw;
       this.playDoorOpenFX();
       return "walk";
     } else {
-      // Get back into driver seat!
       ds.subMode = "drive";
       ds.speed = 0;
+      ds.jumpY = 0;
+      ds.jumpVel = 0;
       if (ds.avatarGroup) ds.avatarGroup.visible = false;
+      // Summon parked vehicle right to your current road spot if you walked far away!
+      if (ds.pos.distanceTo(ds.carPos) > 16) {
+        ds.carPos.copy(ds.pos);
+        ds.carYaw = ds.yaw;
+        if (ds.group) {
+          ds.group.position.copy(ds.carPos);
+          ds.group.rotation.y = ds.carYaw;
+        }
+      }
       ds.pos.copy(ds.carPos);
       ds.yaw = ds.carYaw;
       if (this.onNearbyDoorChange) this.onNearbyDoorChange(null);
@@ -1106,6 +1428,7 @@ export const cinematicMethods = {
     const rr = this.ringRadius || 48;
     const step = this.BLOCK_STEP;
     this.driveState.speed = 0;
+    this.driveState.camYawOffset = 0;
     if (dest === "bridge") {
       this.driveState.pos.set(this.beachX + 18, 0.25, -2);
       this.driveState.yaw = -Math.PI / 2;
@@ -1113,7 +1436,10 @@ export const cinematicMethods = {
       this.driveState.pos.set(this.hillTemplePos.x, 0.2, this.hillTemplePos.z + 32);
       this.driveState.yaw = Math.PI;
     } else if (dest === "rocket") {
-      this.driveState.pos.set(this.rocketPadPos.x + 16, 0.2, this.rocketPadPos.z - 28);
+      this.driveState.pos.set(this.rocketPadPos.x + 18, 0.2, this.rocketPadPos.z - 28);
+      this.driveState.yaw = 0;
+    } else if (dest === "stadium") {
+      this.driveState.pos.set(this.outskirtsStadiumPos.x - 18, 0.2, this.outskirtsStadiumPos.z - 32);
       this.driveState.yaw = 0;
     } else {
       this.driveState.pos.set(0.5 * step, 0.14, rr - 4);
@@ -1154,11 +1480,11 @@ export const cinematicMethods = {
   },
 
   _checkNearbyDoor(px, pz) {
-    // 1. Check Sheru Bhai Royal Island Mansion Grand Arched Doors!
+    // 1. Sheru Bhai Royal Island Mansion Arched Double Doors
     if (this.vipIslandPos) {
       const dx = px - (this.vipIslandPos.x - 1.5);
       const dz = pz - this.vipIslandPos.z;
-      const nearMansion = Math.hypot(dx, dz) < 14.5;
+      const nearMansion = Math.hypot(dx, dz) < 15.0;
       if (this.mansionDoors) {
         const targetOpen = nearMansion ? 1 : 0;
         this.mansionDoors.openAmount = THREE.MathUtils.lerp(this.mansionDoors.openAmount, targetOpen, 0.12);
@@ -1170,9 +1496,19 @@ export const cinematicMethods = {
       }
     }
 
-    // 2. Check Nearest Built City / Beach Building Plot!
+    // 2. Outskirts International Cricket Stadium
+    if (this.outskirtsStadiumPos && Math.hypot(px - this.outskirtsStadiumPos.x, pz - this.outskirtsStadiumPos.z) < 38) {
+      return { plotId: "OUTSKIRTS_STADIUM", label: "Sheru Bhai Cricket Stadium", data: { ownerName: "SHERU BHAI STADIUM", buildingType: "ground" } };
+    }
+
+    // 3. Sacred Hilltop Temple
+    if (this.hillTemplePos && Math.hypot(px - this.hillTemplePos.x, pz - this.hillTemplePos.z) < 30) {
+      return { plotId: "HILL_TEMPLE", label: "Sri Venkateswara Hill Temple", data: { ownerName: "SRI VENKATESWARA TEMPLE", buildingType: "tirumala_temple" } };
+    }
+
+    // 4. Nearest Built City / Beach Building Plot!
     let best = null;
-    let bestDistSq = 13.5 * 13.5;
+    let bestDistSq = 15.0 * 15.0;
     for (const [pid, pdata] of this.plotDataMap.entries()) {
       if (!pdata || pdata.status !== "built" || pdata.buildingType === "empty") continue;
       const c = this.getPlotWorldCenter(pid);
@@ -1434,7 +1770,7 @@ export const cinematicMethods = {
 
     const stops = shotItems.map((item, i) => {
       const c = this.getPlotWorldCenter(item.id);
-      const isSpecial = ["ST_JUNCTION", "AIRPORT", "BEACH", "RAILWAY_STATION", "RAILWAY_SOUTH", "HILL_TEMPLE", "ROCKET_PAD", "VIP_ISLAND", "FERRIS_WHEEL"].includes(item.id);
+      const isSpecial = ["ST_JUNCTION", "AIRPORT", "BEACH", "RAILWAY_STATION", "RAILWAY_SOUTH", "HILL_TEMPLE", "ROCKET_PAD", "VIP_ISLAND", "FERRIS_WHEEL", "OUTSKIRTS_STADIUM"].includes(item.id);
       const fr = this._getTargetFraming(item.id, c.size);
       const ang = i % 2 === 0 ? 0.65 : 2.35;
       return {

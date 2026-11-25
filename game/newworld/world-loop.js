@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getSkyPalette } from "./shaders-glsl.js?v=33";
+import { getSkyPalette } from "./shaders-glsl.js?v=34";
 
 export const loopMethods = {
   _animate() {
@@ -205,32 +205,40 @@ export const loopMethods = {
       const k = ds.keys;
 
       if (ds.subMode === "walk" && ds.avatarGroup) {
-        // 🚶 ON-FOOT AVATAR EXPLORATION MODE!
-        const steer = (k.left ? 1 : 0) - (k.right ? 1 : 0);
-        ds.yaw += steer * 2.5 * rawDt;
-        const move = (k.forward ? 1 : 0) - (k.backward ? 1 : 0);
-        if (move !== 0) {
-          const walkSpd = (k.boost ? 13.5 : 8.5) * move;
+        // 🚶 FREE FIRE STYLE ON-FOOT REAL AVATAR (360° Joystick + Sprint + Jump + Drag Camera!)
+        const steer = (k.left ? 1 : 0) - (k.right ? 1 : 0) - (ds.joyX || 0);
+        ds.yaw += steer * 2.55 * rawDt;
+        const move = THREE.MathUtils.clamp((k.forward ? 1 : 0) - (k.backward ? 1 : 0) + (ds.joyY || 0), -1, 1);
+        if (Math.abs(move) > 0.08) {
+          const walkSpd = (k.boost ? 14.5 : 9.2) * move;
           const nextX = ds.pos.x + Math.sin(ds.yaw) * walkSpd * rawDt;
           const nextZ = ds.pos.z + Math.cos(ds.yaw) * walkSpd * rawDt;
           if (!this._isDrivePosBlocked(nextX, ds.pos.z, true)) ds.pos.x = nextX;
           if (!this._isDrivePosBlocked(ds.pos.x, nextZ, true)) ds.pos.z = nextZ;
-          ds.walkPhase += rawDt * 12;
-          const sw = Math.sin(ds.walkPhase) * 0.55;
+          ds.walkPhase += rawDt * (k.boost ? 15 : 11);
+          const sw = Math.sin(ds.walkPhase) * (k.boost ? 0.72 : 0.52);
           ds.avatarGroup.userData.legL.rotation.x = sw;
           ds.avatarGroup.userData.legR.rotation.x = -sw;
-          ds.avatarGroup.userData.armL.rotation.x = -sw * 0.8;
-          ds.avatarGroup.userData.armR.rotation.x = sw * 0.8;
+          ds.avatarGroup.userData.armL.rotation.x = -sw * 0.85;
+          ds.avatarGroup.userData.armR.rotation.x = sw * 0.85;
           if (this.audioFX) this.audioFX.playStep();
         } else {
-          ds.avatarGroup.userData.legL.rotation.x *= 0.82;
-          ds.avatarGroup.userData.legR.rotation.x *= 0.82;
-          ds.avatarGroup.userData.armL.rotation.x *= 0.82;
-          ds.avatarGroup.userData.armR.rotation.x *= 0.82;
+          ds.avatarGroup.userData.legL.rotation.x *= 0.8;
+          ds.avatarGroup.userData.legR.rotation.x *= 0.8;
+          ds.avatarGroup.userData.armL.rotation.x *= 0.8;
+          ds.avatarGroup.userData.armR.rotation.x *= 0.8;
         }
 
-        ds.pos.y = THREE.MathUtils.lerp(ds.pos.y, this._getDriveGroundY(ds.pos.x, ds.pos.z), 0.25);
-        ds.avatarGroup.position.copy(ds.pos);
+        // Smooth Jump Gravity Physics!
+        if (ds.jumpY > 0 || ds.jumpVel > 0) {
+          ds.jumpY += ds.jumpVel * rawDt;
+          ds.jumpVel -= 24.0 * rawDt;
+          if (ds.jumpY <= 0) { ds.jumpY = 0; ds.jumpVel = 0; }
+        }
+
+        const baseGndY = this._getDriveGroundY(ds.pos.x, ds.pos.z);
+        ds.pos.y = THREE.MathUtils.lerp(ds.pos.y, baseGndY, 0.25);
+        ds.avatarGroup.position.set(ds.pos.x, ds.pos.y + ds.jumpY, ds.pos.z);
         ds.avatarGroup.rotation.y = ds.yaw;
 
         // Close-up Third-Person Avatar Follow Camera!
@@ -338,13 +346,15 @@ export const loopMethods = {
           }
         }
 
-        // Smooth Third-Person Chase Camera
-        const camBack = 15.5 + Math.abs(ds.speed) * 0.08;
-        const camUp = 7.4;
+        // Smooth Free Fire Third-Person Chase Camera (auto-returns camYawOffset when driving!)
+        if (Math.abs(ds.speed) > 4) ds.camYawOffset *= Math.exp(-2.2 * rawDt);
+        const effYaw = ds.yaw + (ds.camYawOffset || 0);
+        const camBack = 15.0 + Math.abs(ds.speed) * 0.08;
+        const camUp = 7.2;
         const desiredCam = new THREE.Vector3(
-          ds.pos.x - Math.sin(ds.yaw) * camBack,
+          ds.pos.x - Math.sin(effYaw) * camBack,
           ds.pos.y + camUp,
-          ds.pos.z - Math.cos(ds.yaw) * camBack
+          ds.pos.z - Math.cos(effYaw) * camBack
         );
         const camAlpha = 1 - Math.exp(-6.5 * rawDt);
         this.camera.position.lerp(desiredCam, camAlpha);
@@ -375,6 +385,7 @@ export const loopMethods = {
       const rs = this.rocketSim;
       const cyc = elapsed % 24.0;
       rs.beaconMat.color.setHex(Math.floor(elapsed * 4) % 2 === 0 ? 0xef4444 : 0xfacc15);
+      if (rs.radarDish) rs.radarDish.rotation.y = elapsed * 0.9;
 
       if (cyc < 7.0) {
         rs.rocket.position.set(0, rs.baseY, 0);
@@ -433,6 +444,38 @@ export const loopMethods = {
         for (let i = 0; i < sbs.bridgeLights.length; i++) {
           sbs.bridgeLights[i].color.setHex(pal[(step + i) % pal.length]);
         }
+      }
+    }
+
+
+    // 🏏 OUTSKIRTS INTERNATIONAL CRICKET STADIUM — LIVE UPDATING LED SCOREBOARD & PLAYERS!
+    if (this.lifeEnabled && this.outskirtsStadiumSim) {
+      const os = this.outskirtsStadiumSim;
+      os.timer += rawDt;
+      if (os.timer >= 3.8) {
+        os.timer = 0;
+        const outcomes = [
+          { r: 6, txt: "MASSIVE SIX! 🔥" },
+          { r: 4, txt: "BOUNDARY FOUR! ⚡" },
+          { r: 1, txt: "SINGLE RUN" },
+          { r: 2, txt: "QUICK TWO!" },
+          { r: 0, txt: "DOT BALL" },
+          { r: 6, txt: "SHERU SIXER! 🦁" }
+        ];
+        const pick = outcomes[Math.floor(Math.random() * outcomes.length)];
+        os.runs += pick.r;
+        os.balls++;
+        if (os.balls >= 120) {
+          os.runs = 148;
+          os.wkts = 1;
+          os.balls = 84;
+        }
+        const ov = `${Math.floor(os.balls / 6)}.${os.balls % 6}`;
+        os.drawScoreboard(os.runs, os.wkts, ov, pick.txt);
+      }
+      if (os.players && os.players.length >= 2) {
+        os.players[0].position.y = 0.5 + Math.abs(Math.sin(elapsed * 3.5)) * 0.2;
+        os.players[1].position.z = -5.2 + Math.sin(elapsed * 2.2) * 1.4;
       }
     }
 

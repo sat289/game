@@ -5,11 +5,11 @@ import {
   getSkyPalette,
   createGLSLOceanMaterial,
   createGLSLContactShadowMaterial
-} from "./shaders-glsl.js?v=33";
-import { WasmPerfEngine } from "./wasm-perf.js?v=33";
-import { GameAudioFX } from "./audio-fx.js?v=33";
-import { QualityManager } from "./quality-manager.js?v=33";
-import { CoinRushMiniGame } from "./minigames.js?v=33";
+} from "./shaders-glsl.js?v=34";
+import { WasmPerfEngine } from "./wasm-perf.js?v=34";
+import { GameAudioFX } from "./audio-fx.js?v=34";
+import { QualityManager } from "./quality-manager.js?v=34";
+import { CoinRushMiniGame } from "./minigames.js?v=34";
 import {
   EIGHT_PLOT_TYPES,
   FOUR_PLOT_TYPES,
@@ -22,11 +22,12 @@ import {
   getBlockPlotIds,
   getTwoPlotGroup,
   getEightPlotGroup
-} from "./world-constants.js?v=33";
-import { zoneMethods } from "./world-zones.js?v=33";
-import { buildingMethods } from "./world-buildings.js?v=33";
-import { cinematicMethods } from "./world-cinematics.js?v=33";
-import { loopMethods } from "./world-loop.js?v=33";
+} from "./world-constants.js?v=34";
+import { zoneMethods } from "./world-zones.js?v=34";
+import { buildingMethods } from "./world-buildings.js?v=34";
+import { cinematicMethods } from "./world-cinematics.js?v=34";
+import { loopMethods } from "./world-loop.js?v=34";
+import { outskirtsMethods } from "./world-outskirts.js?v=34";
 
 export {
   EIGHT_PLOT_TYPES,
@@ -153,11 +154,11 @@ export class FollowerTownEngine {
     });
 
     this.PLOT_SIZE = 7.4;
-    this.ROAD_WIDTH = 4.2;
+    this.ROAD_WIDTH = 6.2;
     this.BLOCK_STEP = this.PLOT_SIZE * 2 + this.ROAD_WIDTH; // 19.0
     this.BLOCK_FOOTPRINT = this.PLOT_SIZE * 2; // 14.8
     this.EIGHT_PLOT_WIDTH = this.BLOCK_FOOTPRINT * 2 + this.ROAD_WIDTH; // 33.8
-    this.RING_ROAD_WIDTH = 7.2;
+    this.RING_ROAD_WIDTH = 9.6;
 
     this.currentGridRadius = 0;
     this.townName = "FOLLOWER NAGARAM";
@@ -182,7 +183,10 @@ export class FollowerTownEngine {
     this.beachHighwaySim = null;
     this.islandOwner = "@vip_island_king";
     this.rocketSim = null;
+    this.outskirtsStadiumSim = null;
     this.rocketPadPos = { x: -104, z: 116 };
+    this.outskirtsStadiumPos = { x: 112, z: 116 };
+    this.outskirtsStadiumSim = null;
     this.seaBridgeSim = null;
     this._getSeaBridgeY = null;
     this._seaBridgeBounds = null;
@@ -193,7 +197,7 @@ export class FollowerTownEngine {
     this.driveState = {
       active: false,
       subMode: "drive", // "drive" | "walk"
-      vehicleType: "car",
+      vehicleType: "jeep",
       group: null,
       avatarGroup: null,
       nitroFlames: null,
@@ -204,6 +208,11 @@ export class FollowerTownEngine {
       carPos: new THREE.Vector3(0, 0.14, 34),
       carYaw: Math.PI,
       speed: 0,
+      jumpVel: 0,
+      jumpY: 0,
+      camYawOffset: 0,
+      joyX: 0,
+      joyY: 0,
       steerAngle: 0,
       walkPhase: 0,
       keys: { forward: false, backward: false, left: false, right: false, boost: false },
@@ -832,7 +841,14 @@ export class FollowerTownEngine {
         blending: THREE.AdditiveBlending
       }),
       driftSmokeMat: new THREE.MeshLambertMaterial({ color: 0xf1f5f9, transparent: true, opacity: 0.65 }),
-      brakeGlowMat: new THREE.MeshBasicMaterial({ color: 0xff1e1e })
+      brakeGlowMat: new THREE.MeshBasicMaterial({ color: 0xff1e1e }),
+      jeepBodyMat: new THREE.MeshPhongMaterial({ color: 0x1f2937, specular: 0x94a3b8, shininess: 110 }),
+      jeepTrimMat: new THREE.MeshPhongMaterial({ color: 0x09090b, specular: 0x475569, shininess: 120 }),
+      jeepRimMat: new THREE.MeshPhongMaterial({ color: 0xd1d5db, specular: 0xffffff, shininess: 150 }),
+      avatarHoodieMat: new THREE.MeshLambertMaterial({ color: 0x1d4ed8 }),
+      avatarJeansMat: new THREE.MeshLambertMaterial({ color: 0x1e293b }),
+      avatarHairMat: new THREE.MeshLambertMaterial({ color: 0x18181b }),
+      avatarShoeMat: new THREE.MeshLambertMaterial({ color: 0xf8fafc })
     };
   }
   _initSharedGeometries() {
@@ -1246,7 +1262,7 @@ export class FollowerTownEngine {
     }
     this.lampBulbs = [];
     this.plotHitboxes = this.plotHitboxes.filter(
-      (h) => !["ST_JUNCTION", "AIRPORT", "BEACH", "RAILWAY_STATION", "RAILWAY_SOUTH", "ADD_AIRPORT_PLOT", "ADD_BEACH_PLOT", "HILL_TEMPLE", "ROCKET_PAD", "VIP_ISLAND", "FERRIS_WHEEL"].includes(h.userData.plotId)
+      (h) => !["ST_JUNCTION", "AIRPORT", "BEACH", "RAILWAY_STATION", "RAILWAY_SOUTH", "ADD_AIRPORT_PLOT", "ADD_BEACH_PLOT", "HILL_TEMPLE", "ROCKET_PAD", "VIP_ISLAND", "FERRIS_WHEEL", "OUTSKIRTS_STADIUM"].includes(h.userData.plotId)
     );
     this.airportSim = null;
     this.beachSim = null;
@@ -1407,6 +1423,7 @@ export class FollowerTownEngine {
     this._buildSeaBridgeAndVipIsland(ringRadius);
     this._buildBeachFerrisWheel(ringRadius);
     this._buildRocketLaunchpad(ringRadius);
+    this._buildOutskirtsCricketStadium(ringRadius);
     this._buildArakuLandscape(ringRadius);
     // Keep any existing custom Airport / Beach zone plots positioned accurately!
     for (const [pid, pdata] of this.plotDataMap.entries()) {
@@ -1776,5 +1793,6 @@ Object.assign(
   zoneMethods,
   buildingMethods,
   cinematicMethods,
-  loopMethods
+  loopMethods,
+  outskirtsMethods
 );

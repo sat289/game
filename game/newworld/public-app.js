@@ -1,5 +1,5 @@
-import { db, ref, onValue, push, set } from "./firebase-config.js?v=33";
-import { FollowerTownEngine, BUILDING_LABELS, getRequiredSize } from "./world-engine.js?v=33";
+import { db, ref, onValue, push, set } from "./firebase-config.js?v=34";
+import { FollowerTownEngine, BUILDING_LABELS, getRequiredSize } from "./world-engine.js?v=34";
 
 let allPlots = {};
 const container = document.getElementById("canvas-container");
@@ -10,29 +10,42 @@ let activeEnterUrl = "";
 
 function getInteriorPageUrl(plotId, data) {
   const owner = encodeURIComponent(
-    plotId === "VIP_ISLAND" ? (engine.islandOwner || "SHERU BHAI") : (data?.ownerName || "SHERU BHAI")
+    plotId === "VIP_ISLAND" ? (engine.islandOwner || "SHERU BHAI")
+    : plotId === "OUTSKIRTS_STADIUM" ? "SHERU BHAI STADIUM"
+    : plotId === "HILL_TEMPLE" ? "SRI VENKATESWARA TEMPLE"
+    : (data?.ownerName || "SHERU BHAI")
   );
   const ret = encodeURIComponent("./index.html");
-  if (plotId === "VIP_ISLAND") {
-    return `./mansion.html?owner=${owner}&type=mansion&return=${ret}`;
+  const qExtra = new URLSearchParams();
+  qExtra.set("plotId", plotId || "");
+  if (engine.driveState && engine.driveState.active) {
+    qExtra.set("ex", engine.driveState.pos.x.toFixed(2));
+    qExtra.set("ez", engine.driveState.pos.z.toFixed(2));
+    qExtra.set("ey", engine.driveState.yaw.toFixed(3));
   }
-  const bt = data?.buildingType || "";
-  if (["srmt_mall", "dmart", "reliance_store", "apple_store"].includes(bt)) {
-    return `./malls.html?owner=${owner}&type=${bt}&return=${ret}`;
-  }
-  if (["school", "iti_college", "library"].includes(bt)) {
-    return `./school.html?owner=${owner}&type=${bt}&return=${ret}`;
-  }
-  if (["ground", "box_cricket"].includes(bt)) {
-    return `./stadium.html?owner=${owner}&type=${bt}&return=${ret}`;
-  }
-  if (bt === "beauty_parlour") {
-    return `./beauty-parlour.html?owner=${owner}&type=beauty&return=${ret}`;
-  }
-  return `./buildings.html?owner=${owner}&type=${bt || "house"}&return=${ret}`;
-}
+  const tail = `&return=${ret}&${qExtra.toString()}`;
 
-const sheru3dBtn = document.getElementById("card-sheru3d-btn");
+  if (plotId === "VIP_ISLAND") return `./mansion.html?owner=${owner}&type=mansion${tail}`;
+  if (plotId === "OUTSKIRTS_STADIUM") return `./stadium.html?owner=${owner}&type=ground${tail}`;
+  if (plotId === "HILL_TEMPLE") return `./landmarks.html?owner=${owner}&type=tirumala_temple${tail}`;
+
+  const bt = data?.buildingType || "";
+  if (bt === "gym") return `./gym.html?owner=${owner}&type=gym${tail}`;
+  if (["movie_theater", "imax_theater"].includes(bt)) return `./theater.html?owner=${owner}&type=${bt}${tail}`;
+  if (["srmt_mall", "dmart", "reliance_store", "apple_store"].includes(bt)) return `./malls.html?owner=${owner}&type=${bt}${tail}`;
+  if (["school", "iti_college", "library"].includes(bt)) return `./school.html?owner=${owner}&type=${bt}${tail}`;
+  if (["ground", "box_cricket"].includes(bt)) return `./stadium.html?owner=${owner}&type=${bt}${tail}`;
+  if (bt === "beauty_parlour") return `./beauty-parlour.html?owner=${owner}&type=beauty${tail}`;
+  if ([
+    "hospital", "police_station", "tirumala_temple", "hotel_oyo", "hostel", "wine_shop",
+    "medical_shop", "cafe", "shop", "biryani_point", "ice_cream_shop", "veg_shop",
+    "photo_studio", "swimming_pool", "audi_showroom", "bmw_showroom", "mahindra_showroom",
+    "bike_showroom", "mobile_showroom", "mobile_shop", "bus_stand", "auto_stand", "petrol_bunk"
+  ].includes(bt)) {
+    return `./landmarks.html?owner=${owner}&type=${bt}${tail}`;
+  }
+  return `./buildings.html?owner=${owner}&type=${bt || "house"}${tail}`;
+}
 const sketchfabModal = document.getElementById("sketchfab-modal");
 const sketchfabIframe = document.getElementById("sketchfab-iframe");
 const SKETCHFAB_URL = "https://sketchfab.com/models/011d2f8f40e146ff8b2d7dfc70e939f8/embed?autostart=1&ui_theme=dark";
@@ -56,6 +69,19 @@ const engine = new FollowerTownEngine(container, (plotId, data) => {
 
 function openPlotCard(plotId, data) {
   if (enterBtn) { enterBtn.classList.add("hidden"); enterBtn.textContent = "🚪 Explore Inside (3D)"; }
+  if (plotId === "OUTSKIRTS_STADIUM") {
+    document.getElementById("card-badge").textContent = "SE CITY OUTSKIRTS • INTERNATIONAL ARENA";
+    document.getElementById("card-owner").textContent = "🏏 SHERU BHAI CRICKET STADIUM";
+    document.getElementById("card-role").textContent = "Massive International Cricket Stadium in the city outskirts with Live Updating LED Scoreboard, Towering Floodlights, Multi-Tier Colorful Seats & 22-Yard Pitch!";
+    document.getElementById("card-type").textContent = "OUTSKIRTS CRICKET STADIUM";
+    document.getElementById("card-day").textContent = "LIVE SCOREBOARD 📺";
+    if (sheru3dBtn) sheru3dBtn.classList.add("hidden");
+    websiteBtn.classList.add("hidden");
+    if (enterBtn) { activeEnterUrl = getInteriorPageUrl("OUTSKIRTS_STADIUM", null); enterBtn.classList.remove("hidden"); enterBtn.textContent = "🏏 Enter Cricket Stadium (3D)"; }
+    plotCard.classList.remove("hidden");
+    return;
+  }
+
   if (plotId === "ROCKET_PAD") {
     document.getElementById("card-badge").textContent = "ISRO SRIHARIKOTA ZONE • SPACEPORT";
     document.getElementById("card-owner").textContent = "🚀 SHERU BHAI SPACEPORT";
@@ -101,6 +127,7 @@ function openPlotCard(plotId, data) {
     document.getElementById("card-day").textContent = "LIVE DIVINE GLOW ✨";
     if (sheru3dBtn) sheru3dBtn.classList.add("hidden");
     websiteBtn.classList.add("hidden");
+    if (enterBtn) { activeEnterUrl = getInteriorPageUrl("HILL_TEMPLE", null); enterBtn.classList.remove("hidden"); enterBtn.textContent = "🛕 Enter Temple Sanctum (3D)"; }
     plotCard.classList.remove("hidden");
     return;
   }
@@ -560,12 +587,12 @@ bindHoldControl("drive-btn-brake", "backward");
 bindHoldControl("drive-btn-boost", "boost");
 
 function updateDriveVehButtons(vType) {
-  ["car", "bike", "auto"].forEach((t) => {
+  ["jeep", "car", "bike", "auto"].forEach((t) => {
     document.getElementById(`drive-veh-${t}`)?.classList.toggle("active", t === vType);
   });
 }
 
-["car", "bike", "auto"].forEach((t) => {
+["jeep", "car", "bike", "auto"].forEach((t) => {
   document.getElementById(`drive-veh-${t}`)?.addEventListener("click", () => {
     engine.switchDriveVehicle(t);
     updateDriveVehButtons(t);
@@ -585,9 +612,9 @@ document.getElementById("drive-exit-btn")?.addEventListener("click", () => {
 if (btnPublicDrive) {
   btnPublicDrive.addEventListener("click", () => {
     setDriveHudVisible(true);
-    updateDriveVehButtons("car");
+    updateDriveVehButtons("jeep");
     engine.startDriveMode(
-      "car",
+      "jeep",
       (kmh) => { if (driveSpeedNum) driveSpeedNum.textContent = String(kmh); },
       () => setDriveHudVisible(false)
     );
@@ -670,9 +697,9 @@ document.getElementById("coin-stop-btn")?.addEventListener("click", () => {
 
 document.getElementById("btn-public-coinrush")?.addEventListener("click", () => {
   setDriveHudVisible(true);
-  updateDriveVehButtons("car");
+  updateDriveVehButtons("jeep");
   engine.startDriveMode(
-    "car",
+    "jeep",
     (kmh) => { if (driveSpeedNum) driveSpeedNum.textContent = String(kmh); },
     () => {
       engine.stopCoinRush();
@@ -694,3 +721,92 @@ document.getElementById("btn-public-coinrush")?.addEventListener("click", () => 
   );
   showToast("🪙 COIN RUSH STARTED! Drive across City, Beach & Sea Bridge to grab all 12 Gold Coins!");
 });
+
+// 🏏 OUTSKIRTS CRICKET STADIUM QUICK JUMP & TELEPORT
+document.getElementById("btn-public-stadium")?.addEventListener("click", () => {
+  engine.focusPlot("OUTSKIRTS_STADIUM", 0.12);
+  openPlotCard("OUTSKIRTS_STADIUM", null);
+  showToast("🏏 Outskirts International Cricket Stadium • Live Scoreboard!");
+});
+document.getElementById("drive-tp-stadium")?.addEventListener("click", () => engine.teleportDrive("stadium"));
+
+// 🎮 FREE FIRE WALK/DRIVE UI SWITCHER + VIRTUAL THUMBSTICK + JUMP!
+const ffSteerWrap = document.getElementById("ff-drive-steer-wrap");
+const ffJoyBase = document.getElementById("ff-walk-joy-base");
+const ffJoyKnob = document.getElementById("ff-walk-joy-knob");
+const ffPedals = document.getElementById("ff-drive-pedals");
+const ffJumpBtn = document.getElementById("drive-btn-jump");
+const ffBoostBtn = document.getElementById("drive-btn-boost");
+
+function syncFreeFireHudMode(mode) {
+  const walking = mode === "walk";
+  ffSteerWrap?.classList.toggle("hidden", walking);
+  ffPedals?.classList.toggle("hidden", walking);
+  ffJoyBase?.classList.toggle("hidden", !walking);
+  ffJumpBtn?.classList.toggle("hidden", !walking);
+  if (ffBoostBtn) ffBoostBtn.textContent = walking ? "🏃 RUN" : "🔥 NITRO";
+  if (pubAvatarBtn) pubAvatarBtn.textContent = walking ? "🚙 JEEP" : "🚶 OUT";
+}
+
+if (ffJoyBase && ffJoyKnob) {
+  let jPid = null;
+  const maxR = 40;
+  const moveJoy = (cx, cy) => {
+    const r = ffJoyBase.getBoundingClientRect();
+    const dx = cx - (r.left + r.width / 2);
+    const dy = cy - (r.top + r.height / 2);
+    const d = Math.min(Math.hypot(dx, dy), maxR);
+    const a = Math.atan2(dy, dx);
+    const kx = Math.cos(a) * d;
+    const ky = Math.sin(a) * d;
+    ffJoyKnob.style.transform = `translate(${kx}px, ${ky}px)`;
+    engine.setDriveJoystick(kx / maxR, -ky / maxR);
+  };
+  ffJoyBase.addEventListener("pointerdown", (e) => { e.preventDefault(); jPid = e.pointerId; ffJoyBase.setPointerCapture(e.pointerId); moveJoy(e.clientX, e.clientY); });
+  ffJoyBase.addEventListener("pointermove", (e) => { if (e.pointerId === jPid) moveJoy(e.clientX, e.clientY); });
+  const endJoy = (e) => {
+    if (e.pointerId !== jPid) return;
+    jPid = null;
+    ffJoyKnob.style.transform = "translate(0px, 0px)";
+    engine.setDriveJoystick(0, 0);
+  };
+  ffJoyBase.addEventListener("pointerup", endJoy);
+  ffJoyBase.addEventListener("pointercancel", endJoy);
+}
+
+ffJumpBtn?.addEventListener("pointerdown", (e) => { e.preventDefault(); engine.triggerAvatarJump(); });
+
+// Keep Free Fire Walk/Drive HUD in sync when toggling Avatar Out/In!
+pubAvatarBtn?.addEventListener("click", () => {
+  syncFreeFireHudMode(engine.driveState.subMode);
+});
+btnPublicDrive?.addEventListener("click", () => syncFreeFireHudMode("drive"));
+
+// 🚪 AUTO-SPAWN RIGHT OUTSIDE THE EXACT HOUSE / LANDMARK WHEN EXITING AN INTERIOR!
+(function checkReturnOutsideBuilding() {
+  const sp = new URLSearchParams(window.location.search);
+  if (sp.get("exitMode") !== "walk") return;
+  const exPlot = sp.get("exitPlot") || "";
+  const ex = sp.has("ex") ? parseFloat(sp.get("ex")) : null;
+  const ez = sp.has("ez") ? parseFloat(sp.get("ez")) : null;
+  const ey = sp.has("ey") ? parseFloat(sp.get("ey")) : 0;
+
+  // Wait briefly for Firebase plots to populate so exact plot coordinates are loaded
+  setTimeout(() => {
+    setDriveHudVisible(true);
+    updateDriveVehButtons("jeep");
+    engine.spawnOutsideBuilding(
+      exPlot,
+      Number.isFinite(ex) ? ex : null,
+      Number.isFinite(ez) ? ez : null,
+      Number.isFinite(ey) ? ey : 0,
+      (kmh) => { if (driveSpeedNum) driveSpeedNum.textContent = String(kmh); },
+      () => setDriveHudVisible(false)
+    );
+    syncFreeFireHudMode("walk");
+    showToast("🚶 You exited right outside! Run, jump, enter another building, or tap 🚙 JEEP to drive!");
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, 650);
+})();

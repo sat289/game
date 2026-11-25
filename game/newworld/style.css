@@ -582,17 +582,24 @@ hr {
 
 .public-quick-bar {
   position: fixed;
-  bottom: 12px;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 10px;
+  left: 8px;
+  right: 8px;
+  width: auto;
   z-index: 40;
   display: flex;
   flex-wrap: nowrap;
-  gap: 6px;
-  max-width: calc(100vw - 16px);
+  align-items: center;
+  justify-content: flex-start;
+  gap: 7px;
   overflow-x: auto;
-  padding: 4px 6px;
+  padding: 6px 8px;
+  border-radius: 16px;
+  background: rgba(8, 15, 32, 0.72);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  backdrop-filter: blur(10px);
   scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 .public-quick-bar::-webkit-scrollbar {
@@ -1282,7 +1289,7 @@ hr {
 /* =========================================
    v31: GPU HARDWARE COMPOSITING + VISITOR QUALITY PILL
    ========================================= */
-#canvas-container, #top-hud, .public-quick-bar, #admin-dock, #drive-hud {
+#canvas-container, #top-hud, #admin-dock, #drive-hud {
   transform: translateZ(0);
   will-change: transform;
 }
@@ -1400,4 +1407,176 @@ hr {
   font-size: 13px;
   font-weight: 900;
   box-shadow: 0 4px 20px rgba(250, 204, 21, 0.45);
+}
+
+/* =========================================
+   v34: FULL-WIDTH QUICK PILLS + FREE FIRE STYLE DRIVE & WALK CONTROLS
+   ========================================= */
+.quick-pill {
+  padding: 8px 12px !important;
+  font-size: 11.5px !important;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.quick-pill.stadium-pill, .mini-pill.stadium-pill {
+  background: linear-gradient(135deg, #16a34a, #0284c7);
+  color: #fff;
+  border-color: rgba(134, 239, 172, 0.9);
+}
+
+.int-floor-bar {
+  position: fixed;
+  top: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 25;
+  display: flex;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(8, 15, 32, 0.85);
+  border: 1px solid rgba(250, 204, 21, 0.55);
+}
+
+/* Free Fire Style Virtual Thumbstick & Action Buttons (Both City & Interiors!) */
+.ff-controls-layer {
+  position: fixed;
+  left: 14px;
+  right: 14px;
+  bottom: 18px;
+  z-index: 30;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  pointer-events: none;
+}
+.ff-joy-base {
+  pointer-events: auto;
+  position: relative;
+  width: 116px;
+  height: 116px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, rgba(15,23,42,0.52) 70%);
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 0 18px rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+}
+.ff-joy-knob {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fef08a, #f59e0b);
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.6);
+  pointer-events: none;
+}
+.ff-action-cluster {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+.ff-circle-btn {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  background: rgba(15, 23, 42, 0.68);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 900;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+  touch-action: none;
+  cursor: pointer;
+}
+.ff-circle-btn:active, .ff-circle-btn.pressed {
+  transform: scale(0.92);
+  border-color: #fde047;
+  background: rgba(245, 158, 11, 0.78);
+}
+.ff-circle-btn.jump {
+  width: 68px;
+  height: 68px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.72), rgba(37, 99, 235, 0.8));
+}
+.ff-circle-btn.sprint {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.78), rgba(239, 68, 68, 0.78));
+}
+
+/* Free Fire Style Drive HUD Polish */
+.ff-steer-pad {
+  pointer-events: auto;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.ff-steer-btn {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.42);
+  background: radial-gradient(circle, rgba(30, 41, 59, 0.78), rgba(8, 15, 32, 0.88));
+  color: #f8fafc;
+  font-size: 24px;
+  font-weight: 900;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  touch-action: none;
+  cursor: pointer;
+}
+.ff-steer-btn:active, .ff-steer-btn.pressed {
+  transform: scale(0.92);
+  border-color: #fde047;
+  background: rgba(56, 189, 248, 0.65);
+}
+.ff-pedal-cluster {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+.ff-pedal-top {
+  display: flex;
+  gap: 8px;
+}
+.ff-pedal-bottom {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+.ff-pedal-btn {
+  border-radius: 18px;
+  border: 2px solid rgba(255,255,255,0.45);
+  color: #fff;
+  font-weight: 900;
+  backdrop-filter: blur(8px);
+  touch-action: none;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.48);
+}
+.ff-pedal-btn.gas {
+  width: 72px;
+  height: 92px;
+  font-size: 13px;
+  background: linear-gradient(180deg, rgba(34, 197, 94, 0.82), rgba(5, 150, 105, 0.9));
+  border-color: #86efac;
+}
+.ff-pedal-btn.brake {
+  width: 66px;
+  height: 70px;
+  font-size: 12px;
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.8), rgba(185, 28, 28, 0.9));
+  border-color: #fca5a5;
+}
+.ff-pedal-btn:active, .ff-pedal-btn.pressed {
+  transform: scale(0.93);
+  filter: brightness(1.15);
 }

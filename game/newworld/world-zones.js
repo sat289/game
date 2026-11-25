@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { createGLSLOceanMaterial } from "./shaders-glsl.js?v=33";
-import { BUILDING_LABELS } from "./world-constants.js?v=33";
+import { createGLSLOceanMaterial } from "./shaders-glsl.js?v=34";
+import { BUILDING_LABELS } from "./world-constants.js?v=34";
 
 export const zoneMethods = {
   _buildSTJunctionStatue() {
@@ -2961,128 +2961,6 @@ export const zoneMethods = {
     this.ferrisWheelSim = { wheelRotor, cabins, neonRimMat };
   },
 
-  _buildRocketLaunchpad(ringRadius) {
-    const rx = -(ringRadius + 56);
-    const rz = ringRadius + 68;
-    this.rocketPadPos = { x: rx, z: rz };
-
-    const rg = new THREE.Group();
-    rg.position.set(rx, 0, rz);
-
-    const roadLen = 68;
-    const spRoad = new THREE.Mesh(this._boxGeo(6.4, 0.12, roadLen), this.mat.road);
-    spRoad.position.set(16, 0.04, -roadLen / 2);
-    const spDash = new THREE.Mesh(new THREE.PlaneGeometry(0.24, roadLen - 2), this.mat.stripe);
-    spDash.rotation.x = -Math.PI / 2;
-    spDash.position.set(16, 0.11, -roadLen / 2);
-    rg.add(spRoad, spDash);
-
-    const apron = new THREE.Mesh(this._boxGeo(34.0, 0.45, 30.0), this.mat.concrete);
-    apron.position.y = 0.22;
-    const padDeck = new THREE.Mesh(this._boxGeo(12.5, 1.6, 12.5), this.mat.stoneDark);
-    padDeck.position.set(0, 1.0, 0);
-    const blastTrench = new THREE.Mesh(this._boxGeo(6.2, 0.3, 14.0), this.mat.cinemaObsidian);
-    blastTrench.position.set(0, 1.85, 0);
-    const dangerRing = new THREE.Mesh(new THREE.RingGeometry(8.2, 9.2, 24), this.mat.petrolYellow);
-    dangerRing.rotation.x = -Math.PI / 2;
-    dangerRing.position.set(0, 0.48, 0);
-
-    const gantry = new THREE.Group();
-    gantry.position.set(-5.8, 1.8, 0);
-    for (let lvl = 0; lvl < 6; lvl++) {
-      const ly = lvl * 3.8 + 1.9;
-      const frame = new THREE.Mesh(this._boxGeo(3.2, 3.6, 3.2), lvl % 2 === 0 ? this.mat.rocketGantryRed : this.mat.wallWhite);
-      frame.position.y = ly;
-      gantry.add(frame);
-    }
-    [9.5, 16.5].forEach((ay) => {
-      const arm = new THREE.Mesh(this._boxGeo(4.8, 0.45, 0.75), this.mat.rocketGantryRed);
-      arm.position.set(3.2, ay, 0);
-      gantry.add(arm);
-    });
-    const beaconMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
-    const topBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.55, 8, 8), beaconMat);
-    topBeacon.position.set(0, 23.6, 0);
-    gantry.add(topBeacon);
-
-    const bunker = new THREE.Mesh(this._boxGeo(10.5, 3.6, 6.2), this.mat.wallWhite);
-    bunker.position.set(11.5, 2.2, 9.2);
-    const bWin = new THREE.Mesh(this._boxGeo(8.2, 1.5, 0.16), this.mat.glass);
-    bWin.position.set(11.5, 2.6, 6.08);
-    const spBoard = this._makeBuildingBoard("ISRO • SHERU SPACEPORT", "PSLV / GSLV LIVE LAUNCHPAD", "#0f172a", "#f97316", 11.4, 1.45);
-    spBoard.position.set(11.5, 4.9, 6.1);
-
-    const rocket = new THREE.Group();
-    rocket.position.set(0, 1.85, 0);
-
-    const core1 = new THREE.Mesh(new THREE.CylinderGeometry(1.25, 1.35, 9.5, 14), this.mat.rocketWhite);
-    core1.position.y = 5.4;
-    const saffronBand = new THREE.Mesh(new THREE.CylinderGeometry(1.29, 1.29, 0.75, 14), this.mat.templeSaffron);
-    saffronBand.position.y = 9.0;
-    const greenBand = new THREE.Mesh(new THREE.CylinderGeometry(1.29, 1.29, 0.75, 14), this.mat.dmartBrightGreen);
-    greenBand.position.y = 7.6;
-    const stage2 = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.25, 5.5, 14), this.mat.cinemaObsidian);
-    stage2.position.y = 12.6;
-    const fairing = new THREE.Mesh(new THREE.CylinderGeometry(1.42, 1.2, 4.2, 14), this.mat.rocketWhite);
-    fairing.position.y = 17.2;
-    const noseCone = new THREE.Mesh(new THREE.ConeGeometry(1.42, 4.4, 14), this.mat.rocketWhite);
-    noseCone.position.y = 21.5;
-
-    [-1.9, 1.9].forEach((bx) => {
-      const bBody = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.6, 8.2, 10), this.mat.rocketWhite);
-      bBody.position.set(bx, 4.8, 0);
-      const bTip = new THREE.Mesh(new THREE.ConeGeometry(0.55, 1.8, 10), this.mat.rocketGantryRed);
-      bTip.position.set(bx, 9.8, 0);
-      const bNozzle = new THREE.Mesh(new THREE.ConeGeometry(0.52, 0.9, 8), this.mat.cinemaObsidian);
-      bNozzle.position.set(bx, 0.45, 0);
-      rocket.add(bBody, bTip, bNozzle);
-    });
-    const mainNozzle = new THREE.Mesh(new THREE.ConeGeometry(1.1, 1.2, 10), this.mat.cinemaObsidian);
-    mainNozzle.position.y = 0.6;
-
-    const flameGroup = new THREE.Group();
-    const outerFlame = new THREE.Mesh(new THREE.ConeGeometry(2.1, 12.5, 12), this.mat.rocketFlame);
-    outerFlame.rotation.x = Math.PI;
-    outerFlame.position.y = -6.2;
-    const innerFlame = new THREE.Mesh(new THREE.ConeGeometry(1.05, 8.2, 10), this.mat.rocketFlameCore);
-    innerFlame.rotation.x = Math.PI;
-    innerFlame.position.y = -4.0;
-    flameGroup.add(outerFlame, innerFlame);
-    flameGroup.visible = false;
-
-    rocket.add(core1, saffronBand, greenBand, stage2, fairing, noseCone, mainNozzle, flameGroup);
-
-    const smokePuffs = [];
-    const smokeGeo = new THREE.DodecahedronGeometry(2.2, 0);
-    for (let s = 0; s < 8; s++) {
-      const ang = (s / 8) * Math.PI * 2;
-      const puff = new THREE.Mesh(smokeGeo, this.mat.rocketSmoke);
-      puff.position.set(Math.cos(ang) * 3.5, 2.2, Math.sin(ang) * 3.5);
-      puff.visible = false;
-      rg.add(puff);
-      smokePuffs.push({ mesh: puff, ang, baseR: 2.5 + (s % 2) * 1.4 });
-    }
-
-    const padSign = this._createNameSign("🚀 ISRO ROCKET LAUNCHPAD", "SRIHARIKOTA ZONE • LIVE LIFTOFF", true);
-    padSign.position.set(0, 27.5, 0);
-
-    const padHit = new THREE.Mesh(this._boxGeo(34, 30, 30), this.mat.invisibleHitbox);
-    padHit.position.set(0, 15, 0);
-    padHit.userData.plotId = "ROCKET_PAD";
-    this.plotHitboxes.push(padHit);
-
-    rg.add(apron, padDeck, blastTrench, dangerRing, gantry, bunker, bWin, spBoard, rocket, padSign, padHit);
-    this.cityGroup.add(rg);
-
-    this.rocketSim = {
-      rocket,
-      flameGroup,
-      smokePuffs,
-      beaconMat,
-      baseY: 1.85
-    };
-  },
-
   _buildArakuLandscape(ringRadius) {
     const ag = new THREE.Group();
 
@@ -3101,6 +2979,14 @@ export const zoneMethods = {
     const rockData = [];
     const treeData = [];
 
+    // Strict exclusion helper so Araku peaks & trees NEVER overlap Rocket Launchpad, Outskirts Stadium, or Hill Temple!
+    const isBlockedByLandmark = (x, z, extraR = 0) => {
+      if (this.rocketPadPos && Math.hypot(x - this.rocketPadPos.x, z - this.rocketPadPos.z) < 62 + extraR) return true;
+      if (this.outskirtsStadiumPos && Math.hypot(x - this.outskirtsStadiumPos.x, z - this.outskirtsStadiumPos.z) < 68 + extraR) return true;
+      if (this.hillTemplePos && Math.hypot(x - this.hillTemplePos.x, z - this.hillTemplePos.z) < 52 + extraR) return true;
+      return false;
+    };
+
     // Ring 1: Closer Lush Green Foothills (42 hills)
     const countInner = this.isLowRam ? 36 : 48;
     for (let i = 0; i < countInner; i++) {
@@ -3113,6 +2999,7 @@ export const zoneMethods = {
       const pz = Math.sin(ang) * rad;
       const h = 32 + ((i * 19) % 28);
       const w = 26 + ((i * 13) % 20);
+      if (isBlockedByLandmark(px, pz, w * 0.5)) continue;
       peakData.push({ x: px, y: h * 0.42, z: pz, sx: w, sy: h, sz: w * 0.92, ry: i * 0.7 });
 
       // Scatter lush Araku pine trees on lower slopes of foothills
@@ -3120,12 +3007,16 @@ export const zoneMethods = {
       for (let t = 0; t < treesPerHill; t++) {
         const ta = ang + (t - 2) * 0.045;
         const tr = rad - w * 0.55 - (t % 2) * 6;
-        treeData.push({
-          x: Math.cos(ta) * tr,
-          y: 2.2 + (t % 3) * 1.4,
-          z: Math.sin(ta) * tr,
-          s: 1.35 + (t % 3) * 0.45
-        });
+        const txp = Math.cos(ta) * tr;
+        const tzp = Math.sin(ta) * tr;
+        if (!isBlockedByLandmark(txp, tzp, 8)) {
+          treeData.push({
+            x: txp,
+            y: 2.2 + (t % 3) * 1.4,
+            z: tzp,
+            s: 1.35 + (t % 3) * 0.45
+          });
+        }
       }
     }
 
@@ -3232,7 +3123,7 @@ export const zoneMethods = {
     // Waterfall 2: North-West Mountain Ridge (cascading right behind the Hollow Railway Tunnel!)
     buildWaterfallCliff(-wfDist * 0.65, -wfDist * 0.88, 0.55, 44);
     // Waterfall 3: South-West Coastal Mountain Cliff (flowing straight into the Ocean beside the Beach!)
-    buildWaterfallCliff(-wfDist * 0.72, wfDist * 0.78, 2.35, 42);
+    buildWaterfallCliff(-wfDist * 0.88, wfDist * 0.96, 2.35, 42);
 
     // 3. 🌊 WINDING FLOWING BLUE VALLEY RIVERS (Connecting Araku Waterfalls -> Flowing Around Valley -> Into West Ocean!)
     const buildValleyRiver = (pts, width = 10.5) => {
@@ -3275,14 +3166,14 @@ export const zoneMethods = {
       new THREE.Vector3(-(ringRadius + 145), 0, -40)
     ], 11.0);
 
-    // South Valley River: Flows from SE Araku Hills -> behind South Railway Station -> SW Waterfall -> into West Ocean!
-    const srZ = ringRadius + 96;
+    // South Valley River: Routed cleanly SOUTH of Rocket Launchpad & Outskirts Stadium!
+    const srZ = ringRadius + 116;
     buildValleyRiver([
-      new THREE.Vector3(wfDist * 0.58, 0, wfDist * 0.75),
-      new THREE.Vector3(42, 0, srZ + 12),
-      new THREE.Vector3(-12, 0, srZ + 16),
-      new THREE.Vector3(-wfDist * 0.65, 0, wfDist * 0.72),
-      new THREE.Vector3(-(ringRadius + 122), 0, 56)
+      new THREE.Vector3(wfDist * 0.78, 0, wfDist * 0.88),
+      new THREE.Vector3(45, 0, srZ + 18),
+      new THREE.Vector3(-12, 0, srZ + 22),
+      new THREE.Vector3(-wfDist * 0.85, 0, wfDist * 0.92),
+      new THREE.Vector3(-(ringRadius + 145), 0, 68)
     ], 10.5);
 
     // 4. ☁️ MISTY ARAKU VALLEY CLOUDS WRAPPING AROUND THE MOUNTAIN PEAKS (Exact Araku Drone Reel Vibe!)
