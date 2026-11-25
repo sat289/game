@@ -9,7 +9,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged
-} from "./firebase-config.js?v=31";
+} from "./firebase-config.js?v=33";
 import {
   FollowerTownEngine,
   BUILDING_LABELS,
@@ -17,7 +17,7 @@ import {
   getTwoPlotGroup,
   getBlockPlotIds,
   getEightPlotGroup
-} from "./world-engine.js?v=31";
+} from "./world-engine.js?v=33";
 
 let isAdmin = false;
 let selectedPlotId = "plot_0001";
@@ -48,6 +48,33 @@ const beachEditBtn = document.getElementById("card-beach-edit-btn");
 const railwayEditBtn = document.getElementById("card-railway-edit-btn");
 const replayBuildBtn = document.getElementById("card-replay-build-btn");
 const websiteBtn = document.getElementById("card-website-btn");
+const enterBtn = document.getElementById("card-enter-btn");
+let activeEnterUrl = "";
+
+function getInteriorPageUrl(plotId, data) {
+  const owner = encodeURIComponent(
+    plotId === "VIP_ISLAND" ? (engine.islandOwner || "SHERU BHAI") : (data?.ownerName || "SHERU BHAI")
+  );
+  const ret = encodeURIComponent("./admin.html");
+  if (plotId === "VIP_ISLAND") {
+    return `./mansion.html?owner=${owner}&type=mansion&return=${ret}`;
+  }
+  const bt = data?.buildingType || "";
+  if (["srmt_mall", "dmart", "reliance_store", "apple_store"].includes(bt)) {
+    return `./malls.html?owner=${owner}&type=${bt}&return=${ret}`;
+  }
+  if (["school", "iti_college", "library"].includes(bt)) {
+    return `./school.html?owner=${owner}&type=${bt}&return=${ret}`;
+  }
+  if (["ground", "box_cricket"].includes(bt)) {
+    return `./stadium.html?owner=${owner}&type=${bt}&return=${ret}`;
+  }
+  if (bt === "beauty_parlour") {
+    return `./beauty-parlour.html?owner=${owner}&type=beauty&return=${ret}`;
+  }
+  return `./buildings.html?owner=${owner}&type=${bt || "house"}&return=${ret}`;
+}
+
 const sheru3dBtn = document.getElementById("card-sheru3d-btn");
 const sketchfabModal = document.getElementById("sketchfab-modal");
 const sketchfabIframe = document.getElementById("sketchfab-iframe");
@@ -160,6 +187,7 @@ engine.onAddPlotTap = (result) => {
 };
 
 function openPlotCard(plotId, data) {
+  if (enterBtn) { enterBtn.classList.add("hidden"); enterBtn.textContent = "🚪 Explore Inside (3D)"; }
   if (plotId === "ROCKET_PAD") {
     document.getElementById("card-badge").textContent = "ISRO SRIHARIKOTA ZONE • SPACEPORT";
     document.getElementById("card-owner").textContent = "🚀 SHERU BHAI SPACEPORT";
@@ -188,6 +216,7 @@ function openPlotCard(plotId, data) {
     if (replayBuildBtn) replayBuildBtn.classList.add("hidden");
     websiteBtn.classList.add("hidden");
     if (sheru3dBtn) sheru3dBtn.classList.add("hidden");
+    if (enterBtn) { activeEnterUrl = getInteriorPageUrl("VIP_ISLAND", null); enterBtn.classList.remove("hidden"); enterBtn.textContent = "👑 Enter Sheru Bhai Mansion (3D)"; }
     plotCard.classList.remove("hidden");
     return;
   }
@@ -316,7 +345,7 @@ function openPlotCard(plotId, data) {
         : size === 4
         ? (data.buildingType === "tirumala_temple" ? "4-PLOT TIRUMALA TEMPLE" : data.buildingType === "hotel_oyo" ? "20-FLOOR OYO TOWER" : data.buildingType === "hostel" ? "4-PLOT HOSTEL" : data.buildingType === "wine_shop" ? "4-PLOT WINE SHOP" : data.buildingType === "box_cricket" ? "4-PLOT BOX CRICKET" : data.buildingType === "bike_showroom" ? "4-PLOT BIKE SHOWROOM" : data.buildingType === "swimming_pool" ? "4-PLOT SWIMMING POOL" : data.buildingType === "city_park" ? "4-PLOT CITY PARK" : data.buildingType === "library" ? "4-PLOT LIBRARY" : data.buildingType === "dmart" ? "4-PLOT D-MART" : "4-PLOT LANDMARK")
         : size === 2
-        ? (data.buildingType === "mobile_showroom" ? "2-PLOT MOBILE SHOWROOM" : data.buildingType === "beach_villa_2" ? "2-PLOT BEACH VILLA" : "2-PLOT STUDIO")
+        ? (data.buildingType === "beauty_parlour" ? "2-PLOT BEAUTY PARLOUR" : data.buildingType === "mobile_showroom" ? "2-PLOT MOBILE SHOWROOM" : data.buildingType === "beach_villa_2" ? "2-PLOT BEACH VILLA" : "2-PLOT STUDIO")
         : data.buildingType === "ice_cream_shop"
         ? "ICE CREAM SHOP"
         : data.buildingType === "biryani_point"
@@ -345,6 +374,10 @@ function openPlotCard(plotId, data) {
   document.getElementById("b-role").value = data?.role || "";
   document.getElementById("b-type").value = data?.status === "built" ? data.buildingType : "house_blue";
   document.getElementById("b-day").value = data?.builtDay || worldSettings.dayNumber || 1;
+  if (enterBtn && data && data.status === "built" && data.buildingType !== "empty") {
+    activeEnterUrl = getInteriorPageUrl(plotId, data);
+    enterBtn.classList.remove("hidden");
+  }
   plotCard.classList.remove("hidden");
 }
 
@@ -623,7 +656,7 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
         ? (type === "imax_theater" ? "8-Plot IMAX 3D Dome Theater" : type === "movie_theater" ? "8-Plot Multiplex Movie Theater" : type === "mahindra_showroom" ? "8-Plot Mahindra SUV Showroom" : type === "bmw_showroom" ? "8-Plot BMW Luxury Showroom" : type === "audi_showroom" ? "8-Plot Audi Luxury Showroom" : "8-Plot Mega Stadium")
         : newSize === 4
         ? (type === "hotel_oyo" ? "20-Floor OYO Rooms Tower" : type === "hostel" ? "Boys & Girls Hostel" : type === "box_cricket" ? "Floodlit Box Cricket Turf" : type === "bike_showroom" ? "GT650 & Superbike Showroom" : type === "wine_shop" ? "Royal Wine Shop Landmark" : type === "dmart" ? "D-Mart Hypermarket" : type === "gym" ? "Fitness Gym Owner" : "4-Plot Town Landmark")
-        : (type === "mobile_showroom" ? "2-Plot Mega Mobile Showroom" : type === "beach_villa_2" ? "Luxury 2-Plot Beachfront Villa" : "2-Plot Photo Studio");
+        : (type === "beauty_parlour" ? "2-Plot Luxury Beauty Parlour & Spa" : type === "mobile_showroom" ? "2-Plot Mega Mobile Showroom" : type === "beach_villa_2" ? "Luxury 2-Plot Beachfront Villa" : "2-Plot Photo Studio");
 
     const anchorPayload = {
       status: "built",
@@ -687,7 +720,7 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
     } else if (relocatedCount > 0) {
       showToast(`🏗️ Built! Moved ${relocatedCount} houses to free plots.`);
     } else {
-      showToast(newSize === 8 ? (type === "imax_theater" ? "🎬 Built 8-Plot Giant IMAX 3D Dome with Sky Disco Lights!" : type === "movie_theater" ? "🎭 Built 8-Plot Real Movie Theater with Sky Disco Lights!" : type === "mahindra_showroom" ? "🚙 Built 8-Plot Mahindra SUV Showroom!" : type === "bmw_showroom" ? "🏎️ Built 8-Plot BMW Luxury Showroom!" : type === "audi_showroom" ? "🚘 Built 8-Plot Audi Showroom!" : "🏟️ Built 8-Plot Mega Stadium!") : newSize === 4 ? "🏛️ Built 4-Plot Landmark!" : newSize === 2 ? (type === "mobile_showroom" ? "📱 Built 2-Plot Mega Mobile Showroom!" : type === "beach_villa_2" ? "🏖️ Built 2-Plot Luxury Beach Villa!" : "📸 Built 2-Plot Photo Studio!") : `🔨 Built ${ownerName}'s plot!`);
+      showToast(newSize === 8 ? (type === "imax_theater" ? "🎬 Built 8-Plot Giant IMAX 3D Dome with Sky Disco Lights!" : type === "movie_theater" ? "🎭 Built 8-Plot Real Movie Theater with Sky Disco Lights!" : type === "mahindra_showroom" ? "🚙 Built 8-Plot Mahindra SUV Showroom!" : type === "bmw_showroom" ? "🏎️ Built 8-Plot BMW Luxury Showroom!" : type === "audi_showroom" ? "🚘 Built 8-Plot Audi Showroom!" : "🏟️ Built 8-Plot Mega Stadium!") : newSize === 4 ? "🏛️ Built 4-Plot Landmark!" : newSize === 2 ? (type === "beauty_parlour" ? "💄 Built 2-Plot Luxury Beauty Parlour & Spa!" : type === "mobile_showroom" ? "📱 Built 2-Plot Mega Mobile Showroom!" : type === "beach_villa_2" ? "🏖️ Built 2-Plot Luxury Beach Villa!" : "📸 Built 2-Plot Photo Studio!") : `🔨 Built ${ownerName}'s plot!`);
     }
     closeAllDrawers();
     engine.focusPlot(selectedPlotId);
@@ -1881,6 +1914,7 @@ function mapRequestedBuildingToType(text = "") {
   if (s.includes("auto")) return "auto_stand";
   if (s.includes("petrol")) return "petrol_bunk";
   if (s.includes("photo") || s.includes("studio")) return "photo_studio";
+  if (s.includes("beauty") || s.includes("parlour") || s.includes("parlor") || s.includes("salon") || s.includes("spa")) return "beauty_parlour";
   if (s.includes("mega mobile") || s.includes("mobile showroom")) return "mobile_showroom";
   if (s.includes("mobile")) return "mobile_shop";
   if (s.includes("medical") || s.includes("pharmacy")) return "medical_shop";
@@ -2227,3 +2261,45 @@ document.getElementById("btn-admin-drive")?.addEventListener("click", () => {
   );
   showToast("🚗 Drive Mode ON! Drive across the RGB Sea Bridge, Ghat Road & Rocket Pad!");
 });
+
+if (enterBtn) {
+  enterBtn.addEventListener("click", () => {
+    if (activeEnterUrl) window.location.href = activeEnterUrl;
+  });
+}
+
+// 🚶 AVATAR EXIT/ENTER CAR + 📯 HORN + 🚪 AUTO DOOR OPEN PROMPT (ADMIN)
+const admAvatarBtn = document.getElementById("drive-avatar-btn");
+const admEnterPrompt = document.getElementById("drive-enter-prompt");
+const admEnterDoorBtn = document.getElementById("drive-enter-door-btn");
+let admNearbyDoorInfo = null;
+
+document.getElementById("drive-horn-btn")?.addEventListener("click", () => engine.playDriveHorn());
+
+if (admAvatarBtn) {
+  admAvatarBtn.addEventListener("click", () => {
+    const mode = engine.toggleDriveAvatar();
+    admAvatarBtn.textContent = mode === "walk" ? "🚗 Get In" : "🚶 Get Out";
+    showToast(mode === "walk" ? "🚶 Avatar exited car! Walk up to any door to explore inside!" : "🚗 Back in driver seat!");
+  });
+}
+
+if (admEnterDoorBtn) {
+  admEnterDoorBtn.addEventListener("click", () => {
+    if (!admNearbyDoorInfo) return;
+    engine.playDoorOpenFX();
+    const url = getInteriorPageUrl(admNearbyDoorInfo.plotId, admNearbyDoorInfo.data);
+    setTimeout(() => { window.location.href = url; }, 220);
+  });
+}
+
+engine.onNearbyDoorChange = (info) => {
+  admNearbyDoorInfo = info;
+  if (!admEnterPrompt || !admEnterDoorBtn) return;
+  if (info) {
+    admEnterDoorBtn.textContent = `🚪 Open Door & Enter ${info.label}`;
+    admEnterPrompt.classList.remove("hidden");
+  } else {
+    admEnterPrompt.classList.add("hidden");
+  }
+};

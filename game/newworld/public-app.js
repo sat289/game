@@ -1,10 +1,37 @@
-import { db, ref, onValue, push, set } from "./firebase-config.js?v=31";
-import { FollowerTownEngine, BUILDING_LABELS, getRequiredSize } from "./world-engine.js?v=31";
+import { db, ref, onValue, push, set } from "./firebase-config.js?v=33";
+import { FollowerTownEngine, BUILDING_LABELS, getRequiredSize } from "./world-engine.js?v=33";
 
 let allPlots = {};
 const container = document.getElementById("canvas-container");
 const plotCard = document.getElementById("plot-card");
 const websiteBtn = document.getElementById("card-website-btn");
+const enterBtn = document.getElementById("card-enter-btn");
+let activeEnterUrl = "";
+
+function getInteriorPageUrl(plotId, data) {
+  const owner = encodeURIComponent(
+    plotId === "VIP_ISLAND" ? (engine.islandOwner || "SHERU BHAI") : (data?.ownerName || "SHERU BHAI")
+  );
+  const ret = encodeURIComponent("./index.html");
+  if (plotId === "VIP_ISLAND") {
+    return `./mansion.html?owner=${owner}&type=mansion&return=${ret}`;
+  }
+  const bt = data?.buildingType || "";
+  if (["srmt_mall", "dmart", "reliance_store", "apple_store"].includes(bt)) {
+    return `./malls.html?owner=${owner}&type=${bt}&return=${ret}`;
+  }
+  if (["school", "iti_college", "library"].includes(bt)) {
+    return `./school.html?owner=${owner}&type=${bt}&return=${ret}`;
+  }
+  if (["ground", "box_cricket"].includes(bt)) {
+    return `./stadium.html?owner=${owner}&type=${bt}&return=${ret}`;
+  }
+  if (bt === "beauty_parlour") {
+    return `./beauty-parlour.html?owner=${owner}&type=beauty&return=${ret}`;
+  }
+  return `./buildings.html?owner=${owner}&type=${bt || "house"}&return=${ret}`;
+}
+
 const sheru3dBtn = document.getElementById("card-sheru3d-btn");
 const sketchfabModal = document.getElementById("sketchfab-modal");
 const sketchfabIframe = document.getElementById("sketchfab-iframe");
@@ -28,6 +55,7 @@ const engine = new FollowerTownEngine(container, (plotId, data) => {
 }, { visitorHD: true });
 
 function openPlotCard(plotId, data) {
+  if (enterBtn) { enterBtn.classList.add("hidden"); enterBtn.textContent = "🚪 Explore Inside (3D)"; }
   if (plotId === "ROCKET_PAD") {
     document.getElementById("card-badge").textContent = "ISRO SRIHARIKOTA ZONE • SPACEPORT";
     document.getElementById("card-owner").textContent = "🚀 SHERU BHAI SPACEPORT";
@@ -48,6 +76,7 @@ function openPlotCard(plotId, data) {
     document.getElementById("card-day").textContent = "TOP COMMENTER REWARD 👑";
     if (sheru3dBtn) sheru3dBtn.classList.add("hidden");
     websiteBtn.classList.add("hidden");
+    if (enterBtn) { activeEnterUrl = getInteriorPageUrl("VIP_ISLAND", null); enterBtn.classList.remove("hidden"); enterBtn.textContent = "👑 Enter Sheru Bhai Mansion (3D)"; }
     plotCard.classList.remove("hidden");
     return;
   }
@@ -152,7 +181,7 @@ function openPlotCard(plotId, data) {
         : size === 4
         ? (data.buildingType === "tirumala_temple" ? "4-PLOT TIRUMALA TEMPLE" : data.buildingType === "hotel_oyo" ? "20-FLOOR OYO TOWER" : data.buildingType === "hostel" ? "4-PLOT HOSTEL" : data.buildingType === "wine_shop" ? "4-PLOT WINE SHOP" : data.buildingType === "box_cricket" ? "4-PLOT BOX CRICKET" : data.buildingType === "bike_showroom" ? "4-PLOT BIKE SHOWROOM" : data.buildingType === "swimming_pool" ? "4-PLOT SWIMMING POOL" : data.buildingType === "city_park" ? "4-PLOT CITY PARK" : data.buildingType === "library" ? "4-PLOT PUBLIC LIBRARY" : data.buildingType === "dmart" ? "4-PLOT D-MART" : "4-PLOT LANDMARK")
         : size === 2
-        ? (data.buildingType === "mobile_showroom" ? "2-PLOT MOBILE SHOWROOM" : data.buildingType === "beach_villa_2" ? "2-PLOT BEACH VILLA" : "2-PLOT STUDIO")
+        ? (data.buildingType === "beauty_parlour" ? "2-PLOT BEAUTY PARLOUR" : data.buildingType === "mobile_showroom" ? "2-PLOT MOBILE SHOWROOM" : data.buildingType === "beach_villa_2" ? "2-PLOT BEACH VILLA" : "2-PLOT STUDIO")
         : data.buildingType === "ice_cream_shop"
         ? "ICE CREAM SHOP"
         : data.buildingType === "biryani_point"
@@ -175,6 +204,10 @@ function openPlotCard(plotId, data) {
     document.getElementById("card-role").textContent = "Follow on Instagram to get your house built here!";
     document.getElementById("card-type").textContent = "OPEN";
     document.getElementById("card-day").textContent = "";
+  }
+  if (enterBtn && data && data.status === "built" && data.buildingType !== "empty") {
+    activeEnterUrl = getInteriorPageUrl(plotId, data);
+    enterBtn.classList.remove("hidden");
   }
   plotCard.classList.remove("hidden");
 }
@@ -581,3 +614,83 @@ if (btnPubGfx) {
     showToast(p.toast);
   });
 }
+
+if (enterBtn) {
+  enterBtn.addEventListener("click", () => {
+    if (activeEnterUrl) window.location.href = activeEnterUrl;
+  });
+}
+
+// 🚶 AVATAR EXIT/ENTER CAR + 📯 HORN + 🚪 AUTO DOOR OPEN PROMPT (PUBLIC)
+const pubAvatarBtn = document.getElementById("drive-avatar-btn");
+const pubEnterPrompt = document.getElementById("drive-enter-prompt");
+const pubEnterDoorBtn = document.getElementById("drive-enter-door-btn");
+let pubNearbyDoorInfo = null;
+
+document.getElementById("drive-horn-btn")?.addEventListener("click", () => engine.playDriveHorn());
+
+if (pubAvatarBtn) {
+  pubAvatarBtn.addEventListener("click", () => {
+    const mode = engine.toggleDriveAvatar();
+    pubAvatarBtn.textContent = mode === "walk" ? "🚗 Get In" : "🚶 Get Out";
+    showToast(mode === "walk" ? "🚶 Avatar exited car! Walk up to any building door to explore inside!" : "🚗 Back in driver seat!");
+  });
+}
+
+if (pubEnterDoorBtn) {
+  pubEnterDoorBtn.addEventListener("click", () => {
+    if (!pubNearbyDoorInfo) return;
+    engine.playDoorOpenFX();
+    const url = getInteriorPageUrl(pubNearbyDoorInfo.plotId, pubNearbyDoorInfo.data);
+    setTimeout(() => { window.location.href = url; }, 220);
+  });
+}
+
+engine.onNearbyDoorChange = (info) => {
+  pubNearbyDoorInfo = info;
+  if (!pubEnterPrompt || !pubEnterDoorBtn) return;
+  if (info) {
+    pubEnterDoorBtn.textContent = `🚪 Open Door & Enter ${info.label}`;
+    pubEnterPrompt.classList.remove("hidden");
+  } else {
+    pubEnterPrompt.classList.add("hidden");
+  }
+};
+
+// 🪙 IN-CITY 3D COIN RUSH MINI-GAME LAUNCHER (v33)
+const coinHud = document.getElementById("coin-hud");
+const coinScoreEl = document.getElementById("coin-score");
+const coinTimerEl = document.getElementById("coin-timer");
+const coinBestEl = document.getElementById("coin-best");
+
+document.getElementById("coin-stop-btn")?.addEventListener("click", () => {
+  engine.stopCoinRush();
+  coinHud?.classList.add("hidden");
+});
+
+document.getElementById("btn-public-coinrush")?.addEventListener("click", () => {
+  setDriveHudVisible(true);
+  updateDriveVehButtons("car");
+  engine.startDriveMode(
+    "car",
+    (kmh) => { if (driveSpeedNum) driveSpeedNum.textContent = String(kmh); },
+    () => {
+      engine.stopCoinRush();
+      coinHud?.classList.add("hidden");
+      setDriveHudVisible(false);
+    }
+  );
+  coinHud?.classList.remove("hidden");
+  engine.startCoinRush(
+    (s) => {
+      if (coinScoreEl) coinScoreEl.textContent = `🪙 ${s.score}`;
+      if (coinTimerEl) coinTimerEl.textContent = `⏱️ ${s.timeLeft}s`;
+      if (coinBestEl) coinBestEl.textContent = `🏆 ${s.best}`;
+    },
+    (res) => {
+      coinHud?.classList.add("hidden");
+      showToast(res.cleared ? `🏆 ALL COINS CLEARED! Final Score: ${res.score} (Best: ${res.best})` : `⏱️ Time Up! Score: ${res.score} (Best: ${res.best})`);
+    }
+  );
+  showToast("🪙 COIN RUSH STARTED! Drive across City, Beach & Sea Bridge to grab all 12 Gold Coins!");
+});

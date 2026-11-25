@@ -1,19 +1,11 @@
-# Sheru Bhai City 3D (v31 — Multi-Language GLSL + WebAssembly High-Quality Visitor Engine + All v30 Mega Features)
+# Sheru Bhai City 3D (v33 — Modular Upload-Safe Architecture + 3D Coin Rush + 60fps Mini-Arcade + Python Termux Optimizer)
 
-Upload the **entire `follower-town/` folder** (all 10 files, including new `shaders-glsl.js`, `wasm-perf.js`, and updated `firebase-config.js`) into your `sat289/game/` GitHub repository!
+## Why v33 Fixes the GitHub Mobile Upload Error ("Something went really wrong, and we can't process that file")
+- Previously, `world-engine.js` was a single **559 KB** file that timed out on mobile Chrome's GitHub web uploader.
+- In **v33**, it is cleanly split into **6 small ES modules** (`world-constants.js` 7 KB, `world-engine.js` 77 KB, `world-cinematics.js` 62 KB, `world-loop.js` 71 KB, `world-buildings.js` 162 KB, `world-zones.js` 170 KB) — **ZERO huge files!**
+- **Tip when uploading via Chrome Mobile:** Upload **5–6 files per commit** (e.g., Batch 1: HTML files, Batch 2: `world-*.js`, Batch 3: remaining JS & CSS), OR push ALL 26 files in 3 seconds using **`python3 optimize_city.py --push "v33 update"`** in Termux!
 
-## Multi-Language Architecture Inside v31
-1. **GLSL (OpenGL Shading Language — `shaders-glsl.js`):**
-   - **GLSL Atmospheric Sky Dome Shader:** 1-draw-call GPU sky gradient with warm sun scattering, golden sunset twilight, and deep night sky.
-   - **GLSL Animated Ocean Water Shader:** GPU-computed multi-wave ocean ripples, turquoise shallow-to-deep depth color, sparkling sun/moon reflections, and animated shoreline foam at Sheru Bhai Beach & VIP Island with zero CPU loops!
-   - **GLSL Ground Contact Shadows:** Soft radial ambient-occlusion ground shadow plane under every building & landmark—gives crisp 3D depth on 2GB–4GB RAM visitor phones without heavy real-time shadow maps!
-2. **WebAssembly (`WASM` — `wasm-perf.js`):**
-   - Verified 144-byte compiled WebAssembly binary running directly in 64KB linear memory (`Float32Array` + `Uint8Array`) to batch-cull 400+ `@username` signs & distant empty plots with zero JavaScript garbage-collection stutter!
-3. **High-Quality Visitors Page (`index.html`):**
-   - Antialiasing enabled on visitor phones, `256×256` crisp procedural asphalt/grass/glass textures, sharper `@username` signboards, GPU CSS hardware compositing, and a **1-Tap Graphics Preset Toggle (`✨ HD` / `🔥 Ultra` / `⚡ Smooth`)**!
-4. **All v30 Mega Features Included:**
-   - 📬 Unlimited Firebase Requests Inbox (`index.html` → `admin.html` with `⚡ Auto-Build`)
-   - 🚗 Drivable Car / GT650 Superbike / Yellow Auto Mode (`🎮 Drive` with Nitro & Teleports)
-   - 🚀 ISRO-Style Rocket Launchpad (`ROCKET_PAD` + `🚀 Rocket Cam`)
-   - 🌉 RGB Cable-Stayed Sea Bridge + 🏝️ VIP Private Island (`VIP_ISLAND`)
-   - 🎡 Beachside Giant Ferris Wheel & Mini Amusement Park (`FERRIS_WHEEL`)
+## New in v33
+1. **🪙 In-City 3D Coin Rush (`minigames.js`):** Tap **`🪙 Coin Rush`** in `index.html` to drive across city roads, Beach Boulevard, RGB Sea Bridge & Hilltop Temple road collecting 12 spinning gold coins against a 60-second timer.
+2. **🕹️ Sheru Bhai Low-RAM 60fps Arcade (`arcade.html` + `arcade-games.js`):** 3 built-in high-quality HTML5 Canvas + CSS3 GPU games (**🏎️ Highway Rush**, **🚀 ISRO Rocket Tap**, **🏏 Super Over Cricket**) using `<15 MB` RAM!
+3. **🐍 Python 3 Optimizer & Termux Git Pusher (`optimize_city.py`):** Audits file sizes, creates a minified low-RAM `dist_min/` build, and pushes straight to GitHub from Termux.
