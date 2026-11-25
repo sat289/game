@@ -59,6 +59,27 @@ window.ApexCity3D = (function () {
 
 
   // REAL FLOWING ANIMATED CANAL WATER TEXTURE (Scrolling Ripples & Foam Streaks!)
+
+  function createCoinTexture() {
+    const c = document.createElement('canvas');
+    c.width = 128; c.height = 128;
+    const ctx = c.getContext('2d');
+    const g = ctx.createRadialGradient(64, 64, 12, 64, 64, 62);
+    g.addColorStop(0.0, '#f59e0b');
+    g.addColorStop(0.65, '#b45309');
+    g.addColorStop(0.88, '#78350f');
+    g.addColorStop(1.0, '#451a03');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(64, 64, 62, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#fde047'; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.arc(64, 64, 52, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = '#fef08a';
+    ctx.font = '900 72px Inter, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('$', 64, 68);
+    return new THREE.CanvasTexture(c);
+  }
+
   function createFlowingWaterTexture() {
     const c = document.createElement('canvas');
     c.width = 256; c.height = 256;
@@ -286,14 +307,14 @@ window.ApexCity3D = (function () {
     const tireMat = new THREE.MeshStandardMaterial({ color: 0x141619, roughness: 0.85, metalness: 0.05 });
     const caliperMat = new THREE.MeshStandardMaterial({ color: 0xef4444, metalness: 0.45, roughness: 0.28 });
     const glassMat = new THREE.MeshStandardMaterial({
-      color: 0x1b4965,
-      emissive: 0x0b2545,
-      emissiveIntensity: 0.22,
-      metalness: 0.88,
-      roughness: 0.06,
-      envMapIntensity: 2.1,
+      color: 0x7dd3fc,
+      emissive: 0x0284c7,
+      emissiveIntensity: 0.34,
+      metalness: 0.55,
+      roughness: 0.08,
+      envMapIntensity: 2.0,
       transparent: true,
-      opacity: 0.54
+      opacity: 0.62
     });
     const headMat = new THREE.MeshBasicMaterial({ color: 0xe0f7ff });
     const drlMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
@@ -474,53 +495,43 @@ window.ApexCity3D = (function () {
         chassis.add(neonArc, ringF, ringR);
       }
 
-      // CRYSTAL-CLEAR HIGH-CONTRAST 3D HUMAN RIDER AVATAR SITTING ON THE BIKE!
+      // EXACT SAME STYLISH MALE PLAYER AVATAR SITTING ON THE BIKE (White-Black Shirt, Black Formal Pants, Swept Hair & Shades!)
       const rider = new THREE.Group();
-      const jacketMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.45, metalness: 0.12 }); // Crisp White Racing Jacket (Stands out clearly!)
-      const pantsMat = new THREE.MeshStandardMaterial({ color: 0x1d4ed8, roughness: 0.72 }); // Clear Denim-Blue Riding Pants
-      const riderAccent = new THREE.MeshStandardMaterial({ color: isVeryLight ? 0xef4444 : mainColor, roughness: 0.25, metalness: 0.55 });
-      const helmetMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.18, metalness: 0.55 }); // High-Vis Glossy Racing Gold/Yellow Helmet!
-      const visorGlowMat = new THREE.MeshStandardMaterial({ color: 0x00f0ff, emissive: 0x0284c7, emissiveIntensity: 0.45, metalness: 0.9, roughness: 0.08 });
-      const skinMat = new THREE.MeshStandardMaterial({ color: 0xe0ac69, roughness: 0.65 });
+      const rSkin = new THREE.MeshStandardMaterial({ color: 0xe0ac69, roughness: 0.62 });
+      const rHair = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.72 });
+      const rWhite = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.48 });
+      const rBlack = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.55 });
+      const rCyan = new THREE.MeshStandardMaterial({ color: 0x06b6d4, roughness: 0.35 });
       const upright = isCafe || isNaked;
-      const leanX = upright ? -0.18 : -0.42;
+      const leanX = upright ? -0.18 : -0.40;
 
-      // Clear Upright Sculpted Torso + Colored Shoulder Pads + Back Racing Number Stripe
-      const torso = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.66, 0.30), jacketMat);
-      torso.position.set(0, upright ? 1.46 : 1.38, upright ? 0.30 : 0.24);
-      torso.rotation.x = leanX;
-      const chestStripe = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.24, 0.32), riderAccent);
-      chestStripe.position.set(0, upright ? 1.54 : 1.44, upright ? 0.27 : 0.20);
-      chestStripe.rotation.x = leanX;
-      // Neck + Large Clear Glossy Racing Helmet + Bright Cyan Visor
-      const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.095, 0.14, 10), skinMat);
-      neck.position.set(0, upright ? 1.80 : 1.68, upright ? 0.22 : 0.08);
-      const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.24, 18, 16), helmetMat);
-      helmet.position.set(0, upright ? 1.98 : 1.84, upright ? 0.20 : 0.04);
-      const hVisor = new THREE.Mesh(new THREE.SphereGeometry(0.225, 16, 12, -Math.PI * 0.38, Math.PI * 0.76, Math.PI * 0.28, Math.PI * 0.36), visorGlowMat);
-      hVisor.position.copy(helmet.position);
-      hVisor.rotation.y = Math.PI;
-      // Arms with Bright Shoulder Pads & Gloves Gripping Handlebars + Blue Riding Legs & Boots
+      const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.20, 0.58, 12), rWhite);
+      torso.scale.set(1.06, 1, 0.65); torso.position.set(0, upright ? 1.44 : 1.36, upright ? 0.30 : 0.24); torso.rotation.x = leanX;
+      const yoke = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.16, 0.28), rBlack);
+      yoke.position.set(0, upright ? 1.62 : 1.50, upright ? 0.26 : 0.18); yoke.rotation.x = leanX;
+      const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.49, 0.05, 0.29), rCyan);
+      stripe.position.set(0, upright ? 1.50 : 1.40, upright ? 0.28 : 0.21); stripe.rotation.x = leanX;
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.20, 14, 12), rSkin);
+      head.position.set(0, upright ? 1.94 : 1.80, upright ? 0.20 : 0.06);
+      const hair = new THREE.Mesh(new THREE.SphereGeometry(0.21, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.54), rHair);
+      hair.position.set(0, upright ? 1.97 : 1.83, upright ? 0.20 : 0.06);
+      const shades = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.06, 0.06), new THREE.MeshStandardMaterial({ color: 0x0ea5e9, metalness: 0.9, roughness: 0.1 }));
+      shades.position.set(0, upright ? 1.95 : 1.81, upright ? 0.02 : -0.12);
       [-1, 1].forEach((s) => {
-        const shoulder = new THREE.Mesh(new THREE.SphereGeometry(0.105, 10, 10), riderAccent);
-        shoulder.position.set(s * 0.30, upright ? 1.66 : 1.54, upright ? 0.22 : 0.12);
-        const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.065, 0.68, 10), jacketMat);
-        arm.position.set(s * 0.32, upright ? 1.44 : 1.34, -0.20);
-        arm.rotation.x = upright ? 1.10 : 1.25;
-        arm.rotation.z = s * 0.18;
-        const glove = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 10), riderAccent);
-        glove.position.set(s * 0.38, upright ? 1.20 : 1.10, -0.60);
-        const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.09, 0.52, 10), pantsMat);
-        thigh.position.set(s * 0.24, 0.94, 0.24);
-        thigh.rotation.x = 0.85;
-        const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.075, 0.48, 10), pantsMat);
-        shin.position.set(s * 0.25, 0.64, 0.18);
-        shin.rotation.x = -0.32;
-        const boot = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.12, 0.26), riderAccent);
-        boot.position.set(s * 0.26, 0.42, 0.14);
-        rider.add(shoulder, arm, glove, thigh, shin, boot);
+        const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.072, 0.058, 0.66, 10), rWhite);
+        arm.position.set(s * 0.30, upright ? 1.44 : 1.34, -0.20);
+        arm.rotation.x = upright ? 1.10 : 1.25; arm.rotation.z = s * 0.18;
+        const hand = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), rSkin);
+        hand.position.set(s * 0.38, upright ? 1.20 : 1.10, -0.60);
+        const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.085, 0.50, 10), rBlack);
+        thigh.position.set(s * 0.24, 0.94, 0.24); thigh.rotation.x = 0.85;
+        const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.07, 0.46, 10), rBlack);
+        shin.position.set(s * 0.25, 0.64, 0.18); shin.rotation.x = -0.32;
+        const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.10, 0.24), rWhite);
+        shoe.position.set(s * 0.26, 0.42, 0.14);
+        rider.add(arm, hand, thigh, shin, shoe);
       });
-      rider.add(torso, chestStripe, neck, helmet, hVisor);
+      rider.add(torso, yoke, stripe, head, hair, shades);
       chassis.add(rider);
       group.userData.rider = rider;
 
@@ -551,10 +562,7 @@ window.ApexCity3D = (function () {
       const bMirL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.07, 0.08), glossyBlackMat);
       bMirL.position.set(-0.46, 1.24, -0.68);
       const bMirR = bMirL.clone(); bMirR.position.x = 0.46;
-      // Colorful Neon Underglow Strip under Bike Engine
-      const bikeGlow = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 2.3), new THREE.MeshBasicMaterial({ color: accentColor === 0x0f172a ? 0x00f0ff : accentColor, transparent: true, opacity: 0.28, depthWrite: false }));
-      bikeGlow.rotation.x = -Math.PI / 2; bikeGlow.position.y = 0.05;
-      chassis.add(exR, exL, hlL, hlR, tl, rimStripeF, rimStripeF2, rimStripeR, rimStripeR2, tankStripe, frontFender, bMirL, bMirR, bikeGlow);
+      chassis.add(exR, exL, hlL, hlR, tl, rimStripeF, rimStripeF2, rimStripeR, rimStripeR2, tankStripe, frontFender, bMirL, bMirR);
 
       addWheel(0, 0.42, -wb, 0.42, 0.22, true);
       addWheel(0, 0.42, wb, 0.42, 0.32, false);
@@ -648,7 +656,7 @@ window.ApexCity3D = (function () {
         chassis.add(cageBarL, cageBarR, postL, postR, jSeatL, jSeatR);
       } else {
         // Transparent Front/Side Cab Glass + VISIBLE 3D HUMAN DRIVER INSIDE + CLEAR SIDE DOOR SEAMS!
-        const cabGlassMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.45, roughness: 0.08, transparent: true, opacity: 0.46 });
+        const cabGlassMat = new THREE.MeshStandardMaterial({ color: 0x7dd3fc, emissive: 0x0369a1, emissiveIntensity: 0.35, metalness: 0.5, roughness: 0.08, transparent: true, opacity: 0.58 });
         const glassCab = new THREE.Mesh(new THREE.BoxGeometry(bodyW + 0.06, 0.56, isSUV ? 2.75 : is6x6 ? 1.85 : 1.52), cabGlassMat);
         glassCab.position.set(0, 1.80 + liftY, isSUV ? 0.42 : -0.34);
         // Visible Human Driver (Head + Shoulders + Steering Wheel inside Truck Cab!)
@@ -839,7 +847,9 @@ window.ApexCity3D = (function () {
       // Roof Cab Visor Trim
       const cabVisor = new THREE.Mesh(new THREE.BoxGeometry(bodyW * 0.92, 0.08, 0.28), accentMat);
       cabVisor.position.set(0, (isJeep ? 2.02 : 2.18) + liftY, -1.06);
-      chassis.add(bullBar, stepL, stepR, roofLight, grilleBox, tMirL, tMirR, flapL, flapR, cabVisor);
+      const guardL = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.42, 0.16), chromeMat); guardL.position.set(-0.52, 0.88 + liftY, -2.66 * lenScale);
+      const guardR = guardL.clone(); guardR.position.x = 0.52;
+      chassis.add(bullBar, stepL, stepR, roofLight, grilleBox, tMirL, tMirR, flapL, flapR, cabVisor, guardL, guardR);
 
       const twx = bodyW / 2 + 0.12;
       addWheel(-twx, wheelR, -1.55 * lenScale, wheelR, isMonster ? 0.72 : 0.46, true);
@@ -1183,6 +1193,96 @@ window.ApexCity3D = (function () {
   }
 
 
+
+  // STYLISH NATURAL ARTICULATED 3D MALE AVATAR (Swept Hair + White & Black/Cyan Color-Block Shirt + Smooth Jointed Limbs — NO Stick Look!)
+  function createPlayerAvatar() {
+    const g = new THREE.Group();
+    const skinMat = new THREE.MeshStandardMaterial({ color: 0xe0ac69, roughness: 0.62 });
+    const hairMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.72 });
+    const whiteShirtMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.48 });
+    const blackAccentMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.55 });
+    const cyanTrimMat = new THREE.MeshStandardMaterial({ color: 0x06b6d4, roughness: 0.35, metalness: 0.3 });
+    const blackPantMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.68 });
+    const shoeMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.4 });
+    const shoeSoleMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.5 });
+
+    const bodyRoot = new THREE.Group();
+    g.add(bodyRoot);
+
+    // Sculpted Head + Stylish Layered Swept Hair + Sunglasses
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.095, 0.14, 12), skinMat);
+    neck.position.y = 1.54;
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.20, 18, 16), skinMat);
+    head.scale.set(0.95, 1.06, 0.98); head.position.y = 1.72;
+    // Stylish modern swept hair (base + sculpted top wave + side fade)
+    const hairBase = new THREE.Mesh(new THREE.SphereGeometry(0.21, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.52), hairMat);
+    hairBase.position.set(0, 1.75, -0.01);
+    const hairQuiff = new THREE.Mesh(new THREE.SphereGeometry(0.14, 14, 10), hairMat);
+    hairQuiff.scale.set(1.15, 0.55, 1.45); hairQuiff.position.set(0.02, 1.91, 0.05); hairQuiff.rotation.x = -0.22;
+    const shades = new THREE.Mesh(new THREE.BoxGeometry(0.27, 0.068, 0.06), new THREE.MeshStandardMaterial({ color: 0x0ea5e9, metalness: 0.9, roughness: 0.1 }));
+    shades.position.set(0, 1.73, 0.185);
+    const beltBuckle = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.075, 0.04), new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.9, roughness: 0.15 }));
+    beltBuckle.position.set(0, 0.94, 0.16);
+    bodyRoot.add(beltBuckle);
+
+    // Stylish White + Black + Cyan Color-Block Formal/Street Shirt Torso
+    const chest = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.20, 0.58, 14), whiteShirtMat);
+    chest.scale.set(1.08, 1, 0.65); chest.position.y = 1.22;
+    const shoulderYoke = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.24, 0.16, 14), blackAccentMat);
+    shoulderYoke.scale.set(1.10, 1, 0.68); shoulderYoke.position.y = 1.43;
+    const stripeChest = new THREE.Mesh(new THREE.BoxGeometry(0.49, 0.05, 0.29), cyanTrimMat);
+    stripeChest.position.y = 1.33;
+    const collar = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.035, 8, 14), whiteShirtMat);
+    collar.rotation.x = Math.PI / 2; collar.position.y = 1.50;
+    const pelvis = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.19, 0.18, 14), blackPantMat);
+    pelvis.scale.set(1.06, 1, 0.68); pelvis.position.y = 0.85;
+
+    // Smooth Natural Jointed Arms (Rounded Shoulder -> Tapered Sleeve -> Elbow Joint -> Forearm + Hand)
+    const makeArm = (sx) => {
+      const sh = new THREE.Group(); sh.position.set(sx * 0.29, 1.44, 0);
+      const shCap = new THREE.Mesh(new THREE.SphereGeometry(0.09, 12, 10), blackAccentMat);
+      const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.082, 0.070, 0.30, 12), whiteShirtMat);
+      upper.position.y = -0.15; sh.add(shCap, upper);
+      const elbow = new THREE.Group(); elbow.position.y = -0.30; sh.add(elbow);
+      const elJoint = new THREE.Mesh(new THREE.SphereGeometry(0.068, 10, 10), whiteShirtMat);
+      const fore = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.052, 0.28, 12), skinMat);
+      fore.position.y = -0.14;
+      const hand = new THREE.Mesh(new THREE.SphereGeometry(0.058, 10, 10), skinMat);
+      hand.position.y = -0.29;
+      elbow.add(elJoint, fore, hand);
+      return { sh, elbow };
+    };
+    const armL = makeArm(-1), armR = makeArm(1);
+
+    // Smooth Natural Jointed Black Formal Pant Legs (Hip -> Thigh -> Knee Joint -> Shin -> Stylish Sneakers!)
+    const makeLeg = (sx) => {
+      const hip = new THREE.Group(); hip.position.set(sx * 0.13, 0.78, 0);
+      const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.105, 0.088, 0.38, 12), blackPantMat);
+      thigh.position.y = -0.19; hip.add(thigh);
+      const knee = new THREE.Group(); knee.position.y = -0.38; hip.add(knee);
+      const knJoint = new THREE.Mesh(new THREE.SphereGeometry(0.082, 10, 10), blackPantMat);
+      const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.082, 0.066, 0.36, 12), blackPantMat);
+      shin.position.y = -0.18;
+      const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.09, 0.25), shoeMat);
+      shoe.position.set(0, -0.37, 0.05);
+      const sole = new THREE.Mesh(new THREE.BoxGeometry(0.135, 0.03, 0.26), shoeSoleMat);
+      sole.position.set(0, -0.41, 0.05);
+      knee.add(knJoint, shin, shoe, sole);
+      return { hip, knee };
+    };
+    const legL = makeLeg(-1), legR = makeLeg(1);
+
+    bodyRoot.add(neck, head, hairBase, hairQuiff, shades, chest, shoulderYoke, stripeChest, collar, pelvis, armL.sh, armR.sh, legL.hip, legR.hip);
+    g.userData = {
+      bodyRoot,
+      legL: legL.hip, kneeL: legL.knee,
+      legR: legR.hip, kneeR: legR.knee,
+      armL: armL.sh, elbowL: armL.elbow,
+      armR: armR.sh, elbowR: armR.elbow
+    };
+    return g;
+  }
+
   // ANIMATED 3D WALKING HUMANS FOR CITY FOOTPATHS
   function createWalkingHuman(idx) {
     const shirtColors = [0xef4444, 0x3b82f6, 0x10b981, 0xf59e0b, 0x8b5cf6, 0xec4899, 0x06b6d4, 0xf8fafc];
@@ -1223,9 +1323,11 @@ window.ApexCity3D = (function () {
     createSkyEnvMap,
     createRoadTexture,
     createFlowingWaterTexture,
+    createCoinTexture,
     createBuildingTexture,
     createRealisticTree,
     createWalkingHuman,
+    createPlayerAvatar,
     buildVehicleMesh
   };
 })();

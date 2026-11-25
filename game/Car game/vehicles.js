@@ -5,10 +5,10 @@ const IMG_TRUCK = 'assets/truck.jpg';
 const IMG_BIKE = 'assets/bike.jpg';
 
 window.APEX_VEHICLES = [
-  { id: 0,  name: '2025 Koenigsegg Gemera', cat: 'CAR',   modelType: 'car',         bodyStyle: 'gemera_hyper',     isRealFBX: true, fbxPath: 'assets/gemera/FINAL_MODEL_G.fbx', resourcePath: 'assets/gemera/', colorHex: 0x0c1018, accentHex: 0xef4444, starter: true, price: 0,      img: IMG_STARTER_CAR, hue: 0,   speed: 78, accel: 76, handle: 82, nitro: 74 },
+  { id: 0,  name: '2025 Koenigsegg Gemera', cat: 'CAR',   modelType: 'car',         bodyStyle: 'gemera_hyper',     isRealFBX: true, fbxPath: 'assets/gemera/FINAL_MODEL_G.fbx', resourcePath: 'assets/gemera/', colorHex: 0xe11d48, accentHex: 0xfacc15, starter: true, price: 0,      img: IMG_STARTER_CAR, hue: 0,   speed: 78, accel: 76, handle: 82, nitro: 74 },
   { id: 1,  name: 'Yamaha R15 V4 Racing',   cat: 'BIKE',  modelType: 'bike',        bodyStyle: 'r15_v4',           colorHex: 0x1d4ed8, accentHex: 0x38bdf8, price: 20000,  img: IMG_BIKE,        hue: 350, speed: 82, accel: 85, handle: 90, nitro: 78 },
   { id: 2,  name: 'F-150 Raptor SVT',       cat: 'TRUCK', modelType: 'truck',       bodyStyle: 'raptor_wide',      colorHex: 0x2563eb, accentHex: 0x38bdf8, price: 30000,  img: IMG_TRUCK,       hue: 210, speed: 78, accel: 79, handle: 76, nitro: 80 },
-  { id: 3,  name: 'Ferrari SF90 Stradale',  cat: 'CAR',   modelType: 'car',         bodyStyle: 'italian_mid',      colorHex: 0xe11d48, accentHex: 0xfde047, price: 40000,  img: IMG_SUPER_CAR,   hue: 350, speed: 86, accel: 85, handle: 88, nitro: 82 },
+  { id: 3,  name: 'Ferrari SF90 Stradale',  cat: 'CAR',   modelType: 'car',         bodyStyle: 'italian_mid',      colorHex: 0x0284c7, accentHex: 0xfde047, price: 40000,  img: IMG_SUPER_CAR,   hue: 350, speed: 86, accel: 85, handle: 88, nitro: 82 },
   { id: 4,  name: 'Kawasaki Ninja H2R',     cat: 'BIKE',  modelType: 'bike',        bodyStyle: 'h2r_supercharged', colorHex: 0x10b981, accentHex: 0x00f0ff, price: 50000,  img: IMG_BIKE,        hue: 155, speed: 88, accel: 90, handle: 91, nitro: 85 },
   { id: 5,  name: 'Jeep Wrangler Rubicon',  cat: 'TRUCK', modelType: 'truck',       bodyStyle: 'jeep_open',        colorHex: 0xea580c, accentHex: 0xfde047, price: 60000,  img: IMG_TRUCK,       hue: 25,  speed: 80, accel: 82, handle: 82, nitro: 83 },
   { id: 6,  name: 'Huracan Evo Spyder',     cat: 'CAR',   modelType: 'car',         bodyStyle: 'wedge_spyder',     colorHex: 0xfacc15, accentHex: 0x0f172a, price: 70000,  img: IMG_SUPER_CAR,   hue: 48,  speed: 91, accel: 90, handle: 90, nitro: 87 },
