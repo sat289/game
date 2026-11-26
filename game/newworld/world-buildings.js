@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { BUILDING_LABELS } from "./world-constants.js?v=36";
+import { BUILDING_LABELS } from "./world-constants.js?v=37";
 
 export const buildingMethods = {
   _getLandmarkSubtitle(type) {
@@ -24,6 +24,17 @@ export const buildingMethods = {
       beach_villa_2: "🏖️ LUXURY MEGA BEACH VILLA",
       mobile_showroom: "📱 మొబైల్ షోరూమ్ • 5G SMARTPHONES",
       beauty_parlour: "💄 బ్యూటీ పార్లర్ • LUXURY SALON & SPA",
+      light_house: "🚨 లైట్ హౌస్ • 360° SEA BEACON",
+      swamy_school: "🏫 స్వామి ఇంగ్లీష్ మీడియం హై స్కూల్",
+      dmart_mega: "🛒 మెగా డి-మార్ట్ • 8-PLOT HYPERMARKET",
+      inorbit_mall: "🏬 ఇనార్బిట్ మాల్ • LUXURY MALL",
+      function_hall: "🎉 ఫంక్షన్ హాల్ • DJ • DRONES • LUNCH",
+      ff_office: "🎮 గరీనా ఫ్రీ ఫైర్ • 3-FLOOR HQ",
+      ayyappa_temple: "🛕 శ్రీ అయ్యప్ప స్వామి • 18 GOLDEN STEPS",
+      yamaha_showroom: "🏍️ యమహా రేసింగ్ షోరూమ్ • R15 & MT-15",
+      stark_tower: "⚡ అవెంజర్స్ స్టార్క్ టవర్ • SKYSCRAPER",
+      lc_mart: "🛒 ఎల్‌సి మార్ట్ • SUPERMARKET",
+      bar_lounge: "🍸 రాయల్ బార్ & రెస్టో లాంజ్",
       tirumala_temple: "🛕 తిరుమల శ్రీ వెంకటేశ్వర స్వామి దేవస్థానం",
       hotel_oyo: "🏨 20-FLOOR OYO ROOMS • LUXURY SUITES",
       hostel: "🏢 బాయ్స్ & గర్ల్స్ హాస్టల్ • AC & WIFI",
@@ -1594,6 +1605,8 @@ export const buildingMethods = {
     const g = new THREE.Group();
     const winMat = this.timeOfDay === "night" ? this.mat.windowNight : this.mat.windowDay;
 
+    if (type === "light_house") return this._buildTwoPlotLightHouse(plotId, ownerName);
+
     if (type === "beauty_parlour") {
       // 💄 2-PLOT LUXURY BEAUTY PARLOUR & SPA
       const body = new THREE.Mesh(this._boxGeo(13.6, 4.6, 5.5), this.mat.beautyBlush);
@@ -1949,6 +1962,13 @@ export const buildingMethods = {
 
 
 
+
+    if (type === "ff_office") return this._buildFourPlotFFOffice(plotId, ownerName);
+    if (type === "ayyappa_temple") return this._buildFourPlotAyyappaTemple(plotId, ownerName);
+    if (type === "yamaha_showroom") return this._buildFourPlotYamahaShowroom(plotId, ownerName);
+    if (type === "stark_tower") return this._buildFourPlotStarkTower(plotId, ownerName);
+    if (type === "lc_mart") return this._buildFourPlotLCMart(plotId, ownerName);
+    if (type === "bar_lounge") return this._buildFourPlotBarLounge(plotId, ownerName);
 
     // 4-PLOT SACRED TIRUMALA VENKATESWARA SWAMY TEMPLE (`tirumala_temple`) — For @bobby_official_333!
     if (type === "tirumala_temple") {

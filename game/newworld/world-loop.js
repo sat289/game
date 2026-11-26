@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getSkyPalette } from "./shaders-glsl.js?v=36";
+import { getSkyPalette } from "./shaders-glsl.js?v=37";
 
 export const loopMethods = {
   _animate() {
@@ -290,6 +290,41 @@ export const loopMethods = {
       if (os.players && os.players.length >= 2) {
         os.players[0].position.y = 0.5 + Math.abs(Math.sin(elapsed * 3.5)) * 0.2;
         os.players[1].position.z = -5.2 + Math.sin(elapsed * 2.2) * 1.4;
+      }
+    }
+
+
+    // 🎉🎮🛕 v37 LIVE ANIMATIONS (Function Hall Drones & Fireworks, FF Live Gameplay Screen & Ayyappa Swamis Climbing 18 Steps!)
+    if (this.lifeEnabled && this.v37Animations && this.v37Animations.length > 0) {
+      for (const item of this.v37Animations) {
+        if (item.type === "function_hall") {
+          for (const d of item.drones) {
+            const a = elapsed * d.speed + d.phase;
+            d.mesh.position.set(Math.cos(a) * d.radius, d.baseY + Math.sin(elapsed * 3.0 + d.phase) * 0.7, Math.sin(a) * (d.radius * 0.45));
+            d.mesh.rotation.y = -a;
+          }
+          if (item.fwGroup) {
+            const burstCycle = (elapsed * 0.7) % 1.0;
+            const sc = 0.25 + burstCycle * 1.45;
+            item.fwGroup.scale.set(sc, sc, sc);
+            item.fwGroup.rotation.y = elapsed * 1.4;
+            item.fwGroup.visible = burstCycle < 0.85;
+          }
+        } else if (item.type === "ff_screen") {
+          item.acc += rawDt;
+          if (item.acc >= 0.2) {
+            item.acc = 0;
+            item.drawFFScreen(elapsed);
+          }
+        } else if (item.type === "ayyappa_steps") {
+          for (const sw of item.swamis) {
+            const f = (elapsed * sw.speed + sw.phase) % 1.0;
+            const sy = 0.45 + f * 3.05 + Math.abs(Math.sin(elapsed * 8.5 + sw.phase * 12)) * 0.12;
+            const sz = 5.8 - f * 4.5;
+            sw.mesh.position.set(sw.laneX, sy, sz);
+            sw.mesh.rotation.y = Math.PI; // Facing straight up the 18 Golden Steps toward Ayyappa Sanctum!
+          }
+        }
       }
     }
 

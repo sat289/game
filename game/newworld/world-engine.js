@@ -5,10 +5,10 @@ import {
   getSkyPalette,
   createGLSLOceanMaterial,
   createGLSLContactShadowMaterial
-} from "./shaders-glsl.js?v=36";
-import { createProceduralTextureSuite } from "./textures-pbr.js?v=36";
-import { WasmPerfEngine } from "./wasm-perf.js?v=36";
-import { QualityManager } from "./quality-manager.js?v=36";
+} from "./shaders-glsl.js?v=37";
+import { createProceduralTextureSuite } from "./textures-pbr.js?v=37";
+import { WasmPerfEngine } from "./wasm-perf.js?v=37";
+import { QualityManager } from "./quality-manager.js?v=37";
 import {
   EIGHT_PLOT_TYPES,
   FOUR_PLOT_TYPES,
@@ -21,12 +21,13 @@ import {
   getBlockPlotIds,
   getTwoPlotGroup,
   getEightPlotGroup
-} from "./world-constants.js?v=36";
-import { zoneMethods } from "./world-zones.js?v=36";
-import { buildingMethods } from "./world-buildings.js?v=36";
-import { cinematicMethods } from "./world-cinematics.js?v=36";
-import { loopMethods } from "./world-loop.js?v=36";
-import { outskirtsMethods } from "./world-outskirts.js?v=36";
+} from "./world-constants.js?v=37";
+import { zoneMethods } from "./world-zones.js?v=37";
+import { buildingMethods } from "./world-buildings.js?v=37";
+import { cinematicMethods } from "./world-cinematics.js?v=37";
+import { loopMethods } from "./world-loop.js?v=37";
+import { outskirtsMethods } from "./world-outskirts.js?v=37";
+import { v37LandmarkMethods } from "./world-landmarks-v37.js?v=37";
 
 export {
   EIGHT_PLOT_TYPES,
@@ -187,6 +188,7 @@ export class FollowerTownEngine {
     this.outskirtsStadiumPos = { x: 112, z: 116 };
     this.outskirtsStadiumSim = null;
     this.beautySparkles = [];
+    this.v37Animations = [];
     this.railRInner = 70;
     this.railROuter = 73.8;
     this.railwayOwner = "@_ur_bunny_108_";
@@ -696,7 +698,16 @@ export class FollowerTownEngine {
       beautyHotPink: new THREE.MeshPhongMaterial({ color: 0xec4899, specular: 0xffffff, shininess: 135 }),
       beautyRoseGold: new THREE.MeshPhongMaterial({ color: 0xf4a29e, specular: 0xfff1f2, shininess: 155 }),
       beautySparklePink: new THREE.MeshBasicMaterial({ color: 0xf472b6 }),
-      beautySparkleGold: new THREE.MeshBasicMaterial({ color: 0xfef08a })
+      beautySparkleGold: new THREE.MeshBasicMaterial({ color: 0xfef08a }),
+      // v37 Swamy School, Inorbit Mall, FF Office, Yamaha & Stark Tower Materials
+      swamySkyBlue: new THREE.MeshLambertMaterial({ color: 0x0284c7 }),
+      swamyArchMaroon: new THREE.MeshLambertMaterial({ color: 0x6b1d28 }),
+      swamyUniformNavy: new THREE.MeshLambertMaterial({ color: 0x1e3a8a }),
+      inorbitNavy: new THREE.MeshPhongMaterial({ color: 0x0c4a6e, specular: 0x7dd3fc, shininess: 110 }),
+      inorbitCyanGlow: new THREE.MeshBasicMaterial({ color: 0x38bdf8 }),
+      ffOrangeGlow: new THREE.MeshBasicMaterial({ color: 0xf97316 }),
+      yamahaBlue: new THREE.MeshPhongMaterial({ color: 0x0033a0, specular: 0x93c5fd, shininess: 140 }),
+      starkArcGlow: new THREE.MeshBasicMaterial({ color: 0x38bdf8 })
     };
   }
 
@@ -1057,6 +1068,7 @@ export class FollowerTownEngine {
     this.theaterDiscos = this.theaterDiscos.filter((t) => t.plotId !== plotId);
     this.heroAudiSlots = this.heroAudiSlots.filter((a) => a.plotId !== plotId);
     this.beautySparkles = this.beautySparkles.filter((b) => b.plotId !== plotId);
+    this.v37Animations = this.v37Animations.filter((v) => v.plotId !== plotId);
   }
 
   syncLandmarkFootprints(allPlotsObj) {
@@ -1326,6 +1338,7 @@ export class FollowerTownEngine {
       this.theaterDiscos = this.theaterDiscos.filter((t) => t.plotId !== plotId);
       this.heroAudiSlots = this.heroAudiSlots.filter((a) => a.plotId !== plotId);
       this.beautySparkles = this.beautySparkles.filter((b) => b.plotId !== plotId);
+      this.v37Animations = this.v37Animations.filter((v) => v.plotId !== plotId);
       this.blockedRoadZones = this.blockedRoadZones.filter((z) => z.plotId !== plotId);
     }
 
@@ -1387,10 +1400,10 @@ export class FollowerTownEngine {
     if (effEight || effFour) {
       const hitW = effEight ? this.EIGHT_PLOT_WIDTH : this.BLOCK_FOOTPRINT - 0.2;
       hitbox = new THREE.Mesh(
-        this._boxGeo(hitW, data?.buildingType === "hotel_oyo" ? 30.0 : 12.0, this.BLOCK_FOOTPRINT - 0.2),
+        this._boxGeo(hitW, (data?.buildingType === "hotel_oyo" || data?.buildingType === "stark_tower") ? 32.0 : 12.0, this.BLOCK_FOOTPRINT - 0.2),
         this.mat.invisibleHitbox
       );
-      hitbox.position.y = data?.buildingType === "hotel_oyo" ? 15.0 : 6.0;
+      hitbox.position.y = (data?.buildingType === "hotel_oyo" || data?.buildingType === "stark_tower") ? 16.0 : 6.0;
     } else if (effTwo) {
       hitbox = new THREE.Mesh(
         this._boxGeo(this.BLOCK_FOOTPRINT - 0.2, 8.5, this.PLOT_SIZE - 0.2),
@@ -1453,7 +1466,31 @@ export class FollowerTownEngine {
       this._emptyPlotCoords.set(plotId, { grp: plotGroup, x: plotGroup.position.x, z: plotGroup.position.z });
     } else if (isEightPlot) {
       this._emptyPlotCoords.delete(plotId);
-      if (data.buildingType === "imax_theater") {
+      if (data.buildingType === "swamy_school") {
+        buildingObj = this._buildEightPlotSwamySchool(plotId, data.ownerName);
+        const topLabel = data.ownerName || "SWAMY E.M. HIGH SCHOOL";
+        const sign = this._createNameSign(topLabel, "🏫 స్వామి ఇంగ్లీష్ మీడియం హై స్కూల్ • KAKINADA", true);
+        sign.position.set(0, 14.8, 0);
+        buildingObj.add(sign);
+      } else if (data.buildingType === "dmart_mega") {
+        buildingObj = this._buildEightPlotMegaDMart(plotId, data.ownerName);
+        const topLabel = data.ownerName || "MEGA D-MART";
+        const sign = this._createNameSign(topLabel, "🛒 మెగా డి-మార్ట్ • 8-PLOT SUPER HYPERMARKET", true);
+        sign.position.set(0, 12.6, 0);
+        buildingObj.add(sign);
+      } else if (data.buildingType === "inorbit_mall") {
+        buildingObj = this._buildEightPlotInorbitMall(plotId, data.ownerName);
+        const topLabel = data.ownerName || "INORBIT MALL";
+        const sign = this._createNameSign(topLabel, "🏬 ఇనార్బిట్ మాల్ • 8-PLOT MEGA MALL", true);
+        sign.position.set(0, 16.5, 0);
+        buildingObj.add(sign);
+      } else if (data.buildingType === "function_hall") {
+        buildingObj = this._buildEightPlotFunctionHall(plotId, data.ownerName);
+        const topLabel = data.ownerName || "GRAND FUNCTION HALL";
+        const sign = this._createNameSign(topLabel, "🎉 ఫంక్షన్ హాల్ • DJ • DRONES • FIREWORKS • LUNCH", true);
+        sign.position.set(0, 15.2, 0);
+        buildingObj.add(sign);
+      } else if (data.buildingType === "imax_theater") {
         buildingObj = this._buildEightPlotIMAXTheater(plotId, data.ownerName);
         const topLabel = data.ownerName || "SHERU BHAI IMAX";
         const sign = this._createNameSign(topLabel, "🎬 ఐమాక్స్ 3D • 8-PLOT GIANT IMAX DOME", true);
@@ -1509,7 +1546,15 @@ export class FollowerTownEngine {
     } else {
       this._emptyPlotCoords.delete(plotId);
       if (isCustom && size === 8) {
-        buildingObj = data.buildingType === "imax_theater"
+        buildingObj = data.buildingType === "swamy_school"
+          ? this._buildEightPlotSwamySchool(plotId, data.ownerName)
+          : data.buildingType === "dmart_mega"
+          ? this._buildEightPlotMegaDMart(plotId, data.ownerName)
+          : data.buildingType === "inorbit_mall"
+          ? this._buildEightPlotInorbitMall(plotId, data.ownerName)
+          : data.buildingType === "function_hall"
+          ? this._buildEightPlotFunctionHall(plotId, data.ownerName)
+          : data.buildingType === "imax_theater"
           ? this._buildEightPlotIMAXTheater(plotId, data.ownerName)
           : data.buildingType === "mahindra_showroom"
           ? this._buildEightPlotMahindraShowroom(plotId, data.ownerName)
@@ -1656,5 +1701,6 @@ Object.assign(
   buildingMethods,
   cinematicMethods,
   loopMethods,
-  outskirtsMethods
+  outskirtsMethods,
+  v37LandmarkMethods
 );

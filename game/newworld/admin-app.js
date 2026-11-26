@@ -9,7 +9,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged
-} from "./firebase-config.js?v=36";
+} from "./firebase-config.js?v=37";
 import {
   FollowerTownEngine,
   BUILDING_LABELS,
@@ -17,7 +17,7 @@ import {
   getTwoPlotGroup,
   getBlockPlotIds,
   getEightPlotGroup
-} from "./world-engine.js?v=36";
+} from "./world-engine.js?v=37";
 
 let isAdmin = false;
 let selectedPlotId = "plot_0001";
@@ -328,11 +328,11 @@ function openPlotCard(plotId, data) {
     document.getElementById("card-role").textContent = data.role || "Town Resident";
     document.getElementById("card-type").textContent =
       size === 8
-        ? (data.buildingType === "imax_theater" ? "8-PLOT IMAX 3D DOME" : data.buildingType === "movie_theater" ? "8-PLOT MOVIE THEATER" : data.buildingType === "mahindra_showroom" ? "8-PLOT MAHINDRA SHOWROOM" : data.buildingType === "bmw_showroom" ? "8-PLOT BMW SHOWROOM" : data.buildingType === "audi_showroom" ? "8-PLOT AUDI SHOWROOM" : "8-PLOT STADIUM")
+        ? (data.buildingType === "swamy_school" ? "8-PLOT SWAMY E.M. SCHOOL" : data.buildingType === "dmart_mega" ? "8-PLOT MEGA D-MART" : data.buildingType === "inorbit_mall" ? "8-PLOT INORBIT MALL" : data.buildingType === "function_hall" ? "8-PLOT FUNCTION HALL" : data.buildingType === "imax_theater" ? "8-PLOT IMAX 3D DOME" : data.buildingType === "movie_theater" ? "8-PLOT MOVIE THEATER" : data.buildingType === "mahindra_showroom" ? "8-PLOT MAHINDRA SHOWROOM" : data.buildingType === "bmw_showroom" ? "8-PLOT BMW SHOWROOM" : data.buildingType === "audi_showroom" ? "8-PLOT AUDI SHOWROOM" : "8-PLOT STADIUM")
         : size === 4
-        ? (data.buildingType === "tirumala_temple" ? "4-PLOT TIRUMALA TEMPLE" : data.buildingType === "hotel_oyo" ? "20-FLOOR OYO TOWER" : data.buildingType === "hostel" ? "4-PLOT HOSTEL" : data.buildingType === "wine_shop" ? "4-PLOT WINE SHOP" : data.buildingType === "box_cricket" ? "4-PLOT BOX CRICKET" : data.buildingType === "bike_showroom" ? "4-PLOT BIKE SHOWROOM" : data.buildingType === "swimming_pool" ? "4-PLOT SWIMMING POOL" : data.buildingType === "city_park" ? "4-PLOT CITY PARK" : data.buildingType === "library" ? "4-PLOT LIBRARY" : data.buildingType === "dmart" ? "4-PLOT D-MART" : "4-PLOT LANDMARK")
+        ? (data.buildingType === "tirumala_temple" ? "4-PLOT TIRUMALA TEMPLE" : data.buildingType === "hotel_oyo" ? "20-FLOOR OYO TOWER" : data.buildingType === "hostel" ? "4-PLOT HOSTEL" : data.buildingType === "wine_shop" ? "4-PLOT WINE SHOP" : data.buildingType === "box_cricket" ? "4-PLOT BOX CRICKET" : data.buildingType === "ff_office" ? "4-PLOT FREE FIRE HQ" : data.buildingType === "ayyappa_temple" ? "4-PLOT AYYAPPA TEMPLE" : data.buildingType === "yamaha_showroom" ? "4-PLOT YAMAHA SHOWROOM" : data.buildingType === "stark_tower" ? "4-PLOT STARK TOWER" : data.buildingType === "lc_mart" ? "4-PLOT LC MART" : data.buildingType === "bar_lounge" ? "4-PLOT ROYAL BAR" : data.buildingType === "bike_showroom" ? "4-PLOT BIKE SHOWROOM" : data.buildingType === "swimming_pool" ? "4-PLOT SWIMMING POOL" : data.buildingType === "city_park" ? "4-PLOT CITY PARK" : data.buildingType === "library" ? "4-PLOT LIBRARY" : data.buildingType === "dmart" ? "4-PLOT D-MART" : "4-PLOT LANDMARK")
         : size === 2
-        ? (data.buildingType === "beauty_parlour" ? "2-PLOT BEAUTY PARLOUR" : data.buildingType === "mobile_showroom" ? "2-PLOT MOBILE SHOWROOM" : data.buildingType === "beach_villa_2" ? "2-PLOT BEACH VILLA" : "2-PLOT STUDIO")
+        ? (data.buildingType === "light_house" ? "2-PLOT LIGHT HOUSE" : data.buildingType === "beauty_parlour" ? "2-PLOT BEAUTY PARLOUR" : data.buildingType === "mobile_showroom" ? "2-PLOT MOBILE SHOWROOM" : data.buildingType === "beach_villa_2" ? "2-PLOT BEACH VILLA" : "2-PLOT STUDIO")
         : data.buildingType === "ice_cream_shop"
         ? "ICE CREAM SHOP"
         : data.buildingType === "biryani_point"
@@ -636,10 +636,10 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
 
     const defaultRole =
       newSize === 8
-        ? (type === "imax_theater" ? "8-Plot IMAX 3D Dome Theater" : type === "movie_theater" ? "8-Plot Multiplex Movie Theater" : type === "mahindra_showroom" ? "8-Plot Mahindra SUV Showroom" : type === "bmw_showroom" ? "8-Plot BMW Luxury Showroom" : type === "audi_showroom" ? "8-Plot Audi Luxury Showroom" : "8-Plot Mega Stadium")
+        ? (type === "swamy_school" ? "Swamy English Medium High School Campus" : type === "dmart_mega" ? "8-Plot Mega D-Mart Super Hypermarket" : type === "inorbit_mall" ? "8-Plot Inorbit Mega Mall" : type === "function_hall" ? "8-Plot Grand Function Hall & DJ Convention" : type === "imax_theater" ? "8-Plot IMAX 3D Dome Theater" : type === "movie_theater" ? "8-Plot Multiplex Movie Theater" : type === "mahindra_showroom" ? "8-Plot Mahindra SUV Showroom" : type === "bmw_showroom" ? "8-Plot BMW Luxury Showroom" : type === "audi_showroom" ? "8-Plot Audi Luxury Showroom" : "8-Plot Mega Stadium")
         : newSize === 4
         ? (type === "hotel_oyo" ? "20-Floor OYO Rooms Tower" : type === "hostel" ? "Boys & Girls Hostel" : type === "box_cricket" ? "Floodlit Box Cricket Turf" : type === "bike_showroom" ? "GT650 & Superbike Showroom" : type === "wine_shop" ? "Royal Wine Shop Landmark" : type === "dmart" ? "D-Mart Hypermarket" : type === "gym" ? "Fitness Gym Owner" : "4-Plot Town Landmark")
-        : (type === "beauty_parlour" ? "2-Plot Luxury Beauty Parlour & Spa" : type === "mobile_showroom" ? "2-Plot Mega Mobile Showroom" : type === "beach_villa_2" ? "Luxury 2-Plot Beachfront Villa" : "2-Plot Photo Studio");
+        : (type === "light_house" ? "2-Plot Coastal Light House" : type === "beauty_parlour" ? "2-Plot Luxury Beauty Parlour & Spa" : type === "mobile_showroom" ? "2-Plot Mega Mobile Showroom" : type === "beach_villa_2" ? "Luxury 2-Plot Beachfront Villa" : "2-Plot Photo Studio");
 
     const anchorPayload = {
       status: "built",
@@ -703,7 +703,7 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
     } else if (relocatedCount > 0) {
       showToast(`🏗️ Built! Moved ${relocatedCount} houses to free plots.`);
     } else {
-      showToast(newSize === 8 ? (type === "imax_theater" ? "🎬 Built 8-Plot Giant IMAX 3D Dome with Sky Disco Lights!" : type === "movie_theater" ? "🎭 Built 8-Plot Real Movie Theater with Sky Disco Lights!" : type === "mahindra_showroom" ? "🚙 Built 8-Plot Mahindra SUV Showroom!" : type === "bmw_showroom" ? "🏎️ Built 8-Plot BMW Luxury Showroom!" : type === "audi_showroom" ? "🚘 Built 8-Plot Audi Showroom!" : "🏟️ Built 8-Plot Mega Stadium!") : newSize === 4 ? "🏛️ Built 4-Plot Landmark!" : newSize === 2 ? (type === "beauty_parlour" ? "💄 Built 2-Plot Luxury Beauty Parlour & Spa!" : type === "mobile_showroom" ? "📱 Built 2-Plot Mega Mobile Showroom!" : type === "beach_villa_2" ? "🏖️ Built 2-Plot Luxury Beach Villa!" : "📸 Built 2-Plot Photo Studio!") : `🔨 Built ${ownerName}'s plot!`);
+      showToast(newSize === 8 ? (type === "swamy_school" ? "🏫 Built Exact 8-Plot Swamy E.M. High School Campus!" : type === "dmart_mega" ? "🛒 Built 8-Plot Mega D-Mart Super Hypermarket!" : type === "inorbit_mall" ? "🏬 Built 8-Plot Inorbit Mega Mall!" : type === "function_hall" ? "🎉 Built 8-Plot Grand Function Hall with DJ, Drones, Fireworks & Lunch!" : type === "imax_theater" ? "🎬 Built 8-Plot Giant IMAX 3D Dome with Sky Disco Lights!" : type === "movie_theater" ? "🎭 Built 8-Plot Real Movie Theater with Sky Disco Lights!" : type === "mahindra_showroom" ? "🚙 Built 8-Plot Mahindra SUV Showroom!" : type === "bmw_showroom" ? "🏎️ Built 8-Plot BMW Luxury Showroom!" : type === "audi_showroom" ? "🚘 Built 8-Plot Audi Showroom!" : "🏟️ Built 8-Plot Mega Stadium!") : newSize === 4 ? "🏛️ Built 4-Plot Landmark!" : newSize === 2 ? (type === "light_house" ? "🚨 Built 2-Plot Coastal Light House with 360° Searchlight!" : type === "beauty_parlour" ? "💄 Built 2-Plot Luxury Beauty Parlour & Spa!" : type === "mobile_showroom" ? "📱 Built 2-Plot Mega Mobile Showroom!" : type === "beach_villa_2" ? "🏖️ Built 2-Plot Luxury Beach Villa!" : "📸 Built 2-Plot Photo Studio!") : `🔨 Built ${ownerName}'s plot!`);
     }
     closeAllDrawers();
     engine.focusPlot(selectedPlotId);
@@ -1881,6 +1881,17 @@ const reqFilterEl = document.getElementById("req-filter");
 
 function mapRequestedBuildingToType(text = "") {
   const s = text.toLowerCase();
+  if (s.includes("swamy")) return "swamy_school";
+  if (s.includes("mega d-mart") || s.includes("mega dmart") || s.includes("large dmart")) return "dmart_mega";
+  if (s.includes("inorbit")) return "inorbit_mall";
+  if (s.includes("function")) return "function_hall";
+  if (s.includes("free fire") || s.includes("ff office")) return "ff_office";
+  if (s.includes("ayyappa")) return "ayyappa_temple";
+  if (s.includes("yamaha")) return "yamaha_showroom";
+  if (s.includes("stark") || s.includes("strak")) return "stark_tower";
+  if (s.includes("lc mart") || s.includes("lcmart")) return "lc_mart";
+  if (s.includes("bar")) return "bar_lounge";
+  if (s.includes("light house") || s.includes("lighthouse")) return "light_house";
   if (s.includes("imax")) return "imax_theater";
   if (s.includes("movie") || s.includes("theater") || s.includes("multiplex")) return "movie_theater";
   if (s.includes("audi")) return "audi_showroom";

@@ -1,5 +1,5 @@
 // Shared City Plot Constants & Spiral Grid Coordinates (v35)
-export const EIGHT_PLOT_TYPES = new Set(["ground", "audi_showroom", "movie_theater", "imax_theater", "mahindra_showroom", "bmw_showroom"]);
+export const EIGHT_PLOT_TYPES = new Set(["ground", "audi_showroom", "movie_theater", "imax_theater", "mahindra_showroom", "bmw_showroom", "swamy_school", "dmart_mega", "inorbit_mall", "function_hall"]);
 
 export const FOUR_PLOT_TYPES = new Set([
   "police_station",
@@ -22,10 +22,16 @@ export const FOUR_PLOT_TYPES = new Set([
   "hostel",
   "wine_shop",
   "box_cricket",
-  "bike_showroom"
+  "bike_showroom",
+  "ff_office",
+  "ayyappa_temple",
+  "yamaha_showroom",
+  "stark_tower",
+  "lc_mart",
+  "bar_lounge"
 ]);
 
-export const TWO_PLOT_TYPES = new Set(["photo_studio", "beach_villa_2", "mobile_showroom", "beauty_parlour"]);
+export const TWO_PLOT_TYPES = new Set(["photo_studio", "beach_villa_2", "mobile_showroom", "beauty_parlour", "light_house"]);
 
 export const BUILDING_LABELS = {
   house_blue: "🏡 Ivory & Slate Villa",
@@ -41,6 +47,17 @@ export const BUILDING_LABELS = {
   mobile_shop: "📱 మొబైల్ షాప్ • MOBILE SHOP (1 PLOT)",
   mobile_showroom: "📱 మొబైల్ షోరూమ్ • MEGA MOBILE HUB (2 PLOTS)",
   beauty_parlour: "💄 బ్యూటీ పార్లర్ • LUXURY BEAUTY PARLOUR & SPA (2 PLOTS)",
+  light_house: "🚨 లైట్ హౌస్ • COASTAL LIGHT HOUSE (2 PLOTS)",
+  swamy_school: "🏫 స్వామి స్కూల్ • SWAMY E.M. HIGH SCHOOL (8 PLOTS)",
+  dmart_mega: "🛒 మెగా డి-మార్ట్ • MEGA D-MART HYPERMARKET (8 PLOTS)",
+  inorbit_mall: "🏬 ఇనార్బిట్ మాల్ • INORBIT MEGA MALL (8 PLOTS)",
+  function_hall: "🎉 ఫంక్షన్ హాల్ • GRAND DJ & FIREWORKS HALL (8 PLOTS)",
+  ff_office: "🎮 ఫ్రీ ఫైర్ ఆఫీస్ • GARENA FREE FIRE 3-FLOOR HQ (4 PLOTS)",
+  ayyappa_temple: "🛕 అయ్యప్ప టెంపుల్ • AYYAPPA SWAMY 18 STEPS (4 PLOTS)",
+  yamaha_showroom: "🏍️ యమహా షోరూమ్ • YAMAHA RACING SHOWROOM (4 PLOTS)",
+  stark_tower: "⚡ స్టార్క్ టవర్ • AVENGERS STARK TOWER (4 PLOTS)",
+  lc_mart: "🛒 ఎల్‌సి మార్ట్ • LC MART SUPERMARKET (4 PLOTS)",
+  bar_lounge: "🍸 రాయల్ బార్ • BAR & RESTO LOUNGE (4 PLOTS)",
   ice_cream_shop: "🍨 ఐస్ క్రీమ్ షాప్ • ICE CREAM PARLOUR (1 PLOT)",
   veg_shop: "🥬 కూరగాయల షాప్ • FRESH VEGETABLE SHOP (1 PLOT)",
   mahindra_showroom: "🚙 మహీంద్రా షోరూమ్ • MAHINDRA SUV SHOWROOM (8 PLOTS)",

@@ -1,17 +1,19 @@
-# Sheru Bhai City 3D (v36 — Fixed Admin Dock & Full-Width Right-to-Left Scroll Bars + 6 New Pro Reel Modes + Realistic PBR Textures)
+# Sheru Bhai City 3D (v37 — Exact Swamy E.M. High School Campus + Mega 8-Plot D-Mart + All Today's Handwritten Follower Comments!)
 
-Upload the **entire `follower-town/` folder** (all 19 files — every file under **164 KB**) into your `sat289/game/game/newworld/` GitHub repository!
+Upload the **`follower-town/`** folder (all 20 modular files — every file under **164 KB** for smooth mobile GitHub uploads!) into `sat289/game/game/newworld/`.
 
-## Fixed in v36
-1. **Fixed Admin `🎬 9:16 Reel` Not Showing & Half-Screen Scrolling Bar Bug:**
-   - Removed the CSS `transform: translateZ(0)` override that broke `#admin-dock` and pushed it to the right half of the screen.
-   - Upgraded `#admin-dock`, `.public-quick-bar`, and `#reel-dock-wrap` to full edge-to-edge width (`left: 8px; right: 8px`) with smooth horizontal scrolling across the entire screen.
-   - Moved **`🎬 9:16 Reel`** to the very first slot of `#admin-dock` right beside **`🏗️ Build`** and **`📬 Inbox`** so it's always visible instantly!
+## All 11 Brand-New Realistic Landmarks Added in v37 (`world-landmarks-v37.js`)
+### 8-Plot Mega Landmarks
+1. **🏫 Swamy English Medium High School (`swamy_school`):** Exact campus remake from your 4 photos — 3-story cream-beige academic block with scalloped maroon balcony arches, sky-blue railings & doors, diagonal exterior staircase, SSC-2025 Toppers Flex Banner, wrought-iron gate, black granite `SWAMY` wall, right-side Junior College/Academy block with yellow-green vertical `S-W-A-M-Y` corner board, tall white-and-blue overhead water tank, 3 yellow Swamy school buses, parked student bicycles, white cars, neem & coconut trees, and animated students!
+2. **🛒 Mega D-Mart Super Hypermarket (`dmart_mega`):** Double-wide 8-plot D-Mart flagship with 6 stocked aisles, towering roadside pylon, chrome trolleys, delivery truck & spacious car parking.
+3. **🏬 Inorbit Mega Mall (`inorbit_mall` — for `@manu_maddyx_46`):** Curved glass atrium dome, luxury brand wings, fountain plaza & valet cars.
+4. **🎉 Grand Function Hall (`function_hall` — for `@potrugirish`):** Royal function hall, outdoor DJ sound stage with giant speakers & dancing DJ, rotating disco lights, bursting fireworks overhead, 2 orbiting camera drones, and full outdoor Banquet Lunch dining pavilion!
 
-## 6 Brand-New Pro Reel Modes in `admin.html` (`🎬 9:16 Reel`)
-1. **`🎬 Mega Reel`** — 1-Tap 28-second Auto Viral Reel Director (Sky Drop → Royal Island Mansion → Sunset Hilltop Temple → ISRO Rocket → Outskirts Cricket Stadium → Night Fireworks & Disco Statue Finale!).
-2. **`👑 Mansion Reel`** — Smooth glide over the glowing RGB Sea Bridge into Sheru Bhai's Black-Gold Marble Island Mansion, Fountain & Bodyguards.
-3. **`⚡ Sky Drop`** — High-altitude cloud drop-in reveal down to your selected building or Lion Statue.
-4. **`🎡 Beach Sweep`** — Coastal crane pan across GLSL Ocean → Giant Ferris Wheel → 20-Floor OYO → Beach Villas.
-5. **`🏏 Stadium Orbit`** — Dramatic orbit around the Outskirts International Cricket Stadium & Live Scoreboard.
-6. **`🔄 Hero 360°`** — Smooth 360° spotlight orbit around whichever follower house or landmark you tapped.
+### 4-Plot & 2-Plot Follower Comment Landmarks
+5. **🎮 Free Fire 3-Floor Office HQ (`ff_office` — for `@just_naveen_8143`):** 3 neon gaming floors, **LIVE ANIMATED Free Fire gameplay display screen**, and 3 stylized FF characters (Alok aura, Kelly, Chrono shield dome) outside!
+6. **🛕 Ayyappa Swamy Temple (`ayyappa_temple` — for `@abhi479992`):** Kerala-style golden sloped roof + **18 Sacred Golden Steps** with **6 animated Ayyappa Swamis in black dress & Irumudi bundles** climbing up!
+7. **🏍️ Yamaha Racing Showroom (`yamaha_showroom` — for `@abhi479992`):** Iconic Yamaha Blue showroom with rotating R15 roof turntable & sportbike lineup.
+8. **⚡ Avengers Stark Tower (`stark_tower` — for `@_harsha._7`):** Towering 30-unit futuristic skyscraper with cyan Arc Reactor ribs, cantilevered Iron Man landing pad & glowing `S T A R K` signage.
+9. **🛒 LC Mart Supermarket (`lc_mart` — for `@lalithadithya13`):** Navy/red/gold supermarket with stocked aisles, trolley & parking.
+10. **🍸 Royal Bar & Resto Lounge (`bar_lounge` — for `@potrugirish`):** Black-gold marble lounge with rotating neon 3D cocktail glass roof sign & VIP entry.
+11. **🚨 Coastal Light House (`light_house` — for `@_mammy_little_princess_630` — 2 Plots):** Red-and-white striped lighthouse with keeper's cottage & **live 360° rotating glowing searchlight beam**!

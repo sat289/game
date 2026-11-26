@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getSkyPalette } from "./shaders-glsl.js?v=36";
+import { getSkyPalette } from "./shaders-glsl.js?v=37";
 import {
   BUILDING_LABELS,
   getRequiredSize,
@@ -7,7 +7,7 @@ import {
   getTwoPlotGroup,
   getBlockPlotIds,
   getEightPlotGroup
-} from "./world-constants.js?v=36";
+} from "./world-constants.js?v=37";
 
 export const cinematicMethods = {
   setTimeOfDay(mode) {
