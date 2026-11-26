@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { BUILDING_LABELS } from "./world-constants.js?v=38";
+import { BUILDING_LABELS } from "./world-constants.js?v=40";
 
 export const buildingMethods = {
   _getLandmarkSubtitle(type) {
@@ -29,6 +29,7 @@ export const buildingMethods = {
       dmart_mega: "🛒 మెగా డి-మార్ట్ • 8-PLOT HYPERMARKET",
       inorbit_mall: "🏬 ఇనార్బిట్ మాల్ • LUXURY MALL",
       function_hall: "🎉 ఫంక్షన్ హాల్ • DJ • DRONES • LUNCH",
+      billionaire_villa: "👑 బిలియనీర్ విల్లా • HELIPAD • ELEVATOR • POOL",
       ff_office: "🎮 గరీనా ఫ్రీ ఫైర్ • 3-FLOOR HQ",
       ayyappa_temple: "🛕 శ్రీ అయ్యప్ప స్వామి • 18 GOLDEN STEPS",
       yamaha_showroom: "🏍️ యమహా రేసింగ్ షోరూమ్ • R15 & MT-15",

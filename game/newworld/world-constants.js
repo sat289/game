@@ -1,5 +1,5 @@
 // Shared City Plot Constants & Spiral Grid Coordinates (v35)
-export const EIGHT_PLOT_TYPES = new Set(["ground", "audi_showroom", "movie_theater", "imax_theater", "mahindra_showroom", "bmw_showroom", "swamy_school", "dmart_mega", "inorbit_mall", "function_hall"]);
+export const EIGHT_PLOT_TYPES = new Set(["ground", "audi_showroom", "movie_theater", "imax_theater", "mahindra_showroom", "bmw_showroom", "swamy_school", "dmart_mega", "inorbit_mall", "function_hall", "billionaire_villa"]);
 
 export const FOUR_PLOT_TYPES = new Set([
   "police_station",
@@ -52,6 +52,7 @@ export const BUILDING_LABELS = {
   dmart_mega: "🛒 మెగా డి-మార్ట్ • MEGA D-MART HYPERMARKET (8 PLOTS)",
   inorbit_mall: "🏬 ఇనార్బిట్ మాల్ • INORBIT MEGA MALL (8 PLOTS)",
   function_hall: "🎉 ఫంక్షన్ హాల్ • GRAND DJ & FIREWORKS HALL (8 PLOTS)",
+  billionaire_villa: "👑 బిలియనీర్ విల్లా • ULTRA-PREMIUM BILLIONAIRE VILLA (8 PLOTS)",
   ff_office: "🎮 ఫ్రీ ఫైర్ ఆఫీస్ • GARENA FREE FIRE 3-FLOOR HQ (4 PLOTS)",
   ayyappa_temple: "🛕 అయ్యప్ప టెంపుల్ • AYYAPPA SWAMY 18 STEPS (4 PLOTS)",
   yamaha_showroom: "🏍️ యమహా షోరూమ్ • YAMAHA RACING SHOWROOM (4 PLOTS)",

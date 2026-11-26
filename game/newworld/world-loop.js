@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getSkyPalette } from "./shaders-glsl.js?v=38";
+import { getSkyPalette } from "./shaders-glsl.js?v=40";
 
 export const loopMethods = {
   _animate() {
@@ -331,6 +331,40 @@ export const loopMethods = {
             const sz = 5.8 - f * 4.5;
             sw.mesh.position.set(sw.laneX, sy, sz);
             sw.mesh.rotation.y = Math.PI; // Facing straight up the 18 Golden Steps toward Ayyappa Sanctum!
+          }
+        } else if (item.type === "billionaire_villa") {
+          const pGrp = this.plotMeshes.get(item.plotId);
+          if (pGrp && !pGrp.visible) continue;
+          if (item.elevCabin) {
+            item.elevCabin.position.y = 5.2 + Math.sin(elapsed * 0.95) * 3.5;
+          }
+          if (item.fireFlame) {
+            item.fireFlame.scale.set(
+              0.92 + Math.sin(elapsed * 14) * 0.14,
+              0.85 + Math.cos(elapsed * 18) * 0.22,
+              0.92 + Math.sin(elapsed * 14) * 0.14
+            );
+          }
+          if (item.fJet) {
+            item.fJet.scale.set(1, 0.85 + Math.sin(elapsed * 5.6) * 0.2, 1);
+          }
+          if (item.drones) {
+            for (const d of item.drones) {
+              const a = elapsed * d.speed + d.phase;
+              d.mesh.position.set(
+                item.palX + Math.cos(a) * d.radius,
+                d.baseY + Math.sin(elapsed * 2.8 + d.phase) * 0.55,
+                item.palZ + Math.sin(a) * (d.radius * 0.42)
+              );
+              d.mesh.rotation.y = -a;
+            }
+          }
+          if (item.rgbTiles && this._animFrameTick % 12 === 0) {
+            const pal = [0x22d3ee, 0xec4899, 0xfacc15, 0xa855f7];
+            const step = Math.floor(elapsed * 3);
+            for (const rt of item.rgbTiles) {
+              rt.mat.color.setHex(pal[(step + rt.idx) % pal.length]);
+            }
           }
         }
       }
@@ -855,6 +889,8 @@ export const loopMethods = {
       }
 
       for (const a of this.landmarkActors) {
+        const pGrp = this.plotMeshes.get(a.plotId);
+        if (pGrp && !pGrp.visible) continue;
         const t = elapsed * a.speed + a.phase;
         if (a.mode === "patrol_x") {
           const offset = Math.sin(t) * a.range;
@@ -1640,11 +1676,33 @@ export const loopMethods = {
         this.wasmPerf.cullList(this.plotSigns, "sprite", cx, cz, maxDistSq);
       }
 
-      if ((this.isLowRam || this.graphicsPreset === "smooth" || this._perfThrottle) && !this.hqMode && this._emptyPlotCoords.size > 0) {
-        const emptyMaxSq = (this.graphicsPreset === "smooth" || this._perfThrottle) ? 160 * 160 : 215 * 215;
-        const emptyArr = Array.from(this._emptyPlotCoords.values());
-        if (this.wasmPerf) {
-          this.wasmPerf.cullList(emptyArr, "grp", cx, cz, emptyMaxSq);
+      // Always cull far empty plots cleanly
+      if (this._emptyPlotCoords.size > 0 && this.wasmPerf) {
+        const emptyDist = this.hqMode ? 320 : (this.graphicsPreset === "smooth" || this._perfThrottle) ? 155 : 215;
+        this.wasmPerf.cullList(Array.from(this._emptyPlotCoords.values()), "grp", cx, cz, emptyDist * emptyDist);
+      }
+
+      // ⚡ WASM BUILT-BUILDING DISTANCE CULLING (Keeps FPS locked smooth even at 1,000+ buildings!)
+      if (this.wasmPerf && !(this.timelapseState && this.timelapseState.active)) {
+        const isWideView = Boolean(this.droneTour?.active || this.cinemaReel?.active);
+        const smallDist = this.hqMode
+          ? (isWideView ? 420 : 340)
+          : (this.graphicsPreset === "smooth" || this._perfThrottle)
+          ? 175
+          : this.isVeryLowRam
+          ? 195
+          : 255;
+        const bigDist = this.hqMode
+          ? 560
+          : (this.graphicsPreset === "smooth" || this._perfThrottle)
+          ? 300
+          : 410;
+
+        if (this._builtSmallPlots && this._builtSmallPlots.size > 0) {
+          this.wasmPerf.cullList(Array.from(this._builtSmallPlots.values()), "grp", cx, cz, smallDist * smallDist);
+        }
+        if (this._builtBigPlots && this._builtBigPlots.size > 0) {
+          this.wasmPerf.cullList(Array.from(this._builtBigPlots.values()), "grp", cx, cz, bigDist * bigDist);
         }
       }
     }

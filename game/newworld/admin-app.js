@@ -9,7 +9,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged
-} from "./firebase-config.js?v=38";
+} from "./firebase-config.js?v=40";
 import {
   FollowerTownEngine,
   BUILDING_LABELS,
@@ -17,7 +17,7 @@ import {
   getTwoPlotGroup,
   getBlockPlotIds,
   getEightPlotGroup
-} from "./world-engine.js?v=38";
+} from "./world-engine.js?v=40";
 
 let isAdmin = false;
 let selectedPlotId = "plot_0001";
@@ -328,7 +328,7 @@ function openPlotCard(plotId, data) {
     document.getElementById("card-role").textContent = data.role || "Town Resident";
     document.getElementById("card-type").textContent =
       size === 8
-        ? (data.buildingType === "swamy_school" ? "8-PLOT SWAMY E.M. SCHOOL" : data.buildingType === "dmart_mega" ? "8-PLOT MEGA D-MART" : data.buildingType === "inorbit_mall" ? "8-PLOT INORBIT MALL" : data.buildingType === "function_hall" ? "8-PLOT FUNCTION HALL" : data.buildingType === "imax_theater" ? "8-PLOT IMAX 3D DOME" : data.buildingType === "movie_theater" ? "8-PLOT MOVIE THEATER" : data.buildingType === "mahindra_showroom" ? "8-PLOT MAHINDRA SHOWROOM" : data.buildingType === "bmw_showroom" ? "8-PLOT BMW SHOWROOM" : data.buildingType === "audi_showroom" ? "8-PLOT AUDI SHOWROOM" : "8-PLOT STADIUM")
+        ? (data.buildingType === "swamy_school" ? "8-PLOT SWAMY E.M. SCHOOL" : data.buildingType === "dmart_mega" ? "8-PLOT MEGA D-MART" : data.buildingType === "inorbit_mall" ? "8-PLOT INORBIT MALL" : data.buildingType === "billionaire_villa" ? "8-PLOT BILLIONAIRE VILLA" : data.buildingType === "function_hall" ? "8-PLOT FUNCTION HALL" : data.buildingType === "imax_theater" ? "8-PLOT IMAX 3D DOME" : data.buildingType === "movie_theater" ? "8-PLOT MOVIE THEATER" : data.buildingType === "mahindra_showroom" ? "8-PLOT MAHINDRA SHOWROOM" : data.buildingType === "bmw_showroom" ? "8-PLOT BMW SHOWROOM" : data.buildingType === "audi_showroom" ? "8-PLOT AUDI SHOWROOM" : "8-PLOT STADIUM")
         : size === 4
         ? (data.buildingType === "tirumala_temple" ? "4-PLOT TIRUMALA TEMPLE" : data.buildingType === "hotel_oyo" ? "20-FLOOR OYO TOWER" : data.buildingType === "hostel" ? "4-PLOT HOSTEL" : data.buildingType === "wine_shop" ? "4-PLOT WINE SHOP" : data.buildingType === "box_cricket" ? "4-PLOT BOX CRICKET" : data.buildingType === "ff_office" ? "4-PLOT FREE FIRE HQ" : data.buildingType === "ayyappa_temple" ? "4-PLOT AYYAPPA TEMPLE" : data.buildingType === "yamaha_showroom" ? "4-PLOT YAMAHA SHOWROOM" : data.buildingType === "stark_tower" ? "4-PLOT STARK TOWER" : data.buildingType === "lc_mart" ? "4-PLOT LC MART" : data.buildingType === "bar_lounge" ? "4-PLOT ROYAL BAR" : data.buildingType === "bike_showroom" ? "4-PLOT BIKE SHOWROOM" : data.buildingType === "swimming_pool" ? "4-PLOT SWIMMING POOL" : data.buildingType === "city_park" ? "4-PLOT CITY PARK" : data.buildingType === "library" ? "4-PLOT LIBRARY" : data.buildingType === "dmart" ? "4-PLOT D-MART" : "4-PLOT LANDMARK")
         : size === 2
@@ -523,10 +523,47 @@ onValue(plotsRef, (snapshot) => {
 
   engine.ensureCapacity(maxIndex + 12);
 
-  keys.forEach((plotId) => {
-    const animate = initialLoadDone && data[plotId]?.status === "built" && JSON.stringify(allPlots[plotId]) !== JSON.stringify(data[plotId]);
-    engine.renderPlot(plotId, data[plotId], animate);
-  });
+  // ⚡ INCREMENTAL DIFF + SMOOTH CHUNKED INITIAL LOAD (Zero UI Freeze even at 500+ buildings!)
+  const changedKeys = [];
+  for (let i = 0; i < keys.length; i++) {
+    const plotId = keys[i];
+    const prev = allPlots[plotId];
+    const curr = data[plotId];
+    if (
+      !initialLoadDone ||
+      !prev ||
+      prev.status !== curr?.status ||
+      prev.buildingType !== curr?.buildingType ||
+      prev.ownerName !== curr?.ownerName ||
+      prev.size !== curr?.size ||
+      prev.offsetX !== curr?.offsetX ||
+      prev.offsetZ !== curr?.offsetZ
+    ) {
+      changedKeys.push(plotId);
+    }
+  }
+
+  if (!initialLoadDone && changedKeys.length > 70) {
+    // Render city center (first 60 plots) immediately, then stream remaining plots smoothly per frame!
+    const immediate = changedKeys.slice(0, 60);
+    const deferred = changedKeys.slice(60);
+    immediate.forEach((pid) => engine.renderPlot(pid, data[pid], false));
+    let cursor = 0;
+    const pumpChunk = () => {
+      const end = Math.min(cursor + 32, deferred.length);
+      for (; cursor < end; cursor++) {
+        const pid = deferred[cursor];
+        if (allPlots[pid]) engine.renderPlot(pid, allPlots[pid], false);
+      }
+      if (cursor < deferred.length) requestAnimationFrame(pumpChunk);
+    };
+    requestAnimationFrame(pumpChunk);
+  } else {
+    changedKeys.forEach((plotId) => {
+      const animate = initialLoadDone && data[plotId]?.status === "built";
+      engine.renderPlot(plotId, data[plotId], animate);
+    });
+  }
 
   Object.keys(allPlots).forEach((plotId) => {
     if (!data[plotId]) {
@@ -758,7 +795,7 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
 
     const defaultRole =
       newSize === 8
-        ? (type === "swamy_school" ? "Swamy English Medium High School Campus" : type === "dmart_mega" ? "8-Plot Mega D-Mart Super Hypermarket" : type === "inorbit_mall" ? "8-Plot Inorbit Mega Mall" : type === "function_hall" ? "8-Plot Grand Function Hall & DJ Convention" : type === "imax_theater" ? "8-Plot IMAX 3D Dome Theater" : type === "movie_theater" ? "8-Plot Multiplex Movie Theater" : type === "mahindra_showroom" ? "8-Plot Mahindra SUV Showroom" : type === "bmw_showroom" ? "8-Plot BMW Luxury Showroom" : type === "audi_showroom" ? "8-Plot Audi Luxury Showroom" : "8-Plot Mega Stadium")
+        ? (type === "swamy_school" ? "Swamy English Medium High School Campus" : type === "dmart_mega" ? "8-Plot Mega D-Mart Super Hypermarket" : type === "inorbit_mall" ? "8-Plot Inorbit Mega Mall" : type === "billionaire_villa" ? "8-Plot Ultra-Premium Billionaire Villa" : type === "function_hall" ? "8-Plot Grand Function Hall & DJ Convention" : type === "imax_theater" ? "8-Plot IMAX 3D Dome Theater" : type === "movie_theater" ? "8-Plot Multiplex Movie Theater" : type === "mahindra_showroom" ? "8-Plot Mahindra SUV Showroom" : type === "bmw_showroom" ? "8-Plot BMW Luxury Showroom" : type === "audi_showroom" ? "8-Plot Audi Luxury Showroom" : "8-Plot Mega Stadium")
         : newSize === 4
         ? (type === "hotel_oyo" ? "20-Floor OYO Rooms Tower" : type === "hostel" ? "Boys & Girls Hostel" : type === "box_cricket" ? "Floodlit Box Cricket Turf" : type === "bike_showroom" ? "GT650 & Superbike Showroom" : type === "wine_shop" ? "Royal Wine Shop Landmark" : type === "dmart" ? "D-Mart Hypermarket" : type === "gym" ? "Fitness Gym Owner" : "4-Plot Town Landmark")
         : (type === "light_house" ? "2-Plot Coastal Light House" : type === "beauty_parlour" ? "2-Plot Luxury Beauty Parlour & Spa" : type === "mobile_showroom" ? "2-Plot Mega Mobile Showroom" : type === "beach_villa_2" ? "Luxury 2-Plot Beachfront Villa" : "2-Plot Photo Studio");
@@ -834,7 +871,7 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
     } else if (relocatedCount > 0) {
       showToast(`🏗️ Built! Moved ${relocatedCount} houses to free plots.`);
     } else {
-      showToast(newSize === 8 ? (type === "swamy_school" ? "🏫 Built Exact 8-Plot Swamy E.M. High School Campus!" : type === "dmart_mega" ? "🛒 Built 8-Plot Mega D-Mart Super Hypermarket!" : type === "inorbit_mall" ? "🏬 Built 8-Plot Inorbit Mega Mall!" : type === "function_hall" ? "🎉 Built 8-Plot Grand Function Hall with DJ, Drones, Fireworks & Lunch!" : type === "imax_theater" ? "🎬 Built 8-Plot Giant IMAX 3D Dome with Sky Disco Lights!" : type === "movie_theater" ? "🎭 Built 8-Plot Real Movie Theater with Sky Disco Lights!" : type === "mahindra_showroom" ? "🚙 Built 8-Plot Mahindra SUV Showroom!" : type === "bmw_showroom" ? "🏎️ Built 8-Plot BMW Luxury Showroom!" : type === "audi_showroom" ? "🚘 Built 8-Plot Audi Showroom!" : "🏟️ Built 8-Plot Mega Stadium!") : newSize === 4 ? "🏛️ Built 4-Plot Landmark!" : newSize === 2 ? (type === "light_house" ? "🚨 Built 2-Plot Coastal Light House with 360° Searchlight!" : type === "beauty_parlour" ? "💄 Built 2-Plot Luxury Beauty Parlour & Spa!" : type === "mobile_showroom" ? "📱 Built 2-Plot Mega Mobile Showroom!" : type === "beach_villa_2" ? "🏖️ Built 2-Plot Luxury Beach Villa!" : "📸 Built 2-Plot Photo Studio!") : `🔨 Built ${ownerName}'s plot!`);
+      showToast(newSize === 8 ? (type === "swamy_school" ? "🏫 Built Exact 8-Plot Swamy E.M. High School Campus!" : type === "dmart_mega" ? "🛒 Built 8-Plot Mega D-Mart Super Hypermarket!" : type === "inorbit_mall" ? "🏬 Built 8-Plot Inorbit Mega Mall!" : type === "billionaire_villa" ? "👑 Built 8-Plot Ultra-Premium Billionaire Villa with Helipad, Elevator, Pool & Garage!" : type === "function_hall" ? "🎉 Built 8-Plot Grand Function Hall with DJ, Drones, Fireworks & Lunch!" : type === "imax_theater" ? "🎬 Built 8-Plot Giant IMAX 3D Dome with Sky Disco Lights!" : type === "movie_theater" ? "🎭 Built 8-Plot Real Movie Theater with Sky Disco Lights!" : type === "mahindra_showroom" ? "🚙 Built 8-Plot Mahindra SUV Showroom!" : type === "bmw_showroom" ? "🏎️ Built 8-Plot BMW Luxury Showroom!" : type === "audi_showroom" ? "🚘 Built 8-Plot Audi Showroom!" : "🏟️ Built 8-Plot Mega Stadium!") : newSize === 4 ? "🏛️ Built 4-Plot Landmark!" : newSize === 2 ? (type === "light_house" ? "🚨 Built 2-Plot Coastal Light House with 360° Searchlight!" : type === "beauty_parlour" ? "💄 Built 2-Plot Luxury Beauty Parlour & Spa!" : type === "mobile_showroom" ? "📱 Built 2-Plot Mega Mobile Showroom!" : type === "beach_villa_2" ? "🏖️ Built 2-Plot Luxury Beach Villa!" : "📸 Built 2-Plot Photo Studio!") : `🔨 Built ${ownerName}'s plot!`);
     }
     closeAllDrawers();
     engine.focusPlot(selectedPlotId);
@@ -2012,6 +2049,7 @@ const reqFilterEl = document.getElementById("req-filter");
 
 function mapRequestedBuildingToType(text = "") {
   const s = text.toLowerCase();
+  if (s.includes("billionaire") || s.includes("premium villa") || s.includes("luxury villa")) return "billionaire_villa";
   if (s.includes("swamy")) return "swamy_school";
   if (s.includes("mega d-mart") || s.includes("mega dmart") || s.includes("large dmart")) return "dmart_mega";
   if (s.includes("inorbit")) return "inorbit_mall";
