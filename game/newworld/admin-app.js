@@ -9,7 +9,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged
-} from "./firebase-config.js?v=37";
+} from "./firebase-config.js?v=38";
 import {
   FollowerTownEngine,
   BUILDING_LABELS,
@@ -17,7 +17,7 @@ import {
   getTwoPlotGroup,
   getBlockPlotIds,
   getEightPlotGroup
-} from "./world-engine.js?v=37";
+} from "./world-engine.js?v=38";
 
 let isAdmin = false;
 let selectedPlotId = "plot_0001";
@@ -364,6 +364,131 @@ function openPlotCard(plotId, data) {
   plotCard.classList.remove("hidden");
 }
 
+
+// =========================================================
+// 🛡️ v38 BULLETPROOF CLEAR-SPACE & ZERO-DISTURBANCE PLACEMENT ENGINE
+// =========================================================
+function getMaxExistingGridPlotNum() {
+  let maxNum = 36;
+  for (const pid of Object.keys(allPlots || {})) {
+    if (!pid.startsWith("plot_")) continue;
+    const n = parseInt(pid.replace("plot_", ""), 10);
+    if (!isNaN(n) && n > maxNum) maxNum = n;
+  }
+  return maxNum;
+}
+
+function getFootprintForPlot(plotId, reqSize) {
+  if (reqSize === 8) return getEightPlotGroup(plotId);
+  if (reqSize === 4) return getBlockPlotIds(plotId);
+  if (reqSize === 2) return getTwoPlotGroup(plotId);
+  return { anchorId: plotId, siblings: [plotId] };
+}
+
+/**
+ * Maps EVERY occupied grid plotId -> its owning anchor plotId (covering all built 1/2/4/8-plot buildings AND occupied_by_landmark slots).
+ */
+function buildOccupancyMap() {
+  const occ = new Map();
+  for (const [pid, p] of Object.entries(allPlots || {})) {
+    if (!p || !pid.startsWith("plot_") || p.isCustomZone) continue;
+    if (p.status === "built" && p.buildingType && p.buildingType !== "empty") {
+      const sz = p.size || getRequiredSize(p.buildingType);
+      const grp = getFootprintForPlot(pid, sz);
+      for (const sid of grp.siblings) {
+        occ.set(sid, grp.anchorId);
+      }
+      occ.set(pid, grp.anchorId);
+    }
+  }
+  for (const [pid, p] of Object.entries(allPlots || {})) {
+    if (!p || !pid.startsWith("plot_") || p.isCustomZone) continue;
+    if (p.status === "occupied_by_landmark" && !occ.has(pid)) {
+      occ.set(pid, p.parentPlot || pid);
+    }
+  }
+  return occ;
+}
+
+function isFootprintValidAndClear(groupInfo, reqSize, occMap, allowedAnchorId = null) {
+  if (!groupInfo || !Array.isArray(groupInfo.siblings)) return false;
+  const uniqueSibs = new Set(groupInfo.siblings);
+  if (uniqueSibs.size !== reqSize) return false;
+  if (reqSize === 8) {
+    if (
+      typeof groupInfo.leftBlockIdx !== "number" ||
+      typeof groupInfo.rightBlockIdx !== "number" ||
+      groupInfo.leftBlockIdx < 0 ||
+      groupInfo.rightBlockIdx < 0 ||
+      groupInfo.leftBlockIdx === groupInfo.rightBlockIdx
+    ) {
+      return false;
+    }
+  }
+  for (const sid of uniqueSibs) {
+    if (occMap.has(sid)) {
+      const ownerAnchor = occMap.get(sid);
+      if (!allowedAnchorId || ownerAnchor !== allowedAnchorId) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+/**
+ * Finds the nearest 100% CLEAR, EMPTY footprint of size `reqSize` (1, 2, 4, or 8 plots)
+ * without touching or disturbing ANY existing building or landmark!
+ */
+function findNearestClearFootprint(reqSize = 1, nearPlotId = null, allowedAnchorId = null) {
+  const occMap = buildOccupancyMap();
+  const maxNum = getMaxExistingGridPlotNum();
+  const searchLimit = Math.max(maxNum + 240, 360);
+
+  let tx = 0;
+  let tz = 0;
+  if (nearPlotId && typeof engine !== "undefined" && engine.getPlotWorldCenter) {
+    const c = engine.getPlotWorldCenter(nearPlotId);
+    if (c) { tx = c.x; tz = c.z; }
+  }
+
+  const step = reqSize === 1 ? 1 : reqSize === 2 ? 2 : 4;
+  const seenAnchors = new Set();
+  let bestGroup = null;
+  let bestDistSq = Infinity;
+  let foundAtNum = -1;
+
+  for (let i = 1; i <= searchLimit; i += step) {
+    // Once we've found a valid clear spot and checked one extra spiral ring (+80 plots), stop early!
+    if (foundAtNum > 0 && i > foundAtNum + 84) break;
+    const pid = `plot_${String(i).padStart(4, "0")}`;
+    const grp = getFootprintForPlot(pid, reqSize);
+    if (seenAnchors.has(grp.anchorId)) continue;
+    seenAnchors.add(grp.anchorId);
+
+    if (!isFootprintValidAndClear(grp, reqSize, occMap, allowedAnchorId)) continue;
+
+    // For Inbox Auto-Build (nearPlotId == null), first valid spiral match is already closest to city center!
+    if (!nearPlotId) return grp;
+
+    const anchorNum = parseInt(grp.anchorId.replace("plot_", ""), 10) - 1;
+    const pos = engine.getPlotPosition(anchorNum);
+    const dx = pos.blockCenterX - tx;
+    const dz = pos.blockCenterZ - tz;
+    const dSq = dx * dx + dz * dz;
+    if (dSq < bestDistSq) {
+      bestDistSq = dSq;
+      bestGroup = grp;
+      if (foundAtNum < 0) foundAtNum = i;
+    }
+  }
+
+  if (bestGroup) return bestGroup;
+  // Guaranteed fallback beyond max existing plot on fresh clear land
+  const freshStart = Math.ceil((maxNum + 16) / 4) * 4 + 1;
+  return getFootprintForPlot(`plot_${String(freshStart).padStart(4, "0")}`, reqSize);
+}
+
 function findNextFreePlotId(reservedSet, startNum = 1) {
   let n = startNum;
   while (true) {
@@ -595,44 +720,41 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
       };
     });
   } else if (newSize === 2 || newSize === 4 || newSize === 8) {
-    // If replacing a larger old landmark (e.g. 4-plot -> 2-plot), clear old extra siblings first
-    if (oldSize > newSize) {
-      const oldSibs = oldSize === 8 ? getEightPlotGroup(selectedPlotId).siblings : getBlockPlotIds(selectedPlotId).siblings;
+    // 🛡️ ZERO-DISTURBANCE PLACEMENT: Never overwrite or move ANY other existing building!
+    // If the tapped block has any other building, ONLY move this new landmark to the nearest 100% clear space!
+    const occMap = buildOccupancyMap();
+    const editingOwnAnchor =
+      currentData &&
+      currentData.status === "built" &&
+      currentData.buildingType !== "empty" &&
+      occMap.get(selectedPlotId) === selectedPlotId &&
+      oldSize >= newSize;
+    const allowedAnchor = editingOwnAnchor ? selectedPlotId : null;
+
+    let groupInfo = getFootprintForPlot(selectedPlotId, newSize);
+    if (!isFootprintValidAndClear(groupInfo, newSize, occMap, allowedAnchor)) {
+      groupInfo = findNearestClearFootprint(newSize, selectedPlotId, null);
+      relocatedCount = -1; // Flag: moved this new landmark smoothly to nearest clear space!
+    } else if (editingOwnAnchor && oldSize > newSize) {
+      // Only clear own leftover siblings if shrinking an existing landmark in-place
+      const oldSibs = getFootprintForPlot(selectedPlotId, oldSize).siblings;
       oldSibs.forEach((sibId) => {
-        updates[`plots/${sibId}`] = {
-          status: "empty",
-          ownerName: "",
-          role: "",
-          buildingType: "empty",
-          size: 1,
-          builtDay
-        };
+        if (!groupInfo.siblings.includes(sibId)) {
+          updates[`plots/${sibId}`] = {
+            status: "empty",
+            ownerName: "",
+            role: "",
+            buildingType: "empty",
+            size: 1,
+            builtDay
+          };
+        }
       });
     }
 
-    const groupInfo =
-      newSize === 8
-        ? getEightPlotGroup(selectedPlotId)
-        : newSize === 4
-        ? getBlockPlotIds(selectedPlotId)
-        : getTwoPlotGroup(selectedPlotId);
-    const reservedSet = new Set(groupInfo.siblings);
-    let searchStart = 1;
-
-    for (const pid of groupInfo.siblings) {
-      const existing = allPlots[pid];
-      if (
-        existing &&
-        existing.status === "built" &&
-        getRequiredSize(existing.buildingType) === 1 &&
-        pid !== selectedPlotId
-      ) {
-        const { plotId: newPid, nextNum } = findNextFreePlotId(reservedSet, searchStart);
-        searchStart = nextNum;
-        updates[`plots/${newPid}`] = { ...existing, size: 1 };
-        relocatedCount++;
-      }
-    }
+    // Ensure the 3D city grid capacity automatically covers the clear footprint!
+    const maxSibNum = Math.max(...groupInfo.siblings.map((sid) => parseInt(sid.replace("plot_", ""), 10) || 1));
+    engine.ensureCapacity(maxSibNum + 4);
 
     const defaultRole =
       newSize === 8
@@ -666,7 +788,14 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
 
     selectedPlotId = groupInfo.anchorId;
   } else {
-    if (oldSize === 8 || oldSize === 4 || oldSize === 2) {
+    const occMap1 = buildOccupancyMap();
+    if (currentData && currentData.status === "occupied_by_landmark") {
+      // Never cut a hole inside an existing landmark — place this 1-plot building in the nearest clear plot!
+      const clear1 = findNearestClearFootprint(1, selectedPlotId, null);
+      selectedPlotId = clear1.anchorId;
+      relocatedCount = -1;
+      engine.ensureCapacity((parseInt(selectedPlotId.replace("plot_", ""), 10) || 1) + 4);
+    } else if (oldSize === 8 || oldSize === 4 || oldSize === 2) {
       const oldSibs =
         oldSize === 8
           ? getEightPlotGroup(selectedPlotId).siblings
@@ -700,6 +829,8 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
     await update(ref(db), updates);
     if (type === "empty") {
       showToast("🚜 Land cleared!");
+    } else if (relocatedCount === -1) {
+      showToast(`✅ Placed ${BUILDING_LABELS[type] || type} in nearest clear space (${selectedPlotId}) — zero buildings disturbed!`);
     } else if (relocatedCount > 0) {
       showToast(`🏗️ Built! Moved ${relocatedCount} houses to free plots.`);
     } else {
@@ -1935,25 +2066,10 @@ function mapRequestedBuildingToType(text = "") {
 }
 
 function findNextFreeEmptyPlotId(reqSize = 1) {
-  const totalSlots = Math.max(Object.keys(allPlots).length + 12, 80);
-  for (let i = 1; i <= totalSlots; i++) {
-    const pid = `plot_${String(i).padStart(4, "0")}`;
-    const p = allPlots[pid];
-    if (!p || p.status !== "built") {
-      if (reqSize === 1) return pid;
-      if (reqSize === 2) {
-        const g2 = getTwoPlotGroup(pid);
-        if (g2.siblings.every((sid) => !allPlots[sid] || allPlots[sid].status !== "built")) return g2.anchorId;
-      } else if (reqSize === 4) {
-        const g4 = getBlockPlotIds(pid);
-        if (g4.siblings.every((sid) => !allPlots[sid] || allPlots[sid].status !== "built")) return g4.anchorId;
-      } else if (reqSize === 8) {
-        const g8 = getEightPlotGroup(pid);
-        if (g8.siblings.every((sid) => !allPlots[sid] || allPlots[sid].status !== "built")) return g8.anchorId;
-      }
-    }
-  }
-  return `plot_${String(totalSlots + 1).padStart(4, "0")}`;
+  const clearGroup = findNearestClearFootprint(reqSize, null, null);
+  const maxSibNum = Math.max(...clearGroup.siblings.map((sid) => parseInt(sid.replace("plot_", ""), 10) || 1));
+  engine.ensureCapacity(maxSibNum + 4);
+  return clearGroup.anchorId;
 }
 
 function formatRelTime(ts) {

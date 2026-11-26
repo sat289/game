@@ -571,7 +571,14 @@ export const v37LandmarkMethods = {
     this.v37Animations.push({ plotId, type: "function_hall", drones, fwGroup });
 
     // Attach Sky Disco Lights too!
-    this._attachSkyDiscoLights(g, plotId, 11.2, 8.2);
+    const fhSpots = [
+      { x: -13.2, y: 8.1, z: -2.2 },
+      { x: -6.5,  y: 8.1, z: -5.6 },
+      { x:  0.2,  y: 8.1, z: -2.2 },
+      { x: -6.5,  y: 8.1, z:  1.6 }
+    ];
+    const fhPalette = [0xec4899, 0x22d3ee, 0xfacc15, 0xa855f7];
+    this._attachSkyDiscoLights(g, plotId, fhSpots, fhPalette, null, { x: -6.5, y: 9.8, z: 3.6 });
 
     g.add(floor, hall, hallRoof, goldBorder, hallBoard, djStage, djDeck, lunchCanopy, lunchSign);
     g.userData.labelY = 15.2;

@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getSkyPalette } from "./shaders-glsl.js?v=37";
+import { getSkyPalette } from "./shaders-glsl.js?v=38";
 
 export const loopMethods = {
   _animate() {
@@ -293,6 +293,14 @@ export const loopMethods = {
       }
     }
 
+
+
+    // 🦁 UPDATE ALL ANIMATED SHERU BHAI .GLB MIXERS (Idle / Walk / Wave / BossSalute!)
+    if (this.lifeEnabled && this.glbMixers && this.glbMixers.length > 0) {
+      for (let i = 0; i < this.glbMixers.length; i++) {
+        this.glbMixers[i].mixer.update(dt);
+      }
+    }
 
     // 🎉🎮🛕 v37 LIVE ANIMATIONS (Function Hall Drones & Fireworks, FF Live Gameplay Screen & Ayyappa Swamis Climbing 18 Steps!)
     if (this.lifeEnabled && this.v37Animations && this.v37Animations.length > 0) {

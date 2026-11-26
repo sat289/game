@@ -5,10 +5,10 @@ import {
   getSkyPalette,
   createGLSLOceanMaterial,
   createGLSLContactShadowMaterial
-} from "./shaders-glsl.js?v=37";
-import { createProceduralTextureSuite } from "./textures-pbr.js?v=37";
-import { WasmPerfEngine } from "./wasm-perf.js?v=37";
-import { QualityManager } from "./quality-manager.js?v=37";
+} from "./shaders-glsl.js?v=38";
+import { createProceduralTextureSuite } from "./textures-pbr.js?v=38";
+import { WasmPerfEngine } from "./wasm-perf.js?v=38";
+import { QualityManager } from "./quality-manager.js?v=38";
 import {
   EIGHT_PLOT_TYPES,
   FOUR_PLOT_TYPES,
@@ -21,13 +21,13 @@ import {
   getBlockPlotIds,
   getTwoPlotGroup,
   getEightPlotGroup
-} from "./world-constants.js?v=37";
-import { zoneMethods } from "./world-zones.js?v=37";
-import { buildingMethods } from "./world-buildings.js?v=37";
-import { cinematicMethods } from "./world-cinematics.js?v=37";
-import { loopMethods } from "./world-loop.js?v=37";
-import { outskirtsMethods } from "./world-outskirts.js?v=37";
-import { v37LandmarkMethods } from "./world-landmarks-v37.js?v=37";
+} from "./world-constants.js?v=38";
+import { zoneMethods } from "./world-zones.js?v=38";
+import { buildingMethods } from "./world-buildings.js?v=38";
+import { cinematicMethods } from "./world-cinematics.js?v=38";
+import { loopMethods } from "./world-loop.js?v=38";
+import { outskirtsMethods } from "./world-outskirts.js?v=38";
+import { v37LandmarkMethods } from "./world-landmarks-v37.js?v=38";
 
 export {
   EIGHT_PLOT_TYPES,
@@ -106,10 +106,16 @@ export class FollowerTownEngine {
     this.composer = null;
     this.bloomPass = null;
     this._bloomLoading = false;
+    this.defaultSheruGlb = "./sheru-bhai-animated.glb?v=38";
     this.heroModelUrls = { statue: "", audi: "", heli: "" };
     this.glbCache = new Map();
+    this._glbPending = new Map();
+    this.glbMixers = [];
     this._gltfLoader = null;
     this.heroStatueSlot = null;
+    this.heroMansionSheruSlot = null;
+    this.heroBeachSheruSlot = null;
+    this.heroAirportSheruSlots = [];
     this.heroHeliSlot = null;
     this.heroAudiSlots = [];
     this.renderer.shadowMap.enabled = false;
@@ -178,6 +184,10 @@ export class FollowerTownEngine {
     this.islandOwner = "@vip_island_king";
     this.rocketSim = null;
     this.outskirtsStadiumSim = null;
+    this.heroAirportSheruSlots = [];
+    if (Array.isArray(this.glbMixers)) {
+      this.glbMixers = this.glbMixers.filter((m) => !m.isCityZone);
+    }
     this.rocketPadPos = { x: -104, z: 116 };
     this.seaBridgeSim = null;
     this._getSeaBridgeY = null;

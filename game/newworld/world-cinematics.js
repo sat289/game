@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getSkyPalette } from "./shaders-glsl.js?v=37";
+import { getSkyPalette } from "./shaders-glsl.js?v=38";
 import {
   BUILDING_LABELS,
   getRequiredSize,
@@ -7,7 +7,7 @@ import {
   getTwoPlotGroup,
   getBlockPlotIds,
   getEightPlotGroup
-} from "./world-constants.js?v=37";
+} from "./world-constants.js?v=38";
 
 export const cinematicMethods = {
   setTimeOfDay(mode) {
@@ -1229,6 +1229,10 @@ export const cinematicMethods = {
     }
   },
 
+  getSheruGlbUrl() {
+    return (this.heroModelUrls && this.heroModelUrls.statue) || this.defaultSheruGlb || "./sheru-bhai-animated.glb?v=38";
+  },
+
   setHeroModelUrls(urls = {}) {
     const clean = {
       statue: (urls.statue || "").trim(),
@@ -1238,23 +1242,40 @@ export const cinematicMethods = {
     const prev = this.heroModelUrls || { statue: "", audi: "", heli: "" };
     this.heroModelUrls = clean;
 
-    if (clean.statue !== prev.statue && this.heroStatueSlot) {
-      this._applyHeroSlot("statue", clean.statue, this.heroStatueSlot, 5.2, 4.6, 0);
+    if (clean.statue !== prev.statue) {
+      const sheruUrl = this.getSheruGlbUrl();
+      if (this.heroStatueSlot) {
+        this._applyHeroSlot("statue", sheruUrl, this.heroStatueSlot, 5.4, 4.6, 0, "BossSalute", true);
+      }
+      if (this.heroMansionSheruSlot) {
+        this._applyHeroSlot("mansion_sheru", sheruUrl, this.heroMansionSheruSlot, 4.0, 0.0, 0, "Wave", true);
+      }
+      if (this.heroBeachSheruSlot) {
+        this._applyHeroSlot("beach_sheru", sheruUrl, this.heroBeachSheruSlot, 2.35, 0.0, -Math.PI / 2, "Idle", true);
+      }
+      if (this.heroAirportSheruSlots && this.heroAirportSheruSlots.length > 0) {
+        this.heroAirportSheruSlots.forEach((s) => {
+          this._applyHeroSlot(s.slotName, sheruUrl, s.group, s.targetMaxDim, s.yOffset, s.rotY, s.animName, true);
+        });
+      }
     }
     if (clean.heli !== prev.heli && this.heroHeliSlot) {
-      this._applyHeroSlot("heli", clean.heli, this.heroHeliSlot, 8.2, 0.1, 0);
+      this._applyHeroSlot("heli", clean.heli, this.heroHeliSlot, 8.2, 0.1, 0, null, true);
     }
     if (clean.audi !== prev.audi && this.heroAudiSlots.length > 0) {
       this.heroAudiSlots.forEach((slot) => {
-        this._applyHeroSlot("audi", clean.audi, slot.group, 4.3, 0.02, 0);
+        this._applyHeroSlot("audi", clean.audi, slot.group, 4.3, 0.02, 0, null, false);
       });
     }
   },
 
-  _applyHeroSlot(slotName, url, targetGroup, targetMaxDim, yOffset, rotY) {
-    // Remove previous custom GLB wrapper if any & restore procedural fallback first
+  _applyHeroSlot(slotName, url, targetGroup, targetMaxDim, yOffset, rotY, animName = null, isCityZone = true) {
+    if (!targetGroup) return;
     const oldGlb = targetGroup.getObjectByName(`hero_glb_${slotName}`);
     if (oldGlb) targetGroup.remove(oldGlb);
+    if (Array.isArray(this.glbMixers)) {
+      this.glbMixers = this.glbMixers.filter((m) => m.slotName !== slotName);
+    }
     targetGroup.children.forEach((ch) => {
       if (ch.userData && ch.userData._hiddenByGlb) {
         ch.visible = true;
@@ -1262,24 +1283,36 @@ export const cinematicMethods = {
       }
     });
     if (url) {
-      this._loadHeroGLB(slotName, url, targetGroup, targetMaxDim, yOffset, rotY);
+      this._loadHeroGLB(slotName, url, targetGroup, targetMaxDim, yOffset, rotY, animName, isCityZone);
     }
   },
 
-  async _loadHeroGLB(slotName, url, targetGroup, targetMaxDim = 5.0, yOffset = 0, rotY = 0) {
+  async _loadHeroGLB(slotName, url, targetGroup, targetMaxDim = 5.0, yOffset = 0, rotY = 0, animName = null, isCityZone = true) {
     if (!url || !targetGroup) return;
     try {
       if (!this._gltfLoader) {
         const { GLTFLoader } = await import("three/addons/loaders/GLTFLoader.js");
         this._gltfLoader = new GLTFLoader();
       }
-      let baseScene = this.glbCache.get(url);
-      if (!baseScene) {
-        const gltf = await this._gltfLoader.loadAsync(url);
-        baseScene = gltf.scene;
-        this.glbCache.set(url, baseScene);
+      let cached = this.glbCache.get(url);
+      if (!cached) {
+        let pending = this._glbPending.get(url);
+        if (!pending) {
+          pending = this._gltfLoader.loadAsync(url).then((gltf) => {
+            const entry = { scene: gltf.scene, animations: gltf.animations || [] };
+            this.glbCache.set(url, entry);
+            this._glbPending.delete(url);
+            return entry;
+          }).catch((e) => {
+            this._glbPending.delete(url);
+            throw e;
+          });
+          this._glbPending.set(url, pending);
+        }
+        cached = await pending;
       }
-      const model = baseScene.clone(true);
+
+      const model = cached.scene.clone(true);
       const box = new THREE.Box3().setFromObject(model);
       const size = new THREE.Vector3();
       const center = new THREE.Vector3();
@@ -1295,7 +1328,7 @@ export const cinematicMethods = {
       wrap.rotation.y = rotY;
       wrap.add(model);
 
-      // Remove any existing wrapper and hide procedural fallback meshes cleanly
+      // Hide procedural fallback meshes & attach animated GLB cleanly
       const prevWrap = targetGroup.getObjectByName(`hero_glb_${slotName}`);
       if (prevWrap) targetGroup.remove(prevWrap);
       targetGroup.children.forEach((ch) => {
@@ -1305,6 +1338,20 @@ export const cinematicMethods = {
         }
       });
       targetGroup.add(wrap);
+
+      // 🎬 Live GLB AnimationMixer Playback (Idle / Walk / Wave / BossSalute!)
+      if (cached.animations && cached.animations.length > 0) {
+        const mixer = new THREE.AnimationMixer(model);
+        let clip = animName ? cached.animations.find((c) => c.name === animName) : null;
+        if (!clip) clip = cached.animations[0];
+        const action = mixer.clipAction(clip);
+        action.play();
+        if (Array.isArray(this.glbMixers)) {
+          this.glbMixers = this.glbMixers.filter((m) => m.slotName !== slotName);
+          this.glbMixers.push({ slotName, mixer, isCityZone });
+        }
+      }
+
       if (this.shadowsEnabled) this._applyShadowFlags(wrap);
     } catch (err) {
       console.warn(`Hero .glb load skipped for ${slotName} (${url}):`, err);

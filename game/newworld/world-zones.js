@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { createGLSLOceanMaterial } from "./shaders-glsl.js?v=37";
-import { BUILDING_LABELS } from "./world-constants.js?v=37";
+import { createGLSLOceanMaterial } from "./shaders-glsl.js?v=38";
+import { BUILDING_LABELS } from "./world-constants.js?v=38";
 
 export const zoneMethods = {
   _buildSTJunctionStatue() {
@@ -276,9 +276,7 @@ export const zoneMethods = {
     sign.position.set(0, 12.2, 0);
 
     this.heroStatueSlot = lionStatue;
-    if (this.heroModelUrls && this.heroModelUrls.statue) {
-      this._loadHeroGLB("statue", this.heroModelUrls.statue, lionStatue, 5.2, 4.6, 0);
-    }
+    this._loadHeroGLB("statue", this.getSheruGlbUrl(), lionStatue, 5.4, 4.6, 0, "BossSalute", true);
     g.add(basePad, gardenRing, poolRim, water, step1, step2, goldCollar, statueBase, aura, sign);
     this.cityGroup.add(g);
   },
@@ -440,6 +438,8 @@ export const zoneMethods = {
     // Seated Sheru Bhai inside Diamond Car (toggled visible when driving!)
     const seatedSheru = this._makeLiveSheruBhai(0.68, true);
     seatedSheru.position.set(-0.22, 0.56, -0.05);
+    this.heroAirportSheruSlots.push({ slotName: "airport_car_sheru", group: seatedSheru, targetMaxDim: 1.05, yOffset: -0.24, rotY: 0, animName: "Idle" });
+    this._loadHeroGLB("airport_car_sheru", this.getSheruGlbUrl(), seatedSheru, 1.05, -0.24, 0, "Idle", true);
     car.userData.seatedSheru = seatedSheru;
 
     // Night road beam
@@ -536,6 +536,8 @@ export const zoneMethods = {
     // Seated Sheru Bhai inside Diamond Helicopter Cockpit!
     const seatedSheru = this._makeLiveSheruBhai(0.86, true);
     seatedSheru.position.set(0, 1.25, 0.95);
+    this.heroAirportSheruSlots.push({ slotName: "airport_heli_sheru", group: seatedSheru, targetMaxDim: 1.25, yOffset: -0.28, rotY: 0, animName: "Idle" });
+    this._loadHeroGLB("airport_heli_sheru", this.getSheruGlbUrl(), seatedSheru, 1.25, -0.28, 0, "Idle", true);
     seatedSheru.visible = false;
     heli.userData.seatedSheru = seatedSheru;
 
@@ -837,6 +839,8 @@ export const zoneMethods = {
 
     const walkingSheru = this._makeLiveSheruBhai(1.08, false);
     walkingSheru.visible = false;
+    this.heroAirportSheruSlots.push({ slotName: "airport_walk_sheru", group: walkingSheru, targetMaxDim: 2.1, yOffset: 0.0, rotY: 0, animName: "Walk" });
+    this._loadHeroGLB("airport_walk_sheru", this.getSheruGlbUrl(), walkingSheru, 2.1, 0.0, 0, "Walk", true);
     ap.add(walkingSheru);
 
     const diamondHeli = this._makeDiamondHeliMesh();
@@ -1229,6 +1233,12 @@ export const zoneMethods = {
     }
     sHeadGroup.add(sHead, sSnout, sNose, sShades);
     chillingSheru.add(sLegL, sLegR, shorts, sTorso, sChain, sHeadGroup);
+    // Attach Animated 3D Sheru Bhai GLB right at the Beach VIP Lounge (facing the Ocean & Beach Visitors!)
+    const beachGlbSlot = new THREE.Group();
+    beachGlbSlot.position.set(-1.3, 0.0, 1.9);
+    chillZone.add(beachGlbSlot);
+    this.heroBeachSheruSlot = beachGlbSlot;
+    this._loadHeroGLB("beach_sheru", this.getSheruGlbUrl(), beachGlbSlot, 2.35, 0.0, -Math.PI / 2, "Idle", true);
     const chillSign = this._createNameSign("🦁 SHERU BHAI CHILLING", "VIP BEACH LOUNGE", false);
     chillSign.position.set(0.5, 4.9, 0);
     chillZone.add(bedFrame, mattress, backrest, towel, uPole, uCanopy, uStripe, sideTbl, coconut, straw, surf, chillingSheru, chillSign);
@@ -2782,6 +2792,8 @@ export const zoneMethods = {
       bossLion.add(mt);
     }
     bossLion.add(bLegL, bLegR, bTorso, bGoldTrim, bTie, bArmL, bArmR, bHead, bSnout);
+    this.heroMansionSheruSlot = bossLion;
+    this._loadHeroGLB("mansion_sheru", this.getSheruGlbUrl(), bossLion, 4.0, 0.0, 0, "Wave", true);
     isl.add(bossLion, makeRamGuard(-3.8), makeRamGuard(3.8));
 
     const hPad = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 4.5, 0.3, 16), this.mat.tarmacGrey);
