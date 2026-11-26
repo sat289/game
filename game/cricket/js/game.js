@@ -1,6 +1,8 @@
 /* =========================================================
-   Pro Cricket Gameplay Engine — Continuous Active Swing Collision,
-   Exact Arc Ballistics, Animated Bowler Run-Up & Umpire Signals
+   Pro Cricket Gameplay Engine (v3 — Bug-Fixed Batting Physics)
+   - Zero swing-lock bugs: bat always swings cleanly on tap!
+   - Strict front-only strike zone [348 .. 468]: balls behind batsman NEVER get hit!
+   - Instant blade-to-ball contact sync + exact arc ballistics
    ========================================================= */
 
 class CricketMatchEngine {
@@ -23,9 +25,12 @@ class CricketMatchEngine {
       groundY: 656,
       stumpsX: 214,
       batsmanX: 320,
-      sweetSpotX: 388,
 
-      // Match Score & Over Tracker
+      // STRICT FRONT-ONLY STRIKE ZONE (Never behind the batsman!)
+      strikeMinX: 348,
+      sweetSpotX: 400,
+      strikeMaxX: 468,
+
       initialTarget: 24,
       targetRemaining: 24,
       runsScored: 0,
@@ -40,7 +45,6 @@ class CricketMatchEngine {
       recentBalls: [],
       matchOver: false,
 
-      // Sequencing & Camera
       countdown: 3.0,
       lastCountdownInt: 4,
       betweenBallsTimer: 0,
@@ -49,10 +53,9 @@ class CricketMatchEngine {
       targetZoom: 1.0,
       delivery: null,
 
-      // Animated Bowler State
       bowler: {
         visible: true,
-        phase: 'idle',      // idle | runup | release | follow
+        phase: 'idle',
         x: 1175,
         jumpY: 0,
         runCycle: 0,
@@ -61,21 +64,19 @@ class CricketMatchEngine {
         phaseTime: 0
       },
 
-      // Continuous Smooth Batsman Swing State (FIXES BALL HITTING!)
+      // Responsive Batsman Swing State (NO PERMANENT SWING LOCK!)
       swingActive: false,
       swingElapsed: 0,
-      swingDuration: 0.48,
-      swingLocked: false,
+      swingDuration: 0.36,
       hitConnectedThisSwing: false,
+      backliftBlend: 0,
 
-      // Umpire Animation
-      umpireSignal: 'idle', // idle | six | four | out
+      umpireSignal: 'idle',
       umpireTimer: 0,
 
-      // Cricket Ball Physics
       ball: {
         visible: false,
-        phase: 'idle',      // idle | bowled | hit | dead
+        phase: 'idle',
         x: 1050,
         prevX: 1050,
         y: 520,
@@ -92,11 +93,9 @@ class CricketMatchEngine {
         arcScored: false
       },
 
-      // Stumps Shatter Physics
       stumpsBroken: false,
       brokenPieces: [],
 
-      // Broadcast VFX
       highlightedZone: null,
       zoneFlashTimer: 0,
       calloutText: '',
@@ -150,48 +149,47 @@ class CricketMatchEngine {
     }
   }
 
-  // =========================================================
-  // FIXED BATTING INPUT: Starts fluid active swing arc window!
-  // =========================================================
   triggerSwing() {
     const s = this.state;
     if (!this.running || this.paused || s.matchOver) return;
     if (s.countdown > 0) return;
 
-    // Prevent double-swinging once bat is mid-swing on the same ball
-    if (s.swingLocked) return;
+    // Only block while a swing is currently mid-motion, or after stumps broke / ball already hit
+    if (s.swingActive || s.stumpsBroken || s.ball.phase === 'hit') return;
 
-    // Allow players to swing anytime after bowler starts releasing / ball is in flight
-    if (s.ball.phase === 'idle' && s.bowler.phase === 'idle') return;
-
-    s.swingLocked = true;
     s.swingActive = true;
     s.swingElapsed = 0;
     s.hitConnectedThisSwing = false;
     soundEngine.playSwingWhoosh();
 
-    // Immediate collision check on tap frame (zero-latency response!)
+    // If the ball ALREADY passed behind the batsman (< 348), bat swings cleanly & whiffs!
+    if (s.ball.phase === 'bowled' && s.ball.x < s.strikeMinX) {
+      this.showCallout('TOO LATE!', 'BALL PASSED THE BAT', '#ff6b6b', 0.8);
+      return;
+    }
+
     this.checkBatBallCollision();
   }
 
-  // Runs BOTH on instant tap AND every physics sub-frame during the active bat downswing!
   checkBatBallCollision() {
     const s = this.state;
     const b = s.ball;
     if (!s.swingActive || s.hitConnectedThisSwing || b.phase !== 'bowled') return;
 
-    // Active hitting window spans the entire bat downswing (0.00s -> 0.28s of swing!)
-    if (s.swingElapsed > 0.28) return;
+    // Active blade contact window strictly synced with forward whip (0.00s -> 0.16s)
+    if (s.swingElapsed > 0.16) return;
 
-    // Continuous swept-interval check so even a 152 km/h ball NEVER tunnels past the bat!
-    const zoneMinX = s.batsmanX - 24;   // 296 (late edge behind crease)
-    const zoneMaxX = s.sweetSpotX + 132; // 520 (early front-foot reach)
+    // HARD GUARD: NEVER hit any ball that has passed behind the batsman (x < 348)!
+    if (b.x < s.strikeMinX) return;
+
+    // Ensure ball is within hittable vertical reach
+    if (b.y < s.groundY - 185) return;
+
     const minBallX = Math.min(b.x, b.prevX);
     const maxBallX = Math.max(b.x, b.prevX);
 
-    if (maxBallX >= zoneMinX && minBallX <= zoneMaxX) {
-      // Exact contact offset relative to dead-center sweet spot
-      const contactX = Math.max(zoneMinX, Math.min(zoneMaxX, b.x));
+    if (maxBallX >= s.strikeMinX && minBallX <= s.strikeMaxX) {
+      const contactX = Math.max(s.strikeMinX, Math.min(s.strikeMaxX, b.x));
       const dx = contactX - s.sweetSpotX;
       this.resolveHit(dx);
     }
@@ -204,32 +202,37 @@ class CricketMatchEngine {
     b.phase = 'hit';
     b.arcScored = false;
 
+    // Snap bat visually to the exact contact frame so blade physically strikes the ball!
+    if (s.swingElapsed < 0.09) {
+      s.swingElapsed = 0.09;
+    }
+
     const absDx = Math.abs(dx);
     let runs = 1;
-    let timingLabel = 'PUSHED TO LEG';
+    let timingLabel = 'DEFENSIVE PUSH';
     let callout = '1 RUN';
     let calloutCol = '#E9ECEF';
     let trailCol = 'rgba(255, 255, 255, ALPHA)';
 
-    if (absDx <= 26) {
+    if (absDx <= 20) {
       runs = 6;
       timingLabel = 'PERFECT SWEET SPOT!';
       callout = 'MASSIVE SIX!';
       calloutCol = '#FFD43B';
       trailCol = 'rgba(255, 212, 59, ALPHA)';
-    } else if (absDx <= 52) {
+    } else if (absDx <= 36) {
       runs = 4;
       timingLabel = 'CRACKING COVER DRIVE!';
       callout = 'SUPER FOUR!';
       calloutCol = '#38D9F5';
       trailCol = 'rgba(56, 217, 245, ALPHA)';
-    } else if (absDx <= 78) {
+    } else if (absDx <= 48) {
       runs = 3;
       timingLabel = 'GREAT TIMING!';
       callout = '3 RUNS!';
       calloutCol = '#69DB7C';
       trailCol = 'rgba(105, 219, 124, ALPHA)';
-    } else if (absDx <= 106) {
+    } else if (absDx <= 58) {
       runs = 2;
       timingLabel = 'GOOD PLACEMENT';
       callout = '2 RUNS';
@@ -243,14 +246,13 @@ class CricketMatchEngine {
       trailCol = 'rgba(255, 255, 255, ALPHA)';
     }
 
-    // EXACT BALLISTICS: Aim hit ball straight through the earned zone on the right curved run arc!
     const zone = CWC_CONFIG.ARC_ZONES.find((z) => z.runs === runs) || CWC_CONFIG.ARC_ZONES[4];
-    const midDeg = (zone.startDeg + zone.endDeg) * 0.5 + (Math.random() - 0.5) * 4;
+    const midDeg = (zone.startDeg + zone.endDeg) * 0.5 + (Math.random() - 0.5) * 3.5;
     const midRad = (midDeg * Math.PI) / 180;
     const targetX = CWC_CONFIG.ARC.cx + Math.cos(midRad) * CWC_CONFIG.ARC.radius;
     const targetY = CWC_CONFIG.ARC.cy + Math.sin(midRad) * CWC_CONFIG.ARC.radius;
 
-    const flightTime = runs >= 6 ? 0.52 : runs >= 4 ? 0.56 : 0.64;
+    const flightTime = runs >= 6 ? 0.50 : runs >= 4 ? 0.55 : 0.62;
     const gHit = runs >= 6 ? 640 : runs >= 4 ? 760 : 940;
     b.gravity = gHit;
     b.vx = (targetX - b.x) / flightTime;
@@ -259,24 +261,21 @@ class CricketMatchEngine {
     b.trail = [{ x: b.x, y: b.y }];
     b.trailColor = trailCol;
 
-    // Instant juicy hit feedback: Willow Crack + Sparks + Hit-Stop Micro-Freeze!
     soundEngine.playBatHit(runs);
-    s.hitStopTimer = runs >= 6 ? 0.045 : runs >= 4 ? 0.03 : 0.012;
-    s.shakeTime = runs >= 6 ? 0.30 : runs >= 4 ? 0.18 : 0.08;
-    s.shakeMag = runs >= 6 ? 13 : runs >= 4 ? 7 : 3;
+    s.hitStopTimer = runs >= 6 ? 0.04 : runs >= 4 ? 0.025 : 0.01;
+    s.shakeTime = runs >= 6 ? 0.28 : runs >= 4 ? 0.16 : 0.08;
+    s.shakeMag = runs >= 6 ? 12 : runs >= 4 ? 7 : 3;
     s.targetZoom = runs >= 6 ? 1.045 : 1.02;
 
     s.shockwaves.push({
       x: b.x, y: b.y, r: 10, maxR: runs >= 6 ? 115 : 70,
-      color: trailCol, life: 0.32, maxLife: 0.32
+      color: trailCol, life: 0.30, maxLife: 0.30
     });
     this.spawnParticles(b.x, b.y, runs >= 6 ? 26 : 14, [calloutCol, '#ffffff'], 'circle');
 
-    // Record pending callout metadata to trigger full celebration as ball blasts the arc!
     s.pendingHitInfo = { runs, callout, timingLabel, calloutCol };
   }
 
-  // Triggered right as the hit ball rockets through the right curved Run Arc!
   finalizeArcScore(hitX, hitY) {
     const s = this.state;
     const b = s.ball;
@@ -299,7 +298,6 @@ class CricketMatchEngine {
     s.zoneFlashTimer = 1.3;
     s.targetZoom = 1.0;
 
-    // Umpire signal!
     if (runs >= 6) {
       s.umpireSignal = 'six';
       s.umpireTimer = 1.6;
@@ -313,7 +311,6 @@ class CricketMatchEngine {
       s.flashColor = 'rgba(56, 217, 245, ALPHA)';
     }
 
-    // Arc impact shockwave & sparks
     s.shockwaves.push({
       x: hitX, y: hitY, r: 12, maxR: runs >= 4 ? 130 : 80,
       color: b.trailColor, life: 0.38, maxLife: 0.38
@@ -339,6 +336,7 @@ class CricketMatchEngine {
     b.vy = -195;
 
     s.stumpsBroken = true;
+    s.swingActive = false;
     s.wicketsLeft = Math.max(0, s.wicketsLeft - 1);
     s.wicketsLost++;
     s.ballsLeft = Math.max(0, s.ballsLeft - 1);
@@ -349,7 +347,6 @@ class CricketMatchEngine {
     s.umpireSignal = 'out';
     s.umpireTimer = 1.8;
 
-    // Flying Glowing Red LED Zing Stumps & Bails!
     s.brokenPieces = [
       { type: 'stump', x: s.stumpsX - 15, y: s.groundY - 62, vx: -180 - Math.random() * 140, vy: -370 - Math.random() * 150, angle: 0, vAng: -7.5, w: 22, h: 112 },
       { type: 'stump', x: s.stumpsX,      y: s.groundY - 62, vx: -270 - Math.random() * 140, vy: -460 - Math.random() * 160, angle: 0, vAng: 9.2,  w: 22, h: 112 },
@@ -395,14 +392,13 @@ class CricketMatchEngine {
     }, delaySec * 1000);
   }
 
-  // Step 1: Start Bowler Run-Up from right end of pitch!
   startBowlerRunUp() {
     const s = this.state;
     if (s.matchOver || s.ballsLeft <= 0 || s.wicketsLeft <= 0) return;
 
     const pool = CWC_CONFIG.DELIVERY_TYPES;
     const d = pool[Math.floor(Math.random() * pool.length)];
-    const spdFactor = 0.96 + Math.random() * 0.10 + (s.oppTeam.strength - 1) * 0.25;
+    const spdFactor = 0.95 + Math.random() * 0.10 + (s.oppTeam.strength - 1) * 0.22;
     const speed = d.speed * spdFactor;
     const kmh = Math.round(d.kmhMin + Math.random() * (d.kmhMax - d.kmhMin));
 
@@ -410,7 +406,7 @@ class CricketMatchEngine {
       name: d.name,
       kmh,
       speed,
-      bounceX: d.bounceX + (Math.random() - 0.5) * 32,
+      bounceX: d.bounceX + (Math.random() - 0.5) * 28,
       bounceRest: d.bounceRest,
       gravity: d.gravity,
       bowlerName: s.oppTeam.bowler
@@ -419,12 +415,11 @@ class CricketMatchEngine {
 
     s.stumpsBroken = false;
     s.brokenPieces = [];
-    s.swingLocked = false;
     s.swingActive = false;
     s.hitConnectedThisSwing = false;
+    s.backliftBlend = 0;
     s.targetZoom = 1.02;
 
-    // Reset Bowler to start of sprint
     const bw = s.bowler;
     bw.visible = true;
     bw.phase = 'runup';
@@ -439,7 +434,6 @@ class CricketMatchEngine {
     s.ball.phase = 'idle';
   }
 
-  // Step 2: Bowler releases leather ball directly from bowling hand!
   releaseBallFromBowler(rx, ry) {
     const s = this.state;
     const d = s.delivery;
@@ -452,7 +446,6 @@ class CricketMatchEngine {
     b.y = ry;
     b.vx = -d.speed;
 
-    // Calculate clean natural arc onto pitch bounce point
     const tBounce = Math.max(0.32, (b.x - d.bounceX) / d.speed);
     const dy = (s.groundY - b.radius) - b.y;
     b.gravity = d.gravity;
@@ -530,10 +523,8 @@ class CricketMatchEngine {
     const s = this.state;
     s.elapsed += dt;
 
-    // Smooth camera zoom interpolation
     s.cameraZoom += (s.targetZoom - s.cameraZoom) * Math.min(1, dt * 6);
 
-    // Hit-stop micro-freeze for juicy boundary impacts!
     if (s.hitStopTimer > 0) {
       s.hitStopTimer = Math.max(0, s.hitStopTimer - dt);
       return;
@@ -579,7 +570,6 @@ class CricketMatchEngine {
       const p = Math.min(1, bw.phaseTime / 0.24);
       bw.x -= 130 * dt;
       bw.jumpY = -Math.sin(p * Math.PI) * 26;
-      // Overhead windmill rotation from behind -> top (-1.75 rad) -> forward release!
       bw.armAngle = 1.2 - p * 3.15;
       if (p >= 0.78 && bw.holdingBall) {
         bw.holdingBall = false;
@@ -603,7 +593,10 @@ class CricketMatchEngine {
       }
     }
 
-    // 3. Fluid Batsman Swing Progress
+    // 3. Smooth Ready Backlift Coil + Active Bat Swing Progress
+    if (s.ball.phase === 'bowled' && !s.swingActive) {
+      s.backliftBlend = Math.min(1, s.backliftBlend + dt * 4.5);
+    }
     if (s.swingActive) {
       s.swingElapsed += dt;
       if (s.swingElapsed >= s.swingDuration) {
@@ -620,7 +613,7 @@ class CricketMatchEngine {
       }
     }
 
-    // 5. Ball Physics & Continuous Active Hit Check
+    // 5. Ball Physics & Strict Front-Only Bat Collision
     const b = s.ball;
     if (b.visible && b.phase !== 'idle') {
       b.prevX = b.x;
@@ -632,12 +625,10 @@ class CricketMatchEngine {
       b.trail.push({ x: b.x, y: b.y });
       if (b.trail.length > 20) b.trail.shift();
 
-      // Check bat-ball contact every single frame during active swing!
       if (b.phase === 'bowled') {
         this.checkBatBallCollision();
       }
 
-      // Pitch Bounce
       if (b.y >= s.groundY - b.radius) {
         b.y = s.groundY - b.radius;
         if (b.phase === 'bowled') {
@@ -654,12 +645,10 @@ class CricketMatchEngine {
         }
       }
 
-      // Check Stumps Hit (Bowled!)
-      if (b.phase === 'bowled' && b.x <= s.stumpsX + 20) {
-        if (b.y >= s.groundY - 134) {
+      if (b.phase === 'bowled') {
+        if (b.x <= s.stumpsX + 20 && b.x >= s.stumpsX - 18 && b.y >= s.groundY - 134) {
           this.resolveBowled();
-        } else if (b.x < 120) {
-          // Ball collected by wicketkeeper -> Dot ball
+        } else if (b.x <= 132) {
           b.phase = 'dead';
           b.visible = false;
           s.ballsLeft = Math.max(0, s.ballsLeft - 1);
@@ -676,7 +665,6 @@ class CricketMatchEngine {
         }
       }
 
-      // Check Hit Ball Crossing Right Curved Run Arc!
       if (b.phase === 'hit') {
         const distFromArcCenter = Math.hypot(b.x - CWC_CONFIG.ARC.cx, b.y - CWC_CONFIG.ARC.cy);
         if (!b.arcScored && distFromArcCenter >= CWC_CONFIG.ARC.radius - 12 && b.x > 700) {

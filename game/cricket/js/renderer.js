@@ -1,6 +1,6 @@
 /* =========================================================
-   Real-Game Broadcast 16:9 Canvas Renderer (1280x720 Virtual)
-   Dynamic Broadcast Camera, Pitch Bounce Ring, Sweet-Spot Indicator & Arc VFX
+   Real-Game Broadcast 16:9 Canvas Renderer (v3)
+   Timing Ring aligned 1:1 with exact front-only strike zone!
    ========================================================= */
 
 class GameRenderer {
@@ -20,7 +20,6 @@ class GameRenderer {
   resize() {
     const rect = this.canvas.getBoundingClientRect();
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    // Use stage dimensions safely even when rotated 90deg!
     const cssW = Math.max(320, this.canvas.clientWidth || rect.width);
     const cssH = Math.max(180, this.canvas.clientHeight || rect.height);
     this.canvas.width = Math.floor(cssW * dpr);
@@ -40,12 +39,10 @@ class GameRenderer {
     ctx.fillStyle = '#04060c';
     ctx.fillRect(0, 0, cw, ch);
 
-    // Map strictly to full 16:9 canvas stage
     const sxScale = cw / vw;
     const syScale = ch / vh;
     ctx.scale(sxScale, syScale);
 
-    // Subtle Broadcast Camera Zoom & Impact Shake
     const shakeX = state.shakeTime > 0 ? (Math.random() - 0.5) * state.shakeMag : 0;
     const shakeY = state.shakeTime > 0 ? (Math.random() - 0.5) * state.shakeMag : 0;
     const zoom = state.cameraZoom || 1;
@@ -53,61 +50,34 @@ class GameRenderer {
     ctx.scale(zoom, zoom);
     ctx.translate(-vw * 0.5, -vh * 0.58);
 
-    // 1. Full-HD Night Stadium Backdrop
     if (this.assets.stadium) {
       ctx.drawImage(this.assets.stadium, 0, 0, vw, vh);
     }
 
-    // 2. Drifting Broadcast Stadium TV Blimp
     if (this.assets.balloons) {
       const bx = 260 + Math.sin(state.elapsed * 0.16) * 90;
       const by = 22 + Math.sin(state.elapsed * 0.9) * 5;
       ctx.drawImage(this.assets.balloons, bx, by, 165, 82);
     }
 
-    // 3. Animated Crowd Camera Flashes (subtle stadium sparkle)
     this.drawCrowdFlashes(ctx, state);
-
-    // 4. Central Giant Stadium Jumbotron (live score!)
     this.drawStadiumJumbotron(ctx, state);
-
-    // 5. Umpire standing beside pitch (signaling SIX / FOUR / OUT!)
     CharacterDrawer.drawUmpire(ctx, state);
-
-    // 6. Pitch Bounce Marker + Dynamic Sweet-Spot Timing Ring
     this.drawPitchMarkers(ctx, state);
-
-    // 7. Right-Side Curved Run Arc Meter (1 • 2 • 3 • 4 • 6)
     this.drawRunArc(ctx, state);
-
-    // 8. Wicketkeeper crouched behind stumps
     CharacterDrawer.drawWicketkeeper(ctx, state);
-
-    // 9. Stumps (Upright OR Physically Shattered Glowing LED Zing Stumps!)
     this.drawStumps(ctx, state);
-
-    // 10. Animated Opponent Bowler (right side of pitch)
     CharacterDrawer.drawBowler(ctx, state);
-
-    // 11. Smooth 60fps Articulated Batsman
     CharacterDrawer.drawBatsman(ctx, state);
-
-    // 12. Spinning Leather Cricket Ball + Shadow + Hawk-Eye Speed Trail
     this.drawBall(ctx, state);
-
-    // 13. Shockwave Rings & Particles (Hit Sparks, Dust, Confetti)
     this.drawShockwaves(ctx, state);
     this.drawParticles(ctx, state);
-
-    // 14. Broadcast Callout ("MASSIVE SIX!", "CRACKING FOUR!", "BOWLED!")
     this.drawCallout(ctx, state);
 
-    // 15. Pre-Match 3-2-1 Countdown
     if (state.countdown > 0) {
       this.drawCountdown(ctx, state);
     }
 
-    // 16. Boundary Gold / Wicket Red Edge Flash
     if (state.flashAlpha > 0) {
       ctx.fillStyle = state.flashColor.replace('ALPHA', state.flashAlpha.toFixed(3));
       ctx.fillRect(0, 0, vw, vh);
@@ -117,7 +87,6 @@ class GameRenderer {
   }
 
   drawCrowdFlashes(ctx, state) {
-    // Twinkling smartphone flashes in the night crowd
     ctx.save();
     for (let i = 0; i < 8; i++) {
       const phase = Math.sin(state.elapsed * (3.5 + i * 0.7) + i * 19.3);
@@ -155,7 +124,6 @@ class GameRenderer {
   }
 
   drawPitchMarkers(ctx, state) {
-    // 1) Glowing Pitch Bounce Spot when delivery is incoming!
     if (state.ball.phase === 'bowled' && !state.ball.bounced && state.delivery) {
       const pulse = 0.55 + 0.45 * Math.sin(state.elapsed * 16);
       const bx = state.delivery.bounceX;
@@ -170,42 +138,40 @@ class GameRenderer {
       ctx.restore();
     }
 
-    // 2) Sweet-Spot Hitting Timing Ring right in front of the batsman!
-    if (state.ball.phase === 'bowled') {
+    // Front-Only Strike Zone Timing Ring (disappears immediately once ball passes strikeMinX!)
+    if (state.ball.phase === 'bowled' && state.ball.x >= state.strikeMinX) {
       const dist = state.ball.x - state.sweetSpotX;
-      if (dist > -70 && dist < 340) {
-        const inZone = Math.abs(dist) <= 58;
-        const perfect = Math.abs(dist) <= 26;
-        const shrink = Math.max(0, Math.min(1, dist / 260));
+      if (dist < 360) {
+        const inZone = state.ball.x <= state.strikeMaxX && state.ball.x >= state.strikeMinX;
+        const perfect = Math.abs(dist) <= 22;
+        const shrink = Math.max(0, Math.min(1, Math.max(0, dist) / 260));
         const r = 18 + shrink * 36;
 
         ctx.save();
-        // Ground target ellipse at sweet spot
         ctx.beginPath();
-        ctx.ellipse(state.sweetSpotX, state.groundY + 5, 48, 12, 0, 0, Math.PI * 2);
+        ctx.ellipse(state.sweetSpotX, state.groundY + 5, 52, 12, 0, 0, Math.PI * 2);
         ctx.fillStyle = perfect
-          ? 'rgba(255, 212, 59, 0.34)'
+          ? 'rgba(255, 212, 59, 0.36)'
           : inZone
-          ? 'rgba(61, 220, 132, 0.24)'
+          ? 'rgba(61, 220, 132, 0.25)'
           : 'rgba(255, 255, 255, 0.10)';
         ctx.fill();
         ctx.strokeStyle = perfect ? '#ffd43b' : inZone ? '#3ddc84' : 'rgba(255, 255, 255, 0.42)';
-        ctx.lineWidth = perfect ? 3 : 2;
+        ctx.lineWidth = perfect ? 3.2 : 2;
         ctx.stroke();
 
-        // Shrinking Timing Halo around sweet spot height (y ~ groundY - 62)
         ctx.beginPath();
         ctx.arc(state.sweetSpotX, state.groundY - 62, r, 0, Math.PI * 2);
         ctx.strokeStyle = perfect
-          ? 'rgba(255, 212, 59, 0.95)'
+          ? 'rgba(255, 212, 59, 0.96)'
           : inZone
-          ? 'rgba(61, 220, 132, 0.85)'
+          ? 'rgba(61, 220, 132, 0.88)'
           : 'rgba(255, 255, 255, 0.35)';
         ctx.lineWidth = perfect ? 4 : 2.5;
         ctx.stroke();
 
         if (perfect) {
-          ctx.font = 'italic 900 16px Impact, sans-serif';
+          ctx.font = 'italic 900 17px Impact, sans-serif';
           ctx.textAlign = 'center';
           ctx.fillStyle = '#ffd43b';
           ctx.fillText('HIT NOW!', state.sweetSpotX, state.groundY - 94);
@@ -220,7 +186,6 @@ class GameRenderer {
     const zones = CWC_CONFIG.ARC_ZONES;
 
     ctx.save();
-    // Dark translucent outer rim track
     ctx.beginPath();
     ctx.arc(cx, cy, radius, (zones[0].startDeg * Math.PI) / 180, (zones[zones.length - 1].endDeg * Math.PI) / 180);
     ctx.strokeStyle = 'rgba(4, 8, 18, 0.56)';
@@ -245,7 +210,6 @@ class GameRenderer {
       ctx.stroke();
       ctx.shadowBlur = 0;
 
-      // Segment separator tick
       ctx.beginPath();
       ctx.moveTo(cx + Math.cos(a0) * (radius - 14), cy + Math.sin(a0) * (radius - 14));
       ctx.lineTo(cx + Math.cos(a0) * (radius + 14), cy + Math.sin(a0) * (radius + 14));
@@ -253,7 +217,6 @@ class GameRenderer {
       ctx.lineWidth = 4;
       ctx.stroke();
 
-      // Run number label cleanly positioned inward
       const midA = (a0 + a1) * 0.5;
       const lx = cx + Math.cos(midA) * (radius - 44);
       const ly = cy + Math.sin(midA) * (radius - 44);
@@ -294,7 +257,6 @@ class GameRenderer {
     const b = state.ball;
     if (!b.visible) return;
 
-    // Ground shadow
     const hAbove = Math.max(0, state.groundY - b.y);
     const shScale = Math.max(0.22, 1 - hAbove / 400);
     ctx.save();
@@ -304,7 +266,6 @@ class GameRenderer {
     ctx.fill();
     ctx.restore();
 
-    // Hawk-Eye Broadcast Speed Trail
     if (b.trail.length > 1) {
       ctx.save();
       for (let i = 1; i < b.trail.length; i++) {
@@ -322,7 +283,6 @@ class GameRenderer {
       ctx.restore();
     }
 
-    // Spinning 3D Leather Ball
     ctx.save();
     ctx.translate(b.x, b.y);
     ctx.rotate(b.rotation);

@@ -1,9 +1,9 @@
 /* =========================================================
-   Strict 16:9 Fullscreen Controller, Preloader & Tournament Manager
+   Strict 16:9 Fullscreen Controller, Preloader & Tournament Manager (v3)
    ========================================================= */
 
 (function () {
-  const SAVE_KEY = 'cwc_pro_hd_tournament_v2';
+  const SAVE_KEY = 'cwc_pro_hd_tournament_v3';
 
   const dom = {
     rotateOverlay: document.getElementById('rotate-overlay'),
@@ -97,6 +97,7 @@
   let currentOpponent = null;
   let hasSwungOnce = false;
   let forceRotated = false;
+  let lastTapMs = 0;
 
   const renderer = new GameRenderer(dom.canvas);
   const engine = new CricketMatchEngine(renderer, {
@@ -105,13 +106,9 @@
     onMatchEnd: handleMatchEnd
   });
 
-  // =========================================================
-  // STRICT 16:9 FULLSCREEN LANDSCAPE ENFORCEMENT (ZERO 9:16!)
-  // =========================================================
   function checkOrientation() {
     const isPortrait = window.innerHeight > window.innerWidth;
     if (!isPortrait) {
-      // Natural landscape -> always remove forced CSS rotation & hide prompt!
       forceRotated = false;
       document.body.classList.remove('force-landscape-90');
       dom.rotateOverlay.classList.add('hidden');
@@ -134,7 +131,6 @@
         await screen.orientation.lock('landscape');
       }
     } catch {
-      // Fallback: if browser denies native orientation lock on portrait screen, auto-rotate stage to 16:9!
       if (window.innerHeight > window.innerWidth) {
         enableForcedLandscape();
       }
@@ -152,7 +148,6 @@
   window.addEventListener('resize', checkOrientation);
   window.addEventListener('orientationchange', () => setTimeout(checkOrientation, 120));
 
-  // ---------- Asset Preloader ----------
   function loadImage(src) {
     return new Promise((resolve) => {
       const img = new Image();
@@ -195,7 +190,6 @@
     setTimeout(() => dom.loader.classList.remove('active'), 160);
   }
 
-  // ---------- Tournament Save / Load ----------
   function saveTournament() {
     if (tournament) localStorage.setItem(SAVE_KEY, JSON.stringify(tournament));
     else localStorage.removeItem(SAVE_KEY);
@@ -237,7 +231,6 @@
     saveTournament();
   }
 
-  // ---------- Screen Router ----------
   function showScreen(name) {
     Object.entries(dom.screens).forEach(([k, el]) => el.classList.toggle('active', k === name));
     const showHome = ['matchup', 'team', 'overs', 'briefing'].includes(name);
@@ -252,7 +245,6 @@
     }
   }
 
-  // ---------- Build 10-Team Broadcast Shield Grid (5x2 widescreen layout!) ----------
   function buildTeamGrids() {
     dom.teamGrid.innerHTML = '';
     dom.oversTeamGrid.innerHTML = '';
@@ -287,7 +279,6 @@
     document.querySelectorAll('.team-card').forEach((c) => c.classList.toggle('selected', c.dataset.id === id));
   }
 
-  // ---------- Matchup & Briefing ----------
   function openMatchupScreen() {
     if (!tournament) { showScreen('team'); return; }
     if (tournament.stage === 'champion' || tournament.stage === 'eliminated') {
@@ -328,13 +319,12 @@
     const rawMax = mode.baseTargetMax * currentOpponent.strength * stageBoost;
     currentMatchTarget = Math.round(rawMin + Math.random() * (rawMax - rawMin));
 
-    const oppProper = currentOpponent.name.toLowerCase().replace(/\w/g, (c) => c.toUpperCase());
+    const oppProper = currentOpponent.name.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
     dom.briefingText.textContent =
       `You have ${mode.balls} balls and ${mode.wickets} ${mode.wickets === 1 ? 'wicket' : 'wickets'} to chase ${oppProper}'s total of ${currentMatchTarget} runs`;
     showScreen('briefing');
   }
 
-  // ---------- Launch Live Match ----------
   function launchMatch() {
     const playerTeam = getTeamById(tournament.teamId);
     dom.hudFlagA.src = `images/flags/${playerTeam.id}.png`;
@@ -355,7 +345,6 @@
     dom.hudBalls.textContent = state.ballsLeft;
     dom.hudWickets.textContent = state.wicketsLeft;
 
-    // Broadcast TV Scorebug Live Update
     dom.hudScoreLive.textContent = `${state.runsScored}/${state.wicketsLost}`;
     const completedOvers = Math.floor(state.ballsBowled / 6);
     const remBalls = state.ballsBowled % 6;
@@ -364,7 +353,6 @@
     const rrr = state.ballsLeft > 0 ? ((state.targetRemaining / state.ballsLeft) * 6).toFixed(1) : '0.0';
     dom.hudRrr.textContent = `RRR ${rrr}`;
 
-    // Last 6 Balls Strip
     dom.hudOverBalls.innerHTML = '';
     for (let i = 0; i < 6; i++) {
       const val = state.recentBalls[i] || '';
@@ -377,7 +365,6 @@
       dom.hudOverBalls.appendChild(dot);
     }
 
-    // Popping Shot Badge
     if (shotBadge !== '') {
       dom.hudLastShot.textContent = shotBadge;
       dom.hudLastShot.className = 'hud-last-shot pop';
@@ -454,7 +441,6 @@
     showScreen('trophy');
   }
 
-  // ---------- Event Bindings ----------
   function bindEvents() {
     dom.btnEnterLandscape.addEventListener('click', () => {
       soundEngine.init();
@@ -512,7 +498,6 @@
     dom.btnTitlePlay.addEventListener('click', () => {
       soundEngine.init();
       soundEngine.playClick();
-      // Auto-enter 16:9 landscape fullscreen on Play click!
       if (!document.fullscreenElement) requestLandscapeFullscreen();
       if (tournament && tournament.stage !== 'champion' && tournament.stage !== 'eliminated') {
         openMatchupScreen();
@@ -574,10 +559,16 @@
       showScreen('team');
     });
 
-    // Zero-Latency Batting Controls (Canvas Tap + Dedicated HIT Button + Space/Up/Enter!)
+    // Zero-Latency Unified Batting Input across entire game screen!
     const handleBatSwing = (e) => {
       if (!dom.screens.game.classList.contains('active')) return;
       if (engine.paused || engine.state.matchOver) return;
+      if (e && e.target && e.target.closest('.icon-btn, .modal-overlay')) return;
+
+      const now = performance.now();
+      if (now - lastTapMs < 70) return;
+      lastTapMs = now;
+
       if (!hasSwungOnce) {
         hasSwungOnce = true;
         dom.hudTapHint.classList.add('hidden');
@@ -585,22 +576,24 @@
       engine.triggerSwing();
     };
 
-    dom.canvas.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      handleBatSwing(e);
+    dom.screens.game.addEventListener('pointerdown', (e) => {
+      if (!e.target.closest('.icon-btn, .modal-overlay')) {
+        e.preventDefault();
+        handleBatSwing(e);
+      }
     });
 
-    dom.btnSwingPad.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      handleBatSwing(e);
-    });
+    dom.screens.game.addEventListener('touchstart', (e) => {
+      if (!e.target.closest('.icon-btn, .modal-overlay')) {
+        handleBatSwing(e);
+      }
+    }, { passive: true });
 
     window.addEventListener('keydown', (e) => {
       if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'Enter') {
         if (dom.screens.game.classList.contains('active') && !engine.paused && !engine.state.matchOver) {
           e.preventDefault();
-          handleBatSwing(e);
+          handleBatSwing(null);
         }
       } else if (e.code === 'Escape' && dom.screens.game.classList.contains('active')) {
         if (!engine.state.matchOver) {
@@ -612,7 +605,6 @@
     });
   }
 
-  // ---------- Boot ----------
   loadTournament();
   buildTeamGrids();
   bindEvents();
