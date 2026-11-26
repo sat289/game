@@ -1,11 +1,14 @@
 /* =========================================================
-   Zero-Dependency Broadcast Sound Engine (Web Audio API)
+   Broadcast Cricket Sound Engine (Web Audio API)
+   Includes Live Stadium Ambience, Willow Crack, Pitch Bounce & Crowd Roar
    ========================================================= */
 
 class SoundEngine {
   constructor() {
     this.ctx = null;
     this.muted = false;
+    this.ambienceNode = null;
+    this.ambienceGain = null;
   }
 
   init() {
@@ -20,18 +23,54 @@ class SoundEngine {
 
   toggleMute() {
     this.muted = !this.muted;
+    if (this.ambienceGain && this.ctx) {
+      this.ambienceGain.gain.setTargetAtTime(this.muted ? 0 : 0.045, this.ctx.currentTime, 0.15);
+    }
     return this.muted;
   }
 
-  _noiseBuffer(durationSec) {
+  _noiseBuffer(sec) {
     const sr = this.ctx.sampleRate;
-    const len = Math.floor(sr * durationSec);
+    const len = Math.floor(sr * sec);
     const buf = this.ctx.createBuffer(1, len, sr);
     const data = buf.getChannelData(0);
+    let b0 = 0, b1 = 0, b2 = 0;
     for (let i = 0; i < len; i++) {
-      data[i] = Math.random() * 2 - 1;
+      const white = Math.random() * 2 - 1;
+      // Soft pink-ish stadium noise
+      b0 = 0.997 * b0 + white * 0.029;
+      b1 = 0.985 * b1 + white * 0.032;
+      b2 = 0.950 * b2 + white * 0.048;
+      data[i] = Math.max(-1, Math.min(1, (b0 + b1 + b2 + white * 0.18) * 1.4));
     }
     return buf;
+  }
+
+  startAmbience() {
+    if (this.ambienceNode) return;
+    this.init();
+    if (!this.ctx) return;
+    const src = this.ctx.createBufferSource();
+    src.buffer = this._noiseBuffer(3.0);
+    src.loop = true;
+    const bp = this.ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 520;
+    bp.Q.value = 0.65;
+    const gain = this.ctx.createGain();
+    gain.gain.value = this.muted ? 0 : 0.045;
+    src.connect(bp).connect(gain).connect(this.ctx.destination);
+    src.start();
+    this.ambienceNode = src;
+    this.ambienceGain = gain;
+  }
+
+  stopAmbience() {
+    if (this.ambienceNode) {
+      try { this.ambienceNode.stop(); } catch {}
+      this.ambienceNode = null;
+      this.ambienceGain = null;
+    }
   }
 
   playClick() {
@@ -40,15 +79,15 @@ class SoundEngine {
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
+    const g = this.ctx.createGain();
     osc.type = 'triangle';
-    osc.frequency.setValueAtTime(520, now);
-    osc.frequency.exponentialRampToValueAtTime(220, now + 0.06);
-    gain.gain.setValueAtTime(0.18, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
-    osc.connect(gain).connect(this.ctx.destination);
+    osc.frequency.setValueAtTime(580, now);
+    osc.frequency.exponentialRampToValueAtTime(240, now + 0.055);
+    g.gain.setValueAtTime(0.16, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.065);
+    osc.connect(g).connect(this.ctx.destination);
     osc.start(now);
-    osc.stop(now + 0.08);
+    osc.stop(now + 0.07);
   }
 
   playCountdown(isGo = false) {
@@ -57,14 +96,31 @@ class SoundEngine {
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
+    const g = this.ctx.createGain();
     osc.type = 'sine';
     osc.frequency.setValueAtTime(isGo ? 880 : 440, now);
-    gain.gain.setValueAtTime(0.22, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + (isGo ? 0.25 : 0.14));
-    osc.connect(gain).connect(this.ctx.destination);
+    g.gain.setValueAtTime(0.2, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + (isGo ? 0.24 : 0.13));
+    osc.connect(g).connect(this.ctx.destination);
     osc.start(now);
     osc.stop(now + 0.26);
+  }
+
+  playPitchBounce() {
+    if (this.muted) return;
+    this.init();
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(145, now);
+    osc.frequency.exponentialRampToValueAtTime(52, now + 0.05);
+    g.gain.setValueAtTime(0.24, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+    osc.connect(g).connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.07);
   }
 
   playSwingWhoosh() {
@@ -74,14 +130,14 @@ class SoundEngine {
     const now = this.ctx.currentTime;
     const src = this.ctx.createBufferSource();
     src.buffer = this._noiseBuffer(0.16);
-    const filter = this.ctx.createBiquadFilter();
-    filter.type = 'bandpass';
-    filter.frequency.setValueAtTime(420, now);
-    filter.frequency.exponentialRampToValueAtTime(1400, now + 0.14);
-    const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime(0.15, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
-    src.connect(filter).connect(gain).connect(this.ctx.destination);
+    const bp = this.ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.setValueAtTime(380, now);
+    bp.frequency.exponentialRampToValueAtTime(1500, now + 0.14);
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.18, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+    src.connect(bp).connect(g).connect(this.ctx.destination);
     src.start(now);
   }
 
@@ -91,37 +147,53 @@ class SoundEngine {
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
 
-    // Crisp willow wood knock
+    // Authentic English Willow Knock
     const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    const baseFreq = runs >= 6 ? 290 : runs >= 4 ? 250 : 210;
+    const g = this.ctx.createGain();
     osc.type = 'triangle';
-    osc.frequency.setValueAtTime(baseFreq, now);
-    osc.frequency.exponentialRampToValueAtTime(75, now + 0.09);
-    gain.gain.setValueAtTime(runs >= 4 ? 0.55 : 0.36, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
-    osc.connect(gain).connect(this.ctx.destination);
+    const f0 = runs >= 6 ? 330 : runs >= 4 ? 280 : 225;
+    osc.frequency.setValueAtTime(f0, now);
+    osc.frequency.exponentialRampToValueAtTime(72, now + 0.095);
+    g.gain.setValueAtTime(runs >= 4 ? 0.62 : 0.4, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+    osc.connect(g).connect(this.ctx.destination);
     osc.start(now);
-    osc.stop(now + 0.12);
+    osc.stop(now + 0.13);
 
-    // High-frequency crack transient
-    const crack = this.ctx.createBufferSource();
-    crack.buffer = this._noiseBuffer(0.05);
+    // Crisp leather-on-wood high snap
+    const snap = this.ctx.createBufferSource();
+    snap.buffer = this._noiseBuffer(0.045);
     const hp = this.ctx.createBiquadFilter();
     hp.type = 'highpass';
-    hp.frequency.setValueAtTime(1800, now);
-    const cg = this.ctx.createGain();
-    cg.gain.setValueAtTime(runs >= 4 ? 0.42 : 0.22, now);
-    cg.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
-    crack.connect(hp).connect(cg).connect(this.ctx.destination);
-    crack.start(now);
+    hp.frequency.setValueAtTime(2100, now);
+    const sg = this.ctx.createGain();
+    sg.gain.setValueAtTime(runs >= 4 ? 0.45 : 0.22, now);
+    sg.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+    snap.connect(hp).connect(sg).connect(this.ctx.destination);
+    snap.start(now);
+  }
 
+  playZoneScore(runs) {
+    if (this.muted) return;
+    this.init();
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
     if (runs >= 4) {
-      this.playCrowdCheer(runs >= 6 ? 1.45 : 0.95);
+      this.playCrowdCheer(runs >= 6 ? 1.85 : 1.2);
+    } else {
+      const osc = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(480 + runs * 80, now);
+      g.gain.setValueAtTime(0.14, now);
+      g.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+      osc.connect(g).connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.19);
     }
   }
 
-  playCrowdCheer(duration = 1.2) {
+  playCrowdCheer(duration = 1.4) {
     if (this.muted) return;
     this.init();
     if (!this.ctx) return;
@@ -131,30 +203,27 @@ class SoundEngine {
     src.buffer = this._noiseBuffer(duration);
     const bp = this.ctx.createBiquadFilter();
     bp.type = 'bandpass';
-    bp.frequency.setValueAtTime(950, now);
-    bp.Q.setValueAtTime(0.8, now);
-    const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime(0.001, now);
-    gain.gain.linearRampToValueAtTime(0.24, now + 0.18);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-    src.connect(bp).connect(gain).connect(this.ctx.destination);
+    bp.frequency.setValueAtTime(1050, now);
+    bp.Q.setValueAtTime(0.7, now);
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.001, now);
+    g.gain.linearRampToValueAtTime(0.28, now + 0.16);
+    g.gain.exponentialRampToValueAtTime(0.001, now + duration);
+    src.connect(bp).connect(g).connect(this.ctx.destination);
     src.start(now);
 
-    // Stadium horn accent for big sixes/fours
-    const notes = duration > 1.2 ? [523.25, 659.25, 783.99] : [440, 554.37];
-    notes.forEach((freq, idx) => {
+    // Broadcast horn chord on boundaries
+    const chord = duration > 1.4 ? [523.25, 659.25, 783.99, 1046.5] : [440, 554.37, 659.25];
+    chord.forEach((freq, i) => {
       const o = this.ctx.createOscillator();
-      const g = this.ctx.createGain();
-      o.type = 'sawtooth';
-      o.frequency.setValueAtTime(freq, now + idx * 0.06);
-      const lp = this.ctx.createBiquadFilter();
-      lp.type = 'lowpass';
-      lp.frequency.setValueAtTime(1500, now);
-      g.gain.setValueAtTime(0.06, now + idx * 0.06);
-      g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.35);
-      o.connect(lp).connect(g).connect(this.ctx.destination);
-      o.start(now + idx * 0.06);
-      o.stop(now + idx * 0.06 + 0.36);
+      const og = this.ctx.createGain();
+      o.type = 'triangle';
+      o.frequency.setValueAtTime(freq, now + i * 0.055);
+      og.gain.setValueAtTime(0.08, now + i * 0.055);
+      og.gain.exponentialRampToValueAtTime(0.001, now + i * 0.055 + 0.36);
+      o.connect(og).connect(this.ctx.destination);
+      o.start(now + i * 0.055);
+      o.stop(now + i * 0.055 + 0.38);
     });
   }
 
@@ -164,29 +233,28 @@ class SoundEngine {
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
 
-    // Wooden stumps clatter (3 staggered pops)
-    [0, 0.045, 0.095].forEach((offset, i) => {
+    // Clattering wooden wickets + LED zing buzz
+    [0, 0.04, 0.085].forEach((off, i) => {
       const osc = this.ctx.createOscillator();
       const g = this.ctx.createGain();
       osc.type = 'square';
-      osc.frequency.setValueAtTime(340 - i * 45, now + offset);
-      osc.frequency.exponentialRampToValueAtTime(90, now + offset + 0.08);
-      g.gain.setValueAtTime(0.25, now + offset);
-      g.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.09);
+      osc.frequency.setValueAtTime(380 - i * 55, now + off);
+      osc.frequency.exponentialRampToValueAtTime(85, now + off + 0.09);
+      g.gain.setValueAtTime(0.24, now + off);
+      g.gain.exponentialRampToValueAtTime(0.001, now + off + 0.1);
       osc.connect(g).connect(this.ctx.destination);
-      osc.start(now + offset);
-      osc.stop(now + offset + 0.1);
+      osc.start(now + off);
+      osc.stop(now + off + 0.11);
     });
 
-    // Noise clatter
     const src = this.ctx.createBufferSource();
-    src.buffer = this._noiseBuffer(0.22);
+    src.buffer = this._noiseBuffer(0.32);
     const bp = this.ctx.createBiquadFilter();
     bp.type = 'bandpass';
-    bp.frequency.setValueAtTime(1400, now);
+    bp.frequency.setValueAtTime(1350, now);
     const ng = this.ctx.createGain();
     ng.gain.setValueAtTime(0.32, now);
-    ng.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+    ng.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
     src.connect(bp).connect(ng).connect(this.ctx.destination);
     src.start(now);
   }
@@ -196,22 +264,22 @@ class SoundEngine {
     this.init();
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
-    const melody = won
-      ? [523.25, 659.25, 783.99, 1046.5]
+    const notes = won
+      ? [523.25, 659.25, 783.99, 1046.5, 1318.5]
       : [392.0, 349.23, 311.13, 261.63];
 
-    melody.forEach((freq, i) => {
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      osc.type = won ? 'triangle' : 'sawtooth';
-      osc.frequency.setValueAtTime(freq, now + i * 0.14);
-      gain.gain.setValueAtTime(0.16, now + i * 0.14);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.14 + 0.42);
-      osc.connect(gain).connect(this.ctx.destination);
-      osc.start(now + i * 0.14);
-      osc.stop(now + i * 0.14 + 0.44);
+    notes.forEach((freq, i) => {
+      const o = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      o.type = won ? 'triangle' : 'sawtooth';
+      o.frequency.setValueAtTime(freq, now + i * 0.12);
+      g.gain.setValueAtTime(0.16, now + i * 0.12);
+      g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 0.44);
+      o.connect(g).connect(this.ctx.destination);
+      o.start(now + i * 0.12);
+      o.stop(now + i * 0.12 + 0.46);
     });
-    if (won) this.playCrowdCheer(1.8);
+    if (won) this.playCrowdCheer(2.0);
   }
 }
 
