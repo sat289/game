@@ -49,4 +49,3 @@ window.CWC_CONFIG = {
     { name: 'INSWINGER',   kmhMin: 132, kmhMax: 143, speed: 880,  bounceX: 445, bounceHeight: 0.58, gravity: 1680 }
   ]
 };
-
