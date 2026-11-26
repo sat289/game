@@ -2,222 +2,254 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#0a0810" />
-  <title>Cricket World Cup — Batting Challenge</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#05070d" />
+  <meta name="screen-orientation" content="landscape" />
+  <title>Cricket World Cup HD — 16:9 Pro Batting</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <div id="app">
-    <!-- Loading Overlay -->
-    <div id="loader-overlay" class="overlay-screen active">
-      <div class="loader-box">
-        <img src="images/logo.png" alt="Cricket World Cup" class="loader-logo" />
-        <div class="loader-bar-wrap">
-          <div id="loader-bar-fill" class="loader-bar-fill"></div>
-        </div>
-        <p id="loader-text">Loading Stadium Assets...</p>
+  <!-- Strict 16:9 Landscape Enforcement Overlay (shown ONLY if viewport is Portrait/9:16 and not force-rotated) -->
+  <div id="rotate-overlay" class="hidden">
+    <div class="rotate-card">
+      <div class="phone-rotate-icon" aria-hidden="true">
+        <div class="phone-body"><div class="phone-screen">16:9</div></div>
+      </div>
+      <h2>16:9 LANDSCAPE FULLSCREEN ONLY</h2>
+      <p>Rotate your phone sideways for the real broadcast stadium view, or tap below to lock 16:9 fullscreen immediately.</p>
+      <div class="rotate-btns">
+        <button id="btn-enter-landscape" class="rect-btn primary">ENTER 16:9 FULLSCREEN</button>
+        <button id="btn-force-rotate" class="rect-btn">FORCE 16:9 ROTATED MODE</button>
       </div>
     </div>
-
-    <!-- Global Top Utility Controls (Sound + Fullscreen) -->
-    <div id="global-controls">
-      <button id="btn-home" class="icon-btn hidden" title="Home" aria-label="Home">
-        <svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3l9-8z"/></svg>
-      </button>
-      <button id="btn-pause" class="icon-btn hidden" title="Pause" aria-label="Pause">
-        <svg viewBox="0 0 24 24"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
-      </button>
-      <div class="spacer"></div>
-      <button id="btn-sound" class="icon-btn" title="Toggle Sound" aria-label="Toggle Sound">
-        <svg id="icon-sound-on" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-        <svg id="icon-sound-off" class="hidden" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.796 8.796 0 0021 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 003.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
-      </button>
-      <button id="btn-fullscreen" class="icon-btn" title="Fullscreen" aria-label="Fullscreen">
-        <svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
-      </button>
-    </div>
-
-    <!-- SCREEN 1: TITLE SPLASH -->
-    <section id="screen-title" class="screen active">
-      <div class="title-center">
-        <button id="btn-title-play" class="circle-play-btn pulse-glow" aria-label="Play Game">
-          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-        </button>
-        <button id="btn-title-reset" class="rect-btn hidden">RESET</button>
-        <img src="images/logo.png" alt="Cricket World Cup" class="title-logo" />
-        <p class="title-hint">Tap anywhere or press SPACE to bat</p>
-      </div>
-    </section>
-
-    <!-- SCREEN 2: CHOOSE TEAM -->
-    <section id="screen-team" class="screen stadium-backdrop">
-      <div class="screen-header">
-        <span class="header-pill">CHOOSE TEAM</span>
-      </div>
-      <div class="choose-layout">
-        <div id="team-grid" class="team-grid"></div>
-        <div class="team-preview-pane">
-          <img id="preview-captain-img" src="images/captains/india.png" alt="Selected Captain" class="preview-captain" />
-          <div id="preview-team-name" class="preview-team-name">INDIA</div>
-          <div class="preview-actions">
-            <button id="btn-team-next" class="square-nav-btn" aria-label="Next">
-              <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
-            </button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- SCREEN 3: CHOOSE OVERS -->
-    <section id="screen-overs" class="screen stadium-backdrop">
-      <div class="screen-header">
-        <span class="header-pill">CHOOSE OVERS</span>
-      </div>
-      <div class="choose-layout">
-        <div id="overs-team-grid" class="team-grid locked"></div>
-        <div class="overs-pane">
-          <div class="overs-buttons">
-            <button class="overs-card active" data-overs="2">
-              <span class="overs-num">2</span>
-              <span class="overs-label">OVERS</span>
-              <span class="overs-meta">12 Balls • 2 Wickets</span>
-            </button>
-            <button class="overs-card" data-overs="5">
-              <span class="overs-num">5</span>
-              <span class="overs-label">OVERS</span>
-              <span class="overs-meta">30 Balls • 4 Wickets</span>
-            </button>
-            <button class="overs-card" data-overs="10">
-              <span class="overs-num">10</span>
-              <span class="overs-label">OVERS</span>
-              <span class="overs-meta">60 Balls • 7 Wickets</span>
-            </button>
-          </div>
-          <div class="overs-footer">
-            <button id="btn-overs-back" class="square-nav-btn" aria-label="Back">
-              <svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"/></svg>
-            </button>
-            <button id="btn-overs-start" class="circle-play-btn small" aria-label="Start Tournament">
-              <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-            </button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- SCREEN 4: TOURNAMENT MATCHUP -->
-    <section id="screen-matchup" class="screen stadium-backdrop">
-      <div class="matchup-banner">
-        <h2 id="matchup-headline">Win 5 matches out of 9 to reach qualifier</h2>
-        <div id="matchup-subline" class="matchup-subline">LEAGUE MATCH 1 OF 9 • WON: 0</div>
-      </div>
-      <div class="matchup-stage">
-        <div class="matchup-side">
-          <img id="matchup-player-img" src="images/captains/india.png" alt="Your Team" class="matchup-captain" />
-          <div id="matchup-player-name" class="matchup-team-label">INDIA</div>
-        </div>
-        <img src="images/vs-badge.png" alt="VS" class="matchup-vs" />
-        <div class="matchup-side">
-          <img id="matchup-opp-img" src="images/captains/australia.png" alt="Opponent Team" class="matchup-captain" />
-          <div id="matchup-opp-name" class="matchup-team-label">AUSTRALIA</div>
-        </div>
-      </div>
-      <button id="btn-matchup-play" class="circle-play-btn matchup-play-btn" aria-label="Play Match">
-        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-      </button>
-    </section>
-
-    <!-- SCREEN 5: PRE-MATCH TARGET BRIEFING -->
-    <section id="screen-briefing" class="screen stadium-backdrop">
-      <div class="briefing-content">
-        <p id="briefing-text" class="briefing-text">
-          You have 12 balls and 2 wickets to chase Australia's total of 24 score
-        </p>
-        <button id="btn-briefing-play" class="circle-play-btn pulse-glow" aria-label="Start Chase">
-          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-        </button>
-      </div>
-    </section>
-
-    <!-- SCREEN 6: LIVE GAMEPLAY ARENA -->
-    <section id="screen-game" class="screen">
-      <canvas id="game-canvas"></canvas>
-
-      <!-- Top-Left Classic Broadcast Scoreboard HUD -->
-      <div id="hud-scoreboard">
-        <div class="hud-top-row">
-          <div class="hud-target-col">
-            <span class="hud-lbl">TARGET</span>
-            <span id="hud-target" class="hud-val">24</span>
-          </div>
-          <div class="hud-last-shot-col">
-            <span id="hud-last-shot" class="hud-last-shot"></span>
-          </div>
-        </div>
-        <div class="hud-divider"></div>
-        <div class="hud-stat-row">
-          <span>BALLS LEFT : <strong id="hud-balls">12</strong></span>
-          <img src="images/sprites/ball.png" alt="Balls" class="hud-mini-icon" />
-        </div>
-        <div class="hud-stat-row">
-          <span>WICKETS LEFT : <strong id="hud-wickets">2</strong></span>
-          <img src="images/sprites/stumps.png" alt="Wickets" class="hud-mini-icon stumps" />
-        </div>
-      </div>
-
-      <!-- Delivery Speed / Type Tag -->
-      <div id="hud-delivery-pill" class="hud-delivery-pill hidden">FAST • 144 KM/H</div>
-
-      <!-- Bottom Team VS Team Banner -->
-      <div id="hud-bottom-bar">
-        <span id="hud-team-a" class="hud-team-name">INDIA</span>
-        <span class="hud-vs-chip">VS</span>
-        <span id="hud-team-b" class="hud-team-name">AUSTRALIA</span>
-      </div>
-
-      <!-- Tap-to-Bat Helper Hint (fades out after first swing) -->
-      <div id="hud-tap-hint" class="hud-tap-hint">TAP SCREEN / PRESS SPACE TO SWING</div>
-
-      <!-- Pause Overlay -->
-      <div id="modal-pause" class="modal-overlay hidden">
-        <div class="modal-card">
-          <h3>MATCH PAUSED</h3>
-          <div class="modal-actions">
-            <button id="btn-resume" class="rect-btn primary">RESUME</button>
-            <button id="btn-restart-match" class="rect-btn">RESTART MATCH</button>
-            <button id="btn-quit-home" class="rect-btn">MAIN MENU</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Match Result Overlay (Win / Lose) -->
-      <div id="modal-result" class="modal-overlay hidden">
-        <div class="result-content">
-          <h2 id="result-title" class="result-title">You won the match</h2>
-          <p id="result-stats" class="result-stats">Scored 26/0 • Sixes: 3 • Fours: 2</p>
-          <button id="btn-result-next" class="square-nav-btn large" aria-label="Continue">
-            <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <!-- SCREEN 7: WORLD CUP CHAMPION / TOURNAMENT OVER -->
-    <section id="screen-trophy" class="screen stadium-backdrop">
-      <div class="trophy-content">
-        <img id="trophy-img" src="images/trophy.png" alt="World Cup Trophy" class="trophy-img" />
-        <h2 id="trophy-title" class="trophy-title">WORLD CUP CHAMPIONS!</h2>
-        <p id="trophy-subtitle" class="trophy-subtitle">INDIA LIFT THE CRICKET WORLD CUP</p>
-        <div id="trophy-summary" class="trophy-summary"></div>
-        <button id="btn-trophy-new" class="rect-btn primary">NEW TOURNAMENT</button>
-      </div>
-    </section>
   </div>
 
-  <!-- Modular Game Scripts -->
+  <!-- Locked 16:9 Widescreen Viewport Shell -->
+  <div id="viewport-outer">
+    <div id="stage-16x9">
+      <!-- Loading Overlay -->
+      <div id="loader-overlay" class="overlay-screen active">
+        <div class="loader-box">
+          <img src="images/logo.png" alt="Cricket World Cup" class="loader-logo" />
+          <div class="loader-bar-wrap">
+            <div id="loader-bar-fill" class="loader-bar-fill"></div>
+          </div>
+          <p id="loader-text">Loading Broadcast Stadium...</p>
+        </div>
+      </div>
+
+      <!-- Global Top Utility Controls -->
+      <div id="global-controls">
+        <button id="btn-home" class="icon-btn hidden" title="Main Menu" aria-label="Main Menu">
+          <svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3l9-8z"/></svg>
+        </button>
+        <button id="btn-pause" class="icon-btn hidden" title="Pause" aria-label="Pause">
+          <svg viewBox="0 0 24 24"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
+        </button>
+        <div class="spacer"></div>
+        <button id="btn-sound" class="icon-btn" title="Toggle Sound" aria-label="Toggle Sound">
+          <svg id="icon-sound-on" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+          <svg id="icon-sound-off" class="hidden" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.796 8.796 0 0021 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 003.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+        </button>
+        <button id="btn-fullscreen" class="icon-btn" title="16:9 Fullscreen" aria-label="16:9 Fullscreen">
+          <svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+        </button>
+      </div>
+
+      <!-- SCREEN 1: TITLE SPLASH -->
+      <section id="screen-title" class="screen active">
+        <div class="title-center">
+          <button id="btn-title-play" class="circle-play-btn pulse-glow" aria-label="Play Game">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </button>
+          <button id="btn-title-reset" class="rect-btn hidden">RESET TOURNAMENT</button>
+          <img src="images/logo.png" alt="Cricket World Cup" class="title-logo" />
+          <p class="title-hint">16:9 FULLSCREEN HD • TAP SCREEN OR PRESS SPACE TO BAT</p>
+        </div>
+      </section>
+
+      <!-- SCREEN 2: CHOOSE TEAM -->
+      <section id="screen-team" class="screen stadium-backdrop">
+        <div class="screen-header">
+          <span class="header-pill">SELECT YOUR WORLD CUP NATION</span>
+        </div>
+        <div class="choose-layout">
+          <div id="team-grid" class="team-grid"></div>
+          <div class="team-preview-pane">
+            <img id="preview-captain-img" src="images/captains/india.png" alt="Selected Team" class="preview-captain" />
+            <div id="preview-team-name" class="preview-team-name">INDIA</div>
+            <div id="preview-team-meta" class="preview-team-meta">BATTING 95 • PACE 92</div>
+            <div class="preview-actions">
+              <button id="btn-team-next" class="rect-btn primary">NEXT ▸</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SCREEN 3: CHOOSE OVERS -->
+      <section id="screen-overs" class="screen stadium-backdrop">
+        <div class="screen-header">
+          <span class="header-pill">CHOOSE MATCH FORMAT</span>
+        </div>
+        <div class="choose-layout">
+          <div id="overs-team-grid" class="team-grid locked"></div>
+          <div class="overs-pane">
+            <div class="overs-buttons">
+              <button class="overs-card active" data-overs="2">
+                <span class="overs-num">2</span>
+                <span class="overs-label">OVERS</span>
+                <span class="overs-meta">12 Balls • 2 Wickets</span>
+              </button>
+              <button class="overs-card" data-overs="5">
+                <span class="overs-num">5</span>
+                <span class="overs-label">OVERS</span>
+                <span class="overs-meta">30 Balls • 4 Wickets</span>
+              </button>
+              <button class="overs-card" data-overs="10">
+                <span class="overs-num">10</span>
+                <span class="overs-label">OVERS</span>
+                <span class="overs-meta">60 Balls • 7 Wickets</span>
+              </button>
+            </div>
+            <div class="overs-footer">
+              <button id="btn-overs-back" class="rect-btn">◂ BACK</button>
+              <button id="btn-overs-start" class="rect-btn primary">START WORLD CUP ▸</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SCREEN 4: TOURNAMENT MATCHUP -->
+      <section id="screen-matchup" class="screen stadium-backdrop">
+        <div class="matchup-banner">
+          <h2 id="matchup-headline">Win 5 matches out of 9 to reach qualifier</h2>
+          <div id="matchup-subline" class="matchup-subline">LEAGUE MATCH 1 OF 9 • WON: 0</div>
+        </div>
+        <div class="matchup-stage">
+          <div class="matchup-side">
+            <img id="matchup-player-img" src="images/captains/india.png" alt="Your Team" class="matchup-captain" />
+            <div id="matchup-player-name" class="matchup-team-label">INDIA</div>
+          </div>
+          <img src="images/vs-badge.png" alt="VS" class="matchup-vs" />
+          <div class="matchup-side">
+            <img id="matchup-opp-img" src="images/captains/australia.png" alt="Opponent Team" class="matchup-captain" />
+            <div id="matchup-opp-name" class="matchup-team-label">AUSTRALIA</div>
+          </div>
+        </div>
+        <button id="btn-matchup-play" class="circle-play-btn matchup-play-btn pulse-glow" aria-label="Play Match">
+          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+      </section>
+
+      <!-- SCREEN 5: PRE-MATCH TARGET BRIEFING -->
+      <section id="screen-briefing" class="screen stadium-backdrop">
+        <div class="briefing-content">
+          <span class="live-chip">LIVE BROADCAST • CHASE INNINGS</span>
+          <p id="briefing-text" class="briefing-text">
+            You have 12 balls and 2 wickets to chase Australia's total of 24 runs
+          </p>
+          <button id="btn-briefing-play" class="circle-play-btn pulse-glow" aria-label="Start Chase">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </button>
+        </div>
+      </section>
+
+      <!-- SCREEN 6: LIVE 16:9 GAMEPLAY ARENA -->
+      <section id="screen-game" class="screen">
+        <canvas id="game-canvas"></canvas>
+
+        <!-- Top-Left Pro Broadcast Target Card -->
+        <div id="hud-scoreboard">
+          <div class="hud-top-row">
+            <div class="hud-target-col">
+              <span class="hud-lbl">TO WIN</span>
+              <span id="hud-target" class="hud-val">24</span>
+            </div>
+            <div class="hud-last-shot-col">
+              <span id="hud-last-shot" class="hud-last-shot"></span>
+            </div>
+          </div>
+          <div class="hud-divider"></div>
+          <div class="hud-stat-row">
+            <span>BALLS LEFT : <strong id="hud-balls">12</strong></span>
+            <img src="images/sprites/ball.png" alt="Balls" class="hud-mini-icon" />
+          </div>
+          <div class="hud-stat-row">
+            <span>WICKETS LEFT : <strong id="hud-wickets">2</strong></span>
+            <img src="images/sprites/stumps.png" alt="Wickets" class="hud-mini-icon stumps" />
+          </div>
+        </div>
+
+        <!-- Top-Center Live Bowler & Speed Radar Pill -->
+        <div id="hud-delivery-pill" class="hud-delivery-pill hidden">STARC • FAST 146 KM/H</div>
+
+        <!-- Bottom Broadcast TV Scorebug Strip -->
+        <div id="hud-tv-bar">
+          <div class="tv-team-block">
+            <img id="hud-flag-a" src="images/flags/india.png" alt="" class="tv-flag" />
+            <span id="hud-team-a" class="tv-short">IND</span>
+            <span id="hud-score-live" class="tv-score">0/0</span>
+            <span id="hud-overs-live" class="tv-overs">(0.0)</span>
+          </div>
+          <div class="tv-mid-block">
+            <div id="hud-over-balls" class="tv-balls-strip"></div>
+          </div>
+          <div class="tv-opp-block">
+            <span id="hud-rrr" class="tv-rrr">RRR 12.0</span>
+            <span class="tv-vs">VS</span>
+            <span id="hud-team-b" class="tv-short opp">AUS</span>
+            <img id="hud-flag-b" src="images/flags/australia.png" alt="" class="tv-flag" />
+          </div>
+        </div>
+
+        <!-- Tactile Mobile Action Button (Bottom-Right corner — plus tapping anywhere on screen works!) -->
+        <button id="btn-swing-pad" class="swing-pad-btn" aria-label="Swing Bat">
+          <span class="swing-pad-title">HIT</span>
+          <span class="swing-pad-sub">TAP / SPACE</span>
+        </button>
+
+        <!-- First-Ball Helper Banner -->
+        <div id="hud-tap-hint" class="hud-tap-hint">WAIT FOR THE GOLD RING &amp; TAP ANYWHERE TO SMASH!</div>
+
+        <!-- Pause Overlay -->
+        <div id="modal-pause" class="modal-overlay hidden">
+          <div class="modal-card">
+            <h3>MATCH PAUSED</h3>
+            <div class="modal-actions">
+              <button id="btn-resume" class="rect-btn primary">RESUME MATCH</button>
+              <button id="btn-restart-match" class="rect-btn">RESTART MATCH</button>
+              <button id="btn-quit-home" class="rect-btn">MAIN MENU</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Match Result Overlay (Win / Lose) -->
+        <div id="modal-result" class="modal-overlay hidden">
+          <div class="result-content">
+            <h2 id="result-title" class="result-title">YOU WON THE MATCH!</h2>
+            <p id="result-stats" class="result-stats">Scored 26/0 • Sixes: 3 • Fours: 2</p>
+            <button id="btn-result-next" class="rect-btn primary">CONTINUE ▸</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- SCREEN 7: WORLD CUP CHAMPION / TOURNAMENT OVER -->
+      <section id="screen-trophy" class="screen stadium-backdrop">
+        <div class="trophy-content">
+          <img id="trophy-img" src="images/trophy.png" alt="World Cup Trophy" class="trophy-img" />
+          <h2 id="trophy-title" class="trophy-title">WORLD CUP CHAMPIONS!</h2>
+          <p id="trophy-subtitle" class="trophy-subtitle">INDIA LIFT THE CRICKET WORLD CUP</p>
+          <div id="trophy-summary" class="trophy-summary"></div>
+          <button id="btn-trophy-new" class="rect-btn primary">NEW TOURNAMENT</button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Modular Broadcast Engine Scripts -->
   <script src="js/config.js"></script>
   <script src="js/audio.js"></script>
+  <script src="js/characters.js"></script>
   <script src="js/renderer.js"></script>
   <script src="js/game.js"></script>
   <script src="js/ui.js"></script>
