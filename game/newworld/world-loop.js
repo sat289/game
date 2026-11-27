@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getSkyPalette } from "./shaders-glsl.js?v=43";
+import { getSkyPalette } from "./shaders-glsl.js?v=45";
 
 export const loopMethods = {
   _animate() {
@@ -306,19 +306,29 @@ export const loopMethods = {
         if (tr.pauseTimer > 0) {
           tr.pauseTimer -= dt;
         } else {
-          tr.u = (tr.u + dir * tr.speed * dt + 1.0) % 1.0;
+          if (tr.closed) {
+            tr.u = (tr.u + dir * tr.speed * dt + 1.0) % 1.0;
+          } else {
+            tr.u += dir * tr.speed * dt;
+            const margin = spacingU * 3.5;
+            if (tr.u > 1.0 - margin) { tr.u = 1.0 - margin; tr.dir = -1; tr.lastStopIdx = -1; }
+            if (tr.u < margin) { tr.u = margin; tr.dir = 1; tr.lastStopIdx = -1; }
+          }
           for (let si = 0; si < stations.length; si++) {
             if (stations[si].line !== tr.line) continue;
             const du = Math.abs(tr.u - stations[si].u);
-            if (du < 0.005 && tr.lastStopIdx !== si) {
+            if (du < 0.006 && tr.lastStopIdx !== si) {
               tr.lastStopIdx = si;
-              tr.pauseTimer = 1.4;
+              tr.pauseTimer = 1.3;
               break;
             }
           }
         }
         for (let c = 0; c < tr.cars.length; c++) {
-          const cu = (tr.u - dir * c * spacingU + 1.0) % 1.0;
+          const curDir = tr.dir || 1;
+          const cu = tr.closed
+            ? (tr.u - curDir * c * spacingU + 1.0) % 1.0
+            : THREE.MathUtils.clamp(tr.u - curDir * c * spacingU, 0.001, 0.999);
           const pt = curve.getPointAt(cu);
           const tang = curve.getTangentAt(cu).normalize();
           const baseYaw = Math.atan2(tang.x, tang.z);
@@ -337,7 +347,8 @@ export const loopMethods = {
       const pr = this.playerRoam;
       const ix = pr.input.x || 0;
       const iy = pr.input.y || 0;
-      const maxBound = (this.ringRadius || 90) + 125;
+      const maxBound = (this.ringRadius || 90) + 145;
+      const minXBound = this.vipIslandPos ? (this.vipIslandPos.x - 32) : -((this.ringRadius || 90) + 245);
 
       if (pr.mode === "metro" && this.metroSim && this.metroSim.trains[0]) {
         const leadCar = this.metroSim.trains[0].cars[0];
@@ -366,32 +377,36 @@ export const loopMethods = {
           pr.carYaw -= ix * 2.15 * rawDt * dirSign;
         }
 
-        const nextX = THREE.MathUtils.clamp(pr.carPos.x + Math.sin(pr.carYaw) * pr.speed * rawDt, -maxBound, maxBound);
+        const nextX = THREE.MathUtils.clamp(pr.carPos.x + Math.sin(pr.carYaw) * pr.speed * rawDt, minXBound, maxBound);
         const nextZ = THREE.MathUtils.clamp(pr.carPos.z + Math.cos(pr.carYaw) * pr.speed * rawDt, -maxBound, maxBound);
-        if (!this._isBlockedByBuilding(nextX, nextZ, 1.75)) {
+        if (!this._isBlockedByBuilding(nextX, nextZ, 1.65)) {
           pr.carPos.x = nextX;
           pr.carPos.z = nextZ;
-        } else if (!this._isBlockedByBuilding(nextX, pr.carPos.z, 1.75)) {
+        } else if (!this._isBlockedByBuilding(nextX, pr.carPos.z, 1.65)) {
           pr.carPos.x = nextX;
           pr.speed *= 0.85;
-        } else if (!this._isBlockedByBuilding(pr.carPos.x, nextZ, 1.75)) {
+        } else if (!this._isBlockedByBuilding(pr.carPos.x, nextZ, 1.65)) {
           pr.carPos.z = nextZ;
           pr.speed *= 0.85;
         } else {
           pr.speed = 0;
         }
+        const cTerr = this._getTerrainAt(pr.carPos.x, pr.carPos.z);
+        pr.carPos.y = cTerr.y;
         pr.pos.copy(pr.carPos);
         pr.yaw = pr.carYaw;
         pr.car.position.copy(pr.carPos);
         pr.car.rotation.y = pr.carYaw;
+        pr.car.rotation.x = -Math.sin(pr.carYaw) * cTerr.pitchX;
 
-        const desiredCam = new THREE.Vector3(
-          pr.carPos.x - Math.sin(pr.carYaw) * 16.5,
-          pr.carPos.y + 8.8,
-          pr.carPos.z - Math.cos(pr.carYaw) * 16.5
-        );
-        this.camera.position.lerp(desiredCam, 0.11);
-        this.controls.target.lerp(new THREE.Vector3(pr.carPos.x, pr.carPos.y + 1.8, pr.carPos.z), 0.16);
+        const dx = pr.carPos.x - pr.prevPos.x;
+        const dy = pr.carPos.y - pr.prevPos.y;
+        const dz = pr.carPos.z - pr.prevPos.z;
+        this.camera.position.x += dx;
+        this.camera.position.y += dy;
+        this.camera.position.z += dz;
+        this.controls.target.set(pr.carPos.x, pr.carPos.y + 1.8, pr.carPos.z);
+        pr.prevPos.copy(pr.carPos);
 
         if (pr.onStateChange && this._animFrameTick % 6 === 0) {
           pr.onStateChange("car", Math.round(Math.abs(pr.speed) * 2.6));
@@ -410,7 +425,7 @@ export const loopMethods = {
             .addScaledVector(rightDir, ix)
             .normalize();
 
-          const nextWX = THREE.MathUtils.clamp(pr.pos.x + moveVec.x * walkSpd * moveMag * rawDt, -maxBound, maxBound);
+          const nextWX = THREE.MathUtils.clamp(pr.pos.x + moveVec.x * walkSpd * moveMag * rawDt, minXBound, maxBound);
           const nextWZ = THREE.MathUtils.clamp(pr.pos.z + moveVec.z * walkSpd * moveMag * rawDt, -maxBound, maxBound);
           if (!this._isBlockedByBuilding(nextWX, nextWZ, 0.85)) {
             pr.pos.x = nextWX;
@@ -430,20 +445,28 @@ export const loopMethods = {
           this._setPlayerRoamAnim("Idle");
         }
 
+        const fTerr = this._getTerrainAt(pr.pos.x, pr.pos.z);
+        pr.pos.y = fTerr.y;
         pr.actor.position.copy(pr.pos);
         pr.actor.rotation.y = pr.yaw;
         if (pr.mixer) pr.mixer.update(rawDt * (pr.input.boost ? 1.55 : 1.15));
 
-        const followDist = 11.5;
-        const desiredCam = new THREE.Vector3(
-          pr.pos.x - Math.sin(pr.yaw) * followDist,
-          pr.pos.y + 6.4,
-          pr.pos.z - Math.cos(pr.yaw) * followDist
-        );
-        this.camera.position.lerp(desiredCam, 0.08);
-        this.controls.target.lerp(new THREE.Vector3(pr.pos.x, pr.pos.y + 1.9, pr.pos.z), 0.15);
+        const dx = pr.pos.x - pr.prevPos.x;
+        const dy = pr.pos.y - pr.prevPos.y;
+        const dz = pr.pos.z - pr.prevPos.z;
+        this.camera.position.x += dx;
+        this.camera.position.y += dy;
+        this.camera.position.z += dz;
+        this.controls.target.set(pr.pos.x, pr.pos.y + 1.9, pr.pos.z);
+        pr.prevPos.copy(pr.pos);
       }
-      this._updateVillaProximitySong(pr.pos.x, pr.pos.z);
+    }
+
+    // 🎵 AUTO VILLA SONG (Plays BOTH when dragging camera over Villa AND when driving/walking to Villa!)
+    if (this._animFrameTick % 4 === 0) {
+      const checkX = (this.playerRoam && this.playerRoam.active) ? this.playerRoam.pos.x : this.controls.target.x;
+      const checkZ = (this.playerRoam && this.playerRoam.active) ? this.playerRoam.pos.z : this.controls.target.z;
+      this._updateVillaProximitySong(checkX, checkZ);
     }
 
     // 🦁 UPDATE ALL ANIMATED SHERU BHAI .GLB MIXERS (Idle / Walk / Wave / BossSalute!)
