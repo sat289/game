@@ -1,12 +1,12 @@
-# Sheru Bhai City 3D (v40 — 8-Plot Ultra-Premium Billionaire Villa + All v39 Lag Fixes)
+# Sheru Bhai City 3D (v41 — Elevated 6-Station Metro Network + Playable Sheru Bhai Car Drive & Free Roam!)
 
-Upload the **`follower-town/`** folder (including the new **`world-villa-v40.js`**) into `sat289/game/game/newworld/`.
+Upload the **`follower-town/`** folder (including the new **`world-metro-player-v41.js`**) into `sat289/game/game/newworld/`.
 
-## New in v40: 👑 8-Plot Ultra-Premium Billionaire Villa (`billionaire_villa`)
-* 3-Story Black-Gold Marble & Curtain-Wall Glass Palace with Cantilevered Cyan/Gold LED Balconies
-* Live Animated Exterior Panoramic Glass Capsule Elevator
-* Cascading 2nd-Floor Balcony Waterfall & Illuminated Koi Pond
-* Twin Golden Lion Gate Statues, Glowing VIP Arch, Red Carpet, Boom Barrier, Guard Cabin & 2 Bodyguards
-* Glass-Wall Supercar Showcase Garage (2 Supercars — 1 spinning on a neon turntable!)
-* Pulsing Courtyard Fountain, Private Mini Basketball Half-Court & Backyard Outdoor Cinema Deck
-* Rooftop Helipad (`H`) + Luxury Mini Helicopter (spinning rotor!), Sky-Deck Infinity Pool, Flickering Fire-Pit Lounge, Rooftop DJ & RGB Dance Floor, Rotating 3D Golden Crown, 2 Orbiting VIP Drones & Night Mode Sky Beams!
+## New in v41
+1. **🚇 Elevated 6-Station Metro Rail Network (`_buildMetroSystem`):**
+   - Connects all 6 major city hubs on a sleek glowing elevated viaduct: **ST Junction Statue**, **Hilltop Temple & Railway**, **20-Acre Airport**, **International Cricket Stadium**, **ISRO Spaceport**, and **Golden Beach / Ferris Wheel**.
+   - Features **2 live 4-car elevated Metro Trains** gliding smoothly with automatic station stops + 1-tap **`🚇 Metro`** fast-travel & live Metro Train ride!
+2. **🦁🚗 Playable Sheru Bhai — Car lo Vellochu & Car Dhigi Motham City Thiragochu (`🦁 Play Sheru`):**
+   - Available for both visitors (`index.html`) and Admin (`admin.html`)!
+   - Drive Sheru Bhai's **Pearl-White & Gold VIP Sports Car** anywhere in the city with a smooth mobile touch joystick (+ Nitro Boost & WASD keys).
+   - Tap **`🚶 Exit Car (Walk)`** anytime to step out as animated 3D **Sheru Bhai** (`sheru-bhai-animated.glb`) and walk/sprint freely around the entire city, call your car back (`📞 Call Car`), or hop onto the **`🚇 Metro`**!

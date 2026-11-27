@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getSkyPalette } from "./shaders-glsl.js?v=40";
+import { getSkyPalette } from "./shaders-glsl.js?v=41";
 
 export const loopMethods = {
   _animate() {
@@ -294,6 +294,129 @@ export const loopMethods = {
     }
 
 
+
+
+    // 🚇 LIVE ELEVATED METRO TRAINS (2 4-Car Trains Gliding Smoothly with Station Stops!)
+    if (this.lifeEnabled && this.metroSim && this.metroSim.trains) {
+      const curve = this.metroSim.curve;
+      const stations = this.metroSim.stations;
+      const carSpacingU = 0.0115;
+      for (const tr of this.metroSim.trains) {
+        if (tr.pauseTimer > 0) {
+          tr.pauseTimer -= dt;
+        } else {
+          tr.u = (tr.u + tr.speed * dt) % 1.0;
+          for (let si = 0; si < stations.length; si++) {
+            const du = Math.abs(tr.u - stations[si].u);
+            if (du < 0.004 && tr.lastStopIdx !== si) {
+              tr.lastStopIdx = si;
+              tr.pauseTimer = 2.0;
+              break;
+            }
+          }
+        }
+        for (let c = 0; c < tr.cars.length; c++) {
+          const cu = (tr.u - c * carSpacingU + 1.0) % 1.0;
+          const pt = curve.getPointAt(cu);
+          const tang = curve.getTangentAt(cu).normalize();
+          tr.cars[c].position.set(pt.x, pt.y, pt.z);
+          tr.cars[c].rotation.y = Math.atan2(tang.x, tang.z);
+        }
+      }
+    }
+
+    // 🦁🚗 PLAYABLE SHERU BHAI FREE ROAM & VIP CAR DRIVING PHYSICS + 3RD-PERSON FOLLOW CAM!
+    if (this.playerRoam && this.playerRoam.active) {
+      const pr = this.playerRoam;
+      const ix = pr.input.x || 0;
+      const iy = pr.input.y || 0;
+      const maxBound = (this.ringRadius || 90) + 125;
+
+      if (pr.mode === "metro" && this.metroSim && this.metroSim.trains[0]) {
+        const leadCar = this.metroSim.trains[0].cars[0];
+        const yaw = leadCar.rotation.y;
+        const camDist = 16;
+        const desiredCam = new THREE.Vector3(
+          leadCar.position.x - Math.sin(yaw) * camDist,
+          leadCar.position.y + 7.5,
+          leadCar.position.z - Math.cos(yaw) * camDist
+        );
+        this.camera.position.lerp(desiredCam, 0.12);
+        this.controls.target.lerp(new THREE.Vector3(leadCar.position.x, leadCar.position.y + 2.2, leadCar.position.z), 0.16);
+      } else if (pr.mode === "car") {
+        const maxSpd = pr.input.boost ? 56 : 36;
+        const accel = pr.input.boost ? 48 : 30;
+        if (Math.abs(iy) > 0.05) {
+          pr.speed += iy * accel * rawDt;
+        } else {
+          pr.speed *= Math.pow(0.08, rawDt);
+          if (Math.abs(pr.speed) < 0.25) pr.speed = 0;
+        }
+        pr.speed = THREE.MathUtils.clamp(pr.speed, -18, maxSpd);
+
+        if (Math.abs(ix) > 0.05 && Math.abs(pr.speed) > 0.4) {
+          const dirSign = pr.speed >= 0 ? 1 : -1;
+          pr.carYaw -= ix * 2.15 * rawDt * dirSign;
+        }
+
+        pr.carPos.x = THREE.MathUtils.clamp(pr.carPos.x + Math.sin(pr.carYaw) * pr.speed * rawDt, -maxBound, maxBound);
+        pr.carPos.z = THREE.MathUtils.clamp(pr.carPos.z + Math.cos(pr.carYaw) * pr.speed * rawDt, -maxBound, maxBound);
+        pr.pos.copy(pr.carPos);
+        pr.yaw = pr.carYaw;
+        pr.car.position.copy(pr.carPos);
+        pr.car.rotation.y = pr.carYaw;
+
+        const desiredCam = new THREE.Vector3(
+          pr.carPos.x - Math.sin(pr.carYaw) * 16.5,
+          pr.carPos.y + 8.8,
+          pr.carPos.z - Math.cos(pr.carYaw) * 16.5
+        );
+        this.camera.position.lerp(desiredCam, 0.11);
+        this.controls.target.lerp(new THREE.Vector3(pr.carPos.x, pr.carPos.y + 1.8, pr.carPos.z), 0.16);
+
+        if (pr.onStateChange && this._animFrameTick % 6 === 0) {
+          pr.onStateChange("car", Math.round(Math.abs(pr.speed) * 2.6));
+        }
+      } else {
+        const moveMag = Math.min(1, Math.hypot(ix, iy));
+        const walkSpd = pr.input.boost ? 22 : 12.5;
+        if (moveMag > 0.08) {
+          const camDir = new THREE.Vector3();
+          this.camera.getWorldDirection(camDir);
+          camDir.y = 0;
+          camDir.normalize();
+          const rightDir = new THREE.Vector3(-camDir.z, 0, camDir.x);
+          const moveVec = new THREE.Vector3()
+            .addScaledVector(camDir, iy)
+            .addScaledVector(rightDir, ix)
+            .normalize();
+
+          pr.pos.x = THREE.MathUtils.clamp(pr.pos.x + moveVec.x * walkSpd * moveMag * rawDt, -maxBound, maxBound);
+          pr.pos.z = THREE.MathUtils.clamp(pr.pos.z + moveVec.z * walkSpd * moveMag * rawDt, -maxBound, maxBound);
+          const targetYaw = Math.atan2(moveVec.x, moveVec.z);
+          let diff = targetYaw - pr.yaw;
+          while (diff > Math.PI) diff -= Math.PI * 2;
+          while (diff < -Math.PI) diff += Math.PI * 2;
+          pr.yaw += diff * Math.min(1, rawDt * 12);
+          this._setPlayerRoamAnim("Walk");
+        } else {
+          this._setPlayerRoamAnim("Idle");
+        }
+
+        pr.actor.position.copy(pr.pos);
+        pr.actor.rotation.y = pr.yaw;
+        if (pr.mixer) pr.mixer.update(rawDt * (pr.input.boost ? 1.55 : 1.15));
+
+        const followDist = 11.5;
+        const desiredCam = new THREE.Vector3(
+          pr.pos.x - Math.sin(pr.yaw) * followDist,
+          pr.pos.y + 6.4,
+          pr.pos.z - Math.cos(pr.yaw) * followDist
+        );
+        this.camera.position.lerp(desiredCam, 0.08);
+        this.controls.target.lerp(new THREE.Vector3(pr.pos.x, pr.pos.y + 1.9, pr.pos.z), 0.15);
+      }
+    }
 
     // 🦁 UPDATE ALL ANIMATED SHERU BHAI .GLB MIXERS (Idle / Walk / Wave / BossSalute!)
     if (this.lifeEnabled && this.glbMixers && this.glbMixers.length > 0) {

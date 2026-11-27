@@ -5,11 +5,11 @@ import {
   getSkyPalette,
   createGLSLOceanMaterial,
   createGLSLContactShadowMaterial
-} from "./shaders-glsl.js?v=40";
-import { createProceduralTextureSuite } from "./textures-pbr.js?v=40";
-import { WasmPerfEngine } from "./wasm-perf.js?v=40";
-import { optimizeStaticPlotMeshes } from "./mesh-batcher.js?v=40";
-import { QualityManager } from "./quality-manager.js?v=40";
+} from "./shaders-glsl.js?v=41";
+import { createProceduralTextureSuite } from "./textures-pbr.js?v=41";
+import { WasmPerfEngine } from "./wasm-perf.js?v=41";
+import { optimizeStaticPlotMeshes } from "./mesh-batcher.js?v=41";
+import { QualityManager } from "./quality-manager.js?v=41";
 import {
   EIGHT_PLOT_TYPES,
   FOUR_PLOT_TYPES,
@@ -22,14 +22,15 @@ import {
   getBlockPlotIds,
   getTwoPlotGroup,
   getEightPlotGroup
-} from "./world-constants.js?v=40";
-import { zoneMethods } from "./world-zones.js?v=40";
-import { buildingMethods } from "./world-buildings.js?v=40";
-import { cinematicMethods } from "./world-cinematics.js?v=40";
-import { loopMethods } from "./world-loop.js?v=40";
-import { outskirtsMethods } from "./world-outskirts.js?v=40";
-import { v37LandmarkMethods } from "./world-landmarks-v37.js?v=40";
-import { v40VillaMethods } from "./world-villa-v40.js?v=40";
+} from "./world-constants.js?v=41";
+import { zoneMethods } from "./world-zones.js?v=41";
+import { buildingMethods } from "./world-buildings.js?v=41";
+import { cinematicMethods } from "./world-cinematics.js?v=41";
+import { loopMethods } from "./world-loop.js?v=41";
+import { outskirtsMethods } from "./world-outskirts.js?v=41";
+import { v37LandmarkMethods } from "./world-landmarks-v37.js?v=41";
+import { v40VillaMethods } from "./world-villa-v40.js?v=41";
+import { v41MetroPlayerMethods } from "./world-metro-player-v41.js?v=41";
 
 export {
   EIGHT_PLOT_TYPES,
@@ -112,7 +113,7 @@ export class FollowerTownEngine {
     this.composer = null;
     this.bloomPass = null;
     this._bloomLoading = false;
-    this.defaultSheruGlb = "./sheru-bhai-animated.glb?v=40";
+    this.defaultSheruGlb = "./sheru-bhai-animated.glb?v=41";
     this.heroModelUrls = { statue: "", audi: "", heli: "" };
     this.glbCache = new Map();
     this._glbPending = new Map();
@@ -190,6 +191,7 @@ export class FollowerTownEngine {
     this.islandOwner = "@vip_island_king";
     this.rocketSim = null;
     this.outskirtsStadiumSim = null;
+    this.metroSim = null;
     this.heroAirportSheruSlots = [];
     if (Array.isArray(this.glbMixers)) {
       this.glbMixers = this.glbMixers.filter((m) => !m.isCityZone);
@@ -203,6 +205,7 @@ export class FollowerTownEngine {
     this.ferrisWheelPos = { x: -102, z: 44 };
     this.outskirtsStadiumPos = { x: 112, z: 116 };
     this.outskirtsStadiumSim = null;
+    this.metroSim = null;
     this.beautySparkles = [];
     this.v37Animations = [];
     this.railRInner = 70;
@@ -1349,6 +1352,7 @@ export class FollowerTownEngine {
     this._buildBeachFerrisWheel(ringRadius);
     this._buildRocketLaunchpad(ringRadius);
     this._buildOutskirtsCricketStadium(ringRadius);
+    this._buildMetroSystem(ringRadius);
     this._buildArakuLandscape(ringRadius);
     // Keep any existing custom Airport / Beach zone plots positioned accurately!
     for (const [pid, pdata] of this.plotDataMap.entries()) {
@@ -1804,5 +1808,6 @@ Object.assign(
   loopMethods,
   outskirtsMethods,
   v37LandmarkMethods,
-  v40VillaMethods
+  v40VillaMethods,
+  v41MetroPlayerMethods
 );

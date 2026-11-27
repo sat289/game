@@ -1,5 +1,5 @@
-import { db, ref, onValue, push, set } from "./firebase-config.js?v=40";
-import { FollowerTownEngine, BUILDING_LABELS, getRequiredSize } from "./world-engine.js?v=40";
+import { db, ref, onValue, push, set } from "./firebase-config.js?v=41";
+import { FollowerTownEngine, BUILDING_LABELS, getRequiredSize } from "./world-engine.js?v=41";
 
 let allPlots = {};
 const container = document.getElementById("canvas-container");
@@ -562,3 +562,176 @@ document.getElementById("btn-public-stadium")?.addEventListener("click", () => {
   openPlotCard("OUTSKIRTS_STADIUM", null);
   showToast("🏏 Outskirts International Cricket Stadium • Live Scoreboard!");
 });
+
+
+// =========================================================
+// 🦁🚗🚇 v41 PLAYABLE SHERU BHAI (CAR + WALK) & METRO STATION UI WIRING
+// =========================================================
+(function initSheruRoamAndMetroUI() {
+  const btnPlaySheru = document.getElementById("btn-play-sheru");
+  const btnOpenMetro = document.getElementById("btn-open-metro");
+  const roamHud = document.getElementById("roam-hud");
+  const roamStatus = document.getElementById("roam-status-badge");
+  const btnCarToggle = document.getElementById("btn-roam-car-toggle");
+  const btnBoost = document.getElementById("btn-roam-boost");
+  const btnCallCar = document.getElementById("btn-roam-call-car");
+  const btnRoamMetro = document.getElementById("btn-roam-metro");
+  const btnRoamExit = document.getElementById("btn-roam-exit");
+  const joyZone = document.getElementById("roam-joy-zone");
+  const joyKnob = document.getElementById("roam-joy-knob");
+  const metroModal = document.getElementById("metro-modal");
+  const metroList = document.getElementById("metro-station-list");
+  const btnCloseMetro = document.getElementById("btn-close-metro");
+  const btnRideLive = document.getElementById("btn-ride-metro-live");
+
+  const updateRoamBadge = (mode, kmh) => {
+    if (!roamStatus || !btnCarToggle) return;
+    if (mode === "car") {
+      roamStatus.textContent = `🚗 DRIVING VIP CAR • ${kmh} KM/H`;
+      btnCarToggle.textContent = "🚶 Exit Car (Walk)";
+    } else if (mode === "foot") {
+      roamStatus.textContent = "🦁 WALKING AS SHERU BHAI • FREE ROAM";
+      btnCarToggle.textContent = "🚗 Enter Car";
+    } else if (mode === "metro") {
+      roamStatus.textContent = "🚇 RIDING ELEVATED METRO • 80 KM/H";
+      btnCarToggle.textContent = "🚶 Step Off Metro";
+    }
+  };
+
+  const setRoamVisible = (on) => {
+    if (roamHud) roamHud.classList.toggle("hidden", !on);
+    document.querySelectorAll(".public-quick-bar, #admin-dock").forEach((el) => {
+      el.classList.toggle("hidden", on);
+    });
+  };
+
+  if (btnPlaySheru) {
+    btnPlaySheru.addEventListener("click", () => {
+      engine.startSheruRoamMode(true, updateRoamBadge);
+      setRoamVisible(true);
+      updateRoamBadge("car", 0);
+      if (typeof showToast === "function") showToast("🦁🚗 Driving Sheru Bhai VIP Car! Tap '🚶 Exit Car' anytime to walk the city!");
+    });
+  }
+
+  if (btnRoamExit) {
+    btnRoamExit.addEventListener("click", () => {
+      engine.exitSheruRoamMode();
+      setRoamVisible(false);
+    });
+  }
+
+  if (btnCarToggle) {
+    btnCarToggle.addEventListener("click", () => {
+      const msg = engine.toggleSheruCarMode();
+      if (msg && typeof showToast === "function") showToast(msg);
+    });
+  }
+
+  if (btnCallCar) {
+    btnCallCar.addEventListener("click", () => {
+      engine.summonSheruCar();
+      if (typeof showToast === "function") showToast("📞 VIP Car summoned right beside Sheru Bhai!");
+    });
+  }
+
+  const joyState = { active: false, x: 0, y: 0, pid: null };
+  if (btnBoost) {
+    const startB = (e) => { e.preventDefault(); engine.setSheruRoamInput(joyState.x, joyState.y, true); };
+    const endB = () => { engine.setSheruRoamInput(joyState.x, joyState.y, false); };
+    btnBoost.addEventListener("pointerdown", startB);
+    btnBoost.addEventListener("pointerup", endB);
+    btnBoost.addEventListener("pointerleave", endB);
+    btnBoost.addEventListener("pointercancel", endB);
+  }
+
+  if (joyZone && joyKnob) {
+    const maxR = 42;
+    const handleMove = (clientX, clientY) => {
+      const rect = joyZone.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      let dx = clientX - cx;
+      let dy = clientY - cy;
+      const dist = Math.hypot(dx, dy);
+      if (dist > maxR) {
+        dx = (dx / dist) * maxR;
+        dy = (dy / dist) * maxR;
+      }
+      joyKnob.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px)`;
+      joyState.x = dx / maxR;
+      joyState.y = -dy / maxR;
+      engine.setSheruRoamInput(joyState.x, joyState.y, null);
+    };
+    const resetJoy = () => {
+      joyState.active = false;
+      joyState.x = 0;
+      joyState.y = 0;
+      joyState.pid = null;
+      joyKnob.style.transform = "translate(0px, 0px)";
+      engine.setSheruRoamInput(0, 0, false);
+    };
+    joyZone.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      joyState.active = true;
+      joyState.pid = e.pointerId;
+      joyZone.setPointerCapture(e.pointerId);
+      handleMove(e.clientX, e.clientY);
+    });
+    joyZone.addEventListener("pointermove", (e) => {
+      if (!joyState.active || e.pointerId !== joyState.pid) return;
+      handleMove(e.clientX, e.clientY);
+    });
+    joyZone.addEventListener("pointerup", resetJoy);
+    joyZone.addEventListener("pointercancel", resetJoy);
+  }
+
+  const keys = {};
+  const syncKeys = () => {
+    if (!engine.playerRoam || !engine.playerRoam.active) return;
+    const x = (keys["KeyD"] || keys["ArrowRight"] ? 1 : 0) - (keys["KeyA"] || keys["ArrowLeft"] ? 1 : 0);
+    const y = (keys["KeyW"] || keys["ArrowUp"] ? 1 : 0) - (keys["KeyS"] || keys["ArrowDown"] ? 1 : 0);
+    engine.setSheruRoamInput(x, y, Boolean(keys["ShiftLeft"] || keys["ShiftRight"]));
+  };
+  window.addEventListener("keydown", (e) => {
+    if (["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName)) return;
+    keys[e.code] = true;
+    syncKeys();
+    if (e.code === "KeyE" && engine.playerRoam?.active) engine.toggleSheruCarMode();
+  });
+  window.addEventListener("keyup", (e) => {
+    keys[e.code] = false;
+    syncKeys();
+  });
+
+  const openMetroModal = () => {
+    if (!metroModal || !metroList) return;
+    const stations = engine.getMetroStations();
+    metroList.innerHTML = "";
+    stations.forEach((st) => {
+      const b = document.createElement("button");
+      b.className = "metro-st-btn";
+      b.innerHTML = `<span>${st.name}</span><span style="font-size:11px;color:#38bdf8;">GO →</span>`;
+      b.addEventListener("click", () => {
+        metroModal.classList.add("hidden");
+        engine.teleportSheruToStation(st.id);
+        if (typeof showToast === "function") showToast(`🚇 Arrived at ${st.name}!`);
+      });
+      metroList.appendChild(b);
+    });
+    metroModal.classList.remove("hidden");
+  };
+
+  if (btnOpenMetro) btnOpenMetro.addEventListener("click", openMetroModal);
+  if (btnRoamMetro) btnRoamMetro.addEventListener("click", openMetroModal);
+  if (btnCloseMetro) btnCloseMetro.addEventListener("click", () => metroModal.classList.add("hidden"));
+  if (btnRideLive) {
+    btnRideLive.addEventListener("click", () => {
+      if (metroModal) metroModal.classList.add("hidden");
+      engine.boardMetroTrain();
+      setRoamVisible(true);
+      updateRoamBadge("metro", 80);
+      if (typeof showToast === "function") showToast("🚆 Riding Live Elevated Metro Train across Sheru Bhai City!");
+    });
+  }
+})();
