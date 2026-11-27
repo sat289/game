@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getSkyPalette } from "./shaders-glsl.js?v=45";
+import { getSkyPalette } from "./shaders-glsl.js?v=46";
 
 export const loopMethods = {
   _animate() {
@@ -295,6 +295,56 @@ export const loopMethods = {
 
 
 
+
+
+    // 🎬 v46 PRO REEL CUSTOM CAMERA MODES (Metro Chase, Giant Statue Rise, Sea Bridge Flyby, Villa 360°)
+    if (this.v46ReelCam && this.v46ReelCam.mode) {
+      const rc = this.v46ReelCam;
+      rc.t += rawDt * (this.reelTimeScale || 1);
+      const t = rc.t;
+
+      if (rc.mode === "metro_chase" && this.metroSim && this.metroSim.trains && this.metroSim.trains[0]) {
+        const lead = this.metroSim.trains[0].cars[0];
+        const yaw = lead.rotation.y;
+        const side = Math.sin(t * 0.45) * 6.0;
+        const desired = new THREE.Vector3(
+          lead.position.x - Math.sin(yaw) * 18 + Math.cos(yaw) * side,
+          lead.position.y + 8.5 + Math.sin(t * 0.6) * 2.5,
+          lead.position.z - Math.cos(yaw) * 18 - Math.sin(yaw) * side
+        );
+        this.camera.position.lerp(desired, 0.1);
+        this.controls.target.lerp(new THREE.Vector3(lead.position.x, lead.position.y + 1.8, lead.position.z), 0.14);
+      } else if (rc.mode === "statue_rise") {
+        // Dramatic low-angle hero rise from Y=4 up to Y=32 orbiting the 27.5-unit Towering Sheru Bhai Statue!
+        const p = (Math.sin(t * 0.35 - Math.PI / 2) + 1) * 0.5; // Smooth 0 -> 1 -> 0
+        const ang = t * 0.42;
+        const rad = 26 + p * 14;
+        const camY = 5.5 + p * 27.0;
+        const tgtY = 8.0 + p * 16.0;
+        this.camera.position.lerp(new THREE.Vector3(Math.sin(ang) * rad, camY, Math.cos(ang) * rad), 0.1);
+        this.controls.target.lerp(new THREE.Vector3(0, tgtY, 0), 0.12);
+      } else if (rc.mode === "bridge_flyby" && this.vipIslandPos && this._seaBridgeBounds) {
+        const sb = this._seaBridgeBounds;
+        const u = (Math.sin(t * 0.28 - Math.PI / 2) + 1) * 0.5;
+        const bx = THREE.MathUtils.lerp(sb.maxX, this.vipIslandPos.x + 12, u);
+        const by = this._getSeaBridgeY ? this._getSeaBridgeY(bx) : 4.0;
+        this.camera.position.lerp(new THREE.Vector3(bx + 18, by + 11.5, sb.z + 14 * Math.cos(u * Math.PI)), 0.1);
+        this.controls.target.lerp(new THREE.Vector3(bx - 16, by + 3.5, sb.z), 0.12);
+      } else if (rc.mode === "villa_360") {
+        // Orbit the first Billionaire Villa in city, or Sheru Bhai Royal Island Mansion if none built yet!
+        let vx = this.vipIslandPos ? this.vipIslandPos.x : 0;
+        let vz = this.vipIslandPos ? this.vipIslandPos.z : 0;
+        for (const [pid, pdata] of this.plotDataMap.entries()) {
+          if (pdata && pdata.status === "built" && pdata.buildingType === "billionaire_villa") {
+            const grp = this.plotMeshes.get(pid);
+            if (grp) { vx = grp.position.x; vz = grp.position.z; break; }
+          }
+        }
+        const ang = t * 0.55;
+        this.camera.position.lerp(new THREE.Vector3(vx + Math.sin(ang) * 32, 16.5 + Math.sin(t * 0.8) * 3.5, vz + Math.cos(ang) * 32), 0.1);
+        this.controls.target.lerp(new THREE.Vector3(vx, 6.5, vz), 0.14);
+      }
+    }
 
     // 🚇 REAL COMBINED-COACH DOUBLE-TRACK HIGH-SPEED METRO TRAINS (OUTER RING + INNER CITY!)
     if (this.lifeEnabled && this.metroSim && this.metroSim.trains) {

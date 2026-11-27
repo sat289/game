@@ -9,7 +9,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged
-} from "./firebase-config.js?v=45";
+} from "./firebase-config.js?v=46";
 import {
   FollowerTownEngine,
   BUILDING_LABELS,
@@ -17,7 +17,7 @@ import {
   getTwoPlotGroup,
   getBlockPlotIds,
   getEightPlotGroup
-} from "./world-engine.js?v=45";
+} from "./world-engine.js?v=46";
 
 let isAdmin = false;
 let selectedPlotId = "plot_0001";
@@ -1190,9 +1190,7 @@ document.getElementById("btn-reel-mode").addEventListener("click", () => {
   document.querySelectorAll(".hud-element").forEach((el) => el.classList.add("hidden"));
   reelControls.classList.remove("hidden");
   engine.setReelFraming(true);
-  engine.setQualityMode(true);
-  engine.setShadowsEnabled(true);
-  engine.enableCinemaBloom(true);
+  engine.boostReelUltraQuality(true);
   if (btnHqToggle) { btnHqToggle.classList.add("active"); btnHqToggle.textContent = "✨ Ultra HD"; }
   if (btnShadowsToggle) { btnShadowsToggle.classList.add("active"); btnShadowsToggle.textContent = "☀️ Shadows"; }
   if (btnBloomToggle) { btnBloomToggle.classList.add("active"); btnBloomToggle.textContent = "✨ Bloom"; }
@@ -2586,6 +2584,110 @@ bindCinemaReelButton("reel-hero360-btn", "hero360", "🔄 360° Hero Spin around
       setRoamVisible(true);
       updateRoamBadge("metro", 80);
       if (typeof showToast === "function") showToast("🚆 Riding Live Elevated Metro Train across Sheru Bhai City!");
+    });
+  }
+})();
+
+
+// =========================================================
+// 🎬 v46 PRO REEL STUDIO: NEW MODES & LIVE EDITOR CONTROLS
+// =========================================================
+(function initV46ProReelControls() {
+  const modeBtns = [
+    ["reel-statue-rise",  "statue_rise",  "🦁 Towering Statue Rise Cam ON!"],
+    ["reel-metro-chase",  "metro_chase",  "🚇 Hyderabad Metro High-Speed Chase Cam ON!"],
+    ["reel-bridge-flyby", "bridge_flyby", "🌉 RGB Sea Bridge -> Royal Villa Flyby ON!"],
+    ["reel-villa-360",    "villa_360",    "👑 Ultra-Premium Villa 360° Orbit ON!"]
+  ];
+  modeBtns.forEach(([id, mode, msg]) => {
+    const b = document.getElementById(id);
+    if (!b) return;
+    b.addEventListener("click", () => {
+      engine.startReelCustomMode(mode);
+      showToast(msg);
+    });
+  });
+
+  // Live Color Grade / LUT Cycler on WebGL Canvas!
+  const filters = [
+    { label: "🎨 Filter: HD",     css: "contrast(1.06) saturate(1.12)" },
+    { label: "🎬 Teal & Gold",    css: "contrast(1.14) saturate(1.28) sepia(0.14) hue-rotate(-8deg)" },
+    { label: "🔥 Vivid 4K",       css: "contrast(1.18) saturate(1.42) brightness(1.04)" },
+    { label: "🌙 Cyber Neon",     css: "contrast(1.22) saturate(1.5) hue-rotate(14deg)" },
+    { label: "🌇 Warm Sunset",    css: "contrast(1.1) saturate(1.3) sepia(0.24)" },
+    { label: "🎨 Filter: Off",    css: "none" }
+  ];
+  let filterIdx = 0;
+  const btnFilter = document.getElementById("reel-filter-btn");
+  if (btnFilter) {
+    btnFilter.addEventListener("click", () => {
+      filterIdx = (filterIdx + 1) % filters.length;
+      const f = filters[filterIdx];
+      btnFilter.textContent = f.label;
+      btnFilter.classList.toggle("active", f.css !== "none");
+      if (engine.renderer && engine.renderer.domElement) {
+        engine.renderer.domElement.style.filter = f.css;
+      }
+      showToast(`Color Grade: ${f.label}`);
+    });
+  }
+
+  // Cinematic Camera Lens FOV Cycler (48° -> 32° Telephoto -> 68° Ultra-Wide)
+  const fovs = [
+    { label: "🔭 Lens: 48°", deg: 48 },
+    { label: "🔭 Tele: 32°", deg: 32 },
+    { label: "🔭 Wide: 68°", deg: 68 }
+  ];
+  let fovIdx = 0;
+  const btnFov = document.getElementById("reel-fov-btn");
+  if (btnFov) {
+    btnFov.addEventListener("click", () => {
+      fovIdx = (fovIdx + 1) % fovs.length;
+      const fv = fovs[fovIdx];
+      btnFov.textContent = fv.label;
+      btnFov.classList.toggle("active", fv.deg !== 48);
+      engine.setCameraFov(fv.deg);
+      showToast(`Camera Lens: ${fv.label}`);
+    });
+  }
+
+  // Smooth Cinematic Slow-Mo Toggle (0.45x)
+  let sloMoOn = false;
+  const btnSloMo = document.getElementById("reel-slomo-btn");
+  if (btnSloMo) {
+    btnSloMo.addEventListener("click", () => {
+      sloMoOn = !sloMoOn;
+      btnSloMo.classList.toggle("active", sloMoOn);
+      btnSloMo.textContent = sloMoOn ? "🐢 Slow: 0.45x" : "🐢 Slow-Mo";
+      engine.setReelTimeScale(sloMoOn ? 0.45 : 1.0);
+      showToast(sloMoOn ? "🐢 Cinematic Slow-Motion (0.45x) ON!" : "⚡ Normal Speed (1x)");
+    });
+  }
+
+  // Cinema Letterbox Bars Toggle
+  const lbTop = document.getElementById("reel-letterbox-top");
+  const lbBot = document.getElementById("reel-letterbox-bot");
+  const btnBars = document.getElementById("reel-letterbox-btn");
+  if (btnBars && lbTop && lbBot) {
+    btnBars.addEventListener("click", () => {
+      const on = lbTop.classList.toggle("hidden") === false;
+      lbBot.classList.toggle("hidden", !on);
+      btnBars.classList.toggle("active", on);
+    });
+  }
+
+  // Cleanly reset filter, letterbox & exposure when exiting Reel Mode
+  const btnExitReel = document.getElementById("reel-exit");
+  if (btnExitReel) {
+    btnExitReel.addEventListener("click", () => {
+      engine.boostReelUltraQuality(false);
+      if (engine.renderer && engine.renderer.domElement) {
+        engine.renderer.domElement.style.filter = "none";
+      }
+      if (lbTop) lbTop.classList.add("hidden");
+      if (lbBot) lbBot.classList.add("hidden");
+      sloMoOn = false;
+      if (btnSloMo) { btnSloMo.classList.remove("active"); btnSloMo.textContent = "🐢 Slow-Mo"; }
     });
   }
 })();

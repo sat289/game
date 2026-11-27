@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { createGLSLOceanMaterial } from "./shaders-glsl.js?v=45";
-import { BUILDING_LABELS } from "./world-constants.js?v=45";
+import { createGLSLOceanMaterial } from "./shaders-glsl.js?v=46";
+import { BUILDING_LABELS } from "./world-constants.js?v=46";
 
 export const zoneMethods = {
   _buildSTJunctionStatue() {
@@ -59,6 +59,8 @@ export const zoneMethods = {
     const marbleMat = this.mat.wallWhite;
     const suitShadowMat = this.mat.marble;
     const lionStatue = new THREE.Group();
+    lionStatue.scale.setScalar(2.45);
+    lionStatue.position.y = -3.0;
 
     // 1. White Dress Shoes & Confident Stance Trousers
     const shoeGeo = new THREE.BoxGeometry(0.38, 0.24, 0.72);
@@ -264,19 +266,20 @@ export const zoneMethods = {
     });
 
     const hitbox = new THREE.Mesh(
-      new THREE.CylinderGeometry(6.8, 6.8, 12.2, 12),
+      new THREE.CylinderGeometry(7.2, 7.2, 28.0, 12),
       this.mat.invisibleHitbox
     );
-    hitbox.position.y = 6.1;
+    hitbox.position.y = 14.0;
     hitbox.userData.plotId = "ST_JUNCTION";
     g.add(hitbox);
     this.plotHitboxes.push(hitbox);
 
-    const sign = this._createNameSign("🦁 SHERU BHAI STATUE", "ST JUNCTION • TAP FOR 3D VIEW", true);
-    sign.position.set(0, 12.2, 0);
+    const sign = this._createNameSign("🦁 SHERU BHAI STATUE", "MONUMENTAL LANDMARK • HIGHER THAN METRO", true);
+    sign.position.set(0, 29.2, 0);
 
+    // Note: lionStatue has scale 2.45, so local targetMaxDim 9.2 * 2.45 = 22.54 units tall (+ pedestal = 27.5 units total!)
     this.heroStatueSlot = lionStatue;
-    this._loadHeroGLB("statue", this.getSheruGlbUrl(), lionStatue, 5.4, 4.6, 0, "BossSalute", true);
+    this._loadHeroGLB("statue", this.getSheruGlbUrl(), lionStatue, 9.2, 3.25, 0, "BossSalute", true);
     g.add(basePad, gardenRing, poolRim, water, step1, step2, goldCollar, statueBase, aura, sign);
     this.cityGroup.add(g);
   },

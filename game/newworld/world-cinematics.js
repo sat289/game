@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getSkyPalette } from "./shaders-glsl.js?v=45";
+import { getSkyPalette } from "./shaders-glsl.js?v=46";
 import {
   BUILDING_LABELS,
   getRequiredSize,
@@ -7,7 +7,7 @@ import {
   getTwoPlotGroup,
   getBlockPlotIds,
   getEightPlotGroup
-} from "./world-constants.js?v=45";
+} from "./world-constants.js?v=46";
 
 export const cinematicMethods = {
   setTimeOfDay(mode) {
@@ -855,6 +855,7 @@ export const cinematicMethods = {
   },
 
   stopAllReelModes() {
+    this.v46ReelCam = null;
     if (this.cinemaReel && this.cinemaReel.active) this.stopCinemaReel();
     if (this.templeOrbit && this.templeOrbit.active) this.stopTempleOrbit();
     if (this.proReelTour.active) this.stopProReelTour();
@@ -1229,8 +1230,44 @@ export const cinematicMethods = {
     }
   },
 
+
+  // =========================================================
+  // 🎬 v46 PRO REEL STUDIO: INSTANT ULTRA-HD BOOST + NEW CAMERA MODES
+  // =========================================================
+  boostReelUltraQuality(on = true) {
+    if (on) {
+      this._preReelExp = this.renderer.toneMappingExposure;
+      this.setQualityMode(true);
+      this.setShadowsEnabled(true);
+      this.enableCinemaBloom(true);
+      const maxDpr = Math.min(window.devicePixelRatio || 2, 2.5);
+      this.renderer.setPixelRatio(maxDpr);
+      this.renderer.toneMappingExposure = 1.24;
+    } else {
+      this.renderer.toneMappingExposure = this._preReelExp || 1.12;
+      this.setCameraFov(48);
+      this.reelTimeScale = 1.0;
+      this.v46ReelCam = null;
+    }
+  },
+
+  setCameraFov(fovDeg = 48) {
+    if (!this.camera) return;
+    this.camera.fov = fovDeg;
+    this.camera.updateProjectionMatrix();
+  },
+
+  setReelTimeScale(scale = 1.0) {
+    this.reelTimeScale = scale;
+  },
+
+  startReelCustomMode(modeName) {
+    this.stopAllReelModes();
+    this.v46ReelCam = { mode: modeName, t: 0 };
+  },
+
   getSheruGlbUrl() {
-    return (this.heroModelUrls && this.heroModelUrls.statue) || this.defaultSheruGlb || "./sheru-bhai-animated.glb?v=45";
+    return (this.heroModelUrls && this.heroModelUrls.statue) || this.defaultSheruGlb || "./sheru-bhai-animated.glb?v=46";
   },
 
   setHeroModelUrls(urls = {}) {
@@ -1245,7 +1282,7 @@ export const cinematicMethods = {
     if (clean.statue !== prev.statue) {
       const sheruUrl = this.getSheruGlbUrl();
       if (this.heroStatueSlot) {
-        this._applyHeroSlot("statue", sheruUrl, this.heroStatueSlot, 5.4, 4.6, 0, "BossSalute", true);
+        this._applyHeroSlot("statue", sheruUrl, this.heroStatueSlot, 9.2, 3.25, 0, "BossSalute", true);
       }
       if (this.heroMansionSheruSlot) {
         this._applyHeroSlot("mansion_sheru", sheruUrl, this.heroMansionSheruSlot, 4.0, 0.0, 0, "Wave", true);
