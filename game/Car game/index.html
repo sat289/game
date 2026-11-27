@@ -9,6 +9,16 @@
   <script defer src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
+  <!-- Modular Walk-In Landmark Buildings + High-Detail Roadside City Buildings -->
+  <script defer src="buildings/building_utils.js"></script>
+  <script defer src="buildings/hospital.js"></script>
+  <script defer src="buildings/mega_mall.js"></script>
+  <script defer src="buildings/dmart.js"></script>
+  <script defer src="buildings/casino.js"></script>
+  <script defer src="buildings/police_hq.js"></script>
+  <script defer src="buildings/cyber_apartments.js"></script>
+  <script defer src="buildings/roadside_buildings.js"></script>
+  <script defer src="buildings/index.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet" />
@@ -564,7 +574,7 @@ html, body {
         <div class="pointer-events-auto flex items-start gap-2">
           <div class="flex flex-col items-center bg-slate-950/90 border-2 border-cyan-400/75 rounded-xl p-1 shadow-xl shrink-0">
             <canvas id="miniMapCanvas" width="112" height="80" class="rounded-lg bg-slate-950"></canvas>
-            <div class="text-[7px] font-bold text-slate-300 tracking-wide mt-0.5"><span class="text-rose-400">H</span>:Hosp <span class="text-emerald-400">D</span>:DMart <span class="text-purple-400">M</span>:Mall <span class="text-sky-400">O</span>:Office</div>
+            <div class="text-[6.5px] font-bold text-slate-300 tracking-tight mt-0.5"><span class="text-rose-400">H</span>:Hosp <span class="text-purple-400">M</span>:Mall <span class="text-orange-400">D</span>:DMart <span class="text-pink-400">C</span>:Casino <span class="text-blue-400">P</span>:HQ <span class="text-cyan-400">A</span>:Apt</div>
           </div>
           <div class="flex flex-col gap-1.5">
             <div class="bg-slate-950/80 border border-cyan-400/40 backdrop-blur-md rounded-xl px-2.5 py-1.5 max-w-[190px] sm:max-w-[220px] shadow-lg">
@@ -4676,11 +4686,13 @@ window.ApexCity3D = (function () {
       scene.add(ground);
 
       const facadeMats = [0, 1, 2, 3, 4, 5, 6, 7].map((idx) => new THREE.MeshStandardMaterial({
-        map: City3D.createBuildingTexture(idx),
+        map: (window.ApexRoadsideBuildings && window.ApexRoadsideBuildings.createFacadeTexture)
+          ? window.ApexRoadsideBuildings.createFacadeTexture(idx)
+          : City3D.createBuildingTexture(idx),
         emissive: new THREE.Color(0xffffff),
-        emissiveIntensity: 0.16,
-        roughness: 0.42,
-        metalness: 0.04
+        emissiveIntensity: 0.18,
+        roughness: 0.34,
+        metalness: 0.16
       }));
       animatedFacadeMats = facadeMats;
       const roofMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.7 });
@@ -4700,6 +4712,7 @@ window.ApexCity3D = (function () {
       const pitchedRoofTerracotta = []; // Real 3D sloped roofs for 1-floor & 2-floor houses!
       const pitchedRoofDarkBlue = [];   // Real 3D sloped slate/blue roofs for villas & pink houses!
       const bigCrownList = [];          // Stepped penthouse crowns for big multi-floor mansions & towers!
+      const roadsideItems = [];         // Metadata for GPU-instanced 3D awnings, balconies, neon roof trims & spires!
       const padMatrices = [];
       const canalPostMatrices = [];
       const treeTrunkMatrices = [];
@@ -4825,34 +4838,119 @@ window.ApexCity3D = (function () {
             const cellColliders = [];
             const carMargin = 0.78;
 
-            // Check if this block is a special BRANDED LANDMARK (Hospital, D-Mart, Mega Mall, Office Park, Petrol Bunk, Cafe Plaza!)
+            // ALL 6 SHOWCASE WALK-IN 3D BUILDINGS (Hospital, Mega Mall, D-Mart, Jackpot Casino, Police HQ, Cyber Apartments)
+            // Placed right around downtown spawn (0,0) & across the city — all verified clear of lakes, canals & garages!
             const landmarkMap = {
-              // 5 D-MART SUPERMARKETS (Center + West + East + North + South across the entire map!)
-              '0,-1':  { kind: 'dmart',    title: 'D-MART',           sub: 'CENTRAL SUPERMARKET', bg: '#15803d', fg: '#fde047', wall: 0x166534, mapTag: 'D', mapCol: '#22c55e' },
-              '-3,-1': { kind: 'dmart',    title: 'D-MART',           sub: 'WEST HYPERMARKET',    bg: '#15803d', fg: '#fde047', wall: 0x166534, mapTag: 'D', mapCol: '#22c55e' },
-              '3,-1':  { kind: 'dmart',    title: 'D-MART',           sub: 'EAST SUPERMARKET',    bg: '#15803d', fg: '#fde047', wall: 0x166534, mapTag: 'D', mapCol: '#22c55e' },
-              '0,-4':  { kind: 'dmart',    title: 'D-MART',           sub: 'NORTH MART',          bg: '#15803d', fg: '#fde047', wall: 0x166534, mapTag: 'D', mapCol: '#22c55e' },
-              '0,4':   { kind: 'dmart',    title: 'D-MART',           sub: 'SOUTH MART',          bg: '#15803d', fg: '#fde047', wall: 0x166534, mapTag: 'D', mapCol: '#22c55e' },
+              // BUILDING A — CITY HOSPITAL (Walk-In ER & Lobby)
+              '-1,0':  { kind: 'hospital', modularId: 'hospital',         title: 'CITY HOSPITAL',    sub: '24x7 EMERGENCY',       bg: '#dc2626', fg: '#ffffff', wall: 0xe2e8f0, mapTag: 'H', mapCol: '#ef4444', insideMsg: '🏥 INSIDE CITY HOSPITAL — RECEPTION & ER TREATMENT BAYS!' },
+              '3,2':   { kind: 'hospital', modularId: 'hospital',         title: 'CITY HOSPITAL',    sub: 'EAST CARE CENTER',     bg: '#dc2626', fg: '#ffffff', wall: 0xe2e8f0, mapTag: 'H', mapCol: '#ef4444', insideMsg: '🏥 INSIDE CITY HOSPITAL — RECEPTION & ER TREATMENT BAYS!' },
+              // BUILDING B — MEGA MALL (Walk-In Glass Atrium, Fountain & 4 Boutiques)
+              '1,0':   { kind: 'mall',     modularId: 'mega_mall',        title: 'MEGA MALL',        sub: 'ATRIUM & BOUTIQUES',   bg: '#6d28d9', fg: '#38bdf8', wall: 0x3b0764, mapTag: 'M', mapCol: '#a855f7', insideMsg: '🛍️ INSIDE MEGA MALL — CENTRAL FOUNTAIN & 4 BOUTIQUES!' },
+              '-2,3':  { kind: 'mall',     modularId: 'mega_mall',        title: 'MEGA MALL WEST',   sub: 'SHOPPING ATRIUM',      bg: '#6d28d9', fg: '#38bdf8', wall: 0x3b0764, mapTag: 'M', mapCol: '#a855f7', insideMsg: '🛍️ INSIDE MEGA MALL — CENTRAL FOUNTAIN & 4 BOUTIQUES!' },
+              // BUILDING C — D-MART SUPERMARKET (Walk-In 4 Stocked Aisles, Coolers & 3 Checkouts)
+              '0,-1':  { kind: 'dmart',    modularId: 'dmart',            title: 'D-MART',           sub: 'CENTRAL SUPERMARKET',  bg: '#ea580c', fg: '#fde047', wall: 0xea580c, mapTag: 'D', mapCol: '#f97316', insideMsg: '🛒 INSIDE D-MART — 4 STOCKED AISLES & 3 CHECKOUT LANES!' },
+              '-3,-1': { kind: 'dmart',    modularId: 'dmart',            title: 'D-MART WEST',      sub: 'HYPERMARKET',          bg: '#ea580c', fg: '#fde047', wall: 0xea580c, mapTag: 'D', mapCol: '#f97316', insideMsg: '🛒 INSIDE D-MART — 4 STOCKED AISLES & 3 CHECKOUT LANES!' },
+              '3,-1':  { kind: 'dmart',    modularId: 'dmart',            title: 'D-MART EAST',      sub: 'SUPERMARKET',          bg: '#ea580c', fg: '#fde047', wall: 0xea580c, mapTag: 'D', mapCol: '#f97316', insideMsg: '🛒 INSIDE D-MART — 4 STOCKED AISLES & 3 CHECKOUT LANES!' },
+              '0,-4':  { kind: 'dmart',    modularId: 'dmart',            title: 'D-MART NORTH',     sub: 'SUPERMARKET',          bg: '#ea580c', fg: '#fde047', wall: 0xea580c, mapTag: 'D', mapCol: '#f97316', insideMsg: '🛒 INSIDE D-MART — 4 STOCKED AISLES & 3 CHECKOUT LANES!' },
+              '0,4':   { kind: 'dmart',    modularId: 'dmart',            title: 'D-MART SOUTH',     sub: 'SUPERMARKET',          bg: '#ea580c', fg: '#fde047', wall: 0xea580c, mapTag: 'D', mapCol: '#f97316', insideMsg: '🛒 INSIDE D-MART — 4 STOCKED AISLES & 3 CHECKOUT LANES!' },
+              // BUILDING D — JACKPOT NEON CASINO & HOTEL (Walk-In Slots, Roulette, VIP Bar & Cashier)
+              '1,1':   { kind: 'casino',   modularId: 'casino',           title: 'JACKPOT CASINO',   sub: 'VIP LUXURY HOTEL',     bg: '#3b0764', fg: '#facc15', wall: 0x3b0764, mapTag: 'C', mapCol: '#ec4899', insideMsg: '🎰 INSIDE JACKPOT CASINO — SLOTS, ROULETTE & VIP BAR!' },
+              '4,3':   { kind: 'casino',   modularId: 'casino',           title: 'NEON CASINO',      sub: 'HIGH ROLLER LOUNGE',   bg: '#3b0764', fg: '#facc15', wall: 0x3b0764, mapTag: 'C', mapCol: '#ec4899', insideMsg: '🎰 INSIDE JACKPOT CASINO — SLOTS, ROULETTE & VIP BAR!' },
+              // BUILDING E — POLICE HQ (Walk-In Precinct, CCTV Wall, Armory & Holding Jail Cells)
+              '0,1':   { kind: 'police',   modularId: 'police_hq',        title: 'POLICE HQ',        sub: 'CENTRAL PRECINCT',     bg: '#1d4ed8', fg: '#e0f2fe', wall: 0x1e3a8a, mapTag: 'P', mapCol: '#2563eb', insideMsg: '🚓 INSIDE POLICE HQ — CCTV DISPATCH & HOLDING JAIL CELLS!' },
+              '-4,-4': { kind: 'police',   modularId: 'police_hq',        title: 'POLICE HQ WEST',   sub: 'TACTICAL PRECINCT',    bg: '#1d4ed8', fg: '#e0f2fe', wall: 0x1e3a8a, mapTag: 'P', mapCol: '#2563eb', insideMsg: '🚓 INSIDE POLICE HQ — CCTV DISPATCH & HOLDING JAIL CELLS!' },
+              // BUILDING F — CYBER APARTMENTS (Walk-In Lobby & Furnished Cyber Apartment Suite)
+              '-1,1':  { kind: 'apt',      modularId: 'cyber_apartments', title: 'CYBER APARTMENTS', sub: 'SKY GARDEN RESIDENCY', bg: '#0f172a', fg: '#06b6d4', wall: 0x1e293b, mapTag: 'A', mapCol: '#06b6d4', insideMsg: '🏢 INSIDE CYBER APARTMENTS — LOBBY & FURNISHED CYBER SUITE!' },
+              '-4,3':  { kind: 'apt',      modularId: 'cyber_apartments', title: 'CYBER HEIGHTS',    sub: 'NEON RESIDENCY',       bg: '#0f172a', fg: '#06b6d4', wall: 0x1e293b, mapTag: 'A', mapCol: '#06b6d4', insideMsg: '🏢 INSIDE CYBER APARTMENTS — LOBBY & FURNISHED CYBER SUITE!' },
+              '3,-3':  { kind: 'apt',      modularId: 'cyber_apartments', title: 'CYBER TOWERS',     sub: 'PENTHOUSE SUITES',     bg: '#0f172a', fg: '#06b6d4', wall: 0x1e293b, mapTag: 'A', mapCol: '#06b6d4', insideMsg: '🏢 INSIDE CYBER APARTMENTS — LOBBY & FURNISHED CYBER SUITE!' },
               // 2 DRIVE-THROUGH PETROL & DIESEL BUNKS (With Attendant + Fuel Tube + BUY 500 Payment!)
-              '-1,-1': { kind: 'fuel',     title: 'FUEL STATION',     sub: 'PETROL & DIESEL 24x7',bg: '#0f766e', fg: '#fde047', wall: 0x115e59, mapTag: 'F', mapCol: '#14b8a6' },
-              '3,1':   { kind: 'fuel',     title: 'FUEL STATION',     sub: 'HIGHWAY PETROL BUNK', bg: '#0f766e', fg: '#fde047', wall: 0x115e59, mapTag: 'F', mapCol: '#14b8a6' },
-              // VARIETY WALK-IN SHOPS AROUND THE MAP (Electronics, Fashion, Pharmacy, Pizza, Bakery, Malls, Hospitals, Offices!)
-              '4,3':   { kind: 'digital',  title: 'RELIANCE DIGITAL', sub: 'MOBILES & TECH SHOP', bg: '#0284c7', fg: '#fde047', wall: 0x0369a1, mapTag: 'E', mapCol: '#38bdf8' },
-              '-4,3':  { kind: 'fashion',  title: 'TRENDS FASHION',   sub: 'CLOTHING & BOUTIQUE', bg: '#7e22ce', fg: '#fde68a', wall: 0x581c87, mapTag: 'T', mapCol: '#c084fc' },
-              '-4,-4': { kind: 'pharmacy', title: 'APOLLO PHARMACY',  sub: 'MEDICAL & WELLNESS',  bg: '#0d9488', fg: '#ffffff', wall: 0x115e59, mapTag: 'P', mapCol: '#2dd4bf' },
-              '2,-3':  { kind: 'pizza',    title: 'PIZZA HUB',        sub: 'FAST FOOD & BURGERS', bg: '#dc2626', fg: '#fef08a', wall: 0x991b1b, mapTag: 'Z', mapCol: '#f87171' },
-              '1,1':   { kind: 'cafe',     title: 'ROYAL CAFE',       sub: 'BAKERY & SHOPS',      bg: '#be185d', fg: '#fde68a', wall: 0x831843, mapTag: 'S', mapCol: '#ec4899' },
-              '1,0':   { kind: 'mall',     title: 'MEGA MALL',        sub: 'SHOPS & CINEMA',      bg: '#6d28d9', fg: '#38bdf8', wall: 0x3b0764, mapTag: 'M', mapCol: '#a855f7' },
-              '-2,3':  { kind: 'mall',     title: 'ST PLAZA',         sub: 'SHOPPING MART',       bg: '#0369a1', fg: '#fde047', wall: 0x0c3b52, mapTag: 'M', mapCol: '#a855f7' },
-              '-1,0':  { kind: 'hospital', title: '+ HOSPITAL',       sub: '24x7 EMERGENCY',      bg: '#dc2626', fg: '#ffffff', wall: 0xe2e8f0, mapTag: 'H', mapCol: '#ef4444' },
-              '3,2':   { kind: 'hospital', title: '+ HOSPITAL',       sub: 'CITY CARE',           bg: '#dc2626', fg: '#ffffff', wall: 0xe2e8f0, mapTag: 'H', mapCol: '#ef4444' },
-              '0,1':   { kind: 'office',   title: 'TECH OFFICE',      sub: 'IT TOWER',            bg: '#0284c7', fg: '#ffffff', wall: 0x0f2354, mapTag: 'O', mapCol: '#38bdf8' },
-              '3,-3':  { kind: 'office',   title: 'CITY OFFICE',      sub: 'CORPORATE HQ',        bg: '#1e3a8a', fg: '#7dd3fc', wall: 0x0a1738, mapTag: 'O', mapCol: '#38bdf8' }
+              '-1,-1': { kind: 'fuel',     title: 'FUEL STATION',     sub: 'PETROL & DIESEL 24x7', bg: '#0f766e', fg: '#fde047', wall: 0x115e59, mapTag: 'F', mapCol: '#14b8a6' },
+              '3,1':   { kind: 'fuel',     title: 'FUEL STATION',     sub: 'HIGHWAY PETROL BUNK',  bg: '#0f766e', fg: '#fde047', wall: 0x115e59, mapTag: 'F', mapCol: '#14b8a6' },
+              // 2 TECH OFFICE TOWERS (For Taxi Ride-Share Job Pickups!)
+              '1,3':   { kind: 'office',   title: 'TECH OFFICE',      sub: 'IT TOWER',             bg: '#0284c7', fg: '#ffffff', wall: 0x0f2354, mapTag: 'O', mapCol: '#38bdf8' },
+              '-3,-3': { kind: 'office',   title: 'CITY OFFICE',      sub: 'CORPORATE HQ',         bg: '#1e3a8a', fg: '#7dd3fc', wall: 0x0a1738, mapTag: 'O', mapCol: '#38bdf8' }
             };
             const lm = landmarkMap[`${gx},${gz}`];
 
-            if (lm) {
-              // WALK-IN 3D SHOPS & LANDMARKS (Hollow Lit Ground Floor + Cash Counter on Right + Shelves + Automatic Sliding Glass Doors + Front Parking Lot!)
+            if (lm && lm.modularId && window.ApexBuildings && typeof window.ApexBuildings.create === 'function') {
+              // SPAWN EXACT HIGH-DETAIL MODULAR WALK-IN BUILDING (Exterior + Real Walkable 3D Interior!)
+              const b = window.ApexBuildings.create(lm.modularId);
+              const shopZ = cz - 2.6;
+              b.group.position.set(cx, 0, shopZ);
+              scene.add(b.group);
+
+              // Register walkable perimeter wall colliders (Front Doorway stays 100% OPEN to walk inside!)
+              const wPad = 0.42;
+              if (Array.isArray(b.colliders)) {
+                b.colliders.forEach((c) => {
+                  cellColliders.push({
+                    minX: cx + c.minX - wPad,
+                    maxX: cx + c.maxX + wPad,
+                    minZ: shopZ + c.minZ - wPad,
+                    maxZ: shopZ + c.maxZ + wPad
+                  });
+                });
+              }
+
+              // Park 1 drivable visitor vehicle cleanly at the front-right curb outside the landmark
+              if (City3D.buildVehicleMesh && lm.modularId !== 'police_hq') {
+                const isBike = ((Math.abs(gx + gz)) % 2 === 1);
+                const spec = isBike
+                  ? { modelType: 'bike', bodyStyle: 'superbike', colorHex: 0x16a34a, accentHex: 0x111827 }
+                  : { modelType: 'car', bodyStyle: 'exotic_low', colorHex: 0x2563eb, accentHex: 0xf8fafc };
+                const builtPv = City3D.buildVehicleMesh(spec, null);
+                const pv = builtPv.group;
+                if (pv.userData && pv.userData.rider) pv.userData.rider.visible = false;
+                const pvX = cx + 9.2, pvZ = cz + 12.8;
+                pv.position.set(pvX, 0.25, pvZ);
+                pv.rotation.y = Math.PI;
+                scene.add(pv);
+                const pCol = { minX: pvX - 1.25, maxX: pvX + 1.25, minZ: pvZ - 2.3, maxZ: pvZ + 2.3, disabled: false };
+                cellColliders.push(pCol);
+                parkedShopVehicles.push({
+                  mesh: pv, wheels: builtPv.wheels || [],
+                  label: isBike ? 'PARKED SUPERBIKE 🏍️' : 'PARKED SPORTS CAR 🏎️',
+                  colliderRef: pCol, stolen: false, modelType: spec.modelType
+                });
+              }
+
+              const bW = b.width || 24;
+              const bD = b.depth || 16.5;
+              const doorZWorld = shopZ + (b.doorZ || bD / 2 + 0.12);
+              cityLandmarks.push({
+                x: cx, z: shopZ, tag: lm.mapTag, color: lm.mapCol, title: lm.title,
+                insideMsg: lm.insideMsg || ('INSIDE ' + lm.title + '!'),
+                doorL: b.doorL, doorR: b.doorR, doorBaseX: cx, doorZ: doorZWorld,
+                doorHalf: (b.doorGapHalf || 2.8) / 2,
+                isModularBuilding: true,
+                updateFn: typeof b.update === 'function' ? b.update : null,
+                isWalkInShop: true,
+                detailGroup: b.group,
+                minX: cx - bW / 2 + 0.75, maxX: cx + bW / 2 - 0.75,
+                minZ: shopZ - bD / 2 + 0.75, maxZ: shopZ + bD / 2 - 0.45
+              });
+
+              // Spawn 2 Live Animated Indoor Visitors strolling cleanly inside the modular building!
+              if (City3D.createWalkingHuman) {
+                const waypoints = [
+                  { x: cx - 3.6, z: shopZ + 3.6 },
+                  { x: cx - 3.6, z: shopZ - 2.4 },
+                  { x: cx + 3.4, z: shopZ - 2.4 },
+                  { x: cx + 3.4, z: shopZ + 3.6 }
+                ];
+                for (let isIdx = 0; isIdx < 2; isIdx++) {
+                  const inHum = City3D.createWalkingHuman((Math.abs(gx * 3 + gz * 5) + isIdx + 1) % 8);
+                  const wp0 = waypoints[(isIdx * 2) % waypoints.length];
+                  inHum.position.set(wp0.x, 0.26, wp0.z);
+                  scene.add(inHum);
+                  indoorShoppers.push({
+                    mesh: inHum, waypoints, wpIdx: (isIdx * 2 + 1) % waypoints.length,
+                    speed: 1.45 + isIdx * 0.25, phase: isIdx * 2.1
+                  });
+                }
+              }
+            } else if (lm) {
+              // WALK-IN 3D SHOPS & FUEL STATIONS
               const isWalkInShop = (lm.kind !== 'fuel');
               const lmH = lm.kind === 'office' ? 32 : lm.kind === 'mall' ? 20 : lm.kind === 'hospital' ? 16 : lm.kind === 'fuel' ? 6.5 : 11.5;
               const lmW = 24;
@@ -5235,6 +5333,7 @@ window.ApexCity3D = (function () {
                 dummy.rotation.set(0, 0, 0);
                 dummy.updateMatrix();
                 bldgLists[styleIdx].push(dummy.matrix.clone());
+                roadsideItems.push({ bx, bz, bw, bd, bh, styleIdx, seed: subSeed });
 
                 if (bh < 11) {
                   dummy.position.set(bx, bh + 1.9, bz);
@@ -5250,10 +5349,10 @@ window.ApexCity3D = (function () {
                 // Mount Real Rooftop House Name Board on prominent village/city homes (KUMAR NILAYAM, RAVI VILLA, etc.!)
                 if (k === 0 && Math.abs(gx) <= 4 && Math.abs(gz) <= 4) {
                   const houseNames = [
-                    'KUMAR NILAYAM', 'RAVI VILLA', 'SAI RESIDENCY', 'PRASAD HOUSE',
-                    'KIRAN MANSION', 'SURESH HOME', 'LAKSHMI NIVAS', 'ANITHA VILLA',
-                    'VENKAT HOMES', 'RAMESH PALACE', 'ARJUN HEIGHTS', 'DEVI NILAYAM',
-                    'SRINIVAS HOME', 'GANESH VILLA', 'SHIVA RESIDENCY', 'MANI HOUSE'
+                    'METRO BAKERY', 'CYBER CAFE', 'APEX MOTORS', 'KUMAR NILAYAM',
+                    'ROYAL HEIGHTS', 'STAR HOTEL', 'TECH HUB 24x7', 'SAI RESIDENCY',
+                    'URBAN MART', 'LAKSHMI NIVAS', 'GOLD JEWELS', 'RAVI VILLA',
+                    'CITY FITNESS', 'ARJUN HEIGHTS', 'FRESH MART', 'SHIVA RESIDENCY'
                   ];
                   const hLabel = houseNames[Math.abs(gx * 5 + gz * 3 + seed) % houseNames.length];
                   const hc = document.createElement('canvas'); hc.width = 384; hc.height = 96;
@@ -5413,6 +5512,10 @@ window.ApexCity3D = (function () {
         const pr2 = new THREE.InstancedMesh(pitchedGeo, roofSlateMat, pitchedRoofDarkBlue.length);
         pitchedRoofDarkBlue.forEach((m, idx) => pr2.setMatrixAt(idx, m));
         scene.add(pr2);
+      }
+      // Build GPU-Instanced 3D Roadside Architectural Upgrades (Awnings, Balconies, Stepped Crowns, Neon Roof Trims, HVAC & Spires!)
+      if (window.ApexRoadsideBuildings && window.ApexRoadsideBuildings.buildInstancedDetails) {
+        window.ApexRoadsideBuildings.buildInstancedDetails(scene, roadsideItems);
       }
 
       const whiteLineMat = new THREE.MeshBasicMaterial({ color: 0xf8fafc });
@@ -7702,7 +7805,9 @@ window.ApexCity3D = (function () {
       }
       if (curShopInside && driveState.insideShopTitle !== curShopInside) {
         driveState.insideShopTitle = curShopInside;
-        showDriveAlert('INSIDE ' + curShopInside + ' — CASH COUNTER ON RIGHT! 🛒', 'bg-emerald-500 text-slate-950');
+        const hitLm = cityLandmarks.find((l) => l.title === curShopInside);
+        const msg = (hitLm && hitLm.insideMsg) ? hitLm.insideMsg : ('INSIDE ' + curShopInside + ' — EXPLORE INTERIOR! 🏛️');
+        showDriveAlert(msg, 'bg-emerald-500 text-slate-950');
       } else if (!curShopInside) {
         driveState.insideShopTitle = '';
       }
@@ -8574,11 +8679,15 @@ window.ApexCity3D = (function () {
       }
     }
 
-    // AUTOMATIC SLIDING GLASS DOORS FOR ALL WALK-IN SHOPS (D-Mart, Mall, Hospital, Cafe, Office!)
+    // AUTOMATIC SLIDING GLASS DOORS + LIVE 3D LANDMARK ANIMATIONS (Hospital, Mega Mall, D-Mart, Casino, Police HQ, Cyber Apartments!)
     for (let li = 0; li < cityLandmarks.length; li++) {
       const lm = cityLandmarks[li];
+      const dPl = Math.hypot(driveState.x - lm.x, driveState.z - (lm.doorZ || lm.z));
+      // Animate nearby modular landmarks (ambulance strobes, mall fountain & escalators, casino searchlights/roulette/slots, police strobes, balcony LEDs!)
+      if (lm.updateFn && dPl < 145) {
+        lm.updateFn(dt, now);
+      }
       if (!lm.doorL || !lm.doorR) continue;
-      const dPl = Math.hypot(driveState.x - lm.x, driveState.z - lm.doorZ);
       let nearShopper = false;
       for (let si = 0; si < shopCycles.length; si++) {
         const sc0 = shopCycles[si];
@@ -8588,11 +8697,13 @@ window.ApexCity3D = (function () {
           }
         }
       }
-      const openWant = (dPl < 6.8 || nearShopper) ? 2.25 : 0;
-      const curOff = (lm.doorBaseX - 1.36) - lm.doorL.position.x;
+      const baseX = lm.isModularBuilding ? 0 : lm.doorBaseX;
+      const halfW = lm.doorHalf || 1.36;
+      const openWant = (dPl < 7.2 || nearShopper) ? (halfW * 1.65) : 0;
+      const curOff = (baseX - halfW) - lm.doorL.position.x;
       const nextOff = curOff + (openWant - curOff) * Math.min(1, 7 * dt);
-      lm.doorL.position.x = lm.doorBaseX - 1.36 - nextOff;
-      lm.doorR.position.x = lm.doorBaseX + 1.36 + nextOff;
+      lm.doorL.position.x = baseX - halfW - nextOff;
+      lm.doorR.position.x = baseX + halfW + nextOff;
     }
 
     // UPDATE INDOOR MALL & SHOP CROWD (3 Live People strolling inside EVERY Shop & Mall — STOP if Player is in front of them!)
@@ -9271,12 +9382,14 @@ window.ApexCity3D = (function () {
       openModal(`
         <h3 class="font-display text-base font-black text-cyan-300 mb-2">ST GAMES — LIVE CITY GPS MAP</h3>
         <div class="grid grid-cols-2 gap-2 text-[11px] text-slate-200 mb-3">
-          <div class="bg-slate-800/90 px-2.5 py-1.5 rounded-lg border border-rose-400/40"><span class="font-black text-rose-400">H</span> — + Hospital (24x7)</div>
-          <div class="bg-slate-800/90 px-2.5 py-1.5 rounded-lg border border-emerald-400/40"><span class="font-black text-emerald-400">D</span> — D-Mart Supermarket</div>
-          <div class="bg-slate-800/90 px-2.5 py-1.5 rounded-lg border border-purple-400/40"><span class="font-black text-purple-400">M</span> — Mega Mall &amp; Plaza</div>
+          <div class="bg-slate-800/90 px-2.5 py-1.5 rounded-lg border border-rose-400/40"><span class="font-black text-rose-400">H</span> — City Hospital (Walk-In ER)</div>
+          <div class="bg-slate-800/90 px-2.5 py-1.5 rounded-lg border border-purple-400/40"><span class="font-black text-purple-400">M</span> — Mega Mall (Walk-In Atrium)</div>
+          <div class="bg-slate-800/90 px-2.5 py-1.5 rounded-lg border border-orange-400/40"><span class="font-black text-orange-400">D</span> — D-Mart Supermarket (Walk-In)</div>
+          <div class="bg-slate-800/90 px-2.5 py-1.5 rounded-lg border border-pink-400/40"><span class="font-black text-pink-400">C</span> — Jackpot Casino (Walk-In VIP)</div>
+          <div class="bg-slate-800/90 px-2.5 py-1.5 rounded-lg border border-blue-400/40"><span class="font-black text-blue-400">P</span> — Police HQ (Walk-In Precinct)</div>
+          <div class="bg-slate-800/90 px-2.5 py-1.5 rounded-lg border border-cyan-400/40"><span class="font-black text-cyan-400">A</span> — Cyber Apartments (Walk-In)</div>
+          <div class="bg-slate-800/90 px-2.5 py-1.5 rounded-lg border border-teal-400/40"><span class="font-black text-teal-400">F</span> — Fuel Station (24x7 Bunk)</div>
           <div class="bg-slate-800/90 px-2.5 py-1.5 rounded-lg border border-sky-400/40"><span class="font-black text-sky-400">O</span> — Tech Office Park</div>
-          <div class="bg-slate-800/90 px-2.5 py-1.5 rounded-lg border border-orange-400/40"><span class="font-black text-orange-400">F</span> — Fuel Station</div>
-          <div class="bg-slate-800/90 px-2.5 py-1.5 rounded-lg border border-pink-400/40"><span class="font-black text-pink-400">S</span> — Royal Cafe &amp; Shops</div>
         </div>
         <div class="text-[11px] text-slate-300 bg-slate-800/70 p-2.5 rounded-xl border border-white/10">
           <div><b class="text-cyan-300">Current Coordinates:</b> X: ${Math.round(driveState.x)}m, Z: ${Math.round(driveState.z)}m</div>
