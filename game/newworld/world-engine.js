@@ -5,11 +5,11 @@ import {
   getSkyPalette,
   createGLSLOceanMaterial,
   createGLSLContactShadowMaterial
-} from "./shaders-glsl.js?v=41";
-import { createProceduralTextureSuite } from "./textures-pbr.js?v=41";
-import { WasmPerfEngine } from "./wasm-perf.js?v=41";
-import { optimizeStaticPlotMeshes } from "./mesh-batcher.js?v=41";
-import { QualityManager } from "./quality-manager.js?v=41";
+} from "./shaders-glsl.js?v=42";
+import { createProceduralTextureSuite } from "./textures-pbr.js?v=42";
+import { WasmPerfEngine } from "./wasm-perf.js?v=42";
+import { optimizeStaticPlotMeshes } from "./mesh-batcher.js?v=42";
+import { QualityManager } from "./quality-manager.js?v=42";
 import {
   EIGHT_PLOT_TYPES,
   FOUR_PLOT_TYPES,
@@ -22,15 +22,15 @@ import {
   getBlockPlotIds,
   getTwoPlotGroup,
   getEightPlotGroup
-} from "./world-constants.js?v=41";
-import { zoneMethods } from "./world-zones.js?v=41";
-import { buildingMethods } from "./world-buildings.js?v=41";
-import { cinematicMethods } from "./world-cinematics.js?v=41";
-import { loopMethods } from "./world-loop.js?v=41";
-import { outskirtsMethods } from "./world-outskirts.js?v=41";
-import { v37LandmarkMethods } from "./world-landmarks-v37.js?v=41";
-import { v40VillaMethods } from "./world-villa-v40.js?v=41";
-import { v41MetroPlayerMethods } from "./world-metro-player-v41.js?v=41";
+} from "./world-constants.js?v=42";
+import { zoneMethods } from "./world-zones.js?v=42";
+import { buildingMethods } from "./world-buildings.js?v=42";
+import { cinematicMethods } from "./world-cinematics.js?v=42";
+import { loopMethods } from "./world-loop.js?v=42";
+import { outskirtsMethods } from "./world-outskirts.js?v=42";
+import { v37LandmarkMethods } from "./world-landmarks-v37.js?v=42";
+import { v40VillaMethods } from "./world-villa-v40.js?v=42";
+import { v41MetroPlayerMethods } from "./world-metro-player-v41.js?v=42";
 
 export {
   EIGHT_PLOT_TYPES,
@@ -113,7 +113,7 @@ export class FollowerTownEngine {
     this.composer = null;
     this.bloomPass = null;
     this._bloomLoading = false;
-    this.defaultSheruGlb = "./sheru-bhai-animated.glb?v=41";
+    this.defaultSheruGlb = "./sheru-bhai-animated.glb?v=42";
     this.heroModelUrls = { statue: "", audi: "", heli: "" };
     this.glbCache = new Map();
     this._glbPending = new Map();
@@ -161,11 +161,11 @@ export class FollowerTownEngine {
     });
 
     this.PLOT_SIZE = 7.4;
-    this.ROAD_WIDTH = 5.4;
+    this.ROAD_WIDTH = 8.4;
     this.BLOCK_STEP = this.PLOT_SIZE * 2 + this.ROAD_WIDTH; // 19.0
     this.BLOCK_FOOTPRINT = this.PLOT_SIZE * 2; // 14.8
     this.EIGHT_PLOT_WIDTH = this.BLOCK_FOOTPRINT * 2 + this.ROAD_WIDTH; // 33.8
-    this.RING_ROAD_WIDTH = 8.4;
+    this.RING_ROAD_WIDTH = 12.2;
 
     this.currentGridRadius = 0;
     this.townName = "FOLLOWER NAGARAM";

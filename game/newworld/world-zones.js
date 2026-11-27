@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { createGLSLOceanMaterial } from "./shaders-glsl.js?v=41";
-import { BUILDING_LABELS } from "./world-constants.js?v=41";
+import { createGLSLOceanMaterial } from "./shaders-glsl.js?v=42";
+import { BUILDING_LABELS } from "./world-constants.js?v=42";
 
 export const zoneMethods = {
   _buildSTJunctionStatue() {

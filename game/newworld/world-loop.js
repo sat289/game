@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getSkyPalette } from "./shaders-glsl.js?v=41";
+import { getSkyPalette } from "./shaders-glsl.js?v=42";
 
 export const loopMethods = {
   _animate() {
@@ -296,31 +296,35 @@ export const loopMethods = {
 
 
 
-    // 🚇 LIVE ELEVATED METRO TRAINS (2 4-Car Trains Gliding Smoothly with Station Stops!)
+    // 🚇 DOUBLE OPPOSITE HIGH-SPEED ELEVATED METRO TRAINS!
     if (this.lifeEnabled && this.metroSim && this.metroSim.trains) {
       const curve = this.metroSim.curve;
       const stations = this.metroSim.stations;
-      const carSpacingU = 0.0115;
+      const carSpacingU = 0.0095;
       for (const tr of this.metroSim.trains) {
+        const dir = tr.dir || 1;
         if (tr.pauseTimer > 0) {
           tr.pauseTimer -= dt;
         } else {
-          tr.u = (tr.u + tr.speed * dt) % 1.0;
+          tr.u = (tr.u + dir * tr.speed * dt + 1.0) % 1.0;
           for (let si = 0; si < stations.length; si++) {
             const du = Math.abs(tr.u - stations[si].u);
-            if (du < 0.004 && tr.lastStopIdx !== si) {
+            if (du < 0.0045 && tr.lastStopIdx !== si) {
               tr.lastStopIdx = si;
-              tr.pauseTimer = 2.0;
+              tr.pauseTimer = 1.4;
               break;
             }
           }
         }
         for (let c = 0; c < tr.cars.length; c++) {
-          const cu = (tr.u - c * carSpacingU + 1.0) % 1.0;
+          const cu = (tr.u - dir * c * carSpacingU + 1.0) % 1.0;
           const pt = curve.getPointAt(cu);
           const tang = curve.getTangentAt(cu).normalize();
-          tr.cars[c].position.set(pt.x, pt.y, pt.z);
-          tr.cars[c].rotation.y = Math.atan2(tang.x, tang.z);
+          const yaw = Math.atan2(tang.x * dir, tang.z * dir);
+          const sideX = Math.cos(Math.atan2(tang.x, tang.z)) * (tr.laneOffset || 0);
+          const sideZ = -Math.sin(Math.atan2(tang.x, tang.z)) * (tr.laneOffset || 0);
+          tr.cars[c].position.set(pt.x + sideX, pt.y, pt.z + sideZ);
+          tr.cars[c].rotation.y = yaw;
         }
       }
     }
@@ -359,8 +363,20 @@ export const loopMethods = {
           pr.carYaw -= ix * 2.15 * rawDt * dirSign;
         }
 
-        pr.carPos.x = THREE.MathUtils.clamp(pr.carPos.x + Math.sin(pr.carYaw) * pr.speed * rawDt, -maxBound, maxBound);
-        pr.carPos.z = THREE.MathUtils.clamp(pr.carPos.z + Math.cos(pr.carYaw) * pr.speed * rawDt, -maxBound, maxBound);
+        const nextX = THREE.MathUtils.clamp(pr.carPos.x + Math.sin(pr.carYaw) * pr.speed * rawDt, -maxBound, maxBound);
+        const nextZ = THREE.MathUtils.clamp(pr.carPos.z + Math.cos(pr.carYaw) * pr.speed * rawDt, -maxBound, maxBound);
+        if (!this._isBlockedByBuilding(nextX, nextZ, 1.75)) {
+          pr.carPos.x = nextX;
+          pr.carPos.z = nextZ;
+        } else if (!this._isBlockedByBuilding(nextX, pr.carPos.z, 1.75)) {
+          pr.carPos.x = nextX;
+          pr.speed *= 0.85;
+        } else if (!this._isBlockedByBuilding(pr.carPos.x, nextZ, 1.75)) {
+          pr.carPos.z = nextZ;
+          pr.speed *= 0.85;
+        } else {
+          pr.speed = 0;
+        }
         pr.pos.copy(pr.carPos);
         pr.yaw = pr.carYaw;
         pr.car.position.copy(pr.carPos);
@@ -416,6 +432,7 @@ export const loopMethods = {
         this.camera.position.lerp(desiredCam, 0.08);
         this.controls.target.lerp(new THREE.Vector3(pr.pos.x, pr.pos.y + 1.9, pr.pos.z), 0.15);
       }
+      this._updateVillaProximitySong(pr.pos.x, pr.pos.z);
     }
 
     // 🦁 UPDATE ALL ANIMATED SHERU BHAI .GLB MIXERS (Idle / Walk / Wave / BossSalute!)

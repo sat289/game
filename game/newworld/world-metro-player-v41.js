@@ -1,50 +1,66 @@
 import * as THREE from "three";
 
 /**
- * 🚇🦁 SHERU BHAI CITY — v41 ELEVATED METRO NETWORK & PLAYABLE SHERU BHAI (CAR + FREE ROAM)
- * 1. 6 Elevated Glass-and-Cyan Metro Stations at every major city landmark + 2 Live 4-Car Metro Trains.
- * 2. Playable 3D Animated Sheru Bhai (`sheru-bhai-animated.glb`):
- *    - Walk / Sprint freely anywhere in the city ("car dhigi motham city thiragochu")
- *    - Enter / Exit personal VIP Sports Car ("car lo vellochu") with smooth mobile joystick + WASD driving!
- *    - Ride Live Elevated Metro Train or Fast-Travel between all 6 Metro Stations!
+ * 🚇🦁 SHERU BHAI CITY — v42 ROAD-ALIGNED DOUBLE-TRACK HIGH-SPEED METRO,
+ * SOLID BUILDING COLLISION FOR CAR, & AUTO VILLA SONG (`./villa-song.mp3`)
  */
 export const v41MetroPlayerMethods = {
   // =========================================================
-  // 🚇 PART 1: ELEVATED METRO RAIL NETWORK + 6 STATIONS
+  // 🚇 PART 1: ROAD-ALIGNED DOUBLE-TRACK ELEVATED METRO (EXACT MIDDLE OF WIDE RING ROAD!)
   // =========================================================
   _buildMetroSystem(ringRadius) {
     const metroGrp = new THREE.Group();
-    const deckY = 13.4; // Safely above all roads, trees, and 1-2 story houses!
+    const deckY = 13.6; // High above all roads, cars & streetlights
+    const R = ringRadius; // Exact centerline of the 12-unit wide Outer Ring Road!
+    const cr = 10.0; // Smooth rounded corner radius inside the Ring Road intersections
 
-    const ax = this.airportX || (ringRadius + 58);
-    const bx = this.beachX || -(ringRadius + 58);
-    const st = this.outskirtsStadiumPos || { x: ringRadius + 38, z: ringRadius + 40 };
-    const rk = this.rocketPadPos || { x: -(ringRadius + 38), z: ringRadius + 40 };
-
-    // 6 Important City Metro Stations forming a grand elevated loop!
-    const stations = [
-      { id: "metro_center",  name: "🦁 ST Junction Metro",      sub: "SHERU BHAI STATUE • CITY CENTER", x: 0,           z: -15.5 },
-      { id: "metro_temple",  name: "🛕 Temple & Railway Metro", sub: "HILLTOP TEMPLE • RAILWAY JN",     x: 18,          z: -(ringRadius + 6) },
-      { id: "metro_airport", name: "✈️ Airport Metro",          sub: "20-ACRE INTL AIRPORT GATE",       x: ax - 24,     z: -4 },
-      { id: "metro_stadium", name: "🏏 Stadium Metro",          sub: "INTERNATIONAL CRICKET STADIUM",   x: st.x - 16,   z: st.z - 22 },
-      { id: "metro_rocket",  name: "🚀 ISRO Spaceport Metro",   sub: "LVM3 ROCKET LAUNCHPAD",           x: rk.x + 16,   z: rk.z - 22 },
-      { id: "metro_beach",   name: "🏖️ Golden Beach Metro",     sub: "BEACH • 20-FLOOR OYO • WHEEL",    x: bx + 24,     z: -4 }
+    // Build an EXACT road-aligned rounded-square loop along the Ring Road centerline (NEVER cuts across houses!)
+    const pts = [
+      // North Ring Road (West -> East)
+      new THREE.Vector3(-R + cr, deckY, -R),
+      new THREE.Vector3(0,       deckY, -R),
+      new THREE.Vector3(R - cr,  deckY, -R),
+      // NE Corner
+      new THREE.Vector3(R - 2.5, deckY, -R + 2.5),
+      // East Ring Road (North -> South)
+      new THREE.Vector3(R,       deckY, -R + cr),
+      new THREE.Vector3(R,       deckY, 0),
+      new THREE.Vector3(R,       deckY, R - cr),
+      // SE Corner
+      new THREE.Vector3(R - 2.5, deckY, R - 2.5),
+      // South Ring Road (East -> West)
+      new THREE.Vector3(R - cr,  deckY, R),
+      new THREE.Vector3(0,       deckY, R),
+      new THREE.Vector3(-R + cr, deckY, R),
+      // SW Corner
+      new THREE.Vector3(-R + 2.5, deckY, R - 2.5),
+      // West Ring Road (South -> North)
+      new THREE.Vector3(-R,      deckY, R - cr),
+      new THREE.Vector3(-R,      deckY, 0),
+      new THREE.Vector3(-R,      deckY, -R + cr),
+      // NW Corner
+      new THREE.Vector3(-R + 2.5, deckY, -R + 2.5)
     ];
 
-    const curvePts = stations.map((s) => new THREE.Vector3(s.x, deckY, s.z));
-    const metroCurve = new THREE.CatmullRomCurve3(curvePts, true, "catmullrom", 0.35);
+    const metroCurve = new THREE.CatmullRomCurve3(pts, true, "centripetal", 0.25);
+    const totalLen = metroCurve.getLength();
 
-    // 1. Elevated Concrete Viaduct Track + Glowing Cyan LED Side Rails (Instanced for 60fps!)
-    const segCount = 130;
-    const trackGeo = this._boxGeo(3.2, 0.55, 6.2);
-    const railGeo = this._boxGeo(0.22, 0.22, 6.2);
+    // 1. SEAMLESS GAP-FREE DOUBLE-TRACK VIADUCT (Width 5.8 = 2 Opposite Tracks + Center Cyan Divider!)
+    const segLen = 5.2;
+    const segCount = Math.max(120, Math.ceil(totalLen / (segLen * 0.86))); // 14% overlap = ZERO gaps!
+    const trackGeo = this._boxGeo(5.8, 0.58, segLen);
+    const railGeo = this._boxGeo(0.24, 0.24, segLen);
+    const midGeo = this._boxGeo(0.26, 0.28, segLen);
+
     const trackInst = new THREE.InstancedMesh(trackGeo, this.mat.concrete, segCount);
     const railLInst = new THREE.InstancedMesh(railGeo, this.mat.cinemaNeonCyan, segCount);
     const railRInst = new THREE.InstancedMesh(railGeo, this.mat.cinemaNeonCyan, segCount);
+    const midInst = new THREE.InstancedMesh(midGeo, this.mat.mansionGoldTrim, segCount);
 
-    const pillarCount = 36;
-    const pillarInst = new THREE.InstancedMesh(this._boxGeo(1.15, deckY - 0.3, 1.15), this.mat.plinthGrey, pillarCount);
-    const capInst = new THREE.InstancedMesh(this._boxGeo(3.4, 0.55, 1.5), this.mat.wallWhite, pillarCount);
+    const pillarSpacing = 22;
+    const pillarCount = Math.max(24, Math.floor(totalLen / pillarSpacing));
+    const pillarInst = new THREE.InstancedMesh(this._boxGeo(1.25, deckY - 0.3, 1.25), this.mat.plinthGrey, pillarCount);
+    const capInst = new THREE.InstancedMesh(this._boxGeo(5.9, 0.58, 1.8), this.mat.wallWhite, pillarCount);
 
     const dummy = new THREE.Object3D();
 
@@ -53,10 +69,10 @@ export const v41MetroPlayerMethods = {
       const p = metroCurve.getPointAt(u);
       const tang = metroCurve.getTangentAt(u).normalize();
       const yaw = Math.atan2(tang.x, tang.z);
-      const sideX = Math.cos(yaw) * 1.55;
-      const sideZ = -Math.sin(yaw) * 1.55;
+      const sideX = Math.cos(yaw) * 2.82;
+      const sideZ = -Math.sin(yaw) * 2.82;
 
-      dummy.position.set(p.x, p.y - 0.3, p.z);
+      dummy.position.set(p.x, p.y - 0.32, p.z);
       dummy.rotation.set(0, yaw, 0);
       dummy.updateMatrix();
       trackInst.setMatrixAt(i, dummy.matrix);
@@ -68,10 +84,15 @@ export const v41MetroPlayerMethods = {
       dummy.position.set(p.x - sideX, p.y + 0.08, p.z - sideZ);
       dummy.updateMatrix();
       railRInst.setMatrixAt(i, dummy.matrix);
+
+      dummy.position.set(p.x, p.y + 0.06, p.z);
+      dummy.updateMatrix();
+      midInst.setMatrixAt(i, dummy.matrix);
     }
     trackInst.instanceMatrix.needsUpdate = true;
     railLInst.instanceMatrix.needsUpdate = true;
     railRInst.instanceMatrix.needsUpdate = true;
+    midInst.instanceMatrix.needsUpdate = true;
 
     for (let i = 0; i < pillarCount; i++) {
       const u = (i + 0.5) / pillarCount;
@@ -90,46 +111,56 @@ export const v41MetroPlayerMethods = {
     }
     pillarInst.instanceMatrix.needsUpdate = true;
     capInst.instanceMatrix.needsUpdate = true;
-    metroGrp.add(trackInst, railLInst, railRInst, pillarInst, capInst);
+    metroGrp.add(trackInst, railLInst, railRInst, midInst, pillarInst, capInst);
 
-    // 2. Build Modern Elevated Glass-and-Cyan Metro Station at each of the 6 Hubs!
+    // 2. 6 Elevated Metro Stations placed STRICTLY on the Ring Road Median (ZERO steps inside houses!)
+    const stationDefs = [
+      { id: "metro_temple",  name: "🛕 Temple & Railway Metro", sub: "NORTH RING RD • RAILWAY JN",   u: 0.125 },
+      { id: "metro_airport", name: "✈️ Airport Metro",          sub: "EAST RING RD • 20-ACRE AIRPORT", u: 0.375 },
+      { id: "metro_stadium", name: "🏏 Stadium Metro",          sub: "SOUTH-EAST • CRICKET STADIUM",  u: 0.545 },
+      { id: "metro_center",  name: "🦁 City Gate Metro",        sub: "SOUTH RING RD • WELCOME ARCH",  u: 0.625 },
+      { id: "metro_rocket",  name: "🚀 ISRO Spaceport Metro",   sub: "SOUTH-WEST • ROCKET LAUNCHPAD", u: 0.705 },
+      { id: "metro_beach",   name: "🏖️ Golden Beach Metro",     sub: "WEST RING RD • BEACH & WHEEL",  u: 0.875 }
+    ];
+
     const stationStops = [];
-    stations.forEach((stInfo, idx) => {
-      const uStop = idx / stations.length;
-      const p = metroCurve.getPointAt(uStop);
-      const tang = metroCurve.getTangentAt(uStop).normalize();
+    stationDefs.forEach((stInfo) => {
+      const p = metroCurve.getPointAt(stInfo.u);
+      const tang = metroCurve.getTangentAt(stInfo.u).normalize();
       const yaw = Math.atan2(tang.x, tang.z);
 
       const sGrp = new THREE.Group();
       sGrp.position.set(p.x, deckY, p.z);
       sGrp.rotation.y = yaw;
 
-      // Twin Elevated Platforms + Curved Glass Roof Canopy + Glowing Cyan Arch!
-      [-2.85, 2.85].forEach((px) => {
-        const plat = new THREE.Mesh(this._boxGeo(2.4, 0.55, 13.5), this.mat.marble);
-        plat.position.set(px, -0.1, 0);
-        const safetyLine = new THREE.Mesh(this._boxGeo(0.22, 0.58, 13.4), this.mat.petrolYellow);
-        safetyLine.position.set(px + (px > 0 ? -1.05 : 1.05), -0.08, 0);
+      // Twin Elevated Side Platforms overhanging the 12-unit wide Ring Road (clear of all houses!)
+      [-4.1, 4.1].forEach((px) => {
+        const plat = new THREE.Mesh(this._boxGeo(2.3, 0.55, 14.2), this.mat.marble);
+        plat.position.set(px, -0.08, 0);
+        const safetyLine = new THREE.Mesh(this._boxGeo(0.22, 0.58, 14.0), this.mat.petrolYellow);
+        safetyLine.position.set(px + (px > 0 ? -1.0 : 1.0), -0.06, 0);
         sGrp.add(plat, safetyLine);
       });
 
-      const canopy = new THREE.Mesh(this._boxGeo(8.8, 0.42, 14.2), this.mat.glass);
-      canopy.position.set(0, 4.1, 0);
-      const cyanTrimL = new THREE.Mesh(this._boxGeo(0.28, 0.35, 14.4), this.mat.cinemaNeonCyan);
-      cyanTrimL.position.set(-4.35, 4.1, 0);
+      const canopy = new THREE.Mesh(this._boxGeo(11.0, 0.42, 15.0), this.mat.glass);
+      canopy.position.set(0, 4.2, 0);
+      const cyanTrimL = new THREE.Mesh(this._boxGeo(0.28, 0.35, 15.2), this.mat.cinemaNeonCyan);
+      cyanTrimL.position.set(-5.45, 4.2, 0);
       const cyanTrimR = cyanTrimL.clone();
-      cyanTrimR.position.x = 4.35;
+      cyanTrimR.position.x = 5.45;
 
-      // Ground Escalator Access Tower & Metro Signboard
-      const liftShaft = new THREE.Mesh(this._boxGeo(2.6, deckY, 3.2), this.mat.glass);
-      liftShaft.position.set(3.2, -deckY / 2, 0);
-      const mBoard = this._makeBuildingBoard(stInfo.name.replace(/^[^\s]+\s/, "").toUpperCase(), "SHERU BHAI METRO • ELEVATED", "#0c4a6e", "#38bdf8", 8.6, 1.55);
-      mBoard.position.set(0, 5.15, 0);
+      // Center Median Glass Lift & Escalator Core — stands at local X = 0 (EXACT middle of the 12-unit Ring Road!)
+      const liftShaft = new THREE.Mesh(this._boxGeo(1.85, deckY, 2.8), this.mat.glass);
+      liftShaft.position.set(0, -deckY / 2, 0);
+      const liftFrame = new THREE.Mesh(this._boxGeo(2.05, 0.4, 3.0), this.mat.cinemaNeonCyan);
+      liftFrame.position.set(0, -deckY + 0.25, 0);
 
-      // Floating Metro Station Label Sprite
+      const mBoard = this._makeBuildingBoard(stInfo.name.replace(/^[^\s]+\s/, "").toUpperCase(), "SHERU BHAI METRO • DOUBLE TRACK", "#0c4a6e", "#38bdf8", 9.6, 1.6);
+      mBoard.position.set(0, 5.25, 0);
+
       const sign = this._createNameSign(stInfo.name, stInfo.sub, false);
-      sign.position.set(0, 8.2, 0);
-      sGrp.add(canopy, cyanTrimL, cyanTrimR, liftShaft, mBoard, sign);
+      sign.position.set(0, 8.4, 0);
+      sGrp.add(canopy, cyanTrimL, cyanTrimR, liftShaft, liftFrame, mBoard, sign);
       metroGrp.add(sGrp);
 
       stationStops.push({
@@ -139,46 +170,55 @@ export const v41MetroPlayerMethods = {
         x: p.x,
         y: deckY,
         z: p.z,
-        u: uStop
+        u: stInfo.u
       });
     });
 
-    // 3. Build 2 Sleek 4-Car Modern Elevated Metro Trains (Cyan/Silver/Blue Livery!)
-    const makeMetroCar = (isFront) => {
+    // 3. DOUBLE OPPOSITE HIGH-SPEED METRO TRAINS (2 Clockwise on Outer Track + 2 Counter-Clockwise on Inner Track!)
+    const makeMetroCar = (isFront, accentMat) => {
       const car = new THREE.Group();
-      const body = new THREE.Mesh(this._boxGeo(2.35, 2.25, 5.6), this.mat.wallWhite);
-      body.position.y = 1.45;
-      const stripe = new THREE.Mesh(this._boxGeo(2.4, 0.42, 5.65), this.mat.cinemaNeonCyan);
-      stripe.position.y = 0.9;
-      const roof = new THREE.Mesh(this._boxGeo(2.15, 0.22, 5.4), this.mat.inorbitNavy);
-      roof.position.y = 2.65;
-      const winL = new THREE.Mesh(this._boxGeo(2.42, 0.92, 4.6), this.mat.darkGlass);
-      winL.position.y = 1.72;
+      const body = new THREE.Mesh(this._boxGeo(2.25, 2.2, 5.5), this.mat.wallWhite);
+      body.position.y = 1.42;
+      const stripe = new THREE.Mesh(this._boxGeo(2.3, 0.42, 5.55), accentMat);
+      stripe.position.y = 0.88;
+      const roof = new THREE.Mesh(this._boxGeo(2.05, 0.22, 5.3), this.mat.inorbitNavy);
+      roof.position.y = 2.6;
+      const winL = new THREE.Mesh(this._boxGeo(2.32, 0.9, 4.5), this.mat.darkGlass);
+      winL.position.y = 1.7;
       car.add(body, stripe, roof, winL);
       if (isFront) {
-        const hl = new THREE.Mesh(this._boxGeo(1.8, 0.25, 0.14), this.mat.mansionWarmGlow);
-        hl.position.set(0, 0.95, 2.85);
+        const hl = new THREE.Mesh(this._boxGeo(1.75, 0.24, 0.14), this.mat.mansionWarmGlow);
+        hl.position.set(0, 0.92, 2.8);
         car.add(hl);
       }
       return car;
     };
 
     const trains = [];
-    for (let tIdx = 0; tIdx < 2; tIdx++) {
+    const trainConfigs = [
+      { u: 0.00, dir:  1, laneOffset:  1.45, speed: 0.048, accent: this.mat.cinemaNeonCyan },
+      { u: 0.50, dir:  1, laneOffset:  1.45, speed: 0.048, accent: this.mat.cinemaNeonCyan },
+      { u: 0.25, dir: -1, laneOffset: -1.45, speed: 0.048, accent: this.mat.cinemaNeonPink },
+      { u: 0.75, dir: -1, laneOffset: -1.45, speed: 0.048, accent: this.mat.cinemaNeonPink }
+    ];
+
+    trainConfigs.forEach((cfg) => {
       const cars = [];
       for (let c = 0; c < 4; c++) {
-        const cm = makeMetroCar(c === 0 || c === 3);
+        const cm = makeMetroCar(c === 0 || c === 3, cfg.accent);
         metroGrp.add(cm);
         cars.push(cm);
       }
       trains.push({
-        u: tIdx * 0.5,
-        speed: 0.022,
+        u: cfg.u,
+        dir: cfg.dir,
+        laneOffset: cfg.laneOffset,
+        speed: cfg.speed,
         pauseTimer: 0,
         lastStopIdx: -1,
         cars
       });
-    }
+    });
 
     this.cityGroup.add(metroGrp);
     this.metroSim = {
@@ -207,6 +247,84 @@ export const v41MetroPlayerMethods = {
   },
 
   // =========================================================
+  // 🛡️ SOLID BUILDING COLLISION CHECKER (Car NEVER drives through houses/landmarks!)
+  // =========================================================
+  _isBlockedByBuilding(nx, nz, radius = 1.65) {
+    // 1. Central ST Junction Statue Pedestal
+    if (Math.hypot(nx, nz) < 6.4 + radius) return true;
+
+    // 2. Check all built city plots & landmarks
+    for (const [pid, grp] of this.plotMeshes.entries()) {
+      if (!grp || !grp.visible) continue;
+      const pdata = this.plotDataMap.get(pid);
+      if (!pdata || pdata.status !== "built" || pdata.buildingType === "empty") continue;
+
+      const sz = pdata.size || 1;
+      const halfX = sz === 8 ? 16.4 : (sz === 4 || sz === 2) ? 7.1 : 3.35;
+      const halfZ = (sz === 8 || sz === 4) ? 7.1 : 3.35;
+      const bx = grp.position.x;
+      const bz = grp.position.z;
+
+      if (Math.abs(nx - bx) < (halfX + radius) && Math.abs(nz - bz) < (halfZ + radius)) {
+        return true;
+      }
+    }
+    return false;
+  },
+
+  // =========================================================
+  // 🎵 AUTOMATIC VILLA SONG PLAYER (`./villa-song.mp3` — Upload to GitHub!)
+  // =========================================================
+  _updateVillaProximitySong(px, pz) {
+    // Check if user is inside/near Sheru Bhai Royal Island Mansion OR any Billionaire Villa!
+    let nearVilla = false;
+
+    // 1. Sheru Bhai Royal Island Mansion (West Ocean VIP Island)
+    if (this.vipIslandPos) {
+      const dIsl = Math.hypot(px - this.vipIslandPos.x, pz - this.vipIslandPos.z);
+      if (dIsl < 34) nearVilla = true;
+    }
+
+    // 2. Any 8-Plot Ultra-Premium Billionaire Villa in the city
+    if (!nearVilla) {
+      for (const [pid, pdata] of this.plotDataMap.entries()) {
+        if (pdata && pdata.status === "built" && pdata.buildingType === "billionaire_villa") {
+          const grp = this.plotMeshes.get(pid);
+          if (grp && Math.hypot(px - grp.position.x, pz - grp.position.z) < 24) {
+            nearVilla = true;
+            break;
+          }
+        }
+      }
+    }
+
+    if (!this._villaAudio) {
+      const audio = new Audio("./villa-song.mp3");
+      audio.loop = true;
+      audio.volume = 0.0;
+      audio.preload = "none";
+      audio.addEventListener("error", () => { this._villaAudioMissing = true; });
+      this._villaAudio = audio;
+    }
+
+    if (this._villaAudioMissing) return;
+
+    if (nearVilla) {
+      if (this._villaAudio.paused) {
+        this._villaAudio.play().catch(() => {});
+      }
+      this._villaAudio.volume = Math.min(0.85, this._villaAudio.volume + 0.04);
+      this._inVillaZone = true;
+    } else if (this._inVillaZone || !this._villaAudio.paused) {
+      this._villaAudio.volume = Math.max(0.0, this._villaAudio.volume - 0.04);
+      if (this._villaAudio.volume <= 0.01) {
+        this._villaAudio.pause();
+        this._inVillaZone = false;
+      }
+    }
+  },
+
+  // =========================================================
   // 🦁🚗 PART 2: PLAYABLE SHERU BHAI (CAR DRIVE + FREE ROAM + METRO RIDE!)
   // =========================================================
   _initPlayerRoamAssets() {
@@ -215,12 +333,10 @@ export const v41MetroPlayerMethods = {
     const root = new THREE.Group();
     root.visible = false;
 
-    // 1. Playable Sheru Bhai Character Container (Loads Animated `sheru-bhai-animated.glb`!)
     const actor = new THREE.Group();
     const fallbackSheru = this._makeLiveSheruBhai(1.08, false);
     actor.add(fallbackSheru);
 
-    // 2. Sheru Bhai's Personal VIP Sports Car (Pearl-White & Gold Supercar with Cyan Underglow!)
     const car = new THREE.Group();
     const cBody = new THREE.Mesh(this._boxGeo(2.35, 0.72, 4.85), this.mat.wallWhite);
     cBody.position.y = 0.65;
@@ -249,7 +365,6 @@ export const v41MetroPlayerMethods = {
       car.add(w);
     });
 
-    // Seated Sheru Bhai Driver inside Car Cabin (visible when driving!)
     const driverSheru = this._makeLiveSheruBhai(0.68, true);
     driverSheru.position.set(-0.36, 0.62, -0.05);
     car.add(cBody, cGoldStripe, cCabin, cRoof, cSpoiler, cUnderglow, cHeadL, cHeadR, cTail, driverSheru);
@@ -257,17 +372,19 @@ export const v41MetroPlayerMethods = {
     root.add(actor, car);
     this.scene.add(root);
 
+    // Spawn cleanly on the wide central road just south of the Statue!
+    const spawnZ = this.BLOCK_STEP * 0.5;
     this.playerRoam = {
       active: false,
-      mode: "car", // "car" | "foot" | "metro"
+      mode: "car",
       root,
       actor,
       car,
       driverSheru,
-      pos: new THREE.Vector3(0, 0.12, 16),
+      pos: new THREE.Vector3(0, 0.12, spawnZ),
       yaw: 0,
       speed: 0,
-      carPos: new THREE.Vector3(0, 0.12, 16),
+      carPos: new THREE.Vector3(0, 0.12, spawnZ),
       carYaw: 0,
       input: { x: 0, y: 0, boost: false },
       mixer: null,
@@ -277,7 +394,6 @@ export const v41MetroPlayerMethods = {
       onStateChange: null
     };
 
-    // Load Animated `sheru-bhai-animated.glb` onto playable actor!
     this._attachAnimatedPlayerSheru();
   },
 
@@ -348,14 +464,15 @@ export const v41MetroPlayerMethods = {
     this.stopAllReelModes();
     this._initPlayerRoamAssets();
     const pr = this.playerRoam;
+    const spawnZ = this.BLOCK_STEP * 0.5;
     pr.active = true;
     pr.onStateChange = onStateChange;
     pr.root.visible = true;
     pr.mode = startInCar ? "car" : "foot";
-    pr.pos.set(0, 0.12, 16);
+    pr.pos.set(0, 0.12, spawnZ);
     pr.yaw = 0;
     pr.speed = 0;
-    pr.carPos.set(0, 0.12, 16);
+    pr.carPos.set(0, 0.12, spawnZ);
     pr.carYaw = 0;
     pr.car.position.copy(pr.carPos);
     pr.car.rotation.y = pr.carYaw;
@@ -369,6 +486,7 @@ export const v41MetroPlayerMethods = {
     this.playerRoam.active = false;
     this.playerRoam.root.visible = false;
     this.playerRoam.input = { x: 0, y: 0, boost: false };
+    if (this._villaAudio && !this._villaAudio.paused) this._villaAudio.pause();
     if (this.playerRoam.onStateChange) this.playerRoam.onStateChange("off", 0);
   },
 
@@ -447,7 +565,7 @@ export const v41MetroPlayerMethods = {
     this.playerRoam.mode = "metro";
     this.playerRoam.actor.visible = false;
     this.playerRoam.driverSheru.visible = false;
-    if (this.playerRoam.onStateChange) this.playerRoam.onStateChange("metro", 80);
+    if (this.playerRoam.onStateChange) this.playerRoam.onStateChange("metro", 140);
   },
 
   teleportSheruToStation(stationId) {
@@ -456,7 +574,7 @@ export const v41MetroPlayerMethods = {
     if (!st) return;
     if (this.playerRoam && this.playerRoam.active) {
       const pr = this.playerRoam;
-      pr.pos.set(st.x + 5, 0.12, st.z + 5);
+      pr.pos.set(st.x + 3.5, 0.12, st.z + 3.5);
       if (pr.mode === "car") {
         pr.carPos.copy(pr.pos);
         pr.car.position.copy(pr.carPos);
