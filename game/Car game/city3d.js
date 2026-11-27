@@ -130,12 +130,29 @@ window.ApexCity3D = (function () {
 
     ctx.fillStyle = p.trim;
     ctx.fillRect(0, 0, 256, 14);
-    for (let fy = 40; fy < 436; fy += 34) {
-      ctx.fillStyle = p.trim;
-      ctx.globalAlpha = 0.42;
-      ctx.fillRect(0, fy, 256, 4);
+    // Crisp Architectural Multi-Floor Concrete Slabs, Shadow Ledges & Balcony Railings!
+    const floorStep = (430 - 20) / p.rows;
+    for (let r = 0; r <= p.rows; r++) {
+      const fy = Math.round(20 + r * floorStep);
+      // Bright concrete floor slab ledge
+      ctx.fillStyle = 'rgba(248, 250, 252, 0.72)';
+      ctx.fillRect(0, fy - 2, 256, 4);
+      // Subtle architectural under-shadow
+      ctx.fillStyle = p.frame;
+      ctx.globalAlpha = 0.55;
+      ctx.fillRect(0, fy + 2, 256, 3);
       ctx.globalAlpha = 1.0;
     }
+    // Modern Illuminated Ground-Floor Lobby Band
+    ctx.fillStyle = p.frame;
+    ctx.fillRect(0, 434, 256, 78);
+    const lobGrad = ctx.createLinearGradient(0, 442, 0, 506);
+    lobGrad.addColorStop(0, '#38bdf8');
+    lobGrad.addColorStop(1, '#0284c7');
+    ctx.fillStyle = lobGrad;
+    ctx.fillRect(14, 444, 228, 60);
+    ctx.fillStyle = '#0f172a';
+    for (let dx = 48; dx < 240; dx += 44) ctx.fillRect(dx, 444, 4, 60);
 
     // TRANSPARENT GLASS WINDOWS WITH VISIBLE INTERIOR ROOMS, CHAIRS, DESKS & LAMPS!
     const padX = 12, padY = 20;
@@ -567,6 +584,158 @@ window.ApexCity3D = (function () {
       addWheel(0, 0.42, -wb, 0.42, 0.22, true);
       addWheel(0, 0.42, wb, 0.42, 0.32, false);
       addFlame(0.25, isCafe ? 0.46 : 0.60, 1.48); addFlame(-0.25, isCafe ? 0.46 : 0.60, 1.48);
+    } else if (style === 'jeep_open' || style === 'raptor_wide' || style === 'gwagon_box' || style === 'armored_6x6' || style === 'monster_giant') {
+      // ALL 5 CUSTOM 3D JEEP / OFF-ROAD MODELS (Same iconic 3D Jeep build with distinct vibrant colors, unique tire models & trim!)
+      const isRaptorV = style === 'raptor_wide';
+      const isGWagonV = style === 'gwagon_box';
+      const is6x6V = style === 'armored_6x6';
+      const isMonsterV = style === 'monster_giant';
+      // USER'S CUSTOM UPLOADED 3D JEEP MODEL (Replaces ONLY Jeep Wrangler Rubicon, upgraded with vibrant colorful glossy paint & chrome hubs!)
+      const jeepInner = new THREE.Group();
+      const bodyPaintMat = new THREE.MeshStandardMaterial({ color: vehicleObj.colorHex || 0xea580c, metalness: 0.45, roughness: 0.22 });
+      const fenderColorMat = new THREE.MeshStandardMaterial({ color: vehicleObj.accentHex || 0xfacc15, metalness: 0.38, roughness: 0.28 });
+      const darkTrimMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.55, roughness: 0.35 });
+      const tireMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.85 });
+      const hubChromeMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.9, roughness: 0.14 });
+      const glassDarkMat = new THREE.MeshStandardMaterial({ color: 0x0ea5e9, metalness: 0.85, roughness: 0.12, transparent: true, opacity: 0.72 });
+      const headLightMat = new THREE.MeshBasicMaterial({ color: 0xfef9c3 });
+      const stripeAccentMat = new THREE.MeshStandardMaterial({ color: 0x06b6d4, metalness: 0.5, roughness: 0.25 });
+
+      const torusGeo = new THREE.TorusGeometry(1, 0.5, 10, 18);
+      const seatGeo = new THREE.BoxGeometry(2.5, 1, 1);
+      const cylGeo = new THREE.CylinderGeometry(0.5, 0.5, 2, 16);
+
+      // Unique Tire & Wheel Models for Each of the 5 Custom Jeeps/Trucks!
+      const wheelCoords = is6x6V
+        ? [[-5.2, 0.5, -4], [1.2, 0.5, -4], [5.8, 0.5, -4], [-5.2, 0.5, 4], [1.2, 0.5, 4], [5.8, 0.5, 4]]
+        : [[-5, 0.5, -4], [5, 0.5, -4], [-5, 0.5, 4], [5, 0.5, 4]];
+      const wScaleXY = isMonsterV ? 2.15 : is6x6V ? 1.62 : isGWagonV ? 1.58 : isRaptorV ? 1.42 : 1.5;
+      const wScaleZ  = isMonsterV ? 2.25 : isGWagonV ? 1.95 : 1.6;
+      const customRimMat = new THREE.MeshStandardMaterial({
+        color: isMonsterV ? 0xfacc15 : is6x6V ? 0xf59e0b : isRaptorV ? 0x38bdf8 : isGWagonV ? 0xf8fafc : 0xe2e8f0,
+        metalness: 0.9, roughness: 0.14
+      });
+      wheelCoords.forEach(([tx, ty, tz]) => {
+        // Align wheel axle cleanly with car's true forward -Z axis so wheels.rotation.x rolls STRAIGHT FORWARD!
+        const wAlign = new THREE.Group();
+        wAlign.position.set(tx, isMonsterV ? 0.1 : ty, tz);
+        wAlign.rotation.y = Math.PI / 2;
+        const wSpin = new THREE.Group();
+        const tMesh = new THREE.Mesh(torusGeo, tireMat);
+        tMesh.scale.set(wScaleXY, wScaleXY, wScaleZ);
+        tMesh.rotation.y = -Math.PI / 2;
+        const hub = new THREE.Mesh(cylGeo, customRimMat);
+        hub.scale.set(wScaleXY * 0.92, 0.58, wScaleXY * 0.92);
+        hub.rotation.z = Math.PI / 2;
+        const bead = new THREE.Mesh(new THREE.TorusGeometry(wScaleXY * 0.65, 0.12, 6, 12), isMonsterV ? fenderColorMat : darkTrimMat);
+        bead.rotation.y = -Math.PI / 2;
+        bead.position.x = tz > 0 ? -0.45 : 0.45;
+        wSpin.add(tMesh, hub, bead);
+        wAlign.add(wSpin);
+        jeepInner.add(wAlign);
+        wheels.push(wSpin);
+      });
+
+      // Main Sculpted Colorful Jeep Body & Roof Cabin
+      const carbase = new THREE.Mesh(seatGeo, bodyPaintMat);
+      carbase.position.set(0, 3, 0); carbase.scale.set(1, 13, 7.5); carbase.rotation.set(0, 0, Math.PI / 2);
+      const carbase1 = new THREE.Mesh(seatGeo, bodyPaintMat);
+      carbase1.position.set(2, 5, 0); carbase1.scale.set(1, 8, 6.6); carbase1.rotation.set(0, 0, Math.PI / 2);
+      const carbase1m = new THREE.Mesh(seatGeo, glassDarkMat);
+      carbase1m.position.set(-2, 4.5, 0); carbase1m.scale.set(2.5, 3, 2); carbase1m.rotation.set(Math.PI / 2, Math.PI / 3, Math.PI / 2);
+      const c7 = new THREE.Mesh(cylGeo, bodyPaintMat);
+      c7.position.set(0, 4, 0); c7.scale.set(8, 6.5, 1); c7.rotation.set(Math.PI / 2, Math.PI, Math.PI / 2);
+      const c8 = new THREE.Mesh(cylGeo, fenderColorMat);
+      c8.position.set(2, 6, 0); c8.scale.set(7, 4, 1); c8.rotation.set(Math.PI / 2, Math.PI, Math.PI / 2);
+      // Colorful Side Trim Accent Stripes
+      const sideStripeL = new THREE.Mesh(new THREE.BoxGeometry(11.5, 0.45, 0.25), stripeAccentMat);
+      sideStripeL.position.set(0, 3.1, 3.85);
+      const sideStripeR = sideStripeL.clone(); sideStripeR.position.z = -3.85;
+      // Side Windows, Rear Panel & Hood Vent
+      const c77 = new THREE.Mesh(cylGeo, glassDarkMat);
+      c77.position.set(2, 4.5, 3.3); c77.scale.set(3.5, 4.1, 1.4); c77.rotation.set(Math.PI, Math.PI, Math.PI / 2);
+      const c78 = new THREE.Mesh(cylGeo, glassDarkMat);
+      c78.position.set(2, 4.5, -3.3); c78.scale.set(3.5, 4.1, 1.4); c78.rotation.set(Math.PI, Math.PI, Math.PI / 2);
+      const c9 = new THREE.Mesh(cylGeo, darkTrimMat);
+      c9.position.set(6, 3.5, 0); c9.scale.set(5.3, 3.7, 2); c9.rotation.set(Math.PI, Math.PI / 2, Math.PI / 2);
+      const c99 = new THREE.Mesh(cylGeo, darkTrimMat);
+      c99.position.set(-5.6, 4.5, 0); c99.scale.set(3, 1, 0.5); c99.rotation.set(Math.PI / 2, Math.PI, Math.PI / 2);
+      jeepInner.add(carbase, carbase1, carbase1m, c7, c8, sideStripeL, sideStripeR, c77, c78, c9, c99);
+
+      // Colorful Wheel-Arch Fenders (Exact custom Jeep fender geometry!)
+      const fenderSpecs = [
+        [-6.1, 2.3, 4, 1.5, 0.5, 0.5, Math.PI / 2, Math.PI / 5, Math.PI / 2],
+        [-6.1, 2.3, -4, 1.5, 0.5, 0.5, Math.PI / 2, Math.PI / 5, Math.PI / 2],
+        [-4.8, 2.6, 4, 1.5, 1, 0.5, Math.PI / 2, Math.PI, Math.PI / 2],
+        [-3.4, 1.8, 4, 1.5, 1, 0.5, Math.PI / 2, -Math.PI / 3, Math.PI / 2],
+        [-4.8, 2.6, -4, 1.5, 1, 0.5, Math.PI / 2, Math.PI, Math.PI / 2],
+        [-3.4, 1.8, -4, 1.5, 1, 0.5, Math.PI / 2, -Math.PI / 3, Math.PI / 2],
+        [6.5, 1.8, 4, 1.5, 1, 0.5, Math.PI / 2, -Math.PI / 3, Math.PI / 2],
+        [5, 2.6, 4, 1.5, 1.2, 0.5, Math.PI / 2, Math.PI, Math.PI / 2],
+        [3.5, 1.8, 4, 1.5, 1, 0.5, Math.PI / 2, Math.PI / 3, Math.PI / 2],
+        [6.5, 1.8, -4, 1.5, 1, 0.5, Math.PI / 2, -Math.PI / 3, Math.PI / 2],
+        [5, 2.6, -4, 1.5, 1.2, 0.5, Math.PI / 2, Math.PI, Math.PI / 2],
+        [3.5, 1.8, -4, 1.5, 1, 0.5, Math.PI / 2, Math.PI / 3, Math.PI / 2]
+      ];
+      fenderSpecs.forEach(([x, y, z, sx, sy, sz, rx, ry, rz]) => {
+        const fm = new THREE.Mesh(cylGeo, fenderColorMat);
+        fm.position.set(x, y, z); fm.scale.set(sx, sy, sz); fm.rotation.set(rx, ry, rz);
+        jeepInner.add(fm);
+      });
+
+      // Undercarriage Axles & Heavy-Duty Skid Chassis
+      [
+        [-5, 0.5, 0, 0.5, 4, 0.5, Math.PI, Math.PI / 2, Math.PI / 2],
+        [5, 0.5, 0, 0.5, 4, 0.5, Math.PI, Math.PI / 2, Math.PI / 2],
+        [0, 0.5, 0, 0.5, 4.5, 0.5, Math.PI, Math.PI, Math.PI / 2],
+        [0, 0.5, 0, 2.5, 3, 3.5, Math.PI, Math.PI, Math.PI / 2]
+      ].forEach(([x, y, z, sx, sy, sz, rx, ry, rz]) => {
+        const ax = new THREE.Mesh(cylGeo, darkTrimMat);
+        ax.position.set(x, y, z); ax.scale.set(sx, sy, sz); ax.rotation.set(rx, ry, rz);
+        jeepInner.add(ax);
+      });
+
+      // Dual Glowing Round Headlights + Bezels + Iconic Vertical Front Grille Bars
+      [2.5, -2.5].forEach((lz) => {
+        const hl = new THREE.Mesh(cylGeo, headLightMat);
+        hl.position.set(-6.4, 3.5, lz); hl.scale.set(1, 0.3, 1); hl.rotation.set(Math.PI / 2, Math.PI, Math.PI / 2);
+        const hlb = new THREE.Mesh(cylGeo, darkTrimMat);
+        hlb.position.set(-6.3, 3.5, lz); hlb.scale.set(1.2, 0.3, 1.2); hlb.rotation.set(Math.PI / 2, Math.PI, Math.PI / 2);
+        jeepInner.add(hl, hlb);
+      });
+      [0, 0.9, -0.9, -1.7, 1.7].forEach((gz) => {
+        const bar = new THREE.Mesh(seatGeo, darkTrimMat);
+        bar.position.set(-0.1, 3, gz); bar.scale.set(0.8, 13, 0.5); bar.rotation.set(0, 0, Math.PI / 2);
+        jeepInner.add(bar);
+      });
+      const frontBumper = new THREE.Mesh(seatGeo, darkTrimMat);
+      frontBumper.position.set(-0.1, 2, 0); frontBumper.scale.set(2, 13, 1); frontBumper.rotation.set(Math.PI / 2, Math.PI, Math.PI / 2);
+      jeepInner.add(frontBumper);
+
+      // Rear-Mounted Spare Off-Road Tire
+      const spareTire = new THREE.Mesh(torusGeo, tireMat);
+      spareTire.position.set(7, 3.5, 0); spareTire.scale.set(1.5, 1.5, 1.6); spareTire.rotation.set(Math.PI / 2, Math.PI / 2, Math.PI / 2);
+      const spareHub = new THREE.Mesh(cylGeo, fenderColorMat);
+      spareHub.position.set(7, 3.5, 0); spareHub.scale.set(1.4, 0.45, 1.4); spareHub.rotation.set(Math.PI / 2, Math.PI, Math.PI / 2);
+      jeepInner.add(spareTire, spareHub);
+
+      // Scale & orient cleanly so Front Headlights face -Z (Forward) & all 4 tires sit flush on y = 0!
+      const jSc = isMonsterV ? 0.39 : is6x6V ? 0.37 : 0.34;
+      jeepInner.scale.setScalar(jSc);
+      jeepInner.rotation.y = -Math.PI / 2;
+      jeepInner.position.y = isMonsterV ? 0.98 : is6x6V ? 0.68 : 0.60;
+      chassis.add(jeepInner);
+
+      // Twin Cyan-Blue Nitro Exhaust Flames at Rear!
+      const flameMatJ = new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.94 });
+      [-0.45, 0.45].forEach((fx) => {
+        const cone = new THREE.Mesh(new THREE.ConeGeometry(0.16, 1.35, 10), flameMatJ);
+        cone.rotation.x = Math.PI / 2;
+        cone.position.set(fx, 0.55, 2.55);
+        cone.visible = false;
+        chassis.add(cone);
+        flames.push(cone);
+      });
     } else if (vehicleObj.modelType === 'truck' || vehicleObj.modelType === 'heavy_truck') {
       const isMonster = style === 'monster_giant';
       const is6x6 = style === 'armored_6x6';
@@ -1237,28 +1406,31 @@ window.ApexCity3D = (function () {
     const pelvis = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.19, 0.18, 14), blackPantMat);
     pelvis.scale.set(1.06, 1, 0.68); pelvis.position.y = 0.85;
 
-    // Smooth Natural Jointed Arms (Rounded Shoulder -> Tapered Sleeve -> Elbow Joint -> Forearm + Hand)
+    // Seamless Solid-Jointed Athletic Arms (Tucked Deltoid Shoulder -> Full Sleeve -> Rounded Elbow -> Forearm + Hand — ZERO Detached Gaps!)
     const makeArm = (sx) => {
-      const sh = new THREE.Group(); sh.position.set(sx * 0.29, 1.44, 0);
-      const shCap = new THREE.Mesh(new THREE.SphereGeometry(0.09, 12, 10), blackAccentMat);
-      const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.082, 0.070, 0.30, 12), whiteShirtMat);
-      upper.position.y = -0.15; sh.add(shCap, upper);
-      const elbow = new THREE.Group(); elbow.position.y = -0.30; sh.add(elbow);
-      const elJoint = new THREE.Mesh(new THREE.SphereGeometry(0.068, 10, 10), whiteShirtMat);
-      const fore = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.052, 0.28, 12), skinMat);
-      fore.position.y = -0.14;
-      const hand = new THREE.Mesh(new THREE.SphereGeometry(0.058, 10, 10), skinMat);
-      hand.position.y = -0.29;
+      const sh = new THREE.Group(); sh.position.set(sx * 0.242, 1.43, 0);
+      const shCap = new THREE.Mesh(new THREE.SphereGeometry(0.115, 12, 10), blackAccentMat);
+      shCap.scale.set(1.06, 1.0, 0.92);
+      const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.092, 0.078, 0.44, 12), whiteShirtMat);
+      upper.position.y = -0.21; sh.add(shCap, upper);
+      const elbow = new THREE.Group(); elbow.position.y = -0.42; sh.add(elbow);
+      const elJoint = new THREE.Mesh(new THREE.SphereGeometry(0.078, 10, 10), whiteShirtMat);
+      const fore = new THREE.Mesh(new THREE.CylinderGeometry(0.072, 0.056, 0.41, 12), skinMat);
+      fore.position.y = -0.20;
+      const hand = new THREE.Mesh(new THREE.SphereGeometry(0.066, 10, 10), skinMat);
+      hand.position.y = -0.41;
       elbow.add(elJoint, fore, hand);
+      sh.rotation.z = sx * -0.07; // Natural relaxed shoulder drape tucked close to torso!
       return { sh, elbow };
     };
     const armL = makeArm(-1), armR = makeArm(1);
 
-    // Smooth Natural Jointed Black Formal Pant Legs (Hip -> Thigh -> Knee Joint -> Shin -> Stylish Sneakers!)
+    // Seamless Solid-Jointed Black Formal Pant Legs (Rounded Hip -> Thigh -> Knee Joint -> Shin -> Stylish Sneakers!)
     const makeLeg = (sx) => {
-      const hip = new THREE.Group(); hip.position.set(sx * 0.13, 0.78, 0);
-      const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.105, 0.088, 0.38, 12), blackPantMat);
-      thigh.position.y = -0.19; hip.add(thigh);
+      const hip = new THREE.Group(); hip.position.set(sx * 0.115, 0.80, 0);
+      const hipCap = new THREE.Mesh(new THREE.SphereGeometry(0.105, 10, 10), blackPantMat);
+      const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.106, 0.090, 0.38, 12), blackPantMat);
+      thigh.position.y = -0.19; hip.add(hipCap, thigh);
       const knee = new THREE.Group(); knee.position.y = -0.38; hip.add(knee);
       const knJoint = new THREE.Mesh(new THREE.SphereGeometry(0.082, 10, 10), blackPantMat);
       const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.082, 0.066, 0.36, 12), blackPantMat);

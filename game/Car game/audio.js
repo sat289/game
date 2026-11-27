@@ -117,38 +117,65 @@ window.ApexAudio = (function () {
     });
   }
 
+  let windSrcNode = null, windGainNode = null;
+
   function startMusic() {
     stopMusic();
     if (!soundEnabled) return;
     init();
+    if (!audioCtx) return;
+
+    // 1. Gentle Continuous Greenery Breeze / Soft Leaves Rustling (1 lightweight looped node = ZERO CPU lag!)
+    if (noiseBuffer) {
+      try {
+        const src = audioCtx.createBufferSource();
+        src.buffer = noiseBuffer;
+        src.loop = true;
+        const lp = audioCtx.createBiquadFilter();
+        lp.type = 'lowpass';
+        lp.frequency.value = 420;
+        const gn = audioCtx.createGain();
+        gn.gain.value = 0.022;
+        src.connect(lp); lp.connect(gn); gn.connect(audioCtx.destination);
+        src.start();
+        windSrcNode = src;
+        windGainNode = gn;
+      } catch (e) {}
+    }
+
+    // 2. Peaceful Occasional Natural Bird Chirps every ~4.2 seconds (Zero tun-tun beats, zero lag!)
     bgmStep = 0;
     bgmTimerId = setInterval(() => {
       if (!soundEnabled || !audioCtx || audioCtx.state !== 'running') return;
       const now = audioCtx.currentTime;
-      const step = bgmStep % 16;
-      const bar = Math.floor(bgmStep / 16) % 4;
-
-      if (step === 0) playWarmAtmosphere(now, chillChords[bar]);
-      if (step === 0 || step === 6 || step === 10) playKick(now);
-      if (step === 4 || step === 12) playSoftRim(now);
-
-      if (step === 0 || step === 8) {
-        const bOsc = audioCtx.createOscillator();
-        const bGain = audioCtx.createGain();
-        bOsc.type = 'sine';
-        bOsc.frequency.setValueAtTime(deepBass[bar], now);
-        bGain.gain.setValueAtTime(0.085, now);
-        bGain.gain.exponentialRampToValueAtTime(0.001, now + 0.52);
-        bOsc.connect(bGain); bGain.connect(audioCtx.destination);
-        bOsc.start(now); bOsc.stop(now + 0.55);
-      }
-
+      const chirpSets = [
+        [2450, 2950, 2600],
+        [2100, 2700],
+        [2800, 3250, 2900]
+      ];
+      const notes = chirpSets[bgmStep % chirpSets.length];
+      notes.forEach((f, idx) => {
+        const t = now + idx * 0.11;
+        const osc = audioCtx.createOscillator();
+        const gn = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f * 0.92, t);
+        osc.frequency.exponentialRampToValueAtTime(f, t + 0.045);
+        osc.frequency.exponentialRampToValueAtTime(f * 0.88, t + 0.095);
+        gn.gain.setValueAtTime(0.0005, t);
+        gn.gain.linearRampToValueAtTime(0.014, t + 0.025);
+        gn.gain.exponentialRampToValueAtTime(0.0005, t + 0.10);
+        osc.connect(gn); gn.connect(audioCtx.destination);
+        osc.start(t); osc.stop(t + 0.11);
+      });
       bgmStep++;
-    }, 148); // Relaxed ~101 BPM smooth cinematic night-drive groove
+    }, 4200);
   }
 
   function stopMusic() {
     if (bgmTimerId) { clearInterval(bgmTimerId); bgmTimerId = null; }
+    if (windSrcNode) { try { windSrcNode.stop(); } catch (e) {} windSrcNode = null; }
+    windGainNode = null;
   }
 
   function playCoin() {

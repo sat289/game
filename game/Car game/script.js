@@ -100,6 +100,7 @@
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
+      renderer.shadowMap.enabled = false;
     }
   }
 
@@ -194,65 +195,85 @@
     return { group, chassis, wheels: [], frontWheelPivots: [], flames };
   }
 
+  let car04BodyMatRef = null;
+
+  function finalizeCar04GLTF(gltf) {
+    const model = gltf.scene || (gltf.scenes && gltf.scenes[0]);
+    if (!model) { gemeraLoading = false; return; }
+    const box1 = new THREE.Box3().setFromObject(model);
+    const sz1 = new THREE.Vector3(); box1.getSize(sz1);
+    if (sz1.x > sz1.z * 1.15) model.rotation.y = Math.PI / 2;
+    const box2 = new THREE.Box3().setFromObject(model);
+    const sz2 = new THREE.Vector3(); box2.getSize(sz2);
+    const maxDim = Math.max(sz2.x, sz2.y, sz2.z) || 1;
+    model.scale.multiplyScalar(4.9 / maxDim);
+    const box3 = new THREE.Box3().setFromObject(model);
+    const center = new THREE.Vector3(); box3.getCenter(center);
+    model.position.x -= center.x;
+    model.position.z -= center.z;
+    model.position.y -= box3.min.y;
+
+    // SHOWSTOPPER 1ST CAR: Dark Stealth-Carbon Edges & Roof + Glowing Electric Crimson -> Midnight Indigo -> Neon Cyan Gradient!
+    const bodyMat0 = new THREE.MeshStandardMaterial({
+      vertexColors: true, color: 0xffffff,
+      emissive: 0xe11d48, emissiveIntensity: 0.16,
+      metalness: 0.58, roughness: 0.14
+    });
+    car04BodyMatRef = bodyMat0;
+    const glassMat0 = new THREE.MeshStandardMaterial({
+      color: 0x0f172a, emissive: 0x0284c7, emissiveIntensity: 0.18,
+      metalness: 0.92, roughness: 0.06, transparent: true, opacity: 0.78
+    });
+    const opticMat0 = new THREE.MeshBasicMaterial({ color: 0xe0f2fe });
+    const wheelMat0 = new THREE.MeshStandardMaterial({ color: 0x090b10, roughness: 0.82, metalness: 0.18 });
+
+    model.traverse((child) => {
+      if (!child.isMesh) return;
+      const nm = (child.name || '').toLowerCase();
+      if (nm.includes('glass')) child.material = glassMat0;
+      else if (nm.includes('optic')) child.material = opticMat0;
+      else if (nm.includes('wheel')) child.material = wheelMat0;
+      else {
+        applyMultiColorVertexPaint(child, 0xe11d48, 0x1e1b4b, 0x06b6d4, 0x090d16);
+        child.material = bodyMat0;
+      }
+    });
+
+    const masterWrap = new THREE.Group();
+    masterWrap.add(model);
+    gemeraMaster = masterWrap;
+    gemeraLoading = false;
+    captureGemeraStoreThumb();
+    while (gemeraCallbacks.length) {
+      const fn = gemeraCallbacks.shift();
+      try { fn(cloneGemeraBuild()); } catch (e) {}
+    }
+  }
+
   function loadGemeraFBX(cb) {
     if (gemeraMaster) { if (cb) cb(cloneGemeraBuild()); return; }
     if (cb) gemeraCallbacks.push(cb);
     if (gemeraLoading) return;
-    if (typeof THREE === 'undefined' || !THREE.FBXLoader || window.location.protocol === 'about:' || window.location.protocol === 'file:' || window.location.hostname === 'unused.url') return;
+    if (typeof THREE === 'undefined' || !THREE.GLTFLoader) return;
     gemeraLoading = true;
+    const loader = new THREE.GLTFLoader();
+    const parseB64 = () => {
+      if (!window.CAR04_GLB_B64) { gemeraLoading = false; return; }
+      try {
+        const binStr = atob(window.CAR04_GLB_B64);
+        const bytes = new Uint8Array(binStr.length);
+        for (let i = 0; i < binStr.length; i++) bytes[i] = binStr.charCodeAt(i);
+        loader.parse(bytes.buffer, '', finalizeCar04GLTF, () => { gemeraLoading = false; });
+      } catch (e) { gemeraLoading = false; }
+    };
+    if (window.CAR04_GLB_B64 && (window.location.protocol === 'about:' || window.location.protocol === 'file:' || window.location.hostname === 'unused.url')) {
+      parseB64();
+      return;
+    }
     try {
-      const loader = new THREE.FBXLoader();
-      loader.setResourcePath('assets/gemera/');
-      loader.load('assets/gemera/FINAL_MODEL_G.fbx', (fbx) => {
-        // Auto-normalize real-world scale & road fit (4.9m length, centered X/Z, tires flush on y=0)
-        const box1 = new THREE.Box3().setFromObject(fbx);
-        const sz1 = new THREE.Vector3();
-        box1.getSize(sz1);
-        if (sz1.x > sz1.z * 1.15) {
-          fbx.rotation.y = Math.PI / 2;
-        }
-        const box2 = new THREE.Box3().setFromObject(fbx);
-        const sz2 = new THREE.Vector3();
-        box2.getSize(sz2);
-        const maxDim = Math.max(sz2.x, sz2.y, sz2.z) || 1;
-        const normScale = 4.9 / maxDim;
-        fbx.scale.multiplyScalar(normScale);
-
-        const box3 = new THREE.Box3().setFromObject(fbx);
-        const center = new THREE.Vector3();
-        box3.getCenter(center);
-        fbx.position.x -= center.x;
-        fbx.position.z -= center.z;
-        fbx.position.y -= box3.min.y;
-
-        fbx.traverse((child) => {
-          if (child.isMesh) {
-            const mats = Array.isArray(child.material) ? child.material : [child.material];
-            mats.forEach((m) => {
-              if (!m) return;
-              if ('envMapIntensity' in m) m.envMapIntensity = 1.45;
-              m.needsUpdate = true;
-            });
-          }
-        });
-
-        const masterWrap = new THREE.Group();
-        masterWrap.add(fbx);
-        gemeraMaster = masterWrap;
-        gemeraLoading = false;
-
-        // Capture real 3D snapshot of the loaded Gemera FBX for Store Card #00!
-        captureGemeraStoreThumb();
-
-        while (gemeraCallbacks.length) {
-          const fn = gemeraCallbacks.shift();
-          try { fn(cloneGemeraBuild()); } catch (e) {}
-        }
-      }, undefined, () => {
-        gemeraLoading = false;
-      });
+      loader.load('assets/car_04.glb', finalizeCar04GLTF, undefined, parseB64);
     } catch (e) {
-      gemeraLoading = false;
+      parseB64();
     }
   }
 
@@ -268,6 +289,16 @@
     const built = cloneGemeraBuild();
     if (built) {
       gScene.add(built.group);
+      if (car04BodyMatRef) { car04BodyMatRef.emissive.setHSL((now * 0.00008) % 1, 0.88, 0.14); }
+    if (car01BodyMatRef) {
+        const hueG = (now * 0.00009) % 1;
+        car01BodyMatRef.emissive.setHSL(0.04 + Math.sin(now * 0.0014) * 0.04, 0.9, 0.14);
+      }
+      for (let sfi = 0; sfi < activeSideFlames.length; sfi++) {
+        const sf = activeSideFlames[sfi];
+        const pulse = 0.72 + 0.42 * Math.abs(Math.sin(now * 0.018 + sf.phase));
+        sf.mesh.scale.set(0.85 + pulse * 0.25, 0.85 + pulse * 0.25, pulse);
+      }
       gRen.render(gScene, gCam);
       try {
         const snap = document.createElement('canvas');
@@ -287,6 +318,379 @@
     gCam.lookAt(0, 0.75, 0);
     if (prevWrap) gScene.add(prevWrap);
     gRen.render(gScene, gCam);
+  }
+
+  // REAL 3D GLB LOADER FOR 2ND CAR (Vehicle #3 — User's uploaded car_01.glb, works in BOTH Canvas Preview & GitHub Pages!)
+  let car01Master = null, car01Loading = false;
+  const car01Callbacks = [];
+
+  function cloneCar01Build() {
+    if (!car01Master) return null;
+    const group = new THREE.Group();
+    const chassis = car01Master.clone(true);
+    group.add(chassis);
+    const flames = [];
+    const flameMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.94 });
+    [-0.44, 0.44].forEach((fx) => {
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.16, 1.35, 10), flameMat);
+      cone.rotation.x = Math.PI / 2;
+      cone.position.set(fx, 0.42, 2.45);
+      cone.visible = false;
+      chassis.add(cone);
+      flames.push(cone);
+    });
+    return { group, chassis, wheels: [], frontWheelPivots: [], flames };
+  }
+
+  let car01BodyMatRef = null;
+
+  function applyMultiColorVertexPaint(mesh, cFrontHex, cMidHex, cRearHex, cRoofHex, cleanDarkWindows = false) {
+    if (!mesh || !mesh.geometry || !mesh.geometry.attributes || !mesh.geometry.attributes.position) return;
+    const geo = mesh.geometry;
+    geo.computeBoundingBox();
+    const bb = geo.boundingBox;
+    const pos = geo.attributes.position;
+    const count = pos.count;
+    const colors = new Float32Array(count * 3);
+    const cF = new THREE.Color(cFrontHex);
+    const cM = new THREE.Color(cMidHex);
+    const cR = new THREE.Color(cRearHex);
+    const cTop = new THREE.Color(cRoofHex);
+    const cDarkEdge = new THREE.Color(0x0b101b); // Deep Carbon Obsidian Dark Edges & Lower Skirts!
+    const tmpC = new THREE.Color();
+    const spanX = (bb.max.x - bb.min.x) || 1;
+    const spanY = (bb.max.y - bb.min.y) || 1;
+    const spanZ = (bb.max.z - bb.min.z) || 1;
+    const useX = spanX > spanZ;
+    const minL = useX ? bb.min.x : bb.min.z;
+    const spanL = useX ? spanX : spanZ;
+    const midSide = useX ? (bb.min.z + bb.max.z) * 0.5 : (bb.min.x + bb.max.x) * 0.5;
+    const halfW = (useX ? spanZ : spanX) * 0.5 || 1;
+
+    for (let i = 0; i < count; i++) {
+      const vx = pos.getX(i), vy = pos.getY(i), vz = pos.getZ(i);
+      const along = ((useX ? vx : vz) - minL) / spanL; // 0..1 front-to-rear
+      const hNorm = (vy - bb.min.y) / spanY; // 0..1 bottom-to-roof
+      const sideNorm = Math.min(1, Math.abs((useX ? vz : vx) - midSide) / halfW); // 0=center .. 1=outer edge
+
+      if (along < 0.5) {
+        tmpC.copy(cF).lerp(cM, along * 2);
+      } else {
+        tmpC.copy(cM).lerp(cR, (along - 0.5) * 2);
+      }
+      // Clean dark smoked window/cabin zone when requested (Car #2!), or sleek dark roof accent!
+      if (cleanDarkWindows && hNorm > 0.54) {
+        tmpC.lerp(cTop, Math.min(0.92, (hNorm - 0.54) / 0.22));
+      } else if (hNorm > 0.76) {
+        tmpC.lerp(cTop, Math.min(0.78, (hNorm - 0.76) * 2.8));
+      }
+      // DARK CARBON LOWER SIDE SKIRTS & UNDER-BODY TRIM (hNorm < 0.25)
+      if (hNorm < 0.26) {
+        const lowMix = Math.min(0.88, (0.26 - hNorm) / 0.26 * 0.92);
+        tmpC.lerp(cDarkEdge, lowMix);
+      }
+      // DARK SCULPTED BODY EDGES & OUTER FENDER CONTOURS (sideNorm > 0.76 or bumper tips)
+      if (sideNorm > 0.76) {
+        const edgeMix = Math.min(0.68, (sideNorm - 0.76) / 0.24 * 0.72);
+        tmpC.lerp(cDarkEdge, edgeMix);
+      }
+      if (along < 0.08 || along > 0.92) {
+        tmpC.lerp(cDarkEdge, 0.45);
+      }
+      colors[i * 3] = tmpC.r;
+      colors[i * 3 + 1] = tmpC.g;
+      colors[i * 3 + 2] = tmpC.b;
+    }
+    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  }
+
+  // Sleek Animated Side-Flame / Energy Wing Streams (Visible from FRONT & Side & Chase Cam!)
+  const activeSideFlames = [];
+  function attachAnimatedSideFlames(parentGrp, outerHex, coreHex) {
+    const outerMat = new THREE.MeshBasicMaterial({ color: outerHex, transparent: true, opacity: 0.84 });
+    const coreMat = new THREE.MeshBasicMaterial({ color: coreHex, transparent: true, opacity: 0.94 });
+    const outerGeo = new THREE.ConeGeometry(0.14, 1.35, 8);
+    const coreGeo = new THREE.ConeGeometry(0.075, 0.92, 6);
+    [-1, 1].forEach((side) => {
+      // Front-fender angled side flame jet (clearly visible from the front!) + rear lower side flame!
+      [-0.75, 0.75].forEach((zOff, idx) => {
+        const fg = new THREE.Group();
+        const o = new THREE.Mesh(outerGeo, outerMat); o.rotation.x = Math.PI / 2; o.position.z = 0.55;
+        const c = new THREE.Mesh(coreGeo, coreMat); c.rotation.x = Math.PI / 2; c.position.z = 0.35;
+        fg.add(o, c);
+        fg.position.set(side * 1.06, 0.34, zOff);
+        fg.rotation.y = side * 0.16; // Flared slightly outward so front camera sees glowing animated side flames!
+        parentGrp.add(fg);
+        activeSideFlames.push({ mesh: fg, phase: idx * 1.7 + (side > 0 ? 0.5 : 0) });
+      });
+    });
+  }
+
+  function createMultiColorCarTexture(frontHex, midHex, rearHex) {
+    const c = document.createElement('canvas'); c.width = 512; c.height = 512;
+    const ctx = c.getContext('2d');
+    const g = ctx.createLinearGradient(0, 0, 512, 512);
+    g.addColorStop(0.0, frontHex);
+    g.addColorStop(0.48, midHex);
+    g.addColorStop(1.0, rearHex);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 512, 512);
+    // Subtle glossy metallic sheen stripes
+    ctx.fillStyle = 'rgba(255,255,255,0.14)';
+    ctx.fillRect(0, 210, 512, 32);
+    ctx.fillRect(0, 255, 512, 12);
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+    return tex;
+  }
+
+  function finalizeCar01GLTF(gltf) {
+    const model = gltf.scene || (gltf.scenes && gltf.scenes[0]);
+    if (!model) { car01Loading = false; return; }
+
+    // 1. Align length along Z & flip 180 deg so GAS = FORWARD, BRAKE = REVERSE!
+    const box1 = new THREE.Box3().setFromObject(model);
+    const sz1 = new THREE.Vector3(); box1.getSize(sz1);
+    if (sz1.x > sz1.z * 1.15) model.rotation.y = Math.PI / 2;
+    model.rotation.y += Math.PI;
+
+    const box2 = new THREE.Box3().setFromObject(model);
+    const sz2 = new THREE.Vector3(); box2.getSize(sz2);
+    const maxDim = Math.max(sz2.x, sz2.y, sz2.z) || 1;
+    model.scale.multiplyScalar(4.85 / maxDim);
+
+    const box3 = new THREE.Box3().setFromObject(model);
+    const center = new THREE.Vector3(); box3.getCenter(center);
+    const finalSz = new THREE.Vector3(); box3.getSize(finalSz);
+    model.position.x -= center.x;
+    model.position.z -= center.z;
+    model.position.y -= (box3.min.y - 0.08);
+
+    // 2. TRUE MULTI-COLOR VERTEX-COLOR WRAP ON CAR #2 (Front Sunset Orange -> Mid Electric Cyan -> Rear Royal Purple + Pearl Roof!)
+    const bodyPaintMat = new THREE.MeshStandardMaterial({
+      vertexColors: true,
+      color: 0xffffff,
+      emissive: 0x0ea5e9,
+      emissiveIntensity: 0.12,
+      metalness: 0.42,
+      roughness: 0.18
+    });
+    car01BodyMatRef = bodyPaintMat;
+    const tireRubberMat = new THREE.MeshStandardMaterial({ color: 0x090b10, roughness: 0.85, metalness: 0.08 });
+
+    model.traverse((child) => {
+      if (!child.isMesh) return;
+      const nm = (child.name || '').toLowerCase();
+      if (nm.includes('wheel') || nm.includes('tire')) {
+        child.material = tireRubberMat;
+      } else {
+        applyMultiColorVertexPaint(child, 0xe11d48, 0xf97316, 0xfacc15, 0x0f172a, true);
+        child.material = bodyPaintMat;
+      }
+    });
+
+    const masterWrap = new THREE.Group();
+    masterWrap.add(model);
+
+    // 3. Flush-Attached Front White Headlights & Rear Red Taillights tucked directly onto the bumper (NO floating!)
+    const w = finalSz.x || 2.0;
+    const h = finalSz.y || 1.5;
+    const l = finalSz.z || 4.85;
+    const headMat = new THREE.MeshBasicMaterial({ color: 0xfef9c3 });
+    const tailMat = new THREE.MeshBasicMaterial({ color: 0xff1e1e });
+    [-w * 0.28, w * 0.28].forEach((lx) => {
+      const hl = new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 8), headMat);
+      hl.position.set(lx, h * 0.36 + 0.08, -l * 0.44);
+      const tl = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.12, 0.10), tailMat);
+      tl.position.set(lx, h * 0.38 + 0.08, l * 0.44);
+      masterWrap.add(hl, tl);
+    });
+
+    car01Master = masterWrap;
+    car01Loading = false;
+    if (gRen && gScene && gCam) {
+      const prevWrap = gCarWrap;
+      if (prevWrap) gScene.remove(prevWrap);
+      const prevPos = gCam.position.clone();
+      const prevBg = gScene.background;
+      gScene.background = new THREE.Color(0x0b1526);
+      gCam.position.set(-4.3, 2.0, -4.6);
+      gCam.lookAt(0, 0.8, 0);
+      const built = cloneCar01Build();
+      if (built) {
+        gScene.add(built.group);
+        gRen.render(gScene, gCam);
+        try {
+          const snap = document.createElement('canvas');
+          snap.width = 192; snap.height = 108;
+          snap.getContext('2d').drawImage(gRen.domElement, 0, 0, 192, 108);
+          vehicleThumbCache[3] = snap.toDataURL('image/jpeg', 0.82);
+          const card3 = document.querySelector('.veh-card[data-vid="3"] img');
+          if (card3 && vehicleThumbCache[3]) card3.src = vehicleThumbCache[3];
+        } catch (e) {}
+        gScene.remove(built.group);
+      }
+      gScene.background = prevBg;
+      gCam.position.copy(prevPos);
+      gCam.lookAt(0, 0.75, 0);
+      if (prevWrap) gScene.add(prevWrap);
+    }
+    while (car01Callbacks.length) {
+      const fn = car01Callbacks.shift();
+      try { fn(cloneCar01Build()); } catch (e) {}
+    }
+  }
+
+  function loadCar01GLB(cb) {
+    if (car01Master) { if (cb) cb(cloneCar01Build()); return; }
+    if (cb) car01Callbacks.push(cb);
+    if (car01Loading) return;
+    if (typeof THREE === 'undefined' || !THREE.GLTFLoader) return;
+    car01Loading = true;
+    const loader = new THREE.GLTFLoader();
+    const parseB64 = () => {
+      if (!window.CAR01_GLB_B64) { car01Loading = false; return; }
+      try {
+        const binStr = atob(window.CAR01_GLB_B64);
+        const bytes = new Uint8Array(binStr.length);
+        for (let i = 0; i < binStr.length; i++) bytes[i] = binStr.charCodeAt(i);
+        loader.parse(bytes.buffer, '', finalizeCar01GLTF, () => { car01Loading = false; });
+      } catch (e) { car01Loading = false; }
+    };
+    if (window.CAR01_GLB_B64 && (window.location.protocol === 'about:' || window.location.protocol === 'file:' || window.location.hostname === 'unused.url')) {
+      parseB64();
+      return;
+    }
+    try {
+      loader.load('assets/car_01.glb', finalizeCar01GLTF, undefined, parseB64);
+    } catch (e) {
+      parseB64();
+    }
+  }
+
+  // REAL 3D GLB LOADER FOR 3RD CAR (Vehicle #6 — User's uploaded car_02.glb with Multi-Color Two-Tone Paint + Native Glossy Glass & Optics!)
+  let car02Master = null, car02Loading = false;
+  const car02Callbacks = [];
+
+  function cloneCar02Build() {
+    if (!car02Master) return null;
+    const group = new THREE.Group();
+    const chassis = car02Master.clone(true);
+    group.add(chassis);
+    const flames = [];
+    const flameMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.94 });
+    [-0.46, 0.46].forEach((fx) => {
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.16, 1.35, 10), flameMat);
+      cone.rotation.x = Math.PI / 2;
+      cone.position.set(fx, 0.44, 2.45);
+      cone.visible = false;
+      chassis.add(cone);
+      flames.push(cone);
+    });
+    return { group, chassis, wheels: [], frontWheelPivots: [], flames };
+  }
+
+  function finalizeCar02GLTF(gltf) {
+    const model = gltf.scene || (gltf.scenes && gltf.scenes[0]);
+    if (!model) { car02Loading = false; return; }
+    const box1 = new THREE.Box3().setFromObject(model);
+    const sz1 = new THREE.Vector3(); box1.getSize(sz1);
+    if (sz1.x > sz1.z * 1.15) model.rotation.y = Math.PI / 2;
+    const box2 = new THREE.Box3().setFromObject(model);
+    const sz2 = new THREE.Vector3(); box2.getSize(sz2);
+    const maxDim = Math.max(sz2.x, sz2.y, sz2.z) || 1;
+    model.scale.multiplyScalar(4.9 / maxDim);
+    const box3 = new THREE.Box3().setFromObject(model);
+    const center = new THREE.Vector3(); box3.getCenter(center);
+    model.position.x -= center.x;
+    model.position.z -= center.z;
+    model.position.y -= box3.min.y;
+
+    // TRUE MULTI-COLOR VERTEX-COLOR WRAP ON CAR #3 (Neon Gold Front -> Emerald-Cyan Mid -> Royal Violet-Pink Rear + Bright Roof!)
+    const bodyMat2 = new THREE.MeshStandardMaterial({
+      vertexColors: true, color: 0xffffff,
+      emissive: 0x10b981, emissiveIntensity: 0.12,
+      metalness: 0.44, roughness: 0.18
+    });
+    const glassMat2 = new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.28, metalness: 0.85, roughness: 0.08, transparent: true, opacity: 0.76 });
+    const opticMat2 = new THREE.MeshBasicMaterial({ color: 0xfef9c3 });
+    const wheelMat2 = new THREE.MeshStandardMaterial({ color: 0x090b10, roughness: 0.85, metalness: 0.10 });
+
+    model.traverse((child) => {
+      if (!child.isMesh) return;
+      const nm = (child.name || '').toLowerCase();
+      if (nm.includes('glass')) child.material = glassMat2;
+      else if (nm.includes('optic')) child.material = opticMat2;
+      else if (nm.includes('wheel')) child.material = wheelMat2;
+      else {
+        applyMultiColorVertexPaint(child, 0x00f0ff, 0x10b981, 0x4f46e5, 0x0f172a);
+        child.material = bodyMat2;
+      }
+    });
+
+    const masterWrap = new THREE.Group();
+    masterWrap.add(model);
+    car02Master = masterWrap;
+    car02Loading = false;
+
+    if (gRen && gScene && gCam) {
+      const prevWrap = gCarWrap;
+      if (prevWrap) gScene.remove(prevWrap);
+      const prevPos = gCam.position.clone();
+      const prevBg = gScene.background;
+      gScene.background = new THREE.Color(0x0b1526);
+      gCam.position.set(-4.3, 2.0, -4.6);
+      gCam.lookAt(0, 0.8, 0);
+      const built = cloneCar02Build();
+      if (built) {
+        gScene.add(built.group);
+        gRen.render(gScene, gCam);
+        try {
+          const snap = document.createElement('canvas');
+          snap.width = 192; snap.height = 108;
+          snap.getContext('2d').drawImage(gRen.domElement, 0, 0, 192, 108);
+          vehicleThumbCache[6] = snap.toDataURL('image/jpeg', 0.82);
+          const card6 = document.querySelector('.veh-card[data-vid="6"] img');
+          if (card6 && vehicleThumbCache[6]) card6.src = vehicleThumbCache[6];
+        } catch (e) {}
+        gScene.remove(built.group);
+      }
+      gScene.background = prevBg;
+      gCam.position.copy(prevPos);
+      gCam.lookAt(0, 0.75, 0);
+      if (prevWrap) gScene.add(prevWrap);
+    }
+    while (car02Callbacks.length) {
+      const fn = car02Callbacks.shift();
+      try { fn(cloneCar02Build()); } catch (e) {}
+    }
+  }
+
+  function loadCar02GLB(cb) {
+    if (car02Master) { if (cb) cb(cloneCar02Build()); return; }
+    if (cb) car02Callbacks.push(cb);
+    if (car02Loading) return;
+    if (typeof THREE === 'undefined' || !THREE.GLTFLoader) return;
+    car02Loading = true;
+    const loader = new THREE.GLTFLoader();
+    const parseB64 = () => {
+      if (!window.CAR02_GLB_B64) { car02Loading = false; return; }
+      try {
+        const binStr = atob(window.CAR02_GLB_B64);
+        const bytes = new Uint8Array(binStr.length);
+        for (let i = 0; i < binStr.length; i++) bytes[i] = binStr.charCodeAt(i);
+        loader.parse(bytes.buffer, '', finalizeCar02GLTF, () => { car02Loading = false; });
+      } catch (e) { car02Loading = false; }
+    };
+    if (window.CAR02_GLB_B64 && (window.location.protocol === 'about:' || window.location.protocol === 'file:' || window.location.hostname === 'unused.url')) {
+      parseB64();
+      return;
+    }
+    try {
+      loader.load('assets/car_02.glb', finalizeCar02GLTF, undefined, parseB64);
+    } catch (e) {
+      parseB64();
+    }
   }
 
   function mountShowroomCanvas(targetId) {
@@ -510,6 +914,20 @@
       loadGemeraFBX((fbxBuilt) => {
         if (fbxBuilt && (selectedId === 0 || (homeScreen && !homeScreen.classList.contains('hidden-screen') && state.equippedId === 0))) {
           applyModelToTurntable(fbxBuilt, true);
+        }
+      });
+    }
+    if (vehicleObj.id === 3 && vehicleObj.isRealGLB) {
+      loadCar01GLB((glbBuilt) => {
+        if (glbBuilt && (selectedId === 3 || (homeScreen && !homeScreen.classList.contains('hidden-screen') && state.equippedId === 3))) {
+          applyModelToTurntable(glbBuilt, true);
+        }
+      });
+    }
+    if (vehicleObj.id === 6 && vehicleObj.isRealGLB2) {
+      loadCar02GLB((glbBuilt) => {
+        if (glbBuilt && (selectedId === 6 || (homeScreen && !homeScreen.classList.contains('hidden-screen') && state.equippedId === 6))) {
+          applyModelToTurntable(glbBuilt, true);
         }
       });
     }
@@ -821,10 +1239,12 @@
   let parkedCarPos = { x: 0, z: 0, heading: 0 };
   let nearbyVehicleRef = null; // { type: 'own' } or { type: 'traffic', car: tc }
   let hijackedTrafficCar = null;
-  const footState = { joyX: 0, joyY: 0, running: false, vy: 0, y: 0.22, jumping: false, pose: 'stand', landTimer: 0, knockedUntil: 0, kvx: 0, kvz: 0 };
+  const footState = { joyX: 0, joyY: 0, running: false, vy: 0, y: 0.22, jumping: false, pose: 'stand', landTimer: 0, punchTimer: 0, knockedUntil: 0, kvx: 0, kvz: 0 };
   let vehicleAnim = null; // Smooth door-open Enter / Exit / GTA Car-Jack animation
   const exhaustPuffs = [];
-  let coinMeshes = [], trafficCars = [], walkingHumans = [], stuntRamps = [], trafficSignals = [], cityLandmarks = [], emergencyEvents = [], policeUnits = [], shopCycles = [], bridgeDeckZones = [], parkedShopVehicles = [], indoorShoppers = [];
+  let cachedFireTruckTpl = null, cachedAmbulanceTpl = null, cachedTowTruckTpl = null;
+  let fuelStations = [];
+  let coinMeshes = [], trafficCars = [], walkingHumans = [], stuntRamps = [], trafficSignals = [], cityLandmarks = [], emergencyEvents = [], policeUnits = [], shopCycles = [], bridgeDeckZones = [], parkedShopVehicles = [], indoorShoppers = [], skyClouds = [], skySunMesh = null, skyStarsMesh = null;
   let camModeIdx = 0; // 0: Chase, 1: Hood, 2: Far
   let skyModeIdx = 0; // 0: Morning, 1: Sunset, 2: Neon Night
   let sunLightRef = null, hemiLightRef = null;
@@ -839,7 +1259,7 @@
 
   const driveState = {
     x: 0, z: 0, heading: 0, speed: 0, steerInput: 0, targetSteer: 0,
-    nitro: 100, health: 100, wrecked: false,
+    nitro: 100, health: 100, fuel: 100, lowFuelWarned: false, wrecked: false,
     gas: false, brake: false, boost: false,
     keys: { w: false, s: false, a: false, d: false, shift: false },
     wheelDragging: false, lastCrashAt: 0,
@@ -848,22 +1268,36 @@
   };
 
   const cityTasks = [
-    { type: 'coins', target: 5, reward: 500, label: 'Collect 5 Gold Coins' },
-    { type: 'speed', target: 135, reward: 650, label: 'Hit 135 KM/H Top Speed' },
-    { type: 'checkpoint', target: 1, reward: 800, label: 'Pass Cyan City Checkpoint' },
-    { type: 'garage', target: 1, reward: 700, label: 'Visit Any Green Repair Garage' },
-    { type: 'distance', target: 600, reward: 750, label: 'Explore 600m of Morning City' },
-    { type: 'coins', target: 10, reward: 1100, label: 'Collect 10 Gold Coins' },
-    { type: 'speed', target: 175, reward: 1200, label: 'Nitro Burst: Reach 175 KM/H' },
-    { type: 'distance', target: 1000, reward: 1500, label: 'Grand City Cruise: 1,000m' }
+    { type: 'coins', target: 2, reward: 300, label: 'Collect 2 Gold Coins' },
+    { type: 'speed', target: 75, reward: 400, label: 'Reach 75 KM/H Speed' },
+    { type: 'distance', target: 200, reward: 450, label: 'Drive 200m in City' },
+    { type: 'coins', target: 3, reward: 500, label: 'Collect 3 Gold Coins' },
+    { type: 'checkpoint', target: 1, reward: 600, label: 'Pass Cyan Checkpoint' },
+    { type: 'speed', target: 110, reward: 650, label: 'Nitro Boost: 110 KM/H' },
+    { type: 'garage', target: 1, reward: 600, label: 'Visit Repair Garage' },
+    { type: 'distance', target: 350, reward: 800, label: 'Easy City Cruise: 350m' }
   ];
   let taskProgress = 0;
+
+  function updateFuelHUD() {
+    const pct = Math.max(0, Math.min(100, Math.round(driveState.fuel)));
+    const fEl = document.getElementById('fuelPercentEl');
+    const fBar = document.getElementById('fuelBarFill');
+    if (fEl) {
+      fEl.textContent = pct + '%';
+      fEl.className = pct <= 20 ? 'text-rose-400 animate-pulse' : pct <= 45 ? 'text-amber-300' : 'text-emerald-300';
+    }
+    if (fBar) {
+      fBar.style.height = pct + '%';
+      fBar.className = 'w-full rounded-full transition-all duration-150 ' + (pct <= 20 ? 'bg-rose-500 animate-pulse' : pct <= 45 ? 'bg-amber-400' : 'bg-emerald-400');
+    }
+  }
 
   function updateHealthHUD() {
     const h = Math.max(0, Math.round(driveState.health));
     healthPercentEl.textContent = h + '%';
-    healthBarFill.style.width = h + '%';
-    healthBarFill.className = h > 55 ? 'h-full bg-emerald-400 rounded-full transition-all duration-150' : h > 25 ? 'h-full bg-amber-400 rounded-full transition-all duration-150' : 'h-full bg-rose-500 rounded-full transition-all duration-150';
+    healthBarFill.style.height = h + '%';
+    healthBarFill.className = h > 55 ? 'w-full bg-emerald-400 rounded-full transition-all duration-150' : h > 25 ? 'w-full bg-amber-400 rounded-full transition-all duration-150' : 'w-full bg-rose-500 rounded-full transition-all duration-150';
   }
 
   function showDriveAlert(text, bgClass = 'bg-amber-500/95 text-slate-950') {
@@ -883,43 +1317,87 @@
 
       const w = isStageRotated() ? window.innerHeight : window.innerWidth;
       const h = isStageRotated() ? window.innerWidth : window.innerHeight;
-      camera = new THREE.PerspectiveCamera(62, w / h, 0.5, 340);
-      renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
+      const isLowRamPhone = (navigator.deviceMemory && navigator.deviceMemory <= 3) || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
+      camera = new THREE.PerspectiveCamera(62, w / h, 0.85, isLowRamPhone ? 210 : 280);
+      renderer = new THREE.WebGLRenderer({
+        antialias: !(navigator.deviceMemory && navigator.deviceMemory <= 2),
+        powerPreference: 'high-performance',
+        precision: 'highp',
+        logarithmicDepthBuffer: false
+      });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isLowRamPhone ? 1.0 : 1.25));
       renderer.setSize(w, h);
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.16;
+      renderer.toneMappingExposure = 1.28;
       city3dContainer.appendChild(renderer.domElement);
 
-      const envTex = City3D.createSkyEnvMap(renderer);
-      if (envTex) scene.environment = envTex;
+      // Skip heavy per-pixel IBL environment map in open-world city for ultra-smooth 120-240 FPS on phones!
 
-      hemiLightRef = new THREE.HemisphereLight(0xffffff, 0x64748b, 1.15);
+      hemiLightRef = new THREE.HemisphereLight(0xffffff, 0x94a3b8, 1.65);
       scene.add(hemiLightRef);
-      sunLightRef = new THREE.DirectionalLight(0xfffbeb, 1.25);
+      sunLightRef = new THREE.DirectionalLight(0xfffdf2, 1.55);
       sunLightRef.position.set(140, 220, 100);
       scene.add(sunLightRef);
+      // LIVE ANIMATED 3D SKY: Glowing Sun/Moon + Drifting Fluffy Clouds + Night Starfield (Ultra-light for 2GB phones!)
+      skySunMesh = new THREE.Mesh(
+        new THREE.SphereGeometry(16, 16, 12),
+        new THREE.MeshBasicMaterial({ color: 0xfff7cc })
+      );
+      skySunMesh.position.set(140, 145, -220);
+      scene.add(skySunMesh);
+
+      const cloudMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.86 });
+      const cloudGeo = new THREE.SphereGeometry(1, 10, 8);
+      for (let c = 0; c < 18; c++) {
+        const cg = new THREE.Group();
+        const p1 = new THREE.Mesh(cloudGeo, cloudMat); p1.scale.set(14, 5.2, 8);
+        const p2 = new THREE.Mesh(cloudGeo, cloudMat); p2.scale.set(10, 4.4, 7); p2.position.set(-9, -0.8, 1.5);
+        const p3 = new THREE.Mesh(cloudGeo, cloudMat); p3.scale.set(11, 4.6, 7); p3.position.set(9.5, -0.5, -1.2);
+        cg.add(p1, p2, p3);
+        const cx0 = ((c % 6) - 2.5) * 95 + (c * 17) % 35;
+        const cz0 = (Math.floor(c / 6) - 1) * 140 + (c * 23) % 45;
+        const cy0 = 78 + (c % 4) * 12;
+        cg.position.set(cx0, cy0, cz0);
+        scene.add(cg);
+        skyClouds.push({ mesh: cg, offX: cx0, offZ: cz0, y: cy0, spd: 3.2 + (c % 4) * 1.1 });
+      }
+      const starPos = [];
+      for (let st = 0; st < 220; st++) {
+        const ang = Math.random() * Math.PI * 2;
+        const rad = 160 + Math.random() * 140;
+        starPos.push(Math.cos(ang) * rad, 95 + Math.random() * 110, Math.sin(ang) * rad);
+      }
+      const starGeo = new THREE.BufferGeometry();
+      starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
+      skyStarsMesh = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xe0f2fe, size: 2.2, transparent: true, opacity: 0.9 }));
+      skyStarsMesh.visible = false;
+      scene.add(skyStarsMesh);
 
       const roadTex = City3D.createRoadTexture();
       animRoadTex = roadTex;
       animCanalTex = City3D.createFlowingWaterTexture ? City3D.createFlowingWaterTexture() : null;
       const ground = new THREE.Mesh(
-        new THREE.PlaneGeometry(4600, 4600),
-        new THREE.MeshStandardMaterial({ map: roadTex, roughness: 0.62, metalness: 0.12 })
+        new THREE.PlaneGeometry(2400, 2400, 32, 32),
+        new THREE.MeshLambertMaterial({
+          map: roadTex,
+          polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 2
+        })
       );
       ground.rotation.x = -Math.PI / 2;
+      ground.position.y = -0.02;
+      ground.matrixAutoUpdate = false; ground.updateMatrix();
       scene.add(ground);
 
       const facadeMats = [0, 1, 2, 3, 4, 5, 6, 7].map((idx) => new THREE.MeshStandardMaterial({
         map: City3D.createBuildingTexture(idx),
         emissive: new THREE.Color(0xffffff),
-        emissiveIntensity: 0.08,
-        roughness: 0.34,
-        metalness: 0.14
+        emissiveIntensity: 0.16,
+        roughness: 0.42,
+        metalness: 0.04
       }));
       animatedFacadeMats = facadeMats;
       const roofMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.7 });
-      const sidewalkMat = new THREE.MeshStandardMaterial({ color: 0x1e242d, roughness: 0.82 });
+      const sidewalkMat = new THREE.MeshLambertMaterial({ color: 0x475569 });
       const grassMat = new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.9 });
       const waterMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.15, metalness: 0.4 });
       const trunkMat = new THREE.MeshStandardMaterial({ color: 0x78350f });
@@ -936,6 +1414,7 @@
       const pitchedRoofDarkBlue = [];   // Real 3D sloped slate/blue roofs for villas & pink houses!
       const bigCrownList = [];          // Stepped penthouse crowns for big multi-floor mansions & towers!
       const padMatrices = [];
+      const canalPostMatrices = [];
       const treeTrunkMatrices = [];
       const treeBranchMatrices = [];
       const treeLeafLowMatrices = [];
@@ -1002,10 +1481,9 @@
                 const railMid = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.12, fenceLen), fencePostMat);
                 railMid.position.set(cx + ox, 0.96, cz);
                 scene.add(wall, railTop, railMid);
-                for (let pz = -fenceLen / 2; pz <= fenceLen / 2; pz += 6.5) {
-                  const post = new THREE.Mesh(new THREE.BoxGeometry(0.24, 1.45, 0.24), fencePostMat);
-                  post.position.set(cx + ox, 0.74, cz + pz);
-                  scene.add(post);
+                for (let pz = -fenceLen / 2; pz <= fenceLen / 2; pz += 8.5) {
+                  dummy.position.set(cx + ox, 0.74, cz + pz); dummy.scale.set(0.24, 1.45, 0.24); dummy.rotation.set(0, 0, 0); dummy.updateMatrix();
+                  canalPostMatrices.push(dummy.matrix.clone());
                 }
                 canalColliders.push({
                   minX: cx + ox - 0.72, maxX: cx + ox + 0.72,
@@ -1022,10 +1500,9 @@
                 const railMid = new THREE.Mesh(new THREE.BoxGeometry(fenceLen, 0.12, 0.18), fencePostMat);
                 railMid.position.set(cx, 0.96, cz + oz);
                 scene.add(wall, railTop, railMid);
-                for (let px = -fenceLen / 2; px <= fenceLen / 2; px += 6.5) {
-                  const post = new THREE.Mesh(new THREE.BoxGeometry(0.24, 1.45, 0.24), fencePostMat);
-                  post.position.set(cx + px, 0.74, cz + oz);
-                  scene.add(post);
+                for (let px = -fenceLen / 2; px <= fenceLen / 2; px += 8.5) {
+                  dummy.position.set(cx + px, 0.74, cz + oz); dummy.scale.set(0.24, 1.45, 0.24); dummy.rotation.set(0, 0, 0); dummy.updateMatrix();
+                  canalPostMatrices.push(dummy.matrix.clone());
                 }
                 canalColliders.push({
                   minX: cx - fenceLen / 2 - 0.5, maxX: cx + fenceLen / 2 + 0.5,
@@ -1059,32 +1536,37 @@
             const seed = Math.abs(gx * 13 + gz * 7 + gx * gz + gx * 31);
             const isDowntown = Math.abs(gx) <= 5 && Math.abs(gz) <= 5;
             const cellColliders = [];
-            const carMargin = 0.22;
+            const carMargin = 0.78;
 
             // Check if this block is a special BRANDED LANDMARK (Hospital, D-Mart, Mega Mall, Office Park, Petrol Bunk, Cafe Plaza!)
             const landmarkMap = {
-              '0,-1':  { kind: 'dmart',    title: 'D-MART',     sub: 'CENTRAL SUPERMARKET', bg: '#15803d', fg: '#fde047', wall: 0x166534, mapTag: 'D', mapCol: '#22c55e' },
-              '-1,0':  { kind: 'hospital', title: '+ HOSPITAL', sub: '24x7 EMERGENCY', bg: '#dc2626', fg: '#ffffff', wall: 0xe2e8f0, mapTag: 'H', mapCol: '#ef4444' },
-              '1,0':   { kind: 'mall',     title: 'MEGA MALL',  sub: 'SHOPS & CINEMA', bg: '#6d28d9', fg: '#38bdf8', wall: 0x3b0764, mapTag: 'M', mapCol: '#a855f7' },
-              '0,1':   { kind: 'office',   title: 'TECH OFFICE',sub: 'IT TOWER', bg: '#0284c7', fg: '#ffffff', wall: 0x0f2354, mapTag: 'O', mapCol: '#38bdf8' },
-              '-1,-1': { kind: 'fuel',     title: 'FUEL STATION',sub: 'PETROL & MART', bg: '#ea580c', fg: '#fef08a', wall: 0x9a3412, mapTag: 'F', mapCol: '#f97316' },
-              '1,1':   { kind: 'cafe',     title: 'ROYAL CAFE', sub: 'BAKERY & SHOPS', bg: '#be185d', fg: '#fde68a', wall: 0x831843, mapTag: 'S', mapCol: '#ec4899' },
-              '-3,-1': { kind: 'dmart',    title: 'D-MART',     sub: 'WEST HYPERMARKET', bg: '#15803d', fg: '#fde047', wall: 0x166534, mapTag: 'D', mapCol: '#22c55e' },
-              '3,-1':  { kind: 'dmart',    title: 'D-MART',     sub: 'EAST SUPERMARKET', bg: '#15803d', fg: '#fde047', wall: 0x166534, mapTag: 'D', mapCol: '#22c55e' },
-              '0,-4':  { kind: 'dmart',    title: 'D-MART',     sub: 'NORTH MART', bg: '#15803d', fg: '#fde047', wall: 0x166534, mapTag: 'D', mapCol: '#22c55e' },
-              '0,4':   { kind: 'dmart',    title: 'D-MART',     sub: 'SOUTH MART', bg: '#15803d', fg: '#fde047', wall: 0x166534, mapTag: 'D', mapCol: '#22c55e' },
-              '4,3':   { kind: 'dmart',    title: 'D-MART',     sub: 'SE PLAZA MART', bg: '#15803d', fg: '#fde047', wall: 0x166534, mapTag: 'D', mapCol: '#22c55e' },
-              '-4,3':  { kind: 'dmart',    title: 'D-MART',     sub: 'SW SUPERMARKET', bg: '#15803d', fg: '#fde047', wall: 0x166534, mapTag: 'D', mapCol: '#22c55e' },
-              '-4,-4': { kind: 'dmart',    title: 'D-MART',     sub: 'NW HYPERMARKET', bg: '#15803d', fg: '#fde047', wall: 0x166534, mapTag: 'D', mapCol: '#22c55e' },
-              '3,2':   { kind: 'hospital', title: '+ HOSPITAL', sub: 'CITY CARE', bg: '#dc2626', fg: '#ffffff', wall: 0xe2e8f0, mapTag: 'H', mapCol: '#ef4444' },
-              '-2,3':  { kind: 'mall',     title: 'ST PLAZA',   sub: 'SHOPPING MART', bg: '#0369a1', fg: '#fde047', wall: 0x0c3b52, mapTag: 'M', mapCol: '#a855f7' },
-              '3,-3':  { kind: 'office',   title: 'CITY OFFICE',sub: 'CORPORATE HQ', bg: '#1e3a8a', fg: '#7dd3fc', wall: 0x0a1738, mapTag: 'O', mapCol: '#38bdf8' }
+              // 5 D-MART SUPERMARKETS (Center + West + East + North + South across the entire map!)
+              '0,-1':  { kind: 'dmart',    title: 'D-MART',           sub: 'CENTRAL SUPERMARKET', bg: '#15803d', fg: '#fde047', wall: 0x166534, mapTag: 'D', mapCol: '#22c55e' },
+              '-3,-1': { kind: 'dmart',    title: 'D-MART',           sub: 'WEST HYPERMARKET',    bg: '#15803d', fg: '#fde047', wall: 0x166534, mapTag: 'D', mapCol: '#22c55e' },
+              '3,-1':  { kind: 'dmart',    title: 'D-MART',           sub: 'EAST SUPERMARKET',    bg: '#15803d', fg: '#fde047', wall: 0x166534, mapTag: 'D', mapCol: '#22c55e' },
+              '0,-4':  { kind: 'dmart',    title: 'D-MART',           sub: 'NORTH MART',          bg: '#15803d', fg: '#fde047', wall: 0x166534, mapTag: 'D', mapCol: '#22c55e' },
+              '0,4':   { kind: 'dmart',    title: 'D-MART',           sub: 'SOUTH MART',          bg: '#15803d', fg: '#fde047', wall: 0x166534, mapTag: 'D', mapCol: '#22c55e' },
+              // 2 DRIVE-THROUGH PETROL & DIESEL BUNKS (With Attendant + Fuel Tube + BUY 500 Payment!)
+              '-1,-1': { kind: 'fuel',     title: 'FUEL STATION',     sub: 'PETROL & DIESEL 24x7',bg: '#0f766e', fg: '#fde047', wall: 0x115e59, mapTag: 'F', mapCol: '#14b8a6' },
+              '3,1':   { kind: 'fuel',     title: 'FUEL STATION',     sub: 'HIGHWAY PETROL BUNK', bg: '#0f766e', fg: '#fde047', wall: 0x115e59, mapTag: 'F', mapCol: '#14b8a6' },
+              // VARIETY WALK-IN SHOPS AROUND THE MAP (Electronics, Fashion, Pharmacy, Pizza, Bakery, Malls, Hospitals, Offices!)
+              '4,3':   { kind: 'digital',  title: 'RELIANCE DIGITAL', sub: 'MOBILES & TECH SHOP', bg: '#0284c7', fg: '#fde047', wall: 0x0369a1, mapTag: 'E', mapCol: '#38bdf8' },
+              '-4,3':  { kind: 'fashion',  title: 'TRENDS FASHION',   sub: 'CLOTHING & BOUTIQUE', bg: '#7e22ce', fg: '#fde68a', wall: 0x581c87, mapTag: 'T', mapCol: '#c084fc' },
+              '-4,-4': { kind: 'pharmacy', title: 'APOLLO PHARMACY',  sub: 'MEDICAL & WELLNESS',  bg: '#0d9488', fg: '#ffffff', wall: 0x115e59, mapTag: 'P', mapCol: '#2dd4bf' },
+              '2,-3':  { kind: 'pizza',    title: 'PIZZA HUB',        sub: 'FAST FOOD & BURGERS', bg: '#dc2626', fg: '#fef08a', wall: 0x991b1b, mapTag: 'Z', mapCol: '#f87171' },
+              '1,1':   { kind: 'cafe',     title: 'ROYAL CAFE',       sub: 'BAKERY & SHOPS',      bg: '#be185d', fg: '#fde68a', wall: 0x831843, mapTag: 'S', mapCol: '#ec4899' },
+              '1,0':   { kind: 'mall',     title: 'MEGA MALL',        sub: 'SHOPS & CINEMA',      bg: '#6d28d9', fg: '#38bdf8', wall: 0x3b0764, mapTag: 'M', mapCol: '#a855f7' },
+              '-2,3':  { kind: 'mall',     title: 'ST PLAZA',         sub: 'SHOPPING MART',       bg: '#0369a1', fg: '#fde047', wall: 0x0c3b52, mapTag: 'M', mapCol: '#a855f7' },
+              '-1,0':  { kind: 'hospital', title: '+ HOSPITAL',       sub: '24x7 EMERGENCY',      bg: '#dc2626', fg: '#ffffff', wall: 0xe2e8f0, mapTag: 'H', mapCol: '#ef4444' },
+              '3,2':   { kind: 'hospital', title: '+ HOSPITAL',       sub: 'CITY CARE',           bg: '#dc2626', fg: '#ffffff', wall: 0xe2e8f0, mapTag: 'H', mapCol: '#ef4444' },
+              '0,1':   { kind: 'office',   title: 'TECH OFFICE',      sub: 'IT TOWER',            bg: '#0284c7', fg: '#ffffff', wall: 0x0f2354, mapTag: 'O', mapCol: '#38bdf8' },
+              '3,-3':  { kind: 'office',   title: 'CITY OFFICE',      sub: 'CORPORATE HQ',        bg: '#1e3a8a', fg: '#7dd3fc', wall: 0x0a1738, mapTag: 'O', mapCol: '#38bdf8' }
             };
             const lm = landmarkMap[`${gx},${gz}`];
 
             if (lm) {
               // WALK-IN 3D SHOPS & LANDMARKS (Hollow Lit Ground Floor + Cash Counter on Right + Shelves + Automatic Sliding Glass Doors + Front Parking Lot!)
-              const isWalkInShop = true;
+              const isWalkInShop = (lm.kind !== 'fuel');
               const lmH = lm.kind === 'office' ? 32 : lm.kind === 'mall' ? 20 : lm.kind === 'hospital' ? 16 : lm.kind === 'fuel' ? 6.5 : 11.5;
               const lmW = 24;
               const lmD = 16.5;
@@ -1093,6 +1575,8 @@
               let doorL = null, doorR = null;
               const doorZWorld = shopZ + lmD / 2 + 0.22;
 
+              const detailGroup = new THREE.Group();
+              scene.add(detailGroup);
               if (isWalkInShop) {
                 const roomH = 4.6;
                 const wallT = 0.65;
@@ -1173,7 +1657,7 @@
                 posScreen.position.set(counterX - 0.15, 2.02, counterZ + 1.2);
                 const cashDrawer = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.24, 0.85), new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.6, roughness: 0.3 }));
                 cashDrawer.position.set(counterX + 0.1, 1.6, counterZ - 0.8);
-                scene.add(cDesk, cTop, cReturn, posStand, posScreen, cashDrawer);
+                detailGroup.add(cDesk, cTop, cReturn, posStand, posScreen, cashDrawer);
 
                 // Crisp "CASH COUNTER" Hanging Board above Counter
                 const ccCan = document.createElement('canvas'); ccCan.width = 256; ccCan.height = 64;
@@ -1185,14 +1669,14 @@
                 const ccMat = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(ccCan) });
                 const ccSign = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.82, 3.6), [ccMat, ccMat, frameMat, frameMat, frameMat, frameMat]);
                 ccSign.position.set(counterX, 3.35, counterZ);
-                scene.add(ccSign);
+                detailGroup.add(ccSign);
 
                 // 3D Cashier Staff standing behind the Cash Counter
                 if (City3D.createWalkingHuman) {
                   const cashier = City3D.createWalkingHuman((gx + gz + 5) & 7);
                   cashier.position.set(counterX + 1.45, 0.32, counterZ + 0.6);
                   cashier.rotation.y = -Math.PI / 2;
-                  scene.add(cashier);
+                  detailGroup.add(cashier);
                 }
 
                 // ===== SHOP INTERIOR SHELVES / DISPLAYS ON LEFT & CENTER-LEFT =====
@@ -1207,7 +1691,7 @@
                     bed.position.set(cx - 6.8, 0.66, shopZ + bz);
                     const sheet = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.16, 1.44), sheetMat);
                     sheet.position.set(cx - 6.5, 1.04, shopZ + bz);
-                    scene.add(bed, sheet);
+                    detailGroup.add(bed, sheet);
                     // Solid collider for Hospital Bed
                     cellColliders.push({ minX: cx - 6.8 - 1.7, maxX: cx - 6.8 + 1.7, minZ: shopZ + bz - 0.85, maxZ: shopZ + bz + 0.85 });
                   });
@@ -1216,7 +1700,7 @@
                   [-8.2, -3.2].forEach((rxOff, rIdx) => {
                     const rack = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.5, 8.8), rackMat);
                     rack.position.set(cx + rxOff, 1.55, shopZ - 1.2);
-                    scene.add(rack);
+                    detailGroup.add(rack);
                     // Solid collider for Shop Display Stand / Rack + Product Boxes (zero clipping/glitching!)
                     cellColliders.push({ minX: cx + rxOff - 1.15, maxX: cx + rxOff + 1.15, minZ: shopZ - 1.2 - 4.65, maxZ: shopZ - 1.2 + 4.65 });
                     for (let row = 0; row < 2; row++) {
@@ -1226,7 +1710,7 @@
                           new THREE.MeshStandardMaterial({ color: prodColors[(rIdx * 3 + row + col) % prodColors.length], roughness: 0.55 })
                         );
                         pBox.position.set(cx + rxOff, 1.05 + row * 0.95, shopZ - 4.3 + col * 2.05);
-                        scene.add(pBox);
+                        detailGroup.add(pBox);
                       }
                     }
                   });
@@ -1248,20 +1732,83 @@
                 cellColliders.push({ minX: counterX - 1.15, maxX: counterX + 1.15, minZ: counterZ - 3.65, maxZ: counterZ + 3.65 });
                 cellColliders.push({ minX: counterX + 0.2, maxX: counterX + 2.6, minZ: counterZ - 3.55, maxZ: counterZ - 2.05 });
               } else {
-                // Fuel Station solid structure
-                const mainB = new THREE.Mesh(new THREE.BoxGeometry(lmW, lmH, lmD), lmMat);
-                mainB.position.set(cx, lmH / 2 + 0.22, shopZ);
-                scene.add(mainB);
-                cellColliders.push({
-                  minX: cx - lmW / 2 - carMargin, maxX: cx + lmW / 2 + carMargin,
-                  minZ: shopZ - lmD / 2 - carMargin, maxZ: shopZ + lmD / 2 + carMargin
+                // REAL DRIVE-THROUGH 3D PETROL & DIESEL BUNK (Open Canopy + 2 Fuel Pumps + Attendant Avatar + Fuel Tube Hose!)
+                const bunkPad = new THREE.Mesh(new THREE.BoxGeometry(26, 0.14, 24), new THREE.MeshLambertMaterial({ color: 0x334155 }));
+                bunkPad.position.set(cx, 0.24, cz);
+                // Overhead FUEL STATION Canopy Roof (Modern Emerald-Teal + Crisp White + Bright Gold Trim!)
+                const canopyRoof = new THREE.Mesh(new THREE.BoxGeometry(22, 1.15, 14.5), new THREE.MeshLambertMaterial({ color: 0x0f766e }));
+                canopyRoof.position.set(cx, 6.2, cz);
+                const canopyWhite = new THREE.Mesh(new THREE.BoxGeometry(22.2, 0.36, 14.7), new THREE.MeshBasicMaterial({ color: 0xf8fafc }));
+                canopyWhite.position.set(cx, 6.65, cz);
+                const canopyTrim = new THREE.Mesh(new THREE.BoxGeometry(22.3, 0.32, 14.8), new THREE.MeshBasicMaterial({ color: 0xfacc15 }));
+                canopyTrim.position.set(cx, 5.62, cz);
+                scene.add(canopyWhite);
+                scene.add(bunkPad, canopyRoof, canopyTrim);
+                // 4 Sturdy Canopy Support Pillars (Leaving wide open drive-through fuel lanes!)
+                const pilMat = new THREE.MeshLambertMaterial({ color: 0xf8fafc });
+                [[-9.5, -5.2], [9.5, -5.2], [-9.5, 5.2], [9.5, 5.2]].forEach(([px, pz]) => {
+                  const pil = new THREE.Mesh(new THREE.BoxGeometry(0.95, 5.8, 0.95), pilMat);
+                  pil.position.set(cx + px, 3.1, cz + pz);
+                  scene.add(pil);
+                  cellColliders.push({ minX: cx + px - 0.55, maxX: cx + px + 0.55, minZ: cz + pz - 0.55, maxZ: cz + pz + 0.55 });
+                });
+                // Raised Center Pump Island + 2 Detailed Fuel Dispensers (PETROL & DIESEL!)
+                const island = new THREE.Mesh(new THREE.BoxGeometry(10.5, 0.35, 2.2), new THREE.MeshLambertMaterial({ color: 0x94a3b8 }));
+                island.position.set(cx, 0.42, cz - 1.5);
+                const pumpPetrol = new THREE.Mesh(new THREE.BoxGeometry(1.4, 2.35, 1.0), new THREE.MeshLambertMaterial({ color: 0x16a34a }));
+                pumpPetrol.position.set(cx - 2.6, 1.75, cz - 1.5);
+                const pumpDiesel = new THREE.Mesh(new THREE.BoxGeometry(1.4, 2.35, 1.0), new THREE.MeshLambertMaterial({ color: 0x2563eb }));
+                pumpDiesel.position.set(cx + 2.6, 1.75, cz - 1.5);
+                const lcdMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+                const lcd1 = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.5, 1.06), lcdMat); lcd1.position.set(cx - 2.6, 2.15, cz - 1.5);
+                const lcd2 = lcd1.clone(); lcd2.position.x = cx + 2.6;
+                scene.add(island, pumpPetrol, pumpDiesel, lcd1, lcd2);
+                cellColliders.push({ minX: cx - 5.3, maxX: cx + 5.3, minZ: cz - 2.7, maxZ: cz - 0.3 });
+
+                // Glowing Green Drive-In Fuel Stop Ring right beside the Petrol Pump!
+                const fuelZoneX = cx, fuelZoneZ = cz + 3.2;
+                const fRing = new THREE.Mesh(
+                  new THREE.RingGeometry(2.6, 3.2, 24),
+                  new THREE.MeshBasicMaterial({ color: 0x22c55e, side: THREE.DoubleSide })
+                );
+                fRing.rotation.x = -Math.PI / 2;
+                fRing.position.set(fuelZoneX, 0.34, fuelZoneZ);
+                scene.add(fRing);
+
+                // 3D Petrol Bunk Attendant (Fuel Boy Avatar standing beside the Petrol Pump!)
+                const attendant = City3D.createWalkingHuman ? City3D.createWalkingHuman(3) : new THREE.Group();
+                const attHomeX = cx - 2.6, attHomeZ = cz - 0.2;
+                attendant.position.set(attHomeX, 0.32, attHomeZ);
+                scene.add(attendant);
+
+                // Bold Visible 3D Fuel Hose Pipe + Bright Yellow Fuel Nozzle (Stretches clearly into Car, Bike, OR Truck!)
+                const hoseMesh = new THREE.Mesh(
+                  new THREE.CylinderGeometry(0.11, 0.11, 1, 10),
+                  new THREE.MeshBasicMaterial({ color: 0x0f172a })
+                );
+                hoseMesh.visible = false;
+                const nozzleTip = new THREE.Mesh(
+                  new THREE.CylinderGeometry(0.14, 0.09, 0.45, 8),
+                  new THREE.MeshBasicMaterial({ color: 0xfacc15 })
+                );
+                nozzleTip.visible = false;
+                scene.add(hoseMesh, nozzleTip);
+
+                fuelStations.push({
+                  cx, cz, x: fuelZoneX, z: fuelZoneZ,
+                  pumpX: cx - 2.6, pumpZ: cz - 1.5,
+                  attHomeX, attHomeZ, attendant, hoseMesh, nozzleTip,
+                  startFuel: 50,
+                  phase: 'idle', timer: 0, cooldownUntil: 0
                 });
               }
 
               // Branded Entrance Canopy & Rooftop Signboard
-              const canopy = new THREE.Mesh(new THREE.BoxGeometry(lmW + 1.6, 0.65, lmD + 2.0), new THREE.MeshStandardMaterial({ color: lm.bg, roughness: 0.4 }));
-              canopy.position.set(cx, 5.05, shopZ);
-              scene.add(canopy);
+              if (isWalkInShop) {
+                const canopy = new THREE.Mesh(new THREE.BoxGeometry(lmW + 1.6, 0.65, lmD + 2.0), new THREE.MeshLambertMaterial({ color: lm.bg }));
+                canopy.position.set(cx, 5.05, shopZ);
+                scene.add(canopy);
+              }
 
               const sc = document.createElement('canvas'); sc.width = 512; sc.height = 160;
               const sctx = sc.getContext('2d');
@@ -1278,6 +1825,7 @@
               scene.add(signBox);
 
               // ===== FRONT PARKING LOT IN FRONT OF EVERY SHOP (Painted Bays + P Sign + Parked Visitor Cars & Bikes!) =====
+              if (isWalkInShop) {
               const parkZ = cz + 11.2;
               const parkPad = new THREE.Mesh(
                 new THREE.BoxGeometry(lmW + 2.0, 0.08, 8.8),
@@ -1338,11 +1886,12 @@
                   stolen: false, modelType: spec.modelType
                 });
               });
+              }
 
               cityLandmarks.push({
                 x: cx, z: shopZ, tag: lm.mapTag, color: lm.mapCol, title: lm.title,
                 doorL, doorR, doorBaseX: cx, doorZ: doorZWorld,
-                isWalkInShop,
+                isWalkInShop, detailGroup,
                 minX: cx - lmW / 2 + 0.8, maxX: cx + lmW / 2 - 0.8,
                 minZ: shopZ - lmD / 2 + 0.8, maxZ: shopZ + lmD / 2 - 0.5
               });
@@ -1355,11 +1904,11 @@
                   { x: cx + 4.8, z: shopZ + 1.0 },
                   { x: cx + 1.0, z: shopZ + 5.2 }
                 ];
-                for (let isIdx = 0; isIdx < 3; isIdx++) {
+                for (let isIdx = 0; isIdx < 2; isIdx++) {
                   const inHum = City3D.createWalkingHuman((Math.abs(gx * 3 + gz * 5) + isIdx + 1) % 8);
                   const wp0 = waypoints[(isIdx * 2) % waypoints.length];
                   inHum.position.set(wp0.x, 0.32, wp0.z);
-                  scene.add(inHum);
+                  detailGroup.add(inHum);
                   indoorShoppers.push({
                     mesh: inHum,
                     waypoints,
@@ -1454,24 +2003,24 @@
                 dummy.position.set(tx, tH * 0.5, tz); dummy.scale.set(trunkScale, tH, trunkScale); dummy.rotation.set(0, tRot, 0); dummy.updateMatrix();
                 treeTrunkMatrices.push(dummy.matrix.clone());
                 if (isBigBranchTree) {
-                  // REAL BIG-BRANCHING TREE: 3 thick angled wooden limbs extending outward + dense leafy clusters at each branch tip!
-                  for (let br = 0; br < 3; br++) {
-                    const bAng = tRot + br * (Math.PI * 2 / 3);
-                    const bx = tx + Math.cos(bAng) * 1.15;
-                    const bz = tz + Math.sin(bAng) * 1.15;
-                    dummy.position.set(tx + Math.cos(bAng) * 0.65, tH - 0.15, tz + Math.sin(bAng) * 0.65);
-                    dummy.scale.set(0.32, 2.25, 0.32);
-                    dummy.rotation.set(Math.sin(bAng) * 0.68, 0, -Math.cos(bAng) * 0.68);
+                  // REAL BIG-BRANCHING BANYAN/OAK TREE: 4 thick visible wooden limbs extending outward + dense lush foliage!
+                  for (let br = 0; br < 4; br++) {
+                    const bAng = tRot + br * (Math.PI / 2) + 0.35;
+                    const bx = tx + Math.cos(bAng) * 1.65;
+                    const bz = tz + Math.sin(bAng) * 1.65;
+                    dummy.position.set(tx + Math.cos(bAng) * 0.88, tH - 0.35, tz + Math.sin(bAng) * 0.88);
+                    dummy.scale.set(0.38, 2.75, 0.38);
+                    dummy.rotation.set(Math.sin(bAng) * 0.82, 0, -Math.cos(bAng) * 0.82);
                     dummy.updateMatrix();
                     treeBranchMatrices.push(dummy.matrix.clone());
-                    // Dense leaf cluster right over this branch tip!
+                    // Extra-dense lush leaf cluster crowning each big branch!
                     dummy.position.set(bx, tH + 0.85, bz);
-                    dummy.scale.set(2.35, 1.38, 2.25); dummy.rotation.set(0.06, bAng, -0.05); dummy.updateMatrix();
+                    dummy.scale.set(2.65, 1.52, 2.55); dummy.rotation.set(0.05, bAng, -0.05); dummy.updateMatrix();
                     (br % 2 === 0 ? treeLeafLowMatrices : treeLeafMidMatrices).push(dummy.matrix.clone());
                   }
-                  // Lush wide top canopy crown
-                  dummy.position.set(tx, tH + 1.85, tz);
-                  dummy.scale.set(2.55, 1.48, 2.45); dummy.rotation.set(0, tRot, 0); dummy.updateMatrix();
+                  // Thick wide sunlit top canopy dome
+                  dummy.position.set(tx, tH + 1.95, tz);
+                  dummy.scale.set(2.85, 1.65, 2.75); dummy.rotation.set(0, tRot, 0); dummy.updateMatrix();
                   treeLeafTopMatrices.push(dummy.matrix.clone());
                 } else {
                   // DENSE LEAFY CANOPY TREE: 4 thick overlapping lush green leaf layers!
@@ -1488,7 +2037,7 @@
                 dummy.rotation.set(0, 0, 0);
 
                 // SOLID TREE COLLIDER: Car & Avatar stop cleanly outside every tree trunk!
-                cellColliders.push({ minX: tx - 0.42, maxX: tx + 0.42, minZ: tz - 0.42, maxZ: tz + 0.42 });
+                cellColliders.push({ minX: tx - 0.68, maxX: tx + 0.68, minZ: tz - 0.68, maxZ: tz + 0.68 });
               });
             }
           }
@@ -1497,15 +2046,21 @@
 
       // Build Fast InstancedMeshes for all 1,680+ Cement Buildings & Sidewalks
       const unitBox = new THREE.BoxGeometry(1, 1, 1);
+      if (canalPostMatrices.length) {
+        const cPostIM = new THREE.InstancedMesh(unitBox, new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.7, roughness: 0.35 }), canalPostMatrices.length);
+        canalPostMatrices.forEach((m, idx) => cPostIM.setMatrixAt(idx, m));
+        cPostIM.matrixAutoUpdate = false; cPostIM.updateMatrix();
+        scene.add(cPostIM);
+      }
       const padIM = new THREE.InstancedMesh(unitBox, sidewalkMat, padMatrices.length);
       padMatrices.forEach((m, idx) => padIM.setMatrixAt(idx, m));
       scene.add(padIM);
       if (treeTrunkMatrices.length) {
-        const tBarkMat = new THREE.MeshStandardMaterial({ color: 0x5c3a21, roughness: 0.92 });
-        const tLeafLowMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.78 });
-        const tLeafMidMat = new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.75 });
-        const tBlossomPinkMat = new THREE.MeshStandardMaterial({ color: 0x166534, roughness: 0.78 });
-        const tBlossomGoldMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.76 });
+        const tBarkMat = new THREE.MeshLambertMaterial({ color: 0x5c3a21 });
+        const tLeafLowMat = new THREE.MeshLambertMaterial({ color: 0x14532d });
+        const tLeafMidMat = new THREE.MeshLambertMaterial({ color: 0x166534 });
+        const tBlossomPinkMat = new THREE.MeshLambertMaterial({ color: 0x14532d });
+        const tBlossomGoldMat = new THREE.MeshLambertMaterial({ color: 0x166534 });
         const tTrunkIM = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.24, 0.48, 1, 10), tBarkMat, treeTrunkMatrices.length);
         // Smooth organic rounded sphere foliage (NOT blocky painted boxes!)
         const smoothFoliageGeo = new THREE.SphereGeometry(0.95, 14, 12);
@@ -1522,14 +2077,16 @@
         treeLeafLowMatrices.forEach((m, i) => tLowIM.setMatrixAt(i, m));
         treeLeafMidMatrices.forEach((m, i) => tMidIM.setMatrixAt(i, m));
         scene.add(tTrunkIM, tLowIM, tMidIM);
+        window._swayTreeCanopies = [tLowIM, tMidIM];
         if (treeBranchMatrices.length) {
           const tBranchIM = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.14, 0.28, 1, 7), tBarkMat, treeBranchMatrices.length);
           treeBranchMatrices.forEach((m, i) => tBranchIM.setMatrixAt(i, m));
           scene.add(tBranchIM);
         }
         if (greenTops.length) {
-          const imG = new THREE.InstancedMesh(smoothFoliageGeo, new THREE.MeshStandardMaterial({ color: 0x4ade80, roughness: 0.72 }), greenTops.length);
+          const imG = new THREE.InstancedMesh(smoothFoliageGeo, new THREE.MeshLambertMaterial({ color: 0x15803d }), greenTops.length);
           greenTops.forEach((m, i) => imG.setMatrixAt(i, m)); scene.add(imG);
+          if (window._swayTreeCanopies) window._swayTreeCanopies.push(imG);
         }
         if (pinkTops.length) {
           const imP = new THREE.InstancedMesh(smoothFoliageGeo, tBlossomPinkMat, pinkTops.length);
@@ -1733,11 +2290,11 @@
           });
         };
         if (alongX) {
-          addBridgeWallCol({ minX: bx - 14.5, maxX: bx + 14.5, minZ: bz - 8.75, maxZ: bz - 7.85 });
-          addBridgeWallCol({ minX: bx - 14.5, maxX: bx + 14.5, minZ: bz + 7.85, maxZ: bz + 8.75 });
+          addBridgeWallCol({ minX: bx - 9.4, maxX: bx + 9.4, minZ: bz - 8.75, maxZ: bz - 7.95 });
+          addBridgeWallCol({ minX: bx - 9.4, maxX: bx + 9.4, minZ: bz + 7.95, maxZ: bz + 8.75 });
         } else {
-          addBridgeWallCol({ minX: bx - 8.75, maxX: bx - 7.85, minZ: bz - 14.5, maxZ: bz + 14.5 });
-          addBridgeWallCol({ minX: bx + 7.85, maxX: bx + 8.75, minZ: bz - 14.5, maxZ: bz + 14.5 });
+          addBridgeWallCol({ minX: bx - 8.75, maxX: bx - 7.95, minZ: bz - 9.4, maxZ: bz + 9.4 });
+          addBridgeWallCol({ minX: bx + 7.95, maxX: bx + 8.75, minZ: bz - 9.4, maxZ: bz + 9.4 });
         }
       };
       // Place Bridges across Canal 1 (North-South at x = 2*58 + 29 = 145) at every E-W road (z = g * 58)
@@ -1783,6 +2340,7 @@
       checkpointBeam.position.set(108, 15, -108);
       scene.add(checkpointBeam);
 
+
       const aiModels = [
         { modelType: 'car', bodyStyle: 'exotic_low', colorHex: 0xdc2626, accentHex: 0x111827 },
         { modelType: 'car', bodyStyle: 'sedan', colorHex: 0xf8fafc, accentHex: 0x0284c7 },
@@ -1794,7 +2352,7 @@
       // LIVING CITY PROCESS: D-Mart & Mall Shoppers Walking Inside Open Doors -> Carrying Shopping Bags -> Boarding Yellow Taxi -> Driving Away!
       for (let l = 0; l < cityLandmarks.length; l++) {
         const lm = cityLandmarks[l];
-        if (!lm.isWalkInShop) continue;
+        if (!lm.isWalkInShop || shopCycles.length >= 4) continue;
         const doorX = lm.x, doorZ = lm.doorZ || (lm.z + 8.5);
         const curbZ = lm.z + 17.5;
         const roadZ = Math.round(curbZ / BLOCK_STEP) * BLOCK_STEP;
@@ -1826,7 +2384,7 @@
           const axis = p % 2 === 0 ? 'z' : 'x';
           const dir = (p % 4 < 2) ? 1 : -1;
           const blockIdx = (p % 7) - 3;
-          const sideEdge = blockIdx * BLOCK_STEP + (dir > 0 ? 5.3 : -5.3); // Strictly along road curb — NEVER inside buildings!
+          const sideEdge = blockIdx * BLOCK_STEP + (dir > 0 ? 6.75 : -6.75); // Strictly along road curb — NEVER inside buildings!
           const startPos = -240 + (p * 17) % 480;
           if (axis === 'z') {
             human.position.set(sideEdge, 0.22, startPos);
@@ -1841,8 +2399,8 @@
       }
 
       // Spawn 42 Commuter AI Cars grouped in realistic 2-3 car platoons on signalized roads so 2-3 cars wait at Red Signals!
-      const signalLanes = [-3, -2, -1, 0, 1, 2, 3];
-      for (let t = 0; t < 20; t++) {
+      const signalLanes = [-5, -3, -1, 1, 3, 5];
+      for (let t = 0; t < 12; t++) {
         const builtAI = City3D.buildVehicleMesh(aiModels[t % aiModels.length], null);
         const tMesh = builtAI.group;
         const axis = t % 2 === 0 ? 'z' : 'x';
@@ -1900,10 +2458,38 @@
         scene.add(playerGroup);
       });
     }
+    if (eq.id === 3 && eq.isRealGLB) {
+      loadCar01GLB((glbBuilt) => {
+        if (!glbBuilt || state.equippedId !== 3) return;
+        if (playerGroup) scene.remove(playerGroup);
+        playerGroup = glbBuilt.group;
+        playerChassis = glbBuilt.chassis;
+        playerWheels = glbBuilt.wheels;
+        playerFrontPivots = glbBuilt.frontWheelPivots;
+        nitroFlames = glbBuilt.flames;
+        playerGroup.position.set(driveState.x, driveState.y || 0, driveState.z);
+        playerGroup.rotation.y = driveState.heading;
+        scene.add(playerGroup);
+      });
+    }
+    if (eq.id === 6 && eq.isRealGLB2) {
+      loadCar02GLB((glbBuilt) => {
+        if (!glbBuilt || state.equippedId !== 6) return;
+        if (playerGroup) scene.remove(playerGroup);
+        playerGroup = glbBuilt.group;
+        playerChassis = glbBuilt.chassis;
+        playerWheels = glbBuilt.wheels;
+        playerFrontPivots = glbBuilt.frontWheelPivots;
+        nitroFlames = glbBuilt.flames;
+        playerGroup.position.set(driveState.x, driveState.y || 0, driveState.z);
+        playerGroup.rotation.y = driveState.heading;
+        scene.add(playerGroup);
+      });
+    }
 
     driveState.x = 0; driveState.z = 0; driveState.heading = 0;
     driveState.speed = 0; driveState.steerInput = 0; driveState.targetSteer = 0;
-    driveState.nitro = 100; driveState.health = 100; driveState.wrecked = false;
+    driveState.nitro = 100; driveState.health = 100; driveState.fuel = 100; driveState.lowFuelWarned = false; driveState.wrecked = false; updateFuelHUD();
     updateHealthHUD();
     updateTaskUI();
   }
@@ -2081,6 +2667,44 @@
     return g;
   }
 
+  function getBridgeY(x, z) {
+    for (let bi = 0; bi < bridgeDeckZones.length; bi++) {
+      const bz = bridgeDeckZones[bi];
+      const dxB = Math.abs(x - bz.bx), dzB = Math.abs(z - bz.bz);
+      const along = bz.alongX ? dxB : dzB;
+      const across = bz.alongX ? dzB : dxB;
+      if (across < 8.6 && along < 16.0) {
+        return along < 10.0 ? 0.56 : Math.max(0.04, 0.56 * (1 - (along - 10.0) / 6.0));
+      }
+    }
+    return 0.04;
+  }
+
+  function getGroundY(x, z) {
+    // 1. Check elevated Bridges & smooth ramps first (top at 0.54m)
+    for (let bi = 0; bi < bridgeDeckZones.length; bi++) {
+      const bz = bridgeDeckZones[bi];
+      const dxB = Math.abs(x - bz.bx), dzB = Math.abs(z - bz.bz);
+      const along = bz.alongX ? dxB : dzB;
+      const across = bz.alongX ? dzB : dxB;
+      if (across < 8.6 && along < 16.0) {
+        return along < 10.0 ? 0.58 : Math.max(0.06, 0.58 * (1 - (along - 10.0) / 6.0));
+      }
+    }
+    // 2. Check Walk-In Shop Floors (0.34m) & Shop Parking Pads (0.28m)
+    for (let li = 0; li < cityLandmarks.length; li++) {
+      const lm = cityLandmarks[li];
+      if (Math.abs(x - lm.x) < 13.0 && z > lm.minZ - 1.0 && z < lm.maxZ + 12.5) {
+        return z <= lm.maxZ + 0.5 ? 0.34 : 0.28;
+      }
+    }
+    // 3. Check Sidewalk Block Pads vs Open Roads
+    const modX = ((x % BLOCK_STEP) + BLOCK_STEP) % BLOCK_STEP;
+    const modZ = ((z % BLOCK_STEP) + BLOCK_STEP) % BLOCK_STEP;
+    const onBlockPad = (modX > 5.8 && modX < BLOCK_STEP - 5.8) && (modZ > 5.8 && modZ < BLOCK_STEP - 5.8);
+    return onBlockPad ? 0.26 : 0.06;
+  }
+
   function pushOutOfBuildings(x, z, rad, isVehicle = false) {
     let rx = x, rz = z, hit = false;
     // Vehicles (player car, police cars) can NEVER drive inside walk-in shop interiors!
@@ -2141,7 +2765,7 @@
   function spawnPoliceChase(now) {
     // ONLY 1 SINGLE POLICE CAR — chases for 10 seconds with live top countdown timer, then leaves automatically!
     if (policeUnits.length >= 1) {
-      policeUnits[0].expiresAt = now + 10000; // Refresh 10s timer if another hit occurs
+      policeUnits[0].expiresAt = now + 20000; // Refresh 10s timer if another hit occurs
       return;
     }
     const h = driveState.heading;
@@ -2154,13 +2778,13 @@
     pc.rotation.y = h;
     scene.add(pc);
     policeUnits.push({
-      mesh: pc, spawnAt: now, expiresAt: now + 10000, lastHorn: 0,
+      mesh: pc, spawnAt: now, expiresAt: now + 20000, lastHorn: 0,
       role: 'pursuer', slotFwd: -9.5, slotSide: 0, heading: h, speed: 16
     });
     const ptEl = document.getElementById('policeTimerEl');
-    if (ptEl) { ptEl.classList.remove('hidden'); ptEl.textContent = '🚓 POLICE: 10s'; }
+    if (ptEl) { ptEl.classList.remove('hidden'); ptEl.textContent = '🚓 POLICE: 20s'; }
     if (Audio) { if (Audio.playSiren) Audio.playSiren(); if (Audio.startHorn) Audio.startHorn(); }
-    showDriveAlert('★ POLICE CHASE! SURVIVE 10 SECONDS! 🚓', 'bg-blue-600 text-white');
+    showDriveAlert('★ POLICE CHASE! SURVIVE 20 SECONDS! 🚓', 'bg-blue-600 text-white');
   }
 
 
@@ -2368,7 +2992,8 @@
       : [{ x: hospitalTarget.x, z: roadZ + 2.4 }, { x: hospitalTarget.x, z: hospitalTarget.z }];
 
     if (Audio) { Audio.playCrash(); if (Audio.playSiren) Audio.playSiren(); }
-    showDriveAlert((shopCycleRef ? 'TAXI ACCIDENT! ' : 'HIGH-SPEED ACCIDENT! ') + 'FIRE ENGINE & AMBULANCE CONVOY ON ROAD! 🚒🚑', 'bg-rose-600 text-white');
+    showDriveAlert((shopCycleRef ? 'TAXI ACCIDENT! ' : 'HIGH-SPEED ACCIDENT! ') + 'FIRE ENGINE, AMBULANCE & POLICE ON THE WAY! 🚒🚑🚓', 'bg-rose-600 text-white');
+    spawnPoliceChase(now);
 
     const firefighter = City3D.createWalkingHuman ? City3D.createWalkingHuman(0) : new THREE.Group();
     firefighter.position.set(ftStop.x + 1.8, 0.22, ftStop.z); firefighter.visible = false; scene.add(firefighter);
@@ -2393,6 +3018,61 @@
       phase: 'dispatch',
       phaseTimer: 0,
       fireScale: 1.0
+    });
+  }
+
+  function dispatchAmbulanceOnly(humanObj, now) {
+    if (emergencyEvents.length >= 2) return;
+    const vx = humanObj.mesh.position.x + 1.5, vz = humanObj.mesh.position.z + 1.5;
+    const roadX = Math.round(vx / BLOCK_STEP) * BLOCK_STEP;
+    const roadZ = Math.round(vz / BLOCK_STEP) * BLOCK_STEP;
+    const alongZ = Math.abs(vx - roadX) <= Math.abs(vz - roadZ);
+
+    const ambulance = buildAmbulance3D();
+    const ambStart = alongZ ? { x: roadX + 2.4, z: vz - 48 } : { x: vx - 48, z: roadZ + 2.4 };
+    const ambStop  = alongZ ? { x: roadX + 2.4, z: vz - 3.6 } : { x: vx - 3.6, z: roadZ + 2.4 };
+    ambulance.position.set(ambStart.x, 0, ambStart.z);
+    scene.add(ambulance);
+
+    let hospitalTarget = { x: -BLOCK_STEP, z: 0 };
+    let bestD = Infinity;
+    for (let l = 0; l < cityLandmarks.length; l++) {
+      if (cityLandmarks[l].tag === 'H') {
+        const hx = Math.round(cityLandmarks[l].x / BLOCK_STEP) * BLOCK_STEP;
+        const hz = Math.round(cityLandmarks[l].z / BLOCK_STEP) * BLOCK_STEP;
+        const d = Math.hypot(hx - vx, hz - vz);
+        if (d < bestD) { bestD = d; hospitalTarget = { x: hx, z: hz }; }
+      }
+    }
+    const ambWaypoints = alongZ
+      ? [{ x: roadX + 2.4, z: hospitalTarget.z }, { x: hospitalTarget.x, z: hospitalTarget.z }]
+      : [{ x: hospitalTarget.x, z: roadZ + 2.4 }, { x: hospitalTarget.x, z: hospitalTarget.z }];
+
+    const stretcherGroup = new THREE.Group();
+    const m1 = City3D.createWalkingHuman ? City3D.createWalkingHuman(2) : new THREE.Group(); m1.position.set(0, 0, -1.1);
+    const m2 = City3D.createWalkingHuman ? City3D.createWalkingHuman(2) : new THREE.Group(); m2.position.set(0, 0, 1.1);
+    const bedMesh = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.14, 2.0), new THREE.MeshLambertMaterial({ color: 0xf8fafc })); bedMesh.position.y = 0.85;
+    stretcherGroup.add(m1, m2, bedMesh);
+    stretcherGroup.position.set(ambStop.x, 0.22, ambStop.z); stretcherGroup.visible = false; scene.add(stretcherGroup);
+
+    if (Audio && Audio.playSiren) Audio.playSiren();
+    showDriveAlert('🚑 AMBULANCE COMING TO RESCUE INJURED PERSON!', 'bg-sky-500 text-white');
+
+    const dummyFire = new THREE.Group(); dummyFire.visible = false;
+    const dummyJet = new THREE.Group(); dummyJet.visible = false;
+    const dummyFT = new THREE.Group(); dummyFT.visible = false;
+    emergencyEvents.push({
+      trafficCar: { mesh: new THREE.Group(), wrecked: false, axis: 'x' },
+      isHumanOnly: true,
+      ax: vx, az: vz, vx, vz,
+      firefighter: null, stretcherGroup, towTruck: null,
+      fireGroup: dummyFire, flames: [], smokePuffs: [], waterJet: dummyJet,
+      victim: humanObj.mesh, fireTruck: dummyFT, stolenFire: true,
+      ambulance, hospitalTarget,
+      ftStop: ambStop, ftExit: ambStop, ambWait: ambStop, ambStop, ambWaypoints, ambWpIdx: 0,
+      phase: 'amb_pullup',
+      phaseTimer: 0,
+      fireScale: 0
     });
   }
 
@@ -2551,7 +3231,17 @@
 
     if (driveState.wrecked) {
       if (Audio) Audio.updateEngine(0, false, false, 0);
-      renderer.render(scene, camera);
+      if (car04BodyMatRef) { car04BodyMatRef.emissive.setHSL((now * 0.00008) % 1, 0.88, 0.14); }
+    if (car01BodyMatRef) {
+      const hueShift = (now * 0.00008) % 1;
+      car01BodyMatRef.emissive.setHSL(0.04 + Math.sin(now * 0.0012) * 0.04, 0.9, 0.14);
+    }
+    for (let sfi = 0; sfi < activeSideFlames.length; sfi++) {
+      const sf = activeSideFlames[sfi];
+      const pulse = 0.72 + 0.42 * Math.abs(Math.sin(now * 0.018 + sf.phase));
+      sf.mesh.scale.set(0.85 + pulse * 0.25, 0.85 + pulse * 0.25, pulse);
+    }
+    renderer.render(scene, camera);
       return;
     }
 
@@ -2577,7 +3267,7 @@
 
     const nitroMult = 1.30 + Math.min(0.32, ((state.upgradeLevels.nitro - 1) * 0.03) + ((state.level || 1) - 1) * 0.03);
     const effectiveMax = nitroOn ? maxSpeed * nitroMult : maxSpeed;
-    if (gasOn || nitroOn) driveState.speed += (nitroOn ? accelRate * 1.72 : accelRate) * dt;
+    if ((gasOn || nitroOn) && driveState.fuel > 0) driveState.speed += (nitroOn ? accelRate * 1.72 : accelRate) * dt;
     else if (brakeOn) driveState.speed -= accelRate * 1.5 * dt;
     else {
       driveState.speed *= Math.pow(0.28, dt);
@@ -2607,6 +3297,26 @@
     }
 
     const prevX = driveState.x, prevZ = driveState.z;
+    // Fuel Depletion & Empty-Tank Stop Logic!
+    if (!isOnFoot && Math.abs(driveState.speed) > 1.2) {
+      driveState.fuel = Math.max(0, driveState.fuel - (nitroOn ? 0.42 : 0.22) * dt);
+      if (driveState._frame === 0) updateFuelHUD();
+      if (driveState.fuel <= 20 && !driveState.lowFuelWarned) {
+        driveState.lowFuelWarned = true;
+        if (Audio) Audio.playTone(320, 0.16, 'sawtooth', 0.1);
+        showDriveAlert('⛽ LOW FUEL! GO TO FUEL STATION (F ON MAP)!', 'bg-rose-600 text-white');
+      }
+      if (driveState.fuel <= 0) {
+        driveState.fuel = 0;
+        driveState.speed *= Math.pow(0.08, dt);
+        if (Math.abs(driveState.speed) < 0.4) driveState.speed = 0;
+        updateFuelHUD();
+        if (now - (driveState._lastEmptyAlert || 0) > 4500) {
+          driveState._lastEmptyAlert = now;
+          showDriveAlert('⛽ FUEL EMPTY! CAR STOPPED! GO TO FUEL STATION!', 'bg-rose-600 text-white');
+        }
+      }
+    }
     const dx = -Math.sin(driveState.heading) * driveState.speed * dt;
     const dz = -Math.cos(driveState.heading) * driveState.speed * dt;
     let nextX = prevX + dx;
@@ -2641,15 +3351,23 @@
 
     let pushDx = 0, pushDz = 0;
     if (!isOnFoot) {
-      const rawNx = nextX, rawNz = nextZ;
-      const safeCar = pushOutOfBuildings(nextX, nextZ, 0.88, true);
-      if (safeCar.hit) {
-        pushDx = safeCar.x - rawNx;
-        pushDz = safeCar.z - rawNz;
-        nextX = safeCar.x;
-        nextZ = safeCar.z;
-        collided = true;
+      // 2-Substep collision sweep so high-speed cars NEVER tunnel inside or through tree trunks!
+      let curX = prevX, curZ = prevZ;
+      const halfDx = (nextX - prevX) * 0.5, halfDz = (nextZ - prevZ) * 0.5;
+      for (let sub = 0; sub < 2; sub++) {
+        const tryX = curX + halfDx, tryZ = curZ + halfDz;
+        const safeCar = pushOutOfBuildings(tryX, tryZ, 0.92, true);
+        if (safeCar.hit) {
+          pushDx += (safeCar.x - tryX);
+          pushDz += (safeCar.z - tryZ);
+          curX = safeCar.x; curZ = safeCar.z;
+          collided = true;
+          break;
+        } else {
+          curX = tryX; curZ = tryZ;
+        }
       }
+      nextX = curX; nextZ = curZ;
     }
 
     if (collided) {
@@ -2694,6 +3412,184 @@
 
     for (const lk of lakeZones) {
       if (Math.hypot(nextX - lk.cx, nextZ - lk.cz) < lk.r) driveState.speed *= Math.pow(0.15, dt);
+    }
+
+    // REALISTIC 6-STEP 3D FUEL STATION ATTENDANT SCRIPT (Runs smoothly inside cityLoop at full FPS!)
+    // Step 1: Walk to pump -> Step 2: Carry pipe to Bike Front Dome / Car & Truck Right Side -> Step 3: Pump Fuel -> 100%
+    // Step 4: Return pipe to pump -> Step 5: Walk to driver & show PAY (Bike 400 / Car 500 / Truck 1000) -> Step 6: Return to home spot!
+    for (let fi = 0; fi < fuelStations.length; fi++) {
+      const fs = fuelStations[fi];
+      const distCircle = Math.hypot(driveState.x - fs.x, driveState.z - fs.z);
+      const inCircle = distCircle < 3.45;
+      const inCanopy = distCircle < 5.0;
+      const att = fs.attendant;
+      const uAtt = att && att.userData;
+      const animAttWalk = (moving) => {
+        if (!uAtt || !uAtt.legL) return;
+        if (moving) {
+          const sw = Math.sin(now * 0.011) * 0.55;
+          uAtt.legL.rotation.x = sw; uAtt.legR.rotation.x = -sw;
+          uAtt.armL.rotation.x = -sw * 0.7; uAtt.armR.rotation.x = sw * 0.7;
+        } else {
+          uAtt.legL.rotation.x = 0; uAtt.legR.rotation.x = 0;
+          uAtt.armL.rotation.x = 0; uAtt.armR.rotation.x = 0;
+        }
+      };
+      // Compute exact vehicle tank cap position (Bike = Front Dome; Car/Truck = Right Side!) & price (Bike 400, Car 500, Truck 1000)
+      const vehType = eq.modelType || 'car';
+      const isBike = vehType === 'bike';
+      const isTruck = (vehType === 'truck' || vehType === 'heavy_truck');
+      const fuelPrice = isBike ? 400 : isTruck ? 1000 : 500;
+      const hV = driveState.heading;
+      const fwdX = -Math.sin(hV), fwdZ = -Math.cos(hV);
+      const rightX = Math.cos(hV), rightZ = -Math.sin(hV);
+      const tankX = isBike ? (driveState.x + fwdX * 0.35) : (driveState.x + rightX * (isTruck ? 1.15 : 0.98) - fwdX * 0.35);
+      const tankZ = isBike ? (driveState.z + fwdZ * 0.35) : (driveState.z + rightZ * (isTruck ? 1.15 : 0.98) - fwdZ * 0.35);
+      const tankY = (driveState.y || 0.28) + (isBike ? 0.98 : isTruck ? 0.92 : 0.76);
+      const standX = tankX + rightX * 0.75;
+      const standZ = tankZ + rightZ * 0.75;
+
+      const drawHoseTo = (tx, ty, tz) => {
+        const p1x = fs.pumpX, p1y = 1.55, p1z = fs.pumpZ;
+        const hLen = Math.hypot(tx - p1x, ty - p1y, tz - p1z);
+        fs.hoseMesh.visible = true;
+        fs.hoseMesh.position.set((p1x + tx) * 0.5, (p1y + ty) * 0.5, (p1z + tz) * 0.5);
+        fs.hoseMesh.scale.set(1, Math.max(0.1, hLen), 1);
+        if (!window._hoseUpV) { window._hoseUpV = new THREE.Vector3(0, 1, 0); window._hoseDirV = new THREE.Vector3(); }
+        window._hoseDirV.set(tx - p1x, ty - p1y, tz - p1z).normalize();
+        fs.hoseMesh.quaternion.setFromUnitVectors(window._hoseUpV, window._hoseDirV);
+        if (fs.nozzleTip) {
+          fs.nozzleTip.visible = true;
+          fs.nozzleTip.position.set(tx, ty, tz);
+        }
+      };
+
+      // Keep Fuel Attendant cleanly outside the vehicle body at all times (ZERO clipping through car!)
+      if (fs.phase !== 'idle' && fs.phase !== 'pumping') {
+        const dAttCar = Math.hypot(att.position.x - driveState.x, att.position.z - driveState.z);
+        if (dAttCar < 1.55 && dAttCar > 0.01) {
+          att.position.x = driveState.x + ((att.position.x - driveState.x) / dAttCar) * 1.62;
+          att.position.z = driveState.z + ((att.position.z - driveState.z) / dAttCar) * 1.62;
+        }
+      }
+      if (fs.phase === 'idle') {
+        if (!isOnFoot && inCircle && Math.abs(driveState.speed) < 8.5 && now > fs.cooldownUntil) {
+          fs.phase = 'walk_to_pump';
+          fs.timer = 0;
+          fs.startFuel = driveState.fuel;
+          fs.price = fuelPrice;
+          driveState.speed = 0;
+          showDriveAlert('⛽ ATTENDANT PICKING UP FUEL PIPE...', 'bg-teal-400 text-slate-950');
+        }
+      } else if (fs.phase === 'walk_to_pump') {
+        if (!inCanopy) { fs.phase = 'walk_back'; continue; }
+        const dxP = (fs.pumpX + 0.9) - att.position.x, dzP = (fs.pumpZ + 0.9) - att.position.z;
+        const dP = Math.hypot(dxP, dzP);
+        if (dP < 0.6) {
+          fs.phase = 'walk_to_tank';
+          showDriveAlert('⛽ BRINGING FUEL PIPE TO ' + (isBike ? 'BIKE TANK...' : isTruck ? 'TRUCK RIGHT TANK...' : 'CAR RIGHT TANK...'), 'bg-teal-400 text-slate-950');
+        } else {
+          att.position.x += (dxP / dP) * 3.8 * dt;
+          att.position.z += (dzP / dP) * 3.8 * dt;
+          att.rotation.y = Math.atan2(dxP, dzP);
+          animAttWalk(true);
+        }
+      } else if (fs.phase === 'walk_to_tank') {
+        if (!inCanopy) { fs.hoseMesh.visible = false; if (fs.nozzleTip) fs.nozzleTip.visible = false; fs.phase = 'walk_back'; continue; }
+        const dxT = standX - att.position.x, dzT = standZ - att.position.z;
+        const dT = Math.hypot(dxT, dzT);
+        drawHoseTo(att.position.x, 1.05, att.position.z);
+        if (dT < 0.65) {
+          fs.phase = 'pumping';
+          fs.timer = 0;
+          animAttWalk(false);
+          att.rotation.y = Math.atan2(tankX - att.position.x, tankZ - att.position.z);
+          if (Audio) Audio.playTone(540, 0.08);
+        } else {
+          att.position.x += (dxT / dT) * 3.8 * dt;
+          att.position.z += (dzT / dT) * 3.8 * dt;
+          att.rotation.y = Math.atan2(dxT, dzT);
+          animAttWalk(true);
+        }
+      } else if (fs.phase === 'pumping') {
+        if (!inCanopy) { fs.hoseMesh.visible = false; if (fs.nozzleTip) fs.nozzleTip.visible = false; fs.phase = 'walk_back'; continue; }
+        fs.timer += dt;
+        const prog = Math.min(1, fs.timer / 3.0);
+        driveState.fuel = fs.startFuel + (100 - fs.startFuel) * prog;
+        driveState.lowFuelWarned = false;
+        updateFuelHUD();
+        drawHoseTo(tankX, tankY, tankZ);
+        if (uAtt && uAtt.armR) uAtt.armR.rotation.x = -1.25;
+        if (Math.floor(fs.timer * 4) !== Math.floor((fs.timer - dt) * 4)) {
+          showDriveAlert('⛽ FILLING PETROL... ' + Math.round(driveState.fuel) + '%', 'bg-sky-400 text-slate-950');
+        }
+        if (prog >= 1) {
+          if (uAtt && uAtt.armR) uAtt.armR.rotation.x = 0;
+          fs.phase = 'return_pipe';
+          showDriveAlert('⛽ TANK 100% FULL! RETURNING FUEL PIPE TO PUMP...', 'bg-emerald-400 text-slate-950');
+        }
+      } else if (fs.phase === 'return_pipe') {
+        const dxR = (fs.pumpX + 0.9) - att.position.x, dzR = (fs.pumpZ + 0.9) - att.position.z;
+        const dR = Math.hypot(dxR, dzR);
+        drawHoseTo(att.position.x, 1.05, att.position.z);
+        if (dR < 0.65) {
+          fs.hoseMesh.visible = false;
+          if (fs.nozzleTip) fs.nozzleTip.visible = false;
+          fs.phase = 'walk_to_driver';
+        } else {
+          att.position.x += (dxR / dR) * 3.8 * dt;
+          att.position.z += (dzR / dR) * 3.8 * dt;
+          att.rotation.y = Math.atan2(dxR, dzR);
+          animAttWalk(true);
+        }
+      } else if (fs.phase === 'walk_to_driver') {
+        if (!inCanopy) { fs.phase = 'walk_back'; continue; }
+        // Approach the NEAREST side window (same side as the Petrol Pump!) so attendant NEVER walks through the car!
+        const pumpSideDot = (fs.pumpX - driveState.x) * rightX + (fs.pumpZ - driveState.z) * rightZ;
+        const nearSign = pumpSideDot >= 0 ? 1 : -1;
+        const drvX = driveState.x + rightX * (nearSign * 1.75) + fwdX * 0.35;
+        const drvZ = driveState.z + rightZ * (nearSign * 1.75) + fwdZ * 0.35;
+        const dxD = drvX - att.position.x, dzD = drvZ - att.position.z;
+        const dD = Math.hypot(dxD, dzD);
+        if (dD < 0.85) {
+          animAttWalk(false);
+          att.rotation.y = Math.atan2(driveState.x - att.position.x, driveState.z - att.position.z);
+          fs.phase = 'await_pay';
+          window._activeFuelStation = fs;
+          const card = document.getElementById('fuelPayCard');
+          const amtEl = document.getElementById('fuelBillAmtEl');
+          const btnEl = document.getElementById('payFuelBtn');
+          if (amtEl) amtEl.textContent = fs.price + ' COINS';
+          if (btnEl) btnEl.textContent = 'PAY ' + fs.price + ' 💳';
+          if (card) card.classList.remove('hidden');
+          if (Audio) Audio.playReadyChime();
+          showDriveAlert('💳 PLEASE PAY ' + fs.price + ' COINS FOR FUEL!', 'bg-amber-400 text-slate-950');
+        } else {
+          att.position.x += (dxD / dD) * 4.0 * dt;
+          att.position.z += (dzD / dD) * 4.0 * dt;
+          att.rotation.y = Math.atan2(dxD, dzD);
+          animAttWalk(true);
+        }
+      } else if (fs.phase === 'await_pay') {
+        if (!inCanopy) {
+          const card = document.getElementById('fuelPayCard');
+          if (card) card.classList.add('hidden');
+          fs.phase = 'walk_back';
+        }
+      } else if (fs.phase === 'walk_back') {
+        const dxB = fs.attHomeX - att.position.x, dzB = fs.attHomeZ - att.position.z;
+        const dB = Math.hypot(dxB, dzB);
+        if (dB < 0.45) {
+          att.position.set(fs.attHomeX, 0.32, fs.attHomeZ);
+          animAttWalk(false);
+          fs.phase = 'idle';
+        } else {
+          att.position.x += (dxB / dB) * 3.8 * dt;
+          att.position.z += (dzB / dB) * 3.8 * dt;
+          att.rotation.y = Math.atan2(dxB, dzB);
+          animAttWalk(true);
+        }
+      }
     }
 
     for (const g of serviceGarages) {
@@ -2754,10 +3650,10 @@
         const tx = sc.taxi;
         if (!tx || tx === playerGroup) continue;
         const dTx = Math.hypot(driveState.x - tx.position.x, driveState.z - tx.position.z);
-        if (dTx < 4.1) {
+        if (dTx < 4.4) {
           const ang = Math.atan2(driveState.x - tx.position.x, driveState.z - tx.position.z);
           const impactSpd = Math.abs(driveState.speed);
-          if (impactSpd >= MIN_CRASH_SPD && !sc.wreckedTaxi) {
+          if (impactSpd >= (35 / 2.6) && !sc.wreckedTaxi) {
             driveState.x = tx.position.x + Math.sin(ang) * 4.4;
             driveState.z = tx.position.z + Math.cos(ang) * 4.4;
             driveState.speed *= 0.2;
@@ -2805,18 +3701,55 @@
       }
     }
 
-    // 1. SMOOTH DOOR-OPEN EXIT / ENTER / GTA CAR-JACK ANIMATION
+    // 1. REAL 3D SWINGING DOOR-OPEN EXIT / ENTER / GTA CAR-JACK ANIMATION (Every Car & Truck opens its door smoothly!)
     if (vehicleAnim && playerAvatar) {
       vehicleAnim.t += dt;
       const p = Math.min(1, vehicleAnim.t / vehicleAnim.dur);
-      const ease = p * (2 - p);
-      // Animate avatar stepping out or climbing smoothly into driver seat
+      // Create a visible 3D hinged driver door on the vehicle (skipped for Bikes!)
+      if (!vehicleAnim.doorInit) {
+        vehicleAnim.doorInit = true;
+        const targetVeh = (vehicleAnim.type === 'enter' && vehicleAnim.targetRef && (vehicleAnim.targetRef.mesh || (vehicleAnim.targetRef.car && vehicleAnim.targetRef.car.mesh))) || playerGroup;
+        const isBikeVeh = (eq && eq.modelType === 'bike' && vehicleAnim.type === 'exit');
+        if (targetVeh && !isBikeVeh) {
+          const dPivot = new THREE.Group();
+          dPivot.position.set(-1.02, 0.82, -0.62);
+          const dPanel = new THREE.Mesh(
+            new THREE.BoxGeometry(0.10, 0.72, 1.22),
+            new THREE.MeshLambertMaterial({ color: 0x0f172a })
+          );
+          dPanel.position.set(0, 0, 0.61);
+          const dGlass = new THREE.Mesh(
+            new THREE.BoxGeometry(0.06, 0.36, 1.05),
+            new THREE.MeshBasicMaterial({ color: 0x7dd3fc, transparent: true, opacity: 0.72 })
+          );
+          dGlass.position.set(0, 0.44, 0.61);
+          dPivot.add(dPanel, dGlass);
+          targetVeh.add(dPivot);
+          vehicleAnim.doorPivot = dPivot;
+          vehicleAnim.doorParent = targetVeh;
+        }
+      }
+      // Door Swing Curve: Opens 0->72° (0..0.32), Stays Open (0.32..0.72), Closes 72°->0 (0.72..1.0)!
+      if (vehicleAnim.doorPivot) {
+        const doorOpenFrac = p < 0.32 ? (p / 0.32) : p < 0.72 ? 1.0 : Math.max(0, (1 - p) / 0.28);
+        vehicleAnim.doorPivot.rotation.y = -doorOpenFrac * 1.25;
+      }
+      // Avatar steps smoothly ONLY while door is open (0.28 -> 0.78) — NO jumping through closed doors!
+      const stepP = Math.max(0, Math.min(1, (p - 0.25) / 0.52));
+      const ease = stepP * (2 - stepP);
       const ax = vehicleAnim.startX + (vehicleAnim.endX - vehicleAnim.startX) * ease;
       const az = vehicleAnim.startZ + (vehicleAnim.endZ - vehicleAnim.startZ) * ease;
-      playerAvatar.position.set(ax, 0.22 + Math.sin(p * Math.PI) * 0.25, az);
+      const gAnimY = getGroundY(ax, az);
+      playerAvatar.position.set(ax, gAnimY, az);
       playerAvatar.rotation.y = vehicleAnim.heading + (vehicleAnim.type === 'exit' ? Math.PI * 0.5 : -Math.PI * 0.5);
-      // Slight car door/chassis rock as door opens & closes!
-      if (playerChassis) playerChassis.rotation.z = Math.sin(p * Math.PI) * 0.06;
+      // Walking leg stride while stepping out/in
+      const uA = playerAvatar.userData;
+      if (uA && uA.legL && stepP > 0 && stepP < 1) {
+        const swA = Math.sin(stepP * Math.PI * 3) * 0.45;
+        uA.legL.rotation.x = swA; uA.legR.rotation.x = -swA;
+        uA.armL.rotation.x = -swA * 0.6; uA.armR.rotation.x = swA * 0.6;
+      }
+      if (playerChassis) playerChassis.rotation.z = Math.sin(p * Math.PI) * 0.04;
       // Toss pulled-out NPC driver sideways onto the street!
       if (vehicleAnim.tossedNpc) {
         const npc = vehicleAnim.tossedNpc;
@@ -2826,10 +3759,13 @@
         npc.rotation.z = p * 1.4;
       }
       if (p >= 1) {
+        if (vehicleAnim.doorPivot && vehicleAnim.doorParent) { try { vehicleAnim.doorParent.remove(vehicleAnim.doorPivot); } catch (e) {} }
         if (playerChassis) playerChassis.rotation.z = 0;
         if (vehicleAnim.type === 'exit') {
           isOnFoot = true;
           driveState.x = vehicleAnim.endX; driveState.z = vehicleAnim.endZ;
+          footState.y = getGroundY(driveState.x, driveState.z);
+          if (playerAvatar) playerAvatar.position.set(driveState.x, footState.y, driveState.z);
           setControlModeUI(true);
         } else {
           if (vehicleAnim.tossedNpc) {
@@ -2859,6 +3795,18 @@
           }
           driveState.x = vehicleAnim.endX; driveState.z = vehicleAnim.endZ; driveState.heading = vehicleAnim.heading;
           isOnFoot = false; driveState.speed = 0;
+          // Per-Vehicle Fuel Memory: New car starts at 100% fuel; returning to your previous car resumes its exact saved fuel!
+          if (playerGroup) {
+            playerGroup.userData = playerGroup.userData || {};
+            if (typeof playerGroup.userData.fuelLevel === 'number') {
+              driveState.fuel = playerGroup.userData.fuelLevel;
+            } else {
+              driveState.fuel = 100;
+              playerGroup.userData.fuelLevel = 100;
+            }
+            driveState.lowFuelWarned = driveState.fuel <= 20;
+            updateFuelHUD();
+          }
           if (playerGroup && playerGroup.userData && playerGroup.userData.rider) playerGroup.userData.rider.visible = true;
           playerAvatar.visible = false;
           setControlModeUI(false);
@@ -2891,7 +3839,7 @@
         let fx = driveState.x + fdx;
         let fz = driveState.z + fdz;
         // 2-Pass Circle-vs-AABB Push-Out (Glides smoothly past every shop wall, doorway, cash counter & stand — ZERO glitching!)
-        const resolvedFoot = pushOutOfBuildings(fx, fz, 0.52);
+        const resolvedFoot = pushOutOfBuildings(fx, fz, 0.68);
         fx = resolvedFoot.x;
         fz = resolvedFoot.z;
         // Solid on-foot collision against Police Cars & Yellow Taxis too!
@@ -2946,15 +3894,17 @@
       }
 
       // REAL ATHLETIC HUMAN JUMP PHYSICS + ARTICULATED KNEE/ELBOW/TORSO ANIMATION!
+      const curFloorY = getGroundY(driveState.x, driveState.z);
       if (footState.jumping) {
         footState.y += footState.vy * dt;
         footState.vy -= 27 * dt;
-        if (footState.y <= 0.22) {
-          footState.y = 0.22; footState.vy = 0; footState.jumping = false;
+        if (footState.y <= curFloorY) {
+          footState.y = curFloorY; footState.vy = 0; footState.jumping = false;
           footState.landTimer = 0.16; // Soft knee-bend landing impact!
         }
-      } else if (footState.landTimer > 0) {
-        footState.landTimer = Math.max(0, footState.landTimer - dt);
+      } else {
+        footState.y = curFloorY; // Always stands cleanly ON TOP of road, sidewalk, shop floor & bridge — ZERO sinking!
+        if (footState.landTimer > 0) footState.landTimer = Math.max(0, footState.landTimer - dt);
       }
 
       playerAvatar.position.set(driveState.x, footState.y, driveState.z);
@@ -2993,20 +3943,31 @@
           u.armL.rotation.x = -0.4 - cw * 0.6; u.armR.rotation.x = -0.4 + cw * 0.6;
           if (u.elbowL) u.elbowL.rotation.x = -0.7; if (u.elbowR) u.elbowR.rotation.x = -0.7;
         } else if (mag > 0.08) {
-          // Smooth Realistic Running / Walking Stride with Knee & Elbow Bend + Slight Bounce!
-          const freq = isSprintPressed ? 0.016 : 0.011;
+          // REALISTIC HUMAN BIOMECHANICS RUNNING CYCLE (Forward Knee Drive + Back-Leg Heel Kick + Natural Pumping Arms + Torso Twist!)
+          const freq = isSprintPressed ? 0.014 : 0.0095;
           const phase = now * freq;
-          const sw = Math.sin(phase) * (isSprintPressed ? 0.88 : 0.52);
+          const sP = Math.sin(phase);
+          const cP = Math.cos(phase);
+          const amp = isSprintPressed ? 0.85 : 0.48;
           if (u.bodyRoot) {
-            u.bodyRoot.position.y = Math.abs(Math.sin(phase)) * (isSprintPressed ? 0.10 : 0.04);
+            // Realistic vertical bounce synced to foot-strike + athletic forward sprint lean + counter-twist!
+            u.bodyRoot.position.y = Math.abs(cP) * (isSprintPressed ? 0.09 : 0.035);
             u.bodyRoot.rotation.x = isSprintPressed ? 0.16 : 0.05;
+            u.bodyRoot.rotation.y = -sP * (isSprintPressed ? 0.15 : 0.06);
           }
-          u.legL.rotation.x = sw; u.legR.rotation.x = -sw;
-          if (u.kneeL) u.kneeL.rotation.x = Math.max(0.05, -sw * 1.15);
-          if (u.kneeR) u.kneeR.rotation.x = Math.max(0.05, sw * 1.15);
-          u.armL.rotation.x = -sw * 0.95; u.armR.rotation.x = sw * 0.95;
-          if (u.elbowL) u.elbowL.rotation.x = isSprintPressed ? -1.1 : -0.45;
-          if (u.elbowR) u.elbowR.rotation.x = isSprintPressed ? -1.1 : -0.45;
+          // Asymmetric Real Leg Stride: Forward leg drives knee up smoothly, trailing leg kicks heel back!
+          const lHip = sP * amp;
+          const rHip = -sP * amp;
+          u.legL.rotation.x = lHip;
+          u.legR.rotation.x = rHip;
+          if (u.kneeL) u.kneeL.rotation.x = lHip < 0 ? Math.min(1.25, -lHip * 1.15 + 0.18) : (isSprintPressed ? 0.22 : 0.08);
+          if (u.kneeR) u.kneeR.rotation.x = rHip < 0 ? Math.min(1.25, -rHip * 1.15 + 0.18) : (isSprintPressed ? 0.22 : 0.08);
+          // Natural Opposite-Arm Sprinter Pump (Dynamic elbow flexion forward & relaxed extension back!)
+          u.armL.rotation.x = -lHip * 0.95;
+          u.armR.rotation.x = -rHip * 0.95;
+          u.armL.rotation.z = 0.08; u.armR.rotation.z = -0.08;
+          if (u.elbowL) u.elbowL.rotation.x = isSprintPressed ? (-0.75 + lHip * 0.35) : (-0.25 + lHip * 0.18);
+          if (u.elbowR) u.elbowR.rotation.x = isSprintPressed ? (-0.75 + rHip * 0.35) : (-0.25 + rHip * 0.18);
         } else if (footState.pose === 'prone') {
           // Lying Flat Prone Pose (Free Fire Style!)
           if (u.bodyRoot) { u.bodyRoot.position.y = 0.25; u.bodyRoot.rotation.x = Math.PI / 2; }
@@ -3022,13 +3983,52 @@
           if (u.elbowL) u.elbowL.rotation.x = -0.7; if (u.elbowR) u.elbowR.rotation.x = -0.7;
         } else {
           // Clean Idle Breathing Stance
-          if (u.bodyRoot) { u.bodyRoot.position.y = Math.sin(now * 0.003) * 0.015; u.bodyRoot.rotation.x = 0; }
+          if (u.bodyRoot) { u.bodyRoot.position.y = Math.sin(now * 0.003) * 0.015; u.bodyRoot.rotation.x = 0; u.bodyRoot.rotation.y = 0; }
           u.legL.rotation.x = 0; u.legR.rotation.x = 0;
           if (u.kneeL) u.kneeL.rotation.x = 0;
           if (u.kneeR) u.kneeR.rotation.x = 0;
           u.armL.rotation.x = 0; u.armR.rotation.x = 0;
           if (u.elbowL) u.elbowL.rotation.x = -0.08;
           if (u.elbowR) u.elbowR.rotation.x = -0.08;
+        }
+        // REALISTIC 3-STAGE HUMAN BOXING PUNCH (Alternating Left Jab & Right Cross: Wind-Up -> Snap Straight Forward -> Boxing Guard!)
+        if (footState.punchTimer > 0) {
+          footState.punchTimer = Math.max(0, footState.punchTimer - dt);
+          const tNorm = 1 - (footState.punchTimer / 0.36); // 0 -> 1
+          const isRight = (footState.punchHand || 0) === 0;
+          const pArm = isRight ? u.armR : u.armL;
+          const pElb = isRight ? u.elbowR : u.elbowL;
+          const gArm = isRight ? u.armL : u.armR;
+          const gElb = isRight ? u.elbowL : u.elbowR;
+          const twistSign = isRight ? 1 : -1;
+
+          // Non-punching hand stays up in realistic boxing guard near chest/chin!
+          gArm.rotation.x = -0.78;
+          gArm.rotation.z = twistSign * 0.22;
+          if (gElb) gElb.rotation.x = -1.45;
+
+          if (tNorm < 0.22) {
+            // Stage 1: Quick shoulder wind-up (fist pulled back to cheek)
+            const k = tNorm / 0.22;
+            pArm.rotation.x = -0.45 * k;
+            if (pElb) pElb.rotation.x = -1.65 * k;
+            if (u.bodyRoot) { u.bodyRoot.rotation.y = -0.34 * twistSign * k; u.bodyRoot.rotation.x = 0.08 * k; }
+          } else if (tNorm < 0.58) {
+            // Stage 2: Explosive straight punch snap forward at chest/head height!
+            const k = (tNorm - 0.22) / 0.36;
+            const snap = Math.min(1, k * 2.2);
+            pArm.rotation.x = -0.45 - 1.08 * snap; // Straight forward punch (-1.53 rad), NOT lifted overhead!
+            pArm.rotation.z = -0.14 * twistSign * snap;
+            if (pElb) pElb.rotation.x = -1.65 * (1 - snap) - 0.08; // Full crisp elbow extension on impact!
+            if (u.bodyRoot) { u.bodyRoot.rotation.y = (-0.34 + 0.82 * snap) * twistSign; u.bodyRoot.rotation.x = 0.15 * snap; }
+          } else {
+            // Stage 3: Smooth recoil back to stance
+            const k = (tNorm - 0.58) / 0.42;
+            pArm.rotation.x = -1.53 * (1 - k);
+            pArm.rotation.z = -0.14 * twistSign * (1 - k);
+            if (pElb) pElb.rotation.x = -0.08 - 0.55 * Math.sin(k * Math.PI);
+            if (u.bodyRoot) { u.bodyRoot.rotation.y = 0.48 * twistSign * (1 - k); u.bodyRoot.rotation.x = 0.15 * (1 - k); }
+          }
         }
       }
 
@@ -3090,21 +4090,12 @@
       }
 
       // Keep parked car at its exact spot
-      playerGroup.position.set(parkedCarPos.x, 0, parkedCarPos.z);
+      playerGroup.position.set(parkedCarPos.x, getGroundY(parkedCarPos.x, parkedCarPos.z), parkedCarPos.z);
       playerGroup.rotation.y = parkedCarPos.heading;
     } else {
-      let bridgeY = 0;
-      for (let bi = 0; bi < bridgeDeckZones.length; bi++) {
-        const bz = bridgeDeckZones[bi];
-        const dxB = Math.abs(driveState.x - bz.bx), dzB = Math.abs(driveState.z - bz.bz);
-        const along = bz.alongX ? dxB : dzB;
-        const across = bz.alongX ? dzB : dxB;
-        if (across < 8.5 && along < 15.8) {
-          bridgeY = along < 10.0 ? 0.52 : Math.max(0, 0.52 * (1 - (along - 10.0) / 5.8));
-          break;
-        }
-      }
-      playerGroup.position.set(driveState.x, bridgeY, driveState.z);
+      const targetGroundY = getGroundY(driveState.x, driveState.z);
+      driveState.y = (driveState.y || 0) + (targetGroundY - (driveState.y || 0)) * Math.min(1, 18 * dt);
+      playerGroup.position.set(driveState.x, driveState.y, driveState.z);
       playerGroup.rotation.y = driveState.heading;
     }
     const spdNorm = Math.min(1, Math.abs(driveState.speed) / 28);
@@ -3150,9 +4141,10 @@
     const camPitch = Math.max(-0.85, Math.min(1.32, driveState.camOrbitPitch));
     const horizDist = Math.cos(Math.max(0.05, camPitch)) * camDist;
     let targetCamX = driveState.x + Math.sin(totalCamYaw) * horizDist;
-    const rawCamY = (driveState.y || 0) + Math.sin(camPitch) * camDist + (isOnFoot ? 1.55 : 1.35);
-    let targetCamY = Math.max(0.75, curShopInside ? Math.min(3.75, rawCamY) : rawCamY);
     let targetCamZ = driveState.z + Math.cos(totalCamYaw) * horizDist;
+    const rawCamY = (driveState.y || 0) + Math.sin(camPitch) * camDist + (isOnFoot ? 1.55 : 1.35);
+    const camMinFloor = getGroundY(targetCamX, targetCamZ) + 1.15;
+    let targetCamY = Math.max(camMinFloor, curShopInside ? Math.min(3.75, rawCamY) : rawCamY);
     if (curShopInside) {
       const activeShop = cityLandmarks.find((l) => l.title === curShopInside && l.isWalkInShop && driveState.x > l.minX && driveState.x < l.maxX && driveState.z > l.minZ && driveState.z < l.maxZ);
       if (activeShop) {
@@ -3182,9 +4174,12 @@
 
     for (const c of coinMeshes) {
       if (!c.userData.active) {
-        if (now > c.userData.respawnAt) { c.userData.active = true; c.visible = true; }
+        if (now > c.userData.respawnAt) { c.userData.active = true; }
         continue;
       }
+      const coinNear = (Math.abs(c.position.x - driveState.x) < 110 && Math.abs(c.position.z - driveState.z) < 110);
+      c.visible = coinNear;
+      if (!coinNear) continue;
       if (c.userData.disc) {
         c.userData.disc.rotation.y += 3.6 * dt;
         c.userData.disc.position.y = 1.65 + Math.sin(now * 0.005 + c.userData.phase) * 0.28;
@@ -3294,6 +4289,8 @@
           t.mesh.position.x = driveState.x + (t.dir > 0 ? -235 : 235);
         }
       }
+      t.mesh.position.y = getBridgeY(t.mesh.position.x, t.mesh.position.z);
+      t.mesh.rotation.set(0, t.axis === 'z' ? (t.dir > 0 ? Math.PI : 0) : (t.dir > 0 ? -Math.PI / 2 : Math.PI / 2), 0);
       if (t.wheels && t.curSpeed > 0.2) {
         for (const tw of t.wheels) tw.rotation.x -= t.curSpeed * dt * 0.75;
       }
@@ -3353,19 +4350,7 @@
           if (Audio) Audio.playCrash();
         }
       }
-      // Solid collision with Shop Yellow Taxis
-      for (let si = 0; si < shopCycles.length; si++) {
-        const tx = shopCycles[si].taxi;
-        if (!tx || tx === playerGroup) continue;
-        const dTx = Math.hypot(driveState.x - tx.position.x, driveState.z - tx.position.z);
-        if (dTx < 3.5) {
-          const ang = Math.atan2(driveState.x - tx.position.x, driveState.z - tx.position.z);
-          driveState.x = tx.position.x + Math.sin(ang) * 3.75;
-          driveState.z = tx.position.z + Math.cos(ang) * 3.75;
-          driveState.speed = -driveState.speed * 0.35;
-          if (Audio) Audio.playCrash();
-        }
-      }
+
       // Solid collision with Emergency Tow Trucks
       for (let ei = 0; ei < emergencyEvents.length; ei++) {
         const tt = emergencyEvents[ei].towTruck;
@@ -3420,11 +4405,11 @@
       const ev = emergencyEvents[eIdx];
       // Flash emergency beacons on Fire Engine & Ambulance
       const flash = Math.floor(now / 180) % 2 === 0;
-      if (ev.fireTruck.userData) {
+      if (ev.fireTruck && ev.fireTruck.userData && ev.fireTruck.userData.beaconR && ev.fireTruck.userData.beaconB) {
         ev.fireTruck.userData.beaconR.material.color.setHex(flash ? 0xff1e1e : 0x330505);
         ev.fireTruck.userData.beaconB.material.color.setHex(!flash ? 0x00f0ff : 0x052233);
       }
-      if (ev.ambulance.userData) {
+      if (ev.ambulance && ev.ambulance.userData && ev.ambulance.userData.beaconR && ev.ambulance.userData.beaconB) {
         ev.ambulance.userData.beaconR.material.color.setHex(flash ? 0xff1e1e : 0x330505);
         ev.ambulance.userData.beaconB.material.color.setHex(!flash ? 0x38bdf8 : 0x052233);
       }
@@ -3467,6 +4452,7 @@
         }
         obj.position.x += nx * spd * dt;
         obj.position.z += nz * spd * dt;
+        obj.position.y = getBridgeY(obj.position.x, obj.position.z);
         obj.rotation.y = Math.atan2(-dxM, -dzM);
         return false;
       };
@@ -3499,17 +4485,28 @@
         ev.phaseTimer += dt;
         ev.waterJet.scale.y = 0.9 + Math.random() * 0.25;
         ev.fireScale = Math.max(0.01, 1.0 - ev.phaseTimer / 3.0);
-        if (ev.phaseTimer >= 3.0) {
+        if (ev.phaseTimer >= 3.2) {
           ev.fireGroup.visible = false;
           ev.waterJet.visible = false;
           if (ev.firefighter) ev.firefighter.visible = false;
+          ev.phase = 'amb_pullup';
+          ev.phaseTimer = 0;
+          showDriveAlert('STEP 2 DONE: FIRE OUT! STEP 3: AMBULANCE PULLING UP! 🚒✅🚑', 'bg-emerald-400 text-slate-950');
+        }
+      } else if (ev.phase === 'amb_pullup') {
+        if (!ev.stolenFire) stepToPoint(ev.fireTruck, ev.ftExit.x, ev.ftExit.z, 14);
+        const ambHere = ev.stolenAmb ? true : stepToPoint(ev.ambulance, ev.ambStop.x, ev.ambStop.z, 16);
+        if (ambHere) {
           ev.phase = 'rescue';
           ev.phaseTimer = 0;
-          showDriveAlert('FIRE OUT! AMBULANCE MOVING IN — 2 PARAMEDICS RESCUING! 🚑', 'bg-emerald-400 text-slate-950');
+          if (ev.stretcherGroup) {
+            ev.stretcherGroup.visible = true;
+            ev.stretcherGroup.position.set(ev.ambulance.position.x, 0.22, ev.ambulance.position.z);
+          }
+          showDriveAlert('STEP 4: 2 PARAMEDICS CARRYING PATIENT TO AMBULANCE! 🚑🧑‍⚕️', 'bg-sky-400 text-slate-950');
         }
       } else if (ev.phase === 'rescue') {
-        // Fire is OUT -> Ambulance now pulls up to victim, THEN 2 Paramedics exit with stretcher!
-        const ambHere = ev.stolenAmb ? true : stepToPoint(ev.ambulance, ev.ambStop.x, ev.ambStop.z, 18);
+        const ambHere = true;
         if (ambHere) {
           ev.phaseTimer += dt;
           // 2 Paramedics carry 3D Stretcher out to fallen human (0-1.2s), lift & carry back to Ambulance (1.2-2.5s)!
@@ -3563,7 +4560,10 @@
         }
         if (ev.ambWpIdx >= ev.ambWaypoints.length) {
           showDriveAlert('PATIENT SAFELY AT HOSPITAL! 🏥✅', 'bg-emerald-500 text-slate-950');
-          scene.remove(ev.fireGroup, ev.waterJet, ev.victim, ev.firefighter, ev.stretcherGroup, ev.towTruck);
+          scene.remove(ev.fireGroup, ev.waterJet, ev.stretcherGroup);
+          if (!ev.isHumanOnly) scene.remove(ev.victim);
+          if (ev.firefighter) scene.remove(ev.firefighter);
+          if (ev.towTruck) scene.remove(ev.towTruck);
           if (!ev.stolenFire) scene.remove(ev.fireTruck);
           if (!ev.stolenAmb) scene.remove(ev.ambulance);
           ev.trafficCar.wrecked = false;
@@ -3662,6 +4662,7 @@
         pu.speed *= 0.5;
       }
       pu.mesh.position.x = finalSafe.x;
+      pu.mesh.position.y = getBridgeY(finalSafe.x, finalSafe.z);
       pu.mesh.position.z = finalSafe.z;
       pu.mesh.rotation.y = pu.heading;
       if (pu.speed > 0.25 && pu.mesh.userData && pu.mesh.userData.wheels) {
@@ -3673,7 +4674,7 @@
         if (Audio && Audio.startHorn) Audio.startHorn();
       }
       // Live 10-Second Countdown Timer at Top of Screen -> Police Car leaves cleanly after 10s (or >100m escape)!
-      const remMs = (pu.expiresAt || (pu.spawnAt + 10000)) - now;
+      const remMs = (pu.expiresAt || (pu.spawnAt + 20000)) - now;
       const ptEl = document.getElementById('policeTimerEl');
       if (ptEl) {
         if (remMs > 0) {
@@ -3689,7 +4690,7 @@
         if (policeUnits.length === 0) {
           if (ptEl) ptEl.classList.add('hidden');
           gainXP(150);
-          showDriveAlert(remMs <= 0 ? '10s OVER — POLICE LEFT! CLEAR! +150 XP ✅' : 'ESCAPED > 100m! POLICE LEFT! +150 XP 🚓💨', 'bg-emerald-500 text-slate-950');
+          showDriveAlert(remMs <= 0 ? '20s OVER — POLICE LEFT! CLEAR! +150 XP ✅' : 'ESCAPED > 100m! POLICE LEFT! +150 XP 🚓💨', 'bg-emerald-500 text-slate-950');
         }
       }
     }
@@ -3789,7 +4790,19 @@
         }
       } else if (sc.stolenTaxi) { continue;
       } else if (sc.phase === 'taxi_drive') {
-        sc.taxi.position.x += 13 * dt;
+        let taxiBlocked = false;
+        for (let sj = 0; sj < shopCycles.length; sj++) {
+          if (sj === si || shopCycles[sj].wreckedTaxi) continue;
+          const ot = shopCycles[sj].taxi;
+          if (ot && Math.hypot(sc.taxi.position.x - ot.position.x, sc.taxi.position.z - ot.position.z) < 4.4) {
+            taxiBlocked = true;
+            if (!sc.wreckedTaxi) {
+              triggerTrafficAccident({ mesh: sc.taxi, wrecked: false, curSpeed: 13, axis: 'x' }, now, sc);
+            }
+            break;
+          }
+        }
+        if (!taxiBlocked) sc.taxi.position.x += 13 * dt;
         sc.taxi.rotation.y = -Math.PI / 2;
         sc.timer += dt;
         if (sc.timer > 6.5) {
@@ -3798,6 +4811,7 @@
         }
       } else if (sc.phase === 'taxi_return') {
         sc.taxi.position.x += 13 * dt;
+        sc.taxi.position.y = getBridgeY(sc.taxi.position.x, sc.taxi.position.z);
         if (sc.taxi.position.x >= sc.doorX) {
           sc.taxi.position.x = sc.doorX;
           sh.visible = true; sc.bag.visible = false;
@@ -3811,20 +4825,25 @@
     for (let i = 0; i < walkingHumans.length; i++) {
       const h = walkingHumans[i];
       if (h.flying) {
-        h.mesh.position.x += h.vx * dt;
-        h.mesh.position.y += h.vy * dt;
-        h.mesh.position.z += h.vz * dt;
-        h.vy -= 26 * dt; // Gravity
-        h.mesh.rotation.x += 9.5 * dt;
-        h.mesh.rotation.z += 7.2 * dt;
-        if (h.mesh.position.y < 0.22) {
-          h.mesh.position.y = 0.22;
-          h.vy = Math.abs(h.vy) * 0.35;
-          h.vx *= 0.65; h.vz *= 0.65;
+        // Short realistic side tumble (0.45s), then lies still flat on the ground waiting for Ambulance!
+        if (!h.fallenStill) {
+          h.mesh.position.x += h.vx * dt;
+          h.mesh.position.y += h.vy * dt;
+          h.mesh.position.z += h.vz * dt;
+          h.vy -= 22 * dt;
+          h.mesh.rotation.x = Math.min(Math.PI / 2, h.mesh.rotation.x + 5.5 * dt);
+          if (h.mesh.position.y <= 0.32) {
+            h.mesh.position.y = 0.32;
+            h.mesh.rotation.set(Math.PI / 2, h.mesh.rotation.y, 0);
+            h.vx = 0; h.vy = 0; h.vz = 0;
+            h.fallenStill = true;
+          }
         }
         if (now > h.respawnAt) {
           h.flying = false;
-          h.mesh.position.set(h.basePos.x, 0.22, h.basePos.z);
+          h.fallenStill = false;
+          h.mesh.visible = true;
+          h.mesh.position.set(h.basePos.x, 0.24, h.basePos.z);
           h.mesh.rotation.set(0, h.axis === 'z' ? (h.dir > 0 ? 0 : Math.PI) : (h.dir > 0 ? Math.PI / 2 : -Math.PI / 2), 0);
         }
         continue;
@@ -3839,7 +4858,7 @@
         h.mesh.position.z += stepH;
         if (Math.abs(h.mesh.position.z - driveState.z) > 170 || Math.abs(h.mesh.position.x - driveState.x) > 170) {
           const nearGX = Math.round(driveState.x / BLOCK_STEP) + ((i % 5) - 2);
-          h.mesh.position.x = nearGX * BLOCK_STEP + (h.dir > 0 ? 5.3 : -5.3);
+          h.mesh.position.x = nearGX * BLOCK_STEP + (h.dir > 0 ? 6.75 : -6.75);
           h.mesh.position.z = driveState.z + (h.dir > 0 ? -155 : 155);
           h.basePos = { x: h.mesh.position.x, z: h.mesh.position.z };
         }
@@ -3847,11 +4866,12 @@
         h.mesh.position.x += stepH;
         if (Math.abs(h.mesh.position.x - driveState.x) > 170 || Math.abs(h.mesh.position.z - driveState.z) > 170) {
           const nearGZ = Math.round(driveState.z / BLOCK_STEP) + ((i % 5) - 2);
-          h.mesh.position.z = nearGZ * BLOCK_STEP + (h.dir > 0 ? 5.3 : -5.3);
+          h.mesh.position.z = nearGZ * BLOCK_STEP + (h.dir > 0 ? 6.75 : -6.75);
           h.mesh.position.x = driveState.x + (h.dir > 0 ? -155 : 155);
           h.basePos = { x: h.mesh.position.x, z: h.mesh.position.z };
         }
       }
+      h.mesh.position.y = Math.max(0.22, getBridgeY(h.mesh.position.x, h.mesh.position.z) + 0.02);
       const swing = Math.sin(now * 0.0075 + h.phase) * 0.58;
       const u = h.mesh.userData;
       if (u && u.legL) {
@@ -3861,20 +4881,45 @@
       // Realistic Human Knockback: Light touch tumbles just 2-4m nearby; fast hit knocks back moderately (NEVER flies miles away!)
       const distCar = Math.hypot(h.mesh.position.x - driveState.x, h.mesh.position.z - driveState.z);
       const carSpd = Math.abs(driveState.speed);
-      if (!isOnFoot && distCar < 2.3 && carSpd > 2.2) {
+      if (!isOnFoot && distCar < 2.55 && carSpd > 1.0) {
         h.flying = true;
-        const isLightTouch = carSpd < 12;
-        const launchPower = isLightTouch ? (3.2 + carSpd * 0.25) : Math.min(13.5, 5.0 + carSpd * 0.28);
-        h.vx = -Math.sin(driveState.heading) * launchPower + (Math.random() - 0.5) * 1.6;
-        h.vz = -Math.cos(driveState.heading) * launchPower + (Math.random() - 0.5) * 1.6;
-        h.vy = isLightTouch ? 3.2 : Math.min(7.5, 4.2 + carSpd * 0.12);
-        h.respawnAt = now + 3500;
+        h.fallenStill = false;
+        // Knock cleanly slightly sideways (2-3.5m) onto the side of the road & lie still!
+        const sideAng = driveState.heading + (Math.random() > 0.5 ? Math.PI / 2 : -Math.PI / 2);
+        h.vx = -Math.sin(sideAng) * 4.5 - Math.sin(driveState.heading) * 2.2;
+        h.vz = -Math.cos(sideAng) * 4.5 - Math.cos(driveState.heading) * 2.2;
+        h.vy = 3.6;
+        h.respawnAt = now + 15000;
         if (Audio) Audio.playTone(180, 0.14, 'triangle', 0.12);
+        dispatchAmbulanceOnly(h, now);
         spawnPoliceChase(now);
       }
     }
 
     // Exhaust smoke removed per user preference (clean zero-smoke vehicles!)
+
+    // LIVE ANIMATED SKY: Drifting Fluffy Clouds + Orbiting Sun/Moon + Night Stars!
+    for (let ci = 0; ci < skyClouds.length; ci++) {
+      const cl = skyClouds[ci];
+      cl.offX += cl.spd * dt;
+      if (cl.offX > 290) cl.offX = -290;
+      cl.mesh.position.set(driveState.x + cl.offX, cl.y, driveState.z + cl.offZ);
+    }
+    if (skySunMesh) {
+      const isNightNow = (skyModeIdx === 2);
+      const isSunsetNow = (skyModeIdx === 1);
+      skySunMesh.position.set(
+        driveState.x + (isSunsetNow ? 185 : 130),
+        isSunsetNow ? 52 : 148,
+        driveState.z - 210
+      );
+      skySunMesh.material.color.setHex(isNightNow ? 0xe2e8f0 : isSunsetNow ? 0xfb923c : 0xfff7cc);
+      if (skyStarsMesh) {
+        skyStarsMesh.visible = isNightNow;
+        skyStarsMesh.position.set(driveState.x, 0, driveState.z);
+        if (isNightNow) skyStarsMesh.rotation.y += dt * 0.008;
+      }
+    }
 
     // REAL FLOWING CANAL WATER ANIMATION + LIVE SUBTLE ROAD MOTION SHEEN!
     if (animCanalTex) {
@@ -3887,16 +4932,31 @@
 
     // Real live building window sunlight shimmer + gentle swaying green trees
     const tSec = now * 0.001;
-    for (let i = 0; i < animatedFacadeMats.length; i++) {
-      animatedFacadeMats[i].emissiveIntensity = 0.025 + 0.04 * (0.5 + 0.5 * Math.sin(tSec * 1.8 + i * 0.85));
+
+    if (window._swayTreeCanopies) {
+      const breezeX = Math.sin(tSec * 1.4) * 0.14;
+      const breezeZ = Math.cos(tSec * 1.1) * 0.09;
+      for (let ti = 0; ti < window._swayTreeCanopies.length; ti++) {
+        const cm = window._swayTreeCanopies[ti];
+        cm.position.x = breezeX * (0.6 + ti * 0.3);
+        cm.position.z = breezeZ * (0.6 + ti * 0.3);
+      }
     }
     for (let i = 0; i < animatedTrees.length; i++) {
       const can = animatedTrees[i].userData && animatedTrees[i].userData.canopy;
       if (can) can.rotation.z = Math.sin(tSec * 1.6 + i * 0.7) * 0.035;
     }
 
-    driveState._frame = ((driveState._frame || 0) + 1) % 4;
-    if (driveState._frame === 0) drawMiniMap();
+    driveState._frame = ((driveState._frame || 0) + 1) % 5;
+    if (driveState._frame === 0) {
+      drawMiniMap();
+      for (let li = 0; li < cityLandmarks.length; li++) {
+        const lm = cityLandmarks[li];
+        if (lm.detailGroup) {
+          lm.detailGroup.visible = (Math.abs(lm.x - driveState.x) < 115 && Math.abs(lm.z - driveState.z) < 115);
+        }
+      }
+    }
     renderer.render(scene, camera);
   }
 
@@ -4161,6 +5221,12 @@
     if (carControlsBar) { carControlsBar.classList.toggle('hidden', onFoot); carControlsBar.classList.toggle('flex', !onFoot); }
     if (onFootControlsBar) { onFootControlsBar.classList.toggle('hidden', !onFoot); onFootControlsBar.classList.toggle('flex', onFoot); }
     if (!onFoot && enterNearCarBtn) { enterNearCarBtn.classList.add('hidden'); enterNearCarBtn.classList.remove('flex'); }
+    const vehStatusHud = document.getElementById('vehStatusHud');
+    if (vehStatusHud) { vehStatusHud.classList.toggle('hidden', onFoot); vehStatusHud.classList.toggle('flex', !onFoot); }
+    const onFootWeaponBox = document.getElementById('onFootWeaponBox');
+    const weaponWheelPopup = document.getElementById('weaponWheelPopup');
+    if (onFootWeaponBox) { onFootWeaponBox.classList.toggle('hidden', !onFoot); onFootWeaponBox.classList.toggle('flex', onFoot); }
+    if (!onFoot && weaponWheelPopup) weaponWheelPopup.classList.add('hidden');
   }
 
   const humanCrouchBtn = document.getElementById('humanCrouchBtn');
@@ -4168,6 +5234,7 @@
 
   const exitCurrentCar = () => {
     if (!playerGroup || !playerAvatar || isOnFoot || vehicleAnim) return;
+    if (playerGroup) { playerGroup.userData = playerGroup.userData || {}; playerGroup.userData.fuelLevel = driveState.fuel; }
     parkedCarPos = { x: driveState.x, z: driveState.z, heading: driveState.heading };
     driveState.speed = 0; driveState.gas = false; driveState.brake = false; driveState.boost = false;
     footState.pose = 'stand'; footState.running = false; footState.y = 0.22; footState.vy = 0; footState.jumping = false;
@@ -4175,9 +5242,12 @@
     playerAvatar.visible = true;
     // Smooth 0.45s Door-Open & Step-Out Animation (NO instant glitch pop!)
     const startX = driveState.x, startZ = driveState.z;
-    const endX = startX + Math.cos(driveState.heading) * 2.9;
-    const endZ = startZ - Math.sin(driveState.heading) * 2.9;
-    vehicleAnim = { type: 'exit', t: 0, dur: 0.45, startX, startZ, endX, endZ, heading: driveState.heading };
+    const rawEndX = startX + Math.cos(driveState.heading) * 2.65;
+    const rawEndZ = startZ - Math.sin(driveState.heading) * 2.65;
+    const safeExit = pushOutOfBuildings(rawEndX, rawEndZ, 0.65, false);
+    const endX = safeExit.x, endZ = safeExit.z;
+    footState.y = getGroundY(endX, endZ);
+    vehicleAnim = { type: 'exit', t: 0, dur: 0.78, startX, startZ, endX, endZ, heading: driveState.heading };
     if (Audio) { Audio.stopEngine(); Audio.playTone(460, 0.08); }
   };
 
@@ -4202,7 +5272,7 @@
       showDriveAlert('PULLING DRIVER OUT! 🚗💥', 'bg-amber-400 text-slate-950');
     }
     vehicleAnim = {
-      type: 'enter', t: 0, dur: targetRef.type === 'traffic' ? 1.15 : 0.55,
+      type: 'enter', t: 0, dur: targetRef.type === 'traffic' ? 1.25 : 0.85,
       startX: driveState.x, startZ: driveState.z, endX: tx, endZ: tz, heading: th,
       targetRef, tossedNpc
     };
@@ -4211,12 +5281,40 @@
 
   const toggleExitEnterCar = () => { if (!isOnFoot) exitCurrentCar(); else enterNearbyCar(); };
   if (exitCarBtn) exitCarBtn.addEventListener('click', (e) => { e.preventDefault(); exitCurrentCar(); });
+  const payFuelBtn = document.getElementById('payFuelBtn');
+  if (payFuelBtn) {
+    payFuelBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const fs = window._activeFuelStation;
+      const card = document.getElementById('fuelPayCard');
+      const billAmt = (fs && fs.price) ? fs.price : 500;
+      if (state.coins >= billAmt) {
+        state.coins -= billAmt;
+        persistSave();
+        if (driveCoinsEl) driveCoinsEl.textContent = state.coins.toLocaleString();
+        driveState.fuel = 100;
+        driveState.lowFuelWarned = false;
+        updateFuelHUD();
+        driveState.nitro = 100;
+        driveState.health = 100;
+        updateHealthHUD();
+        if (Audio) Audio.playCoin();
+        showDriveAlert('✅ PAID ' + billAmt + ' COINS! PETROL & NITRO 100% FULL! ⛽', 'bg-emerald-500 text-slate-950');
+      } else {
+        showDriveAlert('NOT ENOUGH COINS (NEED ' + billAmt + ' C)! COLLECT ROAD COINS! 🪙', 'bg-rose-500 text-white');
+      }
+      if (card) card.classList.add('hidden');
+      if (fs) { fs.phase = 'walk_back'; fs.cooldownUntil = performance.now() + 12000; }
+      window._activeFuelStation = null;
+    });
+  }
   if (enterNearCarBtn) enterNearCarBtn.addEventListener('click', (e) => { e.preventDefault(); enterNearbyCar(); });
 
-  // Free Fire Style LEFT-SIDE Sprint/RUN Toggle Button!
+  // INSTANT-RESPONSE LEFT-SIDE RUN / CROUCH / PRONE BUTTONS (pointerdown = 100% immediate response on every tap!)
   if (humanRunBtn) {
-    humanRunBtn.addEventListener('click', (e) => {
+    humanRunBtn.addEventListener('pointerdown', (e) => {
       e.preventDefault();
+      e.stopPropagation();
       footState.running = !footState.running;
       if (footState.running) footState.pose = 'stand';
       humanRunBtn.classList.toggle('ring-2', footState.running);
@@ -4225,19 +5323,79 @@
     });
   }
   if (humanCrouchBtn) {
-    humanCrouchBtn.addEventListener('click', (e) => {
+    humanCrouchBtn.addEventListener('pointerdown', (e) => {
       e.preventDefault();
+      e.stopPropagation();
       footState.pose = footState.pose === 'crouch' ? 'stand' : 'crouch';
       if (footState.pose !== 'stand') footState.running = false;
+      if (humanRunBtn) { humanRunBtn.classList.remove('ring-2', 'ring-white'); }
       if (Audio) Audio.playTone(460, 0.05);
     });
   }
   if (humanProneBtn) {
-    humanProneBtn.addEventListener('click', (e) => {
+    humanProneBtn.addEventListener('pointerdown', (e) => {
       e.preventDefault();
+      e.stopPropagation();
       footState.pose = footState.pose === 'prone' ? 'stand' : 'prone';
       if (footState.pose !== 'stand') footState.running = false;
+      if (humanRunBtn) { humanRunBtn.classList.remove('ring-2', 'ring-white'); }
       if (Audio) Audio.playTone(360, 0.05);
+    });
+  }
+  // ON-FOOT ROTATING WEAPON WHEEL HANDLER (4 Slots: Knife, Sniper, Double Shotgun, UMP — ready for custom 3D gun models!)
+  const weaponsToggleBtn = document.getElementById('weaponsToggleBtn');
+  const weaponWheelPopup = document.getElementById('weaponWheelPopup');
+  const activeWeaponBadge = document.getElementById('activeWeaponBadge');
+  let wheelSpinDeg = 0;
+  if (weaponsToggleBtn && weaponWheelPopup) {
+    weaponsToggleBtn.addEventListener('pointerdown', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      const opening = weaponWheelPopup.classList.contains('hidden');
+      weaponWheelPopup.classList.toggle('hidden', !opening);
+      if (opening) {
+        wheelSpinDeg = (wheelSpinDeg + 360) % 3600;
+        weaponWheelPopup.style.transform = `rotate(${wheelSpinDeg}deg)`;
+        setTimeout(() => { weaponWheelPopup.style.transform = 'rotate(0deg)'; }, 40);
+      }
+      if (Audio) Audio.playTone(opening ? 620 : 420, 0.05);
+    });
+    weaponWheelPopup.querySelectorAll('.weapon-slot-btn').forEach((btn) => {
+      btn.addEventListener('pointerdown', (e) => {
+        e.preventDefault(); e.stopPropagation();
+        const wName = btn.getAttribute('data-weapon') || 'NONE';
+        if (activeWeaponBadge) activeWeaponBadge.textContent = wName;
+        weaponWheelPopup.querySelectorAll('.weapon-slot-btn').forEach((b) => b.classList.remove('ring-2', 'ring-amber-400'));
+        btn.classList.add('ring-2', 'ring-amber-400');
+        weaponWheelPopup.classList.add('hidden');
+        if (Audio) Audio.playTone(760, 0.06);
+        showDriveAlert('⚔️ WEAPON SLOT SELECTED: ' + wName, 'bg-cyan-400 text-slate-950');
+      });
+    });
+  }
+  const humanFistBtn = document.getElementById('humanFistBtn');
+  if (humanFistBtn) {
+    humanFistBtn.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!isOnFoot) return;
+      footState.pose = 'stand';
+      footState.punchHand = (footState.punchHand || 0) === 0 ? 1 : 0;
+      footState.punchTimer = 0.36;
+      if (Audio) Audio.playTone(190, 0.08, 'triangle', 0.14);
+      for (let hi = 0; hi < walkingHumans.length; hi++) {
+        const h = walkingHumans[hi];
+        if (h.flying) continue;
+        const dH = Math.hypot(h.mesh.position.x - driveState.x, h.mesh.position.z - driveState.z);
+        if (dH < 2.45) {
+          h.flying = true; h.fallenStill = false;
+          const pAng = Math.atan2(h.mesh.position.x - driveState.x, h.mesh.position.z - driveState.z);
+          h.vx = Math.sin(pAng) * 4.2; h.vz = Math.cos(pAng) * 4.2; h.vy = 2.8;
+          h.respawnAt = performance.now() + 14000;
+          dispatchAmbulanceOnly(h, performance.now());
+          spawnPoliceChase(performance.now());
+          break;
+        }
+      }
     });
   }
   if (humanJumpBtn) {
