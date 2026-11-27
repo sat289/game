@@ -588,6 +588,23 @@ html, body {
           <div class="text-sm font-black text-white">BILL AMOUNT: <span id="fuelBillAmtEl" class="text-emerald-400">500 COINS</span></div>
           <button id="payFuelBtn" type="button" class="px-5 py-1.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 active:scale-95 text-slate-950 font-display text-xs font-black shadow-lg cursor-pointer">PAY 500 💳</button>
         </div>
+        <!-- INTERACTIVE POLICE STOP CHOICE CARD (Shown when Officer reaches driver window) -->
+        <div id="policeChoiceCard" class="hidden pointer-events-auto flex flex-col items-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-slate-950/95 border-2 border-blue-400 shadow-2xl text-center max-w-[300px]">
+          <div class="text-[11px] font-display font-black text-blue-300 tracking-wide">👮 OFFICER AT YOUR WINDOW</div>
+          <div id="policeChoiceReasonEl" class="text-[11px] font-bold text-slate-200">Traffic Violation — Fine: 500 C</div>
+          <div class="flex flex-wrap items-center justify-center gap-1.5 mt-0.5">
+            <button id="policePayBtn" type="button" class="px-2.5 py-1.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 active:scale-95 text-slate-950 font-display text-[10px] font-black shadow cursor-pointer">💳 PAY 500 C</button>
+            <button id="policeWarnBtn" type="button" class="px-2.5 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 active:scale-95 text-slate-950 font-display text-[10px] font-black shadow cursor-pointer">🗣️ REQUEST WARNING</button>
+            <button id="policeFleeBtn" type="button" class="px-2.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 active:scale-95 text-white font-display text-[10px] font-black shadow cursor-pointer">🔥 HIT GAS &amp; FLEE</button>
+          </div>
+        </div>
+        <!-- LIVE CITY JOB TRACKER BANNER -->
+        <div id="activeJobBanner" class="hidden pointer-events-auto flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/90 border border-emerald-400/75 text-emerald-200 font-display text-[10px] font-black shadow-lg">
+          <span id="activeJobText">🚕 JOB ACTIVE</span>
+          <button id="cancelJobBtn" type="button" class="px-1.5 py-0.5 rounded bg-rose-500/80 text-white text-[9px] font-black cursor-pointer">✕</button>
+        </div>
+        <!-- LIVE DRIFT COMBO BADGE -->
+        <div id="driftBadgeEl" class="hidden px-3 py-0.5 rounded-full bg-gradient-to-r from-orange-500 to-amber-400 text-slate-950 font-display text-[11px] font-black shadow-xl tracking-wide">🔥 DRIFT +0 C</div>
         <div id="policeTimerEl" class="hidden px-3.5 py-1 rounded-full bg-blue-600/95 border-2 border-red-400 text-white font-display text-[12px] font-black shadow-xl tracking-wide animate-pulse">🚓 POLICE: 10s</div>
         <div id="driveAlertEl" class="opacity-0 transition-opacity duration-300 px-3 py-1 rounded-full bg-amber-500/95 text-slate-950 font-display text-[11px] font-black shadow-xl text-center">
           +100 COINS!
@@ -601,6 +618,9 @@ html, body {
               <span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-slate-950 font-black text-[10px]">C</span>
               <span id="driveCoinsEl" class="font-display text-xs font-black text-amber-300">25,000</span>
             </div>
+            <button id="jobMissionBtn" type="button" class="px-2.5 py-1 rounded-xl bg-emerald-500/90 hover:bg-emerald-400 border border-emerald-200/60 text-[10px] font-display font-black text-slate-950 cursor-pointer shadow">
+              💼 JOBS
+            </button>
             <button id="exitToGarageBtn" type="button" class="px-3 py-1 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-white/25 text-[11px] font-extrabold text-white backdrop-blur-md cursor-pointer shadow">
               Garage
             </button>
@@ -608,6 +628,7 @@ html, body {
           <div class="flex items-center gap-1 bg-slate-950/80 border border-white/15 rounded-xl p-1 backdrop-blur-md shadow-lg">
             <button id="camToggleBtn" type="button" class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-cyan-400/35 text-[9px] font-extrabold text-cyan-200 cursor-pointer">CAM: CHASE</button>
             <button id="skyToggleBtn" type="button" class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-amber-400/35 text-[9px] font-extrabold text-amber-200 cursor-pointer">☀️ DAY</button>
+            <button id="weatherToggleBtn" type="button" class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-sky-400/35 text-[9px] font-extrabold text-sky-200 cursor-pointer">🌤️ CLEAR</button>
           </div>
           <!-- RIGHT-SIDE VEHICLE HUD: Matching Vertical Bottom-to-Top HP & FUEL Bars with Labels Directly Underneath! -->
           <div id="vehStatusHud" class="flex items-end gap-3 bg-slate-950/85 border border-white/15 backdrop-blur-md rounded-xl px-3 py-2 shadow-lg">
@@ -733,7 +754,8 @@ html, body {
                   <circle cx="50" cy="50" r="4" fill="#f8fafc" stroke="#ff3b30" stroke-width="1.5" />
                 </g>
               </svg>
-              <div class="absolute inset-0 flex flex-col items-center justify-end pb-2 pointer-events-none">
+              <div class="absolute inset-0 flex flex-col items-center justify-end pb-1.5 pointer-events-none">
+                <span id="gearBadgeEl" class="px-1.5 py-0 rounded bg-cyan-500/25 border border-cyan-400/60 font-display text-[8px] font-black text-cyan-200 mb-0.5 leading-tight">N</span>
                 <span id="speedKmhEl" class="font-display text-sm sm:text-base font-black text-white leading-none drop-shadow">0</span>
                 <span class="text-[7px] sm:text-[8px] font-extrabold text-cyan-300 tracking-wider">KM/H</span>
               </div>
@@ -764,12 +786,21 @@ html, body {
               <div id="nitroHudBar" class="hidden"></div>
             </div>
           </div>
-          <div class="px-2.5 py-0.5 rounded-full bg-slate-950/80 border border-white/10 text-[9px] text-slate-300 font-semibold shadow">
-            <span id="odometerKmEl" class="text-cyan-300 font-bold">0.0 KM / 100+ KM</span> • Green Bays = Repair
+          <div class="pointer-events-auto flex items-center gap-1.5">
+            <button id="sigLeftBtn" type="button" title="Left Signal (Q)" class="px-2 py-0.5 rounded-lg bg-slate-950/85 border border-amber-400/40 text-amber-300 text-[10px] font-black cursor-pointer shadow">◀</button>
+            <button id="sigHazardBtn" type="button" title="Hazards (Z)" class="px-2 py-0.5 rounded-lg bg-slate-950/85 border border-rose-400/40 text-rose-300 text-[9px] font-black cursor-pointer shadow">⚠</button>
+            <button id="sigRightBtn" type="button" title="Right Signal (R)" class="px-2 py-0.5 rounded-lg bg-slate-950/85 border border-amber-400/40 text-amber-300 text-[10px] font-black cursor-pointer shadow">▶</button>
+            <div class="px-2.5 py-0.5 rounded-full bg-slate-950/80 border border-white/10 text-[9px] text-slate-300 font-semibold shadow">
+              <span id="odometerKmEl" class="text-cyan-300 font-bold">0.0 KM / 100+ KM</span> • Green Bays = Repair
+            </div>
           </div>
         </div>
 
-        <div class="pointer-events-auto flex items-end gap-2.5">
+        <div class="pointer-events-auto flex items-end gap-2">
+          <button id="pedalDrift" type="button" title="Handbrake Drift (Space)" class="w-14 h-14 sm:w-16 sm:h-16 px-1.5 rounded-2xl bg-orange-500/95 active:bg-orange-400 border-2 border-amber-200/85 text-slate-950 font-display font-black text-[9px] sm:text-[10px] shadow-[0_0_16px_rgba(249,115,22,0.55)] flex flex-col items-center justify-center cursor-pointer touch-none">
+            <span class="text-sm">🔥</span>
+            <span>DRIFT</span>
+          </button>
           <button id="pedalBrake" type="button" class="w-20 h-20 sm:w-24 sm:h-24 px-2 rounded-2xl bg-red-600 active:bg-red-500 border-2 border-white/90 text-white font-display font-black text-xs sm:text-sm shadow-[0_0_20px_rgba(239,68,68,0.65)] flex flex-col items-center justify-center cursor-pointer touch-none">
             <span class="text-base">🛑</span>
             <span>BRAKE</span>
@@ -778,6 +809,30 @@ html, body {
             <span class="text-xl">🚀</span>
             <span>GAS</span>
           </button>
+        </div>
+      </div>
+
+      <!-- COCKPIT / INTERIOR DASHBOARD OVERLAY (Active only in CAM: COCKPIT mode) -->
+      <div id="cockpitDashOverlay" class="hidden pointer-events-none absolute inset-0 z-10 overflow-hidden">
+        <div class="absolute top-0 left-0 w-10 h-full bg-gradient-to-r from-slate-950/90 to-transparent" style="transform: skewX(-10deg) translateX(-12px);"></div>
+        <div class="absolute top-0 right-0 w-10 h-full bg-gradient-to-l from-slate-950/90 to-transparent" style="transform: skewX(10deg) translateX(12px);"></div>
+        <div class="absolute top-0 inset-x-0 h-5 bg-gradient-to-b from-slate-950/90 to-transparent"></div>
+        <!-- Rearview Mirror -->
+        <div class="absolute top-3 left-1/2 -translate-x-1/2 w-28 h-7 rounded-lg bg-slate-900/75 border-2 border-slate-700/90 shadow-lg flex items-center justify-center">
+          <span class="text-[8px] font-display text-cyan-300/60 tracking-widest">REARVIEW</span>
+        </div>
+        <!-- Lower Dashboard Hood + Live Inner Steering Wheel -->
+        <div class="absolute bottom-0 inset-x-0 h-20 bg-gradient-to-t from-slate-950 via-slate-900/92 to-transparent border-t border-cyan-500/20"></div>
+        <div class="absolute bottom-1 left-[26%] sm:left-[28%] w-28 h-28 sm:w-36 sm:h-36 opacity-85">
+          <svg id="cockpitWheelSvg" viewBox="0 0 120 120" class="w-full h-full drop-shadow-2xl">
+            <circle cx="60" cy="60" r="50" fill="none" stroke="#0f172a" stroke-width="11"/>
+            <circle cx="60" cy="60" r="50" fill="none" stroke="#334155" stroke-width="3"/>
+            <path d="M55 10 L65 10 L63 18 L57 18 Z" fill="#ef4444"/>
+            <line x1="15" y1="62" x2="105" y2="62" stroke="#1e293b" stroke-width="8" stroke-linecap="round"/>
+            <line x1="60" y1="62" x2="60" y2="108" stroke="#1e293b" stroke-width="9" stroke-linecap="round"/>
+            <circle cx="60" cy="60" r="16" fill="#020617" stroke="#06b6d4" stroke-width="2"/>
+            <text x="60" y="63" text-anchor="middle" fill="#38bdf8" font-size="7" font-weight="900" font-family="Orbitron, sans-serif">APEX</text>
+          </svg>
         </div>
       </div>
 
@@ -856,7 +911,7 @@ window.APEX_VEHICLES = [
   { id: 8,  name: 'G-Wagon 4x4 Squared',    cat: 'TRUCK', modelType: 'heavy_truck', bodyStyle: 'gwagon_box',       colorHex: 0x4f46e5, accentHex: 0x38bdf8, price: 90000,  img: IMG_TRUCK,       hue: 235, speed: 86, accel: 86, handle: 84, nitro: 88 },
   { id: 9,  name: 'McLaren 720S Track',     cat: 'CAR',   modelType: 'car',         bodyStyle: 'teardrop_hyper',   colorHex: 0x7c3aed, accentHex: 0xf97316, price: 100000, img: IMG_SUPER_CAR,   hue: 270, speed: 95, accel: 94, handle: 93, nitro: 92 },
   { id: 10, name: 'Royal Cafe GT 650',      cat: 'BIKE',  modelType: 'bike',        bodyStyle: 'cafe_racer',       colorHex: 0xd97706, accentHex: 0xfef08a, price: 110000, img: IMG_BIKE,        hue: 40,  speed: 95, accel: 96, handle: 95, nitro: 93 },
-  { id: 11, name: 'Titan Armored 6x6',      cat: 'TRUCK', modelType: 'heavy_truck', bodyStyle: 'armored_6x6',      colorHex: 0x15803d, accentHex: 0xfacc15, price: 120000, img: IMG_TRUCK,       hue: 130, speed: 89, accel: 89, handle: 80, nitro: 94 },
+  { id: 11, name: 'Titan Armored 6x6',      cat: 'TRUCK', modelType: 'heavy_truck', bodyStyle: 'armored_6x6',      isRealCustomGLB: true, glbPath: 'assets/custom_car.glb', colorHex: 0x15803d, accentHex: 0xfacc15, price: 120000, img: IMG_TRUCK,       hue: 130, speed: 89, accel: 89, handle: 80, nitro: 94 },
   { id: 12, name: 'Bugatti Chiron Super',   cat: 'CAR',   modelType: 'car',         bodyStyle: 'bugatti_arch',     colorHex: 0x1d4ed8, accentHex: 0x38bdf8, price: 130000, img: IMG_SUPER_CAR,   hue: 220, speed: 99, accel: 99, handle: 96, nitro: 98 },
   { id: 13, name: 'Lightning LS-218 EV',    cat: 'BIKE',  modelType: 'bike',        bodyStyle: 'ev_tron',          colorHex: 0x06b6d4, accentHex: 0xfacc15, price: 140000, img: IMG_BIKE,        hue: 185, speed: 100, accel: 100, handle: 98, nitro: 99 },
   { id: 14, name: 'Monster Titan Crusher',  cat: 'TRUCK', modelType: 'heavy_truck', bodyStyle: 'monster_giant',    colorHex: 0x9333ea, accentHex: 0xf97316, price: 150000, img: IMG_TRUCK,       hue: 280, speed: 96, accel: 97, handle: 86, nitro: 100 }
@@ -1146,70 +1201,95 @@ window.ApexAudio = (function () {
     } catch (e) { return null; }
   }
 
+  let activeHornNodes = [];
+  let isHornSustaining = false;
+
   function stopHorn() {
+    isHornSustaining = false;
+    activeHornNodes.forEach((n) => {
+      try {
+        if (n.gain && audioCtx) {
+          const tNow = audioCtx.currentTime;
+          n.gain.gain.cancelScheduledValues(tNow);
+          n.gain.gain.setValueAtTime(Math.max(0.001, n.gain.gain.value || 0.12), tNow);
+          n.gain.gain.exponentialRampToValueAtTime(0.0008, tNow + 0.065);
+        }
+        if (n.osc && audioCtx) n.osc.stop(audioCtx.currentTime + 0.075);
+      } catch (e) {}
+    });
+    activeHornNodes = [];
+    const domAudio = document.getElementById('realHornAudio');
+    if (domAudio) { try { domAudio.pause(); domAudio.currentTime = 0; } catch (e) {} }
     hornAudioPool.forEach((a) => { try { a.pause(); a.currentTime = 0; } catch (e) {} });
   }
 
-  function startHorn() {
+  function startHorn(vehicleType = 'car', sustain = false) {
     if (!soundEnabled) return;
     init();
     ensureHornBuffer();
-    const playWebAudioFallback = () => {
+    if (sustain && isHornSustaining) return;
+    stopHorn();
+    isHornSustaining = Boolean(sustain);
+
+    // 1. Play real uploaded double car horn (assets/horn.wav) for cars on tap/start
+    if (vehicleType === 'car') {
+      try {
+        const domAudio = document.getElementById('realHornAudio') || getHornAudio();
+        if (domAudio) {
+          domAudio.muted = false;
+          domAudio.volume = sustain ? 0.65 : 0.95;
+          domAudio.currentTime = 0;
+          const p = domAudio.play();
+          if (p && p.catch) p.catch(() => {});
+        }
+      } catch (e) {}
+    }
+
+    // 2. Zero-latency realistic multi-harmonic vehicle horn (Car dual-tone / Bike sharp / Truck triple air-horn)
+    const fireSynthHorn = () => {
       if (!audioCtx) return;
-      const go = () => {
-        if (hornDecodedBuf) {
-          try {
-            const src = audioCtx.createBufferSource();
-            src.buffer = hornDecodedBuf;
-            const g = audioCtx.createGain();
-            g.gain.value = 1.8;
-            src.connect(g); g.connect(audioCtx.destination);
-            src.start(0);
-          } catch (e) {}
-        }
-      };
-      if (audioCtx.state === 'suspended') audioCtx.resume().then(go).catch(() => {});
-      else go();
+      try {
+        const t0 = audioCtx.currentTime;
+        const freqs = vehicleType === 'bike'
+          ? [523.25, 659.25]
+          : (vehicleType === 'truck' || vehicleType === 'heavy_truck')
+            ? [174.61, 220.0, 261.63]
+            : [392.0, 493.88];
+        const perOscGain = vehicleType === 'bike' ? 0.13 : (vehicleType === 'truck' || vehicleType === 'heavy_truck') ? 0.14 : 0.15;
+
+        freqs.forEach((freq) => {
+          const osc = audioCtx.createOscillator();
+          const flt = audioCtx.createBiquadFilter();
+          const gn = audioCtx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(freq, t0);
+          flt.type = 'bandpass';
+          flt.frequency.value = freq * 2.15;
+          flt.Q.value = 1.75;
+          gn.gain.setValueAtTime(0.001, t0);
+          gn.gain.linearRampToValueAtTime(perOscGain, t0 + 0.022);
+          osc.connect(flt); flt.connect(gn); gn.connect(audioCtx.destination);
+          osc.start(t0);
+          if (!sustain) {
+            gn.gain.setValueAtTime(perOscGain, t0 + 0.24);
+            gn.gain.exponentialRampToValueAtTime(0.001, t0 + 0.34);
+            osc.stop(t0 + 0.36);
+          } else {
+            activeHornNodes.push({ osc, gain: gn });
+          }
+        });
+      } catch (e2) {}
     };
-    // 1. ALWAYS play the real native <audio id="realHornAudio"> (user's exact mixkit-car-double-horn-719.wav!) directly!
-    try {
-      const domAudio = document.getElementById('realHornAudio');
-      const a = domAudio || getHornAudio();
-      if (a) {
-        a.muted = false;
-        a.volume = 1.0;
-        a.volume = 1.0;
-        a.currentTime = 0;
-        const p = a.play();
-        if (p && p.catch) p.catch(() => playWebAudioFallback());
-        // Layer crisp realistic dual-tone automotive horn punch (415Hz + 520Hz) for richer loud horn!
-        if (audioCtx && audioCtx.state === 'running') {
-          try {
-            const t0 = audioCtx.currentTime;
-            [415, 520].forEach((freq) => {
-              const osc = audioCtx.createOscillator();
-              const flt = audioCtx.createBiquadFilter();
-              const gn = audioCtx.createGain();
-              osc.type = 'sawtooth';
-              osc.frequency.setValueAtTime(freq, t0);
-              flt.type = 'bandpass'; flt.frequency.value = freq * 2.2; flt.Q.value = 1.6;
-              gn.gain.setValueAtTime(0.001, t0);
-              gn.gain.linearRampToValueAtTime(0.11, t0 + 0.025);
-              gn.gain.setValueAtTime(0.11, t0 + 0.22);
-              gn.gain.exponentialRampToValueAtTime(0.001, t0 + 0.32);
-              osc.connect(flt); flt.connect(gn); gn.connect(audioCtx.destination);
-              osc.start(t0); osc.stop(t0 + 0.34);
-            });
-          } catch (e2) {}
-        }
-        return;
-      }
-    } catch (e) {}
-    playWebAudioFallback();
+
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume().then(fireSynthHorn).catch(() => {});
+    } else {
+      fireSynthHorn();
+    }
   }
 
-  function playHorn() {
-    startHorn();
+  function playHorn(vehicleType = 'car') {
+    startHorn(vehicleType, false);
   }
 
   function playTurboPshh() {
@@ -1306,7 +1386,7 @@ window.ApexAudio = (function () {
     startMusic();
   }
 
-  function updateEngine(speedRatio, nitroOn, braking, steerAmt = 0) {
+  function updateEngine(speedRatio, nitroOn, braking, steerAmt = 0, drifting = false) {
     if (!engineNodes || !audioCtx) return;
     const now = audioCtx.currentTime;
     if (!soundEnabled) {
@@ -1323,7 +1403,7 @@ window.ApexAudio = (function () {
     }
     lastGear = gear;
     const gearRpm = (clamped * 4.5) % 1;
-    const rpmFactor = 1.0 + (0.35 * gear) + (gearRpm * 0.82) + (nitroOn ? 0.42 : 0);
+    const rpmFactor = 1.0 + (0.35 * gear) + (gearRpm * 0.82) + (nitroOn ? 0.42 : 0) + (drifting ? 0.22 : 0);
     engineNodes.osc1.frequency.setTargetAtTime(engineNodes.baseFreq * rpmFactor, now, 0.06);
     engineNodes.osc2.frequency.setTargetAtTime(engineNodes.baseFreq * 1.5 * rpmFactor, now, 0.06);
     engineNodes.sub.frequency.setTargetAtTime(engineNodes.baseFreq * 0.5 * rpmFactor, now, 0.06);
@@ -1331,8 +1411,8 @@ window.ApexAudio = (function () {
     engineNodes.masterGain.gain.setTargetAtTime(braking ? 0.045 : (0.055 + Math.min(0.055, clamped * 0.05)), now, 0.06);
     engineNodes.turboOsc.frequency.setTargetAtTime(580 + clamped * 740 + (nitroOn ? 420 : 0), now, 0.08);
     engineNodes.turboGain.gain.setTargetAtTime(nitroOn ? 0.085 : (clamped > 0.7 ? 0.02 : 0), now, 0.07);
-    const screeching = clamped > 0.38 && (braking || Math.abs(steerAmt) > 0.72);
-    engineNodes.screechGain.gain.setTargetAtTime(screeching ? 0.036 : 0, now, 0.06);
+    const screeching = drifting || (clamped > 0.38 && (braking || Math.abs(steerAmt) > 0.72));
+    engineNodes.screechGain.gain.setTargetAtTime(drifting ? 0.075 : (screeching ? 0.036 : 0), now, 0.05);
   }
 
   function stopEngine() {
@@ -1349,6 +1429,7 @@ window.ApexAudio = (function () {
   return {
     unlock, setEnabled, isEnabled,
     playTone, playCoin, playIgnition, playReadyChime, playCrash,
+    playSiren, startHorn, stopHorn, playHorn, playTurboPshh,
     startEngine, updateEngine, stopEngine, startMusic, stopMusic
   };
 })();
@@ -2877,7 +2958,8 @@ window.ApexCity3D = (function () {
     customHueOffset: 0,
     taskIndex: 0,
     level: 1,
-    xp: 0
+    xp: 0,
+    graphicsQuality: 'HIGH'
   };
 
   function loadSave() {
@@ -2895,7 +2977,8 @@ window.ApexCity3D = (function () {
         customHueOffset: typeof parsed.customHueOffset === 'number' ? parsed.customHueOffset : 0,
         taskIndex: typeof parsed.taskIndex === 'number' ? parsed.taskIndex : 0,
         level: typeof parsed.level === 'number' ? parsed.level : 1,
-        xp: typeof parsed.xp === 'number' ? parsed.xp : 0
+        xp: typeof parsed.xp === 'number' ? parsed.xp : 0,
+        graphicsQuality: (parsed.graphicsQuality === 'LOW' || parsed.graphicsQuality === 'MED' || parsed.graphicsQuality === 'HIGH') ? parsed.graphicsQuality : 'HIGH'
       };
     } catch (e) {
       return { ...defaultSave, ownedIds: new Set(defaultSave.ownedIds) };
@@ -2933,7 +3016,8 @@ window.ApexCity3D = (function () {
         customHueOffset: state.customHueOffset,
         taskIndex: state.taskIndex,
         level: state.level,
-        xp: state.xp
+        xp: state.xp,
+        graphicsQuality: state.graphicsQuality || 'HIGH'
       }));
     } catch (e) {}
   }
@@ -3042,6 +3126,115 @@ window.ApexCity3D = (function () {
   let gemeraLoading = false;
   const gemeraCallbacks = [];
 
+  function attachVehicleDetailsHQ(group, chassis, lenZ = 4.9, widthX = 2.05) {
+    // Grounded soft contact shadow under car so it never looks floating
+    const shCan = document.createElement('canvas'); shCan.width = 128; shCan.height = 256;
+    const sCtx = shCan.getContext('2d');
+    const rg = sCtx.createRadialGradient(64, 128, 12, 64, 128, 62);
+    rg.addColorStop(0, 'rgba(2, 6, 23, 0.72)');
+    rg.addColorStop(0.68, 'rgba(2, 6, 23, 0.36)');
+    rg.addColorStop(1, 'rgba(2, 6, 23, 0)');
+    sCtx.fillStyle = rg;
+    sCtx.fillRect(0, 0, 128, 256);
+    const shMat = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(shCan), transparent: true, depthWrite: false });
+    const shPlane = new THREE.Mesh(new THREE.PlaneGeometry(widthX * 1.28, lenZ * 1.18), shMat);
+    shPlane.rotation.x = -Math.PI / 2;
+    shPlane.position.y = 0.03;
+    group.add(shPlane);
+
+    // Dynamic glowing brake lights + night headlight road beam cones
+    const brakeLights = [];
+    const headBeams = [];
+    const brakeMat = new THREE.MeshBasicMaterial({ color: 0xff1e1e, transparent: true, opacity: 0.92 });
+    const beamMat = new THREE.MeshBasicMaterial({ color: 0xfef9c3, transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide });
+    [-widthX * 0.33, widthX * 0.33].forEach((lx) => {
+      const bl = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.11, 0.08), brakeMat);
+      bl.position.set(lx, 0.62, lenZ * 0.485);
+      bl.visible = false;
+      chassis.add(bl);
+      brakeLights.push(bl);
+
+      const bm = new THREE.Mesh(new THREE.ConeGeometry(1.45, 11.5, 12, 1, true), beamMat);
+      bm.rotation.x = Math.PI / 2;
+      bm.position.set(lx, 0.42, -(lenZ * 0.5 + 5.7));
+      bm.visible = typeof headlightsOn !== 'undefined' ? Boolean(headlightsOn) : false;
+      chassis.add(bm);
+      headBeams.push(bm);
+    });
+    // Left & Right Glowing Amber Turn Signal / Hazard Lights (Front + Rear Corners)
+    const leftSignals = [], rightSignals = [];
+    const sigMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.95 });
+    [-(lenZ * 0.47), lenZ * 0.48].forEach((sz) => {
+      const sl = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.11, 0.12), sigMat);
+      sl.position.set(-widthX * 0.46, 0.60, sz);
+      sl.visible = false;
+      chassis.add(sl);
+      leftSignals.push(sl);
+
+      const sr = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.11, 0.12), sigMat);
+      sr.position.set(widthX * 0.46, 0.60, sz);
+      sr.visible = false;
+      chassis.add(sr);
+      rightSignals.push(sr);
+    });
+
+    group.userData = group.userData || {};
+    group.userData.brakeLights = brakeLights;
+    group.userData.headBeams = headBeams;
+    group.userData.leftSignals = leftSignals;
+    group.userData.rightSignals = rightSignals;
+  }
+
+  // REAL SPINNING & STEERING WHEEL RIG FOR 3D GLB CARS (car_04.glb & car_02.glb)!
+  // Finds individual wheel meshes, computes each wheel's true axle center in chassis space,
+  // and reparents them into centered spin + front-steer pivot groups!
+  function rigGlbWheels(chassis) {
+    const wheels = [];
+    const frontWheelPivots = [];
+    try {
+      chassis.updateMatrixWorld(true);
+      const invChassis = new THREE.Matrix4().copy(chassis.matrixWorld).invert();
+      const wheelMeshes = [];
+      chassis.traverse((ch) => {
+        if (ch.isMesh && (ch.name || '').toLowerCase().includes('wheel')) {
+          wheelMeshes.push(ch);
+        }
+      });
+      // Group meshes that share nearly identical wheel centers (e.g., tire + alloy rim on car_02.glb)
+      const clusters = [];
+      wheelMeshes.forEach((m) => {
+        const b = new THREE.Box3().setFromObject(m);
+        const cWorld = new THREE.Vector3();
+        b.getCenter(cWorld);
+        const cLocal = cWorld.clone().applyMatrix4(invChassis);
+        let found = clusters.find((cl) => cl.center.distanceTo(cLocal) < 0.35);
+        if (!found) {
+          found = { center: cLocal.clone(), meshes: [] };
+          clusters.push(found);
+        }
+        found.meshes.push(m);
+      });
+      // Only rig when we have 4 distinct individual wheels (avoids merged left/right axle meshes)
+      if (clusters.length === 4) {
+        clusters.forEach((cl) => {
+          const isFront = cl.center.z < 0;
+          const steerPivot = new THREE.Group();
+          steerPivot.position.copy(cl.center);
+          const spinGroup = new THREE.Group();
+          steerPivot.add(spinGroup);
+          chassis.add(steerPivot);
+          steerPivot.updateMatrixWorld(true);
+          cl.meshes.forEach((m) => {
+            spinGroup.attach(m);
+          });
+          wheels.push(spinGroup);
+          if (isFront) frontWheelPivots.push(steerPivot);
+        });
+      }
+    } catch (eW) {}
+    return { wheels, frontWheelPivots };
+  }
+
   function cloneGemeraBuild() {
     if (!gemeraMaster) return null;
     const group = new THREE.Group();
@@ -3057,7 +3250,9 @@ window.ApexCity3D = (function () {
       chassis.add(cone);
       flames.push(cone);
     });
-    return { group, chassis, wheels: [], frontWheelPivots: [], flames };
+    attachVehicleDetailsHQ(group, chassis, 4.9, 2.08);
+    const rig = rigGlbWheels(chassis);
+    return { group, chassis, wheels: rig.wheels, frontWheelPivots: rig.frontWheelPivots, flames };
   }
 
   let car04BodyMatRef = null;
@@ -3065,24 +3260,25 @@ window.ApexCity3D = (function () {
   function finalizeCar04GLTF(gltf) {
     const model = gltf.scene || (gltf.scenes && gltf.scenes[0]);
     if (!model) { gemeraLoading = false; return; }
-    const box1 = new THREE.Box3().setFromObject(model);
-    const sz1 = new THREE.Vector3(); box1.getSize(sz1);
-    if (sz1.x > sz1.z * 1.15) model.rotation.y = Math.PI / 2;
+    // EXACT FIX: car_04.glb has a baked -35.69° yaw in its node; -2.51875 rad aligns the front nose dead-straight along -Z (forward)!
+    model.rotation.set(0, -2.51875, 0);
+    model.updateMatrixWorld(true);
     const box2 = new THREE.Box3().setFromObject(model);
     const sz2 = new THREE.Vector3(); box2.getSize(sz2);
     const maxDim = Math.max(sz2.x, sz2.y, sz2.z) || 1;
     model.scale.multiplyScalar(4.9 / maxDim);
+    model.updateMatrixWorld(true);
     const box3 = new THREE.Box3().setFromObject(model);
     const center = new THREE.Vector3(); box3.getCenter(center);
     model.position.x -= center.x;
     model.position.z -= center.z;
     model.position.y -= box3.min.y;
 
-    // SHOWSTOPPER 1ST CAR: Dark Stealth-Carbon Edges & Roof + Glowing Electric Crimson -> Midnight Indigo -> Neon Cyan Gradient!
+    // SHOWSTOPPER 1ST CAR: High-Quality Metallic Gloss + Dark Carbon Edges + Electric Crimson -> Indigo -> Neon Cyan!
     const bodyMat0 = new THREE.MeshStandardMaterial({
       vertexColors: true, color: 0xffffff,
-      emissive: 0xe11d48, emissiveIntensity: 0.16,
-      metalness: 0.58, roughness: 0.14
+      emissive: 0xe11d48, emissiveIntensity: 0.14,
+      metalness: 0.68, roughness: 0.12, envMapIntensity: 1.35
     });
     car04BodyMatRef = bodyMat0;
     const glassMat0 = new THREE.MeshStandardMaterial({
@@ -3196,6 +3392,7 @@ window.ApexCity3D = (function () {
       chassis.add(cone);
       flames.push(cone);
     });
+    attachVehicleDetailsHQ(group, chassis, 4.85, 2.02);
     return { group, chassis, wheels: [], frontWheelPivots: [], flames };
   }
 
@@ -3305,16 +3502,15 @@ window.ApexCity3D = (function () {
     const model = gltf.scene || (gltf.scenes && gltf.scenes[0]);
     if (!model) { car01Loading = false; return; }
 
-    // 1. Align length along Z & flip 180 deg so GAS = FORWARD, BRAKE = REVERSE!
-    const box1 = new THREE.Box3().setFromObject(model);
-    const sz1 = new THREE.Vector3(); box1.getSize(sz1);
-    if (sz1.x > sz1.z * 1.15) model.rotation.y = Math.PI / 2;
-    model.rotation.y += Math.PI;
+    // 1. Exact alignment for car_01.glb so front hood points dead-straight along -Z (forward)
+    model.rotation.set(0, -Math.PI / 2, 0);
+    model.updateMatrixWorld(true);
 
     const box2 = new THREE.Box3().setFromObject(model);
     const sz2 = new THREE.Vector3(); box2.getSize(sz2);
     const maxDim = Math.max(sz2.x, sz2.y, sz2.z) || 1;
     model.scale.multiplyScalar(4.85 / maxDim);
+    model.updateMatrixWorld(true);
 
     const box3 = new THREE.Box3().setFromObject(model);
     const center = new THREE.Vector3(); box3.getCenter(center);
@@ -3443,30 +3639,33 @@ window.ApexCity3D = (function () {
       chassis.add(cone);
       flames.push(cone);
     });
-    return { group, chassis, wheels: [], frontWheelPivots: [], flames };
+    attachVehicleDetailsHQ(group, chassis, 4.9, 2.15);
+    const rig = rigGlbWheels(chassis);
+    return { group, chassis, wheels: rig.wheels, frontWheelPivots: rig.frontWheelPivots, flames };
   }
 
   function finalizeCar02GLTF(gltf) {
     const model = gltf.scene || (gltf.scenes && gltf.scenes[0]);
     if (!model) { car02Loading = false; return; }
-    const box1 = new THREE.Box3().setFromObject(model);
-    const sz1 = new THREE.Vector3(); box1.getSize(sz1);
-    if (sz1.x > sz1.z * 1.15) model.rotation.y = Math.PI / 2;
+    // EXACT FIX: car_02.glb has a baked -71.97° yaw; -1.88554 rad aligns the front hood dead-straight along -Z (forward)!
+    model.rotation.set(0, -1.88554, 0);
+    model.updateMatrixWorld(true);
     const box2 = new THREE.Box3().setFromObject(model);
     const sz2 = new THREE.Vector3(); box2.getSize(sz2);
     const maxDim = Math.max(sz2.x, sz2.y, sz2.z) || 1;
     model.scale.multiplyScalar(4.9 / maxDim);
+    model.updateMatrixWorld(true);
     const box3 = new THREE.Box3().setFromObject(model);
     const center = new THREE.Vector3(); box3.getCenter(center);
     model.position.x -= center.x;
     model.position.z -= center.z;
     model.position.y -= box3.min.y;
 
-    // TRUE MULTI-COLOR VERTEX-COLOR WRAP ON CAR #3 (Neon Gold Front -> Emerald-Cyan Mid -> Royal Violet-Pink Rear + Bright Roof!)
+    // TRUE MULTI-COLOR VERTEX-COLOR WRAP ON CAR #3 + High-Quality Metallic Reflection
     const bodyMat2 = new THREE.MeshStandardMaterial({
       vertexColors: true, color: 0xffffff,
       emissive: 0x10b981, emissiveIntensity: 0.12,
-      metalness: 0.44, roughness: 0.18
+      metalness: 0.62, roughness: 0.14, envMapIntensity: 1.3
     });
     const glassMat2 = new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.28, metalness: 0.85, roughness: 0.08, transparent: true, opacity: 0.76 });
     const opticMat2 = new THREE.MeshBasicMaterial({ color: 0xfef9c3 });
@@ -3546,6 +3745,74 @@ window.ApexCity3D = (function () {
     } catch (e) {
       parseB64();
     }
+  }
+
+  // REAL 3D GLB LOADER FOR VEHICLE #11 (Titan Armored 6x6 — Activates assets/custom_car.glb!)
+  let customCarMaster = null, customCarLoading = false;
+  const customCarCallbacks = [];
+
+  function cloneCustomCarBuild() {
+    if (!customCarMaster) return null;
+    const group = new THREE.Group();
+    const chassis = customCarMaster.clone(true);
+    group.add(chassis);
+    const flames = [];
+    const flameMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.94 });
+    [-0.58, 0.58].forEach((fx) => {
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.18, 1.4, 10), flameMat);
+      cone.rotation.x = Math.PI / 2;
+      cone.position.set(fx, 0.56, 2.85);
+      cone.visible = false;
+      chassis.add(cone);
+      flames.push(cone);
+    });
+    attachVehicleDetailsHQ(group, chassis, 5.5, 2.45);
+    return { group, chassis, wheels: [], frontWheelPivots: [], flames };
+  }
+
+  function finalizeCustomCarGLTF(gltf) {
+    const model = gltf.scene || (gltf.scenes && gltf.scenes[0]);
+    if (!model) { customCarLoading = false; return; }
+    // Side-profile verified: custom_car.glb front hood points +Z, so rotate Math.PI to face -Z forward!
+    model.rotation.set(0, Math.PI, 0);
+    model.updateMatrixWorld(true);
+    const box2 = new THREE.Box3().setFromObject(model);
+    const sz2 = new THREE.Vector3(); box2.getSize(sz2);
+    const maxDim = Math.max(sz2.x, sz2.y, sz2.z) || 1;
+    model.scale.multiplyScalar(5.5 / maxDim);
+    model.updateMatrixWorld(true);
+    const box3 = new THREE.Box3().setFromObject(model);
+    const center = new THREE.Vector3(); box3.getCenter(center);
+    model.position.x -= center.x;
+    model.position.z -= center.z;
+    model.position.y -= box3.min.y;
+    model.traverse((ch) => {
+      if (!ch.isMesh) return;
+      if (ch.material) {
+        ch.material.metalness = Math.min(0.65, (ch.material.metalness || 0.35));
+        ch.material.roughness = Math.max(0.25, (ch.material.roughness || 0.45));
+      }
+    });
+    const masterWrap = new THREE.Group();
+    masterWrap.add(model);
+    customCarMaster = masterWrap;
+    customCarLoading = false;
+    while (customCarCallbacks.length) {
+      const fn = customCarCallbacks.shift();
+      try { fn(cloneCustomCarBuild()); } catch (e) {}
+    }
+  }
+
+  function loadCustomCarGLB(cb) {
+    if (customCarMaster) { if (cb) cb(cloneCustomCarBuild()); return; }
+    if (cb) customCarCallbacks.push(cb);
+    if (customCarLoading) return;
+    if (typeof THREE === 'undefined' || !THREE.GLTFLoader) return;
+    customCarLoading = true;
+    const loader = new THREE.GLTFLoader();
+    try {
+      loader.load('assets/custom_car.glb', finalizeCustomCarGLTF, undefined, () => { customCarLoading = false; });
+    } catch (e) { customCarLoading = false; }
   }
 
   function mountShowroomCanvas(targetId) {
@@ -3788,6 +4055,13 @@ window.ApexCity3D = (function () {
     if (vehicleObj.id === 6 && vehicleObj.isRealGLB2) {
       loadCar02GLB((glbBuilt) => {
         if (glbBuilt && (selectedId === 6 || (homeScreen && !homeScreen.classList.contains('hidden-screen') && state.equippedId === 6))) {
+          applyModelToTurntable(glbBuilt, true);
+        }
+      });
+    }
+    if (vehicleObj.id === 11 && vehicleObj.isRealCustomGLB) {
+      loadCustomCarGLB((glbBuilt) => {
+        if (glbBuilt && (selectedId === 11 || (homeScreen && !homeScreen.classList.contains('hidden-screen') && state.equippedId === 11))) {
           applyModelToTurntable(glbBuilt, true);
         }
       });
@@ -4037,12 +4311,31 @@ window.ApexCity3D = (function () {
         };
         renderUpgradesModal();
       } else if (m === 'settingsModal') {
+        const curQ = state.graphicsQuality || 'HIGH';
+        const qBtnCls = (q) => q === curQ
+          ? 'px-2.5 py-1 rounded-lg bg-cyan-400 text-slate-950 font-display font-black text-[10px] cursor-pointer shadow'
+          : 'px-2.5 py-1 rounded-lg bg-slate-900 border border-white/20 text-slate-300 font-display font-bold text-[10px] cursor-pointer';
         openModal(`
           <h3 class="font-display text-lg font-black text-cyan-300 mb-2">GAME SETTINGS</h3>
-          <div class="space-y-2 text-xs text-slate-200 mt-3">
+          <div class="space-y-2.5 text-xs text-slate-200 mt-3">
+            <div class="flex items-center justify-between bg-slate-800 p-3 rounded-xl border border-white/10">
+              <div>
+                <div class="font-bold text-white">Graphics Quality</div>
+                <div class="text-[10px] text-slate-400">Shadows, Reflections &amp; Resolution</div>
+              </div>
+              <div class="flex items-center gap-1" id="gfxQualityGroup">
+                <button type="button" data-gfx="LOW" class="${qBtnCls('LOW')}">LOW</button>
+                <button type="button" data-gfx="MED" class="${qBtnCls('MED')}">MED</button>
+                <button type="button" data-gfx="HIGH" class="${qBtnCls('HIGH')}">HIGH</button>
+              </div>
+            </div>
             <div class="flex items-center justify-between bg-slate-800 p-3 rounded-xl border border-white/10">
               <span>Audio Status</span>
               <span class="text-emerald-300 font-bold">Always ON 🔊</span>
+            </div>
+            <div class="flex items-center justify-between bg-slate-800 p-3 rounded-xl border border-white/10">
+              <span>Desktop Controls</span>
+              <span class="text-[10px] text-cyan-200 font-semibold">WASD • Space=Drift • H=Horn • Q/R/Z=Signals</span>
             </div>
             <div class="flex items-center justify-between bg-slate-800 p-3 rounded-xl border border-white/10">
               <span>LocalStorage Save</span>
@@ -4050,6 +4343,21 @@ window.ApexCity3D = (function () {
             </div>
           </div>
         `);
+        document.querySelectorAll('#gfxQualityGroup button').forEach((qb) => {
+          qb.addEventListener('click', () => {
+            state.graphicsQuality = qb.dataset.gfx;
+            persistSave();
+            if (typeof applyGraphicsQuality === 'function') applyGraphicsQuality(state.graphicsQuality);
+            if (Audio) Audio.playTone(640, 0.06);
+            showToast('Graphics Quality: ' + state.graphicsQuality);
+            document.querySelectorAll('#gfxQualityGroup button').forEach((b) => {
+              const active = b.dataset.gfx === state.graphicsQuality;
+              b.className = active
+                ? 'px-2.5 py-1 rounded-lg bg-cyan-400 text-slate-950 font-display font-black text-[10px] cursor-pointer shadow'
+                : 'px-2.5 py-1 rounded-lg bg-slate-900 border border-white/20 text-slate-300 font-display font-bold text-[10px] cursor-pointer';
+            });
+          });
+        });
         document.getElementById('resetSaveBtn').addEventListener('click', () => {
           try { localStorage.removeItem(STORAGE_KEY); } catch (err) {}
           state.coins = 25000;
@@ -4108,6 +4416,20 @@ window.ApexCity3D = (function () {
   let coinMeshes = [], trafficCars = [], walkingHumans = [], stuntRamps = [], trafficSignals = [], cityLandmarks = [], emergencyEvents = [], policeUnits = [], shopCycles = [], bridgeDeckZones = [], parkedShopVehicles = [], indoorShoppers = [], skyClouds = [], skySunMesh = null, skyStarsMesh = null;
   let camModeIdx = 0; // 0: Chase, 1: Hood, 2: Far
   let skyModeIdx = 0; // 0: Morning, 1: Sunset, 2: Neon Night
+  let weatherModeIdx = 0; // 0: Clear, 1: Rain, 2: Fog
+  let roadGroundMatRef = null;
+  let cityEnvMapRef = null;
+  let rainPointsMesh = null;
+  let skidMarkPool = [];
+  let skidPoolIdx = 0;
+  let lastSkidAt = 0;
+  let wantedStars = 0;
+  let firstOffenseUsed = false;
+  let activePoliceChoiceUnit = null;
+  let activeCityJob = null;
+  let jobBeaconMesh = null;
+  let signalMode = 'off'; // 'off' | 'left' | 'right' | 'hazard'
+  let lastSignalTickAt = 0;
   let sunLightRef = null, hemiLightRef = null;
   let buildingColliders = [], lakeZones = [], serviceGarages = [], animatedFacadeMats = [], animatedTrees = [];
   let animRoadTex = null, animCanalTex = null;
@@ -4121,8 +4443,9 @@ window.ApexCity3D = (function () {
   const driveState = {
     x: 0, z: 0, heading: 0, speed: 0, steerInput: 0, targetSteer: 0,
     nitro: 100, health: 100, fuel: 100, lowFuelWarned: false, wrecked: false,
-    gas: false, brake: false, boost: false,
-    keys: { w: false, s: false, a: false, d: false, shift: false },
+    gas: false, brake: false, boost: false, drift: false,
+    driftAngle: 0, driftComboCoins: 0, driftActiveTime: 0,
+    keys: { w: false, s: false, a: false, d: false, shift: false, space: false },
     wheelDragging: false, lastCrashAt: 0,
     camOrbitYaw: 0, camOrbitPitch: 0.34, camTargetYaw: 0, camTargetPitch: 0.34, camDragging: false, insideShopTitle: '',
     y: 0, vy: 0, airborne: false, lastStuntAt: 0
@@ -4181,30 +4504,74 @@ window.ApexCity3D = (function () {
       const deviceRam = Number(navigator.deviceMemory || 4);
       const isMobileDevice = /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
       const isVeryLowEnd = deviceRam <= 2;
-      const isLowRamPhone = deviceRam <= 3 || isMobileDevice;
-      camera = new THREE.PerspectiveCamera(62, w / h, 0.85, isLowRamPhone ? 210 : 280);
+      const isLowRamPhone = deviceRam <= 3;
+      camera = new THREE.PerspectiveCamera(60, w / h, 0.65, isVeryLowEnd ? 220 : 340);
       renderer = new THREE.WebGLRenderer({
-        antialias: !isMobileDevice && !isVeryLowEnd,
+        antialias: !isVeryLowEnd,
         alpha: false,
         stencil: false,
         powerPreference: 'high-performance',
-        precision: 'mediump',
+        precision: isVeryLowEnd ? 'mediump' : 'highp',
         logarithmicDepthBuffer: false
       });
-      const renderScale = isVeryLowEnd ? 0.82 : (isMobileDevice ? 0.94 : 1);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isLowRamPhone ? renderScale : 1.25));
+      const maxDpr = isVeryLowEnd ? 0.95 : (isMobileDevice ? 1.65 : 2.0);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxDpr));
       renderer.setSize(w, h);
+      renderer.outputEncoding = THREE.sRGBEncoding;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.16;
+      renderer.toneMappingExposure = 1.18;
+      renderer.shadowMap.enabled = !isVeryLowEnd;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       city3dContainer.appendChild(renderer.domElement);
 
-      // Skip heavy per-pixel IBL environment map in open-world city for ultra-smooth 120-240 FPS on phones!
+      // Lightweight Procedural Sky/Horizon PMREM Reflection Map -> Realistic Glossy Car Paint & Chrome!
+      if (!isVeryLowEnd && typeof THREE.PMREMGenerator === 'function') {
+        try {
+          const pmrem = new THREE.PMREMGenerator(renderer);
+          const envScene = new THREE.Scene();
+          const envCan = document.createElement('canvas');
+          envCan.width = 256; envCan.height = 128;
+          const ectx = envCan.getContext('2d');
+          const eg = ectx.createLinearGradient(0, 0, 0, 128);
+          eg.addColorStop(0.0, '#1e40af');
+          eg.addColorStop(0.40, '#7dd3fc');
+          eg.addColorStop(0.50, '#ffffff');
+          eg.addColorStop(0.56, '#334155');
+          eg.addColorStop(1.0, '#0f172a');
+          ectx.fillStyle = eg;
+          ectx.fillRect(0, 0, 256, 128);
+          const envTex = new THREE.CanvasTexture(envCan);
+          envTex.encoding = THREE.sRGBEncoding;
+          const envSphere = new THREE.Mesh(
+            new THREE.SphereGeometry(40, 20, 12),
+            new THREE.MeshBasicMaterial({ map: envTex, side: THREE.BackSide })
+          );
+          envScene.add(envSphere);
+          cityEnvMapRef = pmrem.fromScene(envScene).texture;
+          scene.environment = cityEnvMapRef;
+          pmrem.dispose();
+        } catch (eEnv) {}
+      }
 
-      hemiLightRef = new THREE.HemisphereLight(0xffffff, 0x94a3b8, 1.65);
+      hemiLightRef = new THREE.HemisphereLight(0xf0f9ff, 0x64748b, 1.45);
       scene.add(hemiLightRef);
-      sunLightRef = new THREE.DirectionalLight(0xfffdf2, 1.55);
-      sunLightRef.position.set(140, 220, 100);
+      sunLightRef = new THREE.DirectionalLight(0xfff9e6, 1.75);
+      sunLightRef.position.set(60, 110, 45);
+      if (!isVeryLowEnd) {
+        sunLightRef.castShadow = true;
+        sunLightRef.shadow.mapSize.width = isMobileDevice ? 1024 : 2048;
+        sunLightRef.shadow.mapSize.height = isMobileDevice ? 1024 : 2048;
+        sunLightRef.shadow.camera.near = 10;
+        sunLightRef.shadow.camera.far = 260;
+        const sc = 48;
+        sunLightRef.shadow.camera.left = -sc;
+        sunLightRef.shadow.camera.right = sc;
+        sunLightRef.shadow.camera.top = sc;
+        sunLightRef.shadow.camera.bottom = -sc;
+        sunLightRef.shadow.bias = -0.0005;
+      }
       scene.add(sunLightRef);
+      scene.add(sunLightRef.target);
       // LIVE ANIMATED 3D SKY: Glowing Sun/Moon + Drifting Fluffy Clouds + Night Starfield (Ultra-light for 2GB phones!)
       skySunMesh = new THREE.Mesh(
         new THREE.SphereGeometry(16, 16, 12),
@@ -4243,13 +4610,66 @@ window.ApexCity3D = (function () {
       const roadTex = City3D.createRoadTexture();
       animRoadTex = roadTex;
       animCanalTex = City3D.createFlowingWaterTexture ? City3D.createFlowingWaterTexture() : null;
+      roadGroundMatRef = new THREE.MeshStandardMaterial({
+        map: roadTex,
+        roughness: 0.88,
+        metalness: 0.05,
+        polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 2
+      });
       const ground = new THREE.Mesh(
         new THREE.PlaneGeometry(2400, 2400, 32, 32),
-        new THREE.MeshLambertMaterial({
-          map: roadTex,
-          polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 2
-        })
+        roadGroundMatRef
       );
+      ground.receiveShadow = true;
+
+      // 3D FALLING RAIN PARTICLE SYSTEM (Zero cost when Clear, lively rain streaks in Rain Mode!)
+      const rainCount = 900;
+      const rainPos = new Float32Array(rainCount * 3);
+      for (let ri = 0; ri < rainCount; ri++) {
+        rainPos[ri * 3] = (Math.random() - 0.5) * 90;
+        rainPos[ri * 3 + 1] = Math.random() * 38;
+        rainPos[ri * 3 + 2] = (Math.random() - 0.5) * 90;
+      }
+      const rainGeo = new THREE.BufferGeometry();
+      rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPos, 3));
+      rainPointsMesh = new THREE.Points(
+        rainGeo,
+        new THREE.PointsMaterial({ color: 0xcbe8ff, size: 0.28, transparent: true, opacity: 0.72, depthWrite: false })
+      );
+      rainPointsMesh.visible = false;
+      scene.add(rainPointsMesh);
+
+      // POOLED DARK ASPHALT DRIFT SKID MARKS (Zero GC allocation!)
+      const skidGeo = new THREE.PlaneGeometry(0.36, 1.35);
+      const skidMat = new THREE.MeshBasicMaterial({ color: 0x05070c, transparent: true, opacity: 0.55, depthWrite: false });
+      skidMarkPool = [];
+      for (let sk = 0; sk < 72; sk++) {
+        const sm = new THREE.Mesh(skidGeo, skidMat);
+        sm.rotation.x = -Math.PI / 2;
+        sm.visible = false;
+        scene.add(sm);
+        skidMarkPool.push(sm);
+      }
+
+      // CITY JOB 3D WAYPOINT BEACON PILLAR
+      const jbGrp = new THREE.Group();
+      const jbCol = new THREE.Mesh(
+        new THREE.CylinderGeometry(1.1, 1.6, 26, 12, 1, true),
+        new THREE.MeshBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.34, side: THREE.DoubleSide, depthWrite: false })
+      );
+      jbCol.position.y = 13;
+      const jbRing = new THREE.Mesh(
+        new THREE.RingGeometry(2.0, 2.9, 20),
+        new THREE.MeshBasicMaterial({ color: 0x34d399, transparent: true, opacity: 0.82, side: THREE.DoubleSide })
+      );
+      jbRing.rotation.x = -Math.PI / 2;
+      jbRing.position.y = 0.2;
+      jbGrp.add(jbCol, jbRing);
+      jbGrp.visible = false;
+      scene.add(jbGrp);
+      jobBeaconMesh = jbGrp;
+
+      if (typeof applyGraphicsQuality === 'function') applyGraphicsQuality(state.graphicsQuality || 'HIGH');
       ground.rotation.x = -Math.PI / 2;
       ground.position.y = -0.02;
       ground.matrixAutoUpdate = false; ground.updateMatrix();
@@ -5286,8 +5706,18 @@ window.ApexCity3D = (function () {
           tMesh.position.set(startAlong, 0, lane);
           tMesh.rotation.y = dir > 0 ? -Math.PI / 2 : Math.PI / 2;
         }
+        // Glowing Red Brake Lights on every AI Traffic Car!
+        const aiBlMat = new THREE.MeshBasicMaterial({ color: 0xff1e1e });
+        const aiBlL = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.12, 0.08), aiBlMat);
+        aiBlL.position.set(-0.68, 0.64, 2.18); aiBlL.visible = false;
+        const aiBlR = aiBlL.clone(); aiBlR.position.x = 0.68;
+        tMesh.add(aiBlL, aiBlR);
         scene.add(tMesh);
-        trafficCars.push({ mesh: tMesh, wheels: builtAI.wheels, axis, dir, maxSpeed: 12 + (t % 4) * 2.5, curSpeed: 10 });
+        trafficCars.push({
+          mesh: tMesh, wheels: builtAI.wheels, brakeLights: [aiBlL, aiBlR],
+          axis, dir, maxSpeed: 12 + (t % 4) * 2.5, curSpeed: 10,
+          blockedTimer: 0, lastHonkAt: 0
+        });
       }
     }
 
@@ -5342,6 +5772,20 @@ window.ApexCity3D = (function () {
     if (eq.id === 6 && eq.isRealGLB2) {
       loadCar02GLB((glbBuilt) => {
         if (!glbBuilt || state.equippedId !== 6) return;
+        if (playerGroup) scene.remove(playerGroup);
+        playerGroup = glbBuilt.group;
+        playerChassis = glbBuilt.chassis;
+        playerWheels = glbBuilt.wheels;
+        playerFrontPivots = glbBuilt.frontWheelPivots;
+        nitroFlames = glbBuilt.flames;
+        playerGroup.position.set(driveState.x, driveState.y || 0, driveState.z);
+        playerGroup.rotation.y = driveState.heading;
+        scene.add(playerGroup);
+      });
+    }
+    if (eq.id === 11 && eq.isRealCustomGLB) {
+      loadCustomCarGLB((glbBuilt) => {
+        if (!glbBuilt || state.equippedId !== 11) return;
         if (playerGroup) scene.remove(playerGroup);
         playerGroup = glbBuilt.group;
         playerChassis = glbBuilt.chassis;
@@ -5484,8 +5928,93 @@ window.ApexCity3D = (function () {
       g.add(wg);
       pWheels.push(wg);
     });
-    g.userData = { barR, barB, wheels: pWheels };
+    // Animated Driver-Side Police Door Pivot (Swings open when Officer exits!)
+    const doorPivot = new THREE.Group();
+    doorPivot.position.set(-1.09, 0.66, -0.92);
+    const openDoorPanel = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.62, 1.12), doorDecalMat);
+    openDoorPanel.position.set(0, 0, 0.56);
+    const openDoorGlass = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.44, 0.96), glsMat);
+    openDoorGlass.position.set(0.02, 0.52, 0.56);
+    doorPivot.add(openDoorPanel, openDoorGlass);
+    doorPivot.visible = false;
+    g.add(doorPivot);
+
+    // Grounded Contact Shadow under Police Car
+    const pShMat = new THREE.MeshBasicMaterial({ color: 0x020617, transparent: true, opacity: 0.42, depthWrite: false });
+    const pSh = new THREE.Mesh(new THREE.PlaneGeometry(2.55, 5.45), pShMat);
+    pSh.rotation.x = -Math.PI / 2;
+    pSh.position.y = 0.03;
+    g.add(pSh);
+
+    g.userData = { barR, barB, wheels: pWheels, doorPivot };
     return g;
+  }
+
+  // DETAILED 3D POLICE OFFICER (Steps out ONLY after the user voluntarily stops!)
+  function buildPoliceOfficer3D() {
+    const officer = new THREE.Group();
+    const navyMat = new THREE.MeshStandardMaterial({ color: 0x0f274a, roughness: 0.62, metalness: 0.15 });
+    const darkMat = new THREE.MeshStandardMaterial({ color: 0x090f1d, roughness: 0.72 });
+    const skinMat = new THREE.MeshStandardMaterial({ color: 0xf1c27d, roughness: 0.55 });
+    const goldMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.88, roughness: 0.18 });
+    const shoeMat = new THREE.MeshStandardMaterial({ color: 0x020617, roughness: 0.4 });
+    const padMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.6 });
+
+    const bodyRoot = new THREE.Group();
+    officer.add(bodyRoot);
+
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.56, 0.26), navyMat);
+    torso.position.y = 1.12;
+    const badge = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.09, 0.03), goldMat);
+    badge.position.set(0.11, 1.24, -0.14);
+    const epL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.04, 0.16), goldMat);
+    epL.position.set(-0.22, 1.40, 0);
+    const epR = epL.clone(); epR.position.x = 0.22;
+    const belt = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.09, 0.28), darkMat);
+    belt.position.y = 0.85;
+    const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.08, 0.04), goldMat);
+    buckle.position.set(0, 0.85, -0.14);
+
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.165, 12, 12), skinMat);
+    head.position.y = 1.56;
+    const sunglasses = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.06, 0.06), shoeMat);
+    sunglasses.position.set(0, 1.58, -0.14);
+    const capBand = new THREE.Mesh(new THREE.CylinderGeometry(0.175, 0.165, 0.09, 12), navyMat);
+    capBand.position.y = 1.70;
+    const capTop = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.17, 0.06, 12), navyMat);
+    capTop.position.y = 1.76;
+    const capBadge = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.03), goldMat);
+    capBadge.position.set(0, 1.72, -0.175);
+    const capVisor = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.03, 0.15), shoeMat);
+    capVisor.position.set(0, 1.66, -0.16);
+
+    const makeLimb = (w, h, x, y, mat, addShoe = false) => {
+      const piv = new THREE.Group();
+      piv.position.set(x, y, 0);
+      const limb = new THREE.Mesh(new THREE.BoxGeometry(w, h, w), mat);
+      limb.position.y = -h / 2;
+      piv.add(limb);
+      if (addShoe) {
+        const shoe = new THREE.Mesh(new THREE.BoxGeometry(w * 1.05, 0.11, w * 1.45), shoeMat);
+        shoe.position.set(0, -h + 0.04, -0.04);
+        piv.add(shoe);
+      }
+      return piv;
+    };
+
+    const legL = makeLimb(0.16, 0.80, -0.12, 0.82, darkMat, true);
+    const legR = makeLimb(0.16, 0.80, 0.12, 0.82, darkMat, true);
+    const armL = makeLimb(0.13, 0.54, -0.31, 1.36, navyMat, false);
+    const armR = makeLimb(0.13, 0.54, 0.31, 1.36, navyMat, false);
+
+    // Ticket clipboard in right hand
+    const pad = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.23, 0.03), padMat);
+    pad.position.set(0, -0.46, -0.09);
+    armR.add(pad);
+
+    bodyRoot.add(torso, badge, epL, epR, belt, buckle, head, sunglasses, capBand, capTop, capBadge, capVisor, legL, legR, armL, armR);
+    officer.userData = { bodyRoot, legL, legR, armL, armR, walkPhase: 0 };
+    return officer;
   }
 
   function buildYellowTaxi3D() {
@@ -5629,29 +6158,82 @@ window.ApexCity3D = (function () {
     return { x: rx, z: rz, hit };
   }
 
-  function spawnPoliceChase(now) {
-    // ONLY 1 SINGLE POLICE CAR — chases for 10 seconds with live top countdown timer, then leaves automatically!
+  function applyGraphicsQuality(q) {
+    if (!renderer || !camera || !scene) return;
+    const isMob = /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
+    if (q === 'LOW') {
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 0.85));
+      renderer.shadowMap.enabled = false;
+      if (sunLightRef) sunLightRef.castShadow = false;
+      scene.environment = null;
+      camera.far = 195;
+    } else if (q === 'MED') {
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMob ? 1.2 : 1.5));
+      renderer.shadowMap.enabled = true;
+      if (sunLightRef) sunLightRef.castShadow = true;
+      scene.environment = cityEnvMapRef || null;
+      camera.far = 270;
+    } else {
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMob ? 1.65 : 2.0));
+      renderer.shadowMap.enabled = true;
+      if (sunLightRef) sunLightRef.castShadow = true;
+      scene.environment = cityEnvMapRef || null;
+      camera.far = 360;
+    }
+    camera.updateProjectionMatrix();
+  }
+
+  function spawnBackupPolice(now) {
+    if (policeUnits.length >= 2) return;
+    const h = driveState.heading;
+    const fwdX = -Math.sin(h), fwdZ = -Math.cos(h);
+    const rightX = Math.cos(h), rightZ = -Math.sin(h);
+    const pc = buildPoliceCar3D();
+    const rawX = driveState.x - fwdX * 32 + rightX * 7.5;
+    const rawZ = driveState.z - fwdZ * 32 + rightZ * 7.5;
+    const safePos = pushOutOfBuildings(rawX, rawZ, 2.8, true);
+    pc.position.set(safePos.x, getBridgeY(safePos.x, safePos.z), safePos.z);
+    pc.rotation.y = h;
+    scene.add(pc);
+    policeUnits.push({
+      mesh: pc, spawnAt: now, expiresAt: now + 50000, lastHorn: 0,
+      role: 'flanker', slotFwd: -9.5, slotSide: 4.2, heading: h, speed: 22,
+      stopPhase: 'chase', officer: null, phaseTimer: 0, stopHoldTimer: 0, reason: 'FLEEING POLICE'
+    });
+  }
+
+  function spawnPoliceChase(now, reason = 'RECKLESS DRIVING') {
     if (policeUnits.length >= 1) {
-      policeUnits[0].expiresAt = now + 20000; // Refresh 10s timer if another hit occurs
+      const pu0 = policeUnits[0];
+      pu0.expiresAt = now + 45000;
+      pu0.reason = reason || pu0.reason;
+      if (pu0.stopPhase === 'depart') {
+        pu0.stopPhase = 'chase';
+        pu0.stopHoldTimer = 0;
+      }
       return;
     }
     const h = driveState.heading;
     const fwdX = -Math.sin(h), fwdZ = -Math.cos(h);
     const pc = buildPoliceCar3D();
-    const rawX = driveState.x - fwdX * 30;
-    const rawZ = driveState.z - fwdZ * 30;
+    const rawX = driveState.x - fwdX * 26;
+    const rawZ = driveState.z - fwdZ * 26;
     const safePos = pushOutOfBuildings(rawX, rawZ, 2.8, true);
-    pc.position.set(safePos.x, 0, safePos.z);
+    pc.position.set(safePos.x, getBridgeY(safePos.x, safePos.z), safePos.z);
     pc.rotation.y = h;
     scene.add(pc);
     policeUnits.push({
-      mesh: pc, spawnAt: now, expiresAt: now + 20000, lastHorn: 0,
-      role: 'pursuer', slotFwd: -9.5, slotSide: 0, heading: h, speed: 16
+      mesh: pc, spawnAt: now, expiresAt: now + 45000, lastHorn: 0,
+      role: 'pursuer', slotFwd: -7.5, slotSide: 0, heading: h, speed: 18,
+      stopPhase: 'chase', // chase -> pullover_park -> officer_walk_in -> officer_ticket -> officer_return -> depart
+      officer: null, phaseTimer: 0, stopHoldTimer: 0, reason
     });
+    wantedStars = Math.max(1, Math.min(3, wantedStars || 1));
+    const starTxt = '★'.repeat(wantedStars);
     const ptEl = document.getElementById('policeTimerEl');
-    if (ptEl) { ptEl.classList.remove('hidden'); ptEl.textContent = '🚓 POLICE: 20s'; }
-    if (Audio) { if (Audio.playSiren) Audio.playSiren(); if (Audio.startHorn) Audio.startHorn(); }
-    showDriveAlert('★ POLICE CHASE! SURVIVE 20 SECONDS! 🚓', 'bg-blue-600 text-white');
+    if (ptEl) { ptEl.classList.remove('hidden'); ptEl.textContent = `🚓 ${starTxt} POLICE BEHIND YOU — STOP OR ESCAPE!`; }
+    if (Audio) { if (Audio.playSiren) Audio.playSiren(); if (Audio.playHorn) Audio.playHorn('car'); }
+    showDriveAlert(`🚓 POLICE PURSUIT (${reason})! STOP YOUR CAR TO PULL OVER OR ESCAPE!`, 'bg-blue-600 text-white');
   }
 
 
@@ -6054,6 +6636,17 @@ window.ApexCity3D = (function () {
       }
     }
 
+    // Active City Job Pulsing Marker ('J') on GPS Minimap
+    if (activeCityJob) {
+      const jt = activeCityJob.stage === 'pickup' ? activeCityJob.pickup : activeCityJob.dropoff;
+      const jx = Math.max(-cx + 7, Math.min(cx - 7, (jt.x - driveState.x) * scale));
+      const jz = Math.max(-cy + 7, Math.min(cy - 7, (jt.z - driveState.z) * scale));
+      ctx.fillStyle = (Math.floor(performance.now() / 220) % 2 === 0) ? '#10b981' : '#facc15';
+      ctx.beginPath(); ctx.arc(cx + jx, cy + jz, 6, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#020617';
+      ctx.fillText('J', cx + jx, cy + jz + 0.5);
+    }
+
     // Checkpoint Beacon
     if (checkpointBeam) {
       const dx = Math.max(-cx + 6, Math.min(cx - 6, (checkpointBeam.position.x - driveState.x) * scale));
@@ -6114,7 +6707,8 @@ window.ApexCity3D = (function () {
 
     const eq = vehicles.find((v) => v.id === state.equippedId) || vehicles[0];
     const lvBonus = ((state.level || 1) - 1) * 2.5;
-    const maxSpeed = isOnFoot ? 11 : (28 + ((eq.speed + (state.upgradeLevels.engine - 1) * 2.5) / 100) * 24 + lvBonus);
+    const hpFactor = (!isOnFoot && driveState.health < 25) ? 0.72 : 1.0;
+    const maxSpeed = isOnFoot ? 11 : (28 + ((eq.speed + (state.upgradeLevels.engine - 1) * 2.5) / 100) * 24 + lvBonus) * hpFactor;
     const accelRate = 19 + ((eq.accel + (state.upgradeLevels.engine - 1) * 2.5) / 100) * 18 + lvBonus * 0.45;
     // Speed-sensitive precision steering (tight turns at low speed, rock-steady stability at highway speed!)
     const speedRatio = Math.min(1, Math.abs(driveState.speed) / maxSpeed);
@@ -6122,7 +6716,9 @@ window.ApexCity3D = (function () {
 
     const gasOn = !isOnFoot && (driveState.gas || driveState.keys.w);
     const brakeOn = !isOnFoot && (driveState.brake || driveState.keys.s);
+    const driftOn = !isOnFoot && (driveState.drift || driveState.keys.space);
     const nitroOn = !isOnFoot && (driveState.boost || driveState.keys.shift) && driveState.nitro > 3;
+    const isRainWet = (weatherModeIdx === 1);
 
     if (nitroOn) { driveState.nitro = Math.max(0, driveState.nitro - 26 * dt); driveState._wasNitro = true; }
     else { if (driveState._wasNitro && Audio && Audio.playTurboPshh) Audio.playTurboPshh(); driveState._wasNitro = false; driveState.nitro = Math.min(100, driveState.nitro + 14 * dt); }
@@ -6142,7 +6738,9 @@ window.ApexCity3D = (function () {
         ? Math.min(0, driveState.speed + forwardAccel * 1.8)
         : driveState.speed + forwardAccel;
     } else if (brakeOn) {
-      const reverseAccel = accelRate * 1.5 * dt;
+      // Rain makes wet asphalt slightly slicker under braking!
+      const gripMult = isRainWet ? 0.76 : 1.0;
+      const reverseAccel = accelRate * 1.5 * gripMult * dt;
       driveState.speed = driveState.speed > 0
         ? Math.max(0, driveState.speed - reverseAccel)
         : driveState.speed - reverseAccel * 0.48;
@@ -6165,12 +6763,67 @@ window.ApexCity3D = (function () {
     const visualWheelDeg = driveState.wheelDragging ? (driveState.wheelAngleDeg || 0) : (driveState.wheelAngleDeg || (-driveState.steerInput * 110));
     steeringWheelSvg.style.transform = `rotate(${visualWheelDeg.toFixed(1)}deg)`;
 
-    if (Audio && !isOnFoot) Audio.updateEngine(Math.abs(driveState.speed) / maxSpeed, nitroOn, brakeOn, driveState.steerInput);
+    // REAL HANDBRAKE DRIFT SYSTEM (Rear Slip Angle + Tire Screech + Dark Asphalt Skid Marks + Drift Combo Coins!)
+    const isDriftingNow = !isOnFoot && driftOn && Math.abs(driveState.speed) > 10.5 && Math.abs(driveState.steerInput) > 0.14;
+    if (driftOn && Math.abs(driveState.speed) > 2.0) {
+      driveState.speed *= Math.pow(isRainWet ? 0.78 : 0.68, dt);
+    }
+    const targetDriftAngle = isDriftingNow
+      ? Math.max(-0.48, Math.min(0.48, driveState.steerInput * (isRainWet ? 0.52 : 0.40)))
+      : 0;
+    driveState.driftAngle = (driveState.driftAngle || 0) + (targetDriftAngle - (driveState.driftAngle || 0)) * Math.min(1, 6.5 * dt);
+
+    const driftBadgeEl = document.getElementById('driftBadgeEl');
+    if (isDriftingNow) {
+      driveState.driftActiveTime = (driveState.driftActiveTime || 0) + dt;
+      driveState.driftComboCoins = (driveState.driftComboCoins || 0) + Math.abs(driveState.speed) * 1.65 * dt;
+      if (driftBadgeEl) {
+        driftBadgeEl.classList.remove('hidden');
+        driftBadgeEl.textContent = `🔥 DRIFT +${Math.floor(driveState.driftComboCoins)} C`;
+      }
+      // Spawn pooled dark asphalt tire skid marks under both rear tires!
+      if (skidMarkPool.length && now - lastSkidAt > 48) {
+        lastSkidAt = now;
+        const rX = Math.cos(driveState.heading), rZ = -Math.sin(driveState.heading);
+        const fX = -Math.sin(driveState.heading), fZ = -Math.cos(driveState.heading);
+        [-0.82, 0.82].forEach((sideOff) => {
+          const sm = skidMarkPool[skidPoolIdx];
+          skidPoolIdx = (skidPoolIdx + 1) % skidMarkPool.length;
+          const sx = driveState.x - fX * 1.55 + rX * sideOff;
+          const sz = driveState.z - fZ * 1.55 + rZ * sideOff;
+          sm.position.set(sx, getGroundY(sx, sz) + 0.025, sz);
+          sm.rotation.set(-Math.PI / 2, 0, driveState.heading + (driveState.driftAngle || 0));
+          sm.visible = true;
+        });
+      }
+    } else if ((driveState.driftComboCoins || 0) >= 25) {
+      const earnedDrift = Math.min(800, Math.round(driveState.driftComboCoins));
+      state.coins += earnedDrift;
+      persistSave();
+      if (Audio) Audio.playCoin();
+      showDriveAlert(`🔥 DRIFT BONUS! +${earnedDrift} COINS!`, 'bg-orange-400 text-slate-950');
+      driveState.driftComboCoins = 0;
+      driveState.driftActiveTime = 0;
+      if (driftBadgeEl) driftBadgeEl.classList.add('hidden');
+    } else {
+      driveState.driftComboCoins = 0;
+      driveState.driftActiveTime = 0;
+      if (driftBadgeEl) driftBadgeEl.classList.add('hidden');
+    }
+
+    if (Audio && !isOnFoot) Audio.updateEngine(Math.abs(driveState.speed) / maxSpeed, nitroOn, brakeOn, driveState.steerInput, isDriftingNow);
 
     if (Math.abs(driveState.speed) > 0.5) {
       const dirSign = driveState.speed >= 0 ? 1 : -1;
       const speedFactor = Math.min(1, Math.abs(driveState.speed) / 12);
-      driveState.heading += driveState.steerInput * turnRate * speedFactor * dirSign * dt;
+      const driftTurnBoost = isDriftingNow ? (isRainWet ? 1.58 : 1.42) : 1.0;
+      driveState.heading += driveState.steerInput * turnRate * driftTurnBoost * speedFactor * dirSign * dt;
+    }
+
+    // Sync Cockpit Inner Steering Wheel Rotation
+    const cockpitWheelSvg = document.getElementById('cockpitWheelSvg');
+    if (cockpitWheelSvg && camModeIdx === 2) {
+      cockpitWheelSvg.style.transform = `rotate(${visualWheelDeg.toFixed(1)}deg)`;
     }
 
     const prevX = driveState.x, prevZ = driveState.z;
@@ -6973,17 +7626,64 @@ window.ApexCity3D = (function () {
       const targetGroundY = getGroundY(driveState.x, driveState.z);
       driveState.y = (driveState.y || 0) + (targetGroundY - (driveState.y || 0)) * Math.min(1, 18 * dt);
       playerGroup.position.set(driveState.x, driveState.y, driveState.z);
-      playerGroup.rotation.y = driveState.heading;
+      playerGroup.rotation.y = driveState.heading + (driveState.driftAngle || 0);
     }
     const spdNorm = Math.min(1, Math.abs(driveState.speed) / 28);
     if (eq.modelType === 'bike') {
       playerGroup.rotation.z = driveState.steerInput * 0.28 * spdNorm;
     } else if (playerChassis) {
-      // Realistic suspension body roll in turns & pitch squat on Nitro/Gas!
-      const targetRoll = -driveState.steerInput * 0.065 * spdNorm;
-      const targetPitch = nitroOn ? 0.045 : gasOn ? 0.02 : brakeOn ? -0.035 : 0;
-      playerChassis.rotation.z += (targetRoll - playerChassis.rotation.z) * Math.min(1, 8 * dt);
-      playerChassis.rotation.x += (targetPitch - playerChassis.rotation.x) * Math.min(1, 8 * dt);
+      // Real suspension weight transfer: dynamic acceleration squat, braking nose-dive & corner body roll!
+      const accelForce = (driveState.speed - (driveState._prevSpeed || 0)) / Math.max(dt, 0.016);
+      driveState._prevSpeed = driveState.speed;
+      const targetRoll = Math.max(-0.085, Math.min(0.085, -driveState.steerInput * 0.09 * spdNorm));
+      const targetPitch = Math.max(-0.055, Math.min(0.06, accelForce * 0.0028 + (nitroOn ? 0.028 : 0)));
+      playerChassis.rotation.z += (targetRoll - playerChassis.rotation.z) * Math.min(1, 9 * dt);
+      playerChassis.rotation.x += (targetPitch - playerChassis.rotation.x) * Math.min(1, 9 * dt);
+    }
+    // Live Brake Lights + Night Headlights + Shadow Sun Tracking
+    if (playerGroup && playerGroup.userData) {
+      if (playerGroup.userData.brakeLights) {
+        const showBrake = !isOnFoot && brakeOn;
+        playerGroup.userData.brakeLights.forEach((bl) => { bl.visible = showBrake; });
+      }
+      if (playerGroup.userData.headBeams) {
+        const autoLights = Boolean(headlightsOn) || weatherModeIdx === 2;
+        playerGroup.userData.headBeams.forEach((bm) => { bm.visible = autoLights && !isOnFoot; });
+      }
+      // Working Turn Signals & Auto-Hazards when pulled over for Police!
+      const policeStoppedNow = policeUnits.some((u) => u.stopPhase === 'pullover_park' || u.stopPhase === 'officer_walk_in' || u.stopPhase === 'officer_ticket');
+      const effSig = policeStoppedNow ? 'hazard' : signalMode;
+      const blinkOn = effSig !== 'off' && (Math.floor(now / 360) % 2 === 0);
+      if (playerGroup.userData.leftSignals) {
+        const showL = blinkOn && (effSig === 'left' || effSig === 'hazard');
+        playerGroup.userData.leftSignals.forEach((s) => { s.visible = showL; });
+      }
+      if (playerGroup.userData.rightSignals) {
+        const showR = blinkOn && (effSig === 'right' || effSig === 'hazard');
+        playerGroup.userData.rightSignals.forEach((s) => { s.visible = showR; });
+      }
+      if (effSig !== 'off' && !isOnFoot && now - lastSignalTickAt > 720) {
+        lastSignalTickAt = now;
+        if (Audio) Audio.playTone(980, 0.025, 'square', 0.022);
+      }
+    }
+    // Live 3D Rain Fall Animation around Player!
+    if (rainPointsMesh) {
+      rainPointsMesh.visible = (weatherModeIdx === 1);
+      if (weatherModeIdx === 1) {
+        rainPointsMesh.position.set(driveState.x, 0, driveState.z);
+        const rAttr = rainPointsMesh.geometry.attributes.position;
+        for (let ri = 0; ri < rAttr.count; ri++) {
+          let ry = rAttr.getY(ri) - 38 * dt;
+          if (ry < 0) ry = 36 + Math.random() * 4;
+          rAttr.setY(ri, ry);
+        }
+        rAttr.needsUpdate = true;
+      }
+    }
+    if (sunLightRef && sunLightRef.castShadow) {
+      sunLightRef.position.set(driveState.x + 55, 105, driveState.z + 40);
+      sunLightRef.target.position.set(driveState.x, 0, driveState.z);
     }
     for (const pv of playerFrontPivots) {
       pv.rotation.y = driveState.steerInput * 0.42;
@@ -7013,7 +7713,7 @@ window.ApexCity3D = (function () {
     driveState.camOrbitYaw += (driveState.camTargetYaw - driveState.camOrbitYaw) * smoothOrbitK;
     driveState.camOrbitPitch += (driveState.camTargetPitch - driveState.camOrbitPitch) * smoothOrbitK;
 
-    const camDist = isOnFoot ? (curShopInside ? 4.3 : 6.0) : (camModeIdx === 1 ? 1.8 : camModeIdx === 2 ? 14.5 : (eq.modelType === 'heavy_truck' ? 11.8 : 9.4));
+    const camDist = isOnFoot ? (curShopInside ? 4.3 : 6.0) : (camModeIdx === 1 ? 1.8 : camModeIdx === 2 ? 0.6 : camModeIdx === 3 ? 14.5 : (eq.modelType === 'heavy_truck' ? 11.8 : 9.4));
     const totalCamYaw = driveState.heading + driveState.camOrbitYaw;
     const camPitch = Math.max(-0.85, Math.min(1.32, driveState.camOrbitPitch));
     const horizDist = Math.cos(Math.max(0.05, camPitch)) * camDist;
@@ -7042,9 +7742,26 @@ window.ApexCity3D = (function () {
     const skyTiltUp = camPitch < 0.08 ? (0.08 - camPitch) * 14.5 : 0;
     const groundTiltDown = camPitch > 0.85 ? (camPitch - 0.85) * 1.4 : 0;
     const lookY = Math.max(0.15, (driveState.y || 0) + (isOnFoot ? 1.45 : 1.3) + skyTiltUp - groundTiltDown);
+    const cockpitOv = document.getElementById('cockpitDashOverlay');
+    if (cockpitOv) cockpitOv.classList.toggle('hidden', !(camModeIdx === 2 && !isOnFoot));
     if (camModeIdx === 1 && !driveState.camDragging && !isOnFoot) {
-      camera.position.set(driveState.x - Math.sin(driveState.heading) * 0.6, (driveState.y || 0) + 1.65, driveState.z - Math.cos(driveState.heading) * 0.6);
+      camera.position.set(driveState.x - Math.sin(driveState.heading) * 0.65, (driveState.y || 0) + 1.65, driveState.z - Math.cos(driveState.heading) * 0.65);
       camera.lookAt(driveState.x - Math.sin(driveState.heading) * 30, (driveState.y || 0) + 1.4 + skyTiltUp, driveState.z - Math.cos(driveState.heading) * 30);
+    } else if (camModeIdx === 2 && !driveState.camDragging && !isOnFoot) {
+      // COCKPIT / INTERIOR DRIVER EYE-LEVEL CAM
+      const eyeH = eq.modelType === 'heavy_truck' ? 2.05 : 1.38;
+      const sideSeat = -0.36;
+      const rX = Math.cos(driveState.heading), rZ = -Math.sin(driveState.heading);
+      camera.position.set(
+        driveState.x - Math.sin(driveState.heading) * 0.12 + rX * sideSeat,
+        (driveState.y || 0) + eyeH,
+        driveState.z - Math.cos(driveState.heading) * 0.12 + rZ * sideSeat
+      );
+      camera.lookAt(
+        driveState.x - Math.sin(driveState.heading) * 34 + rX * sideSeat,
+        (driveState.y || 0) + eyeH - 0.08 + skyTiltUp,
+        driveState.z - Math.cos(driveState.heading) * 34 + rZ * sideSeat
+      );
     } else {
       camera.lookAt(driveState.x, lookY, driveState.z);
     }
@@ -7085,6 +7802,24 @@ window.ApexCity3D = (function () {
       sg.rMat.color.setHex(!sg.zGreen && !isYel ? 0xff1e1e : 0x3b0a0a);
       sg.yMat.color.setHex(isYel ? 0xfacc15 : 0x3b3008);
       sg.gMat.color.setHex(sg.zGreen ? 0x22c55e : 0x0a3b1a);
+
+      // REAL TRAFFIC LAW ENFORCEMENT: Running a Red Signal at speed (> 32 km/h) dispatches Police behind you!
+      if (!isOnFoot && Math.abs(driveState.speed) > 12.5 && policeUnits.length === 0 && (now - (driveState._lastTrafficTicketAt || 0) > 25000)) {
+        const dSig = Math.hypot(driveState.x - sg.x, driveState.z - sg.z);
+        if (dSig < 7.2) {
+          const movingMostlyZ = Math.abs(Math.cos(driveState.heading)) > Math.abs(Math.sin(driveState.heading));
+          const ranRed = (movingMostlyZ && !sg.zGreen && !isYel) || (!movingMostlyZ && !sg.xGreen && !isYel);
+          if (ranRed) {
+            driveState._lastTrafficTicketAt = now;
+            spawnPoliceChase(now, 'RED LIGHT JUMPED');
+          }
+        }
+      }
+    }
+    // REAL SPEED CAMERA ENFORCEMENT: Extreme city overspeeding (> 185 km/h) triggers Police Patrol!
+    if (!isOnFoot && Math.abs(driveState.speed * 2.6) > 185 && policeUnits.length === 0 && (now - (driveState._lastSpeedAlertAt || 0) > 35000)) {
+      driveState._lastSpeedAlertAt = now;
+      spawnPoliceChase(now, 'OVERSPEEDING >185 KM/H');
     }
 
     // Smart Commuter AI Vehicles: Stop & Wait cleanly at Red Traffic Signals + Keep safe spacing, then drive on Green!
@@ -7139,6 +7874,29 @@ window.ApexCity3D = (function () {
         }
       }
 
+      // Smarter AI Traffic: Illuminate brake lights when stopping + honk & lane-change around blocked cars!
+      if (t.brakeLights) {
+        const aiBraking = shouldStop || t.curSpeed < 1.2;
+        t.brakeLights[0].visible = aiBraking;
+        t.brakeLights[1].visible = aiBraking;
+      }
+      if (shouldStop && !isOnFoot) {
+        const dPlBlock = Math.hypot(tx - driveState.x, tz - driveState.z);
+        if (dPlBlock < 12) {
+          t.blockedTimer = (t.blockedTimer || 0) + dt;
+          if (t.blockedTimer > 1.6 && now - (t.lastHonkAt || 0) > 3500) {
+            t.lastHonkAt = now;
+            if (Audio && Audio.playHorn) Audio.playHorn('car');
+            // Smoothly shift into adjacent lane to overtake blocked car!
+            t.yieldSide = t.dir > 0 ? -3.1 : 3.1;
+            t.yieldUntil = now + 4200;
+            shouldStop = false;
+          }
+        }
+      } else {
+        t.blockedTimer = 0;
+      }
+
       const targetSpd = shouldStop ? 0 : t.maxSpeed;
       t.curSpeed += (targetSpd - t.curSpeed) * Math.min(1, (shouldStop ? 7 : 3.5) * dt);
       const step = t.curSpeed * t.dir * dt;
@@ -7175,6 +7933,50 @@ window.ApexCity3D = (function () {
 
     const kmh = Math.abs(Math.round(driveState.speed * 2.6));
     speedKmhEl.textContent = kmh;
+    const gearBadgeEl = document.getElementById('gearBadgeEl');
+    if (gearBadgeEl) {
+      let gearLabel = 'N';
+      if (driveState.speed < -0.5) gearLabel = 'R';
+      else if (driveState.speed > 0.5) {
+        const gNum = Math.min(6, Math.max(1, Math.floor((Math.abs(driveState.speed) / Math.max(1, maxSpeed)) * 5.4) + 1));
+        gearLabel = 'D' + gNum;
+      }
+      gearBadgeEl.textContent = gearLabel;
+    }
+    // LIVE CITY JOB MISSION UPDATE (Taxi / D-Mart Delivery / Hospital Emergency Run)
+    if (activeCityJob && jobBeaconMesh) {
+      const tgt = activeCityJob.stage === 'pickup' ? activeCityJob.pickup : activeCityJob.dropoff;
+      jobBeaconMesh.visible = true;
+      jobBeaconMesh.position.set(tgt.x, 0, tgt.z);
+      jobBeaconMesh.rotation.y += 1.8 * dt;
+      const distJob = Math.hypot(driveState.x - tgt.x, driveState.z - tgt.z);
+      const jobTextEl = document.getElementById('activeJobText');
+      if (jobTextEl) {
+        const verb = activeCityJob.stage === 'pickup' ? 'PICKUP' : 'DROP-OFF';
+        jobTextEl.textContent = `${activeCityJob.icon} ${verb}: ${tgt.title} (${Math.round(distJob)}m) • +${activeCityJob.reward} C`;
+      }
+      if (distJob < 12.5) {
+        if (activeCityJob.stage === 'pickup') {
+          activeCityJob.stage = 'dropoff';
+          if (Audio) Audio.playReadyChime();
+          showDriveAlert(`${activeCityJob.icon} PICKED UP! NOW DRIVE TO ${activeCityJob.dropoff.title}!`, 'bg-cyan-400 text-slate-950');
+        } else {
+          const truckBonus = (activeCityJob.type === 'delivery' && (eq.modelType === 'truck' || eq.modelType === 'heavy_truck')) ? 500 : 0;
+          const totalPay = activeCityJob.reward + truckBonus;
+          state.coins += totalPay;
+          persistSave();
+          gainXP(180);
+          if (Audio) Audio.playCoin();
+          showDriveAlert(`✅ JOB COMPLETE! +${totalPay.toLocaleString()} COINS${truckBonus ? ' (+500 TRUCK BONUS!)' : ''}`, 'bg-emerald-400 text-slate-950');
+          activeCityJob = null;
+          jobBeaconMesh.visible = false;
+          const jbBan = document.getElementById('activeJobBanner');
+          if (jbBan) jbBan.classList.add('hidden');
+        }
+      }
+    } else if (jobBeaconMesh) {
+      jobBeaconMesh.visible = false;
+    }
     if (nitroHudBar) nitroHudBar.style.width = driveState.nitro.toFixed(0) + '%';
     // Animate Twin Circular Bike/Supercar Gauges (Speedometer + Boost Dial)
     const spdRatio = Math.min(1, kmh / 360);
@@ -7452,122 +8254,322 @@ window.ApexCity3D = (function () {
       }
     }
 
-    // UPDATE 3 POLICE CARS: Surround Player, Honk Sirens/Horns, Calm Down ONLY when Player Escapes > 100m!
+    // REAL POLICE PURSUIT & USER-CONTROLLED PULL-OVER LOGIC:
+    // Police NEVER auto-stops or freezes the player!
+    // Police chases behind -> ONLY when the USER voluntarily stops their car -> Police parks behind -> Door opens -> 3D Officer walks out!
     for (let pi = policeUnits.length - 1; pi >= 0; pi--) {
       const pu = policeUnits[pi];
-      if (pu.stolen) continue;
-      const flashP = Math.floor(now / 140) % 2 === 0;
-      if (pu.mesh.userData) {
-        pu.mesh.userData.barR.material.color.setHex(flashP ? 0xff1e1e : 0x330505);
-        pu.mesh.userData.barB.material.color.setHex(!flashP ? 0x00f0ff : 0x051a33);
+      if (pu.stolen) {
+        if (pu.officer) { scene.remove(pu.officer); pu.officer = null; }
+        continue;
       }
-      // REAL INDEPENDENT GTA POLICE CHASE AI (2 Behind + 1 Ahead, Natural Independent Driving, ZERO Magnet Mirroring, ZERO Building Clipping!)
+      if (!pu.stopPhase) pu.stopPhase = 'chase';
+      const flashP = Math.floor(now / 130) % 2 === 0;
+      const lightsOn = pu.stopPhase !== 'depart';
+      if (pu.mesh.userData && pu.mesh.userData.barR && pu.mesh.userData.barB) {
+        pu.mesh.userData.barR.material.color.setHex(lightsOn && flashP ? 0xff1e1e : 0x330505);
+        pu.mesh.userData.barB.material.color.setHex(lightsOn && !flashP ? 0x00f0ff : 0x051a33);
+      }
+
       const hPl = driveState.heading;
       const fwdX = -Math.sin(hPl), fwdZ = -Math.cos(hPl);
       const rightX = Math.cos(hPl), rightZ = -Math.sin(hPl);
-      const dReal = Math.hypot(driveState.x - pu.mesh.position.x, driveState.z - pu.mesh.position.z);
+      const relX = pu.mesh.position.x - driveState.x;
+      const relZ = pu.mesh.position.z - driveState.z;
+      const dReal = Math.hypot(relX, relZ);
+      // forwardDot < 0 means police car is BEHIND the user's car
+      const forwardDot = (relX * fwdX + relZ * fwdZ) / (dReal || 1);
+      const policeIsBehind = dReal < 22 && forwardDot < -0.25;
+      const userVoluntarilyStopped = !isOnFoot && Math.abs(driveState.speed) < 0.75 && !gasOn && !nitroOn;
+      const userDroveOff = !isOnFoot && (Math.abs(driveState.speed) > 1.8 || gasOn || nitroOn);
+      const ptEl = document.getElementById('policeTimerEl');
 
-      // Only lead ahead/behind when player is actively driving; when player is slow/stopped, drive directly to close in & box them in!
-      const playerMoving = Math.abs(driveState.speed) > 3.5;
-      const leadScale = playerMoving ? 1.0 : 0.45;
-      const rawSurX = driveState.x + fwdX * ((pu.slotFwd || -10.5) * leadScale) + rightX * (pu.slotSide || 0);
-      const rawSurZ = driveState.z + fwdZ * ((pu.slotFwd || -10.5) * leadScale) + rightZ * (pu.slotSide || 0);
-      const safeTarget = pushOutOfBuildings(rawSurX, rawSurZ, 3.2, true);
-      const surX = safeTarget.x;
-      const surZ = safeTarget.z;
+      // STAGE 1: CHASE BEHIND USER (Player keeps 100% driving freedom — NEVER auto-stopped!)
+      if (pu.stopPhase === 'chase') {
+        const rawSurX = driveState.x + fwdX * -7.4;
+        const rawSurZ = driveState.z + fwdZ * -7.4;
+        const safeTarget = pushOutOfBuildings(rawSurX, rawSurZ, 3.0, true);
+        const dxP = safeTarget.x - pu.mesh.position.x;
+        const dzP = safeTarget.z - pu.mesh.position.z;
+        const dTarget = Math.hypot(dxP, dzP);
 
-      const dxP = surX - pu.mesh.position.x, dzP = surZ - pu.mesh.position.z;
-      const dTarget = Math.hypot(dxP, dzP);
+        if (pu.heading === undefined) pu.heading = pu.mesh.rotation.y || 0;
+        if (pu.speed === undefined) pu.speed = 16;
 
-      if (pu.heading === undefined) pu.heading = pu.mesh.rotation.y || 0;
-      if (pu.speed === undefined) pu.speed = 14;
-
-      // Smooth independent acceleration/braking (NEVER mirrors player start/stop like a magnet!)
-      let desiredSpd = 0;
-      if (dReal > 5.8 && dTarget > 2.4) {
-        desiredSpd = playerMoving
-          ? Math.min(34, Math.max(16, Math.abs(driveState.speed) + (dTarget > 14 ? 8 : 3)))
-          : Math.min(18, Math.max(9, dTarget * 1.3));
-      } else {
-        desiredSpd = 0;
-      }
-      pu.speed += (desiredSpd - pu.speed) * Math.min(1, (desiredSpd < pu.speed ? 4.5 : 2.6) * dt);
-
-      let nx = pu.mesh.position.x;
-      let nz = pu.mesh.position.z;
-
-      if (pu.speed > 0.25) {
-        let wantAng = Math.atan2(-dxP, -dzP);
-        // 3-Ray Look-Ahead Building Avoidance (Front, Front-Left, Front-Right) so police steer smoothly AROUND buildings!
-        const pAhead = pushOutOfBuildings(nx - Math.sin(pu.heading) * 6.0, nz - Math.cos(pu.heading) * 6.0, 2.5, true);
-        if (pAhead.hit) {
-          const pLeft = pushOutOfBuildings(nx - Math.sin(pu.heading + 0.95) * 6.0, nz - Math.cos(pu.heading + 0.95) * 6.0, 2.5, true);
-          const pRight = pushOutOfBuildings(nx - Math.sin(pu.heading - 0.95) * 6.0, nz - Math.cos(pu.heading - 0.95) * 6.0, 2.5, true);
-          if (!pLeft.hit) wantAng = pu.heading + 1.25;
-          else if (!pRight.hit) wantAng = pu.heading - 1.25;
-          else wantAng = pu.heading + Math.PI * 0.75; // Turn away from dead-end wall!
+        let desiredSpd = 0;
+        if (dReal > 6.0 && dTarget > 1.8) {
+          desiredSpd = Math.min(38, Math.max(14, Math.abs(driveState.speed) + (dTarget > 12 ? 10 : 4)));
         }
-        let angDiff = wantAng - pu.heading;
+        pu.speed += (desiredSpd - pu.speed) * Math.min(1, (desiredSpd < pu.speed ? 4.8 : 3.0) * dt);
+
+        let nx = pu.mesh.position.x;
+        let nz = pu.mesh.position.z;
+        if (pu.speed > 0.25) {
+          let wantAng = Math.atan2(-dxP, -dzP);
+          const pAhead = pushOutOfBuildings(nx - Math.sin(pu.heading) * 6.0, nz - Math.cos(pu.heading) * 6.0, 2.5, true);
+          if (pAhead.hit) {
+            const pLeft = pushOutOfBuildings(nx - Math.sin(pu.heading + 0.95) * 6.0, nz - Math.cos(pu.heading + 0.95) * 6.0, 2.5, true);
+            const pRight = pushOutOfBuildings(nx - Math.sin(pu.heading - 0.95) * 6.0, nz - Math.cos(pu.heading - 0.95) * 6.0, 2.5, true);
+            if (!pLeft.hit) wantAng = pu.heading + 1.25;
+            else if (!pRight.hit) wantAng = pu.heading - 1.25;
+            else wantAng = pu.heading + Math.PI * 0.75;
+          }
+          let angDiff = wantAng - pu.heading;
+          while (angDiff > Math.PI) angDiff -= Math.PI * 2;
+          while (angDiff < -Math.PI) angDiff += Math.PI * 2;
+          pu.heading += Math.max(-3.5 * dt, Math.min(3.5 * dt, angDiff));
+          nx -= Math.sin(pu.heading) * pu.speed * dt;
+          nz -= Math.cos(pu.heading) * pu.speed * dt;
+        }
+        const dPlAfter = Math.hypot(nx - driveState.x, nz - driveState.z);
+        if (dPlAfter < 4.9 && dPlAfter > 0.01) {
+          nx = driveState.x + ((nx - driveState.x) / dPlAfter) * 4.9;
+          nz = driveState.z + ((nz - driveState.z) / dPlAfter) * 4.9;
+        }
+        const finalSafe = pushOutOfBuildings(nx, nz, 2.45, true);
+        if (finalSafe.hit) pu.speed *= 0.5;
+        pu.mesh.position.set(finalSafe.x, getBridgeY(finalSafe.x, finalSafe.z), finalSafe.z);
+        pu.mesh.rotation.y = pu.heading;
+        if (pu.speed > 0.25 && pu.mesh.userData && pu.mesh.userData.wheels) {
+          pu.mesh.userData.wheels.forEach((w) => { w.rotation.x -= pu.speed * dt * 0.85; });
+        }
+
+        if (dReal < 24 && now - pu.lastHorn > 2800) {
+          pu.lastHorn = now;
+          if (Audio && Audio.playSiren) Audio.playSiren();
+        }
+
+        // TRIGGER TRAFFIC STOP *ONLY* WHEN THE USER VOLUNTARILY STOPS THEIR CAR WHILE POLICE IS BEHIND!
+        if (policeIsBehind && userVoluntarilyStopped) {
+          pu.stopHoldTimer = (pu.stopHoldTimer || 0) + dt;
+          if (ptEl) {
+            ptEl.classList.remove('hidden');
+            ptEl.textContent = '🚓 CAR STOPPED — POLICE PULLING UP BEHIND YOU...';
+          }
+          if (pu.stopHoldTimer > 0.55) {
+            pu.stopPhase = 'pullover_park';
+            pu.phaseTimer = 0;
+            showDriveAlert('🚓 YOU STOPPED! POLICE OFFICER COMING OUT...', 'bg-blue-700 text-white');
+          }
+        } else {
+          pu.stopHoldTimer = 0;
+          if (ptEl) {
+            ptEl.classList.remove('hidden');
+            ptEl.textContent = policeIsBehind
+              ? '🚓 POLICE BEHIND YOU — BRAKE TO STOP OR ESCAPE!'
+              : '🚓 POLICE PURSUIT — STOP TO PULL OVER OR ESCAPE >115m';
+          }
+        }
+
+        if (dReal > 130) {
+          if (pu.officer) { scene.remove(pu.officer); pu.officer = null; }
+          scene.remove(pu.mesh);
+          policeUnits.splice(pi, 1);
+          if (policeUnits.length === 0) {
+            const xpBonus = wantedStars >= 2 ? 350 : 150;
+            wantedStars = 0;
+            if (ptEl) ptEl.classList.add('hidden');
+            const pcCard = document.getElementById('policeChoiceCard');
+            if (pcCard) pcCard.classList.add('hidden');
+            gainXP(xpBonus);
+            showDriveAlert(`ESCAPED POLICE! +${xpBonus} XP 🚓💨`, 'bg-emerald-500 text-slate-950');
+          }
+        }
+      }
+
+      // STAGE 2: POLICE CRUISER PARKS BEHIND STOPPED USER, OPENS DOOR & OFFICER STEPS OUT
+      // (If user presses GAS at any time, user drives freely and police resumes chase!)
+      else if (pu.stopPhase === 'pullover_park') {
+        if (userDroveOff) {
+          if (pu.mesh.userData && pu.mesh.userData.doorPivot) {
+            pu.mesh.userData.doorPivot.rotation.y = 0;
+            pu.mesh.userData.doorPivot.visible = false;
+          }
+          pu.stopPhase = 'chase';
+          pu.stopHoldTimer = 0;
+          showDriveAlert('⚠️ YOU DROVE OFF! POLICE BACK IN PURSUIT!', 'bg-red-600 text-white');
+          continue;
+        }
+        const parkRawX = driveState.x - fwdX * 7.2;
+        const parkRawZ = driveState.z - fwdZ * 7.2;
+        const parkSafe = pushOutOfBuildings(parkRawX, parkRawZ, 2.4, true);
+        const dxPark = parkSafe.x - pu.mesh.position.x;
+        const dzPark = parkSafe.z - pu.mesh.position.z;
+        const dPark = Math.hypot(dxPark, dzPark);
+        if (dPark > 0.25) {
+          const stepP = Math.min(dPark, 9.5 * dt);
+          pu.mesh.position.x += (dxPark / dPark) * stepP;
+          pu.mesh.position.z += (dzPark / dPark) * stepP;
+          if (pu.mesh.userData && pu.mesh.userData.wheels) {
+            pu.mesh.userData.wheels.forEach((w) => { w.rotation.x -= stepP * 0.85; });
+          }
+        }
+        pu.mesh.position.y = getBridgeY(pu.mesh.position.x, pu.mesh.position.z);
+        let angDiff = hPl - pu.heading;
         while (angDiff > Math.PI) angDiff -= Math.PI * 2;
         while (angDiff < -Math.PI) angDiff += Math.PI * 2;
-        const maxTurn = 3.2 * dt;
-        pu.heading += Math.max(-maxTurn, Math.min(maxTurn, angDiff));
+        pu.heading += angDiff * Math.min(1, 5.5 * dt);
+        pu.mesh.rotation.y = pu.heading;
 
-        nx -= Math.sin(pu.heading) * pu.speed * dt;
-        nz -= Math.cos(pu.heading) * pu.speed * dt;
-      }
-
-      // Separate from other police cars & player FIRST...
-      for (let pj = 0; pj < policeUnits.length; pj++) {
-        if (pj === pi) continue;
-        const otherP = policeUnits[pj].mesh;
-        const dPP = Math.hypot(nx - otherP.position.x, nz - otherP.position.z);
-        if (dPP < 4.5 && dPP > 0.01) {
-          nx = otherP.position.x + ((nx - otherP.position.x) / dPP) * 4.5;
-          nz = otherP.position.z + ((nz - otherP.position.z) / dPP) * 4.5;
+        // Once patrol car has parked behind user, swing driver door open and spawn Officer!
+        if (dPark < 1.2) {
+          pu.phaseTimer += dt;
+          if (pu.mesh.userData && pu.mesh.userData.doorPivot) {
+            pu.mesh.userData.doorPivot.visible = true;
+            const openP = Math.min(1, pu.phaseTimer / 0.55);
+            pu.mesh.userData.doorPivot.rotation.y = -openP * 1.15;
+          }
+          if (pu.phaseTimer > 0.65) {
+            const officer = buildPoliceOfficer3D();
+            const pRightX = Math.cos(pu.heading), pRightZ = -Math.sin(pu.heading);
+            const doorX = pu.mesh.position.x - pRightX * 1.55;
+            const doorZ = pu.mesh.position.z - pRightZ * 1.55;
+            officer.position.set(doorX, getGroundY(doorX, doorZ), doorZ);
+            officer.rotation.y = pu.heading;
+            scene.add(officer);
+            pu.officer = officer;
+            pu.stopPhase = 'officer_walk_in';
+            pu.phaseTimer = 0;
+            if (ptEl) ptEl.textContent = '👮 POLICE OFFICER COMING TO YOUR WINDOW...';
+          }
         }
       }
-      const dPlAfter = Math.hypot(nx - driveState.x, nz - driveState.z);
-      if (dPlAfter < 4.4 && dPlAfter > 0.01) {
-        nx = driveState.x + ((nx - driveState.x) / dPlAfter) * 4.4;
-        nz = driveState.z + ((nz - driveState.z) / dPlAfter) * 4.4;
-      }
 
-      // ...THEN run STRICT FINAL Building & Shop Exclusion as the VERY LAST step (Mathematically IMPOSSIBLE to ever enter a building!)
-      const finalSafe = pushOutOfBuildings(nx, nz, 2.45, true);
-      if (finalSafe.hit) {
-        pu.speed *= 0.5;
-      }
-      pu.mesh.position.x = finalSafe.x;
-      pu.mesh.position.y = getBridgeY(finalSafe.x, finalSafe.z);
-      pu.mesh.position.z = finalSafe.z;
-      pu.mesh.rotation.y = pu.heading;
-      if (pu.speed > 0.25 && pu.mesh.userData && pu.mesh.userData.wheels) {
-        pu.mesh.userData.wheels.forEach((w) => { w.rotation.x -= pu.speed * dt * 0.85; });
-      }
-      // Honk & Siren continuously while surrounding/chasing!
-      if (dReal < 24 && now - pu.lastHorn > 2600) {
-        pu.lastHorn = now;
-        if (Audio && Audio.startHorn) Audio.startHorn();
-      }
-      // Live 10-Second Countdown Timer at Top of Screen -> Police Car leaves cleanly after 10s (or >100m escape)!
-      const remMs = (pu.expiresAt || (pu.spawnAt + 20000)) - now;
-      const ptEl = document.getElementById('policeTimerEl');
-      if (ptEl) {
-        if (remMs > 0) {
-          ptEl.classList.remove('hidden');
-          ptEl.textContent = '🚓 POLICE: ' + Math.ceil(remMs / 1000) + 's';
+      // STAGE 3: POLICE OFFICER WALKS UP TO USER'S DRIVER WINDOW (User can still drive off anytime!)
+      else if (pu.stopPhase === 'officer_walk_in' && pu.officer) {
+        if (userDroveOff) {
+          scene.remove(pu.officer); pu.officer = null;
+          if (pu.mesh.userData && pu.mesh.userData.doorPivot) {
+            pu.mesh.userData.doorPivot.rotation.y = 0;
+            pu.mesh.userData.doorPivot.visible = false;
+          }
+          pu.stopPhase = 'chase';
+          pu.stopHoldTimer = 0;
+          showDriveAlert('⚠️ FLED FROM POLICE OFFICER! HIGH-SPEED CHASE!', 'bg-red-600 text-white');
+          continue;
+        }
+        // Close patrol car door behind the officer
+        if (pu.mesh.userData && pu.mesh.userData.doorPivot) {
+          pu.mesh.userData.doorPivot.rotation.y *= Math.pow(0.05, dt);
+          if (Math.abs(pu.mesh.userData.doorPivot.rotation.y) < 0.05) pu.mesh.userData.doorPivot.visible = false;
+        }
+        const winX = driveState.x - rightX * 1.95;
+        const winZ = driveState.z - rightZ * 1.95;
+        const ox = pu.officer.position.x, oz = pu.officer.position.z;
+        const dx = winX - ox, dz = winZ - oz;
+        const dist = Math.hypot(dx, dz);
+
+        if (dist > 0.32) {
+          const walkSpd = 2.6;
+          pu.officer.position.x += (dx / dist) * walkSpd * dt;
+          pu.officer.position.z += (dz / dist) * walkSpd * dt;
+          pu.officer.position.y = getGroundY(pu.officer.position.x, pu.officer.position.z);
+          pu.officer.rotation.y = Math.atan2(-dx, -dz);
+          const ud = pu.officer.userData;
+          ud.walkPhase += dt * 9.5;
+          const sw = Math.sin(ud.walkPhase) * 0.58;
+          ud.legL.rotation.x = sw; ud.legR.rotation.x = -sw;
+          ud.armL.rotation.x = -sw * 0.65; ud.armR.rotation.x = sw * 0.35;
+          if (ud.bodyRoot) ud.bodyRoot.position.y = Math.abs(Math.cos(ud.walkPhase)) * 0.04;
         } else {
-          ptEl.classList.add('hidden');
+          // Turn directly toward driver's window & raise ticket clipboard
+          pu.officer.rotation.y = Math.atan2(-(driveState.x - ox), -(driveState.z - oz));
+          const ud = pu.officer.userData;
+          ud.legL.rotation.x = 0; ud.legR.rotation.x = 0;
+          ud.armL.rotation.x = 0; ud.armR.rotation.x = -0.95;
+          if (ud.bodyRoot) ud.bodyRoot.position.y = 0;
+          pu.stopPhase = 'officer_ticket';
+          pu.phaseTimer = 0;
+          activePoliceChoiceUnit = pu;
+          const fineAmt = 500 * Math.max(1, wantedStars);
+          pu.pendingFine = fineAmt;
+          if (Audio) Audio.playTone(520, 0.12, 'triangle', 0.14);
+          const pcCard = document.getElementById('policeChoiceCard');
+          const pcReason = document.getElementById('policeChoiceReasonEl');
+          const pcPayBtn = document.getElementById('policePayBtn');
+          if (pcReason) pcReason.textContent = `${pu.reason || 'TRAFFIC VIOLATION'} (${'★'.repeat(Math.max(1, wantedStars))}) — Fine: ${fineAmt} C`;
+          if (pcPayBtn) pcPayBtn.textContent = `💳 PAY ${fineAmt} C`;
+          if (pcCard) pcCard.classList.remove('hidden');
+          if (ptEl) ptEl.textContent = '👮 CHOOSE RESPONSE AT WINDOW (OR HIT GAS TO FLEE)';
         }
       }
-      if (remMs <= 0 || dReal > 100) {
-        scene.remove(pu.mesh);
-        policeUnits.splice(pi, 1);
-        if (policeUnits.length === 0) {
+
+      // STAGE 4: INTERACTIVE POLICE STOP CHOICE (Waits for User to Choose Pay / Warning / Flee!)
+      else if (pu.stopPhase === 'officer_ticket' && pu.officer) {
+        if (userDroveOff) {
+          scene.remove(pu.officer); pu.officer = null;
+          const pcCard = document.getElementById('policeChoiceCard');
+          if (pcCard) pcCard.classList.add('hidden');
+          activePoliceChoiceUnit = null;
+          wantedStars = Math.min(3, Math.max(1, wantedStars) + 1);
+          pu.stopPhase = 'chase';
+          pu.stopHoldTimer = 0;
+          spawnBackupPolice(now);
+          showDriveAlert(`⚠️ FLED FROM OFFICER! WANTED ${'★'.repeat(wantedStars)} — BACKUP DISPATCHED!`, 'bg-red-600 text-white');
+          continue;
+        }
+        pu.phaseTimer += dt;
+        const ud = pu.officer.userData;
+        if (ud && ud.armR) ud.armR.rotation.x = -0.92 + Math.sin(pu.phaseTimer * 8) * 0.06;
+      }
+
+      // STAGE 5: OFFICER WALKS BACK & GETS INTO PATROL CAR
+      else if (pu.stopPhase === 'officer_return' && pu.officer) {
+        const pRightX = Math.cos(pu.heading), pRightZ = -Math.sin(pu.heading);
+        const doorX = pu.mesh.position.x - pRightX * 1.55;
+        const doorZ = pu.mesh.position.z - pRightZ * 1.55;
+        const dx = doorX - pu.officer.position.x;
+        const dz = doorZ - pu.officer.position.z;
+        const dist = Math.hypot(dx, dz);
+
+        if (dist < 1.6 && pu.mesh.userData && pu.mesh.userData.doorPivot) {
+          pu.mesh.userData.doorPivot.visible = true;
+          pu.mesh.userData.doorPivot.rotation.y = -1.1;
+        }
+
+        if (dist > 0.38) {
+          const walkSpd = 2.65;
+          pu.officer.position.x += (dx / dist) * walkSpd * dt;
+          pu.officer.position.z += (dz / dist) * walkSpd * dt;
+          pu.officer.position.y = getGroundY(pu.officer.position.x, pu.officer.position.z);
+          pu.officer.rotation.y = Math.atan2(-dx, -dz);
+          const ud = pu.officer.userData;
+          ud.walkPhase += dt * 9.5;
+          const sw = Math.sin(ud.walkPhase) * 0.58;
+          ud.legL.rotation.x = sw; ud.legR.rotation.x = -sw;
+          ud.armL.rotation.x = -sw * 0.55; ud.armR.rotation.x = sw * 0.55;
+        } else {
+          scene.remove(pu.officer);
+          pu.officer = null;
+          if (pu.mesh.userData && pu.mesh.userData.doorPivot) {
+            pu.mesh.userData.doorPivot.rotation.y = 0;
+            pu.mesh.userData.doorPivot.visible = false;
+          }
+          pu.stopPhase = 'depart';
+          pu.phaseTimer = 0;
+          pu.speed = 0;
           if (ptEl) ptEl.classList.add('hidden');
-          gainXP(150);
-          showDriveAlert(remMs <= 0 ? '20s OVER — POLICE LEFT! CLEAR! +150 XP ✅' : 'ESCAPED > 100m! POLICE LEFT! +150 XP 🚓💨', 'bg-emerald-500 text-slate-950');
+        }
+      }
+
+      // STAGE 6: PATROL CAR PULLS AROUND & DRIVES AWAY CLEANLY
+      else if (pu.stopPhase === 'depart') {
+        pu.phaseTimer += dt;
+        pu.speed = Math.min(18, (pu.speed || 0) + 8 * dt);
+        if (pu.phaseTimer < 1.4 && dReal < 10) {
+          pu.heading += 0.45 * dt;
+        }
+        const nx = pu.mesh.position.x - Math.sin(pu.heading) * pu.speed * dt;
+        const nz = pu.mesh.position.z - Math.cos(pu.heading) * pu.speed * dt;
+        const depSafe = pushOutOfBuildings(nx, nz, 2.4, true);
+        pu.mesh.position.set(depSafe.x, getBridgeY(depSafe.x, depSafe.z), depSafe.z);
+        pu.mesh.rotation.y = pu.heading;
+        if (pu.mesh.userData && pu.mesh.userData.wheels) {
+          pu.mesh.userData.wheels.forEach((w) => { w.rotation.x -= pu.speed * dt * 0.85; });
+        }
+        if (pu.phaseTimer > 6.5 || dReal > 90) {
+          scene.remove(pu.mesh);
+          policeUnits.splice(pi, 1);
         }
       }
     }
@@ -7934,25 +8936,200 @@ window.ApexCity3D = (function () {
     el.addEventListener('pointerup', off); el.addEventListener('pointerleave', off); el.addEventListener('pointercancel', off);
   };
   bindHold(pedalGas, 'gas'); bindHold(pedalBrake, 'brake'); bindHold(pedalNitro, 'boost');
+  const pedalDrift = document.getElementById('pedalDrift');
+  if (pedalDrift) bindHold(pedalDrift, 'drift');
+
+  const syncSignalButtonsUI = () => {
+    const lB = document.getElementById('sigLeftBtn');
+    const rB = document.getElementById('sigRightBtn');
+    const hB = document.getElementById('sigHazardBtn');
+    if (lB) lB.classList.toggle('bg-amber-400', signalMode === 'left');
+    if (lB) lB.classList.toggle('text-slate-950', signalMode === 'left');
+    if (rB) rB.classList.toggle('bg-amber-400', signalMode === 'right');
+    if (rB) rB.classList.toggle('text-slate-950', signalMode === 'right');
+    if (hB) hB.classList.toggle('bg-rose-500', signalMode === 'hazard');
+    if (hB) hB.classList.toggle('text-white', signalMode === 'hazard');
+  };
+  const toggleSignalMode = (mode) => {
+    signalMode = (signalMode === mode) ? 'off' : mode;
+    syncSignalButtonsUI();
+    if (Audio) Audio.playTone(860, 0.04, 'square', 0.04);
+  };
+  const sigLeftBtn = document.getElementById('sigLeftBtn');
+  const sigRightBtn = document.getElementById('sigRightBtn');
+  const sigHazardBtn = document.getElementById('sigHazardBtn');
+  if (sigLeftBtn) sigLeftBtn.addEventListener('click', () => toggleSignalMode('left'));
+  if (sigRightBtn) sigRightBtn.addEventListener('click', () => toggleSignalMode('right'));
+  if (sigHazardBtn) sigHazardBtn.addEventListener('click', () => toggleSignalMode('hazard'));
 
   window.addEventListener('keydown', (e) => {
     const k = e.key.toLowerCase();
     if (k === 'w' || k === 'arrowup') driveState.keys.w = true;
-    if (k === 's' || k === 'arrowdown' || k === ' ') driveState.keys.s = true;
+    if (k === 's' || k === 'arrowdown') driveState.keys.s = true;
+    if (k === ' ') { e.preventDefault(); driveState.keys.space = true; }
     if (k === 'a' || k === 'arrowleft') driveState.keys.a = true;
     if (k === 'd' || k === 'arrowright') driveState.keys.d = true;
     if (e.key === 'Shift') driveState.keys.shift = true;
-    if (k === 'h') triggerHorn();
     if (k === 'e') toggleExitEnterCar();
+    if (k === 'q' && !e.repeat) toggleSignalMode('left');
+    if (k === 'r' && !e.repeat) toggleSignalMode('right');
+    if (k === 'z' && !e.repeat) toggleSignalMode('hazard');
   });
   window.addEventListener('keyup', (e) => {
     const k = e.key.toLowerCase();
     if (k === 'w' || k === 'arrowup') driveState.keys.w = false;
-    if (k === 's' || k === 'arrowdown' || k === ' ') driveState.keys.s = false;
+    if (k === 's' || k === 'arrowdown') driveState.keys.s = false;
+    if (k === ' ') driveState.keys.space = false;
     if (k === 'a' || k === 'arrowleft') driveState.keys.a = false;
     if (k === 'd' || k === 'arrowright') driveState.keys.d = false;
     if (e.key === 'Shift') driveState.keys.shift = false;
   });
+
+  // INTERACTIVE POLICE STOP CHOICE BUTTON HANDLERS
+  const closePoliceChoiceAndRelease = (msg, cls) => {
+    const pcCard = document.getElementById('policeChoiceCard');
+    if (pcCard) pcCard.classList.add('hidden');
+    if (activePoliceChoiceUnit) {
+      activePoliceChoiceUnit.stopPhase = 'officer_return';
+      activePoliceChoiceUnit.phaseTimer = 0;
+    }
+    // Dismiss any secondary backup units cleanly once fine/warning is settled!
+    for (let k = policeUnits.length - 1; k >= 0; k--) {
+      if (policeUnits[k] !== activePoliceChoiceUnit) {
+        policeUnits[k].stopPhase = 'depart';
+        policeUnits[k].phaseTimer = 0;
+      }
+    }
+    wantedStars = 0;
+    activePoliceChoiceUnit = null;
+    const ptEl = document.getElementById('policeTimerEl');
+    if (ptEl) ptEl.textContent = '🚓 OFFICER RETURNING TO PATROL CAR...';
+    showDriveAlert(msg, cls);
+  };
+
+  const policePayBtn = document.getElementById('policePayBtn');
+  const policeWarnBtn = document.getElementById('policeWarnBtn');
+  const policeFleeBtn = document.getElementById('policeFleeBtn');
+  if (policePayBtn) {
+    policePayBtn.addEventListener('click', () => {
+      const fine = activePoliceChoiceUnit ? Math.min(state.coins, activePoliceChoiceUnit.pendingFine || 500) : 500;
+      state.coins = Math.max(0, state.coins - fine);
+      persistSave();
+      if (Audio) Audio.playReadyChime();
+      closePoliceChoiceAndRelease(`👮 TICKET PAID (-${fine} C)! "DRIVE SAFELY!" ✅`, 'bg-emerald-500 text-slate-950');
+    });
+  }
+  if (policeWarnBtn) {
+    policeWarnBtn.addEventListener('click', () => {
+      const chance = (!firstOffenseUsed && wantedStars <= 1) ? 0.65 : (wantedStars <= 1 ? 0.30 : 0.10);
+      firstOffenseUsed = true;
+      if (Math.random() < chance) {
+        if (Audio) Audio.playReadyChime();
+        closePoliceChoiceAndRelease('👮 OFFICER: "ALRIGHT, WARNING ONLY THIS TIME! SLOW DOWN!" ✅', 'bg-cyan-400 text-slate-950');
+      } else {
+        if (Audio) Audio.playTone(220, 0.16, 'sawtooth', 0.12);
+        const fine = activePoliceChoiceUnit ? Math.min(state.coins, activePoliceChoiceUnit.pendingFine || 500) : 500;
+        state.coins = Math.max(0, state.coins - fine);
+        persistSave();
+        closePoliceChoiceAndRelease(`👮 WARNING DENIED! TICKET ISSUED (-${fine} C)!`, 'bg-amber-400 text-slate-950');
+      }
+    });
+  }
+  if (policeFleeBtn) {
+    policeFleeBtn.addEventListener('click', () => {
+      const pcCard = document.getElementById('policeChoiceCard');
+      if (pcCard) pcCard.classList.add('hidden');
+      if (activePoliceChoiceUnit) {
+        if (activePoliceChoiceUnit.officer) {
+          scene.remove(activePoliceChoiceUnit.officer);
+          activePoliceChoiceUnit.officer = null;
+        }
+        activePoliceChoiceUnit.stopPhase = 'chase';
+        activePoliceChoiceUnit.stopHoldTimer = 0;
+      }
+      activePoliceChoiceUnit = null;
+      wantedStars = Math.min(3, Math.max(1, wantedStars) + 1);
+      driveState.speed = Math.max(driveState.speed, 18); // Launch forward as you hit gas to flee!
+      spawnBackupPolice(performance.now());
+      if (Audio) { if (Audio.playSiren) Audio.playSiren(); }
+      showDriveAlert(`🔥 FLED THE STOP! WANTED ${'★'.repeat(wantedStars)} — 2ND POLICE UNIT INCOMING!`, 'bg-rose-600 text-white');
+    });
+  }
+
+  // CITY JOB MISSIONS BUTTON & MODAL (Taxi / D-Mart Delivery / Hospital Emergency)
+  const startCityJob = (jobType) => {
+    if (!cityLandmarks || cityLandmarks.length < 2) {
+      showDriveAlert('Explore the city first to unlock Job GPS!', 'bg-amber-400 text-slate-950');
+      return;
+    }
+    const pickNear = (tag, fallbackIdx) => {
+      const matches = cityLandmarks.filter((l) => l.tag === tag);
+      if (matches.length) {
+        matches.sort((a, b) => Math.hypot(a.x - driveState.x, a.z - driveState.z) - Math.hypot(b.x - driveState.x, b.z - driveState.z));
+        return matches[Math.min(matches.length - 1, Math.floor(Math.random() * Math.min(3, matches.length)))];
+      }
+      return cityLandmarks[fallbackIdx % cityLandmarks.length];
+    };
+    const pickFar = (fromLm, tags) => {
+      const pool = cityLandmarks.filter((l) => tags.includes(l.tag) && Math.hypot(l.x - fromLm.x, l.z - fromLm.z) > 65);
+      if (pool.length) return pool[Math.floor(Math.random() * pool.length)];
+      return cityLandmarks.find((l) => l !== fromLm) || cityLandmarks[0];
+    };
+    if (jobType === 'taxi') {
+      const p = pickNear('O', 0);
+      const d = pickFar(p, ['M', 'D', 'H', 'O']);
+      activeCityJob = { type: 'taxi', icon: '🚕', stage: 'pickup', pickup: p, dropoff: d, reward: 1200 };
+    } else if (jobType === 'delivery') {
+      const p = pickNear('D', 1);
+      const d = pickFar(p, ['M', 'O']);
+      activeCityJob = { type: 'delivery', icon: '📦', stage: 'pickup', pickup: p, dropoff: d, reward: 1600 };
+    } else {
+      const d = pickNear('H', 2);
+      activeCityJob = { type: 'emergency', icon: '🚑', stage: 'dropoff', pickup: d, dropoff: d, reward: 2000 };
+    }
+    const jbBan = document.getElementById('activeJobBanner');
+    if (jbBan) jbBan.classList.remove('hidden');
+    if (Audio) Audio.playReadyChime();
+    const firstTgt = activeCityJob.stage === 'pickup' ? activeCityJob.pickup : activeCityJob.dropoff;
+    showDriveAlert(`${activeCityJob.icon} JOB STARTED! FOLLOW GREEN BEACON & 'J' ON MAP TO ${firstTgt.title}!`, 'bg-emerald-400 text-slate-950');
+  };
+
+  const jobMissionBtn = document.getElementById('jobMissionBtn');
+  if (jobMissionBtn) {
+    jobMissionBtn.addEventListener('click', () => {
+      openModal(`
+        <h3 class="font-display text-lg font-black text-emerald-300 mb-1">💼 CITY JOB MISSIONS</h3>
+        <p class="text-[11px] text-slate-300 mb-3">Follow the glowing <span class="text-emerald-400 font-bold">Green Beacon</span> &amp; <span class="text-amber-300 font-bold">'J'</span> on your GPS map to earn big coins!</p>
+        <div class="space-y-2 text-left">
+          <button id="jobTaxiBtn" type="button" class="w-full flex items-center justify-between p-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-amber-400/40 cursor-pointer">
+            <div><div class="font-display text-xs font-black text-amber-300">🚕 TAXI RIDE-SHARE</div><div class="text-[10px] text-slate-300">Pick up passenger at Office → Drop at Mall/City</div></div>
+            <span class="font-display text-xs font-black text-emerald-400">+1,200 C</span>
+          </button>
+          <button id="jobDeliveryBtn" type="button" class="w-full flex items-center justify-between p-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-cyan-400/40 cursor-pointer">
+            <div><div class="font-display text-xs font-black text-cyan-300">📦 D-MART EXPRESS DELIVERY</div><div class="text-[10px] text-slate-300">Load at D-Mart → Deliver (+500 C Truck Bonus!)</div></div>
+            <span class="font-display text-xs font-black text-emerald-400">+1,600 C</span>
+          </button>
+          <button id="jobEmergencyBtn" type="button" class="w-full flex items-center justify-between p-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-rose-400/40 cursor-pointer">
+            <div><div class="font-display text-xs font-black text-rose-300">🚑 HOSPITAL EMERGENCY RUN</div><div class="text-[10px] text-slate-300">High-priority rush direct to Hospital (H)</div></div>
+            <span class="font-display text-xs font-black text-emerald-400">+2,000 C</span>
+          </button>
+        </div>
+      `);
+      document.getElementById('jobTaxiBtn').addEventListener('click', () => { closeModal(); startCityJob('taxi'); });
+      document.getElementById('jobDeliveryBtn').addEventListener('click', () => { closeModal(); startCityJob('delivery'); });
+      document.getElementById('jobEmergencyBtn').addEventListener('click', () => { closeModal(); startCityJob('emergency'); });
+    });
+  }
+  const cancelJobBtn = document.getElementById('cancelJobBtn');
+  if (cancelJobBtn) {
+    cancelJobBtn.addEventListener('click', () => {
+      activeCityJob = null;
+      if (jobBeaconMesh) jobBeaconMesh.visible = false;
+      const jbBan = document.getElementById('activeJobBanner');
+      if (jbBan) jbBan.classList.add('hidden');
+      showDriveAlert('City Job Cancelled.', 'bg-slate-700 text-white');
+    });
+  }
 
   playRaceBtn.addEventListener('click', () => {
     if (gLaunching) return;
@@ -8022,43 +9199,67 @@ window.ApexCity3D = (function () {
   const hornBtn = document.getElementById('hornBtn');
   let headlightsOn = false; // OFF during Day, turns ON automatically at Night!
   let hornDownAt = 0;
+  let hornHeldNow = false;
+  const getEquippedHornType = () => {
+    const eqV = vehicles.find((v) => v.id === state.equippedId);
+    return eqV ? eqV.modelType : 'car';
+  };
   const startCarHorn = () => {
+    if (hornHeldNow) return;
+    hornHeldNow = true;
     hornDownAt = performance.now();
+    if (hornBtn) hornBtn.classList.add('scale-95', 'ring-4', 'ring-amber-300/80');
     if (Audio) {
       Audio.unlock();
-      if (Audio.startHorn) Audio.startHorn();
-      else if (Audio.playHorn) Audio.playHorn();
+      if (Audio.startHorn) Audio.startHorn(getEquippedHornType(), true);
+      else if (Audio.playHorn) Audio.playHorn(getEquippedHornType());
     }
-    // Smart Horn Yielding: Nearby AI traffic cars (ahead OR behind!) smoothly pull aside!
-    let yielded = false;
+    // Real Horn Yielding: Nearby AI traffic cars pull aside & slow down, pedestrians step back!
     for (let i = 0; i < trafficCars.length; i++) {
       const tc = trafficCars[i];
       if (tc.wrecked) continue;
       const dist = Math.hypot(tc.mesh.position.x - driveState.x, tc.mesh.position.z - driveState.z);
-      if (dist < 30) {
-        tc.yieldSide = (tc.yieldSide || 0) === 0 ? (tc.dir > 0 ? 3.0 : -3.0) : tc.yieldSide;
-        tc.yieldUntil = performance.now() + 4000;
-        yielded = true;
+      if (dist < 34) {
+        tc.yieldSide = (tc.yieldSide || 0) === 0 ? (tc.dir > 0 ? 3.2 : -3.2) : tc.yieldSide;
+        tc.yieldUntil = performance.now() + 4500;
+        tc.curSpeed = Math.min(tc.curSpeed, 4.5);
       }
     }
-    // Pure loud horn sound without text popup!
+    for (let hi = 0; hi < walkingHumans.length; hi++) {
+      const hm = walkingHumans[hi];
+      if (!hm.mesh || hm.flying) continue;
+      const dxH = hm.mesh.position.x - driveState.x;
+      const dzH = hm.mesh.position.z - driveState.z;
+      const dH = Math.hypot(dxH, dzH);
+      if (dH < 13 && dH > 0.1) {
+        hm.mesh.position.x += (dxH / dH) * 1.25;
+        hm.mesh.position.z += (dzH / dH) * 1.25;
+      }
+    }
   };
   const stopCarHorn = () => {
+    if (!hornHeldNow) return;
+    hornHeldNow = false;
+    if (hornBtn) hornBtn.classList.remove('scale-95', 'ring-4', 'ring-amber-300/80');
     const held = performance.now() - hornDownAt;
-    const delay = held < 220 ? (220 - held) : 0;
-    setTimeout(() => { if (Audio && Audio.stopHorn) Audio.stopHorn(); }, delay);
+    const delay = held < 180 ? (180 - held) : 0;
+    setTimeout(() => { if (!hornHeldNow && Audio && Audio.stopHorn) Audio.stopHorn(); }, delay);
   };
-  const triggerHorn = () => { startCarHorn(); stopCarHorn(); };
+  const triggerHorn = () => {
+    if (Audio) { Audio.unlock(); Audio.playHorn(getEquippedHornType()); }
+  };
   if (hornBtn) {
-    // Use native click + touchend (NEVER block touchstart with preventDefault — iOS Safari requires unblocked click/touchend to play audio!)
-    const fireHornClean = (e) => {
-      if (e) e.stopPropagation();
-      if (performance.now() - hornDownAt < 280) return;
-      startCarHorn();
-    };
-    hornBtn.addEventListener('click', fireHornClean);
-    hornBtn.addEventListener('touchend', fireHornClean, { passive: true });
+    hornBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); startCarHorn(); });
+    hornBtn.addEventListener('pointerup', (e) => { e.stopPropagation(); stopCarHorn(); });
+    hornBtn.addEventListener('pointerleave', stopCarHorn);
+    hornBtn.addEventListener('pointercancel', stopCarHorn);
   }
+  window.addEventListener('keydown', (e) => {
+    if ((e.key === 'h' || e.key === 'H') && !e.repeat && !isOnFoot) startCarHorn();
+  });
+  window.addEventListener('keyup', (e) => {
+    if (e.key === 'h' || e.key === 'H') stopCarHorn();
+  });
 
 
 
@@ -8326,38 +9527,69 @@ window.ApexCity3D = (function () {
 
   const camToggleBtn = document.getElementById('camToggleBtn');
   if (camToggleBtn) {
-    const camLabels = ['CAM: CHASE', 'CAM: HOOD', 'CAM: FAR'];
+    const camLabels = ['CAM: CHASE', 'CAM: HOOD', 'CAM: COCKPIT', 'CAM: FAR'];
     camToggleBtn.addEventListener('click', () => {
-      camModeIdx = (camModeIdx + 1) % 3;
+      camModeIdx = (camModeIdx + 1) % 4;
       driveState.camOrbitYaw = 0; driveState.camTargetYaw = 0;
       camToggleBtn.textContent = camLabels[camModeIdx];
       if (Audio) Audio.playTone(680, 0.06);
     });
   }
 
+  const skyThemes = [
+    { label: '☀️ DAY', bg: 0x87ceeb, fog: 0xe0f2fe, sunC: 0xfffbeb, sunI: 1.55, hemiI: 1.35 },
+    { label: '🌇 SUNSET', bg: 0xf97316, fog: 0xfdba74, sunC: 0xffedd5, sunI: 1.25, hemiI: 1.0 },
+    { label: '🌙 NIGHT', bg: 0x060b18, fog: 0x0f172a, sunC: 0x38bdf8, sunI: 0.72, hemiI: 0.72 }
+  ];
+  const applySkyAndWeather = () => {
+    const th = skyThemes[skyModeIdx];
+    const isRain = weatherModeIdx === 1;
+    const isFog = weatherModeIdx === 2;
+    if (scene) {
+      const bgHex = isRain ? (skyModeIdx === 2 ? 0x040711 : 0x475569) : (isFog ? 0x94a3b8 : th.bg);
+      const fogHex = isRain ? (skyModeIdx === 2 ? 0x0b1222 : 0x64748b) : (isFog ? 0xcbd5e1 : th.fog);
+      const fogDensity = isFog ? 0.0082 : (isRain ? 0.0042 : 0.00165);
+      scene.background = new THREE.Color(bgHex);
+      scene.fog = new THREE.FogExp2(fogHex, fogDensity);
+    }
+    if (sunLightRef) {
+      sunLightRef.color.setHex(th.sunC);
+      sunLightRef.intensity = th.sunI * (isRain ? 0.65 : isFog ? 0.75 : 1.0);
+    }
+    if (hemiLightRef) hemiLightRef.intensity = th.hemiI * (isRain ? 0.78 : 1.0);
+    // Wet glossy dark road in Rain mode!
+    if (roadGroundMatRef) {
+      roadGroundMatRef.roughness = isRain ? 0.22 : 0.88;
+      roadGroundMatRef.metalness = isRain ? 0.35 : 0.05;
+      roadGroundMatRef.color.setHex(isRain ? 0x8aa0b8 : 0xffffff);
+      roadGroundMatRef.needsUpdate = true;
+    }
+    headlightsOn = (skyModeIdx === 2 || isRain || isFog);
+    if (playerGroup && playerGroup.userData && playerGroup.userData.headBeams) {
+      playerGroup.userData.headBeams.forEach((b) => { b.visible = headlightsOn && !isOnFoot; });
+    }
+  };
+
   const skyToggleBtn = document.getElementById('skyToggleBtn');
   if (skyToggleBtn) {
-    const skyThemes = [
-      { label: '☀️ DAY', bg: 0x87ceeb, fog: 0xe0f2fe, sunC: 0xfffbeb, sunI: 1.25, hemiI: 1.15 },
-      { label: '🌇 SUNSET', bg: 0xf97316, fog: 0xfdba74, sunC: 0xffedd5, sunI: 1.1, hemiI: 0.92 },
-      { label: '🌙 NIGHT', bg: 0x060b18, fog: 0x0f172a, sunC: 0x38bdf8, sunI: 0.65, hemiI: 0.65 }
-    ];
     skyToggleBtn.addEventListener('click', () => {
       skyModeIdx = (skyModeIdx + 1) % 3;
-      const th = skyThemes[skyModeIdx];
-      skyToggleBtn.textContent = th.label;
-      if (scene) {
-        scene.background = new THREE.Color(th.bg);
-        scene.fog = new THREE.FogExp2(th.fog, 0.0018);
-      }
-      if (sunLightRef) { sunLightRef.color.setHex(th.sunC); sunLightRef.intensity = th.sunI; }
-      if (hemiLightRef) hemiLightRef.intensity = th.hemiI;
-      // Headlight beams turn ON automatically ONLY in Night mode, OFF during Day & Sunset!
-      headlightsOn = (skyModeIdx === 2);
-      if (playerGroup && playerGroup.userData && playerGroup.userData.headBeams) {
-        playerGroup.userData.headBeams.forEach((b) => { b.visible = headlightsOn; });
-      }
+      skyToggleBtn.textContent = skyThemes[skyModeIdx].label;
+      applySkyAndWeather();
       if (Audio) Audio.playTone(580, 0.06);
+    });
+  }
+
+  const weatherToggleBtn = document.getElementById('weatherToggleBtn');
+  if (weatherToggleBtn) {
+    const wLabels = ['🌤️ CLEAR', '🌧️ RAIN', '🌫️ FOG'];
+    weatherToggleBtn.addEventListener('click', () => {
+      weatherModeIdx = (weatherModeIdx + 1) % 3;
+      weatherToggleBtn.textContent = wLabels[weatherModeIdx];
+      applySkyAndWeather();
+      if (Audio) Audio.playTone(520, 0.06);
+      if (weatherModeIdx === 1) showDriveAlert('🌧️ RAIN MODE: WET ROADS — LONGER BRAKING & SLICKER DRIFTS!', 'bg-sky-500 text-slate-950');
+      else if (weatherModeIdx === 2) showDriveAlert('🌫️ DENSE FOG: AUTO HEADLIGHTS ON!', 'bg-slate-300 text-slate-950');
     });
   }
 
