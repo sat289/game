@@ -18,7 +18,17 @@
   <script defer src="buildings/police_hq.js"></script>
   <script defer src="buildings/cyber_apartments.js"></script>
   <script defer src="buildings/roadside_buildings.js"></script>
+  <script defer src="buildings/building_logic.js"></script>
   <script defer src="buildings/index.js"></script>
+  <!-- Modular Real 3D Gun Arsenal + Rope Hero Grapple Engine (gun/) -->
+  <script defer src="gun/gun_utils.js"></script>
+  <script defer src="gun/pistol.js"></script>
+  <script defer src="gun/ak47.js"></script>
+  <script defer src="gun/shotgun.js"></script>
+  <script defer src="gun/sniper.js"></script>
+  <script defer src="gun/smg.js"></script>
+  <script defer src="gun/rope_launcher.js"></script>
+  <script defer src="gun/index.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet" />
@@ -659,28 +669,24 @@ html, body {
               <span class="text-[9px] font-display font-black text-amber-300 tracking-wide">FUEL</span>
             </div>
           </div>
-          <!-- ON-FOOT WEAPONS BUTTON + ROTATING 4-SLOT WEAPON WHEEL (Slots ready for custom 3D Weapon Models!) -->
-          <div id="onFootWeaponBox" class="hidden flex-col items-end gap-2 mt-1 relative">
-            <button id="weaponsToggleBtn" type="button" class="px-3 py-1.5 rounded-xl bg-slate-950/90 hover:bg-slate-800 active:scale-95 border-2 border-cyan-400/70 text-[10px] font-display font-black text-cyan-200 shadow-xl cursor-pointer flex items-center gap-1.5">
-              <span>⚔️ WEAPONS</span>
-              <span id="activeWeaponBadge" class="px-1.5 py-0.5 rounded bg-cyan-500/20 text-[8px] text-amber-300">NONE</span>
-            </button>
-            <div id="weaponWheelPopup" class="hidden relative w-40 h-40 rounded-full bg-slate-950/90 border-2 border-cyan-400/80 shadow-2xl backdrop-blur-md transition-transform duration-300">
-              <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div class="w-12 h-12 rounded-full bg-slate-900 border border-white/20 flex items-center justify-center text-[8px] font-display font-black text-cyan-300 text-center leading-tight">WEAPONS<br>WHEEL</div>
-              </div>
-              <button data-weapon="KNIFE" type="button" class="weapon-slot-btn absolute top-1.5 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-slate-900/95 hover:bg-cyan-500/30 border border-white/25 flex flex-col items-center justify-center text-[8px] font-black text-white cursor-pointer shadow">
-                <span class="text-sm leading-none">🔪</span><span>KNIFE</span>
+          <!-- ROPE HERO REAL 3D GUN ARSENAL & WEAPON SELECTOR (gun/) -->
+          <div id="onFootWeaponBox" class="hidden flex-col items-end gap-1.5 mt-1 relative">
+            <div class="flex items-center gap-1.5">
+              <button id="gunReloadBtn" type="button" class="hidden px-2.5 py-1.5 rounded-xl bg-amber-400/95 active:scale-95 border border-white text-slate-950 font-display text-[9px] font-black shadow-lg cursor-pointer">🔄 RELOAD</button>
+              <button id="sniperScopeBtn" type="button" class="hidden px-2.5 py-1.5 rounded-xl bg-cyan-500/95 active:scale-95 border border-white text-slate-950 font-display text-[9px] font-black shadow-lg cursor-pointer">🎯 SCOPE</button>
+              <button id="weaponsToggleBtn" type="button" class="px-3 py-1.5 rounded-xl bg-slate-950/90 hover:bg-slate-800 active:scale-95 border-2 border-cyan-400/75 text-[10px] font-display font-black text-cyan-200 shadow-xl cursor-pointer flex items-center gap-1.5">
+                <span>🔫 GUNS</span>
+                <span id="activeWeaponBadge" class="px-1.5 py-0.5 rounded bg-cyan-500/20 text-[8px] text-amber-300">FISTS</span>
+                <span id="ammoCounterEl" class="hidden px-1.5 py-0.5 rounded bg-emerald-500/25 text-[8px] text-emerald-300">30/30</span>
               </button>
-              <button data-weapon="SNIPER" type="button" class="weapon-slot-btn absolute right-1.5 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-slate-900/95 hover:bg-cyan-500/30 border border-white/25 flex flex-col items-center justify-center text-[8px] font-black text-white cursor-pointer shadow">
-                <span class="text-sm leading-none">🎯</span><span>SNIPER</span>
-              </button>
-              <button data-weapon="DOUBLE SHOT" type="button" class="weapon-slot-btn absolute bottom-1.5 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-slate-900/95 hover:bg-cyan-500/30 border border-white/25 flex flex-col items-center justify-center text-[7px] font-black text-white cursor-pointer shadow leading-tight">
-                <span class="text-sm leading-none">💥</span><span>SHOTGUN</span>
-              </button>
-              <button data-weapon="UMP SMG" type="button" class="weapon-slot-btn absolute left-1.5 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-slate-900/95 hover:bg-cyan-500/30 border border-white/25 flex flex-col items-center justify-center text-[8px] font-black text-white cursor-pointer shadow">
-                <span class="text-sm leading-none">🔫</span><span>UMP</span>
-              </button>
+            </div>
+            <div id="weaponWheelPopup" class="hidden grid grid-cols-3 gap-1.5 p-2 rounded-2xl bg-slate-950/95 border-2 border-cyan-400/80 shadow-2xl backdrop-blur-md">
+              <button data-weapon="fist" type="button" class="weapon-slot-btn w-14 h-12 rounded-xl bg-slate-900 hover:bg-cyan-500/30 border border-white/25 flex flex-col items-center justify-center text-[8px] font-black text-white cursor-pointer"><span class="text-sm leading-none">👊</span><span>FISTS</span></button>
+              <button data-weapon="pistol" type="button" class="weapon-slot-btn w-14 h-12 rounded-xl bg-slate-900 hover:bg-cyan-500/30 border border-white/25 flex flex-col items-center justify-center text-[8px] font-black text-white cursor-pointer"><span class="text-sm leading-none">🔫</span><span>GLOCK 19</span></button>
+              <button data-weapon="ak47" type="button" class="weapon-slot-btn w-14 h-12 rounded-xl bg-slate-900 hover:bg-cyan-500/30 border border-white/25 flex flex-col items-center justify-center text-[8px] font-black text-white cursor-pointer"><span class="text-sm leading-none">💥</span><span>AK-47</span></button>
+              <button data-weapon="shotgun" type="button" class="weapon-slot-btn w-14 h-12 rounded-xl bg-slate-900 hover:bg-cyan-500/30 border border-white/25 flex flex-col items-center justify-center text-[8px] font-black text-white cursor-pointer"><span class="text-sm leading-none">🔥</span><span>M870</span></button>
+              <button data-weapon="sniper" type="button" class="weapon-slot-btn w-14 h-12 rounded-xl bg-slate-900 hover:bg-cyan-500/30 border border-white/25 flex flex-col items-center justify-center text-[8px] font-black text-white cursor-pointer"><span class="text-sm leading-none">🎯</span><span>AWM</span></button>
+              <button data-weapon="smg" type="button" class="weapon-slot-btn w-14 h-12 rounded-xl bg-slate-900 hover:bg-cyan-500/30 border border-white/25 flex flex-col items-center justify-center text-[8px] font-black text-white cursor-pointer"><span class="text-sm leading-none">⚡</span><span>MP5</span></button>
             </div>
           </div>
         </div>
@@ -863,29 +869,64 @@ html, body {
           </div>
         </div>
 
-        <!-- RIGHT SIDE: Dynamic ENTER CAR + PRONE + CROUCH + JUMP (Free Fire Layout!) -->
-        <div class="pointer-events-auto flex items-end gap-2">
-          <button id="enterNearCarBtn" type="button" class="hidden w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 active:scale-95 border-2 border-white text-slate-950 font-display font-black text-[9px] sm:text-[10px] shadow-[0_0_22px_rgba(255,106,0,0.75)] flex-col items-center justify-center cursor-pointer touch-none animate-pulse">
-            <span class="text-xl">🚗</span>
-            <span>ENTER CAR</span>
-          </button>
-          <button id="humanProneBtn" type="button" class="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-slate-900/90 active:scale-95 border-2 border-amber-400/80 text-amber-200 font-display font-black text-[8px] sm:text-[9px] shadow-xl flex flex-col items-center justify-center cursor-pointer touch-none">
-            <span class="text-base">🛌</span>
-            <span>PRONE</span>
-          </button>
-          <button id="humanCrouchBtn" type="button" class="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-slate-900/90 active:scale-95 border-2 border-cyan-400/80 text-cyan-200 font-display font-black text-[8px] sm:text-[9px] shadow-xl flex flex-col items-center justify-center cursor-pointer touch-none">
-            <span class="text-base">🧎</span>
-            <span>SIT</span>
-          </button>
-          <button id="humanFistBtn" type="button" class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-rose-500 to-orange-500 active:scale-95 border-2 border-white text-white font-display font-black text-[10px] sm:text-xs shadow-[0_0_20px_rgba(244,63,94,0.7)] flex flex-col items-center justify-center cursor-pointer touch-none">
-            <span class="text-xl leading-none">👊</span>
-            <span>FIST</span>
-          </button>
-          <button id="humanJumpBtn" type="button" class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-cyan-500/95 active:bg-cyan-400 active:scale-95 border-2 border-white text-slate-950 font-display font-black text-[10px] sm:text-xs shadow-xl flex flex-col items-center justify-center cursor-pointer touch-none">
-            <span class="text-lg">⬆️</span>
-            <span>JUMP</span>
-          </button>
+        <!-- RIGHT SIDE: ROPE HERO ACTION CLUSTER (ROPE SWING + SUPER JUMP + FIRE/FIST + ENTER CAR + SIT/PRONE) -->
+        <div class="pointer-events-auto flex flex-col items-end gap-2">
+          <div class="flex items-center gap-2">
+            <button id="ropeSwingBtn" type="button" title="Shoot Grapple Rope (F)" class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-sky-400 to-blue-600 active:scale-95 border-2 border-white text-white font-display font-black text-[9px] sm:text-[10px] shadow-[0_0_22px_rgba(56,189,248,0.8)] flex flex-col items-center justify-center cursor-pointer touch-none">
+              <span class="text-xl leading-none">🕸️</span>
+              <span>ROPE</span>
+            </button>
+            <button id="superJumpBtn" type="button" title="Rope Hero Super Jump (C)" class="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-600 active:scale-95 border-2 border-white text-white font-display font-black text-[8px] sm:text-[9px] shadow-[0_0_18px_rgba(168,85,247,0.75)] flex flex-col items-center justify-center cursor-pointer touch-none leading-tight">
+              <span class="text-base leading-none">⚡</span>
+              <span>SUPER<br>JUMP</span>
+            </button>
+          </div>
+          <div class="flex items-end gap-2">
+            <button id="enterNearCarBtn" type="button" class="hidden w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 active:scale-95 border-2 border-white text-slate-950 font-display font-black text-[9px] sm:text-[10px] shadow-[0_0_22px_rgba(255,106,0,0.75)] flex-col items-center justify-center cursor-pointer touch-none animate-pulse">
+              <span class="text-xl">🚗</span>
+              <span>ENTER CAR</span>
+            </button>
+            <button id="humanProneBtn" type="button" class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-slate-900/90 active:scale-95 border-2 border-amber-400/80 text-amber-200 font-display font-black text-[7px] sm:text-[8px] shadow-xl flex flex-col items-center justify-center cursor-pointer touch-none">
+              <span class="text-sm">🛌</span>
+              <span>PRONE</span>
+            </button>
+            <button id="humanCrouchBtn" type="button" class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-slate-900/90 active:scale-95 border-2 border-cyan-400/80 text-cyan-200 font-display font-black text-[7px] sm:text-[8px] shadow-xl flex flex-col items-center justify-center cursor-pointer touch-none">
+              <span class="text-sm">🧎</span>
+              <span>SIT</span>
+            </button>
+            <button id="humanFistBtn" type="button" class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-rose-500 to-orange-500 active:scale-95 border-2 border-white text-white font-display font-black text-[10px] sm:text-xs shadow-[0_0_20px_rgba(244,63,94,0.75)] flex flex-col items-center justify-center cursor-pointer touch-none">
+              <span id="fireBtnIcon" class="text-xl leading-none">👊</span>
+              <span id="fireBtnLabel">FIST</span>
+            </button>
+            <button id="humanJumpBtn" type="button" class="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-cyan-500/95 active:bg-cyan-400 active:scale-95 border-2 border-white text-slate-950 font-display font-black text-[9px] sm:text-[10px] shadow-xl flex flex-col items-center justify-center cursor-pointer touch-none">
+              <span class="text-base">⬆️</span>
+              <span>JUMP</span>
+            </button>
+          </div>
         </div>
+      </div>
+
+      <!-- FLOATING [E] INTERACT BUTTON FOR REAL INSIDE-BUILDING LOGICS (D-Mart, Hospital, Mall, Police HQ, Casino, Safe House!) -->
+      <button id="buildingInteractBtn" type="button" class="hidden pointer-events-auto fixed bottom-28 left-1/2 -translate-x-1/2 z-30 px-4 py-2.5 rounded-2xl bg-emerald-400 active:scale-95 border-2 border-white text-slate-950 font-display font-black text-[10px] sm:text-xs shadow-[0_0_24px_rgba(16,185,129,0.75)] cursor-pointer">
+        [E] INTERACT
+      </button>
+
+      <!-- ROPE HERO GUN AIM CROSSHAIR (Visible on-foot when holding any Real Gun!) -->
+      <div id="gunCrosshairEl" class="hidden pointer-events-none fixed inset-0 z-10 flex items-center justify-center">
+        <div class="relative w-7 h-7">
+          <div class="absolute top-0 left-1/2 -translate-x-1/2 w-0.5 h-2 bg-cyan-300 shadow"></div>
+          <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-0.5 h-2 bg-cyan-300 shadow"></div>
+          <div class="absolute left-0 top-1/2 -translate-y-1/2 h-0.5 w-2 bg-cyan-300 shadow"></div>
+          <div class="absolute right-0 top-1/2 -translate-y-1/2 h-0.5 w-2 bg-cyan-300 shadow"></div>
+          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-1 rounded-full bg-rose-500"></div>
+        </div>
+      </div>
+
+      <!-- AWM SNIPER OPTICAL SCOPE OVERLAY -->
+      <div id="sniperScopeOverlay" class="hidden pointer-events-none fixed inset-0 z-10 flex items-center justify-center" style="background: radial-gradient(circle, transparent 34%, rgba(2,6,23,0.96) 36%);">
+        <div class="w-full h-[1px] bg-emerald-400/75 absolute"></div>
+        <div class="h-full w-[1px] bg-emerald-400/75 absolute"></div>
+        <div class="w-4 h-4 rounded-full border border-rose-500"></div>
       </div>
     </section>
 
@@ -4513,9 +4554,12 @@ window.ApexCity3D = (function () {
       const h = isStageRotated() ? window.innerWidth : window.innerHeight;
       const deviceRam = Number(navigator.deviceMemory || 4);
       const isMobileDevice = /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
-      const isVeryLowEnd = deviceRam <= 2;
+      const isVeryLowEnd = deviceRam <= 2 || state.graphicsQuality === 'LOW';
       const isLowRamPhone = deviceRam <= 3;
-      camera = new THREE.PerspectiveCamera(60, w / h, 0.65, isVeryLowEnd ? 220 : 340);
+      if (window.ApexBuildingUtils && window.ApexBuildingUtils.setLowRamMode) {
+        window.ApexBuildingUtils.setLowRamMode(isVeryLowEnd || isLowRamPhone);
+      }
+      camera = new THREE.PerspectiveCamera(60, w / h, 0.65, isVeryLowEnd ? 185 : (isLowRamPhone ? 245 : 340));
       renderer = new THREE.WebGLRenderer({
         antialias: !isVeryLowEnd,
         alpha: false,
@@ -4524,7 +4568,7 @@ window.ApexCity3D = (function () {
         precision: isVeryLowEnd ? 'mediump' : 'highp',
         logarithmicDepthBuffer: false
       });
-      const maxDpr = isVeryLowEnd ? 0.95 : (isMobileDevice ? 1.65 : 2.0);
+      const maxDpr = isVeryLowEnd ? 0.90 : (isLowRamPhone ? 1.18 : (isMobileDevice ? 1.55 : 1.85));
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxDpr));
       renderer.setSize(w, h);
       renderer.outputEncoding = THREE.sRGBEncoding;
@@ -4924,6 +4968,10 @@ window.ApexCity3D = (function () {
                 doorHalf: (b.doorGapHalf || 2.8) / 2,
                 isModularBuilding: true,
                 updateFn: typeof b.update === 'function' ? b.update : null,
+                setInteriorVisible: typeof b.setInteriorVisible === 'function' ? b.setInteriorVisible : null,
+                triggers: Array.isArray(b.triggers) ? b.triggers.map((t) => ({
+                  ...t, worldX: cx + t.x, worldZ: shopZ + t.z
+                })) : [],
                 isWalkInShop: true,
                 detailGroup: b.group,
                 minX: cx - bW / 2 + 0.75, maxX: cx + bW / 2 - 0.75,
@@ -6262,6 +6310,9 @@ window.ApexCity3D = (function () {
   }
 
   function applyGraphicsQuality(q) {
+    if (window.ApexBuildingUtils && window.ApexBuildingUtils.setLowRamMode) {
+      window.ApexBuildingUtils.setLowRamMode(q === 'LOW');
+    }
     if (!renderer || !camera || !scene) return;
     const isMob = /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
     if (q === 'LOW') {
@@ -6269,7 +6320,7 @@ window.ApexCity3D = (function () {
       renderer.shadowMap.enabled = false;
       if (sunLightRef) sunLightRef.castShadow = false;
       scene.environment = null;
-      camera.far = 195;
+      camera.far = 180;
     } else if (q === 'MED') {
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMob ? 1.2 : 1.5));
       renderer.shadowMap.enabled = true;
@@ -7449,6 +7500,12 @@ window.ApexCity3D = (function () {
         vehicleAnim = null;
       }
     } else if (isOnFoot && playerAvatar) {
+      // 1. REAL ROPE HERO GRAPPLE SWING & ZIP-CLIMB PHYSICS (Overrides normal walk while mid-air swinging!)
+      const ropeSwingingNow = (window.ApexRopeHero && window.ApexRopeHero.update(dt, driveState, footState, playerAvatar));
+      if (ropeSwingingNow) {
+        // Keep hero smoothly above ground & check active gun combat update while airborne
+        footState.pose = 'stand';
+      } else {
       // DEDICATED HUMAN ON-FOOT CONTROLS (Holding RUN directly sprints forward automatically — no joystick drag required! + REAL ATHLETIC JUMP!)
       let inX = footState.joyX;
       let inY = footState.joyY;
@@ -7471,10 +7528,12 @@ window.ApexCity3D = (function () {
         const fdz = -Math.cos(moveAng) * moveSpd * mag * dt;
         let fx = driveState.x + fdx;
         let fz = driveState.z + fdz;
-        // 2-Pass Circle-vs-AABB Push-Out (Glides smoothly past every shop wall, doorway, cash counter & stand — ZERO glitching!)
-        const resolvedFoot = pushOutOfBuildings(fx, fz, 0.68);
-        fx = resolvedFoot.x;
-        fz = resolvedFoot.z;
+        // While Rope Hero is high in the sky (>4.8m rooftop flight), allow flying smoothly over street walls!
+        if ((footState.y || 0) < 4.8) {
+          const resolvedFoot = pushOutOfBuildings(fx, fz, 0.68);
+          fx = resolvedFoot.x;
+          fz = resolvedFoot.z;
+        }
         // Solid on-foot collision against Police Cars & Yellow Taxis too!
         for (let pi = 0; pi < policeUnits.length; pi++) {
           const pm = policeUnits[pi].mesh;
@@ -7663,6 +7722,59 @@ window.ApexCity3D = (function () {
             if (u.bodyRoot) { u.bodyRoot.rotation.y = 0.48 * twistSign * (1 - k); u.bodyRoot.rotation.x = 0.15 * (1 - k); }
           }
         }
+        // REAL GUN AIMING & RECOIL STANCE WHEN HOLDING ANY 3D GUN!
+        if (window.ApexGuns && window.ApexGuns.Combat && window.ApexGuns.Combat.getEquippedId() !== 'fist') {
+          const rec = window.ApexGuns.Combat.getRecoil();
+          u.armR.rotation.x = -1.52 - rec * 0.85;
+          u.armR.rotation.z = -0.05;
+          if (u.elbowR) u.elbowR.rotation.x = -0.08;
+          // Support rifle/shotgun/sniper/SMG with left hand too!
+          if (window.ApexGuns.Combat.getEquippedId() !== 'pistol') {
+            u.armL.rotation.x = -1.25 - rec * 0.4;
+            u.armL.rotation.z = 0.35;
+            if (u.elbowL) u.elbowL.rotation.x = -0.55;
+          }
+          // Face camera aim direction while firing or scoping!
+          if (window._fireHeldNow || window._sniperScoped) {
+            playerAvatar.rotation.y = (driveState.heading + driveState.camOrbitYaw) + Math.PI;
+          }
+        }
+      }
+      } // End of !ropeSwingingNow block
+
+      // LIVE REAL GUN RAPID-FIRE, POOLED BULLET COLLISION & AMMO HUD UPDATE
+      if (window.ApexGuns && window.ApexGuns.Combat) {
+        const gCombat = window.ApexGuns.Combat;
+        const eqGun = gCombat.getSpec();
+        if (window._fireHeldNow && eqGun.id !== 'fist' && eqGun.auto) {
+          if (typeof fireActiveWeapon === 'function') fireActiveWeapon(now);
+        }
+        const gunHits = gCombat.update(dt, now, { trafficCars, policeUnits, walkingHumans });
+        for (let hi = 0; hi < gunHits.length; hi++) {
+          const gh = gunHits[hi];
+          if (gh.type === 'traffic') {
+            if (gh.fatal && !gh.obj.wrecked) {
+              triggerTrafficAccident(gh.obj, now);
+              showDriveAlert('💥 VEHICLE DESTROYED! +250 C', 'bg-orange-500 text-slate-950');
+              state.coins += 250; persistSave();
+            }
+          } else if (gh.type === 'police') {
+            wantedStars = Math.min(3, Math.max(1, wantedStars) + 1);
+            spawnBackupPolice(now);
+          } else if (gh.type === 'human') {
+            const hm = gh.obj;
+            hm.flying = true; hm.fallenStill = false;
+            hm.vx = (gh.vx || 0) * 0.08; hm.vz = (gh.vz || 0) * 0.08; hm.vy = 3.2;
+            hm.respawnAt = now + 14000;
+            dispatchAmbulanceOnly(hm, now);
+            spawnPoliceChase(now, 'GUNFIRE IN CITY');
+          }
+        }
+        const ammoEl = document.getElementById('ammoCounterEl');
+        if (ammoEl && eqGun.id !== 'fist') {
+          ammoEl.classList.remove('hidden');
+          ammoEl.textContent = gCombat.isReloading(now) ? 'RELOADING...' : `${gCombat.getAmmo()}/${eqGun.mag}`;
+        }
       }
 
       // DYNAMIC NEAREST-CAR PROXIMITY CHECK: Show ENTER CAR button ONLY when within 5.5m of YOUR parked car OR ANY AI traffic car!
@@ -7838,7 +7950,7 @@ window.ApexCity3D = (function () {
     camera.position.x += (targetCamX - camera.position.x) * camLerp;
     camera.position.y += (targetCamY - camera.position.y) * camLerp;
     camera.position.z += (targetCamZ - camera.position.z) * camLerp;
-    const targetFov = 60 + Math.min(22, (Math.abs(driveState.speed) / maxSpeed) * (nitroOn ? 20 : 11));
+    const targetFov = (isOnFoot && window._sniperScoped) ? 24 : (60 + Math.min(22, (Math.abs(driveState.speed) / maxSpeed) * (nitroOn ? 20 : 11)));
     if (Math.abs(camera.fov - targetFov) > 0.1) {
       camera.fov += (targetFov - camera.fov) * Math.min(1, 5 * dt);
       camera.updateProjectionMatrix();
@@ -8679,13 +8791,27 @@ window.ApexCity3D = (function () {
       }
     }
 
-    // AUTOMATIC SLIDING GLASS DOORS + LIVE 3D LANDMARK ANIMATIONS (Hospital, Mega Mall, D-Mart, Casino, Police HQ, Cyber Apartments!)
+    // AUTOMATIC SLIDING GLASS DOORS + LOW-RAM INTERIOR CULLING + REAL BUILDING LOGIC TRIGGERS!
+    let foundBuildingTrigger = null;
     for (let li = 0; li < cityLandmarks.length; li++) {
       const lm = cityLandmarks[li];
       const dPl = Math.hypot(driveState.x - lm.x, driveState.z - (lm.doorZ || lm.z));
-      // Animate nearby modular landmarks (ambulance strobes, mall fountain & escalators, casino searchlights/roulette/slots, police strobes, balcony LEDs!)
-      if (lm.updateFn && dPl < 145) {
+      // 2GB RAM ZERO-LAG OPTIMIZATION: Automatically hide building interiors when >42m away!
+      if (lm.setInteriorVisible) {
+        lm.setInteriorVisible(dPl < 42);
+      }
+      if (lm.updateFn && dPl < 95) {
         lm.updateFn(dt, now);
+      }
+      // Check if player on foot is standing on any Real-World Building Logic Trigger Ring!
+      if (isOnFoot && dPl < 24 && lm.triggers && lm.triggers.length) {
+        for (let ti = 0; ti < lm.triggers.length; ti++) {
+          const tr = lm.triggers[ti];
+          if (Math.hypot(driveState.x - tr.worldX, driveState.z - tr.worldZ) < (tr.radius || 2.4)) {
+            foundBuildingTrigger = tr;
+            break;
+          }
+        }
       }
       if (!lm.doorL || !lm.doorR) continue;
       let nearShopper = false;
@@ -8704,6 +8830,16 @@ window.ApexCity3D = (function () {
       const nextOff = curOff + (openWant - curOff) * Math.min(1, 7 * dt);
       lm.doorL.position.x = baseX - halfW - nextOff;
       lm.doorR.position.x = baseX + halfW + nextOff;
+    }
+    window._activeBuildingTrigger = foundBuildingTrigger;
+    const bIntBtn = document.getElementById('buildingInteractBtn');
+    if (bIntBtn) {
+      if (foundBuildingTrigger && isOnFoot) {
+        bIntBtn.textContent = '[E] ' + foundBuildingTrigger.label;
+        bIntBtn.classList.remove('hidden');
+      } else {
+        bIntBtn.classList.add('hidden');
+      }
     }
 
     // UPDATE INDOOR MALL & SHOP CROWD (3 Live People strolling inside EVERY Shop & Mall — STOP if Player is in front of them!)
@@ -9418,6 +9554,21 @@ window.ApexCity3D = (function () {
     const weaponWheelPopup = document.getElementById('weaponWheelPopup');
     if (onFootWeaponBox) { onFootWeaponBox.classList.toggle('hidden', !onFoot); onFootWeaponBox.classList.toggle('flex', onFoot); }
     if (!onFoot && weaponWheelPopup) weaponWheelPopup.classList.add('hidden');
+    if (!onFoot) {
+      window._fireHeldNow = false;
+      const crossEl = document.getElementById('gunCrosshairEl');
+      if (crossEl) crossEl.classList.add('hidden');
+      const scEl = document.getElementById('sniperScopeOverlay');
+      if (scEl) scEl.classList.add('hidden');
+      window._sniperScoped = false;
+      const bIntBtn = document.getElementById('buildingInteractBtn');
+      if (bIntBtn) bIntBtn.classList.add('hidden');
+      if (window.ApexRopeHero && window.ApexRopeHero.isActive()) window.ApexRopeHero.release(footState);
+    } else if (window.ApexGuns && window.ApexGuns.Combat) {
+      const sp = window.ApexGuns.Combat.getSpec();
+      const crossEl = document.getElementById('gunCrosshairEl');
+      if (crossEl) crossEl.classList.toggle('hidden', sp.id === 'fist');
+    }
   }
 
   const humanCrouchBtn = document.getElementById('humanCrouchBtn');
@@ -9533,42 +9684,45 @@ window.ApexCity3D = (function () {
       if (Audio) Audio.playTone(360, 0.05);
     });
   }
-  // ON-FOOT ROTATING WEAPON WHEEL HANDLER (4 Slots: Knife, Sniper, Double Shotgun, UMP — ready for custom 3D gun models!)
-  const weaponsToggleBtn = document.getElementById('weaponsToggleBtn');
-  const weaponWheelPopup = document.getElementById('weaponWheelPopup');
-  const activeWeaponBadge = document.getElementById('activeWeaponBadge');
-  let wheelSpinDeg = 0;
-  if (weaponsToggleBtn && weaponWheelPopup) {
-    weaponsToggleBtn.addEventListener('pointerdown', (e) => {
-      e.preventDefault(); e.stopPropagation();
-      const opening = weaponWheelPopup.classList.contains('hidden');
-      weaponWheelPopup.classList.toggle('hidden', !opening);
-      if (opening) {
-        wheelSpinDeg = (wheelSpinDeg + 360) % 3600;
-        weaponWheelPopup.style.transform = `rotate(${wheelSpinDeg}deg)`;
-        setTimeout(() => { weaponWheelPopup.style.transform = 'rotate(0deg)'; }, 40);
+  // REAL 3D GUN ARSENAL + ROPE HERO SWING + REAL BUILDING LOGIC INTERACT HANDLERS!
+  window._fireHeldNow = false;
+  window._sniperScoped = false;
+
+  const setSniperScope = (on) => {
+    window._sniperScoped = Boolean(on);
+    const scEl = document.getElementById('sniperScopeOverlay');
+    if (scEl) scEl.classList.toggle('hidden', !window._sniperScoped);
+  };
+
+  const syncGunHUD = (spec) => {
+    const isGun = spec && spec.id !== 'fist';
+    const badge = document.getElementById('activeWeaponBadge');
+    const ammoEl = document.getElementById('ammoCounterEl');
+    const relBtn = document.getElementById('gunReloadBtn');
+    const scpBtn = document.getElementById('sniperScopeBtn');
+    const crossEl = document.getElementById('gunCrosshairEl');
+    const fIcon = document.getElementById('fireBtnIcon');
+    const fLbl = document.getElementById('fireBtnLabel');
+    if (badge) badge.textContent = spec ? spec.name : 'FISTS';
+    if (ammoEl) {
+      ammoEl.classList.toggle('hidden', !isGun);
+      if (isGun && window.ApexGuns && window.ApexGuns.Combat) {
+        ammoEl.textContent = `${window.ApexGuns.Combat.getAmmo(spec.id)}/${spec.mag}`;
       }
-      if (Audio) Audio.playTone(opening ? 620 : 420, 0.05);
-    });
-    weaponWheelPopup.querySelectorAll('.weapon-slot-btn').forEach((btn) => {
-      btn.addEventListener('pointerdown', (e) => {
-        e.preventDefault(); e.stopPropagation();
-        const wName = btn.getAttribute('data-weapon') || 'NONE';
-        if (activeWeaponBadge) activeWeaponBadge.textContent = wName;
-        weaponWheelPopup.querySelectorAll('.weapon-slot-btn').forEach((b) => b.classList.remove('ring-2', 'ring-amber-400'));
-        btn.classList.add('ring-2', 'ring-amber-400');
-        weaponWheelPopup.classList.add('hidden');
-        if (Audio) Audio.playTone(760, 0.06);
-        showDriveAlert('⚔️ WEAPON SLOT SELECTED: ' + wName, 'bg-cyan-400 text-slate-950');
-      });
-    });
-  }
-  const humanFistBtn = document.getElementById('humanFistBtn');
-  if (humanFistBtn) {
-    humanFistBtn.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (!isOnFoot) return;
+    }
+    if (relBtn) relBtn.classList.toggle('hidden', !isGun);
+    if (scpBtn) scpBtn.classList.toggle('hidden', !(spec && spec.id === 'sniper'));
+    if (crossEl) crossEl.classList.toggle('hidden', !(isOnFoot && isGun));
+    if (fIcon) fIcon.textContent = isGun ? '🔥' : '👊';
+    if (fLbl) fLbl.textContent = isGun ? 'FIRE' : 'FIST';
+    if (!spec || spec.id !== 'sniper') setSniperScope(false);
+  };
+
+  function fireActiveWeapon(now) {
+    if (!isOnFoot) return;
+    const gCombat = window.ApexGuns && window.ApexGuns.Combat;
+    const eqGun = gCombat ? gCombat.getSpec() : { id: 'fist' };
+    if (eqGun.id === 'fist') {
       footState.pose = 'stand';
       footState.punchHand = (footState.punchHand || 0) === 0 ? 1 : 0;
       footState.punchTimer = 0.36;
@@ -9583,12 +9737,174 @@ window.ApexCity3D = (function () {
           h.vx = Math.sin(pAng) * 4.2; h.vz = Math.cos(pAng) * 4.2; h.vy = 2.8;
           h.respawnAt = performance.now() + 14000;
           dispatchAmbulanceOnly(h, performance.now());
-          spawnPoliceChase(performance.now());
+          spawnPoliceChase(performance.now(), 'ASSAULT');
           break;
         }
       }
+      return;
+    }
+    // Fire real 3D gun along camera aim vector!
+    const aimYaw = driveState.heading + driveState.camOrbitYaw;
+    const aimDirX = -Math.sin(aimYaw);
+    const aimDirZ = -Math.cos(aimYaw);
+    const aimDirY = Math.max(-0.35, Math.min(0.45, -(driveState.camOrbitPitch - 0.28) * 0.75));
+    const len = Math.hypot(aimDirX, aimDirY, aimDirZ) || 1;
+    const ox = driveState.x + aimDirX * 0.9;
+    const oy = (footState.y || 0.22) + 1.48;
+    const oz = driveState.z + aimDirZ * 0.9;
+    if (playerAvatar) playerAvatar.rotation.y = aimYaw + Math.PI;
+    gCombat.fire(scene, now || performance.now(), ox, oy, oz, aimDirX / len, aimDirY / len, aimDirZ / len);
+  }
+
+  const weaponsToggleBtn = document.getElementById('weaponsToggleBtn');
+  const weaponWheelPopup = document.getElementById('weaponWheelPopup');
+  if (weaponsToggleBtn && weaponWheelPopup) {
+    weaponsToggleBtn.addEventListener('pointerdown', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      const opening = weaponWheelPopup.classList.contains('hidden');
+      weaponWheelPopup.classList.toggle('hidden', !opening);
+      if (Audio) Audio.playTone(opening ? 620 : 420, 0.05);
+    });
+    weaponWheelPopup.querySelectorAll('.weapon-slot-btn').forEach((btn) => {
+      btn.addEventListener('pointerdown', (e) => {
+        e.preventDefault(); e.stopPropagation();
+        const wId = btn.getAttribute('data-weapon') || 'fist';
+        let spec = { id: 'fist', name: 'FISTS', mag: 0 };
+        if (window.ApexGuns && window.ApexGuns.Combat) {
+          spec = window.ApexGuns.Combat.attachToAvatar(playerAvatar, wId);
+        }
+        syncGunHUD(spec);
+        weaponWheelPopup.querySelectorAll('.weapon-slot-btn').forEach((b) => b.classList.remove('ring-2', 'ring-amber-400'));
+        btn.classList.add('ring-2', 'ring-amber-400');
+        weaponWheelPopup.classList.add('hidden');
+        if (Audio) Audio.playTone(760, 0.06);
+        showDriveAlert(`${spec.icon || '🔫'} EQUIPPED: ${spec.name}`, 'bg-cyan-400 text-slate-950');
+      });
     });
   }
+
+  const gunReloadBtn = document.getElementById('gunReloadBtn');
+  if (gunReloadBtn) {
+    gunReloadBtn.addEventListener('pointerdown', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      if (window.ApexGuns && window.ApexGuns.Combat && window.ApexGuns.Combat.startReload(performance.now())) {
+        showDriveAlert('🔄 RELOADING MAGAZINE...', 'bg-amber-400 text-slate-950');
+      }
+    });
+  }
+
+  const sniperScopeBtn = document.getElementById('sniperScopeBtn');
+  if (sniperScopeBtn) {
+    sniperScopeBtn.addEventListener('pointerdown', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      setSniperScope(!window._sniperScoped);
+      if (Audio) Audio.playTone(window._sniperScoped ? 840 : 520, 0.05);
+    });
+  }
+
+  const humanFistBtn = document.getElementById('humanFistBtn');
+  if (humanFistBtn) {
+    humanFistBtn.addEventListener('pointerdown', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      window._fireHeldNow = true;
+      fireActiveWeapon(performance.now());
+    });
+    const stopFire = () => { window._fireHeldNow = false; };
+    humanFistBtn.addEventListener('pointerup', stopFire);
+    humanFistBtn.addEventListener('pointerleave', stopFire);
+    humanFistBtn.addEventListener('pointercancel', stopFire);
+  }
+
+  // ROPE HERO GRAPPLE SWING BUTTON (🕸️ ROPE / F KEY) + SUPER JUMP BUTTON (⚡ SUPER JUMP / C KEY)!
+  const triggerRopeHeroSwing = () => {
+    if (!isOnFoot || !window.ApexRopeHero) return;
+    if (window.ApexRopeHero.isActive()) {
+      window.ApexRopeHero.release(footState);
+      return;
+    }
+    const aimYaw = driveState.heading + driveState.camOrbitYaw;
+    const aimX = -Math.sin(aimYaw), aimZ = -Math.cos(aimYaw);
+    // Ensure hero wrist grapple launcher is mounted!
+    if (window.ApexGuns && window.ApexGuns.Combat) {
+      window.ApexGuns.Combat.attachToAvatar(playerAvatar, window.ApexGuns.Combat.getEquippedId());
+    }
+    const mode = window.ApexRopeHero.launch(
+      scene, { x: driveState.x, y: footState.y || 0.22, z: driveState.z },
+      aimX, aimZ, cityLandmarks, colliderGrid, BLOCK_STEP, trafficCars
+    );
+    showDriveAlert(mode === 'pull_car' ? '🕸️ GRAPPLED VEHICLE!' : '🕸️ ROPE HERO SWING!', 'bg-sky-400 text-slate-950');
+  };
+
+  const triggerSuperJump = () => {
+    if (!isOnFoot) return;
+    footState.pose = 'stand';
+    footState.jumping = true;
+    footState.vy = 20.8; // High-altitude Rope Hero Super Leap!
+    if (window.ApexGunUtils) window.ApexGunUtils.playSuperJump();
+    showDriveAlert('⚡ ROPE HERO SUPER JUMP!', 'bg-fuchsia-500 text-white');
+  };
+
+  const ropeSwingBtn = document.getElementById('ropeSwingBtn');
+  if (ropeSwingBtn) {
+    ropeSwingBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); triggerRopeHeroSwing(); });
+  }
+  const superJumpBtn = document.getElementById('superJumpBtn');
+  if (superJumpBtn) {
+    superJumpBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); triggerSuperJump(); });
+  }
+
+  // REAL INSIDE-BUILDING LOGIC INTERACT BUTTON ([E] — D-Mart, Hospital, Mall, Police HQ, Casino, Safe House!)
+  const triggerBuildingLogic = () => {
+    const tr = window._activeBuildingTrigger;
+    if (!isOnFoot || !tr || !window.ApexBuildingLogic) return;
+    window.ApexBuildingLogic.execute(tr.action, {
+      coins: state.coins,
+      hp: driveState.health,
+      nitro: driveState.nitro,
+      wantedStars,
+      setCoins: (v) => { state.coins = Math.max(0, Math.round(v)); if (driveCoinsEl) driveCoinsEl.textContent = state.coins.toLocaleString(); },
+      setHP: (v) => { driveState.health = Math.max(0, Math.min(100, v)); updateHealthHUD(); },
+      setNitro: (v) => { driveState.nitro = Math.max(0, Math.min(100, v)); },
+      setWantedStars: (v) => {
+        wantedStars = Math.max(0, v);
+        if (wantedStars === 0) {
+          for (let k = policeUnits.length - 1; k >= 0; k--) {
+            if (policeUnits[k].officer) scene.remove(policeUnits[k].officer);
+            scene.remove(policeUnits[k].mesh);
+            policeUnits.splice(k, 1);
+          }
+          const ptEl = document.getElementById('policeTimerEl');
+          if (ptEl) ptEl.classList.add('hidden');
+        }
+      },
+      cycleTime: () => {
+        skyModeIdx = (skyModeIdx + 1) % 3;
+        const stBtn = document.getElementById('skyToggleBtn');
+        if (stBtn && skyThemes[skyModeIdx]) stBtn.textContent = skyThemes[skyModeIdx].label;
+        applySkyAndWeather();
+      },
+      saveGame: () => persistSave(),
+      showAlert: (msg) => showDriveAlert(msg, 'bg-emerald-500 text-slate-950')
+    });
+  };
+
+  const buildingInteractBtn = document.getElementById('buildingInteractBtn');
+  if (buildingInteractBtn) {
+    buildingInteractBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); triggerBuildingLogic(); });
+  }
+
+  // Keyboard shortcuts for Rope Hero (F = Rope Swing, C = Super Jump, E = Interact Inside Building, R = Reload Gun)
+  window.addEventListener('keydown', (e) => {
+    const k = e.key.toLowerCase();
+    if (isOnFoot && !e.repeat) {
+      if (k === 'f') triggerRopeHeroSwing();
+      if (k === 'c') triggerSuperJump();
+      if (k === 'e' && window._activeBuildingTrigger) triggerBuildingLogic();
+      if (k === 'r' && window.ApexGuns && window.ApexGuns.Combat && window.ApexGuns.Combat.getEquippedId() !== 'fist') {
+        window.ApexGuns.Combat.startReload(performance.now());
+      }
+    }
+  });
   if (humanJumpBtn) {
     humanJumpBtn.addEventListener('pointerdown', (e) => {
       e.preventDefault();
