@@ -1,9 +1,9 @@
 // Main Game Controller: Reliable 5s Auto-Loading + Always-ON Audio + Cinematic Garage Entrance + LocalStorage
 (function () {
-  const STORAGE_KEY = 'apex_nitro_3d_save_v1';
+  const STORAGE_KEY = 'apex_nitro_3d_save_v2';
 
   const defaultSave = {
-    coins: 25000,
+    coins: 5000,
     ownedIds: [0],
     equippedId: 0,
     dailyClaimedDate: null,
@@ -21,7 +21,7 @@
       if (!raw) return { ...defaultSave, ownedIds: new Set(defaultSave.ownedIds) };
       const parsed = JSON.parse(raw);
       return {
-        coins: typeof parsed.coins === 'number' ? parsed.coins : 25000,
+        coins: typeof parsed.coins === 'number' ? parsed.coins : 5000,
         ownedIds: new Set((Array.isArray(parsed.ownedIds) ? parsed.ownedIds : [0]).filter((id) => id >= 0 && id < 15).concat([0])),
         equippedId: (typeof parsed.equippedId === 'number' && parsed.equippedId >= 0 && parsed.equippedId < 15) ? parsed.equippedId : 0,
         dailyClaimedDate: parsed.dailyClaimedDate || null,
@@ -165,7 +165,7 @@
   // ================= LIVE 360-DEGREE INTERACTIVE 3D GARAGE SHOWROOM + 3s LAUNCH ANIMATION =================
   const garage3dHost = document.getElementById('garage3dHost');
   const launchBanner = document.getElementById('launchBanner');
-  let gScene = null, gCam = null, gRen = null, gCarWrap = null, gWheels = [], gFlames = [];
+  let gScene = null, gCam = null, gRen = null, gCarContainer = null, gCarWrap = null, gWheels = [], gFlames = [];
   let gRafId = null, gRotY = 0.65, gDragging = false, gLastPointer = 0, gDragPointerId = null;
   const vehicleThumbCache = {};
   let thumbsGenerated = false;
@@ -279,8 +279,7 @@
 
   function captureGemeraStoreThumb() {
     if (!gemeraMaster || !gRen || !gScene || !gCam) return;
-    const prevWrap = gCarWrap;
-    if (prevWrap) gScene.remove(prevWrap);
+    if (gCarContainer) gCarContainer.visible = false;
     const prevPos = gCam.position.clone();
     const prevBg = gScene.background;
     gScene.background = new THREE.Color(0x0b1526);
@@ -289,17 +288,8 @@
     const built = cloneGemeraBuild();
     if (built) {
       gScene.add(built.group);
-      if (car04BodyMatRef) { car04BodyMatRef.emissive.setHSL((now * 0.00008) % 1, 0.88, 0.14); }
-    if (car01BodyMatRef) {
-        const hueG = (now * 0.00009) % 1;
-        car01BodyMatRef.emissive.setHSL(0.04 + Math.sin(now * 0.0014) * 0.04, 0.9, 0.14);
-      }
-      for (let sfi = 0; sfi < activeSideFlames.length; sfi++) {
-        const sf = activeSideFlames[sfi];
-        const pulse = 0.72 + 0.42 * Math.abs(Math.sin(now * 0.018 + sf.phase));
-        sf.mesh.scale.set(0.85 + pulse * 0.25, 0.85 + pulse * 0.25, pulse);
-      }
-      gRen.render(gScene, gCam);
+      try {
+        gRen.render(gScene, gCam);
       try {
         const snap = document.createElement('canvas');
         snap.width = 192; snap.height = 108;
@@ -311,12 +301,14 @@
           card0.style.filter = 'none';
         }
       } catch (e) {}
-      gScene.remove(built.group);
+      } finally {
+        gScene.remove(built.group);
+      }
     }
     gScene.background = prevBg;
     gCam.position.copy(prevPos);
     gCam.lookAt(0, 0.75, 0);
-    if (prevWrap) gScene.add(prevWrap);
+    if (gCarContainer) gCarContainer.visible = true;
     gRen.render(gScene, gCam);
   }
 
@@ -509,8 +501,7 @@
     car01Master = masterWrap;
     car01Loading = false;
     if (gRen && gScene && gCam) {
-      const prevWrap = gCarWrap;
-      if (prevWrap) gScene.remove(prevWrap);
+      if (gCarContainer) gCarContainer.visible = false;
       const prevPos = gCam.position.clone();
       const prevBg = gScene.background;
       gScene.background = new THREE.Color(0x0b1526);
@@ -533,7 +524,7 @@
       gScene.background = prevBg;
       gCam.position.copy(prevPos);
       gCam.lookAt(0, 0.75, 0);
-      if (prevWrap) gScene.add(prevWrap);
+      if (gCarContainer) gCarContainer.visible = true;
     }
     while (car01Callbacks.length) {
       const fn = car01Callbacks.shift();
@@ -634,8 +625,7 @@
     car02Loading = false;
 
     if (gRen && gScene && gCam) {
-      const prevWrap = gCarWrap;
-      if (prevWrap) gScene.remove(prevWrap);
+      if (gCarContainer) gCarContainer.visible = false;
       const prevPos = gCam.position.clone();
       const prevBg = gScene.background;
       gScene.background = new THREE.Color(0x0b1526);
@@ -658,7 +648,7 @@
       gScene.background = prevBg;
       gCam.position.copy(prevPos);
       gCam.lookAt(0, 0.75, 0);
-      if (prevWrap) gScene.add(prevWrap);
+      if (gCarContainer) gCarContainer.visible = true;
     }
     while (car02Callbacks.length) {
       const fn = car02Callbacks.shift();
@@ -749,6 +739,8 @@
     gScene.userData.glowRing = glowRing;
     glowRing.rotation.x = -Math.PI / 2; glowRing.position.y = 0.01;
     gScene.add(disc, glowRing);
+    gCarContainer = new THREE.Group();
+    gScene.add(gCarContainer);
 
     // Interactive 360 Camera Orbit around Stationary Car (Mouse + Touch safe, supports Sideways rotated phone)
     let gCamYaw = 0.65, gCamPitch = 0.28, gLastX = 0, gLastY = 0;
@@ -841,8 +833,7 @@
   function generateAll3DThumbnails() {
     if (thumbsGenerated || !gRen || !gScene || !gCam || !City3D || !vehicles.length) return;
     thumbsGenerated = true;
-    const prevWrap = gCarWrap;
-    if (prevWrap) gScene.remove(prevWrap);
+    if (gCarContainer) gCarContainer.visible = false;
 
     const prevPos = gCam.position.clone();
     const prevBg = gScene.background;
@@ -874,7 +865,7 @@
     gScene.background = prevBg;
     gCam.position.copy(prevPos);
     gCam.lookAt(0, 0.75, 0);
-    if (prevWrap) gScene.add(prevWrap);
+    if (gCarContainer) gCarContainer.visible = true;
     gRen.render(gScene, gCam);
 
     // Immediately swap all visible store card thumbnails to the exact 3D vehicle models!
@@ -895,16 +886,21 @@
     }
     initGarage3D();
     if (!gScene) return;
-    if (gCarWrap) gScene.remove(gCarWrap);
+    if (gCarContainer) { while (gCarContainer.children.length) gCarContainer.remove(gCarContainer.children[0]); }
     const paint = null;
+    const targetVid = vehicleObj.id;
     const applyModelToTurntable = (builtObj, isFbx) => {
-      if (gCarWrap) gScene.remove(gCarWrap);
+      if (selectedId !== targetVid && !(homeScreen && !homeScreen.classList.contains('hidden-screen') && state.equippedId === targetVid)) return;
+      if (gCarContainer) {
+        while (gCarContainer.children.length) gCarContainer.remove(gCarContainer.children[0]);
+      }
       gCarWrap = builtObj.group;
       gWheels = builtObj.wheels || [];
       gFlames = builtObj.flames || [];
       const sc = isFbx ? 1.02 : (vehicleObj.modelType === 'bike' ? 1.35 : (vehicleObj.modelType === 'heavy_truck' ? 0.84 : 0.96));
       gCarWrap.scale.setScalar(sc);
-      gScene.add(gCarWrap);
+      if (gCarContainer) gCarContainer.add(gCarWrap);
+      else gScene.add(gCarWrap);
       if (homeScreen && !homeScreen.classList.contains('hidden-screen')) mountShowroomCanvas('home3dHost');
       else if (!garageScreen.classList.contains('hidden-screen')) mountShowroomCanvas('garage3dHost');
     };
