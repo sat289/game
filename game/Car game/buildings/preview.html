@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ST GAMES — 3D Walk-In Buildings Preview (Exterior & Real Inside View)</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600;800&family=Orbitron:wght@700;900&display=swap" rel="stylesheet" />
+  <style>
+    body { margin: 0; overflow: hidden; background: #090e1a; font-family: Inter, sans-serif; touch-action: none; user-select: none; }
+    .font-display { font-family: Orbitron, sans-serif; }
+  </style>
+</head>
+<body>
+  <div id="canvasHost" class="fixed inset-0"></div>
+
+  <!-- Top Building Switcher & Mode Controls -->
+  <div class="fixed top-3 inset-x-3 z-20 flex flex-col gap-2 pointer-events-none">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <div class="pointer-events-auto flex flex-wrap gap-1.5 bg-slate-950/85 border border-white/15 backdrop-blur-md p-1.5 rounded-2xl shadow-2xl" id="buildingTabs"></div>
+      <div class="pointer-events-auto flex items-center gap-1.5 bg-slate-950/85 border border-white/15 backdrop-blur-md p-1.5 rounded-2xl shadow-2xl">
+        <button id="modeOutsideBtn" type="button" class="px-3 py-1.5 rounded-xl bg-cyan-400 text-slate-950 font-display text-[10px] font-black cursor-pointer">🏙️ OUTSIDE VIEW</button>
+        <button id="modeInsideBtn" type="button" class="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-200 border border-white/15 font-display text-[10px] font-black cursor-pointer">🚶 WALK INSIDE</button>
+        <button id="dayNightBtn" type="button" class="px-2.5 py-1.5 rounded-xl bg-indigo-600 text-white font-display text-[10px] font-black cursor-pointer">🌙 NIGHT</button>
+      </div>
+    </div>
+    <div class="self-center px-3.5 py-1 rounded-full bg-slate-950/80 border border-cyan-400/40 text-cyan-200 text-[11px] font-bold shadow" id="hintBar">
+      Drag to orbit 360° • Scroll/Pinch to zoom • Click "🚶 WALK INSIDE" to enter the real 3D interior!
+    </div>
+  </div>
+
+  <!-- Mobile / On-Screen Walk Controls (Shown in Walk Inside Mode) -->
+  <div id="walkPad" class="hidden fixed bottom-4 left-4 z-20 flex flex-col items-center gap-1.5">
+    <button data-dir="fwd" class="w-12 h-12 rounded-xl bg-slate-900/85 active:bg-cyan-400 active:text-slate-950 border border-cyan-400/50 text-white font-black text-lg">▲</button>
+    <div class="flex gap-1.5">
+      <button data-dir="left" class="w-12 h-12 rounded-xl bg-slate-900/85 active:bg-cyan-400 active:text-slate-950 border border-cyan-400/50 text-white font-black text-lg">◀</button>
+      <button data-dir="back" class="w-12 h-12 rounded-xl bg-slate-900/85 active:bg-cyan-400 active:text-slate-950 border border-cyan-400/50 text-white font-black text-lg">▼</button>
+      <button data-dir="right" class="w-12 h-12 rounded-xl bg-slate-900/85 active:bg-cyan-400 active:text-slate-950 border border-cyan-400/50 text-white font-black text-lg">▶</button>
+    </div>
+  </div>
+
+  <!-- Separate Modular Building Scripts -->
+  <script src="building_utils.js"></script>
+  <script src="hospital.js"></script>
+  <script src="mega_mall.js"></script>
+  <script src="dmart.js"></script>
+  <script src="casino.js"></script>
+  <script src="police_hq.js"></script>
+  <script src="cyber_apartments.js"></script>
+  <script src="index.js"></script>
+
+  <script>
+    (function () {
+      const host = document.getElementById('canvasHost');
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0b1224);
+      scene.fog = new THREE.FogExp2(0x0b1224, 0.008);
+
+      const camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.2, 300);
+      const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.outputEncoding = THREE.sRGBEncoding;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.15;
+      renderer.shadowMap.enabled = true;
+      host.appendChild(renderer.domElement);
+
+      const hemi = new THREE.HemisphereLight(0xe0f2fe, 0x334155, 1.05);
+      scene.add(hemi);
+      const sun = new THREE.DirectionalLight(0xfffbeb, 1.35);
+      sun.position.set(28, 45, 30);
+      sun.castShadow = true;
+      scene.add(sun);
+
+      const grid = new THREE.GridHelper(90, 45, 0x38bdf8, 0x1e293b);
+      grid.position.y = 0.01;
+      scene.add(grid);
+
+      let currentBuilding = null;
+      let isInside = false;
+      let isNight = true;
+
+      // Orbit state
+      let orbitYaw = 0.55, orbitPitch = 0.48, orbitDist = 34;
+      // First-person walk state
+      const walker = { x: 0, y: 1.85, z: 12, yaw: 0, pitch: 0 };
+      const keys = { fwd: false, back: false, left: false, right: false };
+
+      function loadBuilding(id) {
+        if (currentBuilding) scene.remove(currentBuilding.group);
+        currentBuilding = window.ApexBuildings.create(id);
+        scene.add(currentBuilding.group);
+        if (isInside) enterInsideMode();
+        document.querySelectorAll('#buildingTabs button').forEach((b) => {
+          const active = b.dataset.id === id;
+          b.className = active
+            ? 'px-2.5 py-1.5 rounded-xl bg-cyan-400 text-slate-950 font-display text-[10px] font-black cursor-pointer shadow'
+            : 'px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-white/15 font-display text-[10px] font-bold cursor-pointer';
+        });
+      }
+
+      function enterOutsideMode() {
+        isInside = false;
+        document.getElementById('walkPad').classList.add('hidden');
+        document.getElementById('modeOutsideBtn').className = 'px-3 py-1.5 rounded-xl bg-cyan-400 text-slate-950 font-display text-[10px] font-black cursor-pointer';
+        document.getElementById('modeInsideBtn').className = 'px-3 py-1.5 rounded-xl bg-slate-800 text-slate-200 border border-white/15 font-display text-[10px] font-black cursor-pointer';
+        document.getElementById('hintBar').textContent = 'OUTSIDE ORBIT: Drag to rotate 360° • Scroll to zoom • Click "🚶 WALK INSIDE" to inspect interior!';
+      }
+
+      function enterInsideMode() {
+        isInside = true;
+        if (currentBuilding && currentBuilding.interiorSpawn) {
+          const sp = currentBuilding.interiorSpawn;
+          walker.x = sp.x; walker.y = sp.y; walker.z = sp.z;
+          walker.yaw = Math.atan2(-(sp.lookAt[0] - sp.x), -(sp.lookAt[2] - sp.z));
+          walker.pitch = -0.05;
+        }
+        document.getElementById('walkPad').classList.remove('hidden');
+        document.getElementById('modeInsideBtn').className = 'px-3 py-1.5 rounded-xl bg-emerald-400 text-slate-950 font-display text-[10px] font-black cursor-pointer';
+        document.getElementById('modeOutsideBtn').className = 'px-3 py-1.5 rounded-xl bg-slate-800 text-slate-200 border border-white/15 font-display text-[10px] font-black cursor-pointer';
+        document.getElementById('hintBar').textContent = 'WALK INSIDE MODE: Use WASD / Arrow Keys (or touch arrows) to walk • Drag screen to look around • Walk through automatic sliding glass doors!';
+      }
+
+      // Build Tabs
+      const tabs = document.getElementById('buildingTabs');
+      window.ApexBuildings.CATALOG.forEach((item) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.dataset.id = item.id;
+        btn.textContent = item.name.replace('Building ', '');
+        btn.addEventListener('click', () => loadBuilding(item.id));
+        tabs.appendChild(btn);
+      });
+
+      document.getElementById('modeOutsideBtn').addEventListener('click', enterOutsideMode);
+      document.getElementById('modeInsideBtn').addEventListener('click', enterInsideMode);
+      document.getElementById('dayNightBtn').addEventListener('click', () => {
+        isNight = !isNight;
+        document.getElementById('dayNightBtn').textContent = isNight ? '🌙 NIGHT' : '☀️ DAY';
+        const bg = isNight ? 0x0b1224 : 0x87ceeb;
+        scene.background.setHex(bg);
+        scene.fog.color.setHex(bg);
+        hemi.intensity = isNight ? 0.95 : 1.55;
+        sun.intensity = isNight ? 0.95 : 1.75;
+      });
+
+      // Pointer drag (orbit outside / look inside)
+      let dragging = false, lastX = 0, lastY = 0;
+      renderer.domElement.addEventListener('pointerdown', (e) => { dragging = true; lastX = e.clientX; lastY = e.clientY; });
+      window.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        const dx = e.clientX - lastX, dy = e.clientY - lastY;
+        lastX = e.clientX; lastY = e.clientY;
+        if (!isInside) {
+          orbitYaw -= dx * 0.007;
+          orbitPitch = Math.max(0.12, Math.min(1.25, orbitPitch + dy * 0.006));
+        } else {
+          walker.yaw -= dx * 0.006;
+          walker.pitch = Math.max(-0.7, Math.min(0.7, walker.pitch - dy * 0.005));
+        }
+      });
+      window.addEventListener('pointerup', () => { dragging = false; });
+      window.addEventListener('wheel', (e) => {
+        if (!isInside) orbitDist = Math.max(14, Math.min(58, orbitDist + e.deltaY * 0.03));
+      }, { passive: true });
+
+      // Keyboard & Touch Pad Walk
+      window.addEventListener('keydown', (e) => {
+        const k = e.key.toLowerCase();
+        if (k === 'w' || k === 'arrowup') keys.fwd = true;
+        if (k === 's' || k === 'arrowdown') keys.back = true;
+        if (k === 'a' || k === 'arrowleft') keys.left = true;
+        if (k === 'd' || k === 'arrowright') keys.right = true;
+      });
+      window.addEventListener('keyup', (e) => {
+        const k = e.key.toLowerCase();
+        if (k === 'w' || k === 'arrowup') keys.fwd = false;
+        if (k === 's' || k === 'arrowdown') keys.back = false;
+        if (k === 'a' || k === 'arrowleft') keys.left = false;
+        if (k === 'd' || k === 'arrowright') keys.right = false;
+      });
+      document.querySelectorAll('#walkPad button').forEach((b) => {
+        const dir = b.dataset.dir;
+        b.addEventListener('pointerdown', (e) => { e.preventDefault(); keys[dir] = true; });
+        const off = () => { keys[dir] = false; };
+        b.addEventListener('pointerup', off); b.addEventListener('pointerleave', off); b.addEventListener('pointercancel', off);
+      });
+
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      loadBuilding('hospital');
+
+      let lastT = performance.now();
+      function animate(now) {
+        requestAnimationFrame(animate);
+        const dt = Math.min(0.05, (now - lastT) / 1000);
+        lastT = now;
+
+        if (currentBuilding) {
+          if (currentBuilding.update) currentBuilding.update(dt, now);
+
+          // Automatic sliding glass doors open when walking near doorway!
+          const distDoor = isInside ? Math.hypot(walker.x, walker.z - currentBuilding.doorZ) : 99;
+          const openAmt = distDoor < 6.5 ? (currentBuilding.doorGapHalf * 0.85) : 0;
+          const baseOff = currentBuilding.doorGapHalf / 2;
+          if (currentBuilding.doorL && currentBuilding.doorR) {
+            currentBuilding.doorL.position.x += ((-baseOff - openAmt) - currentBuilding.doorL.position.x) * Math.min(1, 7 * dt);
+            currentBuilding.doorR.position.x += ((baseOff + openAmt) - currentBuilding.doorR.position.x) * Math.min(1, 7 * dt);
+          }
+        }
+
+        if (!isInside) {
+          const cx = Math.sin(orbitYaw) * Math.cos(orbitPitch) * orbitDist;
+          const cy = Math.sin(orbitPitch) * orbitDist + 4;
+          const cz = Math.cos(orbitYaw) * Math.cos(orbitPitch) * orbitDist;
+          camera.position.set(cx, cy, cz);
+          camera.lookAt(0, 5.5, 0);
+        } else {
+          const spd = 7.2 * dt;
+          const fwdX = -Math.sin(walker.yaw), fwdZ = -Math.cos(walker.yaw);
+          const rightX = Math.cos(walker.yaw), rightZ = -Math.sin(walker.yaw);
+          let nx = walker.x, nz = walker.z;
+          if (keys.fwd) { nx += fwdX * spd; nz += fwdZ * spd; }
+          if (keys.back) { nx -= fwdX * spd; nz -= fwdZ * spd; }
+          if (keys.left) { nx -= rightX * spd; nz -= rightZ * spd; }
+          if (keys.right) { nx += rightX * spd; nz += rightZ * spd; }
+
+          // Respect building wall colliders (front doorway stays open!)
+          if (currentBuilding && currentBuilding.colliders) {
+            const rad = 0.55;
+            for (const c of currentBuilding.colliders) {
+              const clX = Math.max(c.minX, Math.min(nx, c.maxX));
+              const clZ = Math.max(c.minZ, Math.min(nz, c.maxZ));
+              const ddx = nx - clX, ddz = nz - clZ;
+              const dSq = ddx * ddx + ddz * ddz;
+              if (dSq < rad * rad && dSq > 0.00001) {
+                const dist = Math.sqrt(dSq);
+                nx = clX + (ddx / dist) * rad;
+                nz = clZ + (ddz / dist) * rad;
+              }
+            }
+          }
+          walker.x = nx; walker.z = nz;
+          camera.position.set(walker.x, walker.y, walker.z);
+          camera.lookAt(
+            walker.x + fwdX * 10,
+            walker.y + Math.sin(walker.pitch) * 10,
+            walker.z + fwdZ * 10
+          );
+        }
+
+        renderer.render(scene, camera);
+      }
+      requestAnimationFrame(animate);
+    })();
+  </script>
+</body>
+</html>
