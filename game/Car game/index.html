@@ -4174,22 +4174,28 @@ window.ApexCity3D = (function () {
       cityInitialized = true;
       scene = new THREE.Scene();
       scene.background = new THREE.Color(0x87ceeb);
-      scene.fog = new THREE.FogExp2(0xe0f2fe, 0.0022);
+      scene.fog = new THREE.FogExp2(0xd7e8f4, 0.00155);
 
       const w = isStageRotated() ? window.innerHeight : window.innerWidth;
       const h = isStageRotated() ? window.innerWidth : window.innerHeight;
-      const isLowRamPhone = (navigator.deviceMemory && navigator.deviceMemory <= 3) || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
+      const deviceRam = Number(navigator.deviceMemory || 4);
+      const isMobileDevice = /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
+      const isVeryLowEnd = deviceRam <= 2;
+      const isLowRamPhone = deviceRam <= 3 || isMobileDevice;
       camera = new THREE.PerspectiveCamera(62, w / h, 0.85, isLowRamPhone ? 210 : 280);
       renderer = new THREE.WebGLRenderer({
-        antialias: !(navigator.deviceMemory && navigator.deviceMemory <= 2),
+        antialias: !isMobileDevice && !isVeryLowEnd,
+        alpha: false,
+        stencil: false,
         powerPreference: 'high-performance',
-        precision: 'highp',
+        precision: 'mediump',
         logarithmicDepthBuffer: false
       });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isLowRamPhone ? 1.0 : 1.25));
+      const renderScale = isVeryLowEnd ? 0.82 : (isMobileDevice ? 0.94 : 1);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isLowRamPhone ? renderScale : 1.25));
       renderer.setSize(w, h);
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.28;
+      renderer.toneMappingExposure = 1.16;
       city3dContainer.appendChild(renderer.domElement);
 
       // Skip heavy per-pixel IBL environment map in open-world city for ultra-smooth 120-240 FPS on phones!
@@ -6112,7 +6118,7 @@ window.ApexCity3D = (function () {
     const accelRate = 19 + ((eq.accel + (state.upgradeLevels.engine - 1) * 2.5) / 100) * 18 + lvBonus * 0.45;
     // Speed-sensitive precision steering (tight turns at low speed, rock-steady stability at highway speed!)
     const speedRatio = Math.min(1, Math.abs(driveState.speed) / maxSpeed);
-    const turnRate = (2.15 + ((eq.handle + (state.upgradeLevels.tires - 1) * 3) / 100) * 0.85) * (1.05 - speedRatio * 0.32);
+    const turnRate = (2.15 + ((eq.handle + (state.upgradeLevels.tires - 1) * 3) / 100) * 0.85) * (1.08 - speedRatio * 0.40);
 
     const gasOn = !isOnFoot && (driveState.gas || driveState.keys.w);
     const brakeOn = !isOnFoot && (driveState.brake || driveState.keys.s);
@@ -6128,9 +6134,19 @@ window.ApexCity3D = (function () {
 
     const nitroMult = 1.30 + Math.min(0.32, ((state.upgradeLevels.nitro - 1) * 0.03) + ((state.level || 1) - 1) * 0.03);
     const effectiveMax = nitroOn ? maxSpeed * nitroMult : maxSpeed;
-    if ((gasOn || nitroOn) && driveState.fuel > 0) driveState.speed += (nitroOn ? accelRate * 1.72 : accelRate) * dt;
-    else if (brakeOn) driveState.speed -= accelRate * 1.5 * dt;
-    else {
+    // Direction-aware pedal logic: brake first slows forward motion, then gently reverses.
+    // Gas first cancels reverse motion before accelerating forward.
+    if ((gasOn || nitroOn) && driveState.fuel > 0) {
+      const forwardAccel = (nitroOn ? accelRate * 1.72 : accelRate) * dt;
+      driveState.speed = driveState.speed < 0
+        ? Math.min(0, driveState.speed + forwardAccel * 1.8)
+        : driveState.speed + forwardAccel;
+    } else if (brakeOn) {
+      const reverseAccel = accelRate * 1.5 * dt;
+      driveState.speed = driveState.speed > 0
+        ? Math.max(0, driveState.speed - reverseAccel)
+        : driveState.speed - reverseAccel * 0.48;
+    } else {
       driveState.speed *= Math.pow(0.28, dt);
       if (Math.abs(driveState.speed) < 0.25) driveState.speed = 0;
     }
@@ -8332,7 +8348,7 @@ window.ApexCity3D = (function () {
       skyToggleBtn.textContent = th.label;
       if (scene) {
         scene.background = new THREE.Color(th.bg);
-        scene.fog = new THREE.FogExp2(th.fog, 0.0022);
+        scene.fog = new THREE.FogExp2(th.fog, 0.0018);
       }
       if (sunLightRef) { sunLightRef.color.setHex(th.sunC); sunLightRef.intensity = th.sunI; }
       if (hemiLightRef) hemiLightRef.intensity = th.hemiI;
