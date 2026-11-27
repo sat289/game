@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ST GAMES — 3D Real Gun Models Arsenal Preview (gun/)</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    body { margin: 0; overflow: hidden; background: #0b101b; font-family: Inter, system-ui, sans-serif; touch-action: none; user-select: none; }
+  </style>
+</head>
+<body>
+  <div id="host" class="fixed inset-0"></div>
+
+  <div class="fixed top-3 inset-x-3 z-20 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
+    <div id="gunTabs" class="pointer-events-auto flex flex-wrap gap-1.5 bg-slate-950/90 border border-white/15 p-1.5 rounded-2xl shadow-xl"></div>
+    <div id="perfEl" class="px-3 py-1 rounded-full bg-slate-950/90 border border-emerald-400/50 text-emerald-300 text-xs font-extrabold">60 FPS</div>
+  </div>
+
+  <div class="fixed bottom-5 inset-x-4 z-20 flex flex-col items-center gap-2 pointer-events-none">
+    <div id="gunInfo" class="px-4 py-1.5 rounded-full bg-slate-950/90 border border-cyan-400/40 text-cyan-200 text-xs font-extrabold">GLOCK 19 • Drag to Rotate 360°</div>
+    <div class="pointer-events-auto flex items-center gap-2">
+      <button id="testFireBtn" type="button" class="px-5 py-2.5 rounded-2xl bg-rose-600 active:scale-95 border-2 border-white text-white font-black text-xs shadow-xl cursor-pointer">🔥 TEST FIRE</button>
+      <button id="testReloadBtn" type="button" class="px-4 py-2.5 rounded-2xl bg-amber-400 active:scale-95 text-slate-950 font-black text-xs shadow-xl cursor-pointer">🔄 RELOAD SFX</button>
+    </div>
+  </div>
+
+  <script src="gun_utils.js"></script>
+  <script src="pistol.js"></script>
+  <script src="ak47.js"></script>
+  <script src="shotgun.js"></script>
+  <script src="sniper.js"></script>
+  <script src="smg.js"></script>
+  <script src="rope_launcher.js"></script>
+  <script src="index.js"></script>
+
+  <script>
+    (function () {
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0b101b);
+      const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.05, 50);
+      camera.position.set(1.1, 0.45, 1.35);
+      camera.lookAt(0, 0.05, 0.15);
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.outputEncoding = THREE.sRGBEncoding;
+      document.getElementById('host').appendChild(renderer.domElement);
+
+      scene.add(new THREE.HemisphereLight(0xf0f9ff, 0x1e293b, 1.4));
+      const key = new THREE.DirectionalLight(0xfffbeb, 1.8); key.position.set(3, 5, 4); scene.add(key);
+      const rim = new THREE.DirectionalLight(0x38bdf8, 0.9); rim.position.set(-4, 2, -3); scene.add(rim);
+      const grid = new THREE.GridHelper(6, 24, 0x38bdf8, 0x1e293b); grid.position.y = -0.35; scene.add(grid);
+
+      const items = [
+        { id: 'pistol', label: '🔫 Glock 19' },
+        { id: 'ak47', label: '💥 AK-47' },
+        { id: 'shotgun', label: '🔥 M870 Shotgun' },
+        { id: 'sniper', label: '🎯 AWM Sniper' },
+        { id: 'smg', label: '⚡ MP5 SMG' },
+        { id: 'rope_launcher', label: '🕸️ Rope Launcher' }
+      ];
+
+      let curId = 'ak47';
+      let curGroup = null;
+      let rotY = -0.7, rotX = 0.12, recoil = 0, flashT = 0;
+
+      function loadGun(id) {
+        curId = id;
+        if (curGroup) scene.remove(curGroup);
+        curGroup = new THREE.Group();
+        const m = window.ApexGuns.createModel(id);
+        if (m) {
+          m.scale.setScalar(id === 'pistol' || id === 'rope_launcher' ? 2.4 : 1.55);
+          m.position.z = id === 'sniper' ? -0.35 : -0.18;
+          curGroup.add(m);
+          curGroup.userData.model = m;
+        }
+        scene.add(curGroup);
+        document.getElementById('gunInfo').textContent = id.toUpperCase() + ' • Drag to Inspect 360° • Tap TEST FIRE';
+        document.querySelectorAll('#gunTabs button').forEach((b) => {
+          b.className = b.dataset.id === id
+            ? 'px-3 py-1.5 rounded-xl bg-cyan-400 text-slate-950 font-black text-[11px] cursor-pointer'
+            : 'px-3 py-1.5 rounded-xl bg-slate-800 text-slate-200 border border-white/15 font-bold text-[11px] cursor-pointer';
+        });
+      }
+
+      const tabs = document.getElementById('gunTabs');
+      items.forEach((it) => {
+        const b = document.createElement('button');
+        b.type = 'button'; b.dataset.id = it.id; b.textContent = it.label;
+        b.addEventListener('click', () => loadGun(it.id));
+        tabs.appendChild(b);
+      });
+
+      document.getElementById('testFireBtn').addEventListener('click', () => {
+        recoil = 0.26; flashT = 0.08;
+        if (curId === 'rope_launcher') window.ApexGunUtils.playRopeShoot();
+        else window.ApexGunUtils.playGunshot(curId);
+        const m = curGroup && curGroup.userData.model;
+        if (m && m.userData && m.userData.flash) m.userData.flash.visible = true;
+      });
+      document.getElementById('testReloadBtn').addEventListener('click', () => window.ApexGunUtils.playReload());
+
+      let drag = false, lx = 0, ly = 0;
+      renderer.domElement.addEventListener('pointerdown', (e) => { drag = true; lx = e.clientX; ly = e.clientY; });
+      window.addEventListener('pointermove', (e) => {
+        if (!drag) return;
+        rotY += (e.clientX - lx) * 0.012;
+        rotX = Math.max(-0.8, Math.min(0.8, rotX + (e.clientY - ly) * 0.01));
+        lx = e.clientX; ly = e.clientY;
+      });
+      window.addEventListener('pointerup', () => { drag = false; });
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      loadGun('ak47');
+
+      let last = performance.now(), frames = 0, fpsAt = last;
+      function loop(now) {
+        requestAnimationFrame(loop);
+        const dt = Math.min(0.05, (now - last) / 1000); last = now;
+        if (!drag) rotY += 0.45 * dt;
+        recoil = Math.max(0, recoil - dt * 1.8);
+        if (flashT > 0) {
+          flashT -= dt;
+          const m = curGroup && curGroup.userData.model;
+          if (flashT <= 0 && m && m.userData && m.userData.flash) m.userData.flash.visible = false;
+        }
+        if (curGroup) {
+          curGroup.rotation.set(rotX - recoil * 0.55, rotY, 0);
+          curGroup.position.z = -recoil * 0.25;
+        }
+        renderer.render(scene, camera);
+        frames++;
+        if (now - fpsAt > 500) {
+          const fps = Math.round((frames * 1000) / (now - fpsAt));
+          document.getElementById('perfEl').textContent = `${fps} FPS • ${renderer.info.render.calls} Calls • ${renderer.info.render.triangles} Tris`;
+          frames = 0; fpsAt = now;
+        }
+      }
+      requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>
