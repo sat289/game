@@ -1,15 +1,16 @@
-# Sheru Bhai City 3D (v42 — Road-Aligned Double-Track High-Speed Metro + Wide Roads + Solid Car Building Collision + Auto Villa Song!)
+# Sheru Bhai City 3D (v43 — Real Combined-Coach Inner-City & Ring Metro, Covered Dropping Steps, Street Life Module, Walk/Car Collision & Smaller Drive Names!)
 
-Upload the **`follower-town/`** folder into `sat289/game/game/newworld/`.
+Upload the **`follower-town/`** folder (including the new **`world-streetlife-v43.js`**) into `sat289/game/game/newworld/`.
 
-## What's Fixed & Added in v42
-1. **🚇 Road-Aligned Double-Track High-Speed Metro (`world-metro-player-v41.js`):**
-   - Runs strictly along the **exact centerline of the 12.2-unit wide Outer Ring Road**—zero diagonal cuts across houses, zero gaps between viaduct segments, and **zero station steps/pillars inside houses**!
-   - Features **4 High-Speed Metro Trains** running on **double opposite tracks** (2 Clockwise Cyan + 2 Counter-Clockwise Neon Pink!).
-2. **🛣️ +55% Wider City Boulevards (`ROAD_WIDTH = 8.4`, `RING_ROAD_WIDTH = 12.2`):**
-   - Much wider roads across the entire city for effortless VIP Car driving and centered metro pillars!
-3. **🛡️ Solid Building Collision for VIP Car:**
-   - The VIP Car can no longer drive through houses, landmarks, or the ST Junction Statue—it smoothly slides along the road curb!
-4. **🎵 Automatic Sheru Bhai Villa Song (`./villa-song.mp3`):**
-   - Upload your favorite `.mp3` song to GitHub as **`follower-town/villa-song.mp3`** (`sat289/game/game/newworld/villa-song.mp3`).
-   - Whenever a player drives or walks into **Sheru Bhai Royal Island Mansion** or any **8-Plot Billionaire Villa**, the song automatically fades in and fades out cleanly when they leave!
+## What's Fixed & Upgraded in v43
+1. **🚆 Real Combined-Coach Articulated Metro Trains:**
+   - Exact arc-length coach spacing (`5.95 / totalLen`) + dark flexible rubber gangway couplers combining all 4 coaches into one seamless high-speed train with sloped aerodynamic front nose & LED headlights.
+2. **🏙️ Inner-City Metro + Auto-Expanding Outer Ring Metro (8 Stations Total):**
+   - Added a **2nd Inner-City Double-Track Metro Line** traveling right through the middle of the city's widened (`10.2`-unit) central boulevards!
+   - Both lines automatically expand whenever new follower houses expand the city grid.
+3. **🪜 Covered Blue Dropping Steps & Concourse Stations:**
+   - Every station features a multi-level concourse straddling the wide road (cars & autos pass underneath!) and covered blue-roof dropping staircases descending parallel to the road curb so zero steps ever touch houses.
+4. **🚶‍♂️🛺🚗 Separate Street Life Module (`world-streetlife-v43.js`):**
+   - Dedicated file handling **Metro Station Parking Bays** (parked autos & cars), **Walking Commuters** strolling around station entries, and **Mixed Road Vehicles** (Indian autos & sedans) cruising city roads!
+5. **🛡️ Solid Building Collision for Walking Sheru Bhai + Smaller Nameplates in Drive Mode:**
+   - Sheru Bhai can no longer walk inside buildings (smooth wall-sliding on foot & in car), and floating building names automatically shrink to `52%` while in Play/Driving Mode for a clean road view!

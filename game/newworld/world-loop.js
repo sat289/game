@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getSkyPalette } from "./shaders-glsl.js?v=42";
+import { getSkyPalette } from "./shaders-glsl.js?v=43";
 
 export const loopMethods = {
   _animate() {
@@ -296,20 +296,21 @@ export const loopMethods = {
 
 
 
-    // 🚇 DOUBLE OPPOSITE HIGH-SPEED ELEVATED METRO TRAINS!
+    // 🚇 REAL COMBINED-COACH DOUBLE-TRACK HIGH-SPEED METRO TRAINS (OUTER RING + INNER CITY!)
     if (this.lifeEnabled && this.metroSim && this.metroSim.trains) {
-      const curve = this.metroSim.curve;
       const stations = this.metroSim.stations;
-      const carSpacingU = 0.0095;
       for (const tr of this.metroSim.trains) {
+        const curve = tr.curve || this.metroSim.curve;
         const dir = tr.dir || 1;
+        const spacingU = tr.carSpacingU || 0.005;
         if (tr.pauseTimer > 0) {
           tr.pauseTimer -= dt;
         } else {
           tr.u = (tr.u + dir * tr.speed * dt + 1.0) % 1.0;
           for (let si = 0; si < stations.length; si++) {
+            if (stations[si].line !== tr.line) continue;
             const du = Math.abs(tr.u - stations[si].u);
-            if (du < 0.0045 && tr.lastStopIdx !== si) {
+            if (du < 0.005 && tr.lastStopIdx !== si) {
               tr.lastStopIdx = si;
               tr.pauseTimer = 1.4;
               break;
@@ -317,17 +318,19 @@ export const loopMethods = {
           }
         }
         for (let c = 0; c < tr.cars.length; c++) {
-          const cu = (tr.u - dir * c * carSpacingU + 1.0) % 1.0;
+          const cu = (tr.u - dir * c * spacingU + 1.0) % 1.0;
           const pt = curve.getPointAt(cu);
           const tang = curve.getTangentAt(cu).normalize();
+          const baseYaw = Math.atan2(tang.x, tang.z);
           const yaw = Math.atan2(tang.x * dir, tang.z * dir);
-          const sideX = Math.cos(Math.atan2(tang.x, tang.z)) * (tr.laneOffset || 0);
-          const sideZ = -Math.sin(Math.atan2(tang.x, tang.z)) * (tr.laneOffset || 0);
+          const sideX = Math.cos(baseYaw) * (tr.laneOffset || 0);
+          const sideZ = -Math.sin(baseYaw) * (tr.laneOffset || 0);
           tr.cars[c].position.set(pt.x + sideX, pt.y, pt.z + sideZ);
           tr.cars[c].rotation.y = yaw;
         }
       }
     }
+    this._updateStreetLife(dt, elapsed);
 
     // 🦁🚗 PLAYABLE SHERU BHAI FREE ROAM & VIP CAR DRIVING PHYSICS + 3RD-PERSON FOLLOW CAM!
     if (this.playerRoam && this.playerRoam.active) {
@@ -407,8 +410,16 @@ export const loopMethods = {
             .addScaledVector(rightDir, ix)
             .normalize();
 
-          pr.pos.x = THREE.MathUtils.clamp(pr.pos.x + moveVec.x * walkSpd * moveMag * rawDt, -maxBound, maxBound);
-          pr.pos.z = THREE.MathUtils.clamp(pr.pos.z + moveVec.z * walkSpd * moveMag * rawDt, -maxBound, maxBound);
+          const nextWX = THREE.MathUtils.clamp(pr.pos.x + moveVec.x * walkSpd * moveMag * rawDt, -maxBound, maxBound);
+          const nextWZ = THREE.MathUtils.clamp(pr.pos.z + moveVec.z * walkSpd * moveMag * rawDt, -maxBound, maxBound);
+          if (!this._isBlockedByBuilding(nextWX, nextWZ, 0.85)) {
+            pr.pos.x = nextWX;
+            pr.pos.z = nextWZ;
+          } else if (!this._isBlockedByBuilding(nextWX, pr.pos.z, 0.85)) {
+            pr.pos.x = nextWX;
+          } else if (!this._isBlockedByBuilding(pr.pos.x, nextWZ, 0.85)) {
+            pr.pos.z = nextWZ;
+          }
           const targetYaw = Math.atan2(moveVec.x, moveVec.z);
           let diff = targetYaw - pr.yaw;
           while (diff > Math.PI) diff -= Math.PI * 2;
