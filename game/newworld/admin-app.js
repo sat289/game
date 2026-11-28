@@ -9,7 +9,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged
-} from "./firebase-config.js?v=48";
+} from "./firebase-config.js?v=49";
 import {
   FollowerTownEngine,
   BUILDING_LABELS,
@@ -18,7 +18,7 @@ import {
   getBlockPlotIds,
   getEightPlotGroup,
   getSixteenPlotGroup
-} from "./world-engine.js?v=48";
+} from "./world-engine.js?v=49";
 
 let isAdmin = false;
 let selectedPlotId = "plot_0001";

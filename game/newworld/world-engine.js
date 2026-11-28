@@ -5,11 +5,11 @@ import {
   getSkyPalette,
   createGLSLOceanMaterial,
   createGLSLContactShadowMaterial
-} from "./shaders-glsl.js?v=48";
-import { createProceduralTextureSuite } from "./textures-pbr.js?v=48";
-import { WasmPerfEngine } from "./wasm-perf.js?v=48";
-import { optimizeStaticPlotMeshes } from "./mesh-batcher.js?v=48";
-import { QualityManager } from "./quality-manager.js?v=48";
+} from "./shaders-glsl.js?v=49";
+import { createProceduralTextureSuite } from "./textures-pbr.js?v=49";
+import { WasmPerfEngine } from "./wasm-perf.js?v=49";
+import { optimizeStaticPlotMeshes } from "./mesh-batcher.js?v=49";
+import { QualityManager } from "./quality-manager.js?v=49";
 import {
   SIXTEEN_PLOT_TYPES,
   EIGHT_PLOT_TYPES,
@@ -24,18 +24,18 @@ import {
   getTwoPlotGroup,
   getEightPlotGroup,
   getSixteenPlotGroup
-} from "./world-constants.js?v=48";
-import { zoneMethods } from "./world-zones.js?v=48";
-import { buildingMethods } from "./world-buildings.js?v=48";
-import { cinematicMethods } from "./world-cinematics.js?v=48";
-import { loopMethods } from "./world-loop.js?v=48";
-import { outskirtsMethods } from "./world-outskirts.js?v=48";
-import { v37LandmarkMethods } from "./world-landmarks-v37.js?v=48";
-import { v40VillaMethods } from "./world-villa-v40.js?v=48";
-import { v41MetroPlayerMethods } from "./world-metro-player-v41.js?v=48";
-import { v43StreetLifeMethods } from "./world-streetlife-v43.js?v=48";
-import { v47GiveawayMethods } from "./world-giveaway-v47.js?v=48";
-import { v48StreamlineMethods } from "./world-streamline-v48.js?v=48";
+} from "./world-constants.js?v=49";
+import { zoneMethods } from "./world-zones.js?v=49";
+import { buildingMethods } from "./world-buildings.js?v=49";
+import { cinematicMethods } from "./world-cinematics.js?v=49";
+import { loopMethods } from "./world-loop.js?v=49";
+import { outskirtsMethods } from "./world-outskirts.js?v=49";
+import { v37LandmarkMethods } from "./world-landmarks-v37.js?v=49";
+import { v40VillaMethods } from "./world-villa-v40.js?v=49";
+import { v41MetroPlayerMethods } from "./world-metro-player-v41.js?v=49";
+import { v43StreetLifeMethods } from "./world-streetlife-v43.js?v=49";
+import { v47GiveawayMethods } from "./world-giveaway-v47.js?v=49";
+import { v48StreamlineMethods } from "./world-streamline-v48.js?v=49";
 
 export {
   SIXTEEN_PLOT_TYPES,
@@ -120,7 +120,7 @@ export class FollowerTownEngine {
     this.composer = null;
     this.bloomPass = null;
     this._bloomLoading = false;
-    this.defaultSheruGlb = "./sheru-bhai-animated.glb?v=48";
+    this.defaultSheruGlb = "./sheru-bhai-animated.glb?v=49";
     this.heroModelUrls = { statue: "", audi: "", heli: "" };
     this.glbCache = new Map();
     this._glbPending = new Map();
