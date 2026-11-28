@@ -1,5 +1,5 @@
-import { db, ref, onValue, push, set } from "./firebase-config.js?v=46";
-import { FollowerTownEngine, BUILDING_LABELS, getRequiredSize } from "./world-engine.js?v=46";
+import { db, ref, onValue, push, set, runTransaction } from "./firebase-config.js?v=47";
+import { FollowerTownEngine, BUILDING_LABELS, getRequiredSize } from "./world-engine.js?v=47";
 
 let allPlots = {};
 const container = document.getElementById("canvas-container");
@@ -734,4 +734,159 @@ document.getElementById("btn-public-stadium")?.addEventListener("click", () => {
       if (typeof showToast === "function") showToast("🚆 Riding Live Elevated Metro Train across Sheru Bhai City!");
     });
   }
+})();
+
+
+// =========================================================
+// 🎁 v47 SECRET PLACE GIVEAWAY — PUBLIC HANDLER
+// =========================================================
+(function initPublicGiveaway() {
+  const headerBanner = document.getElementById("giveaway-header-banner");
+  const welcomePopup = document.getElementById("giveaway-welcome-popup");
+  const welcomePrize = document.getElementById("gw-welcome-prize");
+  const welcomeHint = document.getElementById("gw-welcome-hint");
+  const btnCloseWelcome = document.getElementById("btn-close-gw-welcome");
+  const btnStartHunt = document.getElementById("btn-gw-start-hunt");
+
+  const claimModal = document.getElementById("giveaway-claim-modal");
+  const claimTitle = document.getElementById("gw-claim-title");
+  const claimDesc = document.getElementById("gw-claim-desc");
+  const codeDisplay = document.getElementById("gw-secret-code-display");
+  const statusText = document.getElementById("gw-claim-status-text");
+  const btnCloseClaim = document.getElementById("btn-close-gw-claim");
+  const btnWa = document.getElementById("btn-claim-whatsapp");
+  const btnIg = document.getElementById("btn-claim-instagram");
+
+  let currentGiveaway = null;
+  let initialBannerShown = false;
+  let bannerTimer = null;
+
+  const showHeaderBanner5s = (text, isClaimed) => {
+    if (!headerBanner) return;
+    headerBanner.textContent = text;
+    headerBanner.classList.toggle("claimed-banner", Boolean(isClaimed));
+    headerBanner.classList.remove("hidden");
+    if (bannerTimer) clearTimeout(bannerTimer);
+    bannerTimer = setTimeout(() => {
+      headerBanner.classList.add("hidden");
+    }, 5000);
+  };
+
+  if (btnCloseWelcome) btnCloseWelcome.addEventListener("click", () => welcomePopup.classList.add("hidden"));
+  if (btnStartHunt) btnStartHunt.addEventListener("click", () => welcomePopup.classList.add("hidden"));
+  if (btnCloseClaim) btnCloseClaim.addEventListener("click", () => claimModal.classList.add("hidden"));
+
+  const openClaimModal = (cfg) => {
+    if (!cfg || !claimModal) return;
+    const maxC = Number(cfg.maxClaims) || 1;
+    const curC = Number(cfg.claimedCount) || 0;
+    const isClaimed = Boolean(cfg.claimed) || curC >= maxC;
+
+    if (isClaimed) {
+      claimTitle.textContent = "🏆 GIVEAWAY ALREADY CLAIMED!";
+      claimDesc.textContent = "Someone already found this Secret Place and claimed the prize. Stay tuned for the next drop!";
+      codeDisplay.textContent = "CLAIMED";
+      statusText.textContent = `Status: Giveaway Claimed (${curC}/${maxC})`;
+      if (btnWa) btnWa.disabled = true;
+      if (btnIg) btnIg.disabled = true;
+    } else {
+      claimTitle.textContent = "🎉 YOU FOUND THE SECRET PLACE!";
+      claimDesc.textContent = `Prize: ${cfg.prizeTitle || "Special Giveaway"} — Tap WhatsApp or Instagram below to claim immediately!`;
+      codeDisplay.textContent = cfg.secretCode || "SHERU-WIN";
+      statusText.textContent = `Remaining Claims: ${Math.max(0, maxC - curC)} of ${maxC}`;
+      if (btnWa) btnWa.disabled = !cfg.whatsappNumber;
+      if (btnIg) btnIg.disabled = !cfg.instagramHandle;
+    }
+    claimModal.classList.remove("hidden");
+  };
+
+  engine.onGiveawayFound = (cfg) => {
+    openClaimModal(currentGiveaway || cfg);
+  };
+
+  const executeAtomicClaim = async (platform) => {
+    if (!currentGiveaway || !currentGiveaway.active) return;
+    const gwRef = ref(db, "worldSettings/giveaway");
+    try {
+      const txRes = await runTransaction(gwRef, (data) => {
+        if (!data || !data.active) return data;
+        const maxC = Number(data.maxClaims) || 1;
+        const curC = Number(data.claimedCount) || 0;
+        if (data.claimed || curC >= maxC) {
+          return; // Abort transaction — already claimed!
+        }
+        data.claimedCount = curC + 1;
+        if (data.claimedCount >= maxC) {
+          data.claimed = true;
+        }
+        data.lastClaimedAt = Date.now();
+        return data;
+      });
+
+      if (!txRes.committed) {
+        openClaimModal(currentGiveaway);
+        showHeaderBanner5s("🏆 Giveaway was just claimed by another player!", true);
+        return;
+      }
+
+      const code = currentGiveaway.secretCode || "SHERU-WIN";
+      const prize = currentGiveaway.prizeTitle || "Secret Place Giveaway";
+      const msgText = `Hi! I found the Secret Place in Sheru Bhai City (stgames.online)! 🎁\nPrize: ${prize}\nSecret Code: ${code}`;
+
+      claimModal.classList.add("hidden");
+      showHeaderBanner5s("🏆 GIVEAWAY CLAIMED! Sending your Secret Code now...", true);
+
+      if (platform === "whatsapp") {
+        const num = String(currentGiveaway.whatsappNumber || "").replace(/[^0-9]/g, "");
+        const waUrl = `https://wa.me/${num}?text=${encodeURIComponent(msgText)}`;
+        window.open(waUrl, "_blank");
+      } else {
+        // Copy secret code + message automatically to clipboard, then open Instagram DM!
+        try { await navigator.clipboard.writeText(msgText); } catch (e) {}
+        const handle = String(currentGiveaway.instagramHandle || "_satish_official_16").replace(/^@/, "").trim();
+        const igUrl = `https://ig.me/m/${encodeURIComponent(handle)}`;
+        window.open(igUrl, "_blank");
+      }
+    } catch (err) {
+      console.error("Giveaway claim failed:", err);
+      alert("Could not claim right now. Please check your internet and try again.");
+    }
+  };
+
+  if (btnWa) btnWa.addEventListener("click", () => executeAtomicClaim("whatsapp"));
+  if (btnIg) btnIg.addEventListener("click", () => executeAtomicClaim("instagram"));
+
+  // Real-time listener for Giveaway status
+  onValue(ref(db, "worldSettings/giveaway"), (snap) => {
+    const cfg = snap.val();
+    currentGiveaway = cfg || null;
+    engine.setGiveawayConfig(currentGiveaway);
+
+    if (!cfg || !cfg.active) {
+      if (welcomePopup) welcomePopup.classList.add("hidden");
+      return;
+    }
+
+    const maxC = Number(cfg.maxClaims) || 1;
+    const curC = Number(cfg.claimedCount) || 0;
+    const isClaimed = Boolean(cfg.claimed) || curC >= maxC;
+
+    if (!initialBannerShown) {
+      initialBannerShown = true;
+      if (isClaimed) {
+        showHeaderBanner5s("🏆 GIVEAWAY CLAIMED! Stay tuned for the next Secret Drop!", true);
+      } else {
+        showHeaderBanner5s(`🎁 LIVE GIVEAWAY: ${cfg.prizeTitle || "Secret Prize"} — Find the hidden chest!`, false);
+        if (welcomePopup && welcomePrize && welcomeHint) {
+          welcomePrize.textContent = cfg.prizeTitle || "Secret Place Giveaway";
+          welcomeHint.textContent = cfg.hint || "Explore Sheru Bhai City to find the glowing Golden Chest and claim the Secret Code!";
+          welcomePopup.classList.remove("hidden");
+        }
+      }
+    } else if (isClaimed) {
+      // Live update if someone claims it while user is playing!
+      showHeaderBanner5s("🏆 GIVEAWAY CLAIMED! Winner just unlocked the Secret Code!", true);
+      if (welcomePopup) welcomePopup.classList.add("hidden");
+    }
+  });
 })();

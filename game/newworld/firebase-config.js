@@ -7,7 +7,8 @@ import {
   update,
   push,
   set,
-  remove
+  remove,
+  runTransaction
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import {
   getAuth,
@@ -46,6 +47,7 @@ export {
   push,
   set,
   remove,
+  runTransaction,
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged

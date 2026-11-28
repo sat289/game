@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getSkyPalette } from "./shaders-glsl.js?v=46";
+import { getSkyPalette } from "./shaders-glsl.js?v=47";
 
 export const loopMethods = {
   _animate() {
@@ -391,6 +391,7 @@ export const loopMethods = {
       }
     }
     this._updateStreetLife(dt, elapsed);
+    this._updateGiveawayChest(dt, elapsed);
 
     // 🦁🚗 PLAYABLE SHERU BHAI FREE ROAM & VIP CAR DRIVING PHYSICS + 3RD-PERSON FOLLOW CAM!
     if (this.playerRoam && this.playerRoam.active) {

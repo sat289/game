@@ -9,7 +9,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged
-} from "./firebase-config.js?v=46";
+} from "./firebase-config.js?v=47";
 import {
   FollowerTownEngine,
   BUILDING_LABELS,
@@ -17,7 +17,7 @@ import {
   getTwoPlotGroup,
   getBlockPlotIds,
   getEightPlotGroup
-} from "./world-engine.js?v=46";
+} from "./world-engine.js?v=47";
 
 let isAdmin = false;
 let selectedPlotId = "plot_0001";
@@ -2688,6 +2688,114 @@ bindCinemaReelButton("reel-hero360-btn", "hero360", "🔄 360° Hero Spin around
       if (lbBot) lbBot.classList.add("hidden");
       sloMoOn = false;
       if (btnSloMo) { btnSloMo.classList.remove("active"); btnSloMo.textContent = "🐢 Slow-Mo"; }
+    });
+  }
+})();
+
+
+// =========================================================
+// 🎁 v47 ADMIN SECRET PLACE GIVEAWAY MANAGER
+// =========================================================
+(function initAdminGiveawayManager() {
+  const btnOpen = document.getElementById("btn-open-giveaway");
+  const drawer = document.getElementById("giveaway-drawer");
+  const btnClose = document.getElementById("btn-close-gw-drawer");
+  const statusEl = document.getElementById("admin-gw-status");
+  const chkActive = document.getElementById("gw-active-chk");
+  const selPlace = document.getElementById("gw-place-select");
+  const customWrap = document.getElementById("gw-custom-coords");
+  const inpX = document.getElementById("gw-custom-x");
+  const inpZ = document.getElementById("gw-custom-z");
+  const inpCode = document.getElementById("gw-secret-code");
+  const btnGen = document.getElementById("btn-gw-gen-code");
+  const inpPrize = document.getElementById("gw-prize-title");
+  const inpHint = document.getElementById("gw-hint-text");
+  const inpMax = document.getElementById("gw-max-claims");
+  const inpIg = document.getElementById("gw-ig-handle");
+  const inpWa = document.getElementById("gw-wa-number");
+  const btnSave = document.getElementById("btn-gw-save");
+  const btnReset = document.getElementById("btn-gw-reset");
+
+  if (!btnOpen || !drawer) return;
+
+  btnOpen.addEventListener("click", () => {
+    if (typeof closeAllDrawers === "function") closeAllDrawers();
+    drawer.classList.remove("hidden");
+  });
+  if (btnClose) btnClose.addEventListener("click", () => drawer.classList.add("hidden"));
+
+  if (selPlace && customWrap) {
+    selPlace.addEventListener("change", () => {
+      customWrap.classList.toggle("hidden", selPlace.value !== "custom");
+    });
+  }
+
+  if (btnGen && inpCode) {
+    btnGen.addEventListener("click", () => {
+      const rand = Math.random().toString(36).substring(2, 7).toUpperCase();
+      inpCode.value = `SHERU-${rand}`;
+    });
+  }
+
+  let latestGw = {};
+  onValue(ref(db, "worldSettings/giveaway"), (snap) => {
+    const cfg = snap.val() || {};
+    latestGw = cfg;
+    engine.setGiveawayConfig(cfg);
+    if (chkActive) chkActive.checked = Boolean(cfg.active);
+    if (selPlace && cfg.place) {
+      selPlace.value = cfg.place;
+      if (customWrap) customWrap.classList.toggle("hidden", cfg.place !== "custom");
+    }
+    if (inpX && cfg.customX !== undefined) inpX.value = cfg.customX;
+    if (inpZ && cfg.customZ !== undefined) inpZ.value = cfg.customZ;
+    if (inpCode && cfg.secretCode) inpCode.value = cfg.secretCode;
+    if (inpPrize && cfg.prizeTitle) inpPrize.value = cfg.prizeTitle;
+    if (inpHint && cfg.hint) inpHint.value = cfg.hint;
+    if (inpMax && cfg.maxClaims) inpMax.value = cfg.maxClaims;
+    if (inpIg && cfg.instagramHandle) inpIg.value = cfg.instagramHandle;
+    if (inpWa && cfg.whatsappNumber) inpWa.value = cfg.whatsappNumber;
+
+    const maxC = Number(cfg.maxClaims) || 1;
+    const curC = Number(cfg.claimedCount) || 0;
+    const isClaimed = Boolean(cfg.claimed) || curC >= maxC;
+    if (statusEl) {
+      if (!cfg.active) statusEl.textContent = "Status: ⚪ Inactive";
+      else if (isClaimed) statusEl.textContent = `Status: 🏆 GIVEAWAY CLAIMED (${curC}/${maxC})`;
+      else statusEl.textContent = `Status: 🟢 LIVE & UNCLAIMED (${curC}/${maxC})`;
+    }
+  });
+
+  if (btnSave) {
+    btnSave.addEventListener("click", async () => {
+      if (!isAdmin) return showToast("Login as Admin first!");
+      const maxClaims = Math.max(1, parseInt(inpMax.value, 10) || 1);
+      const claimedCount = Number(latestGw.claimedCount) || 0;
+      const payload = {
+        active: Boolean(chkActive.checked),
+        place: selPlace.value,
+        customX: Number(inpX.value) || 0,
+        customZ: Number(inpZ.value) || 20,
+        secretCode: (inpCode.value || "SHERU-WIN-99").trim().toUpperCase(),
+        prizeTitle: (inpPrize.value || "Secret Giveaway Prize").trim(),
+        hint: (inpHint.value || "Find the glowing Golden Chest in Sheru Bhai City!").trim(),
+        maxClaims,
+        claimedCount,
+        claimed: claimedCount >= maxClaims,
+        instagramHandle: (inpIg.value || "_satish_official_16").replace(/^@/, "").trim(),
+        whatsappNumber: (inpWa.value || "").replace(/[^0-9]/g, "")
+      };
+      await update(ref(db, "worldSettings/giveaway"), payload);
+      showToast("🎁 Secret Place Giveaway Saved & Live!");
+      drawer.classList.add("hidden");
+    });
+  }
+
+  if (btnReset) {
+    btnReset.addEventListener("click", async () => {
+      if (!isAdmin) return showToast("Login as Admin first!");
+      await update(ref(db, "worldSettings/giveaway"), { claimed: false, claimedCount: 0 });
+      showToast("🔄 Giveaway Reset to Unclaimed (0 Claims)!");
     });
   }
 })();

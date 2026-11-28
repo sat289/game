@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Nagaram Builder Studio — Admin Only</title>
-  <link rel="stylesheet" href="./style.css?v=46" />
+  <link rel="stylesheet" href="./style.css?v=47" />
   <script type="importmap">
     {
       "imports": {
@@ -76,6 +76,7 @@
   <div id="admin-dock" class="hidden hud-element">
     <button id="btn-play-sheru" class="dock-btn play-sheru">🦁 Play Sheru</button>
     <button id="btn-open-metro" class="dock-btn metro-pill">🚇 Metro</button>
+    <button id="btn-open-giveaway" class="dock-btn giveaway-btn">🎁 Giveaway</button>
     <button id="btn-reel-mode" class="dock-btn reel-btn">🎬 9:16 Reel</button>
     <button id="btn-open-builder" class="dock-btn">🏗️ Build</button>
     <button id="btn-open-requests" class="dock-btn inbox-btn">📬 Inbox <span id="req-badge" class="req-badge hidden">0</span></button>
@@ -467,7 +468,7 @@
 
   <div id="toast" class="hidden"></div>
 
-  <script type="module" src="./admin-app.js?v=46"></script>
+  <script type="module" src="./admin-app.js?v=47"></script>
   <script>
     window.addEventListener("error", function(e) {
       var box = document.getElementById("err-banner");
@@ -508,5 +509,62 @@
 
   <div id="reel-letterbox-top" class="reel-letterbox top hidden"></div>
   <div id="reel-letterbox-bot" class="reel-letterbox bot hidden"></div>
+
+  <!-- 🎁 ADMIN SECRET PLACE GIVEAWAY DRAWER (v47) -->
+  <div id="giveaway-drawer" class="drawer glass-card hidden">
+    <div class="drawer-header">
+      <h3>🎁 Secret Place Giveaway</h3>
+      <button id="btn-close-gw-drawer" class="close-x">✕</button>
+    </div>
+    <p id="admin-gw-status" style="font-size:12px;font-weight:800;color:#fde047;margin:4px 0 10px;">Status: Inactive</p>
+    <div class="form-grid" style="display:flex;flex-direction:column;gap:8px;">
+      <label style="font-size:12px;display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" id="gw-active-chk" />
+        <strong>Enable Live Secret Giveaway</strong>
+      </label>
+      <label style="font-size:11px;color:#94a3b8;">Secret Place Location
+        <select id="gw-place-select" class="input-field" style="width:100%;margin-top:3px;">
+          <option value="vip_island">👑 Sheru Bhai Royal Island Courtyard</option>
+          <option value="temple_top">🛕 Hilltop Temple Mountain</option>
+          <option value="beach_ferris">🎡 Golden Beach Giant Wheel Pier</option>
+          <option value="airport_runway">✈️ 20-Acre Airport Control Tower</option>
+          <option value="rocket_pad">🚀 ISRO LVM3 Rocket Launchpad</option>
+          <option value="stadium_gate">🏏 Outskirts Cricket Stadium Gate</option>
+          <option value="ameerpet_metro">🚇 Ameerpet 3-Level Metro Hub</option>
+          <option value="custom">📍 Custom X, Z Coordinates</option>
+        </select>
+      </label>
+      <div id="gw-custom-coords" class="hidden" style="display:flex;gap:6px;">
+        <input type="number" id="gw-custom-x" class="input-field" placeholder="X (e.g. 20)" style="width:50%;" />
+        <input type="number" id="gw-custom-z" class="input-field" placeholder="Z (e.g. -30)" style="width:50%;" />
+      </div>
+      <div style="display:flex;gap:6px;align-items:flex-end;">
+        <label style="font-size:11px;color:#94a3b8;flex:1;">Secret Code / ID
+          <input type="text" id="gw-secret-code" class="input-field" placeholder="SHERU-WIN-99" style="width:100%;margin-top:3px;" />
+        </label>
+        <button id="btn-gw-gen-code" class="dock-btn" style="padding:8px 10px;">🎲 Auto</button>
+      </div>
+      <label style="font-size:11px;color:#94a3b8;">Prize Title
+        <input type="text" id="gw-prize-title" class="input-field" placeholder="e.g. Free Fire Diamonds / Cash Prize" style="width:100%;margin-top:3px;" />
+      </label>
+      <label style="font-size:11px;color:#94a3b8;">Clue / Hint for Players
+        <input type="text" id="gw-hint-text" class="input-field" placeholder="e.g. Check near the Royal Island Bridge!" style="width:100%;margin-top:3px;" />
+      </label>
+      <div style="display:flex;gap:6px;">
+        <label style="font-size:11px;color:#94a3b8;flex:1;">Max Claims
+          <input type="number" id="gw-max-claims" class="input-field" value="1" min="1" max="50" style="width:100%;margin-top:3px;" />
+        </label>
+        <label style="font-size:11px;color:#94a3b8;flex:2;">Instagram Handle
+          <input type="text" id="gw-ig-handle" class="input-field" value="_satish_official_16" style="width:100%;margin-top:3px;" />
+        </label>
+      </div>
+      <label style="font-size:11px;color:#94a3b8;">WhatsApp Number (with 91, no +)
+        <input type="text" id="gw-wa-number" class="input-field" placeholder="919876543210" style="width:100%;margin-top:3px;" />
+      </label>
+      <button id="btn-gw-save" class="gw-btn hunt" style="margin-top:4px;">💾 Save &amp; Launch Giveaway</button>
+      <button id="btn-gw-reset" class="dock-btn" style="width:100%;padding:9px;">🔄 Reset Claimed Status (0 Claims)</button>
+    </div>
+  </div>
+
 </body>
 </html>
