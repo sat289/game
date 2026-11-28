@@ -11,6 +11,7 @@ import { WasmPerfEngine } from "./wasm-perf.js?v=48";
 import { optimizeStaticPlotMeshes } from "./mesh-batcher.js?v=48";
 import { QualityManager } from "./quality-manager.js?v=48";
 import {
+  SIXTEEN_PLOT_TYPES,
   EIGHT_PLOT_TYPES,
   FOUR_PLOT_TYPES,
   TWO_PLOT_TYPES,
@@ -37,6 +38,7 @@ import { v47GiveawayMethods } from "./world-giveaway-v47.js?v=48";
 import { v48StreamlineMethods } from "./world-streamline-v48.js?v=48";
 
 export {
+  SIXTEEN_PLOT_TYPES,
   EIGHT_PLOT_TYPES,
   FOUR_PLOT_TYPES,
   TWO_PLOT_TYPES,
@@ -47,7 +49,8 @@ export {
   getBlockPlotIdsByBlockIdx,
   getBlockPlotIds,
   getTwoPlotGroup,
-  getEightPlotGroup
+  getEightPlotGroup,
+  getSixteenPlotGroup
 };
 
 export class FollowerTownEngine {
