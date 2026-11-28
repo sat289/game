@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getSkyPalette } from "./shaders-glsl.js?v=47";
+import { getSkyPalette } from "./shaders-glsl.js?v=48";
 
 export const loopMethods = {
   _animate() {

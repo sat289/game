@@ -1,5 +1,5 @@
-import { db, ref, onValue, push, set, runTransaction } from "./firebase-config.js?v=47";
-import { FollowerTownEngine, BUILDING_LABELS, getRequiredSize } from "./world-engine.js?v=47";
+import { db, ref, onValue, push, set, runTransaction } from "./firebase-config.js?v=48";
+import { FollowerTownEngine, BUILDING_LABELS, getRequiredSize } from "./world-engine.js?v=48";
 
 let allPlots = {};
 const container = document.getElementById("canvas-container");

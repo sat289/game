@@ -5,11 +5,11 @@ import {
   getSkyPalette,
   createGLSLOceanMaterial,
   createGLSLContactShadowMaterial
-} from "./shaders-glsl.js?v=47";
-import { createProceduralTextureSuite } from "./textures-pbr.js?v=47";
-import { WasmPerfEngine } from "./wasm-perf.js?v=47";
-import { optimizeStaticPlotMeshes } from "./mesh-batcher.js?v=47";
-import { QualityManager } from "./quality-manager.js?v=47";
+} from "./shaders-glsl.js?v=48";
+import { createProceduralTextureSuite } from "./textures-pbr.js?v=48";
+import { WasmPerfEngine } from "./wasm-perf.js?v=48";
+import { optimizeStaticPlotMeshes } from "./mesh-batcher.js?v=48";
+import { QualityManager } from "./quality-manager.js?v=48";
 import {
   EIGHT_PLOT_TYPES,
   FOUR_PLOT_TYPES,
@@ -21,18 +21,20 @@ import {
   getBlockPlotIdsByBlockIdx,
   getBlockPlotIds,
   getTwoPlotGroup,
-  getEightPlotGroup
-} from "./world-constants.js?v=47";
-import { zoneMethods } from "./world-zones.js?v=47";
-import { buildingMethods } from "./world-buildings.js?v=47";
-import { cinematicMethods } from "./world-cinematics.js?v=47";
-import { loopMethods } from "./world-loop.js?v=47";
-import { outskirtsMethods } from "./world-outskirts.js?v=47";
-import { v37LandmarkMethods } from "./world-landmarks-v37.js?v=47";
-import { v40VillaMethods } from "./world-villa-v40.js?v=47";
-import { v41MetroPlayerMethods } from "./world-metro-player-v41.js?v=47";
-import { v43StreetLifeMethods } from "./world-streetlife-v43.js?v=47";
-import { v47GiveawayMethods } from "./world-giveaway-v47.js?v=47";
+  getEightPlotGroup,
+  getSixteenPlotGroup
+} from "./world-constants.js?v=48";
+import { zoneMethods } from "./world-zones.js?v=48";
+import { buildingMethods } from "./world-buildings.js?v=48";
+import { cinematicMethods } from "./world-cinematics.js?v=48";
+import { loopMethods } from "./world-loop.js?v=48";
+import { outskirtsMethods } from "./world-outskirts.js?v=48";
+import { v37LandmarkMethods } from "./world-landmarks-v37.js?v=48";
+import { v40VillaMethods } from "./world-villa-v40.js?v=48";
+import { v41MetroPlayerMethods } from "./world-metro-player-v41.js?v=48";
+import { v43StreetLifeMethods } from "./world-streetlife-v43.js?v=48";
+import { v47GiveawayMethods } from "./world-giveaway-v47.js?v=48";
+import { v48StreamlineMethods } from "./world-streamline-v48.js?v=48";
 
 export {
   EIGHT_PLOT_TYPES,
@@ -115,7 +117,7 @@ export class FollowerTownEngine {
     this.composer = null;
     this.bloomPass = null;
     this._bloomLoading = false;
-    this.defaultSheruGlb = "./sheru-bhai-animated.glb?v=47";
+    this.defaultSheruGlb = "./sheru-bhai-animated.glb?v=48";
     this.heroModelUrls = { statue: "", audi: "", heli: "" };
     this.glbCache = new Map();
     this._glbPending = new Map();
@@ -166,7 +168,8 @@ export class FollowerTownEngine {
     this.ROAD_WIDTH = 10.2;
     this.BLOCK_STEP = this.PLOT_SIZE * 2 + this.ROAD_WIDTH; // 19.0
     this.BLOCK_FOOTPRINT = this.PLOT_SIZE * 2; // 14.8
-    this.EIGHT_PLOT_WIDTH = this.BLOCK_FOOTPRINT * 2 + this.ROAD_WIDTH; // 33.8
+    this.EIGHT_PLOT_WIDTH = this.BLOCK_FOOTPRINT * 2 + this.ROAD_WIDTH;
+    this.SIXTEEN_PLOT_WIDTH = this.BLOCK_FOOTPRINT * 2 + this.ROAD_WIDTH;
     this.RING_ROAD_WIDTH = 13.0;
 
     this.currentGridRadius = 0;
@@ -1034,15 +1037,44 @@ export class FollowerTownEngine {
         }
       }
 
-      const hits = this.raycaster.intersectObjects(this.plotHitboxes, false);
-      if (hits.length > 0) {
-        const plotId = hits[0].object.userData.plotId;
-      if (plotId === "SECRET_GIVEAWAY") {
-        if (typeof this.onGiveawayFound === "function" && this.giveawayConfig) {
-          this.onGiveawayFound(this.giveawayConfig);
+      // 📍 MANUAL ADMIN GIFT PLACEMENT MODE (Tap anywhere on 3D ground, mountain, or building!)
+      if (this.giveawayPlacementMode) {
+        const surfaceHits = this.raycaster.intersectObjects([this.cityGroup, this.plotsGroup], true);
+        let picked = null;
+        for (const sh of surfaceHits) {
+          if (sh.object && sh.object.isMesh && sh.object.material !== this.mat.invisibleHitbox) {
+            picked = sh.point;
+            break;
+          }
+        }
+        if (!picked) {
+          const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+          const pt = new THREE.Vector3();
+          if (this.raycaster.ray.intersectPlane(groundPlane, pt)) picked = pt;
+        }
+        if (picked) {
+          const px = Number(picked.x.toFixed(1));
+          const py = Number(Math.max(0.45, picked.y + 0.25).toFixed(1));
+          const pz = Number(picked.z.toFixed(1));
+          this.moveGiveawayPreviewTo(px, py, pz);
+          if (typeof this.onGiveawayPointPicked === "function") {
+            this.onGiveawayPointPicked(px, py, pz);
+          }
         }
         return;
       }
+
+      const hits = this.raycaster.intersectObjects(this.plotHitboxes, false);
+      if (hits.length > 0) {
+        // 🎁 ALWAYS prioritize SECRET_GIVEAWAY even when placed inside Beach/Airport/Temple zone hitboxes!
+        const gwHit = hits.find((h) => h.object.userData.plotId === "SECRET_GIVEAWAY");
+        if (gwHit) {
+          if (typeof this.onGiveawayFound === "function" && this.giveawayConfig) {
+            this.onGiveawayFound(this.giveawayConfig);
+          }
+          return;
+        }
+        const plotId = hits[0].object.userData.plotId;
         if (plotId === "ST_JUNCTION") {
           this.cameraGoal = {
             target: new THREE.Vector3(0, 3.5, 0),
@@ -1443,6 +1475,7 @@ export class FollowerTownEngine {
       ? { x: customWorldX, z: customWorldZ, blockCenterX: customWorldX, blockCenterZ: customWorldZ, rotY: data.customRotY || 0 }
       : this.getPlotPosition(plotIndex);
     const size = data?.status === "built" ? (data.size || reqSize) : 1;
+    const isSixteenPlot = !isCustom && size === 16;
     const isEightPlot = !isCustom && size === 8;
     const isFourPlot = !isCustom && size === 4;
     const isTwoPlot = !isCustom && size === 2;
@@ -1450,6 +1483,19 @@ export class FollowerTownEngine {
     const plotGroup = new THREE.Group();
     if (isCustom) {
       plotGroup.position.set(customWorldX, 0.08, customWorldZ);
+    } else if (isSixteenPlot) {
+      const grpInfo = getSixteenPlotGroup(plotId);
+      const coords = grpInfo.blockIdxs.map((idx) => blockIdxToCoord(idx));
+      const avgX = coords.reduce((acc, c) => acc + c.bx * this.BLOCK_STEP, 0) / coords.length;
+      const avgZ = coords.reduce((acc, c) => acc + c.bz * this.BLOCK_STEP, 0) / coords.length;
+      plotGroup.position.set(avgX, 0.08, avgZ);
+      this.blockedRoadZones.push({
+        plotId,
+        minX: avgX - this.SIXTEEN_PLOT_WIDTH / 2 - 1,
+        maxX: avgX + this.SIXTEEN_PLOT_WIDTH / 2 + 1,
+        minZ: avgZ - this.SIXTEEN_PLOT_WIDTH / 2 - 1,
+        maxZ: avgZ + this.SIXTEEN_PLOT_WIDTH / 2 + 1
+      });
     } else if (isEightPlot) {
       const groupInfo = getEightPlotGroup(plotId);
       const leftCoord = blockIdxToCoord(groupInfo.leftBlockIdx);
@@ -1477,12 +1523,16 @@ export class FollowerTownEngine {
       plotGroup.position.set(pos.x, 0.08, pos.z);
     }
 
+    const effSixteen = isSixteenPlot || (isCustom && size === 16);
     const effEight = isEightPlot || (isCustom && size === 8);
     const effFour = isFourPlot || (isCustom && size === 4);
     const effTwo = isTwoPlot || (isCustom && size === 2);
 
     let hitbox;
-    if (effEight || effFour) {
+    if (effSixteen) {
+      hitbox = new THREE.Mesh(this._boxGeo(this.SIXTEEN_PLOT_WIDTH, 18.0, this.SIXTEEN_PLOT_WIDTH), this.mat.invisibleHitbox);
+      hitbox.position.y = 9.0;
+    } else if (effEight || effFour) {
       const hitW = effEight ? this.EIGHT_PLOT_WIDTH : this.BLOCK_FOOTPRINT - 0.2;
       hitbox = new THREE.Mesh(
         this._boxGeo(hitW, (data?.buildingType === "hotel_oyo" || data?.buildingType === "stark_tower") ? 32.0 : 12.0, this.BLOCK_FOOTPRINT - 0.2),
@@ -1637,7 +1687,9 @@ export class FollowerTownEngine {
       plotGroup.add(sign);
     } else {
       this._emptyPlotCoords.delete(plotId);
-      if (isCustom && size === 8) {
+      if (effSixteen) {
+        buildingObj = this._buildSixteenPlotStreamlineHQ(plotId, data.username);
+      } else if (isCustom && size === 8) {
         buildingObj = data.buildingType === "billionaire_villa"
           ? this._buildEightPlotBillionaireVilla(plotId, data.ownerName)
           : data.buildingType === "swamy_school"
@@ -1824,5 +1876,6 @@ Object.assign(
   v40VillaMethods,
   v41MetroPlayerMethods,
   v43StreetLifeMethods,
-  v47GiveawayMethods
+  v47GiveawayMethods,
+  v48StreamlineMethods
 );

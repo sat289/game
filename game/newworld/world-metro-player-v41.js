@@ -500,8 +500,8 @@ export const v41MetroPlayerMethods = {
       if (!pdata || pdata.status !== "built" || pdata.buildingType === "empty") continue;
 
       const sz = pdata.size || 1;
-      const halfX = sz === 8 ? 16.4 : (sz === 4 || sz === 2) ? 7.1 : 3.45;
-      const halfZ = (sz === 8 || sz === 4) ? 7.1 : 3.45;
+      const halfX = sz === 16 ? 19.6 : sz === 8 ? 16.4 : (sz === 4 || sz === 2) ? 7.1 : 3.45;
+      const halfZ = sz === 16 ? 19.6 : (sz === 8 || sz === 4) ? 7.1 : 3.45;
       const bx = grp.position.x;
       const bz = grp.position.z;
 

@@ -9,15 +9,16 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged
-} from "./firebase-config.js?v=47";
+} from "./firebase-config.js?v=48";
 import {
   FollowerTownEngine,
   BUILDING_LABELS,
   getRequiredSize,
   getTwoPlotGroup,
   getBlockPlotIds,
-  getEightPlotGroup
-} from "./world-engine.js?v=47";
+  getEightPlotGroup,
+  getSixteenPlotGroup
+} from "./world-engine.js?v=48";
 
 let isAdmin = false;
 let selectedPlotId = "plot_0001";
@@ -379,6 +380,7 @@ function getMaxExistingGridPlotNum() {
 }
 
 function getFootprintForPlot(plotId, reqSize) {
+  if (reqSize === 16) return getSixteenPlotGroup(plotId);
   if (reqSize === 8) return getEightPlotGroup(plotId);
   if (reqSize === 4) return getBlockPlotIds(plotId);
   if (reqSize === 2) return getTwoPlotGroup(plotId);
@@ -742,7 +744,8 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
 
   if (type === "empty") {
     let toClear = [selectedPlotId];
-    if (oldSize === 8) toClear = getEightPlotGroup(selectedPlotId).siblings;
+    if (oldSize === 16) toClear = getSixteenPlotGroup(selectedPlotId).siblings;
+    else if (oldSize === 8) toClear = getEightPlotGroup(selectedPlotId).siblings;
     else if (oldSize === 4) toClear = getBlockPlotIds(selectedPlotId).siblings;
     else if (oldSize === 2) toClear = getTwoPlotGroup(selectedPlotId).siblings;
 
@@ -832,9 +835,11 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
       selectedPlotId = clear1.anchorId;
       relocatedCount = -1;
       engine.ensureCapacity((parseInt(selectedPlotId.replace("plot_", ""), 10) || 1) + 4);
-    } else if (oldSize === 8 || oldSize === 4 || oldSize === 2) {
+    } else if (oldSize === 16 || oldSize === 8 || oldSize === 4 || oldSize === 2) {
       const oldSibs =
-        oldSize === 8
+        oldSize === 16
+          ? getSixteenPlotGroup(selectedPlotId).siblings
+          : oldSize === 8
           ? getEightPlotGroup(selectedPlotId).siblings
           : oldSize === 4
           ? getBlockPlotIds(selectedPlotId).siblings
@@ -896,7 +901,7 @@ document.getElementById("btn-fix-overlaps").addEventListener("click", async () =
 
   if (landmarks.length === 0) return showToast("No multi-plot landmarks found!");
 
-  const getGrp = (pid, sz) => (sz === 8 ? getEightPlotGroup(pid) : sz === 4 ? getBlockPlotIds(pid) : getTwoPlotGroup(pid));
+  const getGrp = (pid, sz) => (sz === 16 ? getSixteenPlotGroup(pid) : sz === 8 ? getEightPlotGroup(pid) : sz === 4 ? getBlockPlotIds(pid) : getTwoPlotGroup(pid));
 
   landmarks.forEach((lm) => {
     const grp = getGrp(lm.pid, lm.reqSize);
@@ -2222,9 +2227,10 @@ function renderRequestsInbox() {
 
       const targetPlotId = findNextFreeEmptyPlotId(reqSize);
       const updates = {};
-      if (reqSize === 8 || reqSize === 4 || reqSize === 2) {
+      if (reqSize === 16 || reqSize === 8 || reqSize === 4 || reqSize === 2) {
         const gInfo =
-          reqSize === 8 ? getEightPlotGroup(targetPlotId)
+          reqSize === 16 ? getSixteenPlotGroup(targetPlotId)
+          : reqSize === 8 ? getEightPlotGroup(targetPlotId)
           : reqSize === 4 ? getBlockPlotIds(targetPlotId)
           : getTwoPlotGroup(targetPlotId);
         gInfo.siblings.forEach((sid) => {
@@ -2705,7 +2711,13 @@ bindCinemaReelButton("reel-hero360-btn", "hero360", "🔄 360° Hero Spin around
   const selPlace = document.getElementById("gw-place-select");
   const customWrap = document.getElementById("gw-custom-coords");
   const inpX = document.getElementById("gw-custom-x");
+  const inpY = document.getElementById("gw-custom-y");
   const inpZ = document.getElementById("gw-custom-z");
+  const btnPickMap = document.getElementById("btn-gw-pick-map");
+  const pickBar = document.getElementById("gw-pick-bar");
+  const pickLabel = document.getElementById("gw-pick-coords-label");
+  const btnPickConfirm = document.getElementById("btn-gw-pick-confirm");
+  const btnPickCancel = document.getElementById("btn-gw-pick-cancel");
   const inpCode = document.getElementById("gw-secret-code");
   const btnGen = document.getElementById("btn-gw-gen-code");
   const inpPrize = document.getElementById("gw-prize-title");
@@ -2723,6 +2735,30 @@ bindCinemaReelButton("reel-hero360-btn", "hero360", "🔄 360° Hero Spin around
     drawer.classList.remove("hidden");
   });
   if (btnClose) btnClose.addEventListener("click", () => drawer.classList.add("hidden"));
+
+  if (btnPickMap && pickBar) {
+    btnPickMap.addEventListener("click", () => {
+      drawer.classList.add("hidden");
+      pickBar.classList.remove("hidden");
+      engine.setGiveawayPlacementMode(true, (x, y, z) => {
+        if (selPlace) selPlace.value = "custom";
+        if (customWrap) customWrap.classList.remove("hidden");
+        if (inpX) inpX.value = x;
+        if (inpY) inpY.value = y;
+        if (inpZ) inpZ.value = z;
+        if (pickLabel) pickLabel.textContent = `📍 Gift at X:${x}, Y:${y}, Z:${z}`;
+      });
+      showToast("📍 Tap anywhere on the 3D city, hill, or island to move the Gift!");
+    });
+  }
+  const endPick = (reopen) => {
+    engine.setGiveawayPlacementMode(false);
+    if (pickBar) pickBar.classList.add("hidden");
+    if (reopen) drawer.classList.remove("hidden");
+  };
+  if (btnPickConfirm) btnPickConfirm.addEventListener("click", () => endPick(true));
+  if (btnPickCancel) btnPickCancel.addEventListener("click", () => endPick(true));
+
 
   if (selPlace && customWrap) {
     selPlace.addEventListener("change", () => {
@@ -2775,6 +2811,7 @@ bindCinemaReelButton("reel-hero360-btn", "hero360", "🔄 360° Hero Spin around
         active: Boolean(chkActive.checked),
         place: selPlace.value,
         customX: Number(inpX.value) || 0,
+        customY: Number(inpY?.value) || 0.45,
         customZ: Number(inpZ.value) || 20,
         secretCode: (inpCode.value || "SHERU-WIN-99").trim().toUpperCase(),
         prizeTitle: (inpPrize.value || "Secret Giveaway Prize").trim(),

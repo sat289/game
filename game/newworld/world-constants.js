@@ -1,4 +1,6 @@
 // Shared City Plot Constants & Spiral Grid Coordinates (v35)
+export const SIXTEEN_PLOT_TYPES = new Set(["streamline_hq"]);
+
 export const EIGHT_PLOT_TYPES = new Set(["ground", "audi_showroom", "movie_theater", "imax_theater", "mahindra_showroom", "bmw_showroom", "swamy_school", "dmart_mega", "inorbit_mall", "function_hall", "billionaire_villa"]);
 
 export const FOUR_PLOT_TYPES = new Set([
@@ -53,6 +55,7 @@ export const BUILDING_LABELS = {
   inorbit_mall: "🏬 ఇనార్బిట్ మాల్ • INORBIT MEGA MALL (8 PLOTS)",
   function_hall: "🎉 ఫంక్షన్ హాల్ • GRAND DJ & FIREWORKS HALL (8 PLOTS)",
   billionaire_villa: "👑 బిలియనీర్ విల్లా • ULTRA-PREMIUM BILLIONAIRE VILLA (8 PLOTS)",
+  streamline_hq: "🌐 స్ట్రీమ్‌లైన్ హెచ్‌క్యూ • STREAMLINE SOLUTIONS GLOBAL HQ (16 PLOTS)",
   ff_office: "🎮 ఫ్రీ ఫైర్ ఆఫీస్ • GARENA FREE FIRE 3-FLOOR HQ (4 PLOTS)",
   ayyappa_temple: "🛕 అయ్యప్ప టెంపుల్ • AYYAPPA SWAMY 18 STEPS (4 PLOTS)",
   yamaha_showroom: "🏍️ యమహా షోరూమ్ • YAMAHA RACING SHOWROOM (4 PLOTS)",
@@ -97,6 +100,7 @@ export const BUILDING_LABELS = {
 };
 
 export function getRequiredSize(type) {
+  if (SIXTEEN_PLOT_TYPES.has(type)) return 16;
   if (EIGHT_PLOT_TYPES.has(type)) return 8;
   if (FOUR_PLOT_TYPES.has(type)) return 4;
   if (TWO_PLOT_TYPES.has(type)) return 2;
@@ -216,3 +220,43 @@ export function getEightPlotGroup(plotId) {
   };
 }
 
+
+
+export function getSixteenPlotGroup(plotId) {
+  const num = parseInt(plotId.replace("plot_", ""), 10);
+  const blockIdx = Math.floor((num - 1) / 4);
+  const { bx, bz } = blockIdxToCoord(blockIdx);
+
+  // Pick a clean 2x2 block square avoiding (0,0) ST Junction Statue
+  const candidates = [
+    [bx, bz],
+    [bx - 1, bz],
+    [bx, bz - 1],
+    [bx - 1, bz - 1]
+  ];
+  let chosen = null;
+  for (const [ox, oz] of candidates) {
+    const coords = [[ox, oz], [ox + 1, oz], [ox, oz + 1], [ox + 1, oz + 1]];
+    if (coords.some(([x, z]) => x === 0 && z === 0)) continue;
+    const idxs = coords.map(([x, z]) => coordToBlockIdx(x, z));
+    if (idxs.every((i) => i !== -1)) {
+      chosen = idxs;
+      break;
+    }
+  }
+  if (!chosen) {
+    // Fallback to 4 blocks at (2, 2)
+    chosen = [
+      coordToBlockIdx(2, 2),
+      coordToBlockIdx(3, 2),
+      coordToBlockIdx(2, 3),
+      coordToBlockIdx(3, 3)
+    ];
+  }
+  const infos = chosen.map((idx) => getBlockPlotIdsByBlockIdx(idx));
+  return {
+    blockIdxs: chosen,
+    anchorId: infos[0].anchorId,
+    siblings: infos.flatMap((inf) => inf.siblings)
+  };
+}
