@@ -28,6 +28,7 @@ const Game = {
 
   canvas: null,
   ctx: null,
+  activeScreen: 'loading',
   running: false,
   paused: false,
   levelIndex: 0,
@@ -37,6 +38,7 @@ const Game = {
   lastFire: 0,
   totalSpawned: 0,
   totalKilled: 0,
+  shake: 0,
 
   player: { x: 200, y: 650, shipId: 'cobra', power: 1, bombs: 1, invuln: 0 },
   bullets: [],
@@ -44,6 +46,7 @@ const Game = {
   enemies: [],
   powerups: [],
   particles: [],
+  shockwaves: [],
   starsBg: [],
 
   async init() {
@@ -54,13 +57,15 @@ const Game = {
     window.addEventListener('resize', () => this.resize());
     this.bindControls();
 
-    // Generate starfield
-    for (let i = 0; i < 70; i++) {
+    // 3-layer parallax starfield
+    for (let i = 0; i < 95; i++) {
+      const layer = i % 3;
       this.starsBg.push({
         x: Math.random() * 430,
         y: Math.random() * 900,
-        s: Math.random() * 2 + 0.5,
-        v: Math.random() * 1.5 + 0.5
+        s: layer === 2 ? 2.2 : layer === 1 ? 1.4 : 0.8,
+        v: layer === 2 ? 2.4 : layer === 1 ? 1.2 : 0.45,
+        a: layer === 2 ? 0.9 : layer === 1 ? 0.55 : 0.3
       });
     }
 
@@ -68,19 +73,25 @@ const Game = {
     let pct = 0;
     const bar = document.getElementById('loading-bar');
     const timer = setInterval(() => {
-      pct += 12;
+      pct += 14;
       bar.style.width = Math.min(pct, 100) + '%';
       if (pct >= 100) {
         clearInterval(timer);
         this.showScreen('home');
+        requestAnimationFrame(t => this.uiLoop(t));
       }
-    }, 100);
+    }, 90);
   },
 
   resize() {
     const app = document.getElementById('app');
     this.canvas.width = app.clientWidth;
     this.canvas.height = app.clientHeight;
+    const bg = document.getElementById('home-bg-canvas');
+    if (bg) {
+      bg.width = app.clientWidth;
+      bg.height = app.clientHeight;
+    }
   },
 
   async loadProgress() {
@@ -112,21 +123,63 @@ const Game = {
   },
 
   showScreen(name) {
+    this.activeScreen = name;
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(`screen-${name}`).classList.add('active');
     const showTop = ['home', 'hangar', 'map'].includes(name);
     document.getElementById('top-bar').classList.toggle('hidden', !showTop);
 
-    if (name === 'home') this.renderHomeShip();
     if (name === 'hangar') this.renderHangar();
     if (name === 'map') this.renderMap();
   },
 
-  renderHomeShip() {
-    const c = document.getElementById('home-ship-canvas');
-    const ctx = c.getContext('2d');
-    ctx.clearRect(0, 0, c.width, c.height);
-    SHIPS[this.save.selectedShip].draw(ctx, c.width / 2, c.height / 2, 2.2);
+  drawSpaceBg(ctx, W, H, t) {
+    ctx.fillStyle = '#050714';
+    ctx.fillRect(0, 0, W, H);
+
+    // Soft glowing nebula clouds
+    const n1 = ctx.createRadialGradient(W * 0.25, H * 0.3, 10, W * 0.25, H * 0.3, W * 0.65);
+    n1.addColorStop(0, 'rgba(99, 102, 241, 0.20)');
+    n1.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = n1;
+    ctx.fillRect(0, 0, W, H);
+
+    const n2 = ctx.createRadialGradient(W * 0.8, H * 0.72, 10, W * 0.8, H * 0.72, W * 0.6);
+    n2.addColorStop(0, 'rgba(14, 165, 233, 0.16)');
+    n2.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = n2;
+    ctx.fillRect(0, 0, W, H);
+
+    // 3-layer scrolling stars
+    ctx.fillStyle = '#ffffff';
+    this.starsBg.forEach(s => {
+      s.y += s.v;
+      if (s.y > H) { s.y = 0; s.x = Math.random() * W; }
+      ctx.globalAlpha = s.a;
+      ctx.fillRect(s.x, s.y, s.s, s.s);
+    });
+    ctx.globalAlpha = 1;
+  },
+
+  // Live animation loop for Home & Hangar ship previews
+  uiLoop(t) {
+    if (this.activeScreen === 'home') {
+      const bg = document.getElementById('home-bg-canvas');
+      if (bg) this.drawSpaceBg(bg.getContext('2d'), bg.width, bg.height, t);
+
+      const c = document.getElementById('home-ship-canvas');
+      const ctx = c.getContext('2d');
+      ctx.clearRect(0, 0, c.width, c.height);
+      const hoverY = Math.sin(t * 0.003) * 6;
+      SHIPS[this.save.selectedShip].draw(ctx, c.width / 2, c.height / 2 + hoverY, 2.25, t);
+    } else if (this.activeScreen === 'hangar') {
+      const c = document.getElementById('hangar-canvas');
+      const ctx = c.getContext('2d');
+      ctx.clearRect(0, 0, c.width, c.height);
+      const hoverY = Math.sin(t * 0.0035) * 4;
+      SHIPS[this.save.selectedShip].draw(ctx, c.width / 2, c.height / 2 + hoverY, 2.0, t);
+    }
+    requestAnimationFrame(nextT => this.uiLoop(nextT));
   },
 
   renderHangar() {
@@ -138,11 +191,6 @@ const Game = {
     document.getElementById('stat-rate').textContent = (1000 / ship.fireDelay).toFixed(1) + '/s';
     document.getElementById('stat-special').textContent = ship.special;
     document.getElementById('upgrade-cost').textContent = lv * 100;
-
-    const c = document.getElementById('hangar-canvas');
-    const ctx = c.getContext('2d');
-    ctx.clearRect(0, 0, c.width, c.height);
-    ship.draw(ctx, c.width / 2, c.height / 2, 2.0);
 
     const grid = document.getElementById('hangar-grid');
     grid.innerHTML = '';
@@ -200,17 +248,36 @@ const Game = {
     document.getElementById('map-stars').textContent = totalStars;
   },
 
+  spawnExplosion(x, y, color = '#fb923c', count = 18, big = false) {
+    for (let i = 0; i < count; i++) {
+      const ang = Math.random() * Math.PI * 2;
+      const spd = (Math.random() * (big ? 6.5 : 3.8)) + 0.8;
+      this.particles.push({
+        x, y,
+        vx: Math.cos(ang) * spd,
+        vy: Math.sin(ang) * spd,
+        life: 1,
+        decay: 0.025 + Math.random() * 0.03,
+        size: (Math.random() * (big ? 5 : 3)) + 1.5,
+        color
+      });
+    }
+    this.shockwaves.push({ x, y, r: 4, maxR: big ? 95 : 38, life: 1, color });
+  },
+
   startLevel(idx) {
     this.levelIndex = idx;
     this.waveIndex = 0;
     this.score = 0;
     this.totalSpawned = 0;
     this.totalKilled = 0;
+    this.shake = 0;
     this.bullets = [];
     this.enemyBullets = [];
     this.enemies = [];
     this.powerups = [];
     this.particles = [];
+    this.shockwaves = [];
 
     this.player = {
       x: this.canvas.width / 2,
@@ -279,7 +346,8 @@ const Game = {
         hp: def.hp,
         maxHp: def.hp,
         radius: def.radius,
-        phase: i * 0.5
+        phase: i * 0.5,
+        hitFlash: 0
       });
       this.totalSpawned++;
     }
@@ -303,7 +371,9 @@ const Game = {
     if (!this.running || this.paused || this.player.bombs <= 0) return;
     this.player.bombs--;
     this.enemyBullets = [];
-    this.enemies.forEach(e => { e.hp -= 250; });
+    this.shake = 16;
+    this.spawnExplosion(this.canvas.width / 2, this.canvas.height / 2, '#facc15', 40, true);
+    this.enemies.forEach(e => { e.hp -= 260; e.hitFlash = 4; });
     AudioFX.play(110, 'sawtooth', 0.35, 0.15);
     this.updateHUD();
   },
@@ -384,22 +454,18 @@ const Game = {
     const W = this.canvas.width;
     const H = this.canvas.height;
 
-    // Timer
     const sec = Math.floor((t - this.startTime) / 1000);
     document.getElementById('hud-time').textContent =
       `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
 
-    // Background
-    ctx.fillStyle = '#07091a';
-    ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = '#ffffff';
-    this.starsBg.forEach(s => {
-      s.y += s.v;
-      if (s.y > H) { s.y = 0; s.x = Math.random() * W; }
-      ctx.globalAlpha = 0.5;
-      ctx.fillRect(s.x, s.y, s.s, s.s);
-    });
-    ctx.globalAlpha = 1;
+    ctx.save();
+    if (this.shake > 0) {
+      ctx.translate((Math.random() - 0.5) * this.shake, (Math.random() - 0.5) * this.shake);
+      this.shake *= 0.88;
+      if (this.shake < 0.5) this.shake = 0;
+    }
+
+    this.drawSpaceBg(ctx, W, H, t);
 
     // Auto-fire
     const ship = SHIPS[this.player.shipId];
@@ -407,36 +473,44 @@ const Game = {
     const dmg = ship.baseAtk + (lv - 1) * 5;
     if (t - this.lastFire > ship.fireDelay) {
       ship.fire(this.bullets, this.player.x, this.player.y, this.player.power, dmg);
-      AudioFX.play(520, 'triangle', 0.04, 0.03);
+      AudioFX.play(520, 'triangle', 0.04, 0.025);
       this.lastFire = t;
     }
 
-    // Update & draw player bullets
+    // Glowing additive player bullets
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
     for (let i = this.bullets.length - 1; i >= 0; i--) {
       const b = this.bullets[i];
       b.x += b.vx; b.y += b.vy;
+      ctx.shadowBlur = 12;
+      ctx.shadowColor = b.color;
       ctx.fillStyle = b.color;
       ctx.fillRect(b.x - b.w / 2, b.y - b.h / 2, b.w, b.h);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(b.x - b.w * 0.25, b.y - b.h * 0.4, b.w * 0.5, b.h * 0.8);
       if (b.y < -40) this.bullets.splice(i, 1);
     }
+    ctx.restore();
 
-    // Update & draw enemies
+    // Enemies
     for (let i = this.enemies.length - 1; i >= 0; i--) {
       const e = this.enemies[i];
       const def = ENEMIES[e.type];
       e.y += (e.ty - e.y) * 0.05;
       e.x = e.tx + Math.sin(t * 0.002 + e.phase) * (e.type === 'boss' ? 85 : 22);
+      if (e.hitFlash > 0) e.hitFlash--;
 
-      // Enemy shooting
       if (Math.random() < def.fireChance) {
         this.enemyBullets.push({ x: e.x, y: e.y + e.radius, vx: 0, vy: 4.5 });
       }
 
-      // Bullet collisions
       for (let j = this.bullets.length - 1; j >= 0; j--) {
         const b = this.bullets[j];
         if (Math.hypot(b.x - e.x, b.y - e.y) < e.radius + 8) {
           e.hp -= b.dmg;
+          e.hitFlash = 2;
+          this.spawnExplosion(b.x, b.y, b.color, 3, false);
           this.bullets.splice(j, 1);
           if (e.hp <= 0) break;
         }
@@ -445,7 +519,10 @@ const Game = {
       if (e.hp <= 0) {
         this.score += def.score;
         this.totalKilled++;
-        AudioFX.play(180, 'sawtooth', 0.09, 0.06);
+        const isBoss = e.type === 'boss';
+        if (isBoss) this.shake = 22;
+        this.spawnExplosion(e.x, e.y, isBoss ? '#c084fc' : '#fb923c', isBoss ? 48 : 18, isBoss);
+        AudioFX.play(isBoss ? 90 : 180, 'sawtooth', isBoss ? 0.35 : 0.09, 0.07);
         if (Math.random() < 0.22) {
           const shipIds = Object.keys(SHIPS);
           const isTransform = Math.random() < 0.35;
@@ -461,14 +538,14 @@ const Game = {
         continue;
       }
 
-      def.draw(ctx, e.x, e.y, t);
+      def.draw(ctx, e.x, e.y, t, e.hitFlash);
 
-      // HP Bar
       if (e.hp < e.maxHp) {
+        const bw = e.type === 'boss' ? 90 : 36;
         ctx.fillStyle = '#334155';
-        ctx.fillRect(e.x - 18, e.y - e.radius - 8, 36, 4);
+        ctx.fillRect(e.x - bw / 2, e.y - e.radius - 10, bw, 5);
         ctx.fillStyle = '#ef4444';
-        ctx.fillRect(e.x - 18, e.y - e.radius - 8, 36 * (e.hp / e.maxHp), 4);
+        ctx.fillRect(e.x - bw / 2, e.y - e.radius - 10, bw * (e.hp / e.maxHp), 5);
       }
     }
 
@@ -476,12 +553,16 @@ const Game = {
     for (let i = this.powerups.length - 1; i >= 0; i--) {
       const p = this.powerups[i];
       p.y += 2.2;
+      ctx.save();
+      ctx.shadowBlur = 12;
+      ctx.shadowColor = p.kind === 'ship' ? '#38bdf8' : '#facc15';
       ctx.fillStyle = p.kind === 'ship' ? '#38bdf8' : '#facc15';
       ctx.beginPath(); ctx.arc(p.x, p.y, 12, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#000';
       ctx.font = 'bold 12px sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(p.kind === 'ship' ? '✈' : '▲', p.x, p.y + 4);
+      ctx.restore();
 
       if (Math.hypot(p.x - this.player.x, p.y - this.player.y) < 30) {
         if (p.kind === 'ship') this.player.shipId = p.shipId;
@@ -494,23 +575,59 @@ const Game = {
       }
     }
 
-    // Enemy bullets
+    // Enemy bullets (glowing orbs)
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
     for (let i = this.enemyBullets.length - 1; i >= 0; i--) {
       const eb = this.enemyBullets[i];
       eb.y += eb.vy;
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = '#f43f5e';
       ctx.fillStyle = '#f43f5e';
-      ctx.beginPath(); ctx.arc(eb.x, eb.y, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(eb.x, eb.y, 5.5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.arc(eb.x, eb.y, 2.5, 0, Math.PI * 2); ctx.fill();
 
       if (this.player.invuln <= 0 && Math.hypot(eb.x - this.player.x, eb.y - this.player.y) < 18) {
+        this.spawnExplosion(this.player.x, this.player.y, '#38bdf8', 32, true);
         this.endLevel(false);
+        ctx.restore();
+        ctx.restore();
         return;
       }
       if (eb.y > H + 20) this.enemyBullets.splice(i, 1);
     }
+    ctx.restore();
+
+    // Particles & Shockwaves
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = this.particles.length - 1; i >= 0; i--) {
+      const pt = this.particles[i];
+      pt.x += pt.vx; pt.y += pt.vy;
+      pt.life -= pt.decay;
+      if (pt.life <= 0) { this.particles.splice(i, 1); continue; }
+      ctx.globalAlpha = pt.life;
+      ctx.fillStyle = pt.color;
+      ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2); ctx.fill();
+    }
+    for (let i = this.shockwaves.length - 1; i >= 0; i--) {
+      const sw = this.shockwaves[i];
+      sw.r += (sw.maxR - sw.r) * 0.18;
+      sw.life -= 0.06;
+      if (sw.life <= 0) { this.shockwaves.splice(i, 1); continue; }
+      ctx.globalAlpha = sw.life;
+      ctx.strokeStyle = sw.color;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(sw.x, sw.y, sw.r, 0, Math.PI * 2); ctx.stroke();
+    }
+    ctx.restore();
 
     // Draw player
     if (this.player.invuln > 0) this.player.invuln--;
-    ship.draw(ctx, this.player.x, this.player.y, 1);
+    ship.draw(ctx, this.player.x, this.player.y, 1, t);
+
+    ctx.restore();
 
     // Next wave check
     if (this.enemies.length === 0) {
