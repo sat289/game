@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Space Shooter: Galaxy Attack</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- LOADING SCREEN -->
+    <section id="screen-loading" class="screen active">
+      <div class="logo-banner">
+        <div class="logo-wings"></div>
+        <h1>SPACE<span>SHOOTER</span></h1>
+      </div>
+      <div class="loading-box">
+        <p class="loading-text">LOADING...</p>
+        <div class="progress-track"><div id="loading-bar" class="progress-fill"></div></div>
+        <p id="loading-tip" class="loading-tip">Wingcard can be used to upgrade any mini-ship.</p>
+      </div>
+    </section>
+
+    <!-- TOP RESOURCE BAR (Shared across Home, Hangar, Map) -->
+    <header id="top-bar" class="hidden">
+      <div class="player-badge">
+        <div class="avatar">🚀</div>
+        <div>
+          <div class="player-name" id="ui-player-name">Commander</div>
+          <div class="vip-tag">VIP 0</div>
+        </div>
+      </div>
+      <div class="currency-group">
+        <div class="pill gem-pill">💎 <span id="ui-gems">200</span></div>
+        <div class="pill coin-pill">🪙 <span id="ui-coins">3099</span></div>
+      </div>
+    </header>
+
+    <!-- HOME / LOBBY SCREEN -->
+    <section id="screen-home" class="screen">
+      <div class="home-showcase">
+        <canvas id="home-ship-canvas" width="240" height="240"></canvas>
+        <button class="tap-upgrade-btn" onclick="Game.showScreen('hangar')">TAP TO UPGRADE</button>
+      </div>
+      <div class="home-actions">
+        <button class="icon-btn" onclick="Game.showScreen('hangar')">🛸<span>HANGAR</span></button>
+        <button class="play-btn" onclick="Game.showScreen('map')">PLAY</button>
+        <button class="icon-btn" onclick="Game.claimDailyBonus()">🎁<span>FREE</span></button>
+      </div>
+    </section>
+
+    <!-- HANGAR / SHIP UPGRADE SCREEN -->
+    <section id="screen-hangar" class="screen">
+      <div class="hangar-header">
+        <h2 id="hangar-ship-name">Cobra</h2>
+        <span id="hangar-ship-level">LV. 1</span>
+      </div>
+      <div class="hangar-preview">
+        <canvas id="hangar-canvas" width="220" height="180"></canvas>
+        <div class="ship-stats">
+          <div>ATK: <span id="stat-atk">25</span></div>
+          <div>FIRE RATE: <span id="stat-rate">5.0/s</span></div>
+          <div>SPECIAL: <span id="stat-special">Green Twin Pulse</span></div>
+        </div>
+      </div>
+      <div id="hangar-grid" class="hangar-grid"></div>
+      <div class="hangar-footer">
+        <button class="back-btn" onclick="Game.showScreen('home')">⬅</button>
+        <button id="btn-upgrade-ship" class="upgrade-btn" onclick="Game.upgradeSelectedShip()">
+          +1 LV (🪙 <span id="upgrade-cost">100</span>)
+        </button>
+      </div>
+    </section>
+
+    <!-- GALAXY LEVEL MAP SCREEN -->
+    <section id="screen-map" class="screen">
+      <div class="map-stats">
+        <div>LEVEL <span id="map-unlocked">1</span>/5</div>
+        <div>⭐ <span id="map-stars">0</span>/15</div>
+      </div>
+      <div id="map-nodes" class="map-nodes"></div>
+      <div class="map-footer">
+        <button class="back-btn" onclick="Game.showScreen('home')">⬅</button>
+        <div class="sector-badge">🌍 EARTH SECTOR</div>
+      </div>
+    </section>
+
+    <!-- GAMEPLAY SCREEN -->
+    <section id="screen-game" class="screen">
+      <canvas id="game-canvas"></canvas>
+
+      <!-- IN-GAME HUD -->
+      <div id="hud">
+        <div class="hud-top">
+          <div class="hud-left">
+            <div class="hud-score-box">
+              <span class="hud-avatar">🚀</span>
+              <span id="hud-score">0</span>
+            </div>
+            <div id="hud-power-pips" class="power-pips"></div>
+          </div>
+          <div class="hud-timer">⏱ <span id="hud-time">00:00</span></div>
+          <button class="hud-pause-btn" onclick="Game.togglePause()">❚❚</button>
+        </div>
+
+        <div id="wave-banner" class="wave-banner hidden">WAVE 1/5</div>
+
+        <button id="bomb-btn" class="bomb-btn" onclick="Game.triggerBomb()">
+          <span>B</span>
+          <small id="hud-bombs">1</small>
+        </button>
+      </div>
+
+      <!-- PAUSE OVERLAY -->
+      <div id="pause-modal" class="modal hidden">
+        <div class="modal-card">
+          <h2>PAUSED</h2>
+          <button class="modal-btn primary" onclick="Game.togglePause()">RESUME</button>
+          <button class="modal-btn" onclick="Game.quitToMap()">EXIT TO MAP</button>
+        </div>
+      </div>
+
+      <!-- WIN / LOSE OVERLAY -->
+      <div id="result-modal" class="modal hidden">
+        <div class="modal-card result-card">
+          <h2 id="result-title">WIN</h2>
+          <div id="result-stars" class="result-stars">⭐⭐⭐</div>
+          <ul id="result-tasks" class="task-list"></ul>
+          <div class="result-scores">
+            <div>SCORE: <strong id="result-score">0</strong></div>
+            <div>BEST: <strong id="result-best">0</strong></div>
+          </div>
+          <div class="result-rewards">
+            REWARD: 🪙 <span id="result-coins">0</span>
+          </div>
+          <div class="result-actions">
+            <button class="modal-btn" onclick="Game.quitToMap()">🏠 MAP</button>
+            <button id="btn-next-level" class="modal-btn primary" onclick="Game.nextLevel()">NEXT ⏩</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- MODULAR SCRIPTS -->
+  <script src="js/ships.js"></script>
+  <script src="js/enemies.js"></script>
+  <script src="js/levels.js"></script>
+  <script src="js/game.js"></script>
+  <script>
+    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>
