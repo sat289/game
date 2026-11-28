@@ -1,4 +1,4 @@
-const CACHE_NAME = 'space-shooter-v1';
+const CACHE_NAME = 'space-shooter-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -6,7 +6,14 @@ const ASSETS = [
   './js/ships.js',
   './js/enemies.js',
   './js/levels.js',
-  './js/game.js'
+  './js/game.js',
+  './assets/cobra.png',
+  './assets/seraphim.png',
+  './assets/azure.png',
+  './assets/crimson.png',
+  './assets/cryo.png',
+  './assets/missile_red.png',
+  './assets/plasma_green.png'
 ];
 
 self.addEventListener('install', event => {
