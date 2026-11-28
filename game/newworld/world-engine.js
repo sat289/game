@@ -5,11 +5,11 @@ import {
   getSkyPalette,
   createGLSLOceanMaterial,
   createGLSLContactShadowMaterial
-} from "./shaders-glsl.js?v=49";
-import { createProceduralTextureSuite } from "./textures-pbr.js?v=49";
-import { WasmPerfEngine } from "./wasm-perf.js?v=49";
-import { optimizeStaticPlotMeshes } from "./mesh-batcher.js?v=49";
-import { QualityManager } from "./quality-manager.js?v=49";
+} from "./shaders-glsl.js?v=50";
+import { createProceduralTextureSuite } from "./textures-pbr.js?v=50";
+import { WasmPerfEngine } from "./wasm-perf.js?v=50";
+import { optimizeStaticPlotMeshes } from "./mesh-batcher.js?v=50";
+import { QualityManager } from "./quality-manager.js?v=50";
 import {
   SIXTEEN_PLOT_TYPES,
   EIGHT_PLOT_TYPES,
@@ -24,18 +24,18 @@ import {
   getTwoPlotGroup,
   getEightPlotGroup,
   getSixteenPlotGroup
-} from "./world-constants.js?v=49";
-import { zoneMethods } from "./world-zones.js?v=49";
-import { buildingMethods } from "./world-buildings.js?v=49";
-import { cinematicMethods } from "./world-cinematics.js?v=49";
-import { loopMethods } from "./world-loop.js?v=49";
-import { outskirtsMethods } from "./world-outskirts.js?v=49";
-import { v37LandmarkMethods } from "./world-landmarks-v37.js?v=49";
-import { v40VillaMethods } from "./world-villa-v40.js?v=49";
-import { v41MetroPlayerMethods } from "./world-metro-player-v41.js?v=49";
-import { v43StreetLifeMethods } from "./world-streetlife-v43.js?v=49";
-import { v47GiveawayMethods } from "./world-giveaway-v47.js?v=49";
-import { v48StreamlineMethods } from "./world-streamline-v48.js?v=49";
+} from "./world-constants.js?v=50";
+import { zoneMethods } from "./world-zones.js?v=50";
+import { buildingMethods } from "./world-buildings.js?v=50";
+import { cinematicMethods } from "./world-cinematics.js?v=50";
+import { loopMethods } from "./world-loop.js?v=50";
+import { outskirtsMethods } from "./world-outskirts.js?v=50";
+import { v37LandmarkMethods } from "./world-landmarks-v37.js?v=50";
+import { v40VillaMethods } from "./world-villa-v40.js?v=50";
+import { v41MetroPlayerMethods } from "./world-metro-player-v41.js?v=50";
+import { v43StreetLifeMethods } from "./world-streetlife-v43.js?v=50";
+import { v47GiveawayMethods } from "./world-giveaway-v47.js?v=50";
+import { v48StreamlineMethods } from "./world-streamline-v48.js?v=50";
 
 export {
   SIXTEEN_PLOT_TYPES,
@@ -120,7 +120,7 @@ export class FollowerTownEngine {
     this.composer = null;
     this.bloomPass = null;
     this._bloomLoading = false;
-    this.defaultSheruGlb = "./sheru-bhai-animated.glb?v=49";
+    this.defaultSheruGlb = "./sheru-bhai-animated.glb?v=50";
     this.heroModelUrls = { statue: "", audi: "", heli: "" };
     this.glbCache = new Map();
     this._glbPending = new Map();
@@ -1477,7 +1477,7 @@ export class FollowerTownEngine {
     const pos = isCustom
       ? { x: customWorldX, z: customWorldZ, blockCenterX: customWorldX, blockCenterZ: customWorldZ, rotY: data.customRotY || 0 }
       : this.getPlotPosition(plotIndex);
-    const size = data?.status === "built" ? (data.size || reqSize) : 1;
+    const size = data?.status === "built" ? Math.max(data.size || 1, reqSize) : 1;
     const isSixteenPlot = !isCustom && size === 16;
     const isEightPlot = !isCustom && size === 8;
     const isFourPlot = !isCustom && size === 4;
@@ -1691,7 +1691,11 @@ export class FollowerTownEngine {
     } else {
       this._emptyPlotCoords.delete(plotId);
       if (effSixteen) {
-        buildingObj = this._buildSixteenPlotStreamlineHQ(plotId, data.username);
+        buildingObj = this._buildSixteenPlotStreamlineHQ(plotId, data.ownerName);
+        const topLabel = data.ownerName || "STREAMLINE SOLUTIONS";
+        const sign = this._createNameSign(topLabel, "🌐 STREAMLINE SOLUTIONS • 16-PLOT HQ", true);
+        sign.position.set(0, 22.5, 0);
+        buildingObj.add(sign);
       } else if (isCustom && size === 8) {
         buildingObj = data.buildingType === "billionaire_villa"
           ? this._buildEightPlotBillionaireVilla(plotId, data.ownerName)

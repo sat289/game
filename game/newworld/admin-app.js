@@ -9,7 +9,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged
-} from "./firebase-config.js?v=49";
+} from "./firebase-config.js?v=50";
 import {
   FollowerTownEngine,
   BUILDING_LABELS,
@@ -18,7 +18,7 @@ import {
   getBlockPlotIds,
   getEightPlotGroup,
   getSixteenPlotGroup
-} from "./world-engine.js?v=49";
+} from "./world-engine.js?v=50";
 
 let isAdmin = false;
 let selectedPlotId = "plot_0001";
@@ -328,7 +328,9 @@ function openPlotCard(plotId, data) {
     document.getElementById("card-owner").textContent = data.ownerName || label;
     document.getElementById("card-role").textContent = data.role || "Town Resident";
     document.getElementById("card-type").textContent =
-      size === 8
+      size === 16
+        ? "🌐 16-PLOT GLOBAL HEADQUARTERS"
+        : size === 8
         ? (data.buildingType === "swamy_school" ? "8-PLOT SWAMY E.M. SCHOOL" : data.buildingType === "dmart_mega" ? "8-PLOT MEGA D-MART" : data.buildingType === "inorbit_mall" ? "8-PLOT INORBIT MALL" : data.buildingType === "billionaire_villa" ? "8-PLOT BILLIONAIRE VILLA" : data.buildingType === "function_hall" ? "8-PLOT FUNCTION HALL" : data.buildingType === "imax_theater" ? "8-PLOT IMAX 3D DOME" : data.buildingType === "movie_theater" ? "8-PLOT MOVIE THEATER" : data.buildingType === "mahindra_showroom" ? "8-PLOT MAHINDRA SHOWROOM" : data.buildingType === "bmw_showroom" ? "8-PLOT BMW SHOWROOM" : data.buildingType === "audi_showroom" ? "8-PLOT AUDI SHOWROOM" : "8-PLOT STADIUM")
         : size === 4
         ? (data.buildingType === "tirumala_temple" ? "4-PLOT TIRUMALA TEMPLE" : data.buildingType === "hotel_oyo" ? "20-FLOOR OYO TOWER" : data.buildingType === "hostel" ? "4-PLOT HOSTEL" : data.buildingType === "wine_shop" ? "4-PLOT WINE SHOP" : data.buildingType === "box_cricket" ? "4-PLOT BOX CRICKET" : data.buildingType === "ff_office" ? "4-PLOT FREE FIRE HQ" : data.buildingType === "ayyappa_temple" ? "4-PLOT AYYAPPA TEMPLE" : data.buildingType === "yamaha_showroom" ? "4-PLOT YAMAHA SHOWROOM" : data.buildingType === "stark_tower" ? "4-PLOT STARK TOWER" : data.buildingType === "lc_mart" ? "4-PLOT LC MART" : data.buildingType === "bar_lounge" ? "4-PLOT ROYAL BAR" : data.buildingType === "bike_showroom" ? "4-PLOT BIKE SHOWROOM" : data.buildingType === "swimming_pool" ? "4-PLOT SWIMMING POOL" : data.buildingType === "city_park" ? "4-PLOT CITY PARK" : data.buildingType === "library" ? "4-PLOT LIBRARY" : data.buildingType === "dmart" ? "4-PLOT D-MART" : "4-PLOT LANDMARK")
@@ -759,7 +761,7 @@ document.getElementById("btn-save-plot").addEventListener("click", async () => {
         builtDay
       };
     });
-  } else if (newSize === 2 || newSize === 4 || newSize === 8) {
+  } else if (newSize === 2 || newSize === 4 || newSize === 8 || newSize === 16) {
     // 🛡️ ZERO-DISTURBANCE PLACEMENT: Never overwrite or move ANY other existing building!
     // If the tapped block has any other building, ONLY move this new landmark to the nearest 100% clear space!
     const occMap = buildOccupancyMap();

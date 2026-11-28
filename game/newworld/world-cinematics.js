@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getSkyPalette } from "./shaders-glsl.js?v=49";
+import { getSkyPalette } from "./shaders-glsl.js?v=50";
 import {
   BUILDING_LABELS,
   getRequiredSize,
@@ -7,7 +7,7 @@ import {
   getTwoPlotGroup,
   getBlockPlotIds,
   getEightPlotGroup
-} from "./world-constants.js?v=49";
+} from "./world-constants.js?v=50";
 
 export const cinematicMethods = {
   setTimeOfDay(mode) {
@@ -1267,7 +1267,7 @@ export const cinematicMethods = {
   },
 
   getSheruGlbUrl() {
-    return (this.heroModelUrls && this.heroModelUrls.statue) || this.defaultSheruGlb || "./sheru-bhai-animated.glb?v=49";
+    return (this.heroModelUrls && this.heroModelUrls.statue) || this.defaultSheruGlb || "./sheru-bhai-animated.glb?v=50";
   },
 
   setHeroModelUrls(urls = {}) {
